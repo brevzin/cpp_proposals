@@ -329,7 +329,7 @@ struct X {
 
 This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.
 
-The particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional), and this example includes some functions that are proposed in P0798, with minor changes to better suit this format:
+The particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional), and this example includes some functions that are proposed in [\[P0798\]](https://wg21.link/p0798), with minor changes to better suit this format:
 
 <table>
 <tr><th>C++17</th><th>This proposal</th></tr>
@@ -375,14 +375,12 @@ template <typename T>
 class optional {
   // ...
   constexpr T* operator->() {
-    return std::addressof(
-      this->m_value);
+    return std::addressof(this->m_value);
   }
 
   constexpr const T*
   operator->() const {
-    return std::addressof(
-      this->m_value);
+    return std::addressof(this->m_value);
   }
   // ...
 };
@@ -578,7 +576,7 @@ For those that dislike returning auto in these cases, it is very easy to write a
 
 ## SFINAE-friendly callables
 
-A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in [P0826]. `std::not_fn` is specified to behave as if:
+A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in [\[P0826\]](https://wg21.link/p0826). Consider what happens if we implement `std::not_fn()`, as currently specified:
 
 ```
 template <typename F>
@@ -588,19 +586,38 @@ public:
     // ...
     template <typename... Args>
     auto operator()(Args&&... ) &
-        -> decltype(!declval<invoke_result_t<F&, Args...>>());
+        -> decltype(!declval<invoke_result_t<F&, Args...>>())'
 
     template <typename... Args>
     auto operator()(Args&&... ) const&
         -> decltype(!declval<invoke_result_t<const F&, Args...>>());
 
-    // ...
+    // ... same for && and const && ...
 };
+
+template <typename F>
+auto not_fn(F&& f) {
+    return call_wrapper<std::decay_t<F>>{std::forward<F>(f)};
+}
 ```
 
-which has the surprise result of incorrectly propagating the *cv*-qualifiers of the call wrapper. From the paper:
+As described in the paper, this implementation has two pathological cases: one in which the callable is SFINAE-unfriendly (which would cause a call to be ill-formed, when it could otherwise work), and one in which overload is deleted (which would cause a call to fallback to a different overload, when it should fail):
 
 ```
+struct unfriendly {
+    template <typename T>
+    auto operator()(T v) {
+        static_assert(std::is_same_v<T, int>);
+        return v;
+    }
+
+    template <typename T>
+    auto operator()(T v) const {
+        static_assert(std::is_same_v<T, double>);
+        return v;
+    }
+};
+
 struct fun {
     template <typename... Args>
     void operator()(Args&&...) = delete;
@@ -609,12 +626,13 @@ struct fun {
     bool operator()(Args&&...) const { return true; }
 };
 
-std::not_fn(fun{})(); // ok? Returns false
+std::not_fn(unfriendly{})(1); // static assert!
+std::not_fn(fun{})();         // ok!? Returns false
 ```
 
-`fun` shouldn't be invocable unless it's `const`, but the simple approach of quadruplicating the overloads led to a situation where we can fallback to the const overload of the call wrapper (the `&&`-qualified overload led to a substitution failure so we were able to fall back to the `const&&`-qualified one, which succeeded). Implementing this correctly, while still preserving SFINAE-friendliness, is decidedly non-trivial.
+Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.
 
-This proposal, however, offers a very simple solution to this problem. Deduce `this`. The following is a complete implementation of `std::not_fn`:
+This proposal solves both problems by simply allowing `this` to be deduced. The following is a complete implementation of `std::not_fn`:
 
 ```
 template <typename F>
@@ -623,11 +641,9 @@ struct call_wrapper {
 
     template <typename This, typename... Args>
     auto operator()(This&& this, Args&&... )
-        -> decltype(!invoke(forward<This>(this).f,
-                            forward<Args>(args)...));
+        -> decltype(!invoke(forward<This>(this).f, forward<Args>(args)...))
     {
-        return !invoke(forward<This>(this).f,
-                       forward<Args>(args)...);
+        return !invoke(forward<This>(this).f, forward<Args>(args)...);
     }
 };
 
@@ -636,10 +652,11 @@ auto not_fn(F&& f) {
     return call_wrapper<std::decay_t<F>>{std::forward<F>(f)};
 }
 
-not_fn(fun{})(); // error
+not_fn(unfriendly{})(1); // ok
+not_fn(fun{})();         // error
 ```
 
-Here, there is only one overload with everything deduced together, with `This = fun`. As this overload is not viable (because `fun` is not invocable unless it's `const`), and there is no other overload, overload resolution is complete without a viable candidate. As desired.
+Here, there is only one overload with everything deduced together, with either `This = fun` or `This = poison` as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
 
 ## Recursive Lambdas
 
@@ -659,7 +676,7 @@ auto fib = [](auto& this, int n) {
 };
 ```
 
-In the specific case of lambdas, a lambda could both capture `this` and take a generic parameter named `this`. If this happens, use of `this` would refer to the parameter (and hence, the lambda itself) and not the `this` pointer of the outer-most class. 
+In the specific case of lambdas, a lambda could both capture `this` and take a generic parameter named `this`. If this happens, use of `this` would refer to the parameter (and hence, the lambda itself) and not the `this` pointer of the outer-most class. This preference follows the normal scoping rules.
 
 ```
 struct A {

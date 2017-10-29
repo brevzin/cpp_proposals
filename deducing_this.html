@@ -1,7 +1,7 @@
 <html>
 <head>
-	<title>Deducing this</title>
-
+<title> Deducing this
+</title>
 <style type="text/css">html {
 	position: relative;
 	max-width: 1024px;
@@ -146,6 +146,9 @@ ol ol > li:before {
 }
 ul :first-child, ol :first-child {
 	margin-top: 0;
+}
+ul ul { 
+    margin-left: -15px;
 }
 dl {
 	padding: 0;
@@ -485,529 +488,564 @@ $('tblcode').replaceWith(function(){
 </script>
 </head>
 <body>
-
 <address align=right>
-Document number: DxxxxR0 <br />
+Document number:  dXXXX
+ <br />
 Date: 2017-10-24 <br />
-Audience: Evolution Working Group <br />
-Reply-To: Barry Revzin &lt;barry.revzin@gmail.com> <br />
-Simon Brand &lt;simon@codeplay.com>
+Audience:  EWG
+ <br />
+Reply-To:  Barry Revzin &lt;barry.revzin@gmail.com><br />
+ Simon Brand &lt;simon@codeplay.com><br />
 </address>
-<hr/>
-<h1 align=center>Deducing <code>this</code></h1>
-
+<hr/><h1 align=center> Deducing this
+</h1>
 <h2>Contents</h2>
-
-<ol>
-<li><a href="#toc_1">Motivation</a></li>
-<li><a href="#toc_2">Proposal</a></li>
-<ol>
-<li><a href="#toc2_1">Alternative Syntax</a></li>
-</ol>
-<li><a href="#toc_3">Examples</a>
-<ol>
-<li><a href="#toc3_1">Deduplicating code</a></li>
-<li><a href="#toc3_2">SFINAE-friendly callables</a></li>
-<li><a href="#toc3_3">Recursive lambdas</a></li>
-</ol>
-</li>
-</ol>
-
-<a name="Motivation"> </a><h2>Motivation</h2>
-
-In C++03, member functions could have <i>cv</i>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="language-cpp">const</code> and non-<code class="language-cpp">const</code> overload of a particular member (Of course it was possible to also want <code class="language-cpp">volatile</code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++", Item 3:
-
-<pre><code class="language-cpp">class TextBlock {
+<ol><li><a href="#toc_1">Motivation
+</a></li><li><a href="#toc_2">Proposal
+</a><ol><li><a href="#toc_2.1">Alternative syntax
+</a></li></ol></li><li><a href="#toc_3">Examples
+</a><ol><li><a href="#toc_3.1">Deduplicating Code
+</a></li><li><a href="#toc_3.2">SFINAE-friendly callables
+</a></li><li><a href="#toc_3.3">Recursive Lambdas
+</a></li></ol></li></ol>
+<a name="toc_1"></a><h2>1. Motivation
+</h2>
+<p><p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="language-cpp">const</code> and non-<code class="language-cpp">const</code> overload of a particular member (Of course it was possible to also want <code class="language-cpp">volatile</code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++", Item 3:</p><pre ><code class="language-cpp">class TextBlock {
 public:
-    const char& operator[](std::size_t position) const {
-        // ...
-        return text[position];
+  const char&amp; operator[](std::size_t position) const {
+    // ...
+    return text[position];
+  }
+
+  char&amp; operator[](std::size_t position) {
+    return const_cast&lt;char&amp;&gt;(
+      static_cast&lt;const TextBlock&amp;&gt;(this)[position]
+    );
+  }
+  // ...
+};
+</code></pre>
+<p><p>Neither the duplication or the delegation via <code class="language-cpp">const_cast</code> are arguably great solutions, but they work.</p><p><p>In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: <code class="language-cpp">&amp;</code>, <code class="language-cpp">const&amp;</code>, <code class="language-cpp">&amp;&amp;</code>, or <code class="language-cpp">const&amp;&amp;</code>. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for <code class="language-cpp">optional&lt;T&gt;::value()</code>. The way to implement it would be something like:</p><table style="width: 100%">
+<p><tr><th>Quadruplication</th><th>Delegation to 4th</th><th>Delegation to helper</th></tr><p><tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    constexpr T&amp; value() &amp; {
+        if (has_value()) {
+            return this-&gt;m_value;
+        }
+        throw bad_optional_access();
     }
-    
-    char& operator[](std::size_t position) {
-        return const_cast&lt;char&>(
-            static_cast&lt;const TextBlock&>(this)[position]
-            );
+
+    constexpr const T&amp; value() const&amp; {
+        if (has_value()) {
+            return this-&gt;m_value;
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr T&amp;&amp; value() &amp;&amp; {
+        if (has_value()) {
+            return std::move(this-&gt;m_value);
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
+        if (has_value()) {
+            return std::move(this-&gt;m_value);
+        }
+        throw bad_optional_access();
     }
     // ...
 };
 </code></pre>
-
-Neither the duplication or the delegation via <code class="language-cpp">const_cast</code> are arguably great solutions, but they work.
-
-<p> In C++11, member functions acquired a new axis to specialize on: <i>ref</i>-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: <code class="language-cpp">&</code>, <code class="language-cpp">const&</code>, <code class="language-cpp">&&</code>, or <code class="language-cpp">const&&</code>. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for <code class="language-cpp">optional&lt;T>::value()</code>. The way to implement it would be something like: 
-
-<table style="width:100%">
-<tr><th style="width:33%">Quadruplication</th><th style="width:33%">Delgate to 4th</th><th style="width:33%">Delgate to helper</th></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+<p></td><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
     // ...
-    constexpr T& value() & {
+    constexpr T&amp; value() &amp; {
+        return const_cast&lt;T&amp;&gt;(
+            static_cast&lt;optional const&amp;&gt;(
+                *this).value());
+    }
+
+    constexpr const T&amp; value() const&amp; {
         if (has_value()) {
-            return this->m_value;
+            return this-&gt;m_value;
         }
         throw bad_optional_access();
     }
 
-    constexpr const T& value() const& {
-        if (has_value()) {
-            return this->m_value;
-        }
-        throw bad_optional_access();
-    }    
-
-    constexpr T&& value() && {
-        if (has_value()) {
-            return std::move(this->m_value);
-        }
-        throw bad_optional_access();
-    }    
-    
-    constexpr const T&& value() const&& {
-        if (has_value()) {
-            return std::move(this->m_value);
-        }
-        throw bad_optional_access();
-    }     
-    // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
-class optional {
-    // ...
-    constexpr T& value() & {
-        return const_cast&lt;T&>(
-            static_cast&lt;optional const&>(
+    constexpr T&amp;&amp; value() &amp;&amp; {
+        return const_cast&lt;T&amp;&amp;&gt;(
+            static_cast&lt;optional const&amp;&gt;(
                 *this).value());
     }
 
-    constexpr const T& value() const& {
-        if (has_value()) {
-            return this->m_value;
-        }
-        throw bad_optional_access();
-    }    
-
-    constexpr T&& value() && {
-        return const_cast&lt;T&&>(
-            static_cast&lt;optional const&>(
-                *this).value());
-    }    
-    
-    constexpr const T&& value() const&& {
-        return static_cast&lt;const T&&>(
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
+        return static_cast&lt;const T&amp;&amp;&gt;(
             value());
-    }     
+    }
     // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+};
+</code></pre>
+<p></td><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
     // ...
-    constexpr T& value() & {
+    constexpr T&amp; value() &amp; {
         return value_impl(*this);
     }
 
-    constexpr const T& value() const& {
+    constexpr const T&amp; value() const&amp; {
         return value_impl(*this);
-    }    
+    }
 
-    constexpr T&& value() && {
+    constexpr T&amp;&amp; value() &amp;&amp; {
         return value_impl(std::move(*this));
-    }    
-    
-    constexpr const T&& value() const&& {
+    }
+
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
         return value_impl(std::move(*this));
-    }     
-    
+    }
+
 private:
-    template &lt;typename Opt>
+    template &lt;typename Opt&gt;
     static decltype(auto)
-    value_impl(Opt&& opt) {
+    value_impl(Opt&amp;&amp; opt) {
         if (!opt.has_value()) {
-            throw bad_optional_access();        
+            throw bad_optional_access();
         }
-        return std::forward&lt;Opt>(opt).m_value;
+        return std::forward&lt;Opt&gt;(opt).m_value;
     }
-   
-        
+
+
     // ...
-};</code></pre></td>
-</tr>
-</table>
-
-It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delgation to avoid doing so, is the kind of thing that begs for a rewrite. Except we can't really. We <i>have</i> to implement it this way. It seems like we should be able to abstract away the qualifiers. And we can... sort of. As a non-member function, we simply don't have this problem:
-
-<pre><code class="language-cpp">template &lt;typename T>
+};
+</code></pre>
+<p><p></td></tr></p></table>
+<p><p>It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite. Except we can't really. We <em>have</em> to implement it this way. It seems like we should be able to abstract away the qualifiers. And we can... sort of. As a non-member function, we simply don't have this problem:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 class optional {
     // ...
-    template &lt;typename Opt>
-    friend decltype(auto) value(Opt&& o) {
+    template &lt;typename Opt&gt;
+    friend decltype(auto) value(Opt&amp;&amp; o) {
         if (o.has_value()) {
-            return std::forward&lt;Opt>(o).m_value;
+            return std::forward&lt;Opt&gt;(o).m_value;
         }
         throw bad_optional_access();
     }
     // ...
-};</code></pre>
+};
+</code></pre>
+<p><p>This is great - it's just one function, that handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.</p><p><p>There are many, many cases in code-bases where we need two or four overloads of the same member function for different <code class="language-cpp">const</code>- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.</p><a name="toc_2"></a><h2>2. Proposal
+</h2>
+<p><p>This paper proposes a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invokable as a member function.</p><p><p>We propose allowing the first parameter of a member function to be named <code class="language-cpp">this</code>, with the following restrictions:</p><ul><li><p>The member function shall not have any <em>cv</em>- or ref-qualifiers</p></li><li><p>The member function shall not be <code class="language-cpp">static</code></p></li><li><p>The type of the <code class="language-cpp">this</code> parameter shall be either:</p></li><ul><li><p>a reference to possibly <em>cv</em>-qualified function template parameter</p></li><li><p>a reference to possibly <em>cv</em>-qualified <em>injected-class-name</em></p></li></ul></ul><p><p>The <code class="language-cpp">this</code> parameter will bind to the implicit object argument, as if it were passed as the first argument to a non-member function with the same signature. </p><pre ><code class="language-cpp">struct X {
+    void foo(X&amp; this);
 
-<p>This is great - it's just one function, that handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.
-
-<p>There are many, many cases in code-bases where we need two or four overloads of the same member function for different <code class="language-cpp">const-</code> or <i>ref</i>-qualifiers. More than that, there are likely many cases that a class <i>should</i> have four overloads of a particular member function, but doesn't simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.
-
-<a name="Proposal"></a><h2>Proposal</h2>
-
-<p>This paper proposes a new way of declaring a member function that allows for deducing the type and value category of the instance parameter, while still being invokable as a member function. 
-
-<p>We propose allowing the naming of the first parameter of a cv/ref-unqualified member function <code class="language-cpp">this</code>, which shall be of reference type. The <code>this</code> parameter will be the explicit instance of class type, and can be deduced based on the qualification and value category of the class instance object on which the member function is invoked. 
-
-<pre><code class="language-cpp">struct X {
-    template &lt;typename This>
-    void foo(This&& this);
-    
-    template &lt;typename This, typename T>
-    void bar(This&& this, T&& );
-    
-    template &lt;typename This>
-    void quux(This& this);
+    template &lt;typename This&gt;
+    void bar(This&amp;&amp; this, int i);
 };
 
-void demo(X x, const X* px) {
-    X{}.foo();    // invokes X::foo&lt;X>
-    x.bar(4);     // invokes X::bar&lt;X&, int>
-    px->bar(2.0); // invokes X::bar&lt;const X&, double>
-    
-    X{}.quux();   // ill-formed
-    x.quux();     // invokes X::quux&lt;X>
-    px->quux();   // invokes X::quux&lt;const X>
+// X::foo is member function taking no arguments, X::bar takes one 
+// argument of type int
+X x;
+x.foo();
+x.bar(0);
+
+// These behave as if the call were to these non-member functions
+void foo(X&amp; obj);
+
+template &lt;typename This&gt;
+void bar(This&amp;&amp; obj, int i);
+foo(x);
+bar(x, 0);
+</code></pre>
+<p><p>The usual template deduction rules apply to the <code class="language-cpp">this</code> parameter. While the naming of the parameter <code class="language-cpp">this</code> is significant, the naming of the template type parameter as <code class="language-cpp">This</code> is not. It is used throughout merely a suggested convention.</p><pre ><code class="language-cpp">struct Y {
+    template &lt;typename This, typename T&gt;
+    void bar(This&amp;&amp; this, T&amp;&amp; );
+
+    template &lt;typename Self&gt;
+    void quux(Self&amp; this);
+};
+
+void demo(Y y, const Y* py) {
+    y.bar(4);     // invokes Y::bar&lt;Y&amp;, int&gt;
+    py-&gt;bar(2.0); // invokes Y::bar&lt;const Y&amp;, double&gt;
+
+    Y{}.quux();   // ill-formed
+    y.quux();     // invokes Y::quux&lt;Y&gt;
+    py-&gt;quux();   // invokes Y::quux&lt;const Y&gt;
 }
 </code></pre>
-
-<p>The type of this member function would be qualified based on the deduced qualification of the instance parameter. That is, <code class="language-cpp">decltype(&X::foo&lt;X>)</code> is <code class="language-cpp">void (X::*)() &&</code> and <code class="language-cpp">decltype(&X::bar&lt;const X&, int>)</code> is <code class="language-cpp">void (X::*)(int&& ) const&</code>. Similarly, <code class="language-cpp">decltype(&X::quux&lt;X>)</code> is <code class="language-cpp">void (X::*)() &</code>.
-
-<p>While the type of <code class="language-cpp">this</code> is deduced, it will always be some qualified form of the class type in which the member function is declared, never a derived type:
-
-<pre><code class="language-cpp">struct B {
-    template &lt;typename This>
-    void do_stuff(This&& this);
+<p><p>It will be possible to take pointers to these member functions. Their types would be qualified based on the deduced qualification of the instance object. That is, <code class="language-cpp">decltype(&amp;Y::bar&lt;Y, int&gt;)</code> is <code class="language-cpp">void (Y::*)(int) &amp;&amp;</code> and <code class="language-cpp">decltype(&amp;Y::quux&lt;const Y&gt;)</code> is <code class="language-cpp">void (Y::*)() const&amp;</code>. These member functions can be invoked via pointers to members as usual. </p><p><p>While the type of the <code class="language-cpp">this</code> parameter is deduced, it will always be some qualified form of the class type in which the member function is declared, never a derived type:</p><pre ><code class="language-cpp">struct B {
+    template &lt;typename This&gt;
+    void do_stuff(This&amp;&amp; this);
 };
 
 struct D : B { };
 
 D d;
-d.do_stuff();        // invokes B::do_stuff&lt;B&>, not B::do_stuff&lt;D&>
+d.do_stuff();  // invokes B::do_stuff&lt;B&amp;&gt;, not B::do_stuff&lt;D&amp;&gt;
 </code></pre>
-
-<p>Within these member functions, the keyword <code class="language-cpp">this</code> will be used as a reference, not as a pointer. While inconsistent with usage in normal member functions, it is more consistent with its declaration as a parameter of reference type, and the difference will be a signal to users that this is a different kind of member function.
-Hence, accessing members would be done via <code class="language-cpp">this.</code> and not <code class="language-cpp">this-></code>. Due to these different access rules, all member access <i>must</i> be qualified. There will no longer be an implicit <code class="language-cpp">this</code>:
-
-<pre><code class="language-cpp">template &lt;typename T>
+<p><p>Within these member functions, the keyword <code class="language-cpp">this</code> will be used as a reference, not as a pointer. While inconsistent with usage in normal member functions, it is more consistent with its declaration as a parameter of reference type and its ability to be deduced as a forwarding reference. This difference will be a signal to users that this is a different kind of member function, additionally obviating any questions about checking against <code class="language-cpp">nullptr</code>. </p><p><p>Accessing members would be done via <code class="language-cpp">this.mem</code> and not <code class="language-cpp">this-&gt;mem</code>. There is no implicit <code class="language-cpp">this</code> object, since we now have an <em>explicit</em> instance parameter, so all member access must be qualified:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 class Z {
     T value;
 public:
-    template &lt;typename Object>
-    decltype(auto) get(Object&& this) {
-        return value;                            // error
-        return std::forward&lt;Object>(this).value; // ok
+    template &lt;typename Object&gt;
+    decltype(auto) get(Object&amp;&amp; this) {
+        return value; // error: unknown identifier 'value'
+        return std::forward&lt;Object&gt;(this).value; // ok
     }
 };
 </code></pre>
+<p><p>The only allowed types for the <code class="language-cpp">this</code> parameter are reference to function template parameter and reference to <em>injected-class-name</em>. We do not expect the latter form to be used very often, but likewise we see no reason to artificially limit the proposal to templates.</p><pre ><code class="language-cpp">template &lt;typename T&gt;
+struct B {
+    template &lt;typename This&gt;
+    void a(This&amp;&amp; this);      // ok
 
-<p>While the examples so far all have <code class="language-cpp">this</code> as a parameter whose type is deduced, this proposal does not enforce that. We will also allow simply naming the class type as the parameter type, as long as it's a reference type We do not expect this form to be used, but we likewise do not see the reason to limit the rule. 
+    void b(B&amp; this);          // ok
+    template &lt;typename This&gt;
+    void c(const This&amp; this); // ok
 
-<pre><code class="language-cpp">struct A {
-    int i;
-    
-    // C++11
-    void foo() & { std::cout &lt;&lt; i; }
-    
-    // this proposal: ok, if unlikely to be used
-    void foo(A& this) { std::cout &lt;&lt; this.i; }
-    
-    // error: this as a parameter must have reference type
-    void foo(A* this) { std::cout &lt;&lt; this->i; }    
+    void d(B this);           // error: not a reference type
+    void e(B* this);          // error: not a reference type
+    void f(B&lt;T&gt;&amp; this);       // error: not injected-class-name
+    template &lt;typename U&gt;
+    void g(B&lt;U*&gt;&amp; this);      // error: not reference to template-parameter
+    void h(T&amp; this);          // error: not reference to function's template-parameter
 };
 </code></pre>
-
-<p>Since in many ways member functions act as if they accepted an instance of class type as their first parameter (for instance, in <code>INVOKE</code> and all the functional objects that rely on this), we believe this is a logical extension of the language rules to solve a common and growing source of frustration. This sort of code deduplication is, after all, precisely what templates are for.
-
-<p>Overload resolution between new-style and old-style member functions would compare the explicit <code class="language-cpp">this</code> parameter of the new functions with the implicit <code class="language-cpp">this</code> parameter of the old functions:
-
-<pre><code class="language-cpp">struct C {
-    template &lt;typename This>
-    void foo(This& this); // #1
+<p><p>Since in many ways member functions act as if they accepted an instance of class type as their first parameter (for instance, in <code class="language-cpp">INVOKE</code> and all the functional objects that rely on this), we believe this is a logical extension of the language rules to solve a common and growing source of frustration. This sort of code deduplication is, after all, precisely what templates are for.</p><p><p>Overload resolution between new-style and old-style member functions would compare the explicit this parameter of the new functions with the implicit this parameter of the old functions:</p><pre ><code class="language-cpp">struct C {
+    template &lt;typename This&gt;
+    void foo(This&amp; this); // #1
     void foo() const;     // #2
 };
 
 void demo(C* c, C const* d) {
-    c->foo(); // calls #1, better match
-    d->foo(); // calls #2, non-template preferred to template
+    c-&gt;foo(); // calls #1, better match
+    d-&gt;foo(); // calls #2, non-template preferred to template
 }
 </code></pre>
-
-<p>As <code class="language-cpp">this</code> cannot be used as a parameter name today, this proposal is purely a language extension. All current syntax remains valid. 
-
-<h3>Alternative syntax</h3>
-
-<p>Rather than naming the first parameter <code class="language-cpp">this</code>, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:
-
-<pre><code class="language-cpp">template &lt;typename T>
+<p><p>As <code class="language-cpp">this</code> cannot be used as a parameter name today, this proposal is purely a language extension. All current syntax remains valid.</p><a name="toc_2.1"></a><h3>2.1. Alternative syntax
+</h3>
+<p><p>Rather than naming the first parameter <code class="language-cpp">this</code>, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 struct X {
     T value;
 
     // as proposed
-    template &lt;typename This>
-    decltype(auto) foo(This&& this) {
-        return std::forward&lt;This>(this).value;
+    template &lt;typename This&gt;
+    decltype(auto) foo(This&amp;&amp; this) {
+        return std::forward&lt;This&gt;(this).value;
     }
-    
+
     // alternative
-    template &lt;typename This>
-    decltype(auto) foo() This&& {
-        return std::forward&lt;This>(*this).value;
+    template &lt;typename This&gt;
+    decltype(auto) foo() This&amp;&amp; {
+        return std::forward&lt;This&gt;(*this).value;
     }
-};</code></pre>
-
-<a name="Examples"></a><h2>Examples</h2>
-
-This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.
-
-<p>The particular implementation of <code class="language-cpp">optional</code> is Simon's, and can be viewed on <a href="https://github.com/TartanLlama/optional/blob/31da15a3919665971d748254f41b8bf80b79f32c/optional.hpp">github</a>, and this example includes some functions that are proposed in <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798]</a>, with minor changes to better suit this format:
-
-<table style="width:100%">
-<tr><th style="width:50%">C++17</th><th style="width:50%">This proposal</th></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
-public:
-
-    const char& operator[](std::size_t position) const {
-        // ...
-        return text[position];
-    }
-    
-    char& operator[](std::size_t position) {
-        return const_cast&lt;char&>(
-            static_cast&lt;const TextBlock&>(this)[position]
-            );
-    }
-    // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
-public:
-    template &lt;typename This>
-    auto& operator[](This& this, std::size_t position) {
-        // ...
-        return this.text[position];
-    }
-    // ...
 };
-</code></pre></td></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+</code></pre>
+<a name="toc_3"></a><h2>3. Examples
+</h2>
+<a name="toc_3.1"></a><h3>3.1. Deduplicating Code
+</h3>
+<p><p>This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.</p><p><p>The particular implementation of optional is Simon's, and can be viewed on <a href="https://github.com/TartanLlama/optional">GitHub</a>, and this example includes some functions that are proposed in <a href="https://wg21.link/p0798">[P0798]</a>, with minor changes to better suit this format:</p><table style="width: 100%">
+<p><tr><th>C++17</th><th>This proposal</th></tr><p><tr><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
+public:
+  const char&amp;
+  operator[](std::size_t position) const {
+    // ...
+    return text[position];
+  }
+
+  char&amp; operator[](std::size_t position) {
+    return const_cast&lt;char&amp;&gt;(
+      static_cast&lt;const TextBlock&amp;&gt;
+        (this)[position]
+    );
+  }
+  // ...
+};
+</code></pre>
+<p><td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
+public:
+  template &lt;typename This&gt;
+  auto&amp; operator[](This&amp; this,
+                   std::size_t position) {
+    // ...
+    return this.text[position];
+  }
+  // ...
+};
+</code></pre>
+<p></td><p></tr><p><tr><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...
-    constexpr T* operator->() {
-        return std::addressof(this->m_value);
-    }
-    
-    constexpr const T* operator->() const {
-        return std::addressof(this->m_value);
-    }
-    // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+  // ...
+  constexpr T* operator-&gt;() {
+    return std::addressof(this-&gt;m_value);
+  }
+
+  constexpr const T*
+  operator-&gt;() const {
+    return std::addressof(this-&gt;m_value);
+  }
+  // ...
+};
+</code></pre>
+<p></td><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...
-    template &lt;typename This>
-    constexpr auto operator->(This& this) {
-        return std::addressof(this.m_value);
-    }
-    // ...
-};</code></pre></td></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+  // ...
+  template &lt;typename This&gt;
+  constexpr auto operator-&gt;(This&amp; this) {
+    return std::addressof(this.m_value);
+  }
+  // ...
+};
+</code></pre>
+<p></td><p></tr><p><tr><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...    
-    constexpr T& operator*() & {
-        return this->m_value;
-    }
-    
-    constexpr const T& operator*() const& {
-        return this->m_value;
-    }
+  // ...
+  constexpr T&amp; operator*() &amp; {
+    return this-&gt;m_value;
+  }
 
-    constexpr T&& operator*() && {
-        return std::move(this->m_value);
-    }
-    
-    constexpr const T&& operator*() const&& {
-        return std::move(this->m_value);
-    }    
-    
-    constexpr T& value() & {
-        if (has_value()) {
-            return this->m_value;
-        }
-        throw bad_optional_access();
-    }
+  constexpr const T&amp; operator*() const&amp; {
+    return this-&gt;m_value;
+  }
 
-    constexpr const T& value() const& {
-        if (has_value()) {
-            return this->m_value;
-        }
-        throw bad_optional_access();
-    }    
+  constexpr T&amp;&amp; operator*() &amp;&amp; {
+    return std::move(this-&gt;m_value);
+  }
 
-    constexpr T&& value() && {
-        if (has_value()) {
-            return std::move(this->m_value);
-        }
-        throw bad_optional_access();
-    }    
-    
-    constexpr const T&& value() const&& {
-        if (has_value()) {
-            return std::move(this->m_value);
-        }
-        throw bad_optional_access();
+  constexpr const T&amp;&amp;
+  operator*() const&amp;&amp; {
+    return std::move(this-&gt;m_value);
+  }
+
+  constexpr T&amp; value() &amp; {
+    if (has_value()) {
+      return this-&gt;m_value;
     }
-    // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+    throw bad_optional_access();
+  }
+
+  constexpr const T&amp; value() const&amp; {
+    if (has_value()) {
+      return this-&gt;m_value;
+    }
+    throw bad_optional_access();
+  }
+
+  constexpr T&amp;&amp; value() &amp;&amp; {
+    if (has_value()) {
+      return std::move(this-&gt;m_value);
+    }
+    throw bad_optional_access();
+  }
+
+  constexpr const T&amp;&amp; value() const&amp;&amp; {
+    if (has_value()) {
+      return std::move(this-&gt;m_value);
+    }
+    throw bad_optional_access();
+  }
+  // ...
+};
+</code></pre>
+<p></td><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...
-    template &lt;typename This>
-    constexpr auto&& operator*(This&& this) {
-        return std::forward&lt;This>(this).m_value;
+  // ...
+  template &lt;typename This&gt;
+  constexpr auto&amp;&amp; operator*(This&amp;&amp; this) {
+    return forward&lt;This&gt;(this).m_value;
+  }
+
+  template &lt;typename This&gt;
+  constexpr auto&amp;&amp; value(This&amp;&amp; this) {
+    if (this.has_value()) {
+      return forward&lt;This&gt;(this).m_value;
     }
-    
-    template &lt;typename This>
-    constexpr auto&& value(This&& this) {
-        if (this.has_value()) {
-            return std::forward&lt;This>(this).m_value;
-        }
-        throw bad_optional_access();
-    }
-    // ...
-};</code></pre></td></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+    throw bad_optional_access();
+  }
+  // ...
+};
+</code></pre>
+<p></td><p><tr><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...  
-    template &lt;typename F>
-    constexpr auto and_then(F&& f) & {
-        using result = invoke_result_t&lt;F, T&>;
-        static_assert(is_optional&lt;result>::value,
-            "F must return an optional");
-        
-        return has_value()
-          ? invoke(std::forward&lt;F>(f), **this)
-          : nullopt;
-    }
-    
-    template &lt;typename F>
-    constexpr auto and_then(F&& f) && {
-        using result = invoke_result_t&lt;F, T&&>;
-        static_assert(is_optional&lt;result>::value,
-            "F must return an optional");
-        
-        return has_value()
-          ? invoke(std::forward&lt;F>(f), std::move(**this))
-          : nullopt;
-    }
-    
-    template &lt;typename F>
-    constexpr auto and_then(F&& f) const& {
-        using result = invoke_result_t&lt;F, const T&>;
-        static_assert(is_optional&lt;result>::value,
-            "F must return an optional");
-        
-        return has_value()
-          ? invoke(std::forward&lt;F>(f), **this)
-          : nullopt;
-    }
-    
-    template &lt;typename F>
-    constexpr auto and_then(F&& f) const&& {
-        using result = invoke_result_t&lt;F, const T&&>;
-        static_assert(is_optional&lt;result>::value,
-            "F must return an optional");
-        
-        return has_value()
-          ? invoke(std::forward&lt;F>(f), std::move(**this))
-          : nullopt;
-    }    
-    // ...
-};</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+  // ...
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) &amp; {
+    using result =
+      invoke_result_t&lt;F, T&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f), **this)
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) &amp;&amp; {
+    using result =
+      invoke_result_t&lt;F, T&amp;&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 std::move(**this))
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) const&amp; {
+    using result =
+      invoke_result_t&lt;F, const T&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f), **this)
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) const&amp;&amp; {
+    using result =
+      invoke_result_t&lt;F, const T&amp;&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 std::move(**this))
+        : nullopt;
+  }
+  // ...
+};
+</code></pre>
+<p></td><p><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
-    // ...
-    template &lt;typename This, typename F>
-    constexpr auto and_then(This&& this, F&& f) & {
-        using result = invoke_result_t&lt;F, decltype((
-            std::forward&lt;This>(this).m_value))>;
-        static_assert(is_optional&lt;result>::value,
-            "F must return an optional");
-        
-        return this.has_value()
-          ? invoke(std::forward&lt;F>(f),
-              std::forward&lt;This>(this).m_value)
-          : nullopt;
-    }    
-    // ...
-};</code></pre></td></tr>
-</table>
+  // ...
+  template &lt;typename This, typename F&gt;
+  constexpr auto
+  and_then(This&amp;&amp; this, F&amp;&amp; f) &amp; {
+    using val = decltype((
+        forward&lt;This&gt;(this).m_value));
+    using result = invoke_result_t&lt;F, val&gt;;
 
-<p>Keep in mind that there are a few more functions in [P0798] that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
 
-<p>For those that dislike returning <code class="language-cpp">auto</code> in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.
-
-<a name="SFINAE"> </a><h2>SFINAE-friendly callables</h2>
-
-<p>Another seemingly unrelated problem is that of writing these numerous overloads for function wrappers, as demonstrated in [P0826]. <code class="language-cpp">std::not_fn</code> is specified to behave as if:
-
-<pre><code class="language-cpp">template &lt;typename F>
+    return this.has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 forward&lt;This&gt;
+                   (this).m_value)
+        : nullopt;
+  }
+  // ...
+};
+</code></pre>
+<p></td></table>
+<p><p>Keep in mind that there are a few more functions in P0798 that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.</p><p><p>For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.</p><a name="toc_3.2"></a><h3>3.2. SFINAE-friendly callables
+</h3>
+<p><p>A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in <a href="https://wg21.link/p0826">[P0826]</a>. Consider what happens if we implement <code class="language-cpp">std::not_fn()</code>, as currently specified:</p><pre ><code class="language-cpp">template &lt;typename F&gt;
 class call_wrapper {
     F f;
 public:
     // ...
-    template &lt;typename... Args>
-    auto operator()(Args&&... ) &
-    -> decltype(!declval&lt;invoke_result_t&lt;F&, Args...>>());
-    
-    template &lt;typename... Args>
-    auto operator()(Args&&... ) const&
-    -> decltype(!declval&lt;invoke_result_t&lt;const F&, Args...>>());    
-    
-    // ...
-};</code></pre>
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... ) &amp;
+        -&gt; decltype(!declval&lt;invoke_result_t&lt;F&amp;, Args...&gt;&gt;())'
 
-<p>which has the surprise result of incorrectly propagating the <i>cv</i>-qualifiers of the call wrapper:
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... ) const&amp;
+        -&gt; decltype(!declval&lt;invoke_result_t&lt;const F&amp;, Args...&gt;&gt;());
 
-<pre><code class="language-cpp">struct fun {
-    template &lt;typename... Args>
-    void operator()(Args&&...) = delete;
-    
-    template &lt;typename... Args>
-    bool operator()(Args&&...) const { return true; }
+    // ... same for &amp;&amp; and const &amp;&amp; ...
 };
 
-std::not_fn(fun{})(); // ok? Returns false
+template &lt;typename F&gt;
+auto not_fn(F&amp;&amp; f) {
+    return call_wrapper&lt;std::decay_t&lt;F&gt;&gt;{std::forward&lt;F&gt;(f)};
+}
 </code></pre>
+<p><p>As described in the paper, this implementation has two pathological cases: one in which the callable is SFINAE-unfriendly (which would cause a call to be ill-formed, when it could otherwise work), and one in which overload is deleted (which would cause a call to fallback to a different overload, when it should fail):</p><pre ><code class="language-cpp">struct unfriendly {
+    template &lt;typename T&gt;
+    auto operator()(T v) {
+        static_assert(std::is_same_v&lt;T, int&gt;);
+        return v;
+    }
 
-<code class="language-cpp">fun</code> shouldn't be invocable unless it's <code class="language-cpp">const</code>, but the simple approach of quadruplicating the overloads led to a situation where we can fallback to the <code class="language-cpp">const</code> overload of the call wrapper (the <code class="language-cpp">&&</code>-qualified overload led to a substitution failure so we were able to fall back to the <code class="language-cpp">const&&</code>-qualified one, which succeeded). Implementing this correctly, while still preserving SFINAE-friendliness, is decidedly non-trivial.
+    template &lt;typename T&gt;
+    auto operator()(T v) const {
+        static_assert(std::is_same_v&lt;T, double&gt;);
+        return v;
+    }
+};
 
-<p>This proposal, however, offers a very simple solution to this problem: deduce <code class="language-cpp">this</code>:
+struct fun {
+    template &lt;typename... Args&gt;
+    void operator()(Args&amp;&amp;...) = delete;
 
-<pre><code class="language-cpp">template &lt;typename F>
-class call_wrapper {
+    template &lt;typename... Args&gt;
+    bool operator()(Args&amp;&amp;...) const { return true; }
+};
+
+std::not_fn(unfriendly{})(1); // static assert!
+std::not_fn(fun{})();         // ok!? Returns false
+</code></pre>
+<p><p>Gracefully handling SFINAE-unfriendly callables is <strong>not solvable</strong> in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four <em>cv</em>/ref-qualifiers leads to a pair of overloads: one enabled and one <code class="language-cpp">deleted</code>.</p><p><p>This proposal solves both problems by simply allowing <code class="language-cpp">this</code> to be deduced. The following is a complete implementation of <code class="language-cpp">std::not_fn</code>:</p><pre ><code class="language-cpp">template &lt;typename F&gt;
+struct call_wrapper {
     F f;
-public:
-    // ...
-    template &lt;typename This, typename... Args>
-    auto operator()(This&& this, Args&&... )
-    -> decltype(!declval&lt;invoke_result_t&lt;match_qual_t&lt;This, F>, Args...>>());   
-    // ...
+
+    template &lt;typename This, typename... Args&gt;
+    auto operator()(This&amp;&amp; this, Args&amp;&amp;... )
+        -&gt; decltype(!invoke(forward&lt;This&gt;(this).f, forward&lt;Args&gt;(args)...))
+    {
+        return !invoke(forward&lt;This&gt;(this).f, forward&lt;Args&gt;(args)...);
+    }
 };
 
-std::not_fn(fun{})(); // error
-</code></pre>
+template &lt;typename F&gt;
+auto not_fn(F&amp;&amp; f) {
+    return call_wrapper&lt;std::decay_t&lt;F&gt;&gt;{std::forward&lt;F&gt;(f)};
+}
 
-Here, there is only one overload with everything deduced together, with <code class="language-cpp">This = fun</code>. As this overload is not viable (because <code class="language-cpp">fun</code> is not invocable unless it's <code class="language-cpp">const</code>), and there is no other overload, overload resolution is complete without a viable candidate. As desired.
+not_fn(unfriendly{})(1); // ok
+not_fn(fun{})();         // error
+</code></pre>
+<p><p>Here, there is only one overload with everything deduced together, with either <code class="language-cpp">This = fun</code> or <code class="language-cpp">This = poison</code> as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for <code class="language-cpp">unfriendly</code>, and not working, for <code class="language-cpp">fun</code>.</p><a name="toc_3.3"></a><h3>3.3. Recursive Lambdas
+</h3>
+<p><p>This proposal also allows for an alternative solution to implementing a recursive lambda, since now we open up the possibility of allowing a lambda to reference itself:</p><pre ><code class="language-cpp">// as proposed in [P0839]
+auto fib = [] self (int n) {
+    if (n &lt; 2) return n;
+    return self(n-1) + self(n-2);
+};
+
+// this proposal
+auto fib = [](auto&amp; this, int n) {
+    if (n &lt; 2) return n;
+    return this(n-1) + this(n-2);
+};
+</code></pre>
+<p><p>In the specific case of lambdas, a lambda could both capture <code class="language-cpp">this</code> and take a generic parameter named <code class="language-cpp">this</code>. If this happens, use of <code class="language-cpp">this</code> would refer to the parameter (and hence, the lambda itself) and not the <code class="language-cpp">this</code> pointer of the outer-most class. This preference follows the normal scoping rules.</p><pre ><code class="language-cpp">struct A {
+    int bar();
+
+    auto foo() {
+        return [this](auto&amp; this, int n) {
+            return this-&gt;bar() + n; // error: no operator-&gt;() for this lambda
+        };
+    }
+};
+</code></pre>
 
 </body>
 </html>

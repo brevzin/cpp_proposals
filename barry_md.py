@@ -31,40 +31,13 @@ def normal_markdown(line):
     return markdown.markdown(line).replace('<code>',
         '<code class="language-cpp">')
     
-
-    state = 'normal'
-    res = ''
-    for c in line:
-        if state == 'normal':
-            if c == '`':
-                state = 'code'
-                res += '<code class="language-cpp">'
-            elif c == '*':
-                state = 'em'
-                res += '<em>'
-            else:
-                res += c
-        elif state == 'code':
-            if c == '`':
-                state = 'normal'
-                res += '</code>'
-            else:
-                res += cgi.escape(c)
-        elif state == 'em':
-            if c == '*':
-                state = 'normal'
-                res += '</em>'
-            else:
-                res += c
-    res += '\n'
-    return res
-    
 writer = PaperWriter()
 state = ''
 sections = []
 ul_depth = 0
 in_table = False
 header = collections.defaultdict(list)
+
 with open('deducing-this.md') as f:
     for line in f.readlines():
         if not line:
@@ -103,14 +76,15 @@ with open('deducing-this.md') as f:
                     writer.toc += '<ol>'
                     sections.append(1)
                 else:
-                    if len(sections) > len(h):
-                        writer.toc += '</ol>'
+                    writer.toc += '</li>'
+                    writer.toc += '</ol></li>' * (len(sections) - len(h))
                     sections = sections[:len(h)]
                     sections[-1] += 1
 
                 section_str = '.'.join(map(str, sections))
-                writer.toc += '<li><a href="#toc_{0}">{1}</a></li>'.format(section_str, title)
-                writer.body += '<a name="toc_{0}"></a><h{2}>{0}. {1}</h{2}>\n'.format(section_str, title, len(h)+1)
+                writer.toc += '<li><a href="#toc_{0}">{1}</a>'.format(section_str, title)
+                writer.body += '<a name="toc_{0}"></a><h{2}>{0}. {1}</h{2}>\n'.format(
+                    section_str, title, len(h)+1)
             elif line.strip().startswith('- '):
                 cur_depth = line.index('-')
                 if ul_depth < cur_depth:
@@ -144,6 +118,6 @@ with open('deducing-this.md') as f:
             else:
                 writer.body += cgi.escape(line)
 
-# need to close all the ordered lists from the sections
-writer.toc += '</ol>' * len(sections)
+writer.toc += '</li></ol>' * len(sections)
+
 writer.finish()
