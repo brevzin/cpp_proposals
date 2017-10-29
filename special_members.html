@@ -1,0 +1,803 @@
+
+<head>
+	<title>Conditionally Trivial Special Member Functions</title>
+
+<style type="text/css">html {
+	position: relative;
+	max-width: 1024px;
+	height: 100%;
+}
+body {
+	font-family: Helvetica, arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: white;
+	padding: 30px;
+}
+body>*:first-child {
+	margin-top: 0 !important;
+}
+body>*:last-child {
+	margin-bottom: 0 !important;
+}
+a {
+	color: #4183C4;
+}
+a.absent {
+	color: #cc0000;
+}
+a.anchor {
+	display: block;
+	padding-left: 30px;
+	margin-left: -30px;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 20px 0 10px;
+	padding: 0;
+	font-weight: bold;
+	-webkit-font-smoothing: antialiased;
+	cursor: text;
+	position: relative;
+}
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+	text-decoration: none;
+}
+h1 tt, h1 code {
+	font-size: inherit;
+}
+h2 tt, h2 code {
+	font-size: inherit;
+}
+h3 tt, h3 code {
+	font-size: inherit;
+}
+h4 tt, h4 code {
+	font-size: inherit;
+}
+h5 tt, h5 code {
+	font-size: inherit;
+}
+h6 tt, h6 code {
+	font-size: inherit;
+}
+h1 {
+	font-size: 28px;
+	color: black;
+}
+h2 {
+	font-size: 24px;
+	border-bottom: 1px solid #cccccc;
+	color: black;
+}
+h3 {
+	font-size: 18px;
+}
+h4 {
+	font-size: 16px;
+}
+h5 {
+	font-size: 14px;
+}
+h6 {
+	color: #777777;
+	font-size: 14px;
+}
+p, blockquote, ol, dl, li, table, pre {
+	margin: 15px 0;
+}
+hr {
+	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+	border: 0 none;
+	color: #cccccc;
+	height: 4px;
+	padding: 0;
+}
+body>h2:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child+h2 {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+	margin-top: 0;
+	padding-top: 0;
+}
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+	margin-top: 0;
+}
+li p.first {
+	display: inline-block;
+}
+li {
+	margin: 0;
+}
+ol {
+	padding-left: 30px;
+}
+ul :first-child, ol :first-child {
+	margin-top: 0;
+}
+dl {
+	padding: 0;
+}
+dl dt {
+	font-size: 14px;
+	font-weight: bold;
+	font-style: italic;
+	padding: 0;
+	margin: 15px 0 5px;
+}
+dl dt:first-child {
+	padding: 0;
+}
+dl dt> :first-child {
+	margin-top: 0;
+}
+dl dt> :last-child {
+	margin-bottom: 0;
+}
+dl dd {
+	margin: 0 0 15px;
+	padding: 0 15px;
+}
+dl dd> :first-child {
+	margin-top: 0;
+}
+dl dd> :last-child {
+	margin-bottom: 0;
+}
+blockquote {
+	border-left: 4px solid #dddddd;
+	padding: 0 15px;
+	color: #777777;
+}
+blockquote> :first-child {
+	margin-top: 0;
+}
+blockquote> :last-child {
+	margin-bottom: 0;
+}
+table {
+	padding: 0;
+	border-collapse: collapse;
+}
+table tr {
+	border-top: 1px solid #cccccc;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
+table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+table tr th {
+	font-weight: bold;
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr td {
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr th :first-child, table tr td :first-child {
+	margin-top: 0;
+}
+table tr th :last-child, table tr td :last-child {
+	margin-bottom: 0;
+}
+td {
+	vertical-align: top;
+}
+img {
+	max-width: 100%;
+}
+span.frame {
+	display: block;
+	overflow: hidden;
+}
+span.frame>span {
+	border: 1px solid #dddddd;
+	display: block;
+	float: left;
+	overflow: hidden;
+	margin: 13px 0 0;
+	padding: 7px;
+	width: auto;
+}
+span.frame span img {
+	display: block;
+	float: left;
+}
+span.frame span span {
+	clear: both;
+	color: #333333;
+	display: block;
+	padding: 5px 0 0;
+}
+span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-center>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: center;
+}
+span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px 0 0;
+	text-align: right;
+}
+span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+span.float-left {
+	display: block;
+	margin-right: 13px;
+	overflow: hidden;
+	float: left;
+}
+span.float-left span {
+	margin: 13px 0 0;
+}
+span.float-right {
+	display: block;
+	margin-left: 13px;
+	overflow: hidden;
+	float: right;
+}
+span.float-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: right;
+}
+code, tt {
+	margin: 0 2px;
+	padding: 0 5px;
+	white-space: nowrap;
+	border: 1px solid #eaeaea;
+	background-color: #f8f8f8;
+	border-radius: 3px;
+}
+pre code {
+	margin: 0;
+	padding: 0;
+	white-space: pre;
+	border: none;
+	background: transparent;
+}
+.highlight pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+}
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+}
+pre code, pre tt {
+	background-color: transparent;
+	border: none;
+}
+sup {
+	font-size: 0.83em;
+	vertical-align: super;
+	line-height: 0;
+}
+kbd {
+	display: inline-block;
+	padding: 3px 5px;
+	font-size: 11px;
+	line-height: 10px;
+	color: #555;
+	vertical-align: middle;
+	background-color: #fcfcfc;
+	border: solid 1px #ccc;
+	border-bottom-color: #bbb;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #bbb
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+ins {
+	color: #00A000
+}
+del {
+	color: #A00000
+}
+</style><style type="text/css">
+/**
+	* prism.js default theme for JavaScript, CSS and HTML
+	* Based on dabblet (http://dabblet.com)
+	* @author Lea Verou
+	*/
+
+code[class*="language-"], pre[class*="language-"] {
+	color: black;
+	background: none;
+	text-shadow: 0 1px white;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 11px;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection, code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection, code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+@media print {
+	code[class*="language-"], pre[class*="language-"] {
+		text-shadow: none;
+	}
+}
+
+/* Code blocks */
+
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+}
+:not(pre)>code[class*="language-"], pre[class*="language-"] {
+	background: #f8f8f8;
+}
+
+/* Inline code */
+
+:not(pre)>code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+.token.comment, .token.prolog, .token.doctype, .token.cdata {
+	color: slategray;
+}
+.token.punctuation {
+	color: #999;
+}
+.namespace {
+	opacity: .7;
+}
+.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted {
+	color: #905;
+}
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted {
+	color: #690;
+}
+.token.operator {
+	color: #a67f59;
+}
+.token.entity, .token.url, .language-css .token.string, .style .token.string {
+	color: #a67f59;
+	background: hsla(0, 0%, 100%, .5);
+}
+.token.atrule, .token.attr-value, .token.keyword {
+	color: #07a;
+}
+.token.function {
+	color: #DD4A68;
+}
+.token.regex, .token.important, .token.variable {
+	color: #e90;
+}
+.token.important, .token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+.token.entity {
+	cursor: help;
+}
+</style>
+
+<script type="text/javascript">
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-(\w+)\b/i,t=0,n=_self.Prism={util:{encode:function(e){return e instanceof a?new a(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e){var t=n.util.type(e);switch(t){case"Object":var a={};for(var r in e)e.hasOwnProperty(r)&&(a[r]=n.util.clone(e[r]));return a;case"Array":return e.map&&e.map(function(e){return n.util.clone(e)})}return e}},languages:{extend:function(e,t){var a=n.util.clone(n.languages[e]);for(var r in t)a[r]=t[r];return a},insertBefore:function(e,t,a,r){r=r||n.languages;var l=r[e];if(2==arguments.length){a=arguments[1];for(var i in a)a.hasOwnProperty(i)&&(l[i]=a[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in a)a.hasOwnProperty(i)&&(o[i]=a[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===r[e]&&t!=e&&(this[t]=o)}),r[e]=o},DFS:function(e,t,a,r){r=r||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],a||l),"Object"!==n.util.type(e[l])||r[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||r[n.util.objId(e[l])]||(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,r)):(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,r)))}},plugins:{},highlightAll:function(e,t){var a={callback:t,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var r,l=a.elements||document.querySelectorAll(a.selector),i=0;r=l[i++];)n.highlightElement(r,e===!0,a.callback)},highlightElement:function(t,a,r){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1],i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l);var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(!s||!i)return n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),a&&_self.Worker){var c=new Worker(n.filename);c.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},c.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,r){var l=n.tokenize(e,t);return a.stringify(n.util.encode(l),r)},tokenize:function(e,t){var a=n.Token,r=[e],l=t.rest;if(l){for(var i in l)t[i]=l[i];delete t.rest}e:for(var i in t)if(t.hasOwnProperty(i)&&t[i]){var o=t[i];o="Array"===n.util.type(o)?o:[o];for(var s=0;s<o.length;++s){var u=o[s],c=u.inside,g=!!u.lookbehind,h=!!u.greedy,f=0,d=u.alias;u=u.pattern||u;for(var p=0;p<r.length;p++){var m=r[p];if(r.length>e.length)break e;if(!(m instanceof a)){u.lastIndex=0;var y=u.exec(m),v=1;if(!y&&h&&p!=r.length-1){var b=r[p+1].matchedStr||r[p+1],k=m+b;if(p<r.length-2&&(k+=r[p+2].matchedStr||r[p+2]),u.lastIndex=0,y=u.exec(k),!y)continue;var w=y.index+(g?y[1].length:0);if(w>=m.length)continue;var _=y.index+y[0].length,P=m.length+b.length;if(v=3,P>=_){if(r[p+1].greedy)continue;v=2,k=k.slice(0,P)}m=k}if(y){g&&(f=y[1].length);var w=y.index+f,y=y[0].slice(f),_=w+y.length,S=m.slice(0,w),O=m.slice(_),j=[p,v];S&&j.push(S);var A=new a(i,c?n.tokenize(y,c):y,d,y,h);j.push(A),O&&j.push(O),Array.prototype.splice.apply(r,j)}}}}}return r},hooks:{all:{},add:function(e,t){var a=n.hooks.all;a[e]=a[e]||[],a[e].push(t)},run:function(e,t){var a=n.hooks.all[e];if(a&&a.length)for(var r,l=0;r=a[l++];)r(t)}}},a=n.Token=function(e,t,n,a,r){this.type=e,this.content=t,this.alias=n,this.matchedStr=a||null,this.greedy=!!r};if(a.stringify=function(e,t,r){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return a.stringify(n,t,e)}).join("");var l={type:e.type,content:a.stringify(e.content,t,r),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:r};if("comment"==l.type&&(l.attributes.spellcheck="true"),e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o="";for(var s in l.attributes)o+=(o?" ":"")+s+'="'+(l.attributes[s]||"")+'"';return"<"+l.tag+' class="'+l.classes.join(" ")+'" '+o+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(_self.addEventListener("message",function(e){var t=JSON.parse(e.data),a=t.language,r=t.code,l=t.immediateClose;_self.postMessage(n.highlight(r,n.languages[a],a)),l&&_self.close()},!1),_self.Prism):_self.Prism;var r=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return r&&(n.filename=r.src,document.addEventListener&&!r.hasAttribute("data-manual")&&document.addEventListener("DOMContentLoaded",n.highlightAll)),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+</script>
+
+<script type="text/javascript">
+Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\w\W]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:{pattern:/(["'])(\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[a-z0-9_\.\\]+/i,lookbehind:!0,inside:{punctuation:/(\.|\\)/}},keyword:/\b(if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(true|false)\b/,"function":/[a-z0-9_]+(?=\()/i,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)\b/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
+</script>
+
+<script type="text/javascript">
+Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/\-[>-]?|\+\+?|!=?|<<?=?|>>?=?|==?|&&?|\|?\||[~^%?*\/]/,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)[ful]*\b/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+([^\r\n\\]|\\.|\\(?:\r\n?|\n))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(<.+?>|("|')(\\?.)+?\3)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(define|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
+</script>
+
+<script type="text/javascript">
+Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|requires|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(true|false)\b/,operator:/[-+]{1,2}|!=?|<{1,2}=?|>{1,2}=?|\->|:{1,2}|={1,2}|\^|~|%|&{1,2}|\|?\||\?|\*|\/|\b(and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)[a-z0-9_]+/i,lookbehind:!0}});
+</script>
+
+<script type="text/javascript">
+$('tblcode').replaceWith(function(){
+    return $("<pre style=\"background:transparent;border:none\"><code class=\"language-cpp\">" + $(this).text() + "</code></pre>");
+});
+</script>
+</head>
+<body>
+
+<address align=right>
+Document number: DxxxxR0 <br />
+Date: 2017-10-24 <br />
+Audience: Evolution Working Group <br />
+Reply-To: Barry Revzin &lt;barry.revzin@gmail.com>
+</address>
+<hr/>
+<h1 align=center>Conditionally Trivial Special Member Functions</code></h1>
+
+<h2>Contents</h2>
+
+<ul>
+<li><a href="#Motivation">Motivation</a></li>
+<li><a href="#Proposal">Proposal</a></li>
+<li><a href="#Considerations">Design Considerations</a></li>
+<li><a href="#Acks">Acknowledgements</a></li>
+<li><a href="#References">References</a></li>
+</ul>
+
+<a name="Motivation"> </a><h2>Motivation</h2>
+
+There are many situations where we need to write a class template whose special member functions have the same underlying traits as the class template parameters. The most well-known cases of this are the new "sum" types in the C++ standard library: <code class="language-cpp">std::optional&lt;T></code>, <code class="language-cpp">std::variant&lt;Ts...></code>, and the proposed <code class="language-cpp">std::expected&lt;T, E></code>. In each case, each class template specialization needs to be copyable if the underlying types are copyable, trivially copyable if the underlying types are trivially copyable, and trivially destructible if the underlying types are trivially destructible. These aren't just "nice-to-have" features either, they are important for several reasons:
+
+<ul>
+<li>If a type is trivally destructible (among other criteria), it qualifies as a <i>literal type</i>, making it <code class="language-cpp">constexpr</code>-friendly.
+<li>If a type is trivially destructible and trivially copyable, the SysV ABI allows it to be passed via a register instead of a pointer.
+<li>These features stack - so types containing these types would then be able to become literal and so forth.
+<li>If a type advertises itself as satifsying some capability (e.g. copyable), but isn't, that leads to much more difficult compile errors to reason about than if the type was honest.
+</ul>
+
+<p>The problem is... it's actually quite difficult to implement this feature. Or rather, it's not so much that it's difficult, as that it's very verbose, tedious, repetitive, and error prone. What follows is a simplified implementation of <code class="language-cpp">std::optional&lt;T></code> which is conditionally copyable, conditionally trivially copyable, and conditionally trivially destructible. It is, to the best of the author's knowledge, the simplest such solution:
+
+<pre><code class="language-cpp">template &lt;typename T,
+    bool trivial = /* ... */>
+struct base_payload {
+    struct empty { };
+    union {
+        empty _;
+        T value;
+    };
+    bool engaged;
+    
+    base_payload()
+        : _()
+        , engaged(false)
+    { }
+    
+    base_payload(T v)
+        : value(v)
+        , engaged(false)
+    { }    
+    
+    base_payload(base_payload const& rhs)
+        : engaged(rhs.engaged)
+    {
+        if (rhs.engaged) {
+            new (&value) T(rhs.value);
+        }
+    }
+    
+    ~base_payload() {
+        if (engaged) value.~T();
+    }
+};
+
+template &lt;typename T>
+struct base_payload&lt;T, true> {
+    struct empty { };
+    union {
+        empty _;
+        T value;
+    };
+    bool engaged;
+    
+    base_payload()
+        : _()
+        , engaged(false)
+    { }
+    
+    base_payload(T v)
+        : value(v)
+        , engaged(false)
+    { }    
+    
+    base_payload(base_payload const& ) = default;
+    ~base_payload() = default;
+};
+
+template &lt;bool allow_copying>
+struct copy_enabler {
+    copy_enabler() = default;
+    copy_enabler(copy_enabler const& ) = delete;
+    ~copy_enabler() = default;
+};
+
+template &lt;>
+struct copy_enabler&lt;true> {
+    copy_enabler() = default;
+    copy_enabler(copy_enabler const& ) = default;
+    ~copy_enabler() = default;
+};
+
+template &lt;typename T>
+class optional
+    : private copy_enabler&lt;/* copyable */>
+    , private base_payload&lt;T>
+{
+public:
+    using base_payload&lt;T>::base_payload;
+    optional(optional const& ) = default;
+    ~optional() = default;
+};</code></pre>
+
+<p>That's 82 lines of code, featuring two specializations of <code class="language-cpp">base_payload</code> and two specializations of <code class="language-cpp">copy_enabler</code>. It is a simplified solution as only two constructors of the base payload type are featured (each twice), but it should convey the message. This code does not really represent the intent of the programmer at all: it's simply the best available workaround. It's also difficult to follow, as some constructors will be in the <code class="language-cpp">optional</code> derived type itself, but some will be inherited. In effect, we've split our class into five pieces, all of which need to be understood together - but they will potentially be hundreds of lines of code apart. This is all... less than great. 
+
+<p>Thankfully, now we have Concepts.
+
+<a name="Proposal"> </a><h2>Proposal</h2>
+
+<p>With Concepts, we can, for the first time, truly overload special member functions within the same class or class template specialization. That, in of itself, is a very powerful feature which solves the vast majority of the problem. All that's left is a little bit of wording detail. 
+
+<p>The current criteria for trivially copyable reads, from [class]/6:
+
+<blockquote>A <i>trivially copyable class</i> is a class:
+<ul>
+<li> where each copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy], [over.ass]) is either deleted or trivial,
+<li> that has at least one non-deleted copy constructor, move constructor, copy assignment operator, or move assignment operator, and
+<li> that has a trivial, non-deleted destructor.
+</ul>
+
+A <i>trivial class</i> is a class that is trivially copyable and has one or more default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
+</blockquote>
+
+<p>These rules don't take Concepts into account, hence this paper proposes an update. We call a special member function <i>viable</i> if it would be selected during overload resolution for its specific argument list. For instance:
+
+<pre><code class="language-cpp">struct X {
+    X(X const& ); // #1
+    
+    template &lt;class... Args>
+    X(Args&&... ); // #2
+};
+
+template &lt;typename T>
+struct Y {    
+    Y(Y const& ); // #3
+    Y(Y const& ) requires std::is_pointer_v&lt;T>; // #4
+};</code></pre>
+
+<p><code>#1</code> is viable (even if it were not user-specified). It doesn't matter attempting to construct an <code class=language-cpp">X</code> from a non-const <code class=language-cpp">X</code> would invoke <code>#2</code>. Exactly one of <code>#3</code> or <code>#4</code> is viable for all types: <code>#4</code> for pointer types, <code>#3</code> otherwise.
+
+<p>The proposed wording for [class]/6 is thus:
+
+<blockquote>A <i>trivially copyable class</i> is a class:
+<ul>
+<li> where each <ins>viable</ins> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy], [over.ass]) is either deleted or trivial,
+<li> that has at least one <ins>viable</ins> non-deleted copy constructor, move constructor, copy assignment operator, or move assignment operator, and
+<li> that has a <ins>viable</ins> trivial, non-deleted destructor.
+</ul>
+
+A <i>trivial class</i> is a class that is trivially copyable and has one or more <ins>viable</ins> default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
+</blockquote>
+
+<p>The same change would be made in [basic.types/10] for the definition of a <i>literal type</i>: rather than having <i>a</i> trivial destructor, its <ins>viable</ins> destructor must be trivial.
+
+<p>Those minor changes in the wording of two paragraphs allow for this rewrite of the reduced <code class="language-cpp">std::optional&lt;T></code> example that perfectly satisfies all of our critera:
+
+<table style="width:100%">
+<tr><th style="width:50%">C++17</th><th style="width:50%">Proposed</th></tr>
+<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T,
+    bool trivial = /* ... */>
+struct base_payload {
+    struct empty { };
+    union {
+        empty _;
+        T value;
+    };
+    bool engaged;
+    
+    base_payload()
+        : _()
+        , engaged(false)
+    { }
+    
+    base_payload(T v)
+        : value(v)
+        , engaged(false)
+    { }    
+    
+    base_payload(base_payload const& rhs)
+        : engaged(rhs.engaged)
+    {
+        if (rhs.engaged) {
+            new (&value) T(rhs.value);
+        }
+    }
+    
+    ~base_payload() {
+        if (engaged) value.~T();
+    }
+};
+
+template &lt;typename T>
+struct base_payload&lt;T, true> {
+    struct empty { };
+    union {
+        empty _;
+        T value;
+    };
+    bool engaged;
+    
+    constexpr base_payload()
+        : _()
+        , engaged(false)
+    { }
+    
+    constexpr base_payload(T v)
+        : value(v)
+        , engaged(false)
+    { }    
+    
+    constexpr base_payload(base_payload const& ) = default;
+    ~base_payload() = default;
+};
+
+template &lt;bool allow_copying>
+struct copy_enabler {
+    copy_enabler() = default;
+    copy_enabler(copy_enabler const& ) = delete;
+    ~copy_enabler() = default;
+};
+
+template &lt;>
+struct copy_enabler&lt;true> {
+    copy_enabler() = default;
+    copy_enabler(copy_enabler const& ) = default;
+    ~copy_enabler() = default;
+};
+
+template &lt;typename T>
+class optional
+    : private copy_enabler&lt;/* copyable */>
+    , private base_payload&lt;T>
+{
+public:
+    using base_payload&lt;T>::base_payload;
+    optional(optional const& ) = default;
+    ~optional() = default;
+};</code></pre></td>
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T>
+class optional
+{
+    struct empty { };
+    union {
+        empty _;
+        T value;
+    };
+    bool engaged;
+    
+public:
+    constexpr optional()
+        : _()
+        , engaged(false)
+    { }
+    
+    constexpr optional(T v)
+        : value(v)
+        , engaged(true)
+    { }
+    
+    optional(optional const& ) requires /* trivially copyable */ = default;
+    optional(optional const& rhs) requires /* copyable */
+        : engaged(rhs.engaged)
+    {
+        if (rhs.engaged) {
+            new (&value) T(rhs.value);
+        }
+    }
+    optional(optional const& ) = delete;
+    
+    ~optional() requires /* trivially destructible */ = default;
+    ~optional() {
+        if (engaged) value.~T();
+    }
+};</code></pre></td></tr></table>
+
+<p>The code on the right isn't just much shorter, it also expresses the programmer's intent much more clearly, it's easier to read, it's easier to write. As a result of being much more condensed, it's easier to absorb. It's strictly superior in all respects: all we have to do is <i>let</i> this implementation allow <code class="language-cpp">optional&lt;int></code> to be considered trivally copyable and trivially destructible. 
+
+<p>With this proposal, Casey Carter presents a P0602-compliant implementation of <i>all</i> of <code class="language-cpp">std::optional</code>'s special member functions in just 94 lines of code [1]. His equivalent implementation in MSVC's standard library is ~350 lines. The difference in length surely undersells the difference in comprehensibility.
+
+<a name="Considerations"> </a><h2>Design Considerations</h2>
+
+<p>This proposal seems to advocate for allowing a type to have multiple destructors. It is important to note that we already have the ability to overload special member functions, including destructors, in the working paper. In all cases, only one, single, <i>viable</i> special member will lead to code generation - all less constrained alternatives will be discarded. Each class template specialization will still have only a single destructor.
+
+<p>What this proposal aims for is to adjust the higher levels rules surrounding triviality to accommodate this new ability. The example implementation above is legal code according to the working paper - it simply is never trivially copyable.
+
+<p>Any alternative design would involve creating new syntax to allow for the creation of a conditionally-trivial destructor. One such syntax was suggested by Matthias Kretz [2]
+
+<pre><code class="language-cpp">~optional() {
+    if constexpr (std::is_trivially_destructible_v&lt;T>) {
+        default;
+    } else {
+        if (engaged) value.~T();
+    }
+}</code></pre>
+
+Another suggested by Zhihao Yuan [3]
+
+<pre><code class="language-cpp">~optional() = default if (std::is_trivially_destructible_v&lt;T>) {
+    if (engaged) value.~T();
+}</code></pre>
+
+<p>The purported advantage here is that we maintain the invariant of having just one declared destructor within the class. However, whatever new syntax is preferred, it would be end up being unique to destructors. There is no concern about having multiple copy constructors - this was already possible since C++11. Hence, a special syntax, for a special case, that needs to be specially learned. Furthermore, a new rule would need to be added to explicitly forbid the declaration of multiple destructors. 
+
+<p>The advantage of this proposal when set against any alternative syntax is that a constrained destructor behaves identically to a constrained copy constructor which behaves identically to any other constrained member or non-member function. There are no special cases. The code simply behaves the way that one would expect. This situation does not merit the creation of an exception. 
+
+<a name="Acks"> </a><h2>Acknowledgements</h2>
+
+Thanks to Casey Carter for reviewing this proposal and making many improvements to it, as well as contributing the implementation of <code class="language-cpp">std::optional</code>'s special members to demonstrate the potential of this proposal.
+
+<a name="References"> </a><h2>References</h2>
+
+[1] <a href="https://godbolt.org/g/eEchd9">https://godbolt.org/g/eEchd9</a> <br />
+[2] <a href="http://lists.isocpp.org/ext/2017/03/2467.php">http://lists.isocpp.org/ext/2017/03/2467.php</a> <br />
+[3] <a href="http://lists.isocpp.org/ext/2017/03/2365.php">http://lists.isocpp.org/ext/2017/03/2365.php</a> <br /> 
+
+</body>
+</html>
