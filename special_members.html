@@ -590,7 +590,7 @@ public:
 A <i>trivial class</i> is a class that is trivially copyable and has one or more default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
 </blockquote>
 
-<p>These rules don't take Concepts into account, hence this paper proposes an update. We call a special member function <i>viable</i> if it would be selected during overload resolution for its specific argument list (in other words, if it is the most constrained special member function with that signature). For instance:
+<p>These rules don't take Concepts into account. It's an unnecessary restriction that <i>each</i> special member function be trivial or deleted if some of these can never be invoked and would never have its code generated. Hence, this paper proposes an update. We call a special member function <b><i>viable</i></b> if it would be selected during overload resolution for its specific argument list. In other words, only the most constrained special member function with a specific signature is viable. For instance:
 
 <pre><code class="language-cpp">struct X {
     X(X const& ); // #1
@@ -608,7 +608,9 @@ struct Y {
 
 <p><code>#1</code> is viable (even if it were not user-specified). It doesn't matter attempting to construct an <code class=language-cpp">X</code> from a non-const <code class=language-cpp">X</code> would invoke <code>#2</code>. Exactly one of <code>#3</code> or <code>#4</code> is viable for all types: <code>#4</code> for pointer types, <code>#3</code> otherwise. <code>#5</code> is always viable - the other copy constructors have different signatures.
 
-<p>The proposed wording for [class]/6 is thus:
+<p>With this term, this paper proposes new wording for two sections.
+
+<p>[class]/6:
 
 <blockquote>A <i>trivially copyable class</i> is a class:
 <ul>
@@ -620,9 +622,20 @@ struct Y {
 A <i>trivial class</i> is a class that is trivially copyable and has one or more <ins>viable</ins> default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
 </blockquote>
 
-<p>The same change would be made in [basic.types]/12 for the definition of a <i>literal type</i>: rather than having <i>a</i> trivial destructor, its <ins>viable</ins> destructor must be trivial. Additionally, [class.dtor]/12 needs to allow for the degenerate situation of not having a viable destructor.
+<p>and [basic.types]/10:
 
-<p>Those minor changes in the wording of two paragraphs allow for this rewrite of the reduced <code class="language-cpp">std::optional&lt;T></code> example that perfectly satisfies all of our criteria:
+<blockquote>A type is a <i>literal type</i> if it is:
+<ul>
+<li> [...]
+<li> a possibly cv-qualified class type that has all of the following properties:
+<ul><li>it has a <ins>viable</ins> trivial destructor
+<li> [...]
+</ul>
+</ul></blockquote>
+
+<p>Additionally, [class.dtor]/12 would need to be updated to handle the degenerate situation where a class has no viable destructor. 
+
+<p>These minor changes in the wording allow for a rewrite of the reduced <code class="language-cpp">std::optional&lt;T></code> example that perfectly satisfies all of our criteria:
 
 <table style="width:100%">
 <tr><th style="width:50%">C++17</th><th style="width:50%">Proposed</th></tr>
