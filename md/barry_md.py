@@ -38,7 +38,14 @@ ul_depth = 0
 in_table = False
 header = collections.defaultdict(list)
 
-with open('deducing-this.md') as f:
+normal_lines = []
+def flush():
+    global normal_lines
+    if normal_lines:
+        writer.body += normal_markdown('\n'.join(normal_lines))
+        normal_lines = []
+
+with open(sys.argv[1]) as f:
     for line in f.readlines():
         if not line:
             continue
@@ -70,6 +77,7 @@ with open('deducing-this.md') as f:
             header[key].append(val)
         elif state == 'md':
             if line.startswith('#'):
+                flush()
                 # this is a header row
                 h, title = line.split(' ', 1)
                 if len(sections) < len(h):
@@ -85,6 +93,7 @@ with open('deducing-this.md') as f:
                 writer.toc += '<li><a href="#toc_{0}">{1}</a>'.format(section_str, title)
                 writer.body += '<a name="toc_{0}"></a><h{2}>{0}. {1}</h{2}>\n'.format(
                     section_str, title, len(h)+1)
+                """
             elif line.strip().startswith('- '):
                 cur_depth = line.index('-')
                 if ul_depth < cur_depth:
@@ -96,21 +105,27 @@ with open('deducing-this.md') as f:
 
                 writer.body += '<li>{}</li>'.format(normal_markdown(line.strip()[1:].strip()))
                 pass    
+                """
             elif line.strip() == '```':
+                flush()
                 state = 'codeblock'
                 style = 'style="background:transparent;border:0px"' if in_table else ''
                 writer.body += '<pre {}><code class="language-cpp">'.format(style)
             elif line.strip() == '<table>':
+                flush()
                 in_table = True
                 writer.body += '<table style="width: 100%">\n'
             elif line.strip() == '</table>':
                 in_table = False
                 writer.body += '</table>\n'
             elif line.strip():
+                normal_lines.append(line)
+                """
                 if ul_depth > 0:
                     writer.body += '</ul>' * ul_depth
                     ul_depth = 0
                 writer.body += '<p>' + normal_markdown(line)
+                """
         elif state == 'codeblock':
             if line.strip() == '```':
                 state = 'md'
@@ -118,6 +133,7 @@ with open('deducing-this.md') as f:
             else:
                 writer.body += cgi.escape(line)
 
+flush()
 writer.toc += '</li></ol>' * len(sections)
 
 writer.finish()
