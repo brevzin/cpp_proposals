@@ -1,0 +1,230 @@
+<html>
+<head>
+	<title>Make Pointers to Members Callable</title>
+
+	<style>
+	p {text-align:justify}
+	li {text-align:justify}
+    html {
+        position: relative;
+        max-width: 1024px;
+        height: 100%;
+    }
+    
+	blockquote.note
+	{
+		background-color:#E0E0E0;
+		padding-left: 15px;
+		padding-right: 15px;
+		padding-top: 1px;
+		padding-bottom: 1px;
+	}
+    code.codeblock {
+        border: 2px solid #d0d0d0;
+        background-color: LightYellow;
+        padding: 2px;
+        padding-left: 10px;
+        width: 100%;
+        display:table;
+        white-space:pre;
+        margin:2px;
+        margin-bottom:10px;
+    }
+    code.inline {
+        border: 2px solid #d0d0d0;
+        background-color: LightYellow;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+	ins {color:#00A000}
+	del {color:#A00000}
+	</style>
+</head>
+<body>
+
+<address align=right>
+Document number: P0312R1 <br />
+Date: 2017-06-07 <br />
+Audience: Evolution Working Group <br />
+Reply-To: Barry Revzin &lt;barry.revzin@gmail.com>
+</address>
+<hr/>
+<h1 align=center>Making Pointers to Members Callable</h1>
+
+<h2>Contents</h2>
+
+<ul>
+<li><a href="#Revisions">Revisions</a></li>
+<li><a href="#Motivation">Motivation</a></li>
+<li><a href="#Proposal">Proposal</a></li>
+<li><a href="#Impact">Impact on Code</a></li>
+<li><a href="#Concerns">Potential Concerns</a></li>
+<li><a href="#Prior">Prior Art</a></li>
+<li><a href="#Acks">Acknowledgements</a></li>
+</ul>
+
+<a name="Revisions" /><h2>Revisions</h2>
+
+Since r0, this paper has focused its motivation much more heavily on generic programming - as it is writing generic code that would benefit most from this feature. Concerns raised about r0 have been addressed in a separate section.
+
+<a name="Motivation"></a><h2>Motivation</h2>
+
+<p>Suppose we have a collection of <code>Shape</code>s and want to draw all of them.
+
+<code class="codeblock">std::vector&lt;Shape*> shapes;
+std::for_each(shapes.begin(), shapes.end(), &Shape::draw); // error</code>
+
+<p>That doesn't work. But then later, we try to parallelize this by starting a bunch of threads: <code class="codeblock">std::vector&lt;std::thread> threads;
+for (auto shape : shapes) {
+    threads.push_back(std::thread(&Shape::draw, shape)); // ok
+}</code>
+
+<p>The difference between the first fragment failing but the second succeeding is the foundation of this proposal.
+
+<p>Suppose we have a simple type wrapper holding a member of dependent type, and we wish to write a member function that takes a Callable as a template argument and invokes it. The simplest way to implement that would be, setting aside the question of SFINAE:
+
+<code class="codeblock">template &lt;class T>
+struct Wrapper {
+    T val;
+  
+    template &lt;class F>
+    decltype(auto) call(F f) const {
+        return f(val);
+    }
+};</code>
+
+<p>The need to invoke a Callable of dependent type comes up with some regularity. But the clearest, simplest solution to that problem isn't the best. The main problem is with the syntax <code class="inline">f(val)</code>. That isn't the only syntax to invoke a Callable in C++. In fact, depending on the types of the callable and the first argument, there are <b>five</b>:
+
+<ul>
+<li> <code class="inline">f(t1, t2, ..., tN)</code>, if <code class="inline">f</code> is a function, function pointer, or class type with overloaded <code class="inline">operator()</code>
+<li> <code class="inline">(t1.*f)(t2, ..., tN)</code>, if <code class="inline">f</code> is a pointer to member function of a class <code class="inline">t1</code> derives from
+<li> <code class="inline">((*t1).*f)(t2, ..., tN)</code>, if <code class="inline">f</code> is a pointer to member function of a class <code class="inline">*t1</code> derives from
+<li> <code class="inline">t1.*f</code>, if <code class="inline">f</code> is a pointer to member data of a class <code class="inline">t1</code> derives from
+<li> <code class="inline">(*t1).*f</code>, if <code class="inline">f</code> is a pointer to member data of a class <code class="inline">*t1</code> derives from
+</ul>
+
+In order to allow pointers to members to be used in our <code>Wrapper</code>, one of two steps needs to be taken:
+
+<ol>
+<li> We impose on the user the requirement to pass that pointer to member in a way that can work with the <code class="inline">f(val)</code> syntax, which can either be done with <code class="inline">std::mem_fn()</code> or a lambda. This approach is taken by all the standard library algorithms and makes all the library code easier to read: all function calls just look like function calls. We just push the awkwardness to the user, as everybody who has ever tried to write this code would recognize:
+
+<code class="codeblock">auto it = std::find_if(widgets.begin(), widgets.end(), &Widget::isFoo);               // error
+auto it = std::find_if(widgets.begin(), widgets.end(), std::mem_fn(&Widget::isFoo));  // ok</code>
+
+<li> We can reimplement <code>call()</code> to work with all the different callable types: <code class="codeblock">template &lt;class F>
+decltype(auto) call(F f) const {
+    return std::ref(f)(val);     // in C++11, though this is likely not used often
+    return std::invoke(f, val);  // in C++17
+}
+</code>This makes user code easier to read, but makes the library code more difficult - such code quickly becomes a proliferation of <code class="inline">std::invoke()</code>s. This can make it harder to answer at a glance the question: which function calls are <i>passing</i> the Callable and which are calling it? 
+</ol>
+
+<p> This problem gets further complicated when you want to use SFINAE (or eventually Concepts) to constrain your function templates. The ecosystem of the standard library is built around the concept <i>INVOKE</i>. All the tools at our disposal (the metafunctions <code>std::is_invocable</code>, <code>std::invoke_result_t</code> and the concepts like <code>Invocable</code>) check if something is <i>INVOKE</i>-able. Hence, the following example, despite being common, is subtly incorrect:
+
+<code class="codeblock">template &lt;class T>
+struct Wrapper {
+    T val;
+    
+    template &lt;class F>
+    std::invoke_result_t&lt;F&, T const&> call(F f) const {
+        return f(val);
+    }
+};</code>
+
+<p>It is easy enough to express the constraint that <code>F</code> can be directly invoked with <code>val</code>, but that's something we have to be vigilant about expressing. Hence, the options at our disposal are more like:
+
+<ol>
+<li> Use the <code class="inline">f(val)</code> in our library throughout, requiring the users to use <code class="inline">std::mem_fn()</code> for pointers to members, but also write our own type traits and concepts to express these constraints <i>properly</i>.
+<li> Use the standard library's type traits and concepts and use <code class="inline">std::invoke()</code> everywhere.
+</ol>
+
+<p> The fundamental problem with both choices is: what information do <code class="inline">std::mem_fn()</code> and <code class="inline">std::invoke()</code> actually convey to readers of our code? 
+
+<p> Arguably, <b>none</b>!
+
+<p> Both are only ever used in the context where the Callable type is dependent. After all, if we know we have a function, we would just call the function. If we know we have a pointer to member, we would just use the appropriate syntax to invoke that pointer. These tools are unnecessary in non-dependent contexts. And if the Callable <i>is</i> dependent, we may not always need to use <code class="inline">std::invoke()</code> (e.g. if our Callable is nullary), but it's <i>never wrong</i> to use it. These tools become simple annotation: <code class="inline">std::invoke(f, val)</code> is nothing more than an 11-character annotation for "Here is an invocation of a Callable." <code class="inline">std::mem_fn(ptr)</code> is likewise just annotation for "Here a pointer to member is being passed to a function template," which is already obvious from context. 
+
+<p> Both only exist because we have five syntaxes for invoking Callables. What if we didn't?
+
+<a name="Proposal"></a><h2>Proposal</h2>
+
+<h4>Pointers to members</h4>
+
+Allow the syntax <code class="inline">f(t1, t2, ..., tN)</code> to work correctly if <code class="inline">f</code> is a pointer to member function or pointer to member data. That is, let that expression be equivalent to what <code class="inline">INVOKE(f, t1, t2, ..., tN)</code> currently means. Pointers to members are conceptually functions that take an appropriate class type as their first argument. The language already recognizes this with regards to how the various standard library function objects work (e.g. <code>std::function</code>, <code>std::bind</code>, <code>std::thread</code>). The only thing missing is the syntactic equivalence. This would allow:<code class="codeblock">template &lt;class F>
+std::invoke_result_t&lt;F&(T const&)> call(F f) const {
+    return f(val);
+}</code>to be a correctly constrained, fully functional implementation that is easy to read on both the library side (it just looks like a function call) and the user side (we can just pass in a pointer to member without annotation).
+
+<p>This proposal would obviate the need for annotation in all the standard library algorithms as well:
+
+<code class="codeblock">vector&lt;Widget*> widgets;
+auto it = find_if(widgets.begin(), widgets.end(), std::mem_fn(&Widget::isFoo)); // ok today
+auto it = find_if(widgets.begin(), widgets.end(), &Widget::isFoo);              // error today, ok with proposal</code>
+
+<p>C++ is a complicated language, and there is intrinsic value in making the simplest code just simply do the right thing in all cases. 
+
+<h4><code>std::reference_wrapper</code></h4>
+
+<p>Now, what about <code class="inline">std::reference_wrapper</code>? This proposal started by defining five syntaxes for invoking callables, but according to the standard's definition of <i>INVOKE</i> in [func.require], there are actually seven - two of which treat <code>std::reference_wrapper</code> as special. Would those overloads still need to be special? If pointers to members become callable, then the mental model for thinking about them would move towards thinking of them as functions. And if they're just functions, we can redefine how they're invoked to align with other functions. Consider: <code class="codeblock">struct X {
+    bool isFoo() const;
+};
+
+auto f = &X::isFoo;
+f(x);
+</code>For what expressions of <code>x</code> should that expression be well-formed? The paper proposes that the model for resolution of this call should consider <code>f</code> as if it were an overloaded function like:<code class="codeblock">bool f_impl(X const* x) { return (x->*f)(); } // #1
+bool f_impl(X const& x) { return (x.*f)(); }  // #2</code>This overloaded function approach would already correctly handle pointers to <code>X</code> (#1) or objects of type <code>X</code> (#2) or objects of type <code>std::reference_wrapper&lt;X></code> (#2 by way of <code>operator X&()</code>), or any types that inherit from <code>X</code> in similar ways. But there is one group of types that still doesn't work: proxy pointers. We would just need to properly define a rule to address these types, and ensuring that <code>X* operator-></code> would have to take precedence over <code>operator X&()</code>. One such model could be:
+
+<code class="codeblock">bool f_impl(X const* x) { return (x->*f)(); } // #1
+bool f_impl(X const& x) { return (x.*f)(); }  // #2
+
+template &lt;class P>
+auto f_impl(P&& p) -> decltype((p->*f)()) { return (p->*f)(); } // #3</code>
+
+<p>This proposal is based on the premise that define this new model for invoking pointers to members greatly simplifies the everyday act of writing code in a way that far outstrips the added complexity of defining these rules themselves. Arguably, these rules are no more complicated than <i>INVOKE</i> is today.
+
+<a name="Impact"></a><h2>Impact on Code</h2>
+
+<p>This proposal would make it easier to write generic code that is more functional. There would be no more need to have to think about pointers to members as a special category of Callable. There would simply be Callables, and not Callables. It would make <code class="inline">std::invoke()</code> and <code class="inline">std::mem_fn()</code> obsolete. It would also remove a source of error in writing SFINAE-friendly generic code by using <code class="inline">std::invoke_result</code> or <code class="inline">std::is_invocable</code> without <code class="inline">std::invoke()</code>.
+
+<p>This proposal would break code that exists today. One potential implementation of <code class="inline">std::invoke()</code> would be to simply have five overloads for the five different syntaxes that are disambiguated with expression SFINAE. There is currently no overlap between the five syntaxes: no set of Callable and arguments is valid for more than one. But this proposal would make <code class="inline">f(t1, t2, ..., tN)</code> valid for all of them, making all the calls to such an implementation ambiguous for pointers to members. Such code would be easy to fix - simply don't use <code class="inline">invoke()</code>.
+
+<a name="Concerns" /a><h2>Potential Concerns</h2>
+
+<p>There were a few concerns brought up when this proposal was presented in Oulu. 
+
+<h4>Does this proposal affect overload resolution?</h4>
+
+This proposal does not change the rules of overload resolution. It only seeks the change the meaning of the syntax <code class="inline">f(val)</code> where <code>f</code> is a pointer to member. Name lookup finds <code>f</code> as normal, and if the result is a pointer to member, it will be a pointer to a specific member function or specific member data. At that point, there is no overload resolution to perform, save to determine if the function call is viable.
+
+<h4>Is this proposal related to Unified Call Syntax [1]?</h4>
+
+This proposal does not change the rules of name lookup and is not concerned with the <i>names</i> of member functions, only pointers to them. Unified Call Syntax deals with name lookup, but in the context of a dependent function call, the same limitation on having multiple invocation syntaxes still applies. 
+
+<h4>This proposal would allow automatic dereferencing of pointers in the language</h4>
+
+While pointers to functions are automatically derefenced when invoked, function arguments are not, so this would certainly be new, and potentially dangerous. Consider:
+
+<code class="codeblock">struct Widget {
+    int foo();
+};
+
+int bar(Widget* pw, int (Widget::*f)()) {
+    return f(pw); // pw dereferenced, no annotation
+}
+</code>
+
+<p> Yes, this proposal would be the first place in the language where an argument to a call could be automatically dereferenced without any language annotation. But this paper believes this concern is unwarranted. Today, pointers to members will either be passed through <code class="inline">std::mem_fn()</code> or through <code class="inline">std::invoke()</code> (or through <code class="inline">std::bind()</code> or <code class="inline">std::thread</code> or <code class="inline">std::ref()</code> or <code class="inline">std::function</code>), all of which will automatically dereference their first argument if it's a pointer. While these dereferences happen in <i>code</i> and not in the language, that code is buried in the standard library implementations of these tools which isn't something people look at on a day to day basis. This paper believes that this is a distinction without a practical difference, and the utility of being able to write function calls that invoke all the things outweighs the potential danger of hidden pointer dereferencing. 
+
+<a name="Prior" /a><h2>Prior Art</h2>
+
+This idea was previously proposed by Peter Dimov in N1695 [2]. This proposal predates the committee recording discussions and the precise reason why it was rejected is unclear. This paper believes that paper was a good idea thirteen years ago and continues to be a good idea today.
+
+<a name="Acks"></a><h2>Acknowledgements</h2>
+
+Thanks to Jonathan Wakely, Matt Calabrese, and Peter Dimov for the encouragement, support, and review of the paper. 
+
+<p> [1] <a href="http://wg21.link/p0301">Wording for Unified Call Syntax</a>
+<p> [2] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1695.html">A Proposal to Make Pointers to Members Callable</a>
+
+</body>
+</html>
