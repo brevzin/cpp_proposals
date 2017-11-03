@@ -3,7 +3,6 @@ import markdown
 import collections
 import StringIO
 import sys
-from HTMLParser import HTMLParser
 
 class PaperWriter(object):
     def __init__(self):
@@ -28,8 +27,16 @@ class PaperWriter(object):
         print self.out.getvalue()
 
 def normal_markdown(line):
-    return markdown.markdown(line).replace('<code>',
-        '<code class="language-cpp">')
+    md = markdown.markdown(line)
+    md = md.replace('<code>', '<code class="language-cpp">')
+    # now, remove all the <li><p> stuff
+    lines = md.splitlines()
+    for i in range(1, len(lines)):
+        if (lines[i-1] == '<li>' and
+                lines[i].startswith('<p>') and
+                lines[i].endswith('</p>')):
+            lines[i] = lines[i][3:-4]
+    return '\n'.join(lines)
     
 writer = PaperWriter()
 state = ''
@@ -93,19 +100,6 @@ with open(sys.argv[1]) as f:
                 writer.toc += '<li><a href="#toc_{0}">{1}</a>'.format(section_str, title)
                 writer.body += '<a name="toc_{0}"></a><h{2}>{0}. {1}</h{2}>\n'.format(
                     section_str, title, len(h)+1)
-                """
-            elif line.strip().startswith('- '):
-                cur_depth = line.index('-')
-                if ul_depth < cur_depth:
-                    writer.body += '<ul>'
-                    ul_depth += 1
-                elif ul_depth > cur_depth:
-                    writer.body += '</ul>' * (ul_depth - cur_depth)
-                    ul_depth = cur_depth
-
-                writer.body += '<li>{}</li>'.format(normal_markdown(line.strip()[1:].strip()))
-                pass    
-                """
             elif line.strip() == '```':
                 flush()
                 state = 'codeblock'
@@ -120,12 +114,6 @@ with open(sys.argv[1]) as f:
                 writer.body += '</table>\n'
             elif line.strip():
                 normal_lines.append(line)
-                """
-                if ul_depth > 0:
-                    writer.body += '</ul>' * ul_depth
-                    ul_depth = 0
-                writer.body += '<p>' + normal_markdown(line)
-                """
         elif state == 'codeblock':
             if line.strip() == '```':
                 state = 'md'
