@@ -41,7 +41,6 @@ def normal_markdown(line):
 writer = PaperWriter()
 state = ''
 sections = []
-ul_depth = 0
 in_table = False
 header = collections.defaultdict(list)
 
