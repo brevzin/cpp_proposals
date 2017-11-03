@@ -1,0 +1,101 @@
+<html>
+<head>
+	<title>Fixing const-qualified pointers to members</title>
+
+	<style>
+	p {text-align:justify}
+	li {text-align:justify}
+    html {
+        position: relative;
+        max-width: 1024px;
+        height: 100%;
+    }
+	blockquote.note
+	{
+		background-color:#E0E0E0;
+		padding-left: 15px;
+		padding-right: 15px;
+		padding-top: 1px;
+		padding-bottom: 1px;
+	}
+    blockquote.std {
+        color: #000000;
+        background-color: #F1F1F1;
+        border: 1px solid #D1D1D1;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+    }
+    blockquote.stddel { text-decoration: line-through;
+  color: #000000; background-color: #FFEBFF;
+  border: 1px solid #ECD7EC;
+  padding-left: 0.5empadding-right: 0.5em; ; }
+
+blockquote.stdins { text-decoration: underline;
+  color: #000000; background-color: #C8FFC8;
+  border: 1px solid #B3EBB3; padding: 0.5em; }
+
+blockquote pre em { font-family: normal }
+
+   
+    code.codeblock {
+        border: 2px solid #d0d0d0;
+        background-color: LightYellow;
+        padding: 2px;
+        padding-left: 10px;
+        width: 100%;
+        display:table;
+        white-space:pre;
+        margin:2px;
+        margin-bottom:10px;
+    }
+    code.inline {
+        border: 2px solid #d0d0d0;
+        background-color: LightYellow;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+	ins {color:#00A000}
+	del {color:#A00000}
+	</style>
+</head>
+<body>
+
+<address align=right>
+Document number: P0704R0 <br />
+Date: 2017-06-18 <br />
+Audience: Evolution Working Group <br />
+Reply-To: Barry Revzin &lt;barry.revzin@gmail.com>
+</address>
+<hr/>
+<h1 align=center>Fixing const-qualified pointers to members</h1>
+
+<h2>Motivation</h2>
+
+Consider the following example:
+
+<code class="codeblock">struct X { void foo() const&; };
+
+X{}.foo();        // this is okay
+(X{}.*&X::foo)(); // this is ill-formed
+</code>
+
+The second expression is ill-formed due to the wording in <a href="http://eel.is/c++draft/expr.mptr.oper#6">[expr.mptr.oper]/6</a>:
+
+<blockquote class="std">In a <code>.*</code> expression whose object expression is an rvalue, the program is ill-formed if the second operand is a pointer to member function with <i>ref-qualifier</i> <code>&</code>.
+</blockquote>
+
+but the first expression is fine because we can bind an rvalue <code>X</code> to the implicit object parameter which is of type <code>X const&</code>. That seems inconsistent, since the two expressions fundamentally mean the same thing.
+
+<h2>Proposal</h2>
+
+Modify the wording of [expr.mptr.oper]/6 to allow pointer-to-member expressions when the object is an rvalue and the pointer to member is <code>const&</code>-qualified, as follows:
+
+<blockquote class="std">In a <code>.*</code> expression whose object expression is an rvalue, the program is ill-formed if the second operand is a pointer to member function with <i>ref-qualifier</i> <code>&</code> <ins>that is not const-qualified</ins>.
+</blockquote>
+
+<h2>Acknowledgements</h2>
+
+Thanks to Mike Spertus for suggesting that this should be a proposal.
+
+</body>
+</html>
