@@ -476,7 +476,7 @@ $('tblcode').replaceWith(function(){
 
 <address align=right>
 Document number: D0848R0 <br />
-Date: 2017-10-24 <br />
+Date: 2017-11-12 <br />
 Audience: Evolution Working Group <br />
 Reply-To: Barry Revzin &lt;barry.revzin@gmail.com><br/>
 Casey Carter &lt;Casey@Carter.net>
@@ -590,7 +590,9 @@ public:
 A <i>trivial class</i> is a class that is trivially copyable and has one or more default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
 </blockquote>
 
-<p>These rules don't take Concepts into account. It's an unnecessary restriction that <i>each</i> special member function be trivial or deleted if some of these can never be invoked and would never have its code generated. Hence, this paper proposes an update. We call a special member function <b><i>viable</i></b> if it would be selected during overload resolution for its specific argument list. In other words, only the most constrained special member function with a specific signature is viable. For instance:
+<p>These rules don't take Concepts into account. It's an unnecessary restriction that <i>each</i> special member function be trivial or deleted if some of these can never be invoked and would never have its code generated. Hence, this paper proposes an update. 
+
+<p>We call a special member function <b><i>usable</i></b> if it would be selected during overload resolution for its specific argument list. In other words, only the most constrained special member function with a specific signature is usable. For instance:
 
 <pre><code class="language-cpp">struct X {
     X(X const& ); // #1
@@ -606,7 +608,7 @@ struct Y {
     Y(Y& ); // #5
 };</code></pre>
 
-<p><code>#1</code> is viable (even if it were not user-specified). It doesn't matter attempting to construct an <code class=language-cpp">X</code> from a non-const <code class=language-cpp">X</code> would invoke <code>#2</code>. Exactly one of <code>#3</code> or <code>#4</code> is viable for all types: <code>#4</code> for pointer types, <code>#3</code> otherwise. <code>#5</code> is always viable - the other copy constructors have different signatures.
+<p><code>#1</code> is usable (even if it were not user-specified). It doesn't matter attempting to construct an <code class=language-cpp">X</code> from a non-const <code class=language-cpp">X</code> would invoke <code>#2</code>. Exactly one of <code>#3</code> or <code>#4</code> is usable for all types: <code>#4</code> for pointer types, <code>#3</code> otherwise. <code>#5</code> is always usable - the other copy constructors have different signatures.
 
 <p>With this term, this paper proposes new wording for two sections.
 
@@ -614,12 +616,12 @@ struct Y {
 
 <blockquote>A <i>trivially copyable class</i> is a class:
 <ul>
-<li> where each <ins>viable</ins> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy], [over.ass]) is either deleted or trivial,
-<li> that has at least one <ins>viable</ins> non-deleted copy constructor, move constructor, copy assignment operator, or move assignment operator, and
-<li> that has a <ins>viable</ins> trivial, non-deleted destructor.
+<li> where each <ins>usable</ins> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy], [over.ass]) is either deleted or trivial,
+<li> that has at least one <ins>usable</ins> non-deleted copy constructor, move constructor, copy assignment operator, or move assignment operator, and
+<li> that has a <ins>usable</ins> trivial, non-deleted destructor.
 </ul>
 
-A <i>trivial class</i> is a class that is trivially copyable and has one or more <ins>viable</ins> default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
+A <i>trivial class</i> is a class that is trivially copyable and has one or more <ins>usable</ins> default constructors, all of which are either trivial or deleted and at least one of which is not deleted.
 </blockquote>
 
 <p>and [basic.types]/10:
@@ -628,12 +630,12 @@ A <i>trivial class</i> is a class that is trivially copyable and has one or more
 <ul>
 <li> [...]
 <li> a possibly cv-qualified class type that has all of the following properties:
-<ul><li>it has a <ins>viable</ins> trivial destructor
+<ul><li>it has a <ins>usable</ins> trivial destructor
 <li> [...]
 </ul>
 </ul></blockquote>
 
-<p>Additionally, [class.dtor]/12 would need to be updated to handle the degenerate situation where a class has no viable destructor. 
+<p>Additionally, [class.dtor]/12 would need to be updated to handle the degenerate situation where a class has no usable destructor. 
 
 <p>These minor changes in the wording allow for a rewrite of the reduced <code class="language-cpp">std::optional&lt;T></code> example that perfectly satisfies all of our criteria:
 
@@ -736,11 +738,13 @@ public:
 
 <a name="Considerations"> </a><h2>3. Design Considerations</h2>
 
-<p>This proposal seems to advocate for allowing a type to have multiple destructors. It is important to note that we already have the ability to overload special member functions, including destructors, in the working paper. In all cases, only one, single, <i>viable</i> special member will lead to code generation - all less constrained alternatives will be discarded. Each class template specialization will still have only a single destructor. Casey's full implementation linked here and the simplified example above are already legal code; the problem with both is that they are simply never trivially copyable. What this proposal aims for is to simply adjust the higher-level rules surrounding triviality to accommodate this new ability that Concepts gave us.  
+<p>This proposal seems to advocate for allowing a type to have multiple destructors. It is important to note that we already have the ability to overload special member functions, including destructors, in the working paper. In all cases, only one, single, <i>usable</i> special member will lead to code generation - all less constrained alternatives will be discarded. Each class template specialization will still have only a single destructor. Casey's full implementation linked here and the simplified example above are already legal code; the problem with both is that they are simply never trivially copyable. What this proposal aims for is to simply adjust the higher-level rules surrounding triviality to accommodate this new ability that Concepts gave us.  
 
-<p>Any alternative design would involve creating new syntax to allow for the creation of a conditionally-trivial destructor. A few such syntaxes were suggested on the mailing list [2] [3], the purported advantage of these being that we maintain the invariant of having just one declared destructor within the class. However, whatever new syntax is preferred, it would be end up being unique to destructors. There is no concern about having multiple copy constructors - this was already possible since C++11. Hence, a special syntax, for a special case, that needs to be specially learned. 
+<p>An alternative design would involve creating new syntax to allow for the creation of a conditionally-trivial destructor. A few such syntaxes were suggested on the mailing list [2] [3], the purported advantage of these being that we maintain the invariant of having just one declared destructor within the class. However, whatever new syntax is preferred, it would be end up being unique to destructors. There is no concern about having multiple copy constructors - this was already possible since C++11. Hence, a special syntax, for a special case, that needs to be specially learned. 
 
-<p>The advantage of this proposal when set against any alternative syntax is that a constrained destructor behaves identically to a constrained copy constructor which behaves identically to any other constrained member or non-member function. There are no special cases. The code simply behaves the way that one would expect. This situation is not so special as to merit the creation of a special exception. 
+<p>A different design might involve restricting class types to a single user-declared destructor, but adjust the rules for implicit destructor generation to generate one anyway if the user-declared destructor were constrained. This has its own problems as well. The rules for implicit special member generation are already complex. To properly apply to the motivating example, the user-declared destructor for <code class="language-cpp">std::optional</code> would have to be constrained on <b>not</b> trivially destructible types. Such a rule would negatively impact readability and comprehensibility, as negated concepts are inherently odd and disallowing defaulted functions would be a special restriction unique to destructors. 
+
+<p>The advantage of this proposal when set against any alternative is that a constrained destructor behaves identically to a constrained copy constructor which behaves identically to any other constrained member or non-member function. There are no special cases. The code simply behaves the way that one would expect. This situation is not so special as to merit the creation of a special exception. 
 
 <a name="References"> </a><h2>4. References</h2>
 
