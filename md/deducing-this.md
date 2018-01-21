@@ -764,3 +764,14 @@ struct A {
 };
 ```
 
+
+# Acknowledgements
+
+The authors would like to thank:
+- Jon Wakely, for bringing us all together by pointing out we were writing the
+  same paper, twice
+- Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback
+  regarding the meaning of `this` inside function bodies
+- Jackie Chen, Vittorio Romeo, Tristan Brindle, for early feedback
+- Guilherme Hartmann for his guidance with the implementation
+
