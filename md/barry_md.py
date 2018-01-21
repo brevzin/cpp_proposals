@@ -35,7 +35,7 @@ def cmd_parser():
     return parser
 
 def open_or_stdout(fname):
-    return sys.stdout if fname == '-' else open(fname, 'w')
+    return sys.stdout if fname == '-' else open(fname, 'wb')
 
 def parse_args(argv=None):
     parser = cmd_parser()
@@ -178,7 +178,7 @@ def main(argv=None):
     # only open after the file has been processed, to avoid touching it on
     # failure. Doing that would break make.
     out_file = open_or_stdout(args.output)
-    print(io.getvalue(), file=out_file)
+    print(io.getvalue().encode('utf-8'), file=out_file)
 
 if __name__ == '__main__':
     main()
