@@ -6,6 +6,8 @@ Shortname: D0847R0
 Level: 0
 Editor: Barry Revzin, barry.revzin@gmail.com
 Editor: Simon Brand, simon@codeplay.com
+Editor: Ben Deane, ben@elbeno.com
+Editor: Gašper Ažman, gasper.azman@gmail.com
 Group: wg21
 Audience: EWG
 Markup Shorthands: markdown yes
