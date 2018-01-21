@@ -1,30 +1,76 @@
+r'''
+Markdown formatter for papers.
+
+in: argv[0]
+out: stdout
+'''
+from __future__ import print_function
 import cgi
 import markdown
 import collections
 import StringIO
 import sys
+import argparse
+
+def cmd_parser():
+    parser = argparse.ArgumentParser(
+            description="Markdown formatter for papers."
+            )
+    parser.add_argument(
+            'input',
+            help='input file name',
+            default='-',
+            )
+    parser.add_argument(
+            'output',
+            help='output file name',
+            default='-',
+            )
+    parser.add_argument(
+            '--style,-s',
+            help='style file (html)',
+            default='style.html',
+            dest='style',
+            )
+    return parser
+
+def open_or_stdout(fname):
+    return sys.stdout if fname == '-' else open(fname, 'wb')
+
+def parse_args(argv=None):
+    parser = cmd_parser()
+    args = parser.parse_args(argv)
+    if args.input == '-':
+        args.input = sys.stdin
+    else:
+        args.input = open(args.input, 'r')
+
+    if args.style == '-':
+        args.style = StringIO.StringIO()
+    else:
+        args.style = open(args.style, 'r')
+
+    return args
+
 
 class PaperWriter(object):
-    def __init__(self):
-        self.out = StringIO.StringIO()
+    def __init__(self, out):
+        self.out = out
         self.out.write('<html>\n')
         self.out.write('<head>\n')
 
-        with open('style.html') as f:
-            self.style_html = f.read()
-            
         self.toc = '<h2>Contents</h2>\n'
         self.body = ''
 
     def write(self, ln):
         self.out.write(ln)
-            
+
     def finish(self):
-        # write the table of contents 
+        # write the table of contents
         self.out.write(self.toc + '\n')
-        self.out.write(self.body + '\n')    
+        self.out.write(self.body + '\n')
         self.out.write('</body>\n</html>')
-        print self.out.getvalue()
+
 
 def normal_markdown(line):
     md = markdown.markdown(line)
@@ -37,22 +83,22 @@ def normal_markdown(line):
                 lines[i].endswith('</p>')):
             lines[i] = lines[i][3:-4]
     return '\n'.join(lines)
-    
-writer = PaperWriter()
-state = ''
-sections = []
-in_table = False
-header = collections.defaultdict(list)
 
-normal_lines = []
-def flush():
-    global normal_lines
-    if normal_lines:
-        writer.body += normal_markdown('\n'.join(normal_lines))
-        normal_lines = []
 
-with open(sys.argv[1]) as f:
-    for line in f.readlines():
+def process(in_file, out_file, style_file):
+    writer = PaperWriter(out_file)
+    state = ''
+    sections = []
+    in_table = False
+    header = collections.defaultdict(list)
+
+    normal_lines = []
+    def flush():
+        if normal_lines:
+            writer.body += normal_markdown('\n'.join(normal_lines))
+            del normal_lines[:]
+
+    for line in in_file.readlines():
         if not line:
             continue
         elif line.startswith('<pre '):
@@ -60,10 +106,10 @@ with open(sys.argv[1]) as f:
         elif line.startswith('</pre>'):
             # write the title
             writer.write('<title>{}</title>\n'.format(header['Title'][0]))
-            writer.write(writer.style_html)
+            writer.write(style_file.read())
             writer.write('</head>\n')
             writer.write('<body>\n')
-            
+
             # address field
             writer.write('<address align=right>\n')
             writer.write('Document number: {} <br />\n'.format(header['Shortname'][0]))
@@ -75,8 +121,8 @@ with open(sys.argv[1]) as f:
                 writer.write('{} &lt;{}><br />\n'.format(name, email.strip()))
             writer.write('</address>\n')
             writer.write('<hr/>')
-            writer.write('<h1 align=center>{}</h1>\n'.format(header['Title'][0]))            
-        
+            writer.write('<h1 align=center>{}</h1>\n'.format(header['Title'][0]))
+
             state = 'md'
         elif state == 'pre':
             key, val = line.split(':', 1)
@@ -120,7 +166,19 @@ with open(sys.argv[1]) as f:
             else:
                 writer.body += cgi.escape(line)
 
-flush()
-writer.toc += '</li></ol>' * len(sections)
+    flush()
+    writer.toc += '</li></ol>' * len(sections)
 
-writer.finish()
+    writer.finish()
+    return writer.out
+
+def main(argv=None):
+    args = parse_args(argv)
+    io = process(args.input, StringIO.StringIO(), args.style)
+    # only open after the file has been processed, to avoid touching it on
+    # failure. Doing that would break make.
+    out_file = open_or_stdout(args.output)
+    print(io.getvalue().encode('utf-8'), file=out_file)
+
+if __name__ == '__main__':
+    main()
