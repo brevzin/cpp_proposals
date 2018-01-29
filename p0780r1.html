@@ -473,9 +473,9 @@ Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(alignas|alignof|asm|
 <body>
 
 <address align=right>
-Document number: D0780R1 <br />
-Date: 2017-11-10 <br />
-Audience: Core Working Group <br />
+Document number: P0780R1 <br />
+Date: 2017-11-26 <br />
+Audience: Evolution Working Group <br />
 Reply-To: Barry Revzin &lt;barry.revzin@gmail.com>
 </address>
 <hr/>
@@ -577,11 +577,20 @@ However, this problem went away with the adoption of CWG 1760 [4], which changed
 
 <a name="Proposal"></a><h2>Proposal</h2>
 
-<p>The proposal is to simply remove the restriction on pack expansions in <i>init-capture</i>.
+<p>The proposal is to simply remove the restriction on pack expansions in <i>init-capture</i>, which requires defining a new form of parameter pack in the language. Proposed wording is as follows.
 
-<p>Proposed wording. In 8.1.5.2 [expr.prim.lambda.capture] paragraph 17:
+<p>In 6 [basic] paragraph 3:
 
-<blockquote class="std">A <del><i>simple-capture</i></del> <ins><i>capture</i></ins> followed by an ellipsis is a pack expansion (17.6.3 [temp.variadic]). <del>An <i>init-capture</i> followed by an ellipsis is ill-formed.</del> <ins>An <i>init-capture</i> followed by an ellipsis introduces an <i>init-capture parameter pack</i>.</ins> <i>[ Example: </i>
+<blockquote class="std">An <i>entity</i> is a value, object, reference, function, enumerator, type, class member, bit-field, template, template
+specialization, namespace, or <del>parameter</del> pack.</blockquote>
+
+<p>In 8.5.2.3 [expr.sizeof] paragraph 5:
+
+<blockquote class="std">The identifier in a <code>sizeof...</code> expression shall name a <del>parameter</del> pack. <ins>If the identifier is a parameter pack, the</ins><del>The</del> <code>sizeof...</code> operator yields the number of arguments provided for the parameter pack <i>identifier</i>. <ins>Otherwise, the <code>sizeof...</code> operator yields the number of introduced unique identifiers in the provided <i>init-capture</i> pack.</ins> <code>sizeof...</code> expression is a pack expansion (17.6.3 [temp.variadic]).</blockquote>
+
+<p>In 8.1.5.2 [expr.prim.lambda.capture] paragraph 17:
+
+<blockquote class="std">A <del><i>simple-capture</i></del> <ins><i>capture</i></ins> followed by an ellipsis is a pack expansion (17.6.3 [temp.variadic]). <del>An <i>init-capture</i> followed by an ellipsis is ill-formed.</del> <ins>An <i>init-capture</i> followed by an ellipsis introduces an <i>init-capture pack</i> (17.6.3 [temp.variadic]), whose declarative region is <i>lambda-expression</i>'s <i>compound-statement</i>. Each <i>init-capture</i> in the pack expansion introduces a new <i>init-capture</i> with invented, unique identifier (and otherwise behaves as described above) that can only be referred to with the <i>init-capture</i> pack.</ins><i>[ Example: </i>
 <pre><code class="codeblock">template&lt;class... Args>
 void f(Args... args) {
   auto lm = [&, args...] { return g(args...); };
@@ -593,21 +602,36 @@ void f(Args... args) {
 <i>- end example ]</i>
 </blockquote>
 
+<p>In 8.1.6 [expr.prim.fold]:
+
+<blockquote class="std"><p>A fold expression performs a fold of a <del>template parameter</del> pack (17.6.3 [temp.variadic]) over a binary operator.
+
+<p>Unary left folds and unary right folds are collectively called unary folds. In a unary fold, the cast-expression shall contain an unexpanded <del>parameter</del> pack (17.6.3 [temp.variadic]).
+
+<p>An expression of the form (e1 op1 ... op2 e2) where op1 and op2 are fold-operators is called a binary fold.
+In a binary fold, op1 and op2 shall be the same fold-operator, and either e1 shall contain an unexpanded <del>parameter</del> pack or e2 shall contain an unexpanded  <del>parameter</del> pack, but not both. If e2 contains an unexpanded <del>parameter</del> pack, the expression is called a binary left fold. If e1 contains an unexpanded <del>parameter</del> pack, the expression is called a binary right fold.</blockquote>
+
 <p>Add a new clause to 17.6.3 [temp.variadic] after paragraph 2:
 
-<blockquote class="std"><ins>An <i>init-capture parameter pack</i> is an invented variable that is introduced by zero or more <i>init-capture</i>s (8.1.5.2 [expr.prim.lambda.capture]).<i>[ Example: </i>
+<blockquote class="std"><ins>An <i>init-capture pack</i> is an identifier standing in for a group of unique identifiers whose size matches that of the other unexpanded packs in the pack expansion where it is introduced. <i>[ Note:</i> The program is ill-formed if there is no such unique size. <i>-- end note ]</i>. <i>[ Example: </i>
 <pre><code class="codeblock">template &lt;typename... Args>
 void foo(Args... args) {
     [xs = args...]{
-        bar(xs...); // xs is an init-capture parameter pack
+        bar(xs...); // xs is an init-capture pack
     };
 }
 
-foo();  // OK: xs contains zero variables
-foo(1); // OK: xs contains one variable
+foo();  // OK: xs contains zero identifiers
+foo(1); // OK: xs contains one identifier
 </code></pre>
 <i>- end example ]</i></ins>
-<p>A <i>parameter pack</i> is either a template parameter pack<del> or</del><ins>,</ins> a function parameter pack<ins>, or an <i>init-capture</i> parameter pack.</blockquote>
+<p>A <i>parameter pack</i> is either a template parameter pack or a function parameter pack.
+</blockquote>
+
+<p> The section describing pack expansions in 17.6.3 [temp.variadic] paragraph 4 remains unchanged:
+<blockquote class="std"><p>Pack expansions can occur in the following contexts:
+<ul><li>In a <i>capture-list</i> ([expr.prim.lambda]); the pattern is a <i>capture</i>.
+</ul></blockquote>
 
 <p> Add a new bullet to 17.6.3 [temp.variadic] paragraph 7:
 
@@ -615,7 +639,7 @@ foo(1); // OK: xs contains one variable
 <ul>
 <li>if the pack is a template parameter pack, the element is a template parameter of the corresponding kind (type or non-type) designating the type or value from the template argument; <del>otherwise,</del>
 <li>if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the function parameter that resulted from the instantiation of the pattern where the pack is declared<del>.</del> <ins>; otherwise,</ins>
-<li><ins>if the pack is an <i>init-capture</i> parameter pack, the element is an <i>identifier</i> designating the invented variable declared in <i>init-capture</i>.</ins></li>
+<li><ins>if the pack is an <i>init-capture</i> pack, the element is an <i>identifier</i> designating the unique identifier.</ins></li>
 </ul>
 </blockquote>
 
@@ -647,7 +671,7 @@ auto delay_invoke_foo(Args... args) {
 
 Thanks to T.C. for suggesting this solution and pointing out the history of the <i>init-capture</i> restriction.
 
-<p>Thanks to Richard Smith, John Spicer, and Daveed Vandevoorde for considering the viability of this change. Thanks to Jens Maurer for help with wording.
+<p>Thanks to Richard Smith, John Spicer, and Daveed Vandevoorde for considering the viability of this change. Thanks to Hubert Tong and Jens Maurer for help with wording.
 
 <a name="References"></a><h2>References</h2>
 
