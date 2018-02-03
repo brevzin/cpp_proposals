@@ -4,14 +4,15 @@ Status: D
 ED: wg21.tartanllama.xyz/deducing-this
 Shortname: D0847R0
 Level: 0
+Editor: Gašper Ažman, gasper dot azman at gmail dot com
+Editor: Ben Deane, ben at elbeno dot com
 Editor: Barry Revzin, barry.revzin@gmail.com
 Editor: Simon Brand, simon@codeplay.com
-Editor: Ben Deane, ben@elbeno.com
-Editor: Gašper Ažman, gasper.azman@gmail.com
 Group: wg21
 Audience: EWG
 Markup Shorthands: markdown yes
 Default Highlight: C++
+Abstract: We propose a new mechanism for specifying the value category of an instance of a class, which is visible from inside a member function of that class -- in other words, a way to tell from within a member function whether one's this points to an rvalue or an lvalue, and whether it is const or volatile.
 </pre>
 
 
@@ -174,144 +175,217 @@ There are many, many cases in code-bases where we need two or four overloads of 
 
 # Proposal
 
-This paper proposes a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invocable as a member function.
+We propose the ability to add an optional first parameter to any member function of a class `T`, taking the form `T [const] [volatile] [&|&&] this <identifier>`.
 
-We propose allowing the first parameter of a member function to be named `this`, with the following restrictions:
+To facilitate use in generic lambda expressions, this may also be formulated as `auto [const] [volatile] [&|&&] this <identifier>`.
 
- - The member function shall not have any *cv*- or ref-qualifiers
- - The member function shall not be `static`
- - The type of the `this` parameter shall be either:
-	 - a reference to possibly *cv*-qualified function template parameter
-	 - a reference to possibly *cv*-qualified *injected-class-name*
+In all cases, the value category of a so-defined `identifier` inside the member function is exactly what the existing parameter rules would already imply. In other words, the *cv-ref qualifiers* that stand after the function signature now
+explicitly apply to the `identifier` so designated with `this`.
 
-The `this` parameter will bind to the implicit object argument, as if it were passed as the first argument to a non-member function with the same signature. As `this` cannot be used as a parameter name today, this proposal is purely a language extension. All current syntax remains valid.
+This is a strict extension to the language; all existing syntax remains valid.
 
+With this extension, the example from above can be written like so:
+
+```
+template <typename T>
+class optional {
+    // ...
+    template <typename Self>
+    decltype(auto) value(Self&& this self) {
+        if (o.has_value()) {
+            return std::forward<Self>(self).m_value;
+        }
+        throw bad_optional_access();
+    }
+    // ...
+};
+```
+
+We believe that the ability to write *cv-ref qualifier*-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily.
+
+## What Does `this` in a Parameter List Mean?
+
+Effectively, `this` denotes a parameter, that otherwise behaves completely normally, to be the parameter that `*this` refers to. The name of this parameter follows the general rules for parameter naming, but shall be referred to as `self` for the remainder of this paper.
+
+The entries of this table should be read as if they are inside a class `X`:
+
+```
+class X { /* entry */ };
+```
+
+In other words, `X` is *not* a template parameter.
+
+<table>
+<tr><th>**written as**                         </th><th>**C++17 signature**         </th><th>**comments** </th></tr>
+<tr><td>`void f(X this self)`                  </td><td>currently not available     </td><td>   [value]   </td></tr>
+<tr><td>`void f(X& this self)`                 </td><td>`void f() &`                </td><td>             </td></tr>
+<tr><td>`void f(X&& this self)`                </td><td>`void f() &&`               </td><td>             </td></tr>
+<tr><td>`void f(X const this self)`            </td><td>currently not available     </td><td>   [value]   </td></tr>
+<tr><td>`void f(X const& this self)`           </td><td>`void f() const&`           </td><td>             </td></tr>
+<tr><td>`void f(X const&& this self)`          </td><td>`void f() const&&`          </td><td>             </td></tr>
+<tr><td>`void f(X volatile this self)`         </td><td>currently not available     </td><td>   [value]   </td></tr>
+<tr><td>`void f(X volatile& this self)`        </td><td>`void f() volatile&`        </td><td>             </td></tr>
+<tr><td>`void f(X volatile&& this self)`       </td><td>`void f() volatile&`        </td><td>             </td></tr>
+<tr><td>`void f(X const volatile this self)`   </td><td>currently not available     </td><td>   [value]   </td></tr>
+<tr><td>`void f(X const volatile& this self)`  </td><td>`void f() const volatile&`  </td><td>             </td></tr>
+<tr><td>`void f(X const volatile&& this self)` </td><td>`void f() const volatile&&` </td><td>             </td></tr>
+</table>
+
+- *[value]*: whether passing by value should be allowed is debatable, but seems desirable for completeness and parity with inline friend functions.
+- The interpretation of `this` in the member function body is always the same -- it points to the same object `self` references.
+- `self` is _not_ a reserved identifier -- instead, just a conventional naming. Any valid identifier is valid instead of `self` (as is, for parity with the rest of the language, no name, since parameter names are optional).
+- `self`, where it is visible, behaves exactly as a parameter declared without `this`. The only difference is in the call syntax. This means that type deduction, use in `decltype` for trailing return types etc., and use within the function body are completely unsurprising.
+- As now, only one definition for a given signature may be present -- e.g. one may define at most one of `void f()`, `void f()&`, or `void f(X& this)`. The first two are already exclusive of each other, we merely add a third way to define the very same method.
+
+## How does a templated `this`-designated parameter work?
+
+The type of the parameter will be deduced as if it were the first parameter of a non-member function template and the implicit object parameter was passed as the first argument.
+
+## What does `this` mean in the body of a member function?
+
+The behavior of \this is unchanged. The behavior of `self` is the same as a paramter declared without the `this` designator. The only difference is in how `self` is bound (to `*this`, and not to an explicitly provided parameter).
+
+## Does this change overload resolution at all?
+
+No. Non-templates still get priority over templates, et cetera.
+
+## How do the explicit `this`-designated parameter and the current, trailing *cv-ref qualifiers* interact?
+
+Other than the pass-by-value member functions, which currently do not have syntax to represent them, the explicit `this` signatures are aliases for those with trailing *cv-ref qualifiers*. They stand for the very same functions.
+
+This means that rewriting the function signature in a different style should not change the ABI of your class, and you should also be able to implement a member function that is forward-declared with one syntax using the other.
+
+## `this` in a variadic parameter pack
+
+Given the fact that there is no obvious meaning to the expression
 ```
 struct X {
-    void foo(X& this);
+  template <typename... Ts>
+  void f(Ts... this selves);
+};
+```
+such a program is ill-formed.
 
-    template <typename This>
-    void bar(This&& this, int i);
+## Constructors and Destructors
+
+No change to current rules. Currently, one cannot have different cv-ref versions of either, so you cannot designate any parameter with `this`.
+
+## What about pass-by-value member functions?
+
+We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax.
+
+One implication of this is that the `this` parameter would be move-constructed in cases where the object is an rvalue, allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.
+
+*Example*:
+
+```
+class string_builder {
+  std::string s;
+
+  operator std::string (string_builder this self) {
+    return std::move(s);
+  }
+  string_builder operator*(string_builder this self, int n) {
+    assert(n > 0);
+
+    s.reserve(s.size() * n);
+    auto const size = s.size();
+    for (auto i = 0; i < n; ++i) {
+      s.append(s, 0, size);
+    }
+    return self;
+  }
+  string_builder bop(string_builder this self) {
+    s.append("bop");
+    return self;
+  }
 };
 
-// X::foo is member function taking no arguments, X::bar takes one 
-// argument of type int
-X x;
-x.foo();
-x.bar(0);
-
-// These behave as if the call were to these non-member functions
-void foo(X& obj);
-
-template <typename This>
-void bar(This&& obj, int i);
-foo(x);
-bar(x, 0);
+// this is optimally efficient as far as allocations go
+std::string const x = (string_builder{{"asdf"}} * 5).bop().bop();
 ```
 
-Within these member functions, the keyword `this` will be used as a reference, not as a pointer. While inconsistent with usage in normal member functions, it is more consistent with its declaration as a parameter of reference type and its ability to be deduced as a forwarding reference. This difference will be a signal to users that this is a different kind of member function, additionally obviating any questions about checking against `nullptr`.
+Of course, implementing this example with templated `this` member functions would have been slightly more efficient due to also saving on move constructions, but the by-value `this` usage makes for simpler code.
 
-Since in many ways member functions act as if they accepted an instance of class type as their first parameter (for instance, in `INVOKE` and all the functional objects that rely on this), we believe this is a logical extension of the language rules to solve a common and growing source of frustration. This sort of code deduplication is, after all, precisely what templates are for.
+## Writing the function pointer types for such functions
 
-The usual template deduction rules apply to the `this` parameter. While the naming of the parameter `this` is significant, the naming of the template type parameter as `This` is not. It is used throughout merely a suggested convention.
+Currently, we write member function pointers like so:
 
 ```
 struct Y {
-    int i;
-
-    template <typename This, typename T>
-    void bar(This&& this, T&& );
-
-    template <typename Self>
-    auto& quux(Self& this) { return this.i; }
+  int f(int a, int b) const &;
 };
-
-void demo(Y y, const Y* py) {
-    y.bar(4);     // invokes Y::bar<Y&, int>
-    py->bar(2.0); // invokes Y::bar<const Y&, double>
-
-    Y{}.quux();   // ill-formed
-    y.quux();     // invokes Y::quux<Y>
-    py->quux();   // invokes Y::quux<const Y>
-}
+static_assert(std::is_same_v<decltype(&Y::f), int (Y::*)(int, int) const &>);
 ```
-It will be possible to take pointers to these member functions. Their types would be qualified based on the deduced qualification of the instance object. That is, `decltype(&Y::bar<Y, int>)` is `void (Y::*)(int) &&` and `decltype(&Y::quux<const Y>)` is `const int& (Y::*)() const&`. These member functions can be invoked via pointers to members as usual.
 
-While the type of the `this` parameter is deduced, it will always be some qualified form of the class type in which the member function is declared, never a derived type:
+All the member functions that take references already have a function pointer syntax - they are just alternate ways of writing functions we can already write.
+
+The only one that does not have such a syntax is the pass-by-value method, all others have pre-existing signatures that do just fine.
+
+We are asking for suggestions for syntax for these function pointers. We give our first pass here:
 
 ```
-struct B {
-    template <typename This>
-    void do_stuff(This&& this);
+struct Z {
+  int f(Z const& this, int a, int b);
+  // same as `int f(int a, int b) const&;`
+  int g(Z this, int a, int b);
 };
-
-struct D : B { };
-
-D d;
-d.do_stuff();  // invokes B::do_stuff<B&>, not B::do_stuff<D&>
+// f is still the same as Y::f
+static_assert(std::is_same_v<decltype(&Z::f), int (Z::*)(int, int) const &>);
+// but would this alternate syntax make any sense?
+static_assert(std::is_same_v<decltype(&Z::f), int (*)(Z::const&, int, int)>);
+// It allows us to specify the syntax for Z as a pass-by-value member function
+static_assert(std::is_same_v<decltype(&Z::g), int (*)(Z::, int, int)>);
 ```
 
-Accessing members would be done via `this.mem` and not `this->mem`. There is no implicit `this` object, since we now have an *explicit* instance parameter, so all member access must be qualified:
+Such an approach unifies, to a degree, the member functions and the rest of the function type spaces, since it communicates not only that the first parameter is special, but also its type and calling convention.
 
-```
-template <typename T>
-class Z {
-    T value;
-public:
-    template <typename Object>
-    decltype(auto) get(Object&& this) {
-        return value; // error: unknown identifier 'value'
-        return std::forward<Object>(this).value; // ok
-    }
-};
-```
+## `virtual` and `this` as value
 
-The only allowed types for the `this` parameter are reference to function template parameter and reference to *injected-class-name*. We do not expect the latter form to be used very often, but likewise we see no reason to artificially limit the proposal to templates.
+Virtual member functions are always dispatched based on the type of the object the dot -- or arrow, in case of pointer -- operator is being used on. Once the member function is located, the parameter `this` is constructed with the appropriate move or copy constructor and passed as the `this` parameter, which might incur slicing.
 
-```
-template <typename T>
-struct B {
-    template <typename This>
-    void a(This&& this);      // ok
+Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.
 
-    void b(B& this);          // ok
-    template <typename This>
-    void c(const This& this); // ok
+## `virtual` and templated member functions
 
-    void d(B this);           // error: not a reference type
-    void e(B* this);          // error: not a reference type
-    void f(B<T>& this);       // error: not injected-class-name
-    template <typename U>
-    void g(B<U*>& this);      // error: not reference to template-parameter
-    void h(T& this);          // error: not reference to function's template-parameter
-};
-```
+This paper does not propose a change from the current behavior. `virtual` templates are still disallowed.
 
-Overload resolution between new-style and old-style member functions would compare the explicit this parameter of the new functions with the implicit this parameter of the old functions:
+## Can `static` member functions have a `this` parameter?
 
-```
-struct C {
-    template <typename This>
-    void foo(This& this); // #1
-    void foo() const;     // #2
-};
+No. Static member functions currently do not have an implicit `this` parameter, and therefore have no reason to have an explicit one.
 
-void demo(C* c, C const* d) {
-    c->foo(); // calls #1, better match
-    d->foo(); // calls #2, non-template preferred to template
-}
-```
+## Teachability Implications
 
-As these functions are still member functions, they will always take as their first argument an instance of class type. As such, it makes little sense to accept a default argument for the `this` parameter, nor a default type parameter in the case of a function template. Such a defaulted type or argument would never be used anyway and as such would be a sign of user error. This proposal suggests that such use be ill-formed:
+Using `auto&& this self` follows existing patterns for dealing with forwarding references.
 
-```
-struct A {
-    template <typename This=A> // error
-    void foo(This&& this);
+Explicitly naming the object as the `this`-designated first parameter fits with many programmers' mental model of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust.
 
-    void bar(A&& this = A{});  // error
-};
-```
+This also makes the definition of "`const` member function" more obvious, meaning it can more easily be taught to students.
+
+It also works as a more obvious way to teach how `std::bind` and `std::function` work with a member function pointer by making the pointer explicit.
+
+## ABI implications for `std::function` and related
+
+If references and pointers do not have the same representation for member functions, this effectively says "for the purposes of the `this`-designated first parameter, they do."
+
+This matters because code written in the "`this` is a pointer" syntax with the `this->` notation needs to be assembly-identical to code written with the `self.` notation; the two are just different ways to implement a function with the same signature.
+
+## Interplays with capturing `[this]` and `[*this]`
+
+`this` just designates the parameter that is bound to the reference to the function object. It does not, in any way, change the meaning of `this`.
+
+If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that develpers have a great potential for introducing hard-to-read code if they are at all changing the meaning of `this`, especially in conjunction with this proposal.
+
+## Is `auto&& this self` allowed in member functions as well as lambdas?
+
+Yes. `auto&& param_name` has a well-defined meaning that is unified across the language. There is absolutely no reason to make it less so.
+
+## Impact on the Standard
+
+TBD: A bunch of stuff in section 8.1.5 [expr.prim.lambda].
+
+TBD: A bunch of stuff in that \this can appear as the first member function
+parameter.
 
 ## Minimal Translations
 
@@ -339,7 +413,7 @@ struct foo {
   void bar() &;
   void bar() const&;
   void bar() &&;
-  void bar() const&&;  
+  void bar() const&&;
 };
 ```
 </td>
@@ -358,14 +432,36 @@ All three of these can be handled by a single perfect-forwarding overload, like 
 
 ```
 struct foo {
-    template <class This>
-    void bar (This&& this);
+    template <class Self>
+    void bar (Self&& this self);
 };
 ```
 
 This overload is callable for all `const`- and ref-qualified object parameters, just like the above examples. It is also callable for `volatile`-qualified objects, so the code is not entirely equivalent; however, the `volatile` versions are unlikely to be invalid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-`const` lvalue arguments would be non-`const` inside the function body, and `const` rvalue arguments would be `const&&` instead of `const&`. Again, this is unlikely to cause correctness issues unless `this` has other member functions called on it which do semantically different things depending on the cv-qualification of `this`.
 
 ## Alternative syntax
+
+Instead of qualifiying the parameter with `this`, to mark it as the parameter for deducing `this`, we could let the first parameter be named `this` instead:
+
+```
+template <typename T>
+struct X {
+    T value;
+
+    // as proposed
+    template <typename Self>
+    decltype(auto) foo(Self&& this self) {
+        return std::forward<Self>(self).value;
+    }
+
+    // alternative
+    template <typename This>
+    decltype(auto) foo(This&& this) {
+        return std::forward<This>(this).value;
+    }
+```
+
+In the example above, `this` is no longer a pointer. Since `this` can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language.
 
 Rather than naming the first parameter `this`, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:
 
@@ -375,9 +471,9 @@ struct X {
     T value;
 
     // as proposed
-    template <typename This>
-    decltype(auto) foo(This&& this) {
-        return std::forward<This>(this).value;
+    template <typename Self>
+    decltype(auto) foo(Self&& this self) {
+        return std::forward<Self>(self).value;
     }
 
     // alternative
@@ -392,6 +488,8 @@ struct X {
     }
 };
 ```
+
+This has the benefit of not muddying the parameter list, and it keeps the qualifier deduction off to the side where qualifiers usually live.
 
 ## Unified Function Call Syntax
 
@@ -433,8 +531,8 @@ public:
 ```
 class TextBlock {
 public:
-  template <typename This>
-  auto& operator[](This&& this,
+  template <typename Self>
+  auto& operator[](Self&& this self,
                    std::size_t position) {
     // ...
     return this.text[position];
@@ -467,8 +565,8 @@ class optional {
 template <typename T>
 class optional {
   // ...
-  template <typename This>
-  constexpr auto operator->(This&& this) {
+  template <typename Self>
+  constexpr auto operator->(Self&& this self) {
     return std::addressof(this.m_value);
   }
   // ...
@@ -537,15 +635,15 @@ class optional {
 template <typename T>
 class optional {
   // ...
-  template <typename This>
-  constexpr auto&& operator*(This&& this) {
-    return forward<This>(this).m_value;
+  template <typename Self>
+  constexpr auto&& operator*(Self&& this self) {
+    return forward<Self>(self).m_value;
   }
 
-  template <typename This>
-  constexpr auto&& value(This&& this) {
+  template <typename Self>
+  constexpr auto&& value(Self&& this self) {
     if (this.has_value()) {
-      return forward<This>(this).m_value;
+      return forward<Self>(self).m_value;
     }
     throw bad_optional_access();
   }
@@ -622,11 +720,11 @@ class optional {
 template <typename T>
 class optional {
   // ...
-  template <typename This, typename F>
+  template <typename Self, typename F>
   constexpr auto
-  and_then(This&& this, F&& f) & {
+  and_then(Self&& this self, F&& f) & {
     using val = decltype((
-        forward<This>(this).m_value));
+        forward<Self>(self).m_value));
     using result = invoke_result_t<F, val>;
 
     static_assert(
@@ -635,8 +733,8 @@ class optional {
 
     return this.has_value()
         ? invoke(forward<F>(f),
-                 forward<This>
-                   (this).m_value)
+                 forward<self>
+                   (self).m_value)
         : nullopt;
   }
   // ...
@@ -715,11 +813,11 @@ template <typename F>
 struct call_wrapper {
     F f;
 
-    template <typename This, typename... Args>
-    auto operator()(This&& this, Args&&... )
-        -> decltype(!invoke(forward<This>(this).f, forward<Args>(args)...))
+    template <typename Self, typename... Args>
+    auto operator()(Self&& this self, Args&&... )
+        -> decltype(!invoke(forward<Self>(self).f, forward<Args>(args)...))
     {
-        return !invoke(forward<This>(this).f, forward<Args>(args)...);
+        return !invoke(forward<Self>(self).f, forward<Args>(args)...);
     }
 };
 
@@ -732,7 +830,7 @@ not_fn(unfriendly{})(1); // ok
 not_fn(fun{})();         // error
 ```
 
-Here, there is only one overload with everything deduced together, with either `This = fun` or `This = poison` as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
+Here, there is only one overload with everything deduced together, with either `Self = fun` or `Self = poison` as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
 
 ## Recursive Lambdas
 
@@ -746,34 +844,31 @@ auto fib = [] self (int n) {
 };
 
 // this proposal
-auto fib = [](auto& this, int n) {
+auto fib = [](auto& this self, int n) {
     if (n < 2) return n;
-    return this(n-1) + this(n-2);
+    return self(n-1) + self(n-2);
 };
 ```
 
-In the specific case of lambdas, a lambda could both capture `this` and take a generic parameter named `this`. If this happens, use of `this` would refer to the parameter (and hence, the lambda itself) and not the `this` pointer of the outer-most class. This preference follows the normal scoping rules.
+If the lambda would otherwise decay to a function pointer, `&self` shall have the value of that function pointer.
+
+### Expressions allowed for \self in lambdas
 
 ```
-struct A {
-    int bar();
-
-    auto foo() {
-        return [this](auto& this, int n) {
-            return this->bar() + n; // error: no operator->() for this lambda
-        };
-    }
-};
+  self(...);      // call with appropriate signature
+  decltype(self); // evaluates to the type of the lambda with the appropriate
+                  // cv-ref qualifiers
+  &self;          // the address of either the closure object or function pointer
+  std::move(self) // you're allowed to move yourself into an algorithm...
+  /* ... and all other things you're allowed to do with the lambda itself. */
 ```
 
+Within lambda expressions, the `this` parameter still does not allow one to refer to the members of the closure object, which has no defined storage or layout, nor do its members have names. Instead it allows one to deduce the value category of the lambda and access its members -- including various call operators -- in the way appropriate for the value category.
 
 # Acknowledgements
 
 The authors would like to thank:
-- Jon Wakely, for bringing us all together by pointing out we were writing the
-  same paper, twice
-- Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback
-  regarding the meaning of `this` inside function bodies
+- Jon Wakely, for bringing us all together by pointing out we were writing the same paper, twice
+- Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
 - Jackie Chen, Vittorio Romeo, Tristan Brindle, for early feedback
 - Guilherme Hartmann for his guidance with the implementation
-
