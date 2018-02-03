@@ -55,22 +55,22 @@ def parse_args(argv=None):
 
 class PaperWriter(object):
     def __init__(self, out):
-        self.out = out
-        self.out.write('<html>\n')
-        self.out.write('<head>\n')
+        self._out = out
+        self._out.write('<html>\n')
+        self._out.write('<head>\n')
 
         self.toc = '<h2>Contents</h2>\n'
         self.body = ''
 
     def write(self, ln):
-        self.out.write(ln)
+        self._out.write(ln)
 
     def finish(self):
         # write the table of contents
-        self.out.write(self.toc + '\n')
-        self.out.write(self.body + '\n')
-        self.out.write('</body>\n</html>')
-
+        self._out.write(self.toc + '\n')
+        self._out.write(self.body.encode('utf-8') + '\n')
+        self._out.write('</body>\n</html>')
+        return self._out
 
 def normal_markdown(line):
     md = markdown.markdown(line)
@@ -99,6 +99,8 @@ def process(in_file, out_file, style_file):
             del normal_lines[:]
 
     for line in in_file.readlines():
+        line = line.decode('utf-8')
+
         if not line:
             continue
         elif line.startswith('<pre '):
@@ -118,7 +120,10 @@ def process(in_file, out_file, style_file):
             writer.write('Reply-To: ')
             for editor in header['Editor']:
                 name, email = editor.split(',')
-                writer.write('{} &lt;{}><br />\n'.format(name, email.strip()))
+                ed_row = '{} &lt;{}><br />\n'.format(
+                    name.encode('utf-8'),
+                    email.encode('utf-8').strip())
+                writer.write(ed_row)
             writer.write('</address>\n')
             writer.write('<hr/>')
             writer.write('<h1 align=center>{}</h1>\n'.format(header['Title'][0]))
@@ -169,8 +174,7 @@ def process(in_file, out_file, style_file):
     flush()
     writer.toc += '</li></ol>' * len(sections)
 
-    writer.finish()
-    return writer.out
+    return writer.finish()
 
 def main(argv=None):
     args = parse_args(argv)
@@ -178,7 +182,7 @@ def main(argv=None):
     # only open after the file has been processed, to avoid touching it on
     # failure. Doing that would break make.
     out_file = open_or_stdout(args.output)
-    print(io.getvalue().encode('utf-8'), file=out_file)
+    print(io.getvalue(), file=out_file)
 
 if __name__ == '__main__':
     main()
