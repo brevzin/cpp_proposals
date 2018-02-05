@@ -1,18 +1,15 @@
-all: deducing-this
+define add_paper
+PAPERS += $(1)
 
-TO_CLEAN:=
+$(1) : $(2) ./md/barry_md.py ./md/style.html
+	python ./md/barry_md.py "$$<" "$$@" --style ./md/style.html			
+endef
+
+$(eval $(call add_paper,0847r0_deducing_this.html,./md/deducing-this.md))
+
+all : $(PAPERS)
+.DEFAULT_GOAL := all
 
 .PHONY: clean
 clean:
-	rm -f $(TO_CLEAN)
-
-.PHONY: deducing-this
-deducing-this: 0847r0_deducing_this.html
-
-TO_CLEAN += ./0847r0_deducing_this.html
-0847r0_deducing_this.html: ./md/deducing-this.md 
-	python ./md/barry_md.py "$<" "$@" --style md/style.html
-
-
-
-
+	rm -f $(PAPERS)

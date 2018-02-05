@@ -6,8 +6,8 @@ Shortname: D0847R0
 Level: 0
 Editor: Gašper Ažman, gasper dot azman at gmail dot com
 Editor: Ben Deane, ben at elbeno dot com
-Editor: Barry Revzin, barry.revzin@gmail.com
-Editor: Simon Brand, simon@codeplay.com
+Editor: Barry Revzin, barry dot revzin at gmail dot com
+Editor: Simon Brand, simon at codeplay dot com
 Group: wg21
 Audience: EWG
 Markup Shorthands: markdown yes
@@ -175,12 +175,11 @@ There are many, many cases in code-bases where we need two or four overloads of 
 
 # Proposal
 
-We propose the ability to add an optional first parameter to any member function of a class `T`, taking the form `T [const] [volatile] [&|&&] this <identifier>`.
+We propose a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invocable as a member function. We introduce a new kind of parameter that can be provided as the first parameter to any member function: an explicit object parameter. The purpose of this parameter is to bind to the implicit object, allowing it to be deduced. 
 
-To facilitate use in generic lambda expressions, this may also be formulated as `auto [const] [volatile] [&|&&] this <identifier>`.
+An explicit object parameter shall be of the form `T [const] [volatile] [&|&&] this <identifier>`, where `T` follows the normal rules of type names (e.g. for generic lambdas, it can be `auto`), except that it cannot be a pointer type. Member functions with explicit object parameters cannot be `static` or have *cv*- or *ref*-qualifiers.
 
-In all cases, the value category of a so-defined `identifier` inside the member function is exactly what the existing parameter rules would already imply. In other words, the *cv-ref qualifiers* that stand after the function signature now
-explicitly apply to the `identifier` so designated with `this`.
+The explicit object parameter can only be the first parameter of a function. It cannot be used in constructors or destructors.
 
 This is a strict extension to the language; all existing syntax remains valid.
 
@@ -191,9 +190,9 @@ template <typename T>
 class optional {
     // ...
     template <typename Self>
-    decltype(auto) value(Self&& this self) {
+    decltype(auto) value(Self&& this) {
         if (o.has_value()) {
-            return std::forward<Self>(self).m_value;
+            return std::forward<std::like_t<Self, optional>>(*self).m_value;
         }
         throw bad_optional_access();
     }
@@ -203,80 +202,168 @@ class optional {
 
 We believe that the ability to write *cv-ref qualifier*-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily.
 
-## What Does `this` in a Parameter List Mean?
+What follows is a description of how explicit object parameters affect all the important language constructs: name lookup, type deduction, overload resolution, and so forth.
 
-Effectively, `this` denotes a parameter, that otherwise behaves completely normally, to be the parameter that `*this` refers to. The name of this parameter follows the general rules for parameter naming, but shall be referred to as `self` for the remainder of this paper.
+## Name lookup: candidate functions
 
-The entries of this table should be read as if they are inside a class `X`:
+Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so will not be mentioned further.
 
-```
-class X { /* entry */ };
-```
-
-In other words, `X` is *not* a template parameter.
+For non-static member functions with the new **explicit** object parameter, lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are set by the parameter itself. The following examples illustrate this concept. Note that the explicit object parameter does not need to be named:
 
 <table>
-<tr><th>**written as**                         </th><th>**C++17 signature**         </th><th>**comments** </th></tr>
-<tr><td>`void f(X this self)`                  </td><td>currently not available     </td><td>   [value]   </td></tr>
-<tr><td>`void f(X& this self)`                 </td><td>`void f() &`                </td><td>             </td></tr>
-<tr><td>`void f(X&& this self)`                </td><td>`void f() &&`               </td><td>             </td></tr>
-<tr><td>`void f(X const this self)`            </td><td>currently not available     </td><td>   [value]   </td></tr>
-<tr><td>`void f(X const& this self)`           </td><td>`void f() const&`           </td><td>             </td></tr>
-<tr><td>`void f(X const&& this self)`          </td><td>`void f() const&&`          </td><td>             </td></tr>
-<tr><td>`void f(X volatile this self)`         </td><td>currently not available     </td><td>   [value]   </td></tr>
-<tr><td>`void f(X volatile& this self)`        </td><td>`void f() volatile&`        </td><td>             </td></tr>
-<tr><td>`void f(X volatile&& this self)`       </td><td>`void f() volatile&`        </td><td>             </td></tr>
-<tr><td>`void f(X const volatile this self)`   </td><td>currently not available     </td><td>   [value]   </td></tr>
-<tr><td>`void f(X const volatile& this self)`  </td><td>`void f() const volatile&`  </td><td>             </td></tr>
-<tr><td>`void f(X const volatile&& this self)` </td><td>`void f() const volatile&&` </td><td>             </td></tr>
-</table>
-
-- *[value]*: whether passing by value should be allowed is debatable, but seems desirable for completeness and parity with inline friend functions.
-- The interpretation of `this` in the member function body is always the same -- it points to the same object `self` references.
-- `self` is _not_ a reserved identifier -- instead, just a conventional naming. Any valid identifier is valid instead of `self` (as is, for parity with the rest of the language, no name, since parameter names are optional).
-- `self`, where it is visible, behaves exactly as a parameter declared without `this`. The only difference is in the call syntax. This means that type deduction, use in `decltype` for trailing return types etc., and use within the function body are completely unsurprising.
-- As now, only one definition for a given signature may be present -- e.g. one may define at most one of `void f()`, `void f()&`, or `void f(X& this)`. The first two are already exclusive of each other, we merely add a third way to define the very same method.
-
-## How does a templated `this`-designated parameter work?
-
-The type of the parameter will be deduced as if it were the first parameter of a non-member function template and the implicit object parameter was passed as the first argument.
-
-## What does `this` mean in the body of a member function?
-
-The behavior of \this is unchanged. The behavior of `self` is the same as a paramter declared without the `this` designator. The only difference is in how `self` is bound (to `*this`, and not to an explicitly provided parameter).
-
-## Does this change overload resolution at all?
-
-No. Non-templates still get priority over templates, et cetera.
-
-## How do the explicit `this`-designated parameter and the current, trailing *cv-ref qualifiers* interact?
-
-Other than the pass-by-value member functions, which currently do not have syntax to represent them, the explicit `this` signatures are aliases for those with trailing *cv-ref qualifiers*. They stand for the very same functions.
-
-This means that rewriting the function signature in a different style should not change the ABI of your class, and you should also be able to implement a member function that is forward-declared with one syntax using the other.
-
-## `this` in a variadic parameter pack
-
-Given the fact that there is no obvious meaning to the expression
+<tr><th>C++17</th><th>With Explicit Object</th></tr>
+<tr><td>
 ```
 struct X {
-  template <typename... Ts>
-  void f(Ts... this selves);
+    // implicit object has type X&
+    void foo();
+
+    // implicit object has type X&
+    void foo() const;
+
+    // implicit object has type X&&
+    void bar() &&;
+    
+    /* ex_baz has no C++17 equivalent */
 };
 ```
-such a program is ill-formed.
+</td>
+<td>
+```
+struct X {
+    // explicit object, named self, has type X&
+    void ex_foo(X& this self);
+    
+    // explicit object, named self, has type X const&
+    void ex_foo(X const& this self);    
 
-## Constructors and Destructors
+    // explicit object, unnamed, has type X&&
+    void ex_bar(X&& this);
 
-No change to current rules. Currently, one cannot have different cv-ref versions of either, so you cannot designate any parameter with `this`.
+    // explicit object, unnamed, has type X
+    void ex_baz(X this);
+};
+```
+</td>
+</tr>
+</table>
 
-## What about pass-by-value member functions?
+The overload resolution rules for this new set of candidate functions remains unchanged - we're simply being explicit rather than implicit about the object parameter. Given a call to `x.ex_foo()`, overload resolution would select the first `ex_foo()` overload if `x` isn't `const` and the second if it is. 
 
-We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax.
+Since the first parameter in member functions that have an explicit object parameter binds to the class object on which the member function is being invoked, the first provided argument is used to initialize the second function parameter, if any:
 
-One implication of this is that the `this` parameter would be move-constructed in cases where the object is an rvalue, allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.
+```
+struct C {
+    int get(C const& this self, int i);
+};
 
-*Example*:
+C c;
+c.get(4); // self is a C const&, initialized to c
+          // i is initialized with 4
+```
+
+## Type deduction
+
+One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit object parameter needs to be deducible. We do not propose any change in the template deduction rules for member functions with explicit object parameters - it will just be deduced from the class object the same way as any other function parameter:
+
+```
+struct X {
+    template <typename Self>
+    void foo(Self&& this self, int i);
+};
+
+X x;
+x.foo(4); // Self deduces as X&
+std::move(x).foo(2); // Self deduces as X
+```
+
+Since deduction rules do not change, and the explicit object parameter is just deduced from the object the function is called on, this has an interesting effect, which can best be illustrated by the following example:
+
+```
+struct B {
+    int i = 0;
+    
+    template <typename Self>
+    auto&& get(Self&& this self) { return self.i; }
+};
+
+struct D : B {
+    double i = 3.14;
+};
+
+B b{};
+B const cb{};
+D d{};
+
+b.foo();            // #1
+cb.foo();           // #2
+d.foo();            // #3
+std::move(d).foo(); // #4
+```
+
+The proposed behavior of these calls is:
+
+ 1. `Self` is deduced as `B&`, this call returns an `int&` to `B::i`
+ 2. `Self` is deduced as `B const&`, this calls returns an `int const&` to `B::i`
+ 3. `Self` is deduced as `D&`, this call returns a `double&` to `D::i`
+ 4. `Self` is deduced as `D`, this call returns a `double&&` to `D::i`
+ 
+When we deduce the object parameter, we don't just deduce the *cv*- and *ref*-qualifiers. We may also get a derived type. This follows from the normal template deduction rules. In `#3`, for instance, the object parameter is an lvalue of type `D`, so `Self` deduces as `D&`.
+
+## Name lookup: within member functions with explicit object parameters
+
+So far, we've only considered how member functions with explicit object parameters get found with name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave. Consider a slightly expanded version of the previous example:
+
+```
+struct B {
+    int i = 0;
+    
+    template <typename Self>
+    auto&& f1(Self&& this self) { return i; }
+    
+    template <typename Self>
+    auto&& f2(Self&& this self) { return this->i; }
+    
+    template <typename Self>
+    auto&& f3(Self&& this self) { return std::forward<Self>(*this).i; }
+
+    template <typename Self>
+    auto&& f4(Self&& this self) { return std::forward<Self>(self).i; }    
+};
+
+struct D : B {
+    double i = 3.14;
+};
+```
+
+Consider invoking each of these functions with an lvalue of type `D`. We have no interest in changing template deduction rules, which means that `Self` in each case will be `D&`. We have several options:
+
+ 1. `this` is a `B*` (non-`const` because the explicit object parameter is non-`const`), unqualified lookup looks in `B`'s scope first. This means that `f1` returns an `int&` (to `B::i`) and `f2` returns an `int&`. `f3` is ill-formed, because `std::forward<D&>` takes a `D&` and we're passing in a `B&`, which is not a conversion that can be done implicitly. `f4` returns a `double&` to `D::i`, because while `*this` is a `B`, `self` actually is the object parameter, hence is a `D`.
+ 2. `this` is a `D*` (non-`const`), but unqualified lookup looks in `B`'s scope. This means that `f1` returns an `int&`, but `f2` returns a `double&`. `f3` and `f4` both return `double&`.
+ 3. `this` is a `D*` and unqualified lookup looks in `D`'s scope too. All four functions return a `double&`.
+ 4. While the previous three options are variations on these functions behaving as non-static member functions, we could instead also consider these functions to behave as either static member functions or non-member `friend` functions. In this case, any member access would require direct access from the explicit object parameter, so `f1`, `f2`, and `f3` are all ill-formed. `f4` returns a `double&`.
+ 
+In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if `f1` didn't return `B::i`, or if `f1` and `f2` behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. 
+
+We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would simply have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yield an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. 
+
+In order to properly forward, we need a metafunction, `like_t`, that applies the *cv* qualifiers and reference from its first parameter to its second (e.g. `like_t<int&, double>` is `double&`, `like_t<int const&&, X>` is `X const&&>`, etc.). With such a metafunction, the proper implementation of `f3` is:
+
+```
+struct B {
+    template < typename Self>
+    auto&& f3(Self&& this self) {
+        return std::forward<Self>(*this).i;            // ok if Self and *this are the same type
+                                                       // compile other if Self is a derived type
+
+        return std::forward<like_t<Self, B>>(*this).i; // always ok
+    }
+};
+```
+
+## By-value explicit object parameters 
+
+We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue, allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates:
 
 ```
 class string_builder {
@@ -285,6 +372,7 @@ class string_builder {
   operator std::string (string_builder this self) {
     return std::move(s);
   }
+
   string_builder operator*(string_builder this self, int n) {
     assert(n > 0);
 
@@ -295,6 +383,7 @@ class string_builder {
     }
     return self;
   }
+
   string_builder bop(string_builder this self) {
     s.append("bop");
     return self;
@@ -305,7 +394,7 @@ class string_builder {
 std::string const x = (string_builder{{"asdf"}} * 5).bop().bop();
 ```
 
-Of course, implementing this example with templated `this` member functions would have been slightly more efficient due to also saving on move constructions, but the by-value `this` usage makes for simpler code.
+Of course, implementing this example with templated explicit object parameter member functions would have been slightly more efficient due to also saving on move constructions, but the by-value usage makes for simpler code.
 
 ## Writing the function pointer types for such functions
 
@@ -326,10 +415,12 @@ We are asking for suggestions for syntax for these function pointers. We give ou
 
 ```
 struct Z {
-  int f(Z const& this, int a, int b);
   // same as `int f(int a, int b) const&;`
+  int f(Z const& this, int a, int b);
+  
   int g(Z this, int a, int b);
 };
+
 // f is still the same as Y::f
 static_assert(std::is_same_v<decltype(&Z::f), int (Z::*)(int, int) const &>);
 // but would this alternate syntax make any sense?
@@ -339,20 +430,6 @@ static_assert(std::is_same_v<decltype(&Z::g), int (*)(Z::, int, int)>);
 ```
 
 Such an approach unifies, to a degree, the member functions and the rest of the function type spaces, since it communicates not only that the first parameter is special, but also its type and calling convention.
-
-## `virtual` and `this` as value
-
-Virtual member functions are always dispatched based on the type of the object the dot -- or arrow, in case of pointer -- operator is being used on. Once the member function is located, the parameter `this` is constructed with the appropriate move or copy constructor and passed as the `this` parameter, which might incur slicing.
-
-Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.
-
-## `virtual` and templated member functions
-
-This paper does not propose a change from the current behavior. `virtual` templates are still disallowed.
-
-## Can `static` member functions have a `this` parameter?
-
-No. Static member functions currently do not have an implicit `this` parameter, and therefore have no reason to have an explicit one.
 
 ## Teachability Implications
 
@@ -370,24 +447,25 @@ If references and pointers do not have the same representation for member functi
 
 This matters because code written in the "`this` is a pointer" syntax with the `this->` notation needs to be assembly-identical to code written with the `self.` notation; the two are just different ways to implement a function with the same signature.
 
+## `virtual` and `this` as value
+
+Virtual member functions are always dispatched based on the type of the object the dot -- or arrow, in case of pointer -- operator is being used on. Once the member function is located, the parameter `this` is constructed with the appropriate move or copy constructor and passed as the `this` parameter, which might incur slicing.
+
+Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.
+
+Virtual member function templates are not allowed in the language today, and this paper does not propose a change from the current behavior for member functions with explicit object parameters either.
+
+## Can `static` member functions have a `this` parameter?
+
+No. Static member functions currently do not have an implicit `this` parameter, and therefore have no reason to have an explicit one.
+
 ## Interplays with capturing `[this]` and `[*this]`
 
 `this` just designates the parameter that is bound to the reference to the function object. It does not, in any way, change the meaning of `this`.
 
 If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that develpers have a great potential for introducing hard-to-read code if they are at all changing the meaning of `this`, especially in conjunction with this proposal.
 
-## Is `auto&& this self` allowed in member functions as well as lambdas?
-
-Yes. `auto&& param_name` has a well-defined meaning that is unified across the language. There is absolutely no reason to make it less so.
-
-## Impact on the Standard
-
-TBD: A bunch of stuff in section 8.1.5 [expr.prim.lambda].
-
-TBD: A bunch of stuff in that \this can appear as the first member function
-parameter.
-
-## Minimal Translations
+## Translating code to use explicit object parameters
 
 The most common qualifier overload sets for member functions are:
 
@@ -441,7 +519,7 @@ This overload is callable for all `const`- and ref-qualified object parameters, 
 
 ## Alternative syntax
 
-Instead of qualifiying the parameter with `this`, to mark it as the parameter for deducing `this`, we could let the first parameter be named `this` instead:
+Instead of qualifying the parameter with `this`, to mark it as the parameter for deducing `this`, we could let the first parameter be *named* `this` instead:
 
 ```
 template <typename T>
@@ -532,10 +610,10 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](Self&& this self,
+  auto& operator[](Self&& this,
                    std::size_t position) {
     // ...
-    return this.text[position];
+    return text[position];
   }
   // ...
 };
@@ -566,8 +644,8 @@ template <typename T>
 class optional {
   // ...
   template <typename Self>
-  constexpr auto operator->(Self&& this self) {
-    return std::addressof(this.m_value);
+  constexpr auto operator->(Self&& this) {
+    return std::addressof(this->m_value);
   }
   // ...
 };
@@ -636,14 +714,14 @@ template <typename T>
 class optional {
   // ...
   template <typename Self>
-  constexpr auto&& operator*(Self&& this self) {
-    return forward<Self>(self).m_value;
+  constexpr auto&& operator*(Self&& this) {
+    return forward<like_t<Self, optional>>(*this).m_value;
   }
 
   template <typename Self>
-  constexpr auto&& value(Self&& this self) {
-    if (this.has_value()) {
-      return forward<Self>(self).m_value;
+  constexpr auto&& value(Self&& this) {
+    if (has_value()) {
+      return forward<like_t<Self, optional>>(*this).m_value;
     }
     throw bad_optional_access();
   }
@@ -722,18 +800,18 @@ class optional {
   // ...
   template <typename Self, typename F>
   constexpr auto
-  and_then(Self&& this self, F&& f) & {
+  and_then(Self&& this, F&& f) {
     using val = decltype((
-        forward<Self>(self).m_value));
+        forward<like_t<Self, optional>>(*this).m_value));
     using result = invoke_result_t<F, val>;
 
     static_assert(
       is_optional<result>::value,
       "F must return an optional");
 
-    return this.has_value()
+    return has_value()
         ? invoke(forward<F>(f),
-                 forward<self>
+                 forward<like_t<Self, optional>>
                    (self).m_value)
         : nullopt;
   }
@@ -747,6 +825,106 @@ Keep in mind that there are a few more functions in P0798 that have this lead to
 
 For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.
 
+## Recursive Lambdas
+
+This proposal also allows for an alternative solution to implementing a recursive lambda, since now we open up the possibility of allowing a lambda to reference itself:
+
+```
+// as proposed in [P0839]
+auto fib = [] self (int n) {
+    if (n < 2) return n;
+    return self(n-1) + self(n-2);
+};
+
+// this proposal
+auto fib = [](auto& this self, int n) {
+    if (n < 2) return n;
+    return self(n-1) + self(n-2);
+};
+```
+
+This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so `self` in this example *is* the closure object.
+
+If the lambda would otherwise decay to a function pointer, `&self` shall have the value of that function pointer.
+
+### Expressions allowed for `self` in lambdas
+
+```
+  self(...);      // call with appropriate signature
+  decltype(self); // evaluates to the type of the lambda with the appropriate
+                  // cv-ref qualifiers
+  &self;          // the address of either the closure object or function pointer
+  std::move(self) // you're allowed to move yourself into an algorithm...
+  /* ... and all other things you're allowed to do with the lambda itself. */
+```
+
+Within lambda expressions, the `this` parameter still does not allow one to refer to the members of the closure object, which has no defined storage or layout, nor do its members have names. Instead it allows one to deduce the value category of the lambda and access its members -- including various call operators -- in the way appropriate for the value category.
+
+### Deducing derived objects for generic lambdas
+
+When we deduce the object parameter, it doesn't have to be the same type as the class - it could be a derived type. This isn't typically relevant for lambdas, which would just be used as is, but it does provide an interesting opportunity when it comes to visitation. One tool to make it easier to invoke `std::visit()` on a `std::variant` is to write an overload utility which ends up creating a new type that inherits from all of the provided types. Consider a scenario where we have a `Tree` type which is a `variant<Leaf, Node>`, where a `Node` contains two sub-`Tree`s. We could count the number of leaves in a `Tree` as follows:
+
+```
+int num_leaves(Tree const& tree) {
+    return std::visit(overload(
+        [](Leaf const&) { return 1; },
+        [](auto const& this self, Node const& n) {
+            return std::visit(self, n.left) + std::visit(self, n.right);
+        }
+    ), tree);
+}
+```
+
+In this example, `self` doesn't deduce as that inner lambda, it deduces at the overload object, so this works.
+
+## CRTP, without the C, R, or even T
+
+Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit object parameters that deduce to the derived objects already, we don't need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn't even need to be a template:
+
+
+<table>
+<tr><th>C++17</th><th>Proposed</th></tr>
+<tr>
+<td>
+```
+template <typename Derived>
+struct add_postfix_increment {
+    Derived operator++(int) {
+        auto& self = static_cast<Derived&>(*this);
+    
+        Derived tmp(self);
+        ++self;
+        return tmp;
+    }
+};
+
+struct some_type : add_postfix_increment<some_Type> {
+    some_type& operator++() { ... }
+};
+```
+</td>
+<td>
+```
+struct add_postifx_increment {
+    template <typename Self>
+    Self operator++(Self& this self, int) {
+        Self tmp(self);
+        ++self;
+        return tmp;
+    }
+};
+
+
+
+struct some_type : add_postfix_increment {
+    some_type& operator++() { ... }
+};
+```
+</td>
+</tr>
+</table>
+
+The example at right isn't much shorter, but it is certainly simpler.
 
 ## SFINAE-friendly callables
 
@@ -832,43 +1010,10 @@ not_fn(fun{})();         // error
 
 Here, there is only one overload with everything deduced together, with either `Self = fun` or `Self = poison` as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
 
-## Recursive Lambdas
-
-This proposal also allows for an alternative solution to implementing a recursive lambda, since now we open up the possibility of allowing a lambda to reference itself:
-
-```
-// as proposed in [P0839]
-auto fib = [] self (int n) {
-    if (n < 2) return n;
-    return self(n-1) + self(n-2);
-};
-
-// this proposal
-auto fib = [](auto& this self, int n) {
-    if (n < 2) return n;
-    return self(n-1) + self(n-2);
-};
-```
-
-If the lambda would otherwise decay to a function pointer, `&self` shall have the value of that function pointer.
-
-### Expressions allowed for \self in lambdas
-
-```
-  self(...);      // call with appropriate signature
-  decltype(self); // evaluates to the type of the lambda with the appropriate
-                  // cv-ref qualifiers
-  &self;          // the address of either the closure object or function pointer
-  std::move(self) // you're allowed to move yourself into an algorithm...
-  /* ... and all other things you're allowed to do with the lambda itself. */
-```
-
-Within lambda expressions, the `this` parameter still does not allow one to refer to the members of the closure object, which has no defined storage or layout, nor do its members have names. Instead it allows one to deduce the value category of the lambda and access its members -- including various call operators -- in the way appropriate for the value category.
-
 # Acknowledgements
 
 The authors would like to thank:
-- Jon Wakely, for bringing us all together by pointing out we were writing the same paper, twice
+- Jonathan Wakely, for bringing us all together by pointing out we were writing the same paper, twice
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
-- Jackie Chen, Vittorio Romeo, Tristan Brindle, for early feedback
+- Jackie Chen, Vittorio Romeo, Tristan Brindle, Louis Dionne, and Michael Park for early feedback
 - Guilherme Hartmann for his guidance with the implementation

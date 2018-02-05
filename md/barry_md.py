@@ -107,6 +107,7 @@ def process(in_file, out_file, style_file):
             state = 'pre'
         elif line.startswith('</pre>'):
             # write the title
+            writer.write('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n')
             writer.write('<title>{}</title>\n'.format(header['Title'][0]))
             writer.write(style_file.read())
             writer.write('</head>\n')
@@ -137,17 +138,28 @@ def process(in_file, out_file, style_file):
                 flush()
                 # this is a header row
                 h, title = line.split(' ', 1)
+                
+                # allow title to have markdown in it, but remove the <p>
+                title = normal_markdown(title).strip()
+                if title.startswith('<p>'):
+                    title = title[3:-4]
+
+                # only add to TOC for # and ##
+                max_toc_len = 2
+                    
                 if len(sections) < len(h):
-                    writer.toc += '<ol>'
+                    if len(h) <= max_toc_len:
+                        writer.toc += '<ol>'
                     sections.append(1)
                 else:
                     writer.toc += '</li>'
-                    writer.toc += '</ol></li>' * (len(sections) - len(h))
+                    writer.toc += '</ol></li>' * (min(max_toc_len, len(sections)) - len(h))
                     sections = sections[:len(h)]
                     sections[-1] += 1
 
                 section_str = '.'.join(map(str, sections))
-                writer.toc += '<li><a href="#toc_{0}">{1}</a>'.format(section_str, title)
+                if len(h) <= max_toc_len:
+                    writer.toc += '<li><a href="#toc_{0}">{1}</a>'.format(section_str, title)
                 writer.body += '<a name="toc_{0}"></a><h{2}>{0}. {1}</h{2}>\n'.format(
                     section_str, title, len(h)+1)
             elif line.strip() == '```':
@@ -160,6 +172,7 @@ def process(in_file, out_file, style_file):
                 in_table = True
                 writer.body += '<table style="width: 100%">\n'
             elif line.strip() == '</table>':
+                flush()
                 in_table = False
                 writer.body += '</table>\n'
             elif line.strip():
