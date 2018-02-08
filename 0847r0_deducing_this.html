@@ -333,7 +333,7 @@ pre {
 	overflow: auto;
     overflow-x: hidden;
     overflow-y: hidden;
-	padding: 6px 10px;
+    padding: 6px 10px;
 	border-radius: 3px;
 }
 pre code, pre tt {
@@ -650,13 +650,14 @@ class optional {
 <p>An explicit object parameter shall be of the form <code class="language-cpp">T [const] [volatile] [&amp;|&amp;&amp;] this &lt;identifier&gt;</code>, where <code class="language-cpp">T</code> follows the normal rules of type names (e.g. for generic lambdas, it can be <code class="language-cpp">auto</code>), except that it cannot be a pointer type. Member functions with explicit object parameters cannot be <code class="language-cpp">static</code> or have <em>cv</em>- or <em>ref</em>-qualifiers.</p>
 <p>The explicit object parameter can only be the first parameter of a function. It cannot be used in constructors or destructors.</p>
 <p>This is a strict extension to the language; all existing syntax remains valid.</p>
+<p>For the purposes of this proposal, we assume the existence of two new library functions: a metafunction named <code class="language-cpp">like</code> which applies the <em>cv</em> and <em>ref</em> qualifiers from its first type argument onto its second (such that <code class="language-cpp">like_t&lt;int&amp;, double&gt;</code> is <code class="language-cpp">double&amp;</code>, <code class="language-cpp">like_t&lt;X const&amp;&amp;, Y&gt;</code> is <code class="language-cpp">Y const&amp;&amp;</code>, etc.), and a function template named <code class="language-cpp">forward_like</code> which allows you to forward based on the value category of an unrelated type (<code class="language-cpp">forward_like&lt;T&gt;(u)</code> is short-hand for <code class="language-cpp">forward&lt;like_t&lt;T, U&gt;&gt;(u)</code>). Sample implementations of both can be seen <a href="https://github.com/atomgalaxy/isocpp-template-this/blob/master/forward_like.cpp">here</a>.</p>
 <p>With this extension, the example from above can be written like so:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 class optional {
     // ...
     template &lt;typename Self&gt;
     decltype(auto) value(Self&amp;&amp; this) {
         if (o.has_value()) {
-            return std::forward&lt;std::like_t&lt;Self, optional&gt;&gt;(*self).m_value;
+            return forward_like&lt;Self&gt;(*this).m_value;
         }
         throw bad_optional_access();
     }
@@ -720,7 +721,7 @@ X x;
 x.foo(4); // Self deduces as X&amp;
 std::move(x).foo(2); // Self deduces as X
 </code></pre>
-<p>Since deduction rules do not change, and the explicit object parameter is just deduced from the object the function is called on, this has an interesting effect, which can best be illustrated by the following example:</p><pre ><code class="language-cpp">struct B {
+<p>Since deduction rules do not change, and the explicit object parameter is deduced from the object the function is called on, this has the interesting effect of possibly deducing derived types, which can best be illustrated by the following example:</p><pre ><code class="language-cpp">struct B {
     int i = 0;
     
     template &lt;typename Self&gt;
@@ -792,22 +793,24 @@ While the previous three options are variations on these functions behaving as n
 </li>
 </ol>
 <p>In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if <code class="language-cpp">f1</code> didn't return <code class="language-cpp">B::i</code>, or if <code class="language-cpp">f1</code> and <code class="language-cpp">f2</code> behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. </p>
-<p>We favor option 1, since <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> all end up having behavior that is reasonable given the other rules for name lookup we already have. <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> returning different things might appear strange at first glance, but <code class="language-cpp">f2</code> references <code class="language-cpp">this-&gt;i</code> and <code class="language-cpp">f4</code> references <code class="language-cpp">self.i</code> - programmers would simply have to be aware that these may be different. Where this option could go wrong is <code class="language-cpp">f3</code>, which looks like it yield an lvalue or rvalue reference to <code class="language-cpp">B::i</code> but is actually casting <code class="language-cpp">*this</code> to a derived object. But since this is ill-formed, this is a <em>compile</em> error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. </p>
-<p>In order to properly forward, we need a metafunction, <code class="language-cpp">like_t</code>, that applies the <em>cv</em> qualifiers and reference from its first parameter to its second (e.g. <code class="language-cpp">like_t&lt;int&amp;, double&gt;</code> is <code class="language-cpp">double&amp;</code>, <code class="language-cpp">like_t&lt;int const&amp;&amp;, X&gt;</code> is <code class="language-cpp">X const&amp;&amp;&gt;</code>, etc.). With such a metafunction, the proper implementation of <code class="language-cpp">f3</code> is:</p><pre ><code class="language-cpp">struct B {
+<p>We favor option 1, since <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> all end up having behavior that is reasonable given the other rules for name lookup we already have. <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> returning different things might appear strange at first glance, but <code class="language-cpp">f2</code> references <code class="language-cpp">this-&gt;i</code> and <code class="language-cpp">f4</code> references <code class="language-cpp">self.i</code> - programmers would have to be aware that these may be different. Where this option could go wrong is <code class="language-cpp">f3</code>, which looks like it yield an lvalue or rvalue reference to <code class="language-cpp">B::i</code> but is actually casting <code class="language-cpp">*this</code> to a derived object. But since this is ill-formed, this is a <em>compile</em> error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. </p>
+<p>The proper way to implement forwarding is to use one of the two hypothetical library functions mentioned earlier:</p><pre ><code class="language-cpp">struct B {
     template &lt; typename Self&gt;
     auto&amp;&amp; f3(Self&amp;&amp; this self) {
         return std::forward&lt;Self&gt;(*this).i;            // ok if Self and *this are the same type
                                                        // compile other if Self is a derived type
 
         return std::forward&lt;like_t&lt;Self, B&gt;&gt;(*this).i; // always ok
+        return std::forward_like&lt;Self&gt;(*this).i;       // always ok
     }
 };
 </code></pre>
-<a name="toc_2.4"></a><h3>2.4. By-value explicit object parameters </h3>
-<p>We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue, allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates:</p><pre ><code class="language-cpp">class string_builder {
+<p>The rule that we're establishing is that <code class="language-cpp">this</code> remains a pointer to the class type of the member function it is used in, and unqualified lookup looks in class scope as usual. Additionally, <code class="language-cpp">this</code> is either a pointer to the explicit object parameter or, in the case of deducing a derived type, one of its base class subobjects.</p><a name="toc_2.4"></a><h3>2.4. By-value explicit object parameters </h3>
+<p>We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue (or constructed in place for prvalues), allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.</p>
+<p>We continue to follow the rule established in the previous section: <code class="language-cpp">this</code> is a pointer to the explicit object parameter or one of its base class subobjects. In the example below, <code class="language-cpp">this == &amp;self</code> and all accesses to <code class="language-cpp">s</code> could also be rewrriten as <code class="language-cpp">this-&gt;s</code> or <code class="language-cpp">self.s</code>:</p><pre ><code class="language-cpp">class string_builder {
   std::string s;
 
-  operator std::string (string_builder this self) {
+  operator std::string(string_builder this self) {
     return std::move(s);
   }
 
@@ -829,8 +832,9 @@ While the previous three options are variations on these functions behaving as n
 };
 
 // this is optimally efficient as far as allocations go
-std::string const x = (string_builder{{"asdf"}} * 5).bop().bop();
+std::string const x = (string_builder{"asdf"} * 5).bop().bop();
 </code></pre>
+<p>In this example, <code class="language-cpp">x</code> would hold the value <code class="language-cpp">"asdfasdfasdfasdfasdfbopbop"</code>.</p>
 <p>Of course, implementing this example with templated explicit object parameter member functions would have been slightly more efficient due to also saving on move constructions, but the by-value usage makes for simpler code.</p><a name="toc_2.5"></a><h3>2.5. Writing the function pointer types for such functions</h3>
 <p>Currently, we write member function pointers like so:</p><pre ><code class="language-cpp">struct Y {
   int f(int a, int b) const &amp;;
@@ -1082,14 +1086,14 @@ class optional {
 class optional {
   // ...
   template &lt;typename Self&gt;
-  constexpr auto&amp;&amp; operator*(Self&amp;&amp; this) {
-    return forward&lt;like_t&lt;Self, optional&gt;&gt;(*this).m_value;
+  constexpr like_t&lt;Self, T&gt;&amp;&amp; operator*(Self&amp;&amp; this) {
+    return forward_like&lt;Self&gt;(*this).m_value;
   }
 
   template &lt;typename Self&gt;
-  constexpr auto&amp;&amp; value(Self&amp;&amp; this) {
+  constexpr like_t&lt;Self, T&gt;&amp;&amp; value(Self&amp;&amp; this) {
     if (has_value()) {
-      return forward&lt;like_t&lt;Self, optional&gt;&gt;(*this).m_value;
+      return forward_like&lt;Self&gt;(*this).m_value;
     }
     throw bad_optional_access();
   }
@@ -1168,7 +1172,7 @@ class optional {
   constexpr auto
   and_then(Self&amp;&amp; this, F&amp;&amp; f) {
     using val = decltype((
-        forward&lt;like_t&lt;Self, optional&gt;&gt;(*this).m_value));
+        forward_like&lt;Self&gt;(*this).m_value));
     using result = invoke_result_t&lt;F, val&gt;;
 
     static_assert(
@@ -1177,7 +1181,7 @@ class optional {
 
     return has_value()
         ? invoke(forward&lt;F&gt;(f),
-                 forward&lt;like_t&lt;Self, optional&gt;&gt;
+                 forward_like&lt;Self&gt;
                    (self).m_value)
         : nullopt;
   }

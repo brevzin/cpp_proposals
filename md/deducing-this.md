@@ -183,6 +183,8 @@ The explicit object parameter can only be the first parameter of a function. It 
 
 This is a strict extension to the language; all existing syntax remains valid.
 
+For the purposes of this proposal, we assume the existence of two new library functions: a metafunction named `like` which applies the *cv* and *ref* qualifiers from its first type argument onto its second (such that `like_t<int&, double>` is `double&`, `like_t<X const&&, Y>` is `Y const&&`, etc.), and a function template named `forward_like` which allows you to forward based on the value category of an unrelated type (`forward_like<T>(u)` is short-hand for `forward<like_t<T, U>>(u)`). Sample implementations of both can be seen [here](https://github.com/atomgalaxy/isocpp-template-this/blob/master/forward_like.cpp).
+
 With this extension, the example from above can be written like so:
 
 ```
@@ -192,13 +194,15 @@ class optional {
     template <typename Self>
     decltype(auto) value(Self&& this) {
         if (o.has_value()) {
-            return std::forward<std::like_t<Self, optional>>(*self).m_value;
+            return forward_like<Self>(*this).m_value;
         }
         throw bad_optional_access();
     }
     // ...
 };
 ```
+
+
 
 We believe that the ability to write *cv-ref qualifier*-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily.
 
@@ -277,7 +281,7 @@ x.foo(4); // Self deduces as X&
 std::move(x).foo(2); // Self deduces as X
 ```
 
-Since deduction rules do not change, and the explicit object parameter is just deduced from the object the function is called on, this has an interesting effect, which can best be illustrated by the following example:
+Since deduction rules do not change, and the explicit object parameter is deduced from the object the function is called on, this has the interesting effect of possibly deducing derived types, which can best be illustrated by the following example:
 
 ```
 struct B {
@@ -345,9 +349,9 @@ Consider invoking each of these functions with an lvalue of type `D`. We have no
  
 In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if `f1` didn't return `B::i`, or if `f1` and `f2` behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. 
 
-We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would simply have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yield an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. 
+We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yield an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. 
 
-In order to properly forward, we need a metafunction, `like_t`, that applies the *cv* qualifiers and reference from its first parameter to its second (e.g. `like_t<int&, double>` is `double&`, `like_t<int const&&, X>` is `X const&&>`, etc.). With such a metafunction, the proper implementation of `f3` is:
+The proper way to implement forwarding is to use one of the two hypothetical library functions mentioned earlier:
 
 ```
 struct B {
@@ -357,19 +361,24 @@ struct B {
                                                        // compile other if Self is a derived type
 
         return std::forward<like_t<Self, B>>(*this).i; // always ok
+        return std::forward_like<Self>(*this).i;       // always ok
     }
 };
 ```
 
+The rule that we're establishing is that `this` remains a pointer to the class type of the member function it is used in, and unqualified lookup looks in class scope as usual. Additionally, `this` is either a pointer to the explicit object parameter or, in the case of deducing a derived type, one of its base class subobjects.
+
 ## By-value explicit object parameters 
 
-We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue, allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates:
+We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue (or constructed in place for prvalues), allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.
+
+We continue to follow the rule established in the previous section: `this` is a pointer to the explicit object parameter or one of its base class subobjects. In the example below, `this == &self` and all accesses to `s` could also be rewrriten as `this->s` or `self.s`:
 
 ```
 class string_builder {
   std::string s;
 
-  operator std::string (string_builder this self) {
+  operator std::string(string_builder this self) {
     return std::move(s);
   }
 
@@ -391,8 +400,10 @@ class string_builder {
 };
 
 // this is optimally efficient as far as allocations go
-std::string const x = (string_builder{{"asdf"}} * 5).bop().bop();
+std::string const x = (string_builder{"asdf"} * 5).bop().bop();
 ```
+
+In this example, `x` would hold the value `"asdfasdfasdfasdfasdfbopbop"`.
 
 Of course, implementing this example with templated explicit object parameter member functions would have been slightly more efficient due to also saving on move constructions, but the by-value usage makes for simpler code.
 
@@ -714,14 +725,14 @@ template <typename T>
 class optional {
   // ...
   template <typename Self>
-  constexpr auto&& operator*(Self&& this) {
-    return forward<like_t<Self, optional>>(*this).m_value;
+  constexpr like_t<Self, T>&& operator*(Self&& this) {
+    return forward_like<Self>(*this).m_value;
   }
 
   template <typename Self>
-  constexpr auto&& value(Self&& this) {
+  constexpr like_t<Self, T>&& value(Self&& this) {
     if (has_value()) {
-      return forward<like_t<Self, optional>>(*this).m_value;
+      return forward_like<Self>(*this).m_value;
     }
     throw bad_optional_access();
   }
@@ -802,7 +813,7 @@ class optional {
   constexpr auto
   and_then(Self&& this, F&& f) {
     using val = decltype((
-        forward<like_t<Self, optional>>(*this).m_value));
+        forward_like<Self>(*this).m_value));
     using result = invoke_result_t<F, val>;
 
     static_assert(
@@ -811,7 +822,7 @@ class optional {
 
     return has_value()
         ? invoke(forward<F>(f),
-                 forward<like_t<Self, optional>>
+                 forward_like<Self>
                    (self).m_value)
         : nullopt;
   }
