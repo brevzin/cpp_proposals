@@ -372,7 +372,7 @@ The rule that we're establishing is that `this` remains a pointer to the class t
 
 We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue (or constructed in place for prvalues), allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.
 
-We continue to follow the rule established in the previous section: `this` is a pointer to the explicit object parameter or one of its base class subobjects. In the example below, `this == &self` and all accesses to `s` could also be rewrriten as `this->s` or `self.s`:
+We continue to follow the rule established in the previous section: `this` is a pointer to the explicit object parameter or one of its base class subobjects. In the example below, `this == &self` and all accesses to `s` could also be rewritten as `this->s` or `self.s`:
 
 ```
 class string_builder {
