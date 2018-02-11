@@ -37,7 +37,7 @@ public:
 };
 ```
 
-Neither the duplication or the delegation via `const_cast` are arguably great solutions, but they work.
+Arguably, neither the duplication or the delegation via `const_cast` are great solutions, but they work.
 
 In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: `&`, `const&`, `&&`, or `const&&`. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for `optional<T>::value()`. The way to implement it would be something like:
 

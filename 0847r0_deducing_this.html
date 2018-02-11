@@ -523,7 +523,7 @@ public:
   // ...
 };
 </code></pre>
-<p>Neither the duplication or the delegation via <code class="language-cpp">const_cast</code> are arguably great solutions, but they work.</p>
+<p>Arguably, neither the duplication or the delegation via <code class="language-cpp">const_cast</code> are great solutions, but they work.</p>
 <p>In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: <code class="language-cpp">&amp;</code>, <code class="language-cpp">const&amp;</code>, <code class="language-cpp">&amp;&amp;</code>, or <code class="language-cpp">const&amp;&amp;</code>. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for <code class="language-cpp">optional&lt;T&gt;::value()</code>. The way to implement it would be something like:</p><table style="width: 100%">
 <tr><th>Quadruplication</th><th>Delegation to 4th</th><th>Delegation to helper</th></tr>
 
