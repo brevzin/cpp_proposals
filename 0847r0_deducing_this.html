@@ -1272,13 +1272,13 @@ struct add_postfix_increment {
     }
 };
 
-struct some_type : add_postfix_increment&lt;some_Type&gt; {
+struct some_type : add_postfix_increment&lt;some_type&gt; {
     some_type&amp; operator++() { ... }
 };
 </code></pre>
 </td>
 
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct add_postifx_increment {
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct add_postfix_increment {
     template &lt;typename Self&gt;
     Self operator++(Self&amp; this self, int) {
         Self tmp(self);
@@ -1304,7 +1304,7 @@ public:
     // ...
     template &lt;typename... Args&gt;
     auto operator()(Args&amp;&amp;... ) &amp;
-        -&gt; decltype(!declval&lt;invoke_result_t&lt;F&amp;, Args...&gt;&gt;())'
+        -&gt; decltype(!declval&lt;invoke_result_t&lt;F&amp;, Args...&gt;&gt;());
 
     template &lt;typename... Args&gt;
     auto operator()(Args&amp;&amp;... ) const&amp;
