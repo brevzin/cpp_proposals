@@ -222,7 +222,7 @@ struct X {
     // implicit object has type X&
     void foo();
 
-    // implicit object has type X&
+    // implicit object has type X const&
     void foo() const;
 
     // implicit object has type X&&
@@ -245,6 +245,7 @@ struct X {
     void ex_bar(X&& this);
 
     // explicit object, unnamed, has type X
+    // copied or moved from original object
     void ex_baz(X this);
 };
 ```
@@ -288,10 +289,14 @@ struct B {
     int i = 0;
     
     template <typename Self>
-    auto&& get(Self&& this self) { return self.i; }
+    auto&& get(Self&& this self) {
+        // NB: specifically self.i, not just i or this->i
+        return self.i;
+    }
 };
 
 struct D : B {
+    // shadows B::i
     double i = 3.14;
 };
 
@@ -349,7 +354,7 @@ Consider invoking each of these functions with an lvalue of type `D`. We have no
  
 In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if `f1` didn't return `B::i`, or if `f1` and `f2` behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. 
 
-We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yield an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. 
+We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yields an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler.
 
 The proper way to implement forwarding is to use one of the two hypothetical library functions mentioned earlier:
 
@@ -470,11 +475,45 @@ Virtual member function templates are not allowed in the language today, and thi
 
 No. Static member functions currently do not have an implicit `this` parameter, and therefore have no reason to have an explicit one.
 
-## Interplays with capturing `[this]` and `[*this]`
+## Interplays with capturing `[this]` and `[*this]` in lambdas
 
-`this` just designates the parameter that is bound to the reference to the function object. It does not, in any way, change the meaning of `this`.
+`this` just designates the explicit object parameter. It does not, in any way, change the meaning of `this` in the body of the lambda.
 
-If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that develpers have a great potential for introducing hard-to-read code if they are at all changing the meaning of `this`, especially in conjunction with this proposal.
+<table>
+<tr><th>C++17</th><th>Proposed</th></tr>
+<tr><td>
+```
+struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](){
+            return x       // refers to X::x
+                + this->y; // refers to X::y
+        };
+    }
+};
+```
+</td>
+<td>
+```
+struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](auto const& this /* self */){
+            return x       // still refers to X::x
+                + this->y; // still refers to X::y
+        };
+    }
+};
+```
+</td></tr>
+</table>
+
+If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have a great potential for introducing hard-to-read code if they are at all changing the meaning of `this` in function bodies, especially in conjunction with this proposal.
 
 ## Translating code to use explicit object parameters
 
@@ -526,7 +565,7 @@ struct foo {
 };
 ```
 
-This overload is callable for all `const`- and ref-qualified object parameters, just like the above examples. It is also callable for `volatile`-qualified objects, so the code is not entirely equivalent; however, the `volatile` versions are unlikely to be invalid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-`const` lvalue arguments would be non-`const` inside the function body, and `const` rvalue arguments would be `const&&` instead of `const&`. Again, this is unlikely to cause correctness issues unless `this` has other member functions called on it which do semantically different things depending on the cv-qualification of `this`.
+This overload is callable for all `const`- and ref-qualified object parameters, just like the above examples. It is also callable for `volatile`-qualified objects, so the code is not entirely equivalent; however, the `volatile` versions are unlikely to be valid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-`const` lvalue arguments would be non-`const` inside the function body, and `const` rvalue arguments would be `const&&` instead of `const&`. Again, this is unlikely to cause correctness issues unless `this` has other member functions called on it which do semantically different things depending on the cv-qualification of `this`.
 
 ## Alternative syntax
 
@@ -550,7 +589,7 @@ struct X {
     }
 ```
 
-In the example above, `this` is no longer a pointer. Since `this` can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language.
+In the example above, `this` is no longer a pointer. Since `this` can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language. It also leaves us at a loss as to how one can address the derived object and the base object, as outlined in the previous section.
 
 Rather than naming the first parameter `this`, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:
 
@@ -1026,5 +1065,5 @@ Here, there is only one overload with everything deduced together, with either `
 The authors would like to thank:
 - Jonathan Wakely, for bringing us all together by pointing out we were writing the same paper, twice
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
-- Jackie Chen, Vittorio Romeo, Tristan Brindle, Louis Dionne, and Michael Park for early feedback
+- Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
 - Guilherme Hartmann for his guidance with the implementation

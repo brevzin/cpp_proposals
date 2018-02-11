@@ -507,7 +507,7 @@ Reply-To:  Gašper Ažman &lt;gasper dot azman at gmail dot com><br />
 <hr/><h1 align=center> Deducing this
 </h1>
 <h2>Contents</h2>
-<ol><li><a href="#toc_1">Motivation</a></li><li><a href="#toc_2">Proposal</a><ol><li><a href="#toc_2.1">Name lookup: candidate functions</a></li><li><a href="#toc_2.2">Type deduction</a></li><li><a href="#toc_2.3">Name lookup: within member functions with explicit object parameters</a></li><li><a href="#toc_2.4">By-value explicit object parameters </a></li><li><a href="#toc_2.5">Writing the function pointer types for such functions</a></li><li><a href="#toc_2.6">Teachability Implications</a></li><li><a href="#toc_2.7">ABI implications for <code class="language-cpp">std::function</code> and related</a></li><li><a href="#toc_2.8"><code class="language-cpp">virtual</code> and <code class="language-cpp">this</code> as value</a></li><li><a href="#toc_2.9">Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</a></li><li><a href="#toc_2.10">Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code></a></li><li><a href="#toc_2.11">Translating code to use explicit object parameters</a></li><li><a href="#toc_2.12">Alternative syntax</a></li><li><a href="#toc_2.13">Unified Function Call Syntax</a></li></ol></li><li><a href="#toc_3">Real-World Examples</a><ol><li><a href="#toc_3.1">Deduplicating Code</a></li><li><a href="#toc_3.2">Recursive Lambdas</a></li></li><li><a href="#toc_3.3">CRTP, without the C, R, or even T</a></li><li><a href="#toc_3.4">SFINAE-friendly callables</a></li></ol></li><li><a href="#toc_4">Acknowledgements</a></li></ol>
+<ol><li><a href="#toc_1">Motivation</a></li><li><a href="#toc_2">Proposal</a><ol><li><a href="#toc_2.1">Name lookup: candidate functions</a></li><li><a href="#toc_2.2">Type deduction</a></li><li><a href="#toc_2.3">Name lookup: within member functions with explicit object parameters</a></li><li><a href="#toc_2.4">By-value explicit object parameters </a></li><li><a href="#toc_2.5">Writing the function pointer types for such functions</a></li><li><a href="#toc_2.6">Teachability Implications</a></li><li><a href="#toc_2.7">ABI implications for <code class="language-cpp">std::function</code> and related</a></li><li><a href="#toc_2.8"><code class="language-cpp">virtual</code> and <code class="language-cpp">this</code> as value</a></li><li><a href="#toc_2.9">Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</a></li><li><a href="#toc_2.10">Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code> in lambdas</a></li><li><a href="#toc_2.11">Translating code to use explicit object parameters</a></li><li><a href="#toc_2.12">Alternative syntax</a></li><li><a href="#toc_2.13">Unified Function Call Syntax</a></li></ol></li><li><a href="#toc_3">Real-World Examples</a><ol><li><a href="#toc_3.1">Deduplicating Code</a></li><li><a href="#toc_3.2">Recursive Lambdas</a></li></li><li><a href="#toc_3.3">CRTP, without the C, R, or even T</a></li><li><a href="#toc_3.4">SFINAE-friendly callables</a></li></ol></li><li><a href="#toc_4">Acknowledgements</a></li></ol>
 <a name="toc_1"></a><h2>1. Motivation</h2>
 <p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="language-cpp">const</code> and non-<code class="language-cpp">const</code> overload of a particular member (Of course it was possible to also want <code class="language-cpp">volatile</code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++", Item 3:</p><pre ><code class="language-cpp">class TextBlock {
 public:
@@ -674,7 +674,7 @@ class optional {
     // implicit object has type X&amp;
     void foo();
 
-    // implicit object has type X&amp;
+    // implicit object has type X const&amp;
     void foo() const;
 
     // implicit object has type X&amp;&amp;
@@ -696,6 +696,7 @@ class optional {
     void ex_bar(X&amp;&amp; this);
 
     // explicit object, unnamed, has type X
+    // copied or moved from original object
     void ex_baz(X this);
 };
 </code></pre>
@@ -725,10 +726,14 @@ std::move(x).foo(2); // Self deduces as X
     int i = 0;
     
     template &lt;typename Self&gt;
-    auto&amp;&amp; get(Self&amp;&amp; this self) { return self.i; }
+    auto&amp;&amp; get(Self&amp;&amp; this self) {
+        // NB: specifically self.i, not just i or this-&gt;i
+        return self.i;
+    }
 };
 
 struct D : B {
+    // shadows B::i
     double i = 3.14;
 };
 
@@ -793,7 +798,7 @@ While the previous three options are variations on these functions behaving as n
 </li>
 </ol>
 <p>In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if <code class="language-cpp">f1</code> didn't return <code class="language-cpp">B::i</code>, or if <code class="language-cpp">f1</code> and <code class="language-cpp">f2</code> behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. </p>
-<p>We favor option 1, since <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> all end up having behavior that is reasonable given the other rules for name lookup we already have. <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> returning different things might appear strange at first glance, but <code class="language-cpp">f2</code> references <code class="language-cpp">this-&gt;i</code> and <code class="language-cpp">f4</code> references <code class="language-cpp">self.i</code> - programmers would have to be aware that these may be different. Where this option could go wrong is <code class="language-cpp">f3</code>, which looks like it yield an lvalue or rvalue reference to <code class="language-cpp">B::i</code> but is actually casting <code class="language-cpp">*this</code> to a derived object. But since this is ill-formed, this is a <em>compile</em> error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler. </p>
+<p>We favor option 1, since <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> all end up having behavior that is reasonable given the other rules for name lookup we already have. <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> returning different things might appear strange at first glance, but <code class="language-cpp">f2</code> references <code class="language-cpp">this-&gt;i</code> and <code class="language-cpp">f4</code> references <code class="language-cpp">self.i</code> - programmers would have to be aware that these may be different. Where this option could go wrong is <code class="language-cpp">f3</code>, which looks like it yields an lvalue or rvalue reference to <code class="language-cpp">B::i</code> but is actually casting <code class="language-cpp">*this</code> to a derived object. But since this is ill-formed, this is a <em>compile</em> error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler.</p>
 <p>The proper way to implement forwarding is to use one of the two hypothetical library functions mentioned earlier:</p><pre ><code class="language-cpp">struct B {
     template &lt; typename Self&gt;
     auto&amp;&amp; f3(Self&amp;&amp; this self) {
@@ -867,9 +872,38 @@ static_assert(std::is_same_v&lt;decltype(&amp;Z::g), int (*)(Z::, int, int)&gt;)
 <p>Virtual member functions are always dispatched based on the type of the object the dot -- or arrow, in case of pointer -- operator is being used on. Once the member function is located, the parameter <code class="language-cpp">this</code> is constructed with the appropriate move or copy constructor and passed as the <code class="language-cpp">this</code> parameter, which might incur slicing.</p>
 <p>Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.</p>
 <p>Virtual member function templates are not allowed in the language today, and this paper does not propose a change from the current behavior for member functions with explicit object parameters either.</p><a name="toc_2.9"></a><h3>2.9. Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</h3>
-<p>No. Static member functions currently do not have an implicit <code class="language-cpp">this</code> parameter, and therefore have no reason to have an explicit one.</p><a name="toc_2.10"></a><h3>2.10. Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code></h3>
-<p><code class="language-cpp">this</code> just designates the parameter that is bound to the reference to the function object. It does not, in any way, change the meaning of <code class="language-cpp">this</code>.</p>
-<p>If other language features play with what <code class="language-cpp">this</code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that develpers have a great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="language-cpp">this</code>, especially in conjunction with this proposal.</p><a name="toc_2.11"></a><h3>2.11. Translating code to use explicit object parameters</h3>
+<p>No. Static member functions currently do not have an implicit <code class="language-cpp">this</code> parameter, and therefore have no reason to have an explicit one.</p><a name="toc_2.10"></a><h3>2.10. Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code> in lambdas</h3>
+<p><code class="language-cpp">this</code> just designates the explicit object parameter. It does not, in any way, change the meaning of <code class="language-cpp">this</code> in the body of the lambda.</p><table style="width: 100%">
+<tr><th>C++17</th><th>Proposed</th></tr>
+
+<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](){
+            return x       // refers to X::x
+                + this-&gt;y; // refers to X::y
+        };
+    }
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](auto const&amp; this /* self */){
+            return x       // still refers to X::x
+                + this-&gt;y; // still refers to X::y
+        };
+    }
+};
+</code></pre>
+<p></td></tr></p></table>
+<p>If other language features play with what <code class="language-cpp">this</code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have a great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="language-cpp">this</code> in function bodies, especially in conjunction with this proposal.</p><a name="toc_2.11"></a><h3>2.11. Translating code to use explicit object parameters</h3>
 <p>The most common qualifier overload sets for member functions are:</p>
 <ol>
 <li>
@@ -914,7 +948,7 @@ static_assert(std::is_same_v&lt;decltype(&amp;Z::g), int (*)(Z::, int, int)&gt;)
     void bar (Self&amp;&amp; this self);
 };
 </code></pre>
-<p>This overload is callable for all <code class="language-cpp">const</code>- and ref-qualified object parameters, just like the above examples. It is also callable for <code class="language-cpp">volatile</code>-qualified objects, so the code is not entirely equivalent; however, the <code class="language-cpp">volatile</code> versions are unlikely to be invalid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-<code class="language-cpp">const</code> lvalue arguments would be non-<code class="language-cpp">const</code> inside the function body, and <code class="language-cpp">const</code> rvalue arguments would be <code class="language-cpp">const&amp;&amp;</code> instead of <code class="language-cpp">const&amp;</code>. Again, this is unlikely to cause correctness issues unless <code class="language-cpp">this</code> has other member functions called on it which do semantically different things depending on the cv-qualification of <code class="language-cpp">this</code>.</p><a name="toc_2.12"></a><h3>2.12. Alternative syntax</h3>
+<p>This overload is callable for all <code class="language-cpp">const</code>- and ref-qualified object parameters, just like the above examples. It is also callable for <code class="language-cpp">volatile</code>-qualified objects, so the code is not entirely equivalent; however, the <code class="language-cpp">volatile</code> versions are unlikely to be valid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-<code class="language-cpp">const</code> lvalue arguments would be non-<code class="language-cpp">const</code> inside the function body, and <code class="language-cpp">const</code> rvalue arguments would be <code class="language-cpp">const&amp;&amp;</code> instead of <code class="language-cpp">const&amp;</code>. Again, this is unlikely to cause correctness issues unless <code class="language-cpp">this</code> has other member functions called on it which do semantically different things depending on the cv-qualification of <code class="language-cpp">this</code>.</p><a name="toc_2.12"></a><h3>2.12. Alternative syntax</h3>
 <p>Instead of qualifying the parameter with <code class="language-cpp">this</code>, to mark it as the parameter for deducing <code class="language-cpp">this</code>, we could let the first parameter be <em>named</em> <code class="language-cpp">this</code> instead:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 struct X {
     T value;
@@ -931,7 +965,7 @@ struct X {
         return std::forward&lt;This&gt;(this).value;
     }
 </code></pre>
-<p>In the example above, <code class="language-cpp">this</code> is no longer a pointer. Since <code class="language-cpp">this</code> can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language.</p>
+<p>In the example above, <code class="language-cpp">this</code> is no longer a pointer. Since <code class="language-cpp">this</code> can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language. It also leaves us at a loss as to how one can address the derived object and the base object, as outlined in the previous section.</p>
 <p>Rather than naming the first parameter <code class="language-cpp">this</code>, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
 struct X {
     T value;
@@ -1341,7 +1375,7 @@ Jonathan Wakely, for bringing us all together by pointing out we were writing th
 Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of <code class="language-cpp">this</code> inside function bodies
 </li>
 <li>
-Jackie Chen, Vittorio Romeo, Tristan Brindle, Louis Dionne, and Michael Park for early feedback
+Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
 </li>
 <li>
 Guilherme Hartmann for his guidance with the implementation
