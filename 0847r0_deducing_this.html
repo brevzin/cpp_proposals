@@ -902,7 +902,7 @@ static_assert(std::is_same_v&lt;decltype(&amp;Z::g), int (*)(Z::, int, int)&gt;)
 };
 </code></pre>
 <p></td></tr></p></table>
-<p>If other language features play with what <code class="language-cpp">this</code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have a great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="language-cpp">this</code> in function bodies, especially in conjunction with this proposal.</p><a name="toc_2.11"></a><h3>2.11. Translating code to use explicit object parameters</h3>
+<p>If other language features play with what <code class="language-cpp">this</code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="language-cpp">this</code> in function bodies, especially in conjunction with this proposal.</p><a name="toc_2.11"></a><h3>2.11. Translating code to use explicit object parameters</h3>
 <p>The most common qualifier overload sets for member functions are:</p>
 <ol>
 <li>
@@ -1341,7 +1341,14 @@ struct fun {
 };
 
 std::not_fn(unfriendly{})(1); // static assert!
+                              // even though the non-const overload is viable and would be the best
+                              // match, during overload resolution, both overloads of unfriendly have
+                              // to be instantiated - and the second one is a hard compile error.
+
 std::not_fn(fun{})();         // ok!? Returns false
+                              // even though we want the non-const overload to be deleted, the const
+                              // overload of the call_wrapper ends up being viable - and the only viable
+                              // candidate.
 </code></pre>
 <p>Gracefully handling SFINAE-unfriendly callables is <strong>not solvable</strong> in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four <em>cv</em>/ref-qualifiers leads to a pair of overloads: one enabled and one <code class="language-cpp">deleted</code>.</p>
 <p>This proposal solves both problems by simply allowing <code class="language-cpp">this</code> to be deduced. The following is a complete implementation of <code class="language-cpp">std::not_fn</code>:</p><pre ><code class="language-cpp">template &lt;typename F&gt;
@@ -1364,7 +1371,9 @@ auto not_fn(F&amp;&amp; f) {
 not_fn(unfriendly{})(1); // ok
 not_fn(fun{})();         // error
 </code></pre>
-<p>Here, there is only one overload with everything deduced together, with either <code class="language-cpp">Self = fun</code> or <code class="language-cpp">Self = poison</code> as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for <code class="language-cpp">unfriendly</code>, and not working, for <code class="language-cpp">fun</code>.</p><a name="toc_4"></a><h2>4. Acknowledgements</h2>
+<p>Here, there is only one overload with everything deduced together. The first example now works correctly. <code class="language-cpp">Self</code> gets deduced as <code class="language-cpp">call_wrapper&lt;unfriendly&gt;</code>, and the one <code class="language-cpp">operator()</code> will only consider <code class="language-cpp">unfriendly</code>'s non-<code class="language-cpp">const</code> call operator. The <code class="language-cpp">const</code> one is simply never considered, so does not have an opportunity to cause problems. The call works. </p>
+<p>The second example now fails correctly. Previously, we had four candidates: the two non-<code class="language-cpp">const</code> ones were removed from the overload set due to <code class="language-cpp">fun</code>'s non-<code class="language-cpp">const</code> call operator being <code class="language-cpp">delete</code>d, and the two <code class="language-cpp">const</code> ones which were viable. But now, we only have one candidate. <code class="language-cpp">Self</code> gets deduced as <code class="language-cpp">call_wrapper&lt;fun&gt;</code>, which requires <code class="language-cpp">fun</code>'s non-<code class="language-cpp">const</code> call operator to be well-formed. Since it is not, the call is an error. There is no opportunity for fallback since there is only one overload ever considered. </p>
+<p>As a result, this singular overload then has precisely the desired behavior: working, for <code class="language-cpp">unfriendly</code>, and not working, for <code class="language-cpp">fun</code>.</p><a name="toc_4"></a><h2>4. Acknowledgements</h2>
 <p>The authors would like to thank:</p>
 <ul>
 <li>

@@ -1029,7 +1029,14 @@ struct fun {
 };
 
 std::not_fn(unfriendly{})(1); // static assert!
+                              // even though the non-const overload is viable and would be the best
+                              // match, during overload resolution, both overloads of unfriendly have
+                              // to be instantiated - and the second one is a hard compile error.
+
 std::not_fn(fun{})();         // ok!? Returns false
+                              // even though we want the non-const overload to be deleted, the const
+                              // overload of the call_wrapper ends up being viable - and the only viable
+                              // candidate.
 ```
 
 Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.
@@ -1058,7 +1065,11 @@ not_fn(unfriendly{})(1); // ok
 not_fn(fun{})();         // error
 ```
 
-Here, there is only one overload with everything deduced together, with either `Self = fun` or `Self = poison` as appropriate. As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
+Here, there is only one overload with everything deduced together. The first example now works correctly. `Self` gets deduced as `call_wrapper<unfriendly>`, and the one `operator()` will only consider `unfriendly`'s non-`const` call operator. The `const` one is simply never considered, so does not have an opportunity to cause problems. The call works. 
+
+The second example now fails correctly. Previously, we had four candidates: the two non-`const` ones were removed from the overload set due to `fun`'s non-`const` call operator being `delete`d, and the two `const` ones which were viable. But now, we only have one candidate. `Self` gets deduced as `call_wrapper<fun>`, which requires `fun`'s non-`const` call operator to be well-formed. Since it is not, the call is an error. There is no opportunity for fallback since there is only one overload ever considered. 
+
+As a result, this singular overload then has precisely the desired behavior: working, for `unfriendly`, and not working, for `fun`.
 
 # Acknowledgements
 
