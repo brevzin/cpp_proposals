@@ -1,8 +1,8 @@
 <pre class='metadata'>
 Title: Deducing this
-Status: D
+Status: P
 ED: wg21.tartanllama.xyz/deducing-this
-Shortname: D0847R0
+Shortname: P0847
 Level: 0
 Editor: Gašper Ažman, gasper dot azman at gmail dot com
 Editor: Ben Deane, ben at elbeno dot com
@@ -12,7 +12,7 @@ Group: wg21
 Audience: EWG
 Markup Shorthands: markdown yes
 Default Highlight: C++
-Abstract: We propose a new mechanism for specifying the value category of an instance of a class, which is visible from inside a member function of that class -- in other words, a way to tell from within a member function whether one's this points to an rvalue or an lvalue, and whether it is const or volatile.
+Abstract: We propose a new mechanism for specifying or deducing the value category of an instance of a class. In other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue, and whether it is const or volatile.
 </pre>
 
 
@@ -175,7 +175,7 @@ There are many, many cases in code-bases where we need two or four overloads of 
 
 # Proposal
 
-We propose a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invocable as a member function. We introduce a new kind of parameter that can be provided as the first parameter to any member function: an explicit object parameter. The purpose of this parameter is to bind to the implicit object, allowing it to be deduced. 
+We propose a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invocable as a member function. We introduce a new kind of parameter that can be provided as the first parameter to any member function: an explicit object parameter. The purpose of this parameter is to bind to the implicit object, allowing it to be deduced.
 
 An explicit object parameter shall be of the form `T [const] [volatile] [&|&&] this <identifier>`, where `T` follows the normal rules of type names (e.g. for generic lambdas, it can be `auto`), except that it cannot be a pointer type. Member functions with explicit object parameters cannot be `static` or have *cv*- or *ref*-qualifiers.
 
@@ -227,7 +227,7 @@ struct X {
 
     // implicit object has type X&&
     void bar() &&;
-    
+
     /* ex_baz has no C++17 equivalent */
 };
 ```
@@ -237,9 +237,9 @@ struct X {
 struct X {
     // explicit object, named self, has type X&
     void ex_foo(X& this self);
-    
+
     // explicit object, named self, has type X const&
-    void ex_foo(X const& this self);    
+    void ex_foo(X const& this self);
 
     // explicit object, unnamed, has type X&&
     void ex_bar(X&& this);
@@ -253,7 +253,7 @@ struct X {
 </tr>
 </table>
 
-The overload resolution rules for this new set of candidate functions remains unchanged - we're simply being explicit rather than implicit about the object parameter. Given a call to `x.ex_foo()`, overload resolution would select the first `ex_foo()` overload if `x` isn't `const` and the second if it is. 
+The overload resolution rules for this new set of candidate functions remains unchanged - we're simply being explicit rather than implicit about the object parameter. Given a call to `x.ex_foo()`, overload resolution would select the first `ex_foo()` overload if `x` isn't `const` and the second if it is.
 
 Since the first parameter in member functions that have an explicit object parameter binds to the class object on which the member function is being invoked, the first provided argument is used to initialize the second function parameter, if any:
 
@@ -287,7 +287,7 @@ Since deduction rules do not change, and the explicit object parameter is deduce
 ```
 struct B {
     int i = 0;
-    
+
     template <typename Self>
     auto&& get(Self&& this self) {
         // NB: specifically self.i, not just i or this->i
@@ -316,7 +316,7 @@ The proposed behavior of these calls is:
  2. `Self` is deduced as `B const&`, this calls returns an `int const&` to `B::i`
  3. `Self` is deduced as `D&`, this call returns a `double&` to `D::i`
  4. `Self` is deduced as `D`, this call returns a `double&&` to `D::i`
- 
+
 When we deduce the object parameter, we don't just deduce the *cv*- and *ref*-qualifiers. We may also get a derived type. This follows from the normal template deduction rules. In `#3`, for instance, the object parameter is an lvalue of type `D`, so `Self` deduces as `D&`.
 
 ## Name lookup: within member functions with explicit object parameters
@@ -326,18 +326,18 @@ So far, we've only considered how member functions with explicit object paramete
 ```
 struct B {
     int i = 0;
-    
+
     template <typename Self>
     auto&& f1(Self&& this self) { return i; }
-    
+
     template <typename Self>
     auto&& f2(Self&& this self) { return this->i; }
-    
+
     template <typename Self>
     auto&& f3(Self&& this self) { return std::forward<Self>(*this).i; }
 
     template <typename Self>
-    auto&& f4(Self&& this self) { return std::forward<Self>(self).i; }    
+    auto&& f4(Self&& this self) { return std::forward<Self>(self).i; }
 };
 
 struct D : B {
@@ -351,8 +351,8 @@ Consider invoking each of these functions with an lvalue of type `D`. We have no
  2. `this` is a `D*` (non-`const`), but unqualified lookup looks in `B`'s scope. This means that `f1` returns an `int&`, but `f2` returns a `double&`. `f3` and `f4` both return `double&`.
  3. `this` is a `D*` and unqualified lookup looks in `D`'s scope too. All four functions return a `double&`.
  4. While the previous three options are variations on these functions behaving as non-static member functions, we could instead also consider these functions to behave as either static member functions or non-member `friend` functions. In this case, any member access would require direct access from the explicit object parameter, so `f1`, `f2`, and `f3` are all ill-formed. `f4` returns a `double&`.
- 
-In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if `f1` didn't return `B::i`, or if `f1` and `f2` behaved differently. Option 4 is interesting, but would be more verbose without clear benefit. 
+
+In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if `f1` didn't return `B::i`, or if `f1` and `f2` behaved differently. Option 4 is interesting, but would be more verbose without clear benefit.
 
 We favor option 1, since `f1`, `f2` and `f4` all end up having behavior that is reasonable given the other rules for name lookup we already have. `f2` and `f4` returning different things might appear strange at first glance, but `f2` references `this->i` and `f4` references `self.i` - programmers would have to be aware that these may be different. Where this option could go wrong is `f3`, which looks like it yields an lvalue or rvalue reference to `B::i` but is actually casting `*this` to a derived object. But since this is ill-formed, this is a *compile* error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler.
 
@@ -373,7 +373,7 @@ struct B {
 
 The rule that we're establishing is that `this` remains a pointer to the class type of the member function it is used in, and unqualified lookup looks in class scope as usual. Additionally, `this` is either a pointer to the explicit object parameter or, in the case of deducing a derived type, one of its base class subobjects.
 
-## By-value explicit object parameters 
+## By-value explicit object parameters
 
 We think they are a logical extension of the mechanism, and would go a long way towards making member functions as powerful as inline friend functions, with the only difference being the call syntax. One implication of this is that the explicit object parameter would be move-constructed in cases where the object is an rvalue (or constructed in place for prvalues), allowing you to treat chained builder member functions that return a new object uniformly without having to resort to templates.
 
@@ -433,7 +433,7 @@ We are asking for suggestions for syntax for these function pointers. We give ou
 struct Z {
   // same as `int f(int a, int b) const&;`
   int f(Z const& this, int a, int b);
-  
+
   int g(Z this, int a, int b);
 };
 
@@ -941,7 +941,7 @@ template <typename Derived>
 struct add_postfix_increment {
     Derived operator++(int) {
         auto& self = static_cast<Derived&>(*this);
-    
+
         Derived tmp(self);
         ++self;
         return tmp;
@@ -1065,5 +1065,5 @@ Here, there is only one overload with everything deduced together, with either `
 The authors would like to thank:
 - Jonathan Wakely, for bringing us all together by pointing out we were writing the same paper, twice
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
-- Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
+- Chandler Carruth, Amy Worthington, Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
 - Guilherme Hartmann for his guidance with the implementation
