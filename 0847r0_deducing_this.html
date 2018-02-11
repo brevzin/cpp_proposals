@@ -1350,16 +1350,16 @@ struct call_wrapper {
     F f;
 
     template &lt;typename Self, typename... Args&gt;
-    auto operator()(Self&amp;&amp; this self, Args&amp;&amp;... )
-        -&gt; decltype(!invoke(forward&lt;Self&gt;(self).f, forward&lt;Args&gt;(args)...))
+    auto operator()(Self&amp;&amp; this, Args&amp;&amp;... args)
+        -&gt; decltype(!invoke(forward_like&lt;Self&gt;(f), forward&lt;Args&gt;(args)...))
     {
-        return !invoke(forward&lt;Self&gt;(self).f, forward&lt;Args&gt;(args)...);
+        return !invoke(forward_like&lt;Self&gt;(f), forward&lt;Args&gt;(args)...);
     }
 };
 
 template &lt;typename F&gt;
 auto not_fn(F&amp;&amp; f) {
-    return call_wrapper&lt;std::decay_t&lt;F&gt;&gt;{std::forward&lt;F&gt;(f)};
+    return call_wrapper&lt;decay_t&lt;F&gt;&gt;{forward&lt;F&gt;(f)};
 }
 
 not_fn(unfriendly{})(1); // ok
