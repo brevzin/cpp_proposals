@@ -665,7 +665,7 @@ class optional {
 </code></pre>
 <p>We believe that the ability to write <em>cv-ref qualifier</em>-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily.</p>
 <p>What follows is a description of how explicit object parameters affect all the important language constructs: name lookup, type deduction, overload resolution, and so forth.</p><a name="toc_2.1"></a><h3>2.1. Name lookup: candidate functions</h3>
-<p>Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to <em>cv</em> <code class="language-cpp">X</code> (where the reference and <em>cv</em> qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so will not be mentioned further.</p>
+<p>Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to <em>cv</em> <code class="language-cpp">X</code> (where the reference and <em>cv</em> qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so they will not be mentioned further.</p>
 <p>For non-static member functions with the new <strong>explicit</strong> object parameter, lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the <em>cv</em>- and <em>ref</em>-qualifiers of the member function, these are set by the parameter itself. The following examples illustrate this concept. Note that the explicit object parameter does not need to be named:</p><table style="width: 100%">
 <tr><th>C++17</th><th>With Explicit Object</th></tr>
 
@@ -781,7 +781,7 @@ struct D : B {
     double i = 3.14;
 };
 </code></pre>
-<p>Consider invoking each of these functions with an lvalue of type <code class="language-cpp">D</code>. We have no interest in changing template deduction rules, which means that <code class="language-cpp">Self</code> in each case will be <code class="language-cpp">D&amp;</code>. We have several options:</p>
+<p>Consider invoking each of these functions with an lvalue of type <code class="language-cpp">D</code>. We have no interest in changing template deduction rules, which means that <code class="language-cpp">Self</code> in each case will be <code class="language-cpp">D&amp;</code>. The design space consists of the following alternatives:</p>
 <ol>
 <li>
 <code class="language-cpp">this</code> is a <code class="language-cpp">B*</code> (non-<code class="language-cpp">const</code> because the explicit object parameter is non-<code class="language-cpp">const</code>), unqualified lookup looks in <code class="language-cpp">B</code>'s scope first. This means that <code class="language-cpp">f1</code> returns an <code class="language-cpp">int&amp;</code> (to <code class="language-cpp">B::i</code>) and <code class="language-cpp">f2</code> returns an <code class="language-cpp">int&amp;</code>. <code class="language-cpp">f3</code> is ill-formed, because <code class="language-cpp">std::forward&lt;D&amp;&gt;</code> takes a <code class="language-cpp">D&amp;</code> and we're passing in a <code class="language-cpp">B&amp;</code>, which is not a conversion that can be done implicitly. <code class="language-cpp">f4</code> returns a <code class="language-cpp">double&amp;</code> to <code class="language-cpp">D::i</code>, because while <code class="language-cpp">*this</code> is a <code class="language-cpp">B</code>, <code class="language-cpp">self</code> actually is the object parameter, hence is a <code class="language-cpp">D</code>.
@@ -848,7 +848,7 @@ static_assert(std::is_same_v&lt;decltype(&amp;Y::f), int (Y::*)(int, int) const 
 <p>All the member functions that take references already have a function pointer syntax - they are just alternate ways of writing functions we can already write.</p>
 <p>The only one that does not have such a syntax is the pass-by-value method, all others have pre-existing signatures that do just fine.</p>
 <p>We are asking for suggestions for syntax for these function pointers. We give our first pass here:</p><pre ><code class="language-cpp">struct Z {
-  // same as `int f(int a, int b) const&amp;;`
+  // same as int f(int a, int b) const&amp;;
   int f(Z const&amp; this, int a, int b);
 
   int g(Z this, int a, int b);
@@ -872,7 +872,7 @@ static_assert(std::is_same_v&lt;decltype(&amp;Z::g), int (*)(Z::, int, int)&gt;)
 <p>Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.</p>
 <p>Virtual member function templates are not allowed in the language today, and this paper does not propose a change from the current behavior for member functions with explicit object parameters either.</p><a name="toc_2.9"></a><h3>2.9. Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</h3>
 <p>No. Static member functions currently do not have an implicit <code class="language-cpp">this</code> parameter, and therefore have no reason to have an explicit one.</p><a name="toc_2.10"></a><h3>2.10. Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code> in lambdas</h3>
-<p><code class="language-cpp">this</code> just designates the explicit object parameter. It does not, in any way, change the meaning of <code class="language-cpp">this</code> in the body of the lambda.</p><table style="width: 100%">
+<p>In the function parameter list, <code class="language-cpp">this</code> just designates the explicit object parameter. It does not, in any way, change the meaning of <code class="language-cpp">this</code> in the body of the lambda.</p><table style="width: 100%">
 <tr><th>C++17</th><th>Proposed</th></tr>
 
 <tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {

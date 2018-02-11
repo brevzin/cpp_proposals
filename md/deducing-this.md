@@ -210,7 +210,7 @@ What follows is a description of how explicit object parameters affect all the i
 
 ## Name lookup: candidate functions
 
-Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so will not be mentioned further.
+Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so they will not be mentioned further.
 
 For non-static member functions with the new **explicit** object parameter, lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are set by the parameter itself. The following examples illustrate this concept. Note that the explicit object parameter does not need to be named:
 
@@ -345,7 +345,7 @@ struct D : B {
 };
 ```
 
-Consider invoking each of these functions with an lvalue of type `D`. We have no interest in changing template deduction rules, which means that `Self` in each case will be `D&`. We have several options:
+Consider invoking each of these functions with an lvalue of type `D`. We have no interest in changing template deduction rules, which means that `Self` in each case will be `D&`. The design space consists of the following alternatives:
 
  1. `this` is a `B*` (non-`const` because the explicit object parameter is non-`const`), unqualified lookup looks in `B`'s scope first. This means that `f1` returns an `int&` (to `B::i`) and `f2` returns an `int&`. `f3` is ill-formed, because `std::forward<D&>` takes a `D&` and we're passing in a `B&`, which is not a conversion that can be done implicitly. `f4` returns a `double&` to `D::i`, because while `*this` is a `B`, `self` actually is the object parameter, hence is a `D`.
  2. `this` is a `D*` (non-`const`), but unqualified lookup looks in `B`'s scope. This means that `f1` returns an `int&`, but `f2` returns a `double&`. `f3` and `f4` both return `double&`.
@@ -431,7 +431,7 @@ We are asking for suggestions for syntax for these function pointers. We give ou
 
 ```
 struct Z {
-  // same as `int f(int a, int b) const&;`
+  // same as int f(int a, int b) const&;
   int f(Z const& this, int a, int b);
 
   int g(Z this, int a, int b);
@@ -477,7 +477,7 @@ No. Static member functions currently do not have an implicit `this` parameter, 
 
 ## Interplays with capturing `[this]` and `[*this]` in lambdas
 
-`this` just designates the explicit object parameter. It does not, in any way, change the meaning of `this` in the body of the lambda.
+In the function parameter list, `this` just designates the explicit object parameter. It does not, in any way, change the meaning of `this` in the body of the lambda.
 
 <table>
 <tr><th>C++17</th><th>Proposed</th></tr>
@@ -513,7 +513,7 @@ struct X {
 </td></tr>
 </table>
 
-If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have a great potential for introducing hard-to-read code if they are at all changing the meaning of `this` in function bodies, especially in conjunction with this proposal.
+If other language features play with what `this` means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have great potential for introducing hard-to-read code if they are at all changing the meaning of `this` in function bodies, especially in conjunction with this proposal.
 
 ## Translating code to use explicit object parameters
 
