@@ -852,214 +852,30 @@ public:
     {
         this->_M_reset();
     }
+
+    template <typename U>
+    constexpr auto operator<=>(optional<U> const& rhs) const
+    -> decltype(compare_3way(**this, *rhs))
+    {
+        return has_value() && rhs.has_value()
+        ? compare_3way(**this, *rhs)
+        : has_value() <=> rhs.has_value();
+    }
+
+    template <typename U>
+    constexpr auto operator<=>(U const& rhs) const
+    -> decltype(compare_3way(**this, rhs))
+    {
+        return has_value()
+        ? compare_3way(**this, rhs)
+        : strong_ordering::less;
+    }
+
+    constexpr strong_ordering operator<=>(nullopt_t ) const
+    {
+        return has_value() ? strong_ordering::greater : strong_ordering::equal;
+    }
 };
-
-template<typename _Tp>
-using __optional_relop_t =
-enable_if_t<is_convertible<_Tp, bool>::value, bool>;
-
-// Comparisons between optional values.
-template<typename _Tp, typename _Up>
-constexpr auto
-operator==(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() == declval<_Up>())> {
-    return static_cast<bool>(__lhs) == static_cast<bool>(__rhs)
-    && (!__lhs || *__lhs == *__rhs);
-}
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator!=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() != declval<_Up>())> {
-    return static_cast<bool>(__lhs) != static_cast<bool>(__rhs)
-    || (static_cast<bool>(__lhs) && *__lhs != *__rhs);
-}
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() < declval<_Up>())> {
-    return static_cast<bool>(__rhs) && (!__lhs || *__lhs < *__rhs);
-}
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() > declval<_Up>())> {
-    return static_cast<bool>(__lhs) && (!__rhs || *__lhs > *__rhs);
-}
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Up>())> {
-    return !__lhs || (static_cast<bool>(__rhs) && *__lhs <= *__rhs);
-}
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Up>())> {
-    return !__rhs || (static_cast<bool>(__lhs) && *__lhs >= *__rhs);
-}
-
-// Comparisons with nullopt.
-template<typename _Tp>
-constexpr bool
-operator==(const optional<_Tp>& __lhs, nullopt_t) noexcept
-{
-    return !__lhs;
-}
-
-template<typename _Tp>
-constexpr bool
-operator==(nullopt_t, const optional<_Tp>& __rhs) noexcept
-{
-    return !__rhs;
-}
-
-template<typename _Tp>
-constexpr bool
-operator!=(const optional<_Tp>& __lhs, nullopt_t) noexcept
-{
-    return static_cast<bool>(__lhs);
-}
-
-template<typename _Tp>
-constexpr bool
-operator!=(nullopt_t, const optional<_Tp>& __rhs) noexcept
-{
-    return static_cast<bool>(__rhs);
-}
-
-template<typename _Tp>
-constexpr bool
-operator<(const optional<_Tp>& /* __lhs */, nullopt_t) noexcept
-{
-    return false;
-}
-
-template<typename _Tp>
-constexpr bool
-operator<(nullopt_t, const optional<_Tp>& __rhs) noexcept
-{
-    return static_cast<bool>(__rhs);
-}
-
-template<typename _Tp>
-constexpr bool
-operator>(const optional<_Tp>& __lhs, nullopt_t) noexcept
-{
-    return static_cast<bool>(__lhs);
-}
-
-template<typename _Tp>
-constexpr bool
-operator>(nullopt_t, const optional<_Tp>& /* __rhs */) noexcept
-{
-    return false;
-}
-
-template<typename _Tp>
-constexpr bool
-operator<=(const optional<_Tp>& __lhs, nullopt_t) noexcept
-{
-    return !__lhs;
-}
-
-template<typename _Tp>
-constexpr bool
-operator<=(nullopt_t, const optional<_Tp>& /* __rhs */) noexcept
-{
-    return true;
-}
-
-template<typename _Tp>
-constexpr bool
-operator>=(const optional<_Tp>& /* __lhs */, nullopt_t) noexcept
-{
-    return true;
-}
-
-template<typename _Tp>
-constexpr bool
-operator>=(nullopt_t, const optional<_Tp>& __rhs) noexcept
-{
-    return !__rhs;
-}
-
-// Comparisons with value type.
-template<typename _Tp, typename _Up>
-constexpr auto
-operator==(const optional<_Tp>& __lhs, const _Up& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() == declval<_Up>())>
-{ return __lhs && *__lhs == __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator==(const _Up& __lhs, const optional<_Tp>& __rhs)
--> __optional_relop_t<decltype(declval<_Up>() == declval<_Tp>())>
-{ return __rhs && __lhs == *__rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator!=(const optional<_Tp>& __lhs, const _Up& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() != declval<_Up>())>
-{ return !__lhs || *__lhs != __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator!=(const _Up& __lhs, const optional<_Tp>& __rhs)
--> __optional_relop_t<decltype(declval<_Up>() != declval<_Tp>())>
-{ return !__rhs || __lhs != *__rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<(const optional<_Tp>& __lhs, const _Up& __rhs)
-         -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Up>())>
-{ return !__lhs || *__lhs < __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<(const _Up& __lhs, const optional<_Tp>& __rhs)
-         -> __optional_relop_t<decltype(declval<_Up>() < declval<_Tp>())>
-{ return __rhs && __lhs < *__rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>(const optional<_Tp>& __lhs, const _Up& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() > declval<_Up>())>
-{ return __lhs && *__lhs > __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>(const _Up& __lhs, const optional<_Tp>& __rhs)
--> __optional_relop_t<decltype(declval<_Up>() > declval<_Tp>())>
-{ return !__rhs || __lhs > *__rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<=(const optional<_Tp>& __lhs, const _Up& __rhs)
-         -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Up>())>
-{ return !__lhs || *__lhs <= __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator<=(const _Up& __lhs, const optional<_Tp>& __rhs)
-         -> __optional_relop_t<decltype(declval<_Up>() <= declval<_Tp>())>
-{ return __rhs && __lhs <= *__rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>=(const optional<_Tp>& __lhs, const _Up& __rhs)
--> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Up>())>
-{ return __lhs && *__lhs >= __rhs; }
-
-template<typename _Tp, typename _Up>
-constexpr auto
-operator>=(const _Up& __lhs, const optional<_Tp>& __rhs)
--> __optional_relop_t<decltype(declval<_Up>() >= declval<_Tp>())>
-{ return !__rhs || __lhs >= *__rhs; }
 
 // Swap and creation functions.
 
