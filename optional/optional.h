@@ -129,29 +129,19 @@ public:
               enable_if_t<__and_<
                               __not_<is_same<optional<_Tp>, decay_t<_Up>>>,
                                       __not_<is_same<in_place_t, decay_t<_Up>>>,
-                                              is_constructible<_Tp, _Up&&>,
-                                              is_convertible<_Up&&, _Tp>
-                                              >::value, bool> = true>
-                                     constexpr optional(_Up&& __t)
-                                         : optional(std::in_place, std::forward<_Up>(__t)) { }
-
-    template <typename _Up = _Tp,
-              enable_if_t<__and_<
-                              __not_<is_same<optional<_Tp>, decay_t<_Up>>>,
-                                      __not_<is_same<in_place_t, decay_t<_Up>>>,
-                                              is_constructible<_Tp, _Up&&>,
-                                              __not_<is_convertible<_Up&&, _Tp>>
+                                              is_constructible<_Tp, _Up&&>
                                               >::value, bool> = false>
-                                     explicit constexpr optional(_Up&& __t)
+                                     explicit(!is_convertible_v<_Up&&, _Tp>)
+                                     constexpr optional(_Up&& __t)
                                          : optional(std::in_place, std::forward<_Up>(__t)) { }
 
     template <typename _Up,
               enable_if_t<__and_<
                               __not_<is_same<_Tp, _Up>>,
                               is_constructible<_Tp, const _Up&>,
-                              is_convertible<const _Up&, _Tp>,
                               __not_<__converts_from_optional<_Tp, _Up>>
-                              >::value, bool> = true>
+                              >::value, bool> = false>
+    explicit(!is_convertible_v<_Up const&, _Tp>)
     constexpr optional(const optional<_Up>& __t)
     {
         if (__t) {
@@ -162,39 +152,11 @@ public:
     template <typename _Up,
               enable_if_t<__and_<
                               __not_<is_same<_Tp, _Up>>,
-                              is_constructible<_Tp, const _Up&>,
-                              __not_<is_convertible<const _Up&, _Tp>>,
+                              is_constructible<_Tp, _Up&&>,
                               __not_<__converts_from_optional<_Tp, _Up>>
                               >::value, bool> = false>
-    explicit constexpr optional(const optional<_Up>& __t)
-    {
-        if (__t) {
-            emplace(*__t);
-        }
-    }
-
-    template <typename _Up,
-              enable_if_t<__and_<
-                              __not_<is_same<_Tp, _Up>>,
-                              is_constructible<_Tp, _Up&&>,
-                              is_convertible<_Up&&, _Tp>,
-                              __not_<__converts_from_optional<_Tp, _Up>>
-                              >::value, bool> = true>
+    explicit(!is_convertible_v<_Up&&, _Tp>)
     constexpr optional(optional<_Up>&& __t)
-    {
-        if (__t) {
-            emplace(std::move(*__t));
-        }
-    }
-
-    template <typename _Up,
-              enable_if_t<__and_<
-                              __not_<is_same<_Tp, _Up>>,
-                              is_constructible<_Tp, _Up&&>,
-                              __not_<is_convertible<_Up&&, _Tp>>,
-                              __not_<__converts_from_optional<_Tp, _Up>>
-                              >::value, bool> = false>
-    explicit constexpr optional(optional<_Up>&& __t)
     {
         if (__t) {
             emplace(std::move(*__t));
