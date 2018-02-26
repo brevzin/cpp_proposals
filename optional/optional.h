@@ -292,36 +292,17 @@ public:
     }
 
     // Observers.
-    constexpr const _Tp*
-    operator->() const
+    template <typename _Self>
+    constexpr auto operator->(_Self&& this)
     {
-        return std::__addressof(_M_payload);
+        return std::__addressof(std::forward_like<_Self>(_M_payload);
     }
 
-    _Tp*
-    operator->()
+    template <typename _Self>
+    constexpr auto&& operator*(_Self&& this)
     {
-        return std::__addressof(_M_payload);
-    }
-
-    constexpr const _Tp&
-    operator*() const&
-    {
-        return _M_payload;
-    }
-
-    constexpr _Tp&
-    operator*()&
-    { return _M_payload; }
-
-    constexpr _Tp&&
-    operator*()&&
-    { return std::move(_M_payload); }
-
-    constexpr const _Tp&&
-    operator*() const&&
-    {
-        return std::move(_M_payload);
+        __glibcxx_assert(_M_engaged);
+        return std::forward_like<_Self>(_M_payload);
     }
 
     constexpr explicit operator bool() const noexcept
@@ -334,62 +315,27 @@ public:
         return _M_engaged;
     }
 
-    constexpr const _Tp&
-    value() const&
+    template <typename _Self>
+    constexpr auto&& value(_Self&& this)
     {
         return _M_engaged
-               ?  _M_payload
-               : (__throw_bad_optional_access(),
-                  _M_payload);
-    }
-
-    constexpr _Tp&
-    value()& {
-        return _M_engaged
-        ?  _M_payload
+        ? std::forward_like<_Self>(_M_payload)
         : (__throw_bad_optional_access(),
-        _M_payload);
+           std::forward_like<_Self>(_M_payload));
     }
 
-    constexpr _Tp&&
-    value()&& {
-        return _M_engaged
-        ?  std::move(_M_payload)
-        : (__throw_bad_optional_access(),
-        std::move(_M_payload));
-    }
-
-    constexpr const _Tp&&
-    value() const&&
-    {
-        return _M_engaged
-               ?  std::move(_M_payload)
-               : (__throw_bad_optional_access(),
-                  std::move(_M_payload));
-    }
-
-    template<typename _Up>
+    template <typename _Self, typename _Up>
     constexpr _Tp
-    value_or(_Up&& __u) const&
+    value_or(_Self&& this, _Up&& __u) const&
     {
-        static_assert(is_copy_constructible_v<_Tp>);
+        static_assert(is_constructible_v<_Tp, std::like_t<Self, _Tp>>);
         static_assert(is_convertible_v<_Up&&, _Tp>);
 
         return _M_engaged
-               ? _M_payload
+               ? std::forward_like<_Self>(_M_payload)
                : static_cast<_Tp>(std::forward<_Up>(__u));
     }
 
-    template<typename _Up>
-    _Tp
-    value_or(_Up&& __u) && {
-        static_assert(is_move_constructible_v<_Tp>);
-        static_assert(is_convertible_v<_Up&&, _Tp>);
-
-        return _M_engaged
-        ? std::move(_M_payload)
-        : static_cast<_Tp>(std::forward<_Up>(__u));
-    }
     void reset() noexcept
     {
         if (_M_engaged) {
