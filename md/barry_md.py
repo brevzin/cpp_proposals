@@ -117,7 +117,7 @@ def process(in_file, out_file, style_file):
             writer.write('<address align=right>\n')
             writer.write('Document number: {}R{} <br />\n'.format(
                 header['Shortname'][0].strip(), header['Level'][0].strip()))
-            writer.write('Date: 2017-10-24 <br />\n')
+            writer.write('Date: {}<br />\n'.format(header['Date'][0]))
             writer.write('Audience: {} <br />\n'.format(header['Audience'][0]))
             writer.write('Reply-To: ')
             for editor in header['Editor']:

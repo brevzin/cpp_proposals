@@ -1,0 +1,1351 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title> Deducing this
+</title>
+<style type="text/css">html {
+	position: relative;
+	max-width: 1024px;
+	height: 100%;
+}
+body {
+	font-family: Helvetica, arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: white;
+	padding: 30px;
+}
+body>*:first-child {
+	margin-top: 0 !important;
+}
+body>*:last-child {
+	margin-bottom: 0 !important;
+}
+a {
+	color: #4183C4;
+}
+a.absent {
+	color: #cc0000;
+}
+a.anchor {
+	display: block;
+	padding-left: 30px;
+	margin-left: -30px;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 20px 0 10px;
+	padding: 0;
+	font-weight: bold;
+	-webkit-font-smoothing: antialiased;
+	cursor: text;
+	position: relative;
+}
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+	text-decoration: none;
+}
+h1 tt, h1 code {
+	font-size: inherit;
+}
+h2 tt, h2 code {
+	font-size: inherit;
+}
+h3 tt, h3 code {
+	font-size: inherit;
+}
+h4 tt, h4 code {
+	font-size: inherit;
+}
+h5 tt, h5 code {
+	font-size: inherit;
+}
+h6 tt, h6 code {
+	font-size: inherit;
+}
+h1 {
+	font-size: 28px;
+	color: black;
+}
+h2 {
+	font-size: 24px;
+	border-bottom: 1px solid #cccccc;
+	color: black;
+}
+h3 {
+	font-size: 18px;
+}
+h4 {
+	font-size: 16px;
+}
+h5 {
+	font-size: 14px;
+}
+h6 {
+	color: #777777;
+	font-size: 14px;
+}
+p, blockquote, ol, dl, li, table, pre {
+	margin: 15px 0;
+}
+hr {
+	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+	border: 0 none;
+	color: #cccccc;
+	height: 4px;
+	padding: 0;
+}
+body>h2:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child+h2 {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+	margin-top: 0;
+	padding-top: 0;
+}
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+	margin-top: 0;
+}
+li p.first {
+	display: inline-block;
+}
+li {
+	margin: 0;
+}
+ol {
+	padding-left: 30px;
+    margin: 5px;
+    counter-reset: item;
+}
+ol > li {
+    counter-increment: item;
+}
+ol ol > li {
+    display: block;
+}
+ol ol > li:before {
+    content: counters(item, ".") ". ";
+    margin-left: -30px;
+}
+ul :first-child, ol :first-child {
+	margin-top: 0;
+}
+ul ul { 
+    margin-left: -15px;
+}
+dl {
+	padding: 0;
+}
+dl dt {
+	font-size: 14px;
+	font-weight: bold;
+	font-style: italic;
+	padding: 0;
+	margin: 15px 0 5px;
+}
+dl dt:first-child {
+	padding: 0;
+}
+dl dt> :first-child {
+	margin-top: 0;
+}
+dl dt> :last-child {
+	margin-bottom: 0;
+}
+dl dd {
+	margin: 0 0 15px;
+	padding: 0 15px;
+}
+dl dd> :first-child {
+	margin-top: 0;
+}
+dl dd> :last-child {
+	margin-bottom: 0;
+}
+blockquote {
+	border-left: 4px solid #dddddd;
+	padding: 0 15px;
+	color: #777777;
+}
+blockquote> :first-child {
+	margin-top: 0;
+}
+blockquote> :last-child {
+	margin-bottom: 0;
+}
+table {
+	padding: 0;
+	border-collapse: collapse;
+}
+table tr {
+	border-top: 1px solid #cccccc;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
+table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+table tr th {
+	font-weight: bold;
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr td {
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr th :first-child, table tr td :first-child {
+	margin-top: 0;
+}
+table tr th :last-child, table tr td :last-child {
+	margin-bottom: 0;
+}
+td {
+	vertical-align: top;
+}
+img {
+	max-width: 100%;
+}
+span.frame {
+	display: block;
+	overflow: hidden;
+}
+span.frame>span {
+	border: 1px solid #dddddd;
+	display: block;
+	float: left;
+	overflow: hidden;
+	margin: 13px 0 0;
+	padding: 7px;
+	width: auto;
+}
+span.frame span img {
+	display: block;
+	float: left;
+}
+span.frame span span {
+	clear: both;
+	color: #333333;
+	display: block;
+	padding: 5px 0 0;
+}
+span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-center>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: center;
+}
+span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px 0 0;
+	text-align: right;
+}
+span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+span.float-left {
+	display: block;
+	margin-right: 13px;
+	overflow: hidden;
+	float: left;
+}
+span.float-left span {
+	margin: 13px 0 0;
+}
+span.float-right {
+	display: block;
+	margin-left: 13px;
+	overflow: hidden;
+	float: right;
+}
+span.float-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: right;
+}
+code, tt {
+	margin: 0 2px;
+	padding: 0 5px;
+	white-space: nowrap;
+	border: 1px solid #eaeaea;
+	background-color: #f8f8f8;
+	border-radius: 3px;
+}
+pre code {
+	margin: 0;
+	padding: 0;
+	white-space: pre;
+	border: none;
+	background: transparent;
+}
+.highlight pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+}
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 6px 10px;
+	border-radius: 3px;
+}
+pre code, pre tt {
+	background-color: transparent;
+	border: none;
+}
+sup {
+	font-size: 0.83em;
+	vertical-align: super;
+	line-height: 0;
+}
+kbd {
+	display: inline-block;
+	padding: 3px 5px;
+	font-size: 11px;
+	line-height: 10px;
+	color: #555;
+	vertical-align: middle;
+	background-color: #fcfcfc;
+	border: solid 1px #ccc;
+	border-bottom-color: #bbb;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #bbb
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+ins {
+	color: #00A000
+}
+del {
+	color: #A00000
+}
+</style><style type="text/css">
+/**
+	* prism.js default theme for JavaScript, CSS and HTML
+	* Based on dabblet (http://dabblet.com)
+	* @author Lea Verou
+	*/
+
+code[class*="language-"], pre[class*="language-"] {
+	color: black;
+	background: none;
+	text-shadow: 0 1px white;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 11px;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection, code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection, code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+@media print {
+	code[class*="language-"], pre[class*="language-"] {
+		text-shadow: none;
+	}
+}
+
+/* Code blocks */
+
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+:not(pre)>code[class*="language-"], pre[class*="language-"] {
+	background: #f8f8f8;
+}
+
+/* Inline code */
+
+:not(pre)>code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+.token.comment, .token.prolog, .token.doctype, .token.cdata {
+	color: slategray;
+}
+.token.punctuation {
+	color: #999;
+}
+.namespace {
+	opacity: .7;
+}
+.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted {
+	color: #905;
+}
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted {
+	color: #690;
+}
+.token.operator {
+	color: #a67f59;
+}
+.token.entity, .token.url, .language-css .token.string, .style .token.string {
+	color: #a67f59;
+	background: hsla(0, 0%, 100%, .5);
+}
+.token.atrule, .token.attr-value, .token.keyword {
+	color: #07a;
+}
+.token.function {
+	color: #DD4A68;
+}
+.token.regex, .token.important, .token.variable {
+	color: #e90;
+}
+.token.important, .token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+.token.entity {
+	cursor: help;
+}
+</style>
+
+<script type="text/javascript">
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-(\w+)\b/i,t=0,n=_self.Prism={util:{encode:function(e){return e instanceof a?new a(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e){var t=n.util.type(e);switch(t){case"Object":var a={};for(var r in e)e.hasOwnProperty(r)&&(a[r]=n.util.clone(e[r]));return a;case"Array":return e.map&&e.map(function(e){return n.util.clone(e)})}return e}},languages:{extend:function(e,t){var a=n.util.clone(n.languages[e]);for(var r in t)a[r]=t[r];return a},insertBefore:function(e,t,a,r){r=r||n.languages;var l=r[e];if(2==arguments.length){a=arguments[1];for(var i in a)a.hasOwnProperty(i)&&(l[i]=a[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in a)a.hasOwnProperty(i)&&(o[i]=a[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===r[e]&&t!=e&&(this[t]=o)}),r[e]=o},DFS:function(e,t,a,r){r=r||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],a||l),"Object"!==n.util.type(e[l])||r[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||r[n.util.objId(e[l])]||(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,r)):(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,r)))}},plugins:{},highlightAll:function(e,t){var a={callback:t,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var r,l=a.elements||document.querySelectorAll(a.selector),i=0;r=l[i++];)n.highlightElement(r,e===!0,a.callback)},highlightElement:function(t,a,r){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1],i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l);var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(!s||!i)return n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),a&&_self.Worker){var c=new Worker(n.filename);c.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},c.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,r){var l=n.tokenize(e,t);return a.stringify(n.util.encode(l),r)},tokenize:function(e,t){var a=n.Token,r=[e],l=t.rest;if(l){for(var i in l)t[i]=l[i];delete t.rest}e:for(var i in t)if(t.hasOwnProperty(i)&&t[i]){var o=t[i];o="Array"===n.util.type(o)?o:[o];for(var s=0;s<o.length;++s){var u=o[s],c=u.inside,g=!!u.lookbehind,h=!!u.greedy,f=0,d=u.alias;u=u.pattern||u;for(var p=0;p<r.length;p++){var m=r[p];if(r.length>e.length)break e;if(!(m instanceof a)){u.lastIndex=0;var y=u.exec(m),v=1;if(!y&&h&&p!=r.length-1){var b=r[p+1].matchedStr||r[p+1],k=m+b;if(p<r.length-2&&(k+=r[p+2].matchedStr||r[p+2]),u.lastIndex=0,y=u.exec(k),!y)continue;var w=y.index+(g?y[1].length:0);if(w>=m.length)continue;var _=y.index+y[0].length,P=m.length+b.length;if(v=3,P>=_){if(r[p+1].greedy)continue;v=2,k=k.slice(0,P)}m=k}if(y){g&&(f=y[1].length);var w=y.index+f,y=y[0].slice(f),_=w+y.length,S=m.slice(0,w),O=m.slice(_),j=[p,v];S&&j.push(S);var A=new a(i,c?n.tokenize(y,c):y,d,y,h);j.push(A),O&&j.push(O),Array.prototype.splice.apply(r,j)}}}}}return r},hooks:{all:{},add:function(e,t){var a=n.hooks.all;a[e]=a[e]||[],a[e].push(t)},run:function(e,t){var a=n.hooks.all[e];if(a&&a.length)for(var r,l=0;r=a[l++];)r(t)}}},a=n.Token=function(e,t,n,a,r){this.type=e,this.content=t,this.alias=n,this.matchedStr=a||null,this.greedy=!!r};if(a.stringify=function(e,t,r){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return a.stringify(n,t,e)}).join("");var l={type:e.type,content:a.stringify(e.content,t,r),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:r};if("comment"==l.type&&(l.attributes.spellcheck="true"),e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o="";for(var s in l.attributes)o+=(o?" ":"")+s+'="'+(l.attributes[s]||"")+'"';return"<"+l.tag+' class="'+l.classes.join(" ")+'" '+o+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(_self.addEventListener("message",function(e){var t=JSON.parse(e.data),a=t.language,r=t.code,l=t.immediateClose;_self.postMessage(n.highlight(r,n.languages[a],a)),l&&_self.close()},!1),_self.Prism):_self.Prism;var r=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return r&&(n.filename=r.src,document.addEventListener&&!r.hasAttribute("data-manual")&&document.addEventListener("DOMContentLoaded",n.highlightAll)),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+</script>
+
+<script type="text/javascript">
+Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\w\W]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:{pattern:/(["'])(\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[a-z0-9_\.\\]+/i,lookbehind:!0,inside:{punctuation:/(\.|\\)/}},keyword:/\b(if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(true|false)\b/,"function":/[a-z0-9_]+(?=\()/i,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)\b/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
+</script>
+
+<script type="text/javascript">
+Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/\-[>-]?|\+\+?|!=?|<<?=?|>>?=?|==?|&&?|\|?\||[~^%?*\/]/,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)[ful]*\b/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+([^\r\n\\]|\\.|\\(?:\r\n?|\n))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(<.+?>|("|')(\\?.)+?\3)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(define|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
+</script>
+
+<script type="text/javascript">
+Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(true|false)\b/,operator:/[-+]{1,2}|!=?|<{1,2}=?|>{1,2}=?|\->|:{1,2}|={1,2}|\^|~|%|&{1,2}|\|?\||\?|\*|\/|\b(and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)[a-z0-9_]+/i,lookbehind:!0}});
+</script>
+
+<script type="text/javascript">
+$('tblcode').replaceWith(function(){
+    return $("<pre style=\"background:transparent;border:none\"><code class=\"language-cpp\">" + $(this).text() + "</code></pre>");
+});
+</script>
+</head>
+<body>
+<address align=right>
+Document number: P0847R1 <br />
+Date:  2018-03-05
+<br />
+Audience:  EWG
+ <br />
+Reply-To:  Gašper Ažman &lt;gasper dot azman at gmail dot com><br />
+ Ben Deane &lt;ben at elbeno dot com><br />
+ Barry Revzin &lt;barry dot revzin at gmail dot com><br />
+ Simon Brand &lt;simon at codeplay dot com><br />
+</address>
+<hr/><h1 align=center> Deducing this
+</h1>
+<h2>Contents</h2>
+<ol><li><a href="#toc_1">Motivation</a></li><li><a href="#toc_2">Proposal</a><ol><li><a href="#toc_2.1">Name lookup: candidate functions</a></li><li><a href="#toc_2.2">Type deduction</a></li><li><a href="#toc_2.3">Name lookup: within member functions with explicit object parameters</a></li><li><a href="#toc_2.4">Writing the function pointer types for such functions</a></li><li><a href="#toc_2.5">Teachability Implications</a></li><li><a href="#toc_2.6">ABI implications for <code class="language-cpp">std::function</code> and related</a></li><li><a href="#toc_2.7"><code class="language-cpp">virtual</code> and <code class="language-cpp">this</code> as value</a></li><li><a href="#toc_2.8">Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</a></li><li><a href="#toc_2.9">Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code> in lambdas</a></li><li><a href="#toc_2.10">Translating code to use explicit object parameters</a></li><li><a href="#toc_2.11">Alternative syntax</a></li><li><a href="#toc_2.12">Unified Function Call Syntax</a></li></ol></li><li><a href="#toc_3">Real-World Examples</a><ol><li><a href="#toc_3.1">Deduplicating Code</a></li><li><a href="#toc_3.2">Recursive Lambdas</a></li></li><li><a href="#toc_3.3">CRTP, without the C, R, or even T</a></li><li><a href="#toc_3.4">SFINAE-friendly callables</a></li></ol></li><li><a href="#toc_4">History</a></li><li><a href="#toc_5">Acknowledgements</a></li></ol>
+<a name="toc_1"></a><h2>1. Motivation</h2>
+<p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="language-cpp">const</code> and non-<code class="language-cpp">const</code> overload of a particular member (Of course it was possible to also want <code class="language-cpp">volatile</code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++", Item 3:</p><pre ><code class="language-cpp">class TextBlock {
+public:
+  const char&amp; operator[](std::size_t position) const {
+    // ...
+    return text[position];
+  }
+
+  char&amp; operator[](std::size_t position) {
+    return const_cast&lt;char&amp;&gt;(
+      static_cast&lt;const TextBlock&amp;&gt;(*this)[position]
+    );
+  }
+  // ...
+};
+</code></pre>
+<p>Arguably, neither the duplication or the delegation via <code class="language-cpp">const_cast</code> are great solutions, but they work.</p>
+<p>In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: <code class="language-cpp">&amp;</code>, <code class="language-cpp">const&amp;</code>, <code class="language-cpp">&amp;&amp;</code>, or <code class="language-cpp">const&amp;&amp;</code>. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for <code class="language-cpp">optional&lt;T&gt;::value()</code>. The way to implement it would be something like:</p><table style="width: 100%">
+<tr><th>Quadruplication</th><th>Delegation to 4th</th><th>Delegation to helper</th></tr>
+
+<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    constexpr T&amp; value() &amp; {
+        if (has_value()) {
+            return this-&gt;m_value;
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr const T&amp; value() const&amp; {
+        if (has_value()) {
+            return this-&gt;m_value;
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr T&amp;&amp; value() &amp;&amp; {
+        if (has_value()) {
+            return std::move(this-&gt;m_value);
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
+        if (has_value()) {
+            return std::move(this-&gt;m_value);
+        }
+        throw bad_optional_access();
+    }
+    // ...
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    constexpr T&amp; value() &amp; {
+        return const_cast&lt;T&amp;&gt;(
+            static_cast&lt;optional const&amp;&gt;(
+                *this).value());
+    }
+
+    constexpr const T&amp; value() const&amp; {
+        if (has_value()) {
+            return this-&gt;m_value;
+        }
+        throw bad_optional_access();
+    }
+
+    constexpr T&amp;&amp; value() &amp;&amp; {
+        return const_cast&lt;T&amp;&amp;&gt;(
+            static_cast&lt;optional const&amp;&gt;(
+                *this).value());
+    }
+
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
+        return static_cast&lt;const T&amp;&amp;&gt;(
+            value());
+    }
+    // ...
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    constexpr T&amp; value() &amp; {
+        return value_impl(*this);
+    }
+
+    constexpr const T&amp; value() const&amp; {
+        return value_impl(*this);
+    }
+
+    constexpr T&amp;&amp; value() &amp;&amp; {
+        return value_impl(std::move(*this));
+    }
+
+    constexpr const T&amp;&amp;
+    value() const&amp;&amp; {
+        return value_impl(std::move(*this));
+    }
+
+private:
+    template &lt;typename Opt&gt;
+    static decltype(auto)
+    value_impl(Opt&amp;&amp; opt) {
+        if (!opt.has_value()) {
+            throw bad_optional_access();
+        }
+        return std::forward&lt;Opt&gt;(opt).m_value;
+    }
+
+
+    // ...
+};
+</code></pre>
+<p></td></tr></p></table>
+<p>It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite. Except we can't really. We <em>have</em> to implement it this way. It seems like we should be able to abstract away the qualifiers. And we can... sort of. As a non-member function, we simply don't have this problem:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    template &lt;typename Opt&gt;
+    friend decltype(auto) value(Opt&amp;&amp; o) {
+        if (o.has_value()) {
+            return std::forward&lt;Opt&gt;(o).m_value;
+        }
+        throw bad_optional_access();
+    }
+    // ...
+};
+</code></pre>
+<p>This is great - it's just one function, that handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.</p>
+<p>There are many, many cases in code-bases where we need two or four overloads of the same member function for different <code class="language-cpp">const</code>- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.</p><a name="toc_2"></a><h2>2. Proposal</h2>
+<p>We propose a new way of declaring a member function that will allow for deducing the type and value category of the class instance parameter, while still being invocable as a member function. We introduce a new kind of parameter that can be provided as the first parameter to any member function: an explicit object parameter. The purpose of this parameter is to bind to the implicit object, allowing it to be deduced.</p>
+<p>An explicit object parameter shall be of the form <code class="language-cpp">this T [const] [volatile] [&amp;|&amp;&amp;] &lt;identifier&gt;</code>, where <code class="language-cpp">T</code> follows the normal rules of type names (e.g. for generic lambdas, it can be <code class="language-cpp">auto</code>), except that the parameter must have reference type. Member functions with explicit object parameters cannot be <code class="language-cpp">static</code> or have <em>cv</em>- or <em>ref</em>-qualifiers.</p>
+<p>The explicit object parameter can only be the first parameter of a function. It cannot be used in constructors or destructors.</p>
+<p>This is a strict extension to the language; all existing syntax remains valid.</p>
+<p>For the purposes of this proposal, we assume the existence of two new library functions: a metafunction named <code class="language-cpp">like</code> which applies the <em>cv</em> and <em>ref</em> qualifiers from its first type argument onto its second (such that <code class="language-cpp">like_t&lt;int&amp;, double&gt;</code> is <code class="language-cpp">double&amp;</code>, <code class="language-cpp">like_t&lt;X const&amp;&amp;, Y&gt;</code> is <code class="language-cpp">Y const&amp;&amp;</code>, etc.), and a function template named <code class="language-cpp">forward_like</code> which allows you to forward based on the value category of an unrelated type (<code class="language-cpp">forward_like&lt;T&gt;(u)</code> is short-hand for <code class="language-cpp">forward&lt;like_t&lt;T, U&gt;&gt;(u)</code>). Sample implementations of both can be seen <a href="https://github.com/atomgalaxy/isocpp-template-this/blob/master/forward_like.cpp">here</a>.</p>
+<p>With this extension, the example from above can be written like so:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+    // ...
+    template &lt;typename Self&gt;
+    decltype(auto) value(this Self&amp;&amp;) {
+        if (o.has_value()) {
+            return forward_like&lt;Self&gt;(*this).m_value;
+        }
+        throw bad_optional_access();
+    }
+    // ...
+};
+</code></pre>
+<p>We believe that the ability to write <em>cv-ref qualifier</em>-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily.</p>
+<p>What follows is a description of how explicit object parameters affect all the important language constructs: name lookup, type deduction, overload resolution, and so forth.</p><a name="toc_2.1"></a><h3>2.1. Name lookup: candidate functions</h3>
+<p>Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to <em>cv</em> <code class="language-cpp">X</code> (where the reference and <em>cv</em> qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. For static member functions, the implicit object parameter is effectively discarded, so they will not be mentioned further.</p>
+<p>For non-static member functions with the new <strong>explicit</strong> object parameter, lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the <em>cv</em>- and <em>ref</em>-qualifiers of the member function, these are set by the parameter itself. The following examples illustrate this concept. Note that the explicit object parameter does not need to be named:</p><table style="width: 100%">
+<tr><th>C++17</th><th>With Explicit Object</th></tr>
+
+<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    // implicit object has type X&amp;
+    void foo();
+
+    // implicit object has type X const&amp;
+    void foo() const;
+
+    // implicit object has type X&amp;&amp;
+    void bar() &amp;&amp;;
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    // explicit object, named self, has type X&amp;
+    void ex_foo(this X&amp; self);
+
+    // explicit object, named self, has type X const&amp;
+    void ex_foo(this X const&amp; self);
+
+    // explicit object, unnamed, has type X&amp;&amp;
+    void ex_bar(this X&amp;&amp;);
+};
+</code></pre>
+</td>
+
+</tr></table>
+<p>The overload resolution rules for this new set of candidate functions remains unchanged - we're simply being explicit rather than implicit about the object parameter. Given a call to <code class="language-cpp">x.ex_foo()</code>, overload resolution would select the first <code class="language-cpp">ex_foo()</code> overload if <code class="language-cpp">x</code> isn't <code class="language-cpp">const</code> and the second if it is.</p>
+<p>Since the first parameter in member functions that have an explicit object parameter binds to the class object on which the member function is being invoked, the first provided argument is used to initialize the second function parameter, if any:</p><pre ><code class="language-cpp">struct C {
+    int get(this C const&amp; self, int i);
+};
+
+C c;
+c.get(4); // self is a C const&amp;, initialized to c
+          // i is initialized with 4
+</code></pre>
+<a name="toc_2.2"></a><h3>2.2. Type deduction</h3>
+<p>One of the main motivations of this proposal is to deduce the <em>cv</em>-qualifiers and value category of the class object, so the explicit object parameter needs to be deducible. We do not propose any change in the template deduction rules for member functions with explicit object parameters - it will just be deduced from the class object the same way as any other function parameter:</p><pre ><code class="language-cpp">struct X {
+    template &lt;typename Self&gt;
+    void foo(this Self&amp;&amp; self, int i);
+};
+
+X x;
+x.foo(4); // Self deduces as X&amp;
+std::move(x).foo(2); // Self deduces as X
+</code></pre>
+<p>Since deduction rules do not change, and the explicit object parameter is deduced from the object the function is called on, this has the interesting effect of possibly deducing derived types, which can best be illustrated by the following example:</p><pre ><code class="language-cpp">struct B {
+    int i = 0;
+
+    template &lt;typename Self&gt;
+    auto&amp;&amp; get(this Self&amp;&amp; self) {
+        // NB: specifically self.i, not just i or this-&gt;i
+        return self.i;
+    }
+};
+
+struct D : B {
+    // shadows B::i
+    double i = 3.14;
+};
+
+B b{};
+B const cb{};
+D d{};
+
+b.foo();            // #1
+cb.foo();           // #2
+d.foo();            // #3
+std::move(d).foo(); // #4
+</code></pre>
+<p>The proposed behavior of these calls is:</p>
+<ol>
+<li>
+<code class="language-cpp">Self</code> is deduced as <code class="language-cpp">B&amp;</code>, this call returns an <code class="language-cpp">int&amp;</code> to <code class="language-cpp">B::i</code>
+</li>
+<li>
+<code class="language-cpp">Self</code> is deduced as <code class="language-cpp">B const&amp;</code>, this calls returns an <code class="language-cpp">int const&amp;</code> to <code class="language-cpp">B::i</code>
+</li>
+<li>
+<code class="language-cpp">Self</code> is deduced as <code class="language-cpp">D&amp;</code>, this call returns a <code class="language-cpp">double&amp;</code> to <code class="language-cpp">D::i</code>
+</li>
+<li>
+<code class="language-cpp">Self</code> is deduced as <code class="language-cpp">D</code>, this call returns a <code class="language-cpp">double&amp;&amp;</code> to <code class="language-cpp">D::i</code>
+</li>
+</ol>
+<p>When we deduce the object parameter, we don't just deduce the <em>cv</em>- and <em>ref</em>-qualifiers. We may also get a derived type. This follows from the normal template deduction rules. In <code class="language-cpp">#3</code>, for instance, the object parameter is an lvalue of type <code class="language-cpp">D</code>, so <code class="language-cpp">Self</code> deduces as <code class="language-cpp">D&amp;</code>.</p><a name="toc_2.3"></a><h3>2.3. Name lookup: within member functions with explicit object parameters</h3>
+<p>So far, we've only considered how member functions with explicit object parameters get found with name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave. Consider a slightly expanded version of the previous example:</p><pre ><code class="language-cpp">struct B {
+    int i = 0;
+
+    template &lt;typename Self&gt;
+    auto&amp;&amp; f1(this Self&amp;&amp; ) { return i; }
+
+    template &lt;typename Self&gt;
+    auto&amp;&amp; f2(this Self&amp;&amp; ) { return this-&gt;i; }
+
+    template &lt;typename Self&gt;
+    auto&amp;&amp; f3(this Self&amp;&amp; ) { return std::forward&lt;Self&gt;(*this).i; }
+
+    template &lt;typename Self&gt;
+    auto&amp;&amp; f4(this Self&amp;&amp; self) { return std::forward&lt;Self&gt;(self).i; }
+};
+
+struct D : B {
+    double i = 3.14;
+};
+</code></pre>
+<p>Consider invoking each of these functions with an lvalue of type <code class="language-cpp">D</code>. We have no interest in changing template deduction rules, which means that <code class="language-cpp">Self</code> in each case will be <code class="language-cpp">D&amp;</code>. The design space consists of the following alternatives:</p>
+<ol>
+<li>
+<code class="language-cpp">this</code> is a <code class="language-cpp">B*</code> (non-<code class="language-cpp">const</code> because the explicit object parameter is non-<code class="language-cpp">const</code>), unqualified lookup looks in <code class="language-cpp">B</code>'s scope first. This means that <code class="language-cpp">f1</code> returns an <code class="language-cpp">int&amp;</code> (to <code class="language-cpp">B::i</code>) and <code class="language-cpp">f2</code> returns an <code class="language-cpp">int&amp;</code>. <code class="language-cpp">f3</code> is ill-formed, because <code class="language-cpp">std::forward&lt;D&amp;&gt;</code> takes a <code class="language-cpp">D&amp;</code> and we're passing in a <code class="language-cpp">B&amp;</code>, which is not a conversion that can be done implicitly. <code class="language-cpp">f4</code> returns a <code class="language-cpp">double&amp;</code> to <code class="language-cpp">D::i</code>, because while <code class="language-cpp">*this</code> is a <code class="language-cpp">B</code>, <code class="language-cpp">self</code> actually is the object parameter, hence is a <code class="language-cpp">D</code>.
+</li>
+<li>
+<code class="language-cpp">this</code> is a <code class="language-cpp">D*</code> (non-<code class="language-cpp">const</code>), but unqualified lookup looks in <code class="language-cpp">B</code>'s scope. This means that <code class="language-cpp">f1</code> returns an <code class="language-cpp">int&amp;</code>, but <code class="language-cpp">f2</code> returns a <code class="language-cpp">double&amp;</code>. <code class="language-cpp">f3</code> and <code class="language-cpp">f4</code> both return <code class="language-cpp">double&amp;</code>.
+</li>
+<li>
+<code class="language-cpp">this</code> is a <code class="language-cpp">D*</code> and unqualified lookup looks in <code class="language-cpp">D</code>'s scope too. All four functions return a <code class="language-cpp">double&amp;</code>.
+</li>
+<li>
+While the previous three options are variations on these functions behaving as non-static member functions, we could instead also consider these functions to behave as either static member functions or non-member <code class="language-cpp">friend</code> functions. In this case, any member access would require direct access from the explicit object parameter, so <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code>, and <code class="language-cpp">f3</code> are all ill-formed. <code class="language-cpp">f4</code> returns a <code class="language-cpp">double&amp;</code>.
+</li>
+</ol>
+<p>In our view, options 2 and 3 are too likely to be lead to programmer errors, even by experts. It would be very surprising if <code class="language-cpp">f1</code> didn't return <code class="language-cpp">B::i</code>, or if <code class="language-cpp">f1</code> and <code class="language-cpp">f2</code> behaved differently. Option 4 is interesting, but would be more verbose without clear benefit.</p>
+<p>We favor option 1, since <code class="language-cpp">f1</code>, <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> all end up having behavior that is reasonable given the other rules for name lookup we already have. <code class="language-cpp">f2</code> and <code class="language-cpp">f4</code> returning different things might appear strange at first glance, but <code class="language-cpp">f2</code> references <code class="language-cpp">this-&gt;i</code> and <code class="language-cpp">f4</code> references <code class="language-cpp">self.i</code> - programmers would have to be aware that these may be different. Where this option could go wrong is <code class="language-cpp">f3</code>, which looks like it yields an lvalue or rvalue reference to <code class="language-cpp">B::i</code> but is actually casting <code class="language-cpp">*this</code> to a derived object. But since this is ill-formed, this is a <em>compile</em> error rather than a runtime bug. Hence, not only do we get typically expected behavior, but we're also protected from a potential source of error by the compiler.</p>
+<p>The proper way to implement forwarding is to use one of the two hypothetical library functions mentioned earlier:</p><pre ><code class="language-cpp">struct B {
+    template &lt; typename Self&gt;
+    auto&amp;&amp; f3(this Self&amp;&amp; self) {
+        return std::forward&lt;Self&gt;(*this).i;            // ok if Self and *this are the same type
+                                                       // compile other if Self is a derived type
+
+        return std::forward&lt;like_t&lt;Self, B&gt;&gt;(*this).i; // always ok
+        return std::forward_like&lt;Self&gt;(*this).i;       // always ok
+    }
+};
+</code></pre>
+<p>The rule that we're establishing is that <code class="language-cpp">this</code> remains a pointer to the class type of the member function it is used in, and unqualified lookup looks in class scope as usual. Additionally, <code class="language-cpp">this</code> is either a pointer to the explicit object parameter or, in the case of deducing a derived type, one of its base class subobjects.</p><a name="toc_2.4"></a><h3>2.4. Writing the function pointer types for such functions</h3>
+<p>Currently, we write member function pointers like so:</p><pre ><code class="language-cpp">struct Y {
+  int f(int a, int b) const &amp;;
+};
+static_assert(std::is_same_v&lt;decltype(&amp;Y::f), int (Y::*)(int, int) const &amp;&gt;);
+</code></pre>
+<p>All the member functions that take references already have a function pointer syntax - they are just alternate ways of writing functions we can already write.</p><pre ><code class="language-cpp">struct Z {
+  // same as int f(int a, int b) const&amp;;
+  int f(this Z const&amp;, int a, int b);
+};
+
+// f is still the same as Y::f
+static_assert(std::is_same_v&lt;decltype(&amp;Z::f), int (Z::*)(int, int) const &amp;&gt;);
+</code></pre>
+<a name="toc_2.5"></a><h3>2.5. Teachability Implications</h3>
+<p>Using <code class="language-cpp">this auto&amp;&amp; self</code> follows existing patterns for dealing with forwarding references.</p>
+<p>Explicitly naming the object as the <code class="language-cpp">this</code>-designated first parameter fits with many programmers' mental model of the <code class="language-cpp">this</code> pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust.</p>
+<p>This also makes the definition of "<code class="language-cpp">const</code> member function" more obvious, meaning it can more easily be taught to students.</p>
+<p>It also works as a more obvious way to teach how <code class="language-cpp">std::bind</code> and <code class="language-cpp">std::function</code> work with a member function pointer by making the pointer explicit.</p><a name="toc_2.6"></a><h3>2.6. ABI implications for <code class="language-cpp">std::function</code> and related</h3>
+<p>If references and pointers do not have the same representation for member functions, this effectively says "for the purposes of the <code class="language-cpp">this</code>-designated first parameter, they do."</p>
+<p>This matters because code written in the "<code class="language-cpp">this</code> is a pointer" syntax with the <code class="language-cpp">this-&gt;</code> notation needs to be assembly-identical to code written with the <code class="language-cpp">self.</code> notation; the two are just different ways to implement a function with the same signature.</p><a name="toc_2.7"></a><h3>2.7. <code class="language-cpp">virtual</code> and <code class="language-cpp">this</code> as value</h3>
+<p>Virtual member functions are always dispatched based on the type of the object the dot -- or arrow, in case of pointer -- operator is being used on. Once the member function is located, the parameter <code class="language-cpp">this</code> is constructed with the appropriate move or copy constructor and passed as the <code class="language-cpp">this</code> parameter, which might incur slicing.</p>
+<p>Effectively, there is no change from current behavior -- only a slight addition of a new overload that behaves the way a user would expect.</p>
+<p>Virtual member function templates are not allowed in the language today, and this paper does not propose a change from the current behavior for member functions with explicit object parameters either.</p><a name="toc_2.8"></a><h3>2.8. Can <code class="language-cpp">static</code> member functions have a <code class="language-cpp">this</code> parameter?</h3>
+<p>No. Static member functions currently do not have an implicit <code class="language-cpp">this</code> parameter, and therefore have no reason to have an explicit one.</p><a name="toc_2.9"></a><h3>2.9. Interplays with capturing <code class="language-cpp">[this]</code> and <code class="language-cpp">[*this]</code> in lambdas</h3>
+<p>In the function parameter list, <code class="language-cpp">this</code> just designates the explicit object parameter. It does not, in any way, change the meaning of <code class="language-cpp">this</code> in the body of the lambda.</p><table style="width: 100%">
+<tr><th>C++17</th><th>Proposed</th></tr>
+
+<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](){
+            return x       // refers to X::x
+                + this-&gt;y; // refers to X::y
+        };
+    }
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    int x, y;
+
+    auto getter() const
+    {
+        return [*this](this auto const&amp; /* self */){
+            return x       // still refers to X::x
+                + this-&gt;y; // still refers to X::y
+        };
+    }
+};
+</code></pre>
+<p></td></tr></p></table>
+<p>If other language features play with what <code class="language-cpp">this</code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="language-cpp">this</code> in function bodies, especially in conjunction with this proposal.</p><a name="toc_2.10"></a><h3>2.10. Translating code to use explicit object parameters</h3>
+<p>The most common qualifier overload sets for member functions are:</p>
+<ol>
+<li>
+<code class="language-cpp">const</code> and non-<code class="language-cpp">const</code>
+</li>
+<li>
+<code class="language-cpp">&amp;</code>, <code class="language-cpp">const&amp;</code>, <code class="language-cpp">&amp;&amp;</code>, and <code class="language-cpp">const&amp;&amp;</code>
+</li>
+<li>
+<code class="language-cpp">const&amp;</code> and <code class="language-cpp">&amp;&amp;</code>
+</li>
+</ol>
+<p>Some examples:</p><table style="width: 100%">
+<tr><th>1</th><th>2</th><th>3</th></tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct foo {
+  void bar();
+  void bar() const;
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct foo {
+  void bar() &amp;;
+  void bar() const&amp;;
+  void bar() &amp;&amp;;
+  void bar() const&amp;&amp;;
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct foo {
+  void bar() const&amp;;
+  void bar() &amp;&amp;;
+};
+</code></pre>
+</td>
+
+</tr></table>
+<p>All three of these can be handled by a single perfect-forwarding overload, like this:</p><pre ><code class="language-cpp">struct foo {
+    template &lt;typename Self&gt;
+    void bar (this Self&amp;&amp; self);
+};
+</code></pre>
+<p>This overload is callable for all <code class="language-cpp">const</code>- and ref-qualified object parameters, just like the above examples. It is also callable for <code class="language-cpp">volatile</code>-qualified objects, so the code is not entirely equivalent; however, the <code class="language-cpp">volatile</code> versions are unlikely to be valid and more likely to be simply left out for the sake of brevity. The only major difference is in the third case, where non-<code class="language-cpp">const</code> lvalue arguments would be non-<code class="language-cpp">const</code> inside the function body, and <code class="language-cpp">const</code> rvalue arguments would be <code class="language-cpp">const&amp;&amp;</code> instead of <code class="language-cpp">const&amp;</code>. Again, this is unlikely to cause correctness issues unless <code class="language-cpp">this</code> has other member functions called on it which do semantically different things depending on the cv-qualification of <code class="language-cpp">this</code>.</p><a name="toc_2.11"></a><h3>2.11. Alternative syntax</h3>
+<p>Instead of qualifying the parameter with <code class="language-cpp">this</code>, to mark it as the parameter for deducing <code class="language-cpp">this</code>, we could let the first parameter be <em>named</em> <code class="language-cpp">this</code> instead:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
+struct X {
+    T value;
+
+    // as proposed
+    template &lt;typename Self&gt;
+    decltype(auto) foo(this Self&amp;&amp; self) {
+        return std::forward&lt;Self&gt;(self).value;
+    }
+    
+    // alternative
+    template &lt;typename This&gt;
+    decltype(auto) foo(This&amp;&amp; this) {
+        return std::forward&lt;This&gt;(this).value;
+    }
+</code></pre>
+<p>In the example above, <code class="language-cpp">this</code> is no longer a pointer. Since <code class="language-cpp">this</code> can never be a null pointer in valid code in the first place, this is an advantage, but may add confusion to the language. It also leaves us at a loss as to how one can address the derived object and the base object, as outlined in the previous section.</p>
+<p>Rather than naming the first parameter <code class="language-cpp">this</code>, we can also consider introducing a dummy template parameter where the qualifications normally reside. This syntax is also ill-formed today, and is purely a language extension:</p><pre ><code class="language-cpp">template &lt;typename T&gt;
+struct X {
+    T value;
+
+    // as proposed
+    template &lt;typename Self&gt;
+    decltype(auto) foo(this Self&amp;&amp; self) {
+        return std::forward&lt;Self&gt;(self).value;
+    }
+
+    // alternative
+    template &lt;typename This&gt;
+    decltype(auto) foo() This&amp;&amp; {
+        return std::forward&lt;This&gt;(*this).value;
+    }
+
+    // another alternative
+    decltype(auto) foo() auto&amp;&amp; {
+        return std::forward&lt;decltype(*this)&gt;(*this).value;
+    }
+};
+</code></pre>
+<p>This has the benefit of not muddying the parameter list, and it keeps the qualifier deduction off to the side where qualifiers usually live.</p><a name="toc_2.12"></a><h3>2.12. Unified Function Call Syntax</h3>
+<p>The proposed use of <code class="language-cpp">this</code> as the first parameter seems as if these members functions really had better be written as non-members to begin with, and might suggest that the solution to this problem is really unified function call syntax (UFCS).</p>
+<p>However, several of the motivating examples presented in this proposal are implementations of operators that cannot be implemented as non-members (<code class="language-cpp">()</code>, <code class="language-cpp">[]</code>, <code class="language-cpp">-&gt;</code>, and unary <code class="language-cpp">*</code>). UFCS alone would be insufficient. Additionally, the member function overload sets in all of these examples exist as <em>member</em> functions, not free functions, today. Having to take a member function overload set and rewrite it as a non-member (likely <code class="language-cpp">friend</code>ed) free function template is very much changing the intended design of a class to overcome a language hurdle. This proposal contends that it would be more in keeping with programmer intent to allow member functions to stay member functions.</p><a name="toc_3"></a><h2>3. Real-World Examples</h2>
+<a name="toc_3.1"></a><h3>3.1. Deduplicating Code</h3>
+<p>This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.</p>
+<p>The particular implementation of optional is Simon's, and can be viewed on <a href="https://github.com/TartanLlama/optional">GitHub</a>, and this example includes some functions that are proposed in <a href="https://wg21.link/p0798">P0798</a>, with minor changes to better suit this format:</p><table style="width: 100%">
+<tr><th>C++17</th><th>This proposal</th></tr>
+
+<tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
+public:
+  const char&amp;
+  operator[](std::size_t position) const {
+    // ...
+    return text[position];
+  }
+
+  char&amp; operator[](std::size_t position) {
+    return const_cast&lt;char&amp;&gt;(
+      static_cast&lt;const TextBlock&amp;&gt;
+        (this)[position]
+    );
+  }
+  // ...
+};
+</code></pre>
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">class TextBlock {
+public:
+  template &lt;typename Self&gt;
+  auto&amp; operator[](this Self&amp;&amp;,
+                   std::size_t position) {
+    // ...
+    return text[position];
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+</tr>
+
+<tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  constexpr T* operator-&gt;() {
+    return std::addressof(this-&gt;m_value);
+  }
+
+  constexpr const T*
+  operator-&gt;() const {
+    return std::addressof(this-&gt;m_value);
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  template &lt;typename Self&gt;
+  constexpr auto operator-&gt;(this Self&amp;&amp;) {
+    return std::addressof(this-&gt;m_value);
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+</tr>
+
+<tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  constexpr T&amp; operator*() &amp; {
+    return this-&gt;m_value;
+  }
+
+  constexpr const T&amp; operator*() const&amp; {
+    return this-&gt;m_value;
+  }
+
+  constexpr T&amp;&amp; operator*() &amp;&amp; {
+    return std::move(this-&gt;m_value);
+  }
+
+  constexpr const T&amp;&amp;
+  operator*() const&amp;&amp; {
+    return std::move(this-&gt;m_value);
+  }
+
+  constexpr T&amp; value() &amp; {
+    if (has_value()) {
+      return this-&gt;m_value;
+    }
+    throw bad_optional_access();
+  }
+
+  constexpr const T&amp; value() const&amp; {
+    if (has_value()) {
+      return this-&gt;m_value;
+    }
+    throw bad_optional_access();
+  }
+
+  constexpr T&amp;&amp; value() &amp;&amp; {
+    if (has_value()) {
+      return std::move(this-&gt;m_value);
+    }
+    throw bad_optional_access();
+  }
+
+  constexpr const T&amp;&amp; value() const&amp;&amp; {
+    if (has_value()) {
+      return std::move(this-&gt;m_value);
+    }
+    throw bad_optional_access();
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  template &lt;typename Self&gt;
+  constexpr like_t&lt;Self, T&gt;&amp;&amp; operator*(this Self&amp;&amp;) {
+    return forward_like&lt;Self&gt;(*this).m_value;
+  }
+
+  template &lt;typename Self&gt;
+  constexpr like_t&lt;Self, T&gt;&amp;&amp; value(this Self&amp;&amp;) {
+    if (has_value()) {
+      return forward_like&lt;Self&gt;(*this).m_value;
+    }
+    throw bad_optional_access();
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+<tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) &amp; {
+    using result =
+      invoke_result_t&lt;F, T&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f), **this)
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) &amp;&amp; {
+    using result =
+      invoke_result_t&lt;F, T&amp;&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 std::move(**this))
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) const&amp; {
+    using result =
+      invoke_result_t&lt;F, const T&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f), **this)
+        : nullopt;
+  }
+
+  template &lt;typename F&gt;
+  constexpr auto and_then(F&amp;&amp; f) const&amp;&amp; {
+    using result =
+      invoke_result_t&lt;F, const T&amp;&amp;&gt;;
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 std::move(**this))
+        : nullopt;
+  }
+  // ...
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+  // ...
+  template &lt;typename Self, typename F&gt;
+  constexpr auto
+  and_then(this Self&amp;&amp;, F&amp;&amp; f) {
+    using val = decltype((
+        forward_like&lt;Self&gt;(*this).m_value));
+    using result = invoke_result_t&lt;F, val&gt;;
+
+    static_assert(
+      is_optional&lt;result&gt;::value,
+      "F must return an optional");
+
+    return has_value()
+        ? invoke(forward&lt;F&gt;(f),
+                 forward_like&lt;Self&gt;
+                   (self).m_value)
+        : nullopt;
+  }
+  // ...
+};
+</code></pre>
+</td></table>
+<p>Keep in mind that there are a few more functions in P0798 that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.</p>
+<p>For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.</p><a name="toc_3.2"></a><h3>3.2. Recursive Lambdas</h3>
+<p>This proposal also allows for an alternative solution to implementing a recursive lambda, since now we open up the possibility of allowing a lambda to reference itself:</p><pre ><code class="language-cpp">// as proposed in [P0839]
+auto fib = [] self (int n) {
+    if (n &lt; 2) return n;
+    return self(n-1) + self(n-2);
+};
+
+// this proposal
+auto fib = [](this auto const&amp; self, int n) {
+    if (n &lt; 2) return n;
+    return self(n-1) + self(n-2);
+};
+</code></pre>
+<p>This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so <code class="language-cpp">self</code> in this example <em>is</em> the closure object.</p>
+<p>If the lambda would otherwise decay to a function pointer, <code class="language-cpp">&amp;self</code> shall have the value of that function pointer.</p><a name="toc_3.2.1"></a><h4>3.2.1. Expressions allowed for <code class="language-cpp">self</code> in lambdas</h4>
+<pre ><code class="language-cpp">  self(...);      // call with appropriate signature
+  decltype(self); // evaluates to the type of the lambda with the appropriate
+                  // cv-ref qualifiers
+  &amp;self;          // the address of either the closure object or function pointer
+  std::move(self) // you're allowed to move yourself into an algorithm...
+  /* ... and all other things you're allowed to do with the lambda itself. */
+</code></pre>
+<p>Within lambda expressions, the <code class="language-cpp">this</code> parameter still does not allow one to refer to the members of the closure object, which has no defined storage or layout, nor do its members have names. Instead it allows one to deduce the value category of the lambda and access its members -- including various call operators -- in the way appropriate for the value category.</p><a name="toc_3.2.2"></a><h4>3.2.2. Deducing derived objects for generic lambdas</h4>
+<p>When we deduce the object parameter, it doesn't have to be the same type as the class - it could be a derived type. This isn't typically relevant for lambdas, which would just be used as is, but it does provide an interesting opportunity when it comes to visitation. One tool to make it easier to invoke <code class="language-cpp">std::visit()</code> on a <code class="language-cpp">std::variant</code> is to write an overload utility which ends up creating a new type that inherits from all of the provided types. Consider a scenario where we have a <code class="language-cpp">Tree</code> type which is a <code class="language-cpp">variant&lt;Leaf, Node&gt;</code>, where a <code class="language-cpp">Node</code> contains two sub-<code class="language-cpp">Tree</code>s. We could count the number of leaves in a <code class="language-cpp">Tree</code> as follows:</p><pre ><code class="language-cpp">int num_leaves(Tree const&amp; tree) {
+    return std::visit(overload(
+        [](Leaf const&amp;) { return 1; },
+        [](this auto const&amp; self, Node const&amp; n) {
+            return std::visit(self, n.left) + std::visit(self, n.right);
+        }
+    ), tree);
+}
+</code></pre>
+<p>In this example, <code class="language-cpp">self</code> doesn't deduce as that inner lambda, it deduces at the overload object, so this works.</p><a name="toc_3.3"></a><h3>3.3. CRTP, without the C, R, or even T</h3>
+<p>Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit object parameters that deduce to the derived objects already, we don't need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn't even need to be a template:</p><table style="width: 100%">
+<tr><th>C++17</th><th>Proposed</th></tr>
+
+<tr>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename Derived&gt;
+struct add_postfix_increment {
+    Derived operator++(int) {
+        auto&amp; self = static_cast&lt;Derived&amp;&gt;(*this);
+
+        Derived tmp(self);
+        ++self;
+        return tmp;
+    }
+};
+
+struct some_type : add_postfix_increment&lt;some_type&gt; {
+    some_type&amp; operator++() { ... }
+};
+</code></pre>
+</td>
+
+<td><pre style="background:transparent;border:0px"><code class="language-cpp">struct add_postfix_increment {
+    template &lt;typename Self&gt;
+    Self operator++(this Self&amp; self, int) {
+        Self tmp(self);
+        ++self;
+        return tmp;
+    }
+};
+
+
+
+struct some_type : add_postfix_increment {
+    some_type&amp; operator++() { ... }
+};
+</code></pre>
+</td>
+
+</tr></table>
+<p>The example at right isn't much shorter, but it is certainly simpler.</p><a name="toc_3.4"></a><h3>3.4. SFINAE-friendly callables</h3>
+<p>A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in <a href="https://wg21.link/p0826">P0826</a>. Consider what happens if we implement <code class="language-cpp">std::not_fn()</code>, as currently specified:</p><pre ><code class="language-cpp">template &lt;typename F&gt;
+class call_wrapper {
+    F f;
+public:
+    // ...
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... ) &amp;
+        -&gt; decltype(!declval&lt;invoke_result_t&lt;F&amp;, Args...&gt;&gt;());
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... ) const&amp;
+        -&gt; decltype(!declval&lt;invoke_result_t&lt;const F&amp;, Args...&gt;&gt;());
+
+    // ... same for &amp;&amp; and const &amp;&amp; ...
+};
+
+template &lt;typename F&gt;
+auto not_fn(F&amp;&amp; f) {
+    return call_wrapper&lt;std::decay_t&lt;F&gt;&gt;{std::forward&lt;F&gt;(f)};
+}
+</code></pre>
+<p>As described in the paper, this implementation has two pathological cases: one in which the callable is SFINAE-unfriendly (which would cause a call to be ill-formed, when it could otherwise work), and one in which overload is deleted (which would cause a call to fallback to a different overload, when it should fail):</p><pre ><code class="language-cpp">struct unfriendly {
+    template &lt;typename T&gt;
+    auto operator()(T v) {
+        static_assert(std::is_same_v&lt;T, int&gt;);
+        return v;
+    }
+
+    template &lt;typename T&gt;
+    auto operator()(T v) const {
+        static_assert(std::is_same_v&lt;T, double&gt;);
+        return v;
+    }
+};
+
+struct fun {
+    template &lt;typename... Args&gt;
+    void operator()(Args&amp;&amp;...) = delete;
+
+    template &lt;typename... Args&gt;
+    bool operator()(Args&amp;&amp;...) const { return true; }
+};
+
+std::not_fn(unfriendly{})(1); // static assert!
+                              // even though the non-const overload is viable and would be the best
+                              // match, during overload resolution, both overloads of unfriendly have
+                              // to be instantiated - and the second one is a hard compile error.
+
+std::not_fn(fun{})();         // ok!? Returns false
+                              // even though we want the non-const overload to be deleted, the const
+                              // overload of the call_wrapper ends up being viable - and the only viable
+                              // candidate.
+</code></pre>
+<p>Gracefully handling SFINAE-unfriendly callables is <strong>not solvable</strong> in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four <em>cv</em>/ref-qualifiers leads to a pair of overloads: one enabled and one <code class="language-cpp">deleted</code>.</p>
+<p>This proposal solves both problems by simply allowing <code class="language-cpp">this</code> to be deduced. The following is a complete implementation of <code class="language-cpp">std::not_fn</code>:</p><pre ><code class="language-cpp">template &lt;typename F&gt;
+struct call_wrapper {
+    F f;
+
+    template &lt;typename Self, typename... Args&gt;
+    auto operator()(this Self&amp;&amp;, Args&amp;&amp;... args)
+        -&gt; decltype(!invoke(forward_like&lt;Self&gt;(f), forward&lt;Args&gt;(args)...))
+    {
+        return !invoke(forward_like&lt;Self&gt;(f), forward&lt;Args&gt;(args)...);
+    }
+};
+
+template &lt;typename F&gt;
+auto not_fn(F&amp;&amp; f) {
+    return call_wrapper&lt;decay_t&lt;F&gt;&gt;{forward&lt;F&gt;(f)};
+}
+
+not_fn(unfriendly{})(1); // ok
+not_fn(fun{})();         // error
+</code></pre>
+<p>Here, there is only one overload with everything deduced together. The first example now works correctly. <code class="language-cpp">Self</code> gets deduced as <code class="language-cpp">call_wrapper&lt;unfriendly&gt;</code>, and the one <code class="language-cpp">operator()</code> will only consider <code class="language-cpp">unfriendly</code>'s non-<code class="language-cpp">const</code> call operator. The <code class="language-cpp">const</code> one is simply never considered, so does not have an opportunity to cause problems. The call works. </p>
+<p>The second example now fails correctly. Previously, we had four candidates: the two non-<code class="language-cpp">const</code> ones were removed from the overload set due to <code class="language-cpp">fun</code>'s non-<code class="language-cpp">const</code> call operator being <code class="language-cpp">delete</code>d, and the two <code class="language-cpp">const</code> ones which were viable. But now, we only have one candidate. <code class="language-cpp">Self</code> gets deduced as <code class="language-cpp">call_wrapper&lt;fun&gt;</code>, which requires <code class="language-cpp">fun</code>'s non-<code class="language-cpp">const</code> call operator to be well-formed. Since it is not, the call is an error. There is no opportunity for fallback since there is only one overload ever considered. </p>
+<p>As a result, this singular overload then has precisely the desired behavior: working, for <code class="language-cpp">unfriendly</code>, and not working, for <code class="language-cpp">fun</code>.</p><a name="toc_4"></a><h2>4. History</h2>
+<p><strong>Changes from r0</strong>: The first draft of this proposal used the syntax <code class="language-cpp">Self&amp;&amp; this &lt;identifier&gt;</code>, we have instead moved the <code class="language-cpp">this</code> keyword up to the front (as <code class="language-cpp">this Self&amp;&amp; &lt;identififer&gt;</code>) to make it more immediately visually apparent and to simplify the grammar. Additionally, the ability to take the explicit object parameter <em>by value</em> has been removed. That parameter now must have reference type.</p><a name="toc_5"></a><h2>5. Acknowledgements</h2>
+<p>The authors would like to thank:</p>
+<ul>
+<li>
+Jonathan Wakely, for bringing us all together by pointing out we were writing the same paper, twice
+</li>
+<li>
+Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of <code class="language-cpp">this</code> inside function bodies
+</li>
+<li>
+Chandler Carruth, Amy Worthington, Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
+</li>
+<li>
+Guilherme Hartmann for his guidance with the implementation
+</li>
+</ul>
+</body>
+</html>
