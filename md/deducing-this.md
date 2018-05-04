@@ -1,8 +1,8 @@
 <pre class='metadata'>
 Title: Deducing this
-Status: P
+Status: D
 ED: http://wg21.link/P0847
-Shortname: P0847
+Shortname: D0847
 Level: 1
 Date: 2018-03-05
 Editor: Gašper Ažman, gasper dot azman at gmail dot com

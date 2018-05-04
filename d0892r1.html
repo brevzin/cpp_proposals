@@ -654,7 +654,7 @@ Insert new paragraph after 10.1.2 [dcl.fct.spec] paragraph 3:
 
 <p>In 15.1 [class.ctor], paragraph 1:
 
-<blockquote class="std">In a constructor declaration, each <i>decl-specifier</i> in the optional <i>decl-specifier-seq</i> shall be <code>friend</code>, <code>inline</code>, <del><code>explicit</code></del>, or <code>constexpr</code> <ins> or an <i>explicit-specifier</i></ins>.</blockquote>
+<blockquote class="std">In a constructor declaration, each <i>decl-specifier</i> in the optional <i>decl-specifier-seq</i> shall be <code>friend</code>, <code>inline</code>, <del><code>explicit</code>,</del> or <code>constexpr</code> <ins> or an <i>explicit-specifier</i></ins>.</blockquote>
 
 <p>In 15.3.1 [class.conv.ctor], paragraph 1:
 
@@ -715,7 +715,7 @@ Insert new paragraph after 10.1.2 [dcl.fct.spec] paragraph 3:
 
 <blockquote class="std"><pre>template&lt;class U1, class U2> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr pair(U1&& x, U2&& y);</pre>
 <p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U1&&, first_type></code> is <code>false</code> or <code>is_convertible_v&lt;U2&&, second_type></code> is <code>false</code>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1&&, first_type> || !is_convertible_v&lt;U2&&, second_type></code></ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1, first_type> || !is_convertible_v&lt;U2, second_type></code></ins></blockquote>
 
 <p>In 23.4.2 [pairs.pair], paragraph 9-10:
 
@@ -727,7 +727,7 @@ Insert new paragraph after 10.1.2 [dcl.fct.spec] paragraph 3:
 
 <blockquote class="std"><pre>template&lt;class U1, class U2> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr pair(pair&lt;U1, U2>&& p);</pre>
 <p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U1&&, first_type></code> is <code>false</code> or <code>is_convertible_v&lt;U2&&, second_type></code> is <code>false</code>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1&&, first_type> || !is_convertible_v&lt;U2&&, second_type></code></ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1, first_type> || !is_convertible_v&lt;U2, second_type></code></ins></blockquote>
 
 <p>In 23.5.3 [tuple.tuple], synopsis should use <code>explicit(<i>see below</i>)</code>:
 
@@ -785,38 +785,30 @@ Insert new paragraph after 10.1.2 [dcl.fct.spec] paragraph 3:
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 7-8:
 
 <blockquote class="std"><pre><del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr tuple(const Types&...);</pre>
-<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;const T<sub>i</sub>&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to the logical <code>OR</code> of the following expressions:
+<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;const T<sub>i</sub>&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
 
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;const T<sub>i</sub>&, T<sub>i</sub>></code></ins></div>
-
-<p><ins>where <code>T<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>Types</code>.</ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>disjunction_v&lt;negation&lt;is_convertible&lt;const Types&, Types>>...></code></ins></div></ins></blockquote>
 
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 9-10:
 
 <blockquote class="std"><pre>template&lt;class... UTypes> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr tuple(UTypes&&...);</pre>
-<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to the logical <code>OR</code> of the following expressions:
+<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
 
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code></ins></div>
-
-<p><ins>where <code>T<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>Types</code> and <code>U<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>UTypes</code>.</ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>disjunction_v&lt;negation&lt;is_convertible&lt;UTypes, Types>>...></code></ins></div></ins></blockquote>
 
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 15-16:
 
 <blockquote class="std"><pre>template&lt;class... UTypes> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr tuple(const tuple&lt;UTypes...>& u);</pre>
-<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;const U<sub>i</sub>&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to the logical <code>OR</code> of the following expressions:
+<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;const U<sub>i</sub>&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
 
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;const U<sub>i</sub>&, T<sub>i</sub>></code></ins></div>
-
-<p><ins>where <code>T<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>Types</code> and <code>U<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>UTypes</code>.</ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>disjunction_v&lt;negation&lt;is_convertible&lt;const UTypes&, Types>>...></code></ins></div></ins></blockquote>
 
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 17-18:
 
 <blockquote class="std"><pre>template&lt;class... UTypes> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr tuple(tuple&lt;UTypes...>&& u);</pre>
-<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to the logical <code>OR</code> of the following expressions:
+<p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code> is <code>false</code> for at least one <i>i</i>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
 
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U<sub>i</sub>&&, T<sub>i</sub>></code></ins></div>
-
-<p><ins>where <code>T<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>Types</code> and <code>U<sub>i</sub></code> is the <i>i</i><sup>th</sup> type in <code>UTypes</code>.</ins></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>disjunction_v&lt;negation&lt;is_convertible&lt;UTypes, Types>>...></code></ins></div></ins></blockquote>
 
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 19-21:
 
@@ -830,7 +822,7 @@ Insert new paragraph after 10.1.2 [dcl.fct.spec] paragraph 3:
 <blockquote class="std"><pre>template&lt;class U1, class U2> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr tuple(pair&lt;U1, U2>&& u);</pre>
 <p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U1&&, T<sub>0</sub>></code> is <code>false</code> or .<code>is_convertible_v&lt;U2&&, T<sub>1</sub>></code> is <code>false</code>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
 
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1&&, T<sub>0</sub>> || !is_convertible_v&lt;U2&&, T<sub>1</sub>></code></ins></div></blockquote>
+<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U1, T<sub>0</sub>> || !is_convertible_v&lt;U2, T<sub>1</sub>></code></ins></div></blockquote>
 
 <p>In 23.5.3.1 [tuple.cnstr], paragraphs 25:
 
@@ -886,7 +878,7 @@ template&lt;class Alloc, class U1, class U2>
 <blockquote class="std"><pre>template&lt;class U = T> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr optional(U&& v);</pre>
 
 <p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U&&, T></code> is <code>false</code>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U&&, T></ins></code></div>
+<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U, T></ins></code></div>
 </blockquote>
 
 <p>In 23.6.3.1 [optional.ctor], paragraphs 24-27:
@@ -902,7 +894,7 @@ template&lt;class Alloc, class U1, class U2>
 <blockquote class="std"><pre>template&lt;class U> <del><i>EXPLICIT</i></del> <ins>explicit(<i>see below</i>)</ins> constexpr optional(optional&lt;U>&& rhs);</pre>
 
 <p><i>Remarks</i>: [...] <del>The constructor is explicit if and only if <code>is_convertible_v&lt;U&&, T></code> is <code>false</code>.</del> <ins>The expression inside <code>explicit</code> is equivalent to:
-<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U&&, T></ins></code></div>
+<p><div style="padding-left: 2em;"><ins><code>!is_convertible_v&lt;U, T></ins></code></div>
 </blockquote>
 
 <a name="Acks"> </a><h2>Acknowledgements</h2>
