@@ -1,5 +1,5 @@
 Title: Structured Bindings can introduce a Pack
-Document-Number: D1061R0
+Document-Number: P1061R0
 Date: 2018-05-01
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Jonathan Wakely, jonathan dot wakely at gmail dot com

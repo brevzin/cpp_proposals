@@ -1,7 +1,7 @@
 <html>
 <head>
-	<title>Pack expansion in lambda init-capture</title>
-
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Structured Bindings can introduce a Pack</title>
 <style type="text/css">html {
 	position: relative;
 	max-width: 1024px;
@@ -131,9 +131,33 @@ li {
 }
 ol {
 	padding-left: 30px;
+    margin: 5px;
+    counter-reset: item;
+    margin-left: -1px;
+    margin-bottom: -1px;
+    margin-top: -1px;
+}
+ol > li {
+    counter-increment: item;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li {
+    display: block;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li:before {
+    content: counters(item, ".") ". ";
+    margin-left: -30px;
+    margin-bottom: -1px;
+    margin-top: -1px;    
 }
 ul :first-child, ol :first-child {
 	margin-top: 0;
+}
+ul ul { 
+    margin-left: -15px;
 }
 dl {
 	padding: 0;
@@ -317,7 +341,7 @@ pre {
 	overflow: auto;
     overflow-x: hidden;
     overflow-y: hidden;
-	padding: 6px 10px;
+    padding: 6px 10px;
 	border-radius: 3px;
 }
 pre code, pre tt {
@@ -467,258 +491,261 @@ Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(asm|typeof|inline|
 </script>
 
 <script type="text/javascript">
-Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(true|false)\b/,operator:/[-+]{1,2}|!=?|<{1,2}=?|>{1,2}=?|\->|:{1,2}|={1,2}|\^|~|%|&{1,2}|\|?\||\?|\*|\/|\b(and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)[a-z0-9_]+/i,lookbehind:!0}});
+Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|concept|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(true|false)\b/,operator:/[-+]{1,2}|!=?|<{1,2}=?|>{1,2}=?|\->|:{1,2}|={1,2}|\^|~|%|&{1,2}|\|?\||\?|\*|\/|\b(and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)[a-z0-9_]+/i,lookbehind:!0}});
 </script>
+
+<script type="text/javascript">
+$('tblcode').replaceWith(function(){
+    return $("<pre style=\"background:transparent;border:none\"><code class=\"language-cpp\">" + $(this).text() + "</code></pre>");
+});
+</script>
+
 </head>
 <body>
-
 <address align=right>
-Document number: D0780R2 <br />
-Date: 2018-03-13 <br />
-Audience: Evolution Working Group <br />
-Reply-To: Barry Revzin &lt;barry.revzin@gmail.com>
+Document Number: P1061R0 <br />
+Date: 2018-05-01 <br />
+Audience: EWG <br />
+Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Jonathan Wakely, jonathan dot wakely at gmail dot com <br />
 </address>
-<hr/>
-<h1 align=center>Allow pack expansion in lambda init-capture</h1>
-
+<hr /><h1 align=center>Structured Bindings can introduce a Pack</h1>
 <h2>Contents</h2>
+<div class="toc">
+<ol>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#proposal">Proposal</a></li>
+<li><a href="#wording">Wording</a></li>
+<li><a href="#acknowledgements">Acknowledgements</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</div>
 
-<ul>
-<li><a href="#Motivation">Motivation</a></li>
-<li><a href="#Restriction">Init-capture restriction history</a></li>
-<li><a href="#Proposal">Proposal</a></li>
-<li><a href="#Example">Example</a></li>
-<li><a href="#Acks">Acknowledgements</a></li>
-<li><a href="#References">References</a></li>
-</ul>
+<h2 id="motivation">1. Motivation</h2>
+<p>Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a <code class="language-cpp">tuple</code>. Today, it's trivial to convert a pack to a <code class="language-cpp">tuple</code>, but it's somewhat more involved to convert a <code class="language-cpp">tuple</code> to a pack. You have to go through <a href="https://wg21.link/n3915"><code class="language-cpp">std::apply()</code></a>:</p>
+<pre class="codehilite"><code class="language-cpp">std::tuple&lt;A, B, C&gt; tup = ...;
+std::apply([&amp;](auto&amp;&amp;... elems){
+    // now I have a pack
+}, tup);</code></pre>
 
-<a name="Motivation"> </a><h2>Motivation</h2>
 
-<p>With the introduction of generalized lambda capture [1], lambda captures can be nearly arbitrarily complex and solve nearly all problems. However, there is still an awkward hole in the capabilities of lambda capture when it comes to parameter packs: you can only capture packs by copy, by reference, or by... <code class="language-cpp">std::tuple</code>?
-
-<p>Consider the simple example of trying to wrap a function and its arguments into a callable to be accessed later. If we copy everything, the implementation is both easy to write and read:
-
-<pre><code class="language-cpp">template&lt;class F, class... Args>
-auto delay_invoke(F f, Args... args) {
-    // the capture here can also be just [=]
-    return [f, args...]() -> decltype(auto) {
-        return std::invoke(f, args...);
-    };
-}</code></pre>
-
-<p>But if we try to be more efficient about the implementation and try to <code class="language-cpp">move</code> all the arguments into the lambda? It seems like you should be able to use an <i>init-capture</i> and write:
-
-<pre><code class="language-cpp">template&lt;class F, class... Args>
-auto delay_invoke(F f, Args... args) {
-    return [f=std::move(f), <font color="#0000A0">...args=std::move(args)</font>]() -> decltype(auto) {
-        return std::invoke(f, args...);
-    };
-}</code></pre>
-
-<p>But this runs afoul of very explicit wording from <a href="http://eel.is/c++draft/expr.prim.lambda#capture-17.sentence-2">[expr.prim.lambda.capture]/17</a>, emphasis mine:
-
-<blockquote class="std">A <i>simple-capture</i> followed by an ellipsis is a pack expansion. <b>An <i>init-capture</i> followed by an ellipsis is ill-formed.</b>
-</blockquote>
-
-<p>As a result of this restriction, our only option is to put all the <code class="language-cpp">args...</code> into a <code class="language-cpp">std::tuple</code>. But once we do that, we don't have access to the arguments as a parameter pack, so we need to pull them back out of the tuple in the body, using something like <code class="language-cpp">std::apply()</code>:
-
-<pre><code class="language-cpp">template&lt;class F, class... Args>
-auto delay_invoke(F f, Args... args) {
-    return [f=std::move(f), tup=std::make_tuple(std::move(args)...)]() -> decltype(auto) {
-        return std::apply(f, tup);
-    };
-}</code></pre>
-
-<p>Which gets even worse if what we wanted to do with that captured parameter pack was invoke a <i>named</i> function rather than a captured object. At that point, all semblance of comprehension goes out the window:
-
+<p>This is great for cases where we just need to call a [non-overloaded] function or function object, but rapidly becomes much more awkward as we dial up the complexity. Not to mention if I want to return from the outer scope based on what these elements have to be.</p>
+<p>How do we compute the dot product of two <code class="language-cpp">tuple</code>s? It's a choose your own adventure of awkward choices:</p>
 <table style="width:100%">
-<tr><th style="width:50%">By copy</th><th style="width:50%">By move</th></tr>
-<tr><td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class... Args>
-auto delay_invoke_foo(Args... args) {
-    return [args...]() -> decltype(auto) {
-    
-        return foo(args...);
-        
-    };
-}</code></pre></td>
-<td><pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class... Args>
-auto delay_invoke_foo(Args... args) {
-    return [tup=std::make_tuple(std::move(args)...)]() -> decltype(auto) {
-        return std::apply([](auto const&... args) -> decltype(auto) {
-            return foo(args...);
-        }, tup);
-    };
-}</code></pre></td></tr>
-</table>
-
-We can do better.
-
-<a name="Restriction"></a><h2>Init-capture restriction history</h2>
-
-The explicit restriction on pack expansion in <i>init-capture</i> was in the initial wording paper for generalized lambda capture [2], due in part to the rules proposed in that paper as to how <i>init-capture</i> would work. The original wording read:
-
-<blockquote class="std">For every <i>init-capture</i> a non-static data member named by the <i>identifier</i> of the <i>init-capture</i> is declared in the closure type. This member is not a bit-field and not mutable. The type of that member corresponds to the type of a hypothetical variable declaration of the form "auto <i>init-capture</i> ;", except that the variable name (i.e., the <i>identifier</i> of the <i>init-capture</i>) is replaced by a unique identifier.</blockquote>
-
-Which introduces a problem, as explained by Richard Smith in [3]:
-
-<blockquote class="std">One problem here is that an init-capture introduces a *named* member of the closure type. A class member name that names a pack would be a new notion, and would bring with it significant additional complications (such as the inability to determine syntactically whether a construct contains an unexpanded parameter pack).
-
-<p>[...] 
-
-<p>Consider this: <pre style="background:transparent;border:none"><code class="language-cpp" style="width:95%">template &lt;typename T> void call_f(T t) {
-    f(t.x...);
+<tr>
+<th style="width:50%">
+<p>Nested <code class="language-cpp">apply()</code></p>
+</th>
+<th style="width:50%">
+<p>Using <code class="language-cpp">index_sequence</code></p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    return std::apply([&amp;](auto... p_elems){
+        return std::apply([&amp;](auto... q_elems){
+            return (... + (p_elems * q_elems));
+        }, q)
+    }, p);
 }</code></pre>
-
-Right now, this is ill-formed (no diagnostic required) because "t.x" does not contain an unexpanded parameter pack. But if we allow class members to be pack expansions, this code could be valid -- we'd lose any syntactic mechanism to determine whether an expression contains an unexpanded pack. This is fatal to at least one implementation strategy for variadic templates. It also admits the possibility of pack expansions occurring outside templates, which current implementations are not well-suited to handle.
-
-<p>Since init-captures add named members to the closure type, allowing init-captures to be pack expansions risks introducing the same problem if those names are visible in *any* context outside the body of the lambda-expression itself.</blockquote>
-
-However, this problem went away with the adoption of CWG 1760 [4], which changed the wording from <i>init-capture</i> introducing a <i>named</i> member (of unspecified access) to introducing an <i>unnamed</i> member. Once <i>init-capture</i> doesn't give us named members, the problem that was pointed out in [3] is no longer a problem. There would be no named pack member to give complications in parsing, so this proposal claims that this restriction is no longer necessary.
-
-<a name="Proposal"></a><h2>Proposal</h2>
-
-<p>The proposal is to simply remove the restriction on pack expansions in <i>init-capture</i>, which requires defining a new form of parameter pack in the language. Proposed wording is as follows.
-
-<p>In 6 [basic] paragraph 3:
-
-<blockquote class="std">An <i>entity</i> is a value, object, reference, function, enumerator, type, class member, bit-field, template, template
-specialization, namespace, or <del>parameter</del> pack.</blockquote>
-
-<p>In 8.4.5.2 [expr.prim.lambda.capture], change the grammar:
-
-<blockquote class="std"><i>capture-list</i>:<br />
-<div style="margin-left: 2em;"><i>capture</i><del>...<sub>opt</sub></del></div>
-<div style="margin-left: 2em;"><i>capture-list</i>, <i>capture</i><del>...<sub>opt</sub></del></div><br/>
-
-<i>capture</i>:<br />
-<div style="margin-left: 2em;"><i>simple-capture</i><ins>...<sub>opt</sub></ins></div>
-<div style="margin-left: 2em;"><ins>...<sub>opt</sub></ins><i>init-capture</i></div>
-</blockquote>
-
-<p>In 8.4.5.2 [expr.prim.lambda.capture] paragraph 17:
-
-<blockquote class="std">A <i>simple-capture</i> followed by an ellipsis is a pack expansion (17.6.3 [temp.variadic]). <del>An <i>init-capture</i> followed by an ellipsis is ill-formed.</del> <ins>An <i>init-capture</i> preceded by an ellipsis is a pack expansion that introduces an <i>init-capture pack</i> (17.6.3 [temp.variadic]) whose declarative region is the <i>lambda-expression</i>'s <i>compound-statement</i>.</ins><i>[ Example: </i>
-<pre><code class="codeblock">template&lt;class... Args>
-void f(Args... args) {
-  auto lm = [&, args...] { return g(args...); };
-  lm();
-  
-  <ins>auto lm2 = [...xs=std::move(args)] { return g(xs...); };
-  lm2();</ins>
-}</code></pre>
-<i>- end example ]</i>
-</blockquote>
-
-<p>In 8.4.6 [expr.prim.fold]:
-
-<blockquote class="std"><p>A fold expression performs a fold of a <del>template parameter</del> pack (17.6.3 [temp.variadic]) over a binary operator.
-
-<p>Unary left folds and unary right folds are collectively called unary folds. In a unary fold, the cast-expression shall contain an unexpanded <del>parameter</del> pack (17.6.3 [temp.variadic]).
-
-<p>An expression of the form (e1 op1 ... op2 e2) where op1 and op2 are fold-operators is called a binary fold.
-In a binary fold, op1 and op2 shall be the same fold-operator, and either e1 shall contain an unexpanded <del>parameter</del> pack or e2 shall contain an unexpanded  <del>parameter</del> pack, but not both. If e2 contains an unexpanded <del>parameter</del> pack, the expression is called a binary left fold. If e1 contains an unexpanded <del>parameter</del> pack, the expression is called a binary right fold.</blockquote>
-
-<p>In 8.5.2.3 [expr.sizeof] paragraph 5:
-
-<blockquote class="std">The identifier in a <code>sizeof...</code> expression shall name a <del>parameter</del> pack. The <code>sizeof...</code> operator yields the number of <del>arguments provided for</del> <ins>elements in</ins> the <del>parameter</del> pack <del><i>identifier</i></del> (17.6.3 [temp.variadic]).</blockquote>
-
-
-<p>In 11.3.5 [dcl.fct], paragraph 17:
-
-<blockquote class="std">A declarator-id or abstract-declarator containing an ellipsis shall only be used in a parameter-declaration. <del>Such a parameter-declaration is a parameter pack.</del> When it is part of a parameter-declaration-clause, the <del>parameter pack is</del> <ins><i>parameter-declaration</i> declares</ins> a function parameter pack. <del>[Note:</del> Otherwise, the parameter-declaration is part of a template-parameter-list and the <del>parameter pack is</del> <ins><i>parameter-declaration</i> declares</ins> a template parameter pack; see [temp.param]. <del>— end note ]</del> A function parameter pack is a pack expansion.</blockquote>
-
-<p>In 11.3.6 [dcl.fct.default], paragraph 3:
-
-<blockquote class="std">A default argument shall be specified only in the parameter-declaration-clause of a function declaration or lambda-declarator or in a template-parameter; in the latter case, the initializer-clause shall be an assignment-expression. A default argument shall not be specified for a <ins>template</ins> parameter pack<ins> or a function parameter pack</ins>. If it is specified in a parameter-declaration-clause, it shall not occur within a declarator or abstract-declarator of a parameter-declaration.</blockquote>
-
-<p>In 17.1 [temp.param], paragraph 19:
-
-<blockquote class="std">If a <i>template-parameter</i> is a <i>type-parameter</i> with an ellipsis prior to its optional identifier or is a <i>parameter-declaration</i> that declares a <del>parameter</del> pack ([dcl.fct]), then the template-parameter is a template parameter pack. A template parameter pack that is a parameter-declaration whose type contains one or more unexpanded <del>parameter</del> packs is a pack expansion. Similarly, a template parameter pack that is a type-parameter with a template-parameter-list containing one or more unexpanded parameter packs is a pack expansion. A template parameter pack that is a pack expansion shall not expand a <ins>template</ins> parameter pack declared in the same template-parameter-list.</blockquote>
-
-<p>In 17.3.3 [temp.arg.template], paragraph 3:
-
-<blockquote class="std">If P contains a <ins>template</ins> parameter pack, then A also matches P if each of A's template parameters matches the corresponding template parameter in the template-head of P.</blockquote>
-
-<p>In 17.3.3 [temp.arg.template], paragraph 4.2:
-
-<blockquote class="std">Each function template has a single function parameter whose type is a specialization of X with template arguments corresponding to the template parameters from the respective function template where, for each template parameter PP in the template-head of the function template, a corresponding template argument AA is formed. If PP declares a <ins>template</ins> parameter pack, then AA is the pack expansion PP... ([temp.variadic]); otherwise, AA is the id-expression PP.</blockquote>
-
-<p>Add a new clause to 17.6.3 [temp.variadic] after paragraph 2:
-
-<blockquote class="std"><ins>An <i>init-capture pack</i> introduces an <i>init-capture</i> for each of the elements in the pack expansion of its <i>initializer</i>. <i>[ Example: </i>
-<pre><code class="codeblock">template &lt;typename... Args>
-void foo(Args... args) {
-    [...xs=args]{
-        bar(xs...); // xs is an init-capture pack
-    };
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;size_t... Is, class P, class Q&gt;
+auto dot_product(std::index_sequence&lt;Is...&gt;, P p, Q, q) {
+    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
 }
 
-foo();  // OK: xs contains zero init-captures
-foo(1); // OK: xs contains one init-capture
-</code></pre>
-<i>- end example ]</i></ins></blockquote>
+template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    return dot_product(
+        std::make_index_sequence&lt;std::tuple_size&lt;P&gt;::value&gt;{},
+        p, q);
+}</code></pre>
+</td>
+</tr>
+</table>
 
-<p>In 17.6.3 [temp.variadic], paragraph 3:
+<p>Regardless of which option you dislike the least, both are limited to only <code class="language-cpp">std::tuple</code>s. We don't have the ability to do this at all for any of the other kinds of types that can be used in a <a href="https://wg21.link/p0144">structured binding declaration</a> - because we need to explicit list the correct number of identifiers, and we might not know how many there are.</p>
+<h2 id="proposal">2. Proposal</h2>
+<p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading <code class="language-cpp">...</code>):</p>
+<pre class="codehilite"><code class="language-cpp">std::tuple&lt;X, Y, Z&gt; f();
+auto [x,y,z] = f();          // OK today
+auto [...xs] = f();          // proposed: xs is a pack of length three containing an X, Y, and a Z
+auto [x, ...rest] = f();     // proposed: x is an X, rest... is a pack of length two
+auto [x,y,z, ...rest] = f(); // proposed: rest... is an empty pack
+auto [x, ...rest, z] = f();  // ill-formed: non-trailing pack. This is for consistency with, for instance, function parameter packs</code></pre>
 
-<blockquote class="std"><p>A <del><i>parameter</del> pack</i> is <del>either</del> a template parameter pack<ins>,</ins> <del>or</del> a function parameter pack<ins>, or an <i>init-capture</i> pack. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack <i>identifier</i>. The number of elements of an <i>init-capture</i> pack is the number of elements in the pack expansion of its initializer.</ins>
+
+<p>If we additionally add the structured binding customization machinery to <code class="language-cpp">std::integer_sequence</code>, this could greatly simplify generic code:</p>
+<table style="width:100%">
+<tr><th></th><th>Today</th><th>Proposed</th></tr>
+<tr>
+<td>
+<p>Implementing<br/><code class="language-cpp">std::apply()</code></p>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">namespace detail {
+    template &lt;class F, class Tuple, std::size_t... I&gt;
+    constexpr decltype(auto) apply_impl(F &amp;&amp;f, Tuple &amp;&amp;t,
+        std::index_sequence&lt;I...&gt;) 
+    {
+        return std::invoke(std::forward&lt;F&gt;(f),
+            std::get&lt;I&gt;(std::forward&lt;Tuple&gt;(t))...);
+    }
+}
+
+template &lt;class F, class Tuple&gt;
+constexpr decltype(auto) apply(F &amp;&amp;f, Tuple &amp;&amp;t) 
+{
+    return detail::apply_impl(
+        std::forward&lt;F&gt;(f), std::forward&lt;Tuple&gt;(t),
+        std::make_index_sequence&lt;std::tuple_size_v&lt;
+            std::decay_t&lt;Tuple&gt;&gt;&gt;{});
+}</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class F, class Tuple&gt;
+constexpr decltype(auto) apply(F &amp;&amp;f, Tuple &amp;&amp;t)
+{
+    auto&amp;&amp; [...elems] = t;
+    return std::invoke(std::forward&lt;F&gt;(f),
+        forward_like&lt;Tuple, decltype(elems)&gt;(elems)...);
+}</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<p><code class="language-cpp">dot_product()</code>,<br/>nested</p>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    return std::apply([&amp;](auto... p_elems){
+        return std::apply([&amp;](auto... q_elems){
+            return (... + (p_elems * q_elems));
+        }, q)
+    }, p);
+}</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    // no indirection!
+    auto&amp;&amp; [...p_elems] = p;
+    auto&amp;&amp; [...q_elems] = q;
+    return (... + (p_elems * q_elems));
+}</code></pre>
+</td></tr>
+<tr>
+<td>
+<p><code class="language-cpp">dot_product()</code>,</br><code class="language-cpp">index_sequence</code></p>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;size_t... Is, class P, class Q&gt;
+auto dot_product(std::index_sequence&lt;Is...&gt;, P p, Q, q) {
+    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
+}
+
+template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    return dot_product(
+        std::make_index_sequence&lt;std::tuple_size_v&lt;P&gt;&gt;{},
+        p, q);
+}</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;class P, class Q&gt;
+auto dot_product(P p, Q q) {
+    // no helper function necessary!
+    auto [...Is] = std::make_index_sequence&lt;
+        std::tuple_size_v&lt;P&gt;&gt;{};
+    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
+}</code></pre>
+</td></tr>
+</table>
+
+<p>Not only are these implementations more concise, but they are also more functional. I can just as easily use <code class="language-cpp">apply()</code> with user-defined types as I can with <code class="language-cpp">std::tuple</code>:</p>
+<pre class="codehilite"><code class="language-cpp">struct Point {
+    int x, y, z;
+};
+
+Point getPoint();
+double calc(int, int, int);
+
+double result = std::apply(calc, getPoint()); // ill-formed today, ok with proposed implementation</code></pre>
+
+
+<h2 id="wording">3. Wording</h2>
+<p>Add a new grammar option for <em>simple-declaration</em> to 10 [dcl.dcl]:</p>
+<blockquote>
+<i>simple-declaration:</i><br />
+<div style="margin-left: 2em;"><i>decl-specifier-seq</i> <i>init-declarator-list<sub>opt</sub></i> ;<br /></div>
+<div style="margin-left: 2em;"><i>attribute-specifier-seq</i> <i>decl-specifier-seq</i> <i>init-declarator-list</i> ;</div>
+<div style="margin-left: 2em;"><i>attribute-specifier-seq<sub>opt</sub></i> <i>decl-specifier-seq</i> <i>ref-qualifier<sub>opt</sub></i> [ <i>identifier-list</i> ] <i>initializer</i> ;</div>
+<div style="margin-left: 2em;"><ins><i>attribute-specifier-seq<sub>opt</sub></i> <i>decl-specifier-seq</i> <i>ref-qualifier<sub>opt</sub></i> [ <i>identifier-list</i>,<sub>opt</sub> ...<i>identifier</i> ] <i>initializer</i> ;</ins></div>
 </blockquote>
 
-<p> The section describing pack expansions in 17.6.3 [temp.variadic] paragraph 4 remains unchanged:
-<blockquote class="std"><p>Pack expansions can occur in the following contexts:
-<ul><li>In a <i>capture-list</i> ([expr.prim.lambda]); the pattern is a <i>capture</i>.
-</ul></blockquote>
+<p>Expand 10 [dcl.dcl] paragraph 8:</p>
+<blockquote>
+<p>A <em>simple-declaration</em> with an <em>identifier-list</em> <ins>or an <em>identifier</em> with preceding ellipsis</ins> is called a structured binding declaration ([dcl.struct.bind]). The <em>decl-specifier-seq</em> shall contain only the <em>type-specifier</em> <code class="language-cpp">auto</code> and <em>cv-qualifiers</em>. The <em>initializer</em> shall be of the form "= <em>assignment-expression</em>", of the form "{ <em>assignment-expression</em> }", or of the form "( <em>assignment-expression</em> )", where the <em>assignment-expression</em> is of array or non-union class type.</p>
+</blockquote>
+<p>Change 11.5 [dcl.struct.bind] paragraph 1:</p>
+<blockquote>
+A structured binding declaration introduces <del>the identifiers v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the <i>identifier-list</i> as</del> names ([basic.scope.declarative]) of <i>structured bindings</i>. <ins>If the declaration contains an <i>identifier-list</i>, the declaration introduces the identifiers v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the <i>identifier-list</i> as names. If the declaration contains an <i>identifier</i> with preceding ellipsis, the declaration introduces a <i>structured binding pack</i> ([temp.variadic]).</ins> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>. 
+</blockquote>
 
-<p> In 17.6.3 [temp.variadic] paragraph 6:
+<p>Introduce a new paragraph after [dcl.struct.bind] paragraph 1, introducing the term "structured binding size":</p>
+<blockquote>
+<ins>The <i>structured binding size</i> of a type <code>E</code> is the required number of names that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <i>identifier-list</i> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of elements in the <i>identifier-list</i>.
+</blockquote>
 
-<blockquote class="std"><p>A <del>parameter</del> pack whose name appears within the pattern of a pack expansion is expanded by that pack expansion. An appearance of the name of a <del>parameter</del> pack is only expanded by the innermost enclosing pack expansion. The pattern of a pack expansion shall name one or more <del>parameter</del> packs that are not expanded by a nested pack expansion; such <del>parameter</del> packs are called <i>unexpanded <del>parameter</del> packs</i> in the pattern. All of the <del>parameter</del> packs expanded by a pack expansion shall have the same number of arguments specified. An appearance of a name of a <del>parameter</del> pack that is not expanded is ill-formed.</p></blockquote>
+<p>Change [dcl.struct.bind] paragraph 2 to define a structured binding size:</p>
+<blockquote>
+If <code>E</code> is an array type with element type <code>T</code>, <del>the number of elements in the <i>identifier-list</i></del> <ins>the structured binding size of <code>E</code></ins> shall be equal to the number of elements of <code>E</code>. <del>Each <i>v<sub>i</sub></i></del> <ins>The <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
+</blockquote>
 
-<p> Add a new bullet to 17.6.3 [temp.variadic] paragraph 7:
+<p>Change [dcl.struct.bind] paragraph 3 to define a structured binding size:</p>
+<blockquote>
+Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the <del>number of elements in the <i>identifier-list</i></del> <ins>structured binding size of <code>E</code></ins> shall be equal to the value of that expression. [...] <del>Each <i>v<sub>i</sub></i></del> <ins>The <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
+</blockquote>
 
-<blockquote class="std"><p>Such an element, in the context of the instantiation, is interpreted as follows:
+<p>Change [dcl.struct.bind] paragraph 4 to define a structured binding size:</p>
+<blockquote>
+Otherwise, all of <code>E</code>'s non-static data members shall be direct members of <code>E</code> or of the same base class of <code>E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code>E</code> shall not have an anonymous union member, and the <del>number of elements in the <i>identifier-list</i></del> <ins>structured binding size of <code>E</code></ins> shall be equal to the number of non-static data members of <code>E</code>. Designating the non-static data members of <code>E</code> as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), <del>each <code class="">v<sub>i</i></code></del> <ins>the <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of <code>e</code> and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+</blockquote>
+
+<p>Add a new clause to 17.6.3 [temp.variadic], after paragraph 3:</p>
+<blockquote>
+<ins>A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i>
+
+```
+auto foo() -> int(&)[2];
+auto [...a] = foo();          // a is a structured binding pack containing 2 elements
+auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements
+auto [e, f, g, ...h] = foo(); // error: too many identifiers
+```
+
+<ins><i>-end example]</i></ins></blockquote>
+
+<p>In 17.6.3 [temp.variadic], change paragraph 4:</p>
+<blockquote>
+<p>A <em>pack</em> is a template parameter pack, a function parameter pack, <del>or</del> an <em>init-capture</em> pack<ins>, or a structured binding pack</ins>. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an <em>init-capture</em> pack is the number of elements in the pack expansion of its <em>initializer</em>.</p>
+</blockquote>
+<p>In 17.6.3 [temp.variadic], paragraph 5 (describing pack expansions) remains unchanged.</p>
+<p>In 17.6.3 [temp.variadic], add a bullet to paragraph 8:</p>
+<blockquote>
+Such an element, in the context of the instantiation, is interpreted as follows:
 <ul>
-<li>if the pack is a template parameter pack, the element is a template parameter of the corresponding kind (type or non-type) designating the type or value from the template argument; <del>otherwise,</del>
-<li>if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the function parameter that resulted from the instantiation of the pattern where the pack is declared<del>.</del> <ins>; otherwise,</ins>
-<li><ins>if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable declared by the <i>init-capture</i> that resulted from the instantiation of the pattern where the pack is declared.</ins></li>
+<li> if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the 
+<i>i</i><sup>th</sup> corresponding type or value template argument;
+<li> if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; otherwise
+<li> if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack<del>.</del> <ins>; otherwise</ins>
+<li><ins> if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.</ins>
 </ul>
 </blockquote>
 
-
-<a name="Example"></a><h2>Example</h2>
-
-<p>This would simplify all the code that currently relies on <code class="language-cpp">std::tuple</code> just to solve this problem, in a way that we are already used to seeing pack expansion:
-
-<table style="width:100%">
-<tr><th style="width:50%">C++17 today</th><th style="width:50%">This proposal</th></tr>
-<tr><td><pre style="background:transparent;border:none"><code class="language-cpp">template &lt;class... Args>
-auto delay_invoke_foo(Args... args) {
-    return [tup=std::make_tuple(std::move(args)...)]() -> decltype(auto) {
-        return std::apply([](auto const&... args) -> decltype(auto) {
-            return foo(args...);
-        }, tup);
-    };
-}</code></pre></td><td><pre style="background:transparent;border:none"><code class="language-cpp">template &lt;class... Args>
-auto delay_invoke_foo(Args... args) {
-    return [...args=std::move(args)]() -> decltype(auto) {
-    
-        return foo(args...);
-        
-    };
-}</code></pre></td></tr>
-</table>
-
-<a name="Acks"></a><h2>Acknowledgements</h2>
-
-Thanks to T.C. for suggesting this solution and pointing out the history of the <i>init-capture</i> restriction.
-
-<p>Thanks to Richard Smith, John Spicer, and Daveed Vandevoorde for considering the viability of this change. Thanks to Hubert Tong and Jens Maurer for help with wording.
-
-<a name="References"></a><h2>References</h2>
-
-<p> [1] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3610.html">N3610</a>: "Generic lambda-capture initializers, supporting capture-by-move"
-<p> [2] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3648.html">N3648</a>: "Wording Changes for Generalized Lambda-capture"
-<p> [3] <a href="https://groups.google.com/a/isocpp.org/d/msg/std-discussion/ePRzn4K7VcM/q734vAlL-moJ">A problem with generalized captures and pack expansion</a>
-<p> [4] <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#1760">CWG 1760</a>: Access of member corresponding to <i>init-capture</i>
-
-
-</body>
+<h2 id="acknowledgements">4. Acknowledgements</h2>
+<p>Thanks to Michael Park and Tomasz Kamiński for their helpful feedback.</p>
+<h2 id="references">5. References</h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3915.pdf">[N3915]</a><span style="margin-left: 5px;">"apply() call a function with arguments from a tuple (V3)" by Peter Sommerlad, 2014-02-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0144r2.pdf">[P0144]</a><span style="margin-left: 5px;">"Structured Bindings" by Herb Sutter, 2016-03-16</span></li></ul>
 </html>

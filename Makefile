@@ -12,8 +12,8 @@ $(1) : $(2) ./md/better_md.py ./md/style.html
 	python ./md/better_md.py -i "$$<" -o "$$@" --references
 endef
 
-$(eval $(call add_paper,0847r1_deducing_this.html,./md/deducing-this.md))
-$(eval $(call add_better_paper,1061r0_sb_pack.html,./md/sb-extensions.md))
+$(eval $(call add_paper,0847_deducing_this/d0847r1.html,./md/deducing-this.md))
+$(eval $(call add_better_paper,1061_sb_pack/p1061r0.html,./md/sb-extensions.md))
 
 all : $(PAPERS)
 .DEFAULT_GOAL := all
