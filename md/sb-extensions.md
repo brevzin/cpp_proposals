@@ -1,17 +1,13 @@
-Title: Structured Bindings extensions
-Status: D
-Shortname: Dxxxx
-Level: 0
-Document-Number: DxxxxR0
+Title: Structured Bindings can introduce a Pack
+Document-Number: D1061R0
 Date: 2018-05-01
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Jonathan Wakely, jonathan dot wakely at gmail dot com
-Group: wg21
 Audience: EWG
 
 # Motivation
 
-Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a `#!c++ tuple`. Today, it's trivial to convert a pack to a `#!c++ tuple`, but it's somewhat more involved to convert a `#!c++ tuple` to a pack. You have to go through [`#!c++ std::apply()`](http://en.cppreference.com/w/cpp/utility/apply):
+Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a `tuple`. Today, it's trivial to convert a pack to a `tuple`, but it's somewhat more involved to convert a `tuple` to a pack. You have to go through [`std::apply()`](https://wg21.link/n3915):
 
     :::c++
     std::tuple<A, B, C> tup = ...;
@@ -21,15 +17,15 @@ Function parameter packs and tuples are conceptually very similar. Both are hete
 
 This is great for cases where we just need to call a [non-overloaded] function or function object, but rapidly becomes much more awkward as we dial up the complexity. Not to mention if I want to return from the outer scope based on what these elements have to be.
 
-How do we compute the dot product of two `#!c++ tuple`s? It's a choose your own adventure of awkward choices:
+How do we compute the dot product of two `tuple`s? It's a choose your own adventure of awkward choices:
 
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-Nested `#!c++ apply()`
+Nested `apply()`
 </th>
 <th style="width:50%">
-Using `#!c++ index_sequence`
+Using `index_sequence`
 </th>
 </tr>
 <tr>
@@ -62,11 +58,11 @@ Using `#!c++ index_sequence`
 </tr>
 </table>
 
-Regardless of which option you dislike the least, both are limited to only `#!c++ std::tuple`s. We don't have the ability to do this at all for any of the other kinds of types that can be used in a structured binding declaration - because we need to explicit list the correct number of identifiers, and we might not know how many there are.
+Regardless of which option you dislike the least, both are limited to only `std::tuple`s. We don't have the ability to do this at all for any of the other kinds of types that can be used in a [structured binding declaration](https://wg21.link/p0144) - because we need to explicit list the correct number of identifiers, and we might not know how many there are.
 
-# Proposal: Structured Bindings can Introduce a Pack
+# Proposal
 
-We propose to extend the structured bindings syntax to introduce a pack as the last identifier, following the usual rules of pack declarations:
+We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading `...`):
 
     :::c++
     std::tuple<X, Y, Z> f();
@@ -77,13 +73,13 @@ We propose to extend the structured bindings syntax to introduce a pack as the l
     auto [x, ...rest, z] = f();  // ill-formed: non-trailing pack. This is for consistency with, for instance, function parameter packs
 
 
-If we additionally add the right structured binding customization machinery to `#!c++ std::integer_sequence`, this could greatly simplify generic code:
+If we additionally add the structured binding customization machinery to `std::integer_sequence`, this could greatly simplify generic code:
 
 <table style="width:100%">
 <tr><th></th><th>Today</th><th>Proposed</th></tr>
 <tr>
 <td>
-Implementing<br/>`#!c++ std::apply()`
+Implementing<br/>`std::apply()`
 </td>
 <td>
     :::c++
@@ -117,7 +113,10 @@ Implementing<br/>`#!c++ std::apply()`
     }
 </td>
 </tr>
-<tr><td>dot product,<br/>nested</td>
+<tr>
+<td>
+`dot_product()`,<br/>nested
+</td>
 <td>
 
     :::c++
@@ -143,7 +142,10 @@ Implementing<br/>`#!c++ std::apply()`
     }
 
 </td></tr>
-<tr><td>dot product,</br>index_sequence</td>
+<tr>
+<td>
+`dot_product()`,</br>`index_sequence`
+</td>
 <td>
 
     :::c++
@@ -155,7 +157,7 @@ Implementing<br/>`#!c++ std::apply()`
     template <class P, class Q>
     auto dot_product(P p, Q q) {
         return dot_product(
-            std::make_index_sequence<std::tuple_size<P>::value>{},
+            std::make_index_sequence<std::tuple_size_v<P>>{},
             p, q);
     }
 
@@ -167,13 +169,13 @@ Implementing<br/>`#!c++ std::apply()`
     auto dot_product(P p, Q q) {
         // no helper function necessary!
         auto [...Is] = std::make_index_sequence<
-            std::tuple_size<P>::value>{};
+            std::tuple_size_v<P>>{};
         return (... + (std::get<Is>(p) * std::get<Is>(q)));
     }
 </td></tr>
 </table>
 
-Not only are these implementations more concise, but they are also more functional. I can just as easily use `#!c++ apply()` with user-defined types as I can with `#!c++ std::tuple`:
+Not only are these implementations more concise, but they are also more functional. I can just as easily use `apply()` with user-defined types as I can with `std::tuple`:
 
     :::c++
     struct Point {
@@ -199,7 +201,7 @@ Add a new grammar option for *simple-declaration* to 10 [dcl.dcl]:
 
 Expand 10 [dcl.dcl] paragraph 8:
 
-> A _simple-declaration_ with an _identifier-list_ <ins>or an <i>identifier</i> with preceding ellipsis</ins> is called a structured binding declaration ([dcl.struct.bind]). The <i>decl-specifier-seq</i> shall contain only the <i>type-specifier</i> `auto` and <i>cv-qualifiers</i>. The <i>initializer</i> shall be of the form "= <i>assignment-expression</i>", of the form "{ <i>assignment-expression</i> }", or of the form "( <i>assignment-expression</i> )", where the <i>assignment-expression</i> is of array or non-union class type.
+> A _simple-declaration_ with an _identifier-list_ <ins>or an _identifier_ with preceding ellipsis</ins> is called a structured binding declaration ([dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the _type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the form "= _assignment-expression_", of the form "{ _assignment-expression_ }", or of the form "( _assignment-expression_ )", where the _assignment-expression_ is of array or non-union class type.
 
 Change 11.5 [dcl.struct.bind] paragraph 1:
 

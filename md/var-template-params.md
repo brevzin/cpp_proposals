@@ -45,7 +45,7 @@ However, there have been recent developments in other parts of the language that
             { a == b } -> bool;
         };
 
-Neither of these can currently be used as template arguments. That is, we can use `#!c++ is_object_v<int>` as a non-type template argument into a template parameter that can accept a `#!c++ bool`... but we cannot use `#!c++ is_object_v` itself. There is no kind of template parameter that currently accepts variable templates. Nor is there a kind of template parameter that can accept a concept like `#!c++ EqualityComprable` directly.
+Neither of these can currently be used as template arguments. That is, we can use `is_object_v<int>` as a non-type template argument into a template parameter that can accept a `bool`... but we cannot use `is_object_v` itself. There is no kind of template parameter that currently accepts variable templates. Nor is there a kind of template parameter that can accept a concept like `EqualityComprable` directly.
 
 # Proposal
 
@@ -70,9 +70,9 @@ A _template variable template parameter_ is a template parameter that can accept
     p.maybe_print(4);        // prints 4
     p.maybe_print("hello"s); // doesn't print anything
 
-`#!c++ Printer` is a class template that has a single template parameter that accepts a `#!c++ bool` variable template that consists of a single template parameter. The only way to achieve such a construction today is to wrap the variable template in a class template that has a `#!c++ value` static data member that needs to be accessed. As variable templates are becoming more common, this is an undesirable indirection.
+`Printer` is a class template that has a single template parameter that accepts a `bool` variable template that consists of a single template parameter. The only way to achieve such a construction today is to wrap the variable template in a class template that has a `value` static data member that needs to be accessed. As variable templates are becoming more common, this is an undesirable indirection.
 
-The allowable types for the variable template parameter would follow the usual rules for other non-type template parameters. They could refer to other template parameters and they could be `#!c++ auto`:
+The allowable types for the variable template parameter would follow the usual rules for other non-type template parameters. They could refer to other template parameters and they could be `auto`:
 
     :::c++
     template <typename T, template <int > T Constant>
@@ -90,7 +90,7 @@ The allowable types for the variable template parameter would follow the usual r
     
 ## Template concept parameters
 
-Concepts are very similar to `#!c++ inline constexpr bool`  variable templates, with a few notable exceptions (they can't be specialized, always evaluate as prvalues, and get special abilities with regards to subsumption and partial ordering). But they really are variable templates, so they should be used as template parameters as well.
+Concepts are very similar to `inline constexpr bool`  variable templates, with a few notable exceptions (they can't be specialized, always evaluate as prvalues, and get special abilities with regards to subsumption and partial ordering). But they really are variable templates, so they should be used as template parameters as well.
 
 Without the ability to pass concepts as template parameters, we have no direct way of creating a type erasure library built on concepts:
 
@@ -103,7 +103,7 @@ Without the ability to pass concepts as template parameters, we have no direct w
         using function = basic_any<Invocable<Signature>, CopyConstructible>;
     }
     
-While it isn't clear at this point what we could put into the `#!c++ ...` section above, it certainly requires the ability to declare `#!c++ Concepts` as a template parameter pack of template concept parameters. 
+While it isn't clear at this point what we could put into the `...` section above, it certainly requires the ability to declare `Concepts` as a template parameter pack of template concept parameters. 
 
 # Acknowledgements
 

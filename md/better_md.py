@@ -1,16 +1,20 @@
 import argparse
 import json
+import os
 import sys
 
 import markdown
 from markdown.extensions import Extension
 from markdown.extensions.codehilite import CodeHiliteExtension
-from markdown.inlinepatterns import LinkPattern, LINK_RE
+from markdown.inlinepatterns import LinkPattern, LINK_RE, BacktickPattern, BACKTICK_RE
 from markdown.treeprocessors import Treeprocessor
 from markdown.postprocessors import Postprocessor
 from markdown.preprocessors import Preprocessor
-from markdown.util import etree, string_type, isBlockLevel
+from markdown.util import etree, string_type, isBlockLevel, AtomicString
 from toc import TocExtension
+
+def local_path(filename):
+    return os.path.join(sys.path[0], filename)
 
 class LinkSaver(LinkPattern):
     def __init__(self, *args, **kwargs):
@@ -25,7 +29,7 @@ class RefProcessor(Treeprocessor):
     def __init__(self, md):
         super(RefProcessor, self).__init__(md)
 
-        self.wg21 = json.load(open('index.json'))
+        self.wg21 = json.load(open(local_path('index.json')))
         for key in sorted(self.wg21, reverse=True):
             if key.startswith('P') and key[:5] not in self.wg21:
                 self.wg21[key[:5]] = self.wg21[key]
@@ -84,6 +88,24 @@ class TableCodeBlockProcessor(Preprocessor):
                 target.append(line)
         return new_lines
 
+class CppBacktickPattern(BacktickPattern):
+    def handleMatch(self, m):
+        if m.group(4):
+            text = m.group(4).strip()
+            el = etree.Element('code')
+            if text.startswith('#!'):
+                el.text = AtomicString(text[2:].strip())
+            else:
+                el.attrib["class"] = "language-cpp"
+                el.text = AtomicString(text.strip())
+            return el
+        else:
+            return super(CppBacktickPattern, self).handleMatch(m)
+
+class CppBacktickExtension(Extension):
+    def extendMarkdown(self, md, md_globals):
+        md.inlinePatterns[u'backtick'] = CppBacktickPattern(BACKTICK_RE)
+            
 class RefExtension(Extension):
     def extendMarkdown(self, md, md_globals):
         md.inlinePatterns[u'link'] = LinkSaver(LINK_RE, md)
@@ -94,7 +116,8 @@ class TableCodeBlockExtension(Extension):
         md.preprocessors.add("tbl_codeblock",
             TableCodeBlockProcessor(
                 markdown.Markdown(extensions=[CodeHiliteExtension(use_pygments=False),
-                    'pymdownx.inlinehilite'])
+                    CppBacktickExtension()
+                    ])
             ),
             '_begin')
         
@@ -104,6 +127,8 @@ def main(argv=None):
     parser.add_argument('-i', '--input', dest='input', type=argparse.FileType('r'))
     parser.add_argument('-o', '--output', dest='output', type=argparse.FileType('w'),
         default='-')
+    parser.add_argument('--style', default=local_path('style.html'),
+        type=argparse.FileType('r'))
     parser.add_argument('--references', action='store_true')
     
     args = parser.parse_args(argv)
@@ -113,7 +138,7 @@ def main(argv=None):
     extensions = [CodeHiliteExtension(use_pygments=False),
         TocExtension(baselevel=2, anchorlink=False, title=None, marker=''),
         'markdown.extensions.meta',
-        'pymdownx.inlinehilite',
+        CppBacktickExtension(),
         'markdown.extensions.tables',
         TableCodeBlockExtension()]
     if args.references:
@@ -126,7 +151,7 @@ def main(argv=None):
     write('<head>\n')
     write('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n')
     write('<title>{}</title>\n'.format(md.Meta['title'][0]))
-    write(open('style.html').read())
+    write(args.style.read())
     write('\n</head>\n')
     write('<body>\n')
     write('<address align=right>\n')    
