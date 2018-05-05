@@ -59,12 +59,6 @@ class RefProcessor(Treeprocessor):
                     info['author'],
                     info['date'])
 
-def full_iter(el):
-    yield el
-    for child in el:
-        for subelem in full_iter(child):
-            yield subelem
-
 class TableCodeBlockProcessor(Preprocessor):
     def run(self, lines):
         new_lines = []
@@ -139,7 +133,6 @@ def main(argv=None):
         TocExtension(baselevel=2, anchorlink=False, title=None, marker=''),
         'markdown.extensions.meta',
         CppBacktickExtension(),
-        'markdown.extensions.tables',
         TableCodeBlockExtension()]
     if args.references:
         extensions.append(RefExtension())
