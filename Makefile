@@ -14,6 +14,7 @@ endef
 
 $(eval $(call add_paper,0847_deducing_this/d0847r1.html,./md/deducing-this.md))
 $(eval $(call add_better_paper,1061_sb_pack/p1061r0.html,./md/sb-extensions.md))
+$(eval $(call add_better_paper,overload_sets.html,./md/overload-sets.md))
 
 all : $(PAPERS)
 .DEFAULT_GOAL := all

@@ -54,7 +54,7 @@ class RefProcessor(Treeprocessor):
 
                 desc = etree.SubElement(li, 'span')
                 desc.attrib['style'] = "margin-left: 5px;"
-                desc.text = '"{}" by {}, {}'.format(
+                desc.text = u'"{}" by {}, {}'.format(
                     info['title'],
                     info['author'],
                     info['date'])
