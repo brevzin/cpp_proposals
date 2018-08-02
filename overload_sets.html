@@ -1,0 +1,1583 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Overload sets as function parameters</title>
+<style type="text/css">html {
+	position: relative;
+	max-width: 1024px;
+	height: 100%;
+}
+body {
+	font-family: Helvetica, arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: white;
+	padding: 30px;
+}
+body>*:first-child {
+	margin-top: 0 !important;
+}
+body>*:last-child {
+	margin-bottom: 0 !important;
+}
+a {
+	color: #4183C4;
+}
+a.absent {
+	color: #cc0000;
+}
+a.anchor {
+	display: block;
+	padding-left: 30px;
+	margin-left: -30px;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 20px 0 10px;
+	padding: 0;
+	font-weight: bold;
+	-webkit-font-smoothing: antialiased;
+	cursor: text;
+	position: relative;
+}
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+	text-decoration: none;
+}
+h1 tt, h1 code {
+	font-size: inherit;
+}
+h2 tt, h2 code {
+	font-size: inherit;
+}
+h3 tt, h3 code {
+	font-size: inherit;
+}
+h4 tt, h4 code {
+	font-size: inherit;
+}
+h5 tt, h5 code {
+	font-size: inherit;
+}
+h6 tt, h6 code {
+	font-size: inherit;
+}
+h1 {
+	font-size: 28px;
+	color: black;
+}
+h2 {
+	font-size: 24px;
+	border-bottom: 1px solid #cccccc;
+	color: black;
+}
+h3 {
+	font-size: 18px;
+}
+h4 {
+	font-size: 16px;
+}
+h5 {
+	font-size: 14px;
+}
+h6 {
+	color: #777777;
+	font-size: 14px;
+}
+p, blockquote, ol, dl, li, table, pre {
+	margin: 15px 0;
+}
+hr {
+	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+	border: 0 none;
+	color: #cccccc;
+	height: 4px;
+	padding: 0;
+}
+body>h2:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child+h2 {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+	margin-top: 0;
+	padding-top: 0;
+}
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+	margin-top: 0;
+}
+li p.first {
+	display: inline-block;
+}
+li {
+	margin: 0;
+}
+ol {
+	padding-left: 30px;
+    margin: 5px;
+    counter-reset: item;
+    margin-left: -1px;
+    margin-bottom: -1px;
+    margin-top: -1px;
+}
+ol > li {
+    counter-increment: item;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li {
+    display: block;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li:before {
+    content: counters(item, ".") ". ";
+    margin-left: -30px;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ul :first-child, ol :first-child {
+	margin-top: 0;
+}
+ul ul { 
+    margin-left: -15px;
+}
+dl {
+	padding: 0;
+}
+dl dt {
+	font-size: 14px;
+	font-weight: bold;
+	font-style: italic;
+	padding: 0;
+	margin: 15px 0 5px;
+}
+dl dt:first-child {
+	padding: 0;
+}
+dl dt> :first-child {
+	margin-top: 0;
+}
+dl dt> :last-child {
+	margin-bottom: 0;
+}
+dl dd {
+	margin: 0 0 15px;
+	padding: 0 15px;
+}
+dl dd> :first-child {
+	margin-top: 0;
+}
+dl dd> :last-child {
+	margin-bottom: 0;
+}
+blockquote {
+	border-left: 4px solid #dddddd;
+	padding: 0 15px;
+	color: #777777;
+}
+blockquote> :first-child {
+	margin-top: 0;
+}
+blockquote> :last-child {
+	margin-bottom: 0;
+}
+table {
+	padding: 0;
+	border-collapse: collapse;
+}
+table tr {
+	border-top: 1px solid #cccccc;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
+table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+table tr th {
+	font-weight: bold;
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr td {
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr th :first-child, table tr td :first-child {
+	margin-top: 0;
+}
+table tr th :last-child, table tr td :last-child {
+	margin-bottom: 0;
+}
+td {
+	vertical-align: top;
+}
+img {
+	max-width: 100%;
+}
+span.frame {
+	display: block;
+	overflow: hidden;
+}
+span.frame>span {
+	border: 1px solid #dddddd;
+	display: block;
+	float: left;
+	overflow: hidden;
+	margin: 13px 0 0;
+	padding: 7px;
+	width: auto;
+}
+span.frame span img {
+	display: block;
+	float: left;
+}
+span.frame span span {
+	clear: both;
+	color: #333333;
+	display: block;
+	padding: 5px 0 0;
+}
+span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-center>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: center;
+}
+span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px 0 0;
+	text-align: right;
+}
+span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+span.float-left {
+	display: block;
+	margin-right: 13px;
+	overflow: hidden;
+	float: left;
+}
+span.float-left span {
+	margin: 13px 0 0;
+}
+span.float-right {
+	display: block;
+	margin-left: 13px;
+	overflow: hidden;
+	float: right;
+}
+span.float-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: right;
+}
+code, tt {
+	margin: 0 2px;
+	padding: 0 5px;
+	white-space: nowrap;
+	border: 1px solid #eaeaea;
+	background-color: #f8f8f8;
+	border-radius: 3px;
+}
+pre code {
+	margin: 0;
+	padding: 0;
+	white-space: pre;
+	border: none;
+	background: transparent;
+}
+.highlight pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+}
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 6px 10px;
+	border-radius: 3px;
+}
+pre code, pre tt {
+	background-color: transparent;
+	border: none;
+}
+sup {
+	font-size: 0.83em;
+	vertical-align: super;
+	line-height: 0;
+}
+kbd {
+	display: inline-block;
+	padding: 3px 5px;
+	font-size: 11px;
+	line-height: 10px;
+	color: #555;
+	vertical-align: middle;
+	background-color: #fcfcfc;
+	border: solid 1px #ccc;
+	border-bottom-color: #bbb;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #bbb
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+ins {
+	color: #00A000
+}
+del {
+	color: #A00000
+}
+</style>
+<style type="text/css">/* PrismJS 1.15.0
+https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
+/**
+ * prism.js default theme for JavaScript, CSS and HTML
+ * Based on dabblet (http://dabblet.com)
+ * @author Lea Verou
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: black;
+	background: none;
+	text-shadow: 0 1px white;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+@media print {
+	code[class*="language-"],
+	pre[class*="language-"] {
+		text-shadow: none;
+	}
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #f8f8f8;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: slategray;
+}
+
+.token.punctuation {
+	color: #999;
+}
+
+.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+	color: #9a6e3a;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #07a;
+}
+
+.token.function,
+.token.class-name {
+	color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #e90;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+
+pre[data-line] {
+	position: relative;
+	padding: 1em 0 1em 3em;
+}
+
+.line-highlight {
+	position: absolute;
+	left: 0;
+	right: 0;
+	padding: inherit 0;
+	margin-top: 1em; /* Same as .prism’s padding-top */
+
+	background: hsla(24, 20%, 50%,.08);
+	background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
+
+	pointer-events: none;
+
+	line-height: inherit;
+	white-space: pre;
+}
+
+	.line-highlight:before,
+	.line-highlight[data-end]:after {
+		content: attr(data-start);
+		position: absolute;
+		top: .4em;
+		left: .6em;
+		min-width: 1em;
+		padding: 0 .5em;
+		background-color: hsla(24, 20%, 50%,.4);
+		color: hsl(24, 20%, 95%);
+		font: bold 65%/1.5 sans-serif;
+		text-align: center;
+		vertical-align: .3em;
+		border-radius: 999px;
+		text-shadow: none;
+		box-shadow: 0 1px white;
+	}
+
+	.line-highlight[data-end]:after {
+		content: attr(data-end);
+		top: auto;
+		bottom: .4em;
+	}
+
+.line-numbers .line-highlight:before,
+.line-numbers .line-highlight:after {
+	content: none;
+}
+
+</style>
+<script type="text/javascript">/* PrismJS 1.15.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+c+cpp&plugins=line-highlight */
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-([\w-]+)\b/i,t=0,n=_self.Prism={manual:_self.Prism&&_self.Prism.manual,disableWorkerMessageHandler:_self.Prism&&_self.Prism.disableWorkerMessageHandler,util:{encode:function(e){return e instanceof r?new r(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e,t){var r=n.util.type(e);switch(t=t||{},r){case"Object":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a={};t[n.util.objId(e)]=a;for(var l in e)e.hasOwnProperty(l)&&(a[l]=n.util.clone(e[l],t));return a;case"Array":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a=[];return t[n.util.objId(e)]=a,e.forEach(function(e,r){a[r]=n.util.clone(e,t)}),a}return e}},languages:{extend:function(e,t){var r=n.util.clone(n.languages[e]);for(var a in t)r[a]=t[a];return r},insertBefore:function(e,t,r,a){a=a||n.languages;var l=a[e];if(2==arguments.length){r=arguments[1];for(var i in r)r.hasOwnProperty(i)&&(l[i]=r[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in r)r.hasOwnProperty(i)&&(o[i]=r[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===a[e]&&t!=e&&(this[t]=o)}),a[e]=o},DFS:function(e,t,r,a){a=a||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],r||l),"Object"!==n.util.type(e[l])||a[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||a[n.util.objId(e[l])]||(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,a)):(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,a)))}},plugins:{},highlightAll:function(e,t){n.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,r){var a={callback:r,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var l,i=a.elements||e.querySelectorAll(a.selector),o=0;l=i[o++];)n.highlightElement(l,t===!0,a.callback)},highlightElement:function(t,r,a){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1].toLowerCase(),i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,t.parentNode&&(o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l));var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(n.hooks.run("before-sanity-check",u),!u.code||!u.grammar)return u.code&&(n.hooks.run("before-highlight",u),u.element.textContent=u.code,n.hooks.run("after-highlight",u)),n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),r&&_self.Worker){var g=new Worker(n.filename);g.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},g.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,a){var l={code:e,grammar:t,language:a};return n.hooks.run("before-tokenize",l),l.tokens=n.tokenize(l.code,l.grammar),n.hooks.run("after-tokenize",l),r.stringify(n.util.encode(l.tokens),l.language)},matchGrammar:function(e,t,r,a,l,i,o){var s=n.Token;for(var u in r)if(r.hasOwnProperty(u)&&r[u]){if(u==o)return;var g=r[u];g="Array"===n.util.type(g)?g:[g];for(var c=0;c<g.length;++c){var h=g[c],f=h.inside,d=!!h.lookbehind,m=!!h.greedy,p=0,y=h.alias;if(m&&!h.pattern.global){var v=h.pattern.toString().match(/[imuy]*$/)[0];h.pattern=RegExp(h.pattern.source,v+"g")}h=h.pattern||h;for(var b=a,k=l;b<t.length;k+=t[b].length,++b){var w=t[b];if(t.length>e.length)return;if(!(w instanceof s)){if(m&&b!=t.length-1){h.lastIndex=k;var _=h.exec(e);if(!_)break;for(var j=_.index+(d?_[1].length:0),P=_.index+_[0].length,A=b,x=k,O=t.length;O>A&&(P>x||!t[A].type&&!t[A-1].greedy);++A)x+=t[A].length,j>=x&&(++b,k=x);if(t[b]instanceof s)continue;I=A-b,w=e.slice(k,x),_.index-=k}else{h.lastIndex=0;var _=h.exec(w),I=1}if(_){d&&(p=_[1]?_[1].length:0);var j=_.index+p,_=_[0].slice(p),P=j+_.length,N=w.slice(0,j),S=w.slice(P),C=[b,I];N&&(++b,k+=N.length,C.push(N));var E=new s(u,f?n.tokenize(_,f):_,y,_,m);if(C.push(E),S&&C.push(S),Array.prototype.splice.apply(t,C),1!=I&&n.matchGrammar(e,t,r,b,k,!0,u),i)break}else if(i)break}}}}},tokenize:function(e,t){var r=[e],a=t.rest;if(a){for(var l in a)t[l]=a[l];delete t.rest}return n.matchGrammar(e,r,t,0,0,!1),r},hooks:{all:{},add:function(e,t){var r=n.hooks.all;r[e]=r[e]||[],r[e].push(t)},run:function(e,t){var r=n.hooks.all[e];if(r&&r.length)for(var a,l=0;a=r[l++];)a(t)}}},r=n.Token=function(e,t,n,r,a){this.type=e,this.content=t,this.alias=n,this.length=0|(r||"").length,this.greedy=!!a};if(r.stringify=function(e,t,a){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return r.stringify(n,t,e)}).join("");var l={type:e.type,content:r.stringify(e.content,t,a),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:a};if(e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o=Object.keys(l.attributes).map(function(e){return e+'="'+(l.attributes[e]||"").replace(/"/g,"&quot;")+'"'}).join(" ");return"<"+l.tag+' class="'+l.classes.join(" ")+'"'+(o?" "+o:"")+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(n.disableWorkerMessageHandler||_self.addEventListener("message",function(e){var t=JSON.parse(e.data),r=t.language,a=t.code,l=t.immediateClose;_self.postMessage(n.highlight(a,n.languages[r],r)),l&&_self.close()},!1),_self.Prism):_self.Prism;var a=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return a&&(n.filename=a.src,n.manual||a.hasAttribute("data-manual")||("loading"!==document.readyState?window.requestAnimationFrame?window.requestAnimationFrame(n.highlightAll):window.setTimeout(n.highlightAll,16):document.addEventListener("DOMContentLoaded",n.highlightAll))),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+Prism.languages.markup={comment:/<!--[\s\S]*?-->/,prolog:/<\?[\s\S]+?\?>/,doctype:/<!DOCTYPE[\s\S]+?>/i,cdata:/<!\[CDATA\[[\s\S]*?]]>/i,tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s+[^\s>\/=]+(?:=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+))?)*\s*\/?>/i,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/i,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"attr-value":{pattern:/=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+)/i,inside:{punctuation:[/^=/,{pattern:/(^|[^\\])["']/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:/&#?[\da-z]{1,8};/i},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.hooks.add("wrap",function(a){"entity"===a.type&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Prism.languages.xml=Prism.languages.markup,Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup;
+Prism.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:/@[\w-]+?.*?(?:;|(?=\s*\{))/i,inside:{rule:/@[\w-]+/}},url:/url\((?:(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1|.*?)\)/i,selector:/[^{}\s][^{};]*?(?=\s*\{)/,string:{pattern:/("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},property:/[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,important:/\B!important\b/i,"function":/[-a-z0-9]+(?=\()/i,punctuation:/[(){};:]/},Prism.languages.css.atrule.inside.rest=Prism.languages.css,Prism.languages.markup&&(Prism.languages.insertBefore("markup","tag",{style:{pattern:/(<style[\s\S]*?>)[\s\S]*?(?=<\/style>)/i,lookbehind:!0,inside:Prism.languages.css,alias:"language-css",greedy:!0}}),Prism.languages.insertBefore("inside","attr-value",{"style-attr":{pattern:/\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,inside:{"attr-name":{pattern:/^\s*style/i,inside:Prism.languages.markup.tag.inside},punctuation:/^\s*=\s*['"]|['"]\s*$/,"attr-value":{pattern:/.+/i,inside:Prism.languages.css}},alias:"language-css"}},Prism.languages.markup.tag));
+Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(?:true|false)\b/,"function":/[a-z0-9_]+(?=\()/i,number:/\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
+Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(?:_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/-[>-]?|\+\+?|!=?|<<?=?|>>?=?|==?|&&?|\|\|?|[~^%?*\/]/,number:/(?:\b0x[\da-f]+|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?)[ful]*/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+(?:[^\r\n\\]|\\(?:\r\n|[\s\S]))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(?:<.+?>|("|')(?:\\?.)+?\2)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(?:define|defined|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(?:__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|SEEK_CUR|SEEK_END|SEEK_SET|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
+Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(?:true|false)\b/,operator:/--?|\+\+?|!=?|<{1,2}=?|>{1,2}=?|->|:{1,2}|={1,2}|\^|~|%|&{1,2}|\|\|?|\?|\*|\/|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)\w+/i,lookbehind:!0}}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
+!function(){function e(e,t){return Array.prototype.slice.call((t||document).querySelectorAll(e))}function t(e,t){return t=" "+t+" ",(" "+e.className+" ").replace(/[\n\t]/g," ").indexOf(t)>-1}function n(e,n,i){n="string"==typeof n?n:e.getAttribute("data-line");for(var o,l=n.replace(/\s+/g,"").split(","),a=+e.getAttribute("data-line-offset")||0,s=r()?parseInt:parseFloat,d=s(getComputedStyle(e).lineHeight),u=t(e,"line-numbers"),c=0;o=l[c++];){var p=o.split("-"),m=+p[0],f=+p[1]||m,h=e.querySelector('.line-highlight[data-range="'+o+'"]')||document.createElement("div");if(h.setAttribute("aria-hidden","true"),h.setAttribute("data-range",o),h.className=(i||"")+" line-highlight",u&&Prism.plugins.lineNumbers){var g=Prism.plugins.lineNumbers.getLine(e,m),y=Prism.plugins.lineNumbers.getLine(e,f);g&&(h.style.top=g.offsetTop+"px"),y&&(h.style.height=y.offsetTop-g.offsetTop+y.offsetHeight+"px")}else h.setAttribute("data-start",m),f>m&&h.setAttribute("data-end",f),h.style.top=(m-a-1)*d+"px",h.textContent=new Array(f-m+2).join(" \n");u?e.appendChild(h):(e.querySelector("code")||e).appendChild(h)}}function i(){var t=location.hash.slice(1);e(".temporary.line-highlight").forEach(function(e){e.parentNode.removeChild(e)});var i=(t.match(/\.([\d,-]+)$/)||[,""])[1];if(i&&!document.getElementById(t)){var r=t.slice(0,t.lastIndexOf(".")),o=document.getElementById(r);o&&(o.hasAttribute("data-line")||o.setAttribute("data-line",""),n(o,i,"temporary "),document.querySelector(".temporary.line-highlight").scrollIntoView())}}if("undefined"!=typeof self&&self.Prism&&self.document&&document.querySelector){var r=function(){var e;return function(){if("undefined"==typeof e){var t=document.createElement("div");t.style.fontSize="13px",t.style.lineHeight="1.5",t.style.padding=0,t.style.border=0,t.innerHTML="&nbsp;<br />&nbsp;",document.body.appendChild(t),e=38===t.offsetHeight,document.body.removeChild(t)}return e}}(),o=0;Prism.hooks.add("before-sanity-check",function(t){var n=t.element.parentNode,i=n&&n.getAttribute("data-line");if(n&&i&&/pre/i.test(n.nodeName)){var r=0;e(".line-highlight",n).forEach(function(e){r+=e.textContent.length,e.parentNode.removeChild(e)}),r&&/^( \n)+$/.test(t.code.slice(-r))&&(t.code=t.code.slice(0,-r))}}),Prism.hooks.add("complete",function l(e){var r=e.element.parentNode,a=r&&r.getAttribute("data-line");if(r&&a&&/pre/i.test(r.nodeName)){clearTimeout(o);var s=Prism.plugins.lineNumbers,d=e.plugins&&e.plugins.lineNumbers;t(r,"line-numbers")&&s&&!d?Prism.hooks.add("line-numbers",l):(n(r,a),o=setTimeout(i,1))}}),window.addEventListener("hashchange",i),window.addEventListener("resize",function(){var e=document.querySelectorAll("pre[data-line]");Array.prototype.forEach.call(e,function(e){n(e)})})}}();
+</script>
+
+</head>
+<body>
+<address align=right>
+Document Number: DxxxxR0 <br />
+Date: 2018-07-24 <br />
+Audience: EWG, LEWG <br />
+Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, andrew dot n dot sutton at gmail dot com <br />
+</address>
+<hr /><h1 align=center>Overload sets as function parameters</h1>
+<h2>Contents</h2>
+<div class="toc">
+<ol>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#history">History</a></li>
+<li><a href="#proposal">Proposal</a><ol>
+<li><a href="#implementation-details">Implementation details</a></li>
+<li><a href="#constraining-on-overload_set">Constraining on overload_set</a></li>
+<li><a href="#deduction-rules">Deduction rules</a><ol>
+<li><a href="#deducing-from-an-object">Deducing from an object</a></li>
+<li><a href="#deducing-from-a-name-of-a-function">Deducing from a name of a function</a><ol>
+<li><a href="#deducing-from-a-name-that-cannot-be-found-by-unqualified-lookup">Deducing from a name that cannot be found by unqualified lookup</a></li>
+</ol>
+</li>
+<li><a href="#deducing-from-partial-class-member-access">Deducing from partial class member access</a></li>
+<li><a href="#deducing-from-a-type-member-access">Deducing from a type-member access</a></li>
+<li><a href="#deducing-from-an-operator-function-id">Deducing from an operator-function-id</a></li>
+<li><a href="#deducing-from-a-type-name">Deducing from a type name</a></li>
+<li><a href="#summary-of-deduction-rules">Summary of deduction rules</a></li>
+</ol>
+</li>
+<li><a href="#standard-library-functions-now-and-future">Standard library functions, now and future</a></li>
+<li><a href="#alternative-spellings">Alternative spellings</a></li>
+<li><a href="#other-potential-avenues">Other potential avenues</a></li>
+</ol>
+</li>
+<li><a href="#acknowledgements">Acknowledgements</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</div>
+
+<h2 id="motivation">1. Motivation</h2>
+<p>Calling a function in C++ in pretty fundamental. But abstracting that function call, the most basic generalization, doesn't always work out neatly. </p>
+<p>Anytime today that we can write:</p>
+<pre class="codehilite"><code class="language-cpp">namespace N {
+    struct X { ... };
+    X getX();
+}
+
+foo(N::getX()); // for any 'foo'</code></pre>
+
+
+<p>We might want to also be able to write:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename F&gt;
+void algorithm(F f, X x) {
+    f(x);
+}
+
+algorithm(foo, N::getX()); // for that same 'foo'</code></pre>
+
+
+<p>These are, conceptually, very similar. But there are many cases where the former code compiles and runs without issue but the latter fails:</p>
+<ol>
+<li><code class="language-cpp">foo</code> could be a function that takes default arguments</li>
+<li><code class="language-cpp">foo</code> could be a function template</li>
+<li><code class="language-cpp">foo</code> could name an overload set</li>
+<li><code class="language-cpp">foo</code> could be a function that was only found by ADL</li>
+<li><code class="language-cpp">foo</code> in unqualified lookup could have found one function, and so the call to <code class="language-cpp">algorithm()</code> succeeds, but the ADL <code class="language-cpp">foo</code> wasn't found and so the call within <code class="language-cpp">algorithm()</code> fails. Worst case, the <code class="language-cpp">foo</code> found by unqualified lookup is actually a viable candidate, so the wrong function gets called.</li>
+<li><code class="language-cpp">foo</code> could be the name of a non-static member function, or non-static member function template, and we are invoking it from within a non-static member function.</li>
+<li><code class="language-cpp">foo</code> could be a partial member access, something like <code class="language-cpp">obj.func</code>, which is valid to spell only in the context of invoking the function.</li>
+<li><code class="language-cpp">foo</code> could name a function in the standard library, which we are not allowed to take a pointer to (this restriction made more explicit in light of <a href="https://wg21.link/p0551r3" title="Thou Shalt Not Specialize std Function Templates!">P0551</a> and <a href="https://wg21.link/p0921r0" title="Standard Library Compatibility Promises">P0921</a>).</li>
+</ol>
+<p>The only solution to this problem today, outside of trafficking exclusively in function objects, is to manually wrap <code class="language-cpp">foo</code> in a lambda - and probably be quite vigiliant about doing so:</p>
+<pre class="codehilite"><code class="language-cpp">algorithm(getX(), [&amp;](auto&amp;&amp; ...args) 
+    noexcept(noexcept(foo(std::forward&lt;decltype(args)&gt;(args)...)))
+    -&gt; decltype(foo(std::forward&lt;decltype(args)&gt;(args)...)) {
+    return foo(std::forward&lt;decltype(args)&gt;(args)...);
+});</code></pre>
+
+
+<p>which is usually seen in the wild in macro form:</p>
+<pre class="codehilite"><code class="language-cpp">#define FWD(x) static_cast&lt;decltype(x)&amp;&amp;&gt;(x)
+#define RETURNS(expr) noexcept(noexcept(expr)) -&gt; decltype(expr) { return expr; }
+#define OVERLOADS_OF(name) [&amp;](auto&amp;&amp; ...args) RETURNS(name(FWD(args)...))
+
+algorithm(getX(), OVERLOADS_OF(foo));</code></pre>
+
+
+<p>This can be found, for instance, in <a href="http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html" title="BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation">Boost.HOF</a> as <code class="language-cpp">BOOST_HOF_LIFT</code>, and in a recent blog of Andrzej Krzemieński's on <a href="https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/" title="Functions in std | Andrzej's C++ blog">this topic</a>.</p>
+<p>However, this is a pretty unsatisfactory solution: we rely on a macro. Or even if not, we have to be vigilant about manually wrapping each and every function at every call site. Why "every"? Because otherwise, we might write code that works today but ends up being very brittle, easily broken. Consider a fairly trivial example:</p>
+<pre class="codehilite"><code class="language-cpp+">// some library
+void do_something(int );
+
+// some user
+std::invoke(do_something, 42);</code></pre>
+
+
+<p>This works fine today. But the library that provided <code class="language-cpp">do_something</code> might someday wish to make some improvements. Maybe add a defaulted second argument to <code class="language-cpp">do_something</code>. Or a new overload. Or turn <code class="language-cpp">do_something</code> into a function template. Any number of changes that would not change the meaning of code directly invoking <code class="language-cpp">do_something</code> with an <code class="language-cpp">int</code>. The kinds of changes detailed in <a href="https://wg21.link/p0921r0" title="Standard Library Compatibility Promises">P0921</a>. All of these changes would break the above user code - even though it compiles today. So <em>even here</em>, it would be better had the user written:</p>
+<pre class="codehilite"><code class="language-cpp">std::invoke(OVERLOADS_OF(do_something), 42);</code></pre>
+
+
+<p>or, at the very least:</p>
+<pre class="codehilite"><code class="language-cpp">std::invoke([](int i){ do_something(i); }, 42);</code></pre>
+
+
+<p>And that's simply too much to ask of the user - it's too much to have to think about it! We're asking the user to, every time, put a bunch of seemingly unnecessary annotation on every call site. After all, in the context of being invoked by a single argument, these two <em>should be</em> equivalent:</p>
+<table>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">[&amp;](auto&amp;&amp; arg) 
+    noexcept(noexcept(foo(FWD(arg))))
+    -&gt; decltype(foo(FWD(arg)))
+{
+    return foo(FWD(arg));
+}</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">foo</code></pre>
+</td>
+</tr>
+</table>
+
+<p>But they are unfortunately not equivalent today, so we have to write the stuff on the left. But the idea we want to express is <em>just</em> to invoke a function by name. Having to explicitly list all of the arguments twice - once in the parameter list, once in the call expression of the lambda body (or even four times in the <em>noexcept-specifier</em> and <em>trailing-return-type</em>) - does not aid the reader in any way.</p>
+<p>This is a real problem today. There are many, many higher-order functions that exist in C++ code. They exist in the standard library algorithms, they exist in user-provided libraries. With the adoption of <a href="https://wg21.link/p0896r2" title="The One Ranges Proposal">Ranges</a>, we will get many more - both in terms of algorithms, projections on algorithms, and views. Higher-order functions are ubiquitous, and incredibly useful. Unfortunately, user problems in trying to pass callables to them are just as ubiquitous <sup><a href="https://stackoverflow.com/q/46587694/2069064">[1]</a> <a href="https://stackoverflow.com/q/47984031/2069064">[2]</a> <a href="https://stackoverflow.com/q/24874478/2069064">[3]</a> <a href="https://stackoverflow.com/q/43502837/2069064">[4]</a> <a href="https://stackoverflow.com/q/46146346/2069064">[5]</a> <a href="https://stackoverflow.com/q/44730281/2069064">[6]</a> <a href="https://stackoverflow.com/q/43141181/2069064">[7]</a> ...</sup>. It's important to give users a solution to this problem, that preferably is not reaching for a macro like <code class="language-cpp">OVERLOADS_OF</code> or having to manually write a lambda (possibly inefficiently).</p>
+<p>Being able to write just the function name, as opposed to having to list the arguments and the body, is sometimes referred to as <a href="https://en.wikipedia.org/wiki/Tacit_programming">"<strong>point-free</strong>" programming</a>, a term more commonly used in languages like Haskell. Being able to write point-free in the context of C++ means being able to pass in names and have that <em>just work</em> regardless of what the name happens to refer to. It means that any time <code class="language-cpp">foo(x)</code> works that <code class="language-cpp">algorithm(foo, x)</code> could be made to work also.</p>
+<p>Titus Winters in a <a href="https://youtu.be/2UmDvg5xv1U?t=284" title="Modern C++ API Design: From Rvalue-References to Type Design">recent C++Now talk</a> described the overload set as the atom of C++ API design. And yet, we cannot even pass this atom into other atoms with reaching for lambdas, forwarding references, and trailing return types.</p>
+<p>We can do better.</p>
+<h2 id="history">2. History</h2>
+<p>This problem has a long history attached to it, with two different tacks explored.</p>
+<p><a href="https://wg21.link/p0119r2" title="Overload sets as function arguments">P0119</a> proposed a syntax-free, "just make it work" approach: synthesize a lambda if, based on a heuristic, it's likely the intended behavior (e.g. if the name nominates an overload set). Unfortunately, this solution fails, as demonstrated in <a href="https://wg21.link/p0382r0" title="Comments on P0119: Overload sets as function arguments">P0382</a>.</p>
+<p><a href="https://wg21.link/n3617" title="Lifting overload sets into function objects">N3617</a> (also <a href="https://wg21.link/ewg65" title="N3617 Lifting overload sets into function objects">EWG65</a>) and later <a href="https://wg21.link/p0834r0" title="Lifting overload sets into objects">P0834</a> proposed syntax for the caller to use to explicitly synthesize an overload set:</p>
+<pre class="codehilite"><code class="language-cpp">algorithm(getX(), []foo);
+std::invoke([]do_something, 42);</code></pre>
+
+
+<p>This was rejected by EWG in the <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0">Albuquerque</a>, and would still have the same problem with placing the onus on the user to avoid brittleness at each and every call site. It is point-free though, and terse enough to be basically invisible. That discussion did conclude with this poll:</p>
+<blockquote>
+<p><em>Are we interested in a core language feature for packing concrete overload sets?</em></p>
+<p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>3</td><td>4</td><td>14</td><td>0</td><td>1</td></table></p>
+</blockquote>
+<p><a href="https://wg21.link/p0573r2" title="Abbreviated Lambdas for Fun and Profit">P0573</a> wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2">Albuquerque</a>, and also did not even try to solve the point-free problem.</p>
+<p>Despite this long history, we believe that this is a problem that needs to be solved. It is unreasonably difficult today to pass a function into another function. The increased emphasis on disallowing users from taking pointers to standard library functions and function templates directly pushes the issue. A significant portion of the discussion of <a href="https://wg21.link/p0798r0" title="Monadic operations for std::optional">P0798</a> in LEWG in <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798">Rapperswil</a> was about the problem of passing overload sets into functions - because the paper would simply introduce more places where users may want to do such a thing. Notably, LEWG took these polls:</p>
+<blockquote>
+<p><em>Assuming the language gets fixed so we can pass overload sets to callables, we want something like this (either as a general monad syntax or specifically in optional).</em></p>
+<p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>12</td><td>4</td><td>0</td><td>0</td><td>0</td></table></p>
+<p><em>We want something like this, even if the language is not fixed with respect to overload sets.</em></p>
+<p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>5</td><td>4</td><td>3</td><td>1</td><td>1</td></table></p>
+</blockquote>
+<p>This is a problem that needs solving, and it has to be solved at the language level.</p>
+<h2 id="proposal">3. Proposal</h2>
+<p>The community tried to solve this problem without adding any syntax, and it tried to solve this problem by adding syntax on the caller's site. We propose a new approach: adding syntax on the function declaration itself. That is, rather than having overload sets as function <em>arguments</em> we instead have overload sets as function <em>parameters</em>.</p>
+<p>We propose a new magic library type, <code class="language-cpp">std::overload_set&lt;T&gt;</code> (see <a href="#alternative-spellings">alternative spellings</a>) that will deduce an overload set, and we will call this new object an <em>overload set object</em>. The fundamental goal driving the design of <code class="language-cpp">overload_set</code> is that anywhere <code class="language-cpp">foo(a, b, c)</code> works today, <code class="language-cpp">std::overload_set(foo)(a, b, c)</code> should also work and have the same meaning:</p>
+<pre class="codehilite"><code class="language-cpp">void foo(int);      // #1
+void foo(int, int); // #2
+
+template &lt;typename F, typename... Args&gt;
+void algorithm(std::overload_set&lt;F&gt; f, Args... args) {
+    f(args...);
+}
+
+foo(1);               // calls #1
+foo(2, 3);            // calls #2
+algorithm(foo, 1);    // ok: calls #1
+algorithm(foo, 2, 3); // ok: calls #2
+
+std::overload_set f = foo; // note: deduction guide magic
+f(1);                      // ok: calls #1
+f(2, 3);                   // ok: calls #2</code></pre>
+
+
+<p>The difference is that, instead of burdening the caller to annotate each and every function, it's up to the API to do that annotation. There are many more callers than callees, so this seems like it places the burden on the correct party. APIs that use <code class="language-cpp">overload_set</code> would be very friendly for users, and would allow for a point-free style.</p>
+<p>For legacy APIs that do not use <code class="language-cpp">overload_set</code> for their callables, <code class="language-cpp">overload_set</code> can be used on the call site as a substitute for the macro. This is admittedly much longer than the <code class="language-cpp">[]</code> proposed in P0834/N3617, but it is at least substantially better than a macro. And legacy APIs can be easily transitioned to take advantage of this feature by simply adding <a href="#standard-library-functions-now-and-future">another overload</a>.</p>
+<h3 id="implementation-details">3.1. Implementation details</h3>
+<p>An <code class="language-cpp">overload_set&lt;T&gt;</code> contains a <code class="language-cpp">T</code> and has a call operator that forwards to <code class="language-cpp">T</code>'s call operator. Its copy and move constructors and assignment operators are defaulted, its other constructors are unspecified.</p>
+<p>A hypothetical implementation might look like:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+class overload_set {
+    T f;
+public:
+    overload_set(/* unspecified */);
+
+    overload_set(overload_set const&amp;) = default;
+    overload_set(overload_set&amp;&amp;) = default;
+    overload_set&amp; operator=(overload_set const&amp;) = default;
+    overload_set&amp; operator=(overload_set&amp;&amp;) = default;
+    ~overload_set() = default;
+
+    template &lt;typename... Us&gt;
+    invoke_result_t&lt;F&amp;, Us...&gt; operator()(Us&amp;&amp;... us) &amp;
+        noexcept(is_nothrow_invocable_v&lt;F&amp;, Us...&gt;);
+
+    template &lt;typename... Us&gt;
+    invoke_result_t&lt;F const&amp;, Us...&gt; operator()(Us&amp;&amp;... us) const&amp; 
+        noexcept(is_nothrow_invocable_v&lt;F const&amp;, Us...&gt;);
+
+    template &lt;typename... Us&gt;
+    invoke_result_t&lt;F, Us...&gt; operator()(Us&amp;&amp;... us) &amp;&amp;
+        noexcept(is_nothrow_invocable_v&lt;F, Us...&gt;);
+
+    template &lt;typename... Us&gt;
+    invoke_result_t&lt;F const, Us...&gt; operator()(Us&amp;&amp;... us) const&amp;&amp; 
+        noexcept(is_nothrow_invocable_v&lt;F const, Us...&gt;);
+};</code></pre>
+
+
+<p>With appropriate deduction guides. An open question is whether or not an <code class="language-cpp">overload_set&lt;T&gt;</code> should be (explicitly or implicitly) convertible to a <code class="language-cpp">T</code>.</p>
+<h3 id="constraining-on-overload_set">3.2. Constraining on <code class="language-cpp">overload_set</code></h3>
+<p>Since <code class="language-cpp">overload_set&lt;T&gt;</code> simply contains a <code class="language-cpp">T</code>, and its call operators are based on <code class="language-cpp">T</code>s, this interacts very well with how template constraints are written:</p>
+<pre class="codehilite"><code class="language-cpp">// SFINAE constraint has the desired effect
+template &lt;typename F, enable_if_t&lt;is_invocable_v&lt;F&amp;, int&gt;, int&gt; = 0&gt;
+void foo(overload_set&lt;F&gt; f) {
+    f(42);
+}
+
+// trailing-return constrained has the desired effect
+template &lt;typename F&gt;
+auto foo(overload_set&lt;F&gt; f) -&gt; decltype(f(17)) {
+    return f(17);
+}
+
+// concept has the desired effect
+template &lt;LvalueInvocable&lt;int&gt; F&gt;
+void bar(overload_set&lt;F&gt; f) {
+    f(63);
+}</code></pre>
+
+
+<h3 id="deduction-rules">3.3. Deduction rules</h3>
+<p>The annotation <code class="language-cpp">overload_set</code> will trigger new deduction rules based not just on the type of the argument it is being deduced from, but also on its <em>name</em>, and even the token sequence.</p>
+<p>There are many cases we're proposing, each will synthesize a slightly different function object. We will go over these proposed deduction rules in detail, and then <a href="#summary-of-deduction-rules">summarize them</a>.</p>
+<h4 id="deducing-from-an-object">3.3.1. Deducing from an object</h4>
+<p>If the argument is an object, whether it is a function object or a pointer (or reference) to function or pointer to member, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as the object's type:</p>
+<pre class="codehilite"><code class="language-cpp">auto square = [](int i){ return i * i; };
+
+template &lt;typename T&gt; void deduce(std::overload_set&lt;T&gt; f);
+deduce(square); // deduce T as decltype(square)</code></pre>
+
+
+<p>The function parameter <code class="language-cpp">f</code> will have the same underlying type as <code class="language-cpp">square</code>. There is no synthesis of a new lambda in this scenario, we are just copying the lambda. </p>
+<p>An <code class="language-cpp">overload_set</code> can be deduced from an object if that object is callable. It must be either a pointer or reference to function or member function, or have class type with at least one declared <code class="language-cpp">operator()</code> or one declared conversion function which can create a surrogate call function as per <a href="http://eel.is/c++draft/over.call.object">[over.call.object]</a>. For any other type, <code class="language-cpp">overload_set</code> cannot be deduced:</p>
+<pre class="codehilite"><code class="language-cpp">deduce(42);      // error
+deduce(new int); // error 
+deduce(&amp;square); // error
+deduce(&quot;hi&quot;s);   // error</code></pre>
+
+
+<p>We also propose that deducing an <code class="language-cpp">overload_set</code> whose template type parameter is an rvalue reference to <em>cv</em>-unqualified template parameter behaves as a forwarding reference. Since <code class="language-cpp">overload_set&lt;T&gt;</code> is simply a <code class="language-cpp">T</code>, <code class="language-cpp">overload_set&lt;T&amp;&gt;</code> is likewise simply a <code class="language-cpp">T&amp;</code>. This allows for overload set objects that are actually references:</p>
+<pre class="codehilite"><code class="language-cpp">// copy
+template &lt;typename T&gt; auto f_copy(overload_set&lt;T&gt; f) { return f; }
+
+// const copy
+template &lt;typename T&gt; auto f_const(overload_set&lt;T const&gt; f) { return f; }
+
+// lvalue reference
+template &lt;typename T&gt; auto f_lref(overload_set&lt;T&amp;&gt; f) { return f; }
+
+// forwarding reference
+template &lt;typename T&gt; auto f_fref(overload_set&lt;T&amp;&amp;&gt; f) { return f; }
+
+struct Counter {
+    int i;
+    int operator() { return ++i; }
+};
+
+Counter c{0};
+c();
+assert(c.i == 1);
+
+f_copy(c)();
+assert(c.i == 1);
+f_const(c)(); // ill-formed, Counter::operator() isn't const
+f_lref(c)();
+assert(c.i == 2);
+f_fref(c)(); // calls f_fref&lt;Counter&amp;&gt;, because forwarding reference
+assert(c.i == 3);</code></pre>
+
+
+<p>This allows the API to avoid copying if it so desires. </p>
+<p>This rule gives the appearance of the <code class="language-cpp">&amp;</code> simply being in the wrong place. But there is a difference between <code class="language-cpp">overload_set&lt;T&amp;&gt;</code> (an overload set object which is a reference to a callable object) and <code class="language-cpp">overload_set&lt;T&gt;&amp;</code> (a reference to an overload set object).</p>
+<h4 id="deducing-from-a-name-of-a-function">3.3.2. Deducing from a name of a function</h4>
+<p>If the argument is the (qualified or unqualified) name of a function, function template, static member function or static member function template, or an overload set containing any number of either, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as a synthesized lambda in the style of <code class="language-cpp">OVERLOADS_OF</code>:</p>
+<pre class="codehilite"><code class="language-cpp">[](auto&amp;&amp; ...args) noexcept(noexcept(name(FWD(args)...)))
+        -&gt; decltype(name(FWD(args)...)) {
+    return name(FWD(args)...);
+}</code></pre>
+
+
+<p>Qualified names synthesize a lambda that makes a qualified call. Unqualified names synthesize a lambda that makes an unqualified call. Note that this lambda has no capture - we're just calling functions by name.</p>
+<p>This is true even if name lookup finds <em>one single</em> function:</p>
+<pre class="codehilite"><code class="language-cpp">int square(int i) { 
+    return i * i;
+}
+
+// note that square is not an object here, it's the name of a function.
+// the underlying type of f is a lambda, not a function pointer
+auto f = std::overload_set(square);</code></pre>
+
+
+<p>The reason for this is we want to have ADL still work:</p>
+<pre class="codehilite"><code class="language-cpp">void g(int);
+void h(int);
+void h(double);
+namespace N {
+    struct X { };
+
+    void g(X);
+    void h(X);
+}
+
+auto over_g = std::overload_set(g);
+auto over_h = std::overload_set(h);
+over_g(N::X{}); // ok, calls N::g... not an error trying to invoke ::g
+over_h(N::X{}); // ok, calls N::h</code></pre>
+
+
+<p>Note that this is only the case if we deduce by <em>name</em>. If we had instead passed in a pointer to <code class="language-cpp">g</code>, we would be in the object case described in the previous section:</p>
+<pre class="codehilite"><code class="language-cpp">auto ptr_g = std::overload_set(&amp;g);
+ptr_g(0);      // ok
+ptr_g(N::X{}); // error, no conversion from N::X to int
+
+auto ptr_h = std::overload_set(&amp;h); // error: unresolved overloaded function</code></pre>
+
+
+<p>The lookup set is frozen at the time of the construction of the overload set object, in the same way it would be had we done it manually:</p>
+<pre class="codehilite"><code class="language-cpp">void foo(int);
+auto f1 = std::overload_set(foo);
+void foo(double);
+auto f2 = std::overload_set(foo);
+
+f1(2.0); // calls foo(int)
+f2(2.0); // calls foo(double)</code></pre>
+
+
+<p>This works with function templates or qualified names:</p>
+<pre class="codehilite"><code class="language-cpp">namespace N {
+    template &lt;typename T&gt; T twice(T);
+}
+
+std::invoke(overload_set(N::twice), 1);      // calls N::twice&lt;int&gt;
+std::invoke(overload_set(N::twice), &quot;hi&quot;s);  // calls N::twice&lt;std::string&gt;</code></pre>
+
+
+<p>It is unspecified whether or not multiple overload set objects created for the same name in the same context have the same type.</p>
+<p>This works even with function templates where one template parameter is explicitly provided but the rest are deduced:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
+T convert_to(U);
+
+// this is okay
+auto to_int = overload_set(convert_to&lt;int&gt;);
+to_int(1);   // ok: calls convert_to&lt;int, int&gt;
+to_int(2.0); // ok: calls convert_to&lt;int, double&gt;
+
+// but not this
+auto convert = overload_set(convert_to);
+convert(1);      // error: can't deduce T
+convert&lt;int&gt;(1); // error: the 'int' would apply to the argument of convert
+                 // there's no 'passthrough' of template parameters</code></pre>
+
+
+<p>It is an open question as to whether or not parenthesized unqualified names should disable ADL (and get early diagnosed typos) or not:</p>
+<pre class="codehilite"><code class="language-cpp">void foo(int);
+namespace N {
+    struct X { };
+    void foo(X);
+}
+
+auto f = std::overload_set((foo)); // NB: parenthesized
+f(N::X{}); // ok or error?</code></pre>
+
+
+<p>Does that call succeed (ADL finding <code class="language-cpp">N::foo</code>) or does the synthesized function behave as if <code class="language-cpp">(foo)(FWD(args)...)</code>, which would not consider ADL, and hence fail with no matching overload?</p>
+<h5 id="deducing-from-a-name-that-cannot-be-found-by-unqualified-lookup">3.3.2.1. Deducing from a name that cannot be found by unqualified lookup</h5>
+<p>Consider a slight variation from an example from the previous section:</p>
+<pre class="codehilite" data-line="7,12,16"><code class="language-cpp">void g(int);
+void h(int);
+void h(double);
+namespace N {
+    struct X { };
+
+    void f(X);
+    void g(X);
+    void h(X);
+}
+
+auto over_f = std::overload_set(f);
+auto over_g = std::overload_set(g);
+auto over_h = std::overload_set(h);
+
+over_f(N::X{});
+over_g(N::X{});
+over_h(N::X{});</code></pre>
+
+
+<p>Should this work? In the previous section, we introduced a rule based on synthesizing a lambda if name lookup finds a function or function template or overload set... but on line 12 here, name lookup on <code class="language-cpp">f</code> finds nothing. Can we really ignore that?</p>
+<p>Perhaps <code class="language-cpp">f</code> was a typo, and the programmer really meant <code class="language-cpp">g</code> and we would be doing them a disservice if we do not diagnose at the point of its use on line 12. </p>
+<p>On the other hand, a user trying to pass the name <code class="language-cpp">f</code> into a function would write this code:</p>
+<pre class="codehilite"><code class="language-cpp">auto over_f = [](auto e) { return f(e); };
+over_f(N::X{});</code></pre>
+
+
+<p>which would diagnose at the point of call rather than at the point of the declaration of the lambda if there was no such function <code class="language-cpp">f</code>. </p>
+<p>The motivation of this paper is very much to allow for the separation of the function from its arguments, and since in the original example <code class="language-cpp">f(N::X{})</code> would work (by finding <code class="language-cpp">N::f</code> via ADL), we firmly believe that <code class="language-cpp">std::overload_set(f)(N::X{})</code> should work as well.</p>
+<p>In order to achieve that goal, we amend the previous stated rule to also synthesize the same kind of lambda from an unqualified name for which lookup finds nothing. </p>
+<p>We can safely reject any attempt to use a qualified name for which we cannot find any candidates. </p>
+<h4 id="deducing-from-partial-class-member-access">3.3.3. Deducing from partial class member access</h4>
+<p>If the argument is a partial class member access, of the forms <code class="language-cpp">x.y</code>, <code class="language-cpp">x-&gt;y</code>, or, in the context of a member function, <code class="language-cpp">y</code>, where <code class="language-cpp">y</code> is the name of a member function, member function template, overload set of member functions, or an object that is callable in some way, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as a synthesized type which captures the class object or pointer.</p>
+<p>The rule here is that <code class="language-cpp">overload_set(obj.mem)</code> will copy <code class="language-cpp">obj</code>, just as <code class="language-cpp">overload_set(ptr-&gt;mem)</code> will copy <code class="language-cpp">ptr</code>. This gives the user control over how the object is captures to invoke the member function. If capture-by-copy is desired, use the dot access syntax. If capture-by-reference is desired, then either take a pointer to your object (i.e. <code class="language-cpp">overload_set((&amp;obj).mem)</code>) or wrap it in a reference (i.e. <code class="language-cpp">overload_set(std::ref(obj).mem)</code>). </p>
+<pre class="codehilite"><code class="language-cpp">std::string s = &quot;hello&quot;;    
+std::overload_set f = s.size;        // f holds a copy of s, i.e. by value
+std::overload_set g1 = (&amp;s)-&gt;size;   // g1 holds a copy of &amp;s, i.e. by reference
+std::overload_set g2 = ref(s).size;  // g2 also holds a reference
+
+s += &quot;, world&quot;;
+assert(f() == 5);
+assert(g1() == 12);
+assert(g2() == 12);</code></pre>
+
+
+<p>This rule is necessary to cover the two situations where we can directly invoke a function by name, but cannot stash the name to be invoked later: invoking a non-static member function from within the body of a non-static member function, and normal invocation of member functions on objects:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    void foo();
+
+    void bar() {
+        foo();                    // ok
+        std::overload_set(foo)(); // proposed ok
+    }
+};
+
+X x;
+x.foo();                    // ok
+std::overload_set(x.foo)(); // proposed ok</code></pre>
+
+
+<p>Such partial member syntax is ill-formed today, which seems wasteful. This syntax is available in Python and is widely used. The desire to write such code is the entire motivation for <a href="https://wg21.link/p0356r3" title="Simplified partial function application">P0356</a>:</p>
+<pre class="codehilite"><code class="language-cpp">struct Strategy { double process(std:string, std::string, double, double); };
+
+std::unique_ptr&lt;Strategy&gt; createStrategy();
+
+// p0356: note that this suffers from all of the same problems
+// through this paper regarding API brittleness, due to the named
+// pointer to member function
+auto f = std::bind_front(&amp;Strategy::process, createStrategy());
+
+// proposed: strictly better than the above: more expressive
+// of user intent, in addition to simply working in more cases
+auto g = std::overload_set(createStrategy()-&gt;process);</code></pre>
+
+
+<p>Given a general output function iterator, you could, for instance, specify <code class="language-cpp">push_back()</code> directly instead of using <code class="language-cpp">back_inserter()</code>:</p>
+<pre class="codehilite"><code class="language-cpp">// today
+std::transform(src.begin(), src.end(),
+    std::back_inserter(dst),
+    f);
+
+// proposed
+std::transform(src.begin(), src.end(),
+    function_output(std::ref(dst).push_back),
+    f);</code></pre>
+
+
+<h4 id="deducing-from-a-type-member-access">3.3.4. Deducing from a type-member access</h4>
+<p>When it comes to member functions, we depart somewhat from our initially stated goal of having the validity of <code class="language-cpp">foo(a, b, c)</code> imply the validity of <code class="language-cpp">std::overload_set(foo)(a, b, c)</code>. While member functions are conceptually functions that take, as their first argument, an instance of the class type, that is not the way they are spelled (despite <code class="language-cpp">INVOKE</code>). Moreover, we cannot use <code class="language-cpp">&amp;Class::mem</code> as a launching point for a special deduction rule, since that already is a pointer to member function and would be covered by the object rules.</p>
+<p>However, invoking member functions in such a way is still highly useful today, and will become even more highly in demand with the adoption of Ranges and its heavy use of projections. The motivating example for projections in <a href="https://wg21.link/N4128" title="Ranges for the Standard Library, Revision 1">N4128</a> was:</p>
+<pre class="codehilite"><code class="language-cpp">std::sort(a, std::less&lt;&gt;(), &amp;employee::last);
+auto p = std::lower_bound(a, &quot;Parent&quot;, std::less&lt;&gt;(), &amp;employee::last);</code></pre>
+
+
+<p>Which is great. And <code class="language-cpp">last</code> is a non-static data member, there are no problems whatsoever. But what if <code class="language-cpp">last</code> is an overloaded function or a function template? Such cases are not infrequent, and should be just as easy to use! </p>
+<p>We propose a novel syntax to cover these cases: <code class="language-cpp">Type.member</code>. Such syntax is ill-formed today, and has an intuitive meaning: invoke the member <code class="language-cpp">member</code> given an instance of type <code class="language-cpp">Type</code>. In other words, <code class="language-cpp">Type.member</code> is syntax for invoking a non-static member function/data set whereas <code class="language-cpp">Type::member</code> is syntax for invoking a static member function/data set.</p>
+<p>That is:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    template &lt;typename T&gt;
+    void bar(T ) const;
+    void bar(double, double) const;
+};
+
+std::overload_set bar = X.bar;
+
+X x;
+bar(x, 1);                  // calls X::bar&lt;int&gt;
+bar(&amp;x, 'x');               // calls X::bar&lt;char&gt;
+bar(std::ref(x), 2.0, 3.0); // calls X::bar(double, double)</code></pre>
+
+
+<p>The underlying type of <code class="language-cpp">bar</code> behaves similarly to having synthesized:</p>
+<pre class="codehilite"><code class="language-cpp">struct overloads_x_bar {
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;X, std::uncvref_t&lt;T&gt;&gt;
+    auto operator()(T&amp;&amp; x, Args&amp;&amp;... args) const 
+        RETURNS(FWD(x).bar(FWD(args)...))
+
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;X,
+            std::uncvref_t&lt;decltype(*std::declval&lt;T&gt;())&gt;&gt;
+    auto operator()(T&amp;&amp; x, Args&amp;&amp;... args) const
+        RETURNS((*FWD(x)).bar(FWD(args)...))
+
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;X, T&gt;
+    auto operator()(std::reference_wrapper&lt;T&gt; x, Args&amp;&amp;... args) const
+        RETURNS(x.get().bar(FWD(args)...))
+};
+
+overloads_x_bar bar;</code></pre>
+
+
+<p>In this way, <code class="language-cpp">std::overload_set(X.bar)</code> is a strictly superior alternative to <code class="language-cpp">std::mem_fn(&amp;X::bar)</code> and effectively obsoletes it:</p>
+<table style="width:100%">
+<tr><th colspan="2">Defaulted arguments</th></tr>
+<tr>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    int f(int, int=4);
+} obj;
+
+std::mem_fn(&amp;C::f)(obj, 1);    // error
+std::mem_fn(&amp;C::f)(obj, 1, 2); // ok, obj.f(1, 2)</code></pre>
+</td>
+<td style="width:50%">    
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    int f(int, int=4);
+} obj;
+
+std::overload_set(C.f)(obj, 1);    // ok, obj.f(1, 4);
+std::overload_set(C.f)(obj, 1, 2); // ok, obj.f(1, 2);</code></pre>
+</td>
+</tr>
+<tr><th colspan="2">Overloads</th></tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    int g(int);
+    int g(int, int);
+} obj;
+
+std::mem_fn(&amp;C::g); // error already
+
+// technically, okay, for some definition of okay
+std::mem_fn(static_cast&lt;int(C::*)(int)&gt;(&amp;C::g))(obj, 1);</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    int g(int);
+    int g(int, int);
+} obj;
+
+std::overload_set(C.g)(obj, 1);    // ok, obj.g(1)
+std::overload_set(C.g)(obj, 1, 2); // ok, obj.g(1, 2)</code></pre>
+</td>
+<tr><th colspan="2">Templates</th></tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    template &lt;typename T&gt;
+    void h(T);
+} obj;
+
+std::mem_fn(&amp;C::h);                // error already
+std::mem_fn(&amp;C::h&lt;int&gt;, obj, 1);   // ok, obj.h&lt;int&gt;(1)
+std::mem_fn(&amp;C::h&lt;int&gt;, obj, '1'); // ok, but
+      // manual template deduction picked the wrong type</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct C {
+    template &lt;typename T&gt;
+    void h(T);
+} obj;
+
+std::overload_set(C.h)(obj, 1);    // ok, obj.h&lt;int&gt;(1)
+std::overload_set(C.h)(obj, '1');  // ok, obj.h&lt;char&gt;('1')</code></pre>
+</td>
+</tr>
+</table>
+
+<p>In the case where the notation <code class="language-cpp">Type.member</code> nominates a data member (whether static or non-static), we can simply fallback to using the object deduction from the pointer to member <code class="language-cpp">&amp;Type::member</code>. In these cases, there are no issues with overloading or template deduction - since there can just be one member. </p>
+<p>Getting back to the initial examples from Ranges. Assuming projections would be implemented using this proposal, we would write:</p>
+<pre class="codehilite"><code class="language-cpp">std::sort(a, std::less&lt;&gt;(), employee.last);
+auto p = std::lower_bound(a, &quot;Parent&quot;, std::less&lt;&gt;(), employee.last);</code></pre>
+
+
+<p>And then just... not have to worry about anything. It just works. </p>
+<h4 id="deducing-from-an-operator-function-id">3.3.5. Deducing from an <em>operator-function-id</em></h4>
+<p>Going one step further from the previous cases, we want to further allow the synthesis of a lambda overload set from the name of an <em>operator-function-id</em>. This will synthesize a unary, binary, or hybrid callable depending on the operator in question. </p>
+<p>Many of these cases are already covered by preexisting function objects in <code class="language-cpp">&lt;functional&gt;</code>. <code class="language-cpp">std::overload_set(operator&lt;)</code> is <code class="language-cpp">std::less()</code>, <code class="language-cpp">std::overload_set(operator==)</code> is <code class="language-cpp">std::equal_to()</code>, and so forth. So why do we need them? </p>
+<p>The main argument is a question of readability. Everyone is familiar with the operators, they jump out more than names of objects. Not everyone is familiar with all of the equivalent names - very few are familiar with all of them. </p>
+<p>As initially suggested in P0119, we propose a shorthand parenthesized form for these operators as well.</p>
+<table style="width:100%">
+<tr>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::sort(a, std::greater());</code></pre>
+</td>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">// assuming sort() can be specified to take an
+// overload_set&lt;Compare&gt;
+std::sort(values, operator&gt;);
+std::sort(values, (&gt;));
+
+// equivalent to
+std::sort(values, [](auto&amp;&amp; a, auto&amp;&amp; b)
+    -&gt; decltype(FWD(a) &gt; FWD(b)) {
+    retur FWD(a) &gt; FWD(b);
+});</code></pre>
+</td>
+</tr>
+</table>
+
+<p>Combining with the previous sections examples, this gives us:</p>
+<table style="width:100%">
+<tr>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">// works only if the pointer to member &amp;employee::last
+// can be formed
+std::sort(a, std::less&lt;&gt;(), &amp;employee::last);
+auto p = std::lower_bound(a, &quot;Parent&quot;, std::less&lt;&gt;(),
+    &amp;employee::last);</code></pre>
+</td>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">// works regardless of how 'last' is implemented
+std::sort(a, (&lt;), employee.last);
+auto p = std::lower_bound(a, &quot;Parent&quot;, (&lt;), employee.last);</code></pre>
+</td>
+</tr>
+</table>
+
+<p>The synthesized lambda for the call operator would behalf equivalently to <code class="language-cpp">std::invoke</code>. That is:</p>
+<pre class="codehilite"><code class="language-cpp">auto inv = std::overload_set(operator());
+inv(a, b, c); // equivalent to std::invoke(a, b, c);</code></pre>
+
+
+<h4 id="deducing-from-a-type-name">3.3.6. Deducing from a type name</h4>
+<p>One final place situation we want to handle is when the function or overload set we're invoking is actually a constructor. In this case, the name isn't the name of a function or a function template, it's the name of a type:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    X(int);
+};
+
+// with Ranges today
+std::vector&lt;X&gt; makeXs(std::vector&lt;int&gt; const&amp; input) {
+    return input | view::transform([](int i){ return X(i); });
+}</code></pre>
+
+
+<p>The lambda <code class="language-cpp">[](int i){ return X(i); }</code> follows the same pattern as can be seen throughout the paper. In the same way that we've been able to replace this lambda with an overload set object for functions and operators and class member access, we'd also like to replace this for types. Writing <code class="language-cpp">X(1)</code> is a valid expression, so writing <code class="language-cpp">std::overload_set(X)(1)</code> should be as well:</p>
+<pre class="codehilite"><code class="language-cpp">// Proposed
+std::vector&lt;X&gt; makeXs(std::vector&lt;int&gt; const&amp; input) {
+    return input | view::transform(X);
+}</code></pre>
+
+
+<p>A type name very much behaves as if it were an overload set that, when invoked, produces an instance of that type. The <code class="language-cpp">emplace()</code> functions are very much forwarding arguments to that type function. Being able to deduce an overload set object from a type name just cements that model.</p>
+<h4 id="summary-of-deduction-rules">3.3.7. Summary of deduction rules</h4>
+<p>The following table goes through all the rules presented above. For each row, on the left is some declaration <code>std::overload_set <i>name</i> = <i>tokens</i>;</code> and on the right is an declaration for the type <code class="language-cpp">T</code> that would be synthesized for <code class="language-cpp">std::overload_set&lt;T&gt;</code> in this deduction.</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+<p>Declaration</p>
+</th>
+<th style="width:50%">
+<p>Equivalent synthesized type</p>
+</th>
+</tr>
+<tr>
+<th colspan="2">
+<p>Objects</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">auto square = [](int i) { return i * i; };
+
+std::overload_set a = square;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">using T_a = decltype(square);</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">void (*f)() = +[]{ /* ... */ };
+std::overload_set b = f;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">using T_b = void(*)();</code></pre>
+</td>
+</tr>
+<tr>
+<th colspan="2">
+<p>Function names</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">void foo(int);
+void foo(int, int);
+
+std::overload_set c = foo;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_c {
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(foo(FWD(args)...))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set d = std::max;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_d {
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(std::max(FWD(args)...))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+    static void bar();
+    static void bar(int);
+    template &lt;typename T&gt;
+    static void bar(T);
+};
+
+std::overload_set e = X::bar;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_e {
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(X::bar(FWD(args)...))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<th colspan="2">
+<p>Partial class access</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::string s = &quot;copy&quot;;
+std::overload_set f = s.size;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_f {
+    std::string _s;
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) &amp;
+        RETURNS(_s.size(FWD(args)...))
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) &amp;&amp;
+        RETURNS(std::move(_s).size(FWD(args)...))
+
+    // + two more overloads
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::string s = &quot;by_ref&quot;;
+std::overload_set g = (&amp;s)-&gt;size;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_g {
+    std::string* _s;
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(_s-&gt;size(FWD(args)...))
+};</code></pre>
+</td>    
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::string s = &quot;by_ref&quot;;
+std::overload_set h = std::ref(s).append;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_h {
+    std::reference_wrapper&lt;std::string&gt; _s;
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(_s.get().append(FWD(args)...))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<th colspan="2">
+<p>Class type member access</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set i = std::string.size;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_i {
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;std::string, std::uncvref_t&lt;T&gt;&gt;
+    auto operator()(T&amp;&amp; x, Args&amp;&amp;... args) const 
+        RETURNS(FWD(x).size(FWD(args)...))
+
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;std::string,
+            std::uncvref_t&lt;decltype(*std::declval&lt;T&gt;())&gt;&gt;
+    auto operator()(T&amp;&amp; x, Args&amp;&amp;... args) const
+        RETURNS((*FWD(x)).size(FWD(args)...))
+
+    template &lt;typename T, typename... Args&gt;
+        requires std::is_base_of_v&lt;std::string, T&gt;
+    auto operator()(std::reference_wrapper&lt;T&gt; x, Args&amp;&amp;... args) const
+        RETURNS(x.get().size(FWD(args)...))    
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct Person {
+    int id;
+    std::string name;
+};
+std::overload_set j = Person.id;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_j {
+    int Person::* pmd;
+
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(std::invoke(pmd, std::forward&lt;Args&gt;(args)...))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<th colspan="2">
+<p>Operators</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set k = operator&lt;;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_k {
+    template &lt;typename T, typename U&gt;
+    auto operator()(T&amp;&amp; t, U&amp;&amp; u) const
+        RETURNS(FWD(t) &lt; FWD(u))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set m = operator!;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_m {
+    template &lt;typename T&gt;
+    auto operator()(T&amp;&amp; t) const
+        RETURNS(!FWD(t))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set n = operator-;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_n {
+    template &lt;typename T&gt;
+    auto operator()(T&amp;&amp; t) const
+        RETURNS(-FWD(t))
+
+    template &lt;typename T, typename U&gt;
+    auto operator()(T&amp;&amp; t, U&amp;&amp; u) const
+        RETURNS(FWD(t) - FWD(u))
+};</code></pre>
+</td>
+</tr>
+<tr>
+<th colspan="2">
+<p>Type names</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">std::overload_set o = std::string;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct T_o {
+    template &lt;typename... Args&gt;
+    auto operator()(Args&amp;&amp;... args) const
+        RETURNS(std::string(FWD(args)...))
+};</code></pre>
+</td>
+</tr>
+</table>
+
+<h3 id="standard-library-functions-now-and-future">3.4. Standard library functions, now and future</h3>
+<p>One of the papers mentioned earlier, P0798, proposed a handful of new member functions for <code class="language-cpp">std::optional</code>. Currently these just all deduce their arguments in the same way as all other standard library function templates. But if we, instead, specify them to deduce an overload set parameter:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+struct optional {
+    template &lt;Invocable&lt;T const&amp;&gt; F&gt;
+    auto map(std::overload_set&lt;F&gt; f) const&amp; -&gt; optional&lt;std::invoke_result_t&lt;F&amp;, T const&amp;&gt;&gt;
+    {
+        if (!*this) {
+            return nullopt;
+        } else {
+            return f(**this);
+        }
+    }
+};</code></pre>
+
+
+<p>Then any reasonable usage of it would just work, do the right thing, and be a usage that would be blessed by P0921. </p>
+<pre class="codehilite"><code class="language-cpp">std::optional&lt;std::string&gt; f();
+
+f().map(&amp;std::string::size);     // okay, would compile, but not allowed
+f().map(std::size&lt;std::string&gt;); // likewise
+f().map(std::size);              // okay with this proposal, ill-formed today
+f().map(size);                   // okay with this proposal (would call std::size via ADL), ill-formed today
+f().map(std::string.size);       // okay with this proposal, ill-formed today</code></pre>
+
+
+<p>Otherwise, the <strong>only</strong> approved way to get this behavior would be:</p>
+<pre class="codehilite"><code class="language-cpp">f().map([](auto&amp;&amp; s){ return s.size(); });</code></pre>
+
+
+<p>Which is a lot to write for a simple task. Instead, people will consistently reach for the shorter, more brittle solutions. Let's just solve the problem instead.</p>
+<p>As far as preexisting standard library function templates go. We cannot simply <em>change</em> the ones that exist. But, we do allow ourselves to add overloads. We could easily do that, and take advantage of the proposed deduction rules of <code class="language-cpp">overload_set</code> to not change any behavior:</p>
+<pre class="codehilite"><code class="language-cpp">// new overload
+template &lt;class InputIt, class UnaryPredicate&gt;
+constexpr InputIt find_if(InputIt first, InputIt last, std::overlod_set&lt;UnaryPredicate&gt; p) {
+    return find_if(first, last, std::ref(p));
+}
+
+// existing overload
+template &lt;class InputIt, class UnaryPredicate&gt;
+constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p) {
+    // same as it ever was
+}</code></pre>
+
+
+<p>All existing, viable calls to <code class="language-cpp">find_if</code> will continue to call the existing overload. It is a better match. But a wide variety of new calls to <code class="language-cpp">find_if()</code> suddenly become possible where they weren't before! This isn't perfect - we still allow users to take pointers to functions and member functions if those happen to work today. But it's a big step in better usability for everyone.</p>
+<h3 id="alternative-spellings">3.5. Alternative spellings</h3>
+<p>The name <code class="language-cpp">overload_set</code> makes a judgement about what is being passed, which may not actually be an overload set. We are very open to considering other names. Unfortunately <code class="language-cpp">function</code> is taken, but some alternatives might be:</p>
+<ul>
+<li><code class="language-cpp">invocable&lt;T&gt;</code></li>
+<li><code class="language-cpp">callable&lt;T&gt;</code></li>
+<li><code class="language-cpp">[] T</code> (along the lines of N3617/P0834)</li>
+</ul>
+<h3 id="other-potential-avenues">3.6. Other potential avenues</h3>
+<p>Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (<code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>). </p>
+<p>But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? Well, how about (references and forwarding omitted for brevity):</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename F, typename G&gt;
+auto operator*(overload_set&lt;F&gt; f, overload_set&lt;G&gt; g) {
+    return [=](auto... xs) -&gt; decltype(f(g(xs...)))
+        return f(g(xs...));
+    }
+}</code></pre>
+
+
+<p>This let's us replace another of the standard library's function objects. We have <code class="language-cpp">std::not_fn()</code>, which takes one function object and produces a new function objects whose effects are negating the original one. But with function composition, we don't need a special function like <code class="language-cpp">not_fn</code>. We can just compose with negation:</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">C++17</th>
+<th style="width:50%">
+<p>With composition</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">namespace std {
+    template&lt;class F&gt; unspecified not_fn(F&amp;&amp; f);
+}
+
+auto g = std::not_fn(f);</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">// We could use the preexisting function object
+auto g1 = std::negate() * f;
+
+// Or we could use the new ability to use operator-function-ids
+auto g2 = operator! * f;
+
+// Or we could use the new ability to use parenthesized operators
+auto g3 = (!) * f;
+
+// Or we could spell out the !
+auto g4 = (not) * f;</code></pre>
+</td>
+</tr>
+</table>
+
+<p>The composition choices aren't necessarily shorter than using <code class="language-cpp">not_fn</code>. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. </p>
+<p>Perhaps also <code class="language-cpp">overload_set&lt;T&gt;</code> could curry by default. Or provide a way to turn an <code class="language-cpp">overload_set&lt;T&gt;</code> into a <code class="language-cpp">curried_overload_set&lt;T&gt;</code>. With a more encompassing idea of what a callable is, these tools become much easier to write. </p>
+<h2 id="acknowledgements">4. Acknowledgements</h2>
+<p>Thanks to Tim Song for many conversations about all the trouble this proposal gets itself into, and to Simon Brand for invaluable feedback.</p>
+<h2 id="references">5. References</h2><ul><li><a href="https://cplusplus.github.io/EWG/ewg-active.html#65">[EWG65]</a><span style="margin-left: 5px;">"N3617 Lifting overload sets into function objects" by Philipp Juschka, 2015-05-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3617.htm">[N3617]</a><span style="margin-left: 5px;">"Lifting overload sets into function objects" by Philipp Juschka, 2013-03-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4128.html">[N4128]</a><span style="margin-left: 5px;">"Ranges for the Standard Library, Revision 1" by E. Niebler, S. Parent, A. Sutton, 2014-10-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0119r2.pdf">[P0119R2]</a><span style="margin-left: 5px;">"Overload sets as function arguments" by Andrew Sutton, 2016-05-28</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0356r3.html">[P0356R3]</a><span style="margin-left: 5px;">"Simplified partial function application" by Tomasz Kamiński, 2017-11-09</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0382r0.html">[P0382R0]</a><span style="margin-left: 5px;">"Comments on P0119: Overload sets as function arguments" by Tomasz Kamiński, 2016-05-29</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">[P0551R3]</a><span style="margin-left: 5px;">"Thou Shalt Not Specialize std Function Templates!" by Walter E. Brown, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0573r2.html">[P0573R2]</a><span style="margin-left: 5px;">"Abbreviated Lambdas for Fun and Profit" by Barry Revzin, Tomasz Kamiński, 2017-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798R0]</a><span style="margin-left: 5px;">"Monadic operations for std::optional" by Simon Brand, 2017-10-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0834r0.html">[P0834R0]</a><span style="margin-left: 5px;">"Lifting overload sets into objects" by Michael Dominiak, 2017-10-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r2.pdf">[P0896R2]</a><span style="margin-left: 5px;">"The One Ranges Proposal" by Eric Niebler, Casey Carter, Christopher Di Bella, 2018-06-25</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0921r0.pdf">[P0921R0]</a><span style="margin-left: 5px;">"Standard Library Compatibility Promises" by Titus Winters, 2018-02-01</span></li></ul>
+</html>

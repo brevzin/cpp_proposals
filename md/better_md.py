@@ -2,15 +2,18 @@ import argparse
 import json
 import os
 import sys
+import time
 
 import markdown
 from markdown.extensions import Extension
-from markdown.extensions.codehilite import CodeHiliteExtension
+#from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.inlinepatterns import LinkPattern, LINK_RE, BacktickPattern, BACKTICK_RE
 from markdown.treeprocessors import Treeprocessor
 from markdown.postprocessors import Postprocessor
 from markdown.preprocessors import Preprocessor
 from markdown.util import etree, string_type, isBlockLevel, AtomicString
+
+from codehilite import CodeHiliteExtension
 from toc import TocExtension
 
 def local_path(filename):
@@ -19,11 +22,32 @@ def local_path(filename):
 class LinkSaver(LinkPattern):
     def __init__(self, *args, **kwargs):
         super(LinkSaver, self).__init__(*args, **kwargs)
-        self.markdown.saved_links = []
-
+        self.markdown.saved_links = set()
+        self.wg21 = json.load(open(local_path('index.json')))
+        for key in sorted(self.wg21, reverse=True):
+            if key.startswith('P') and key[:5] not in self.wg21:
+                self.wg21[key[:5]] = self.wg21[key]
+        
     def handleMatch(self, m):
-        self.markdown.saved_links.append(m.group(9))
-        return super(LinkSaver, self).handleMatch(m)
+        el = etree.Element('a')
+        el.text = m.group(2)
+        title = m.group(13)
+        href = m.group(9)
+        self.markdown.saved_links.add(href)
+        
+        if href:
+            if href[0] == '<':
+                href = href[1:-1]
+            el.set('href', self.sanitize_url(self.unescape(href.strip())))
+        else:
+            el.set('href', '')
+        
+        if title:
+            title = self.unescape(title)
+            el.set("title", title)
+        elif 'wg21.link' in href:
+            el.set("title", self.wg21[href.split('/')[-1].upper()]['title'])
+        return el
 
 class RefProcessor(Treeprocessor):
     def __init__(self, md):
@@ -36,16 +60,18 @@ class RefProcessor(Treeprocessor):
 
     def run(self, doc):
         wg21_links = []
+        other_links = []
         for link in self.markdown.saved_links:
             if 'wg21.link' in link:
                 wg21_links.append(link.split('/')[-1].upper())
+        wg21_links.sort()
 
-        if sorted(wg21_links):
+        if wg21_links:
             refs = etree.SubElement(doc, 'h1')
             refs.text = 'References'
 
             ul = etree.SubElement(doc, 'ul')
-            for link in sorted(wg21_links):
+            for link in wg21_links:
                 info = self.wg21[link]
                 li = etree.SubElement(ul, 'li')
                 a = etree.SubElement(li, 'a')
@@ -54,10 +80,16 @@ class RefProcessor(Treeprocessor):
 
                 desc = etree.SubElement(li, 'span')
                 desc.attrib['style'] = "margin-left: 5px;"
-                desc.text = u'"{}" by {}, {}'.format(
-                    info['title'],
-                    info['author'],
-                    info['date'])
+                if info['type'] == 'paper':
+                    desc.text = u'"{}" by {}, {}'.format(
+                        info['title'],
+                        info['author'],
+                        info['date'])
+                elif info['type'] == 'issue':
+                    desc.text = u'"{}" by {}, {}'.format(
+                        info['title'],
+                        info['submitter'],
+                        info['last_modified'])
 
 class TableCodeBlockProcessor(Preprocessor):
     def run(self, lines):
@@ -121,8 +153,6 @@ def main(argv=None):
     parser.add_argument('-i', '--input', dest='input', type=argparse.FileType('r'))
     parser.add_argument('-o', '--output', dest='output', type=argparse.FileType('w'),
         default='-')
-    parser.add_argument('--style', default=local_path('style.html'),
-        type=argparse.FileType('r'))
     parser.add_argument('--references', action='store_true')
     
     args = parser.parse_args(argv)
@@ -139,17 +169,36 @@ def main(argv=None):
      
     md = markdown.Markdown(extensions=extensions)
     in_md = args.input.read().decode('utf-8')
-    html = md.convert(in_md).replace('language-c++', 'language-cpp')
+    html = md.convert(in_md)
     write('<html>\n')
     write('<head>\n')
     write('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n')
     write('<title>{}</title>\n'.format(md.Meta['title'][0]))
-    write(args.style.read())
+
+    def add_style(filename):
+        suffix = filename.rsplit('.', 1)[1]
+        fmt = {'css': '<style type="text/css">{}</style>\n',
+            'js': '<script type="text/javascript">{}</script>\n'
+        }[suffix]
+            
+        write(fmt.format(open(local_path(filename)).read()))
+
+    add_style('general.css')
+    add_style('prism_default.css')
+    add_style('prism.js')
+    
+    #write('<style type="text/css">{}</style>\n'.format(
+    #    open(local_path('general.css')).read()))    
+    #write('<style type="text/css">{}</style>\n'.format(
+    #    open(local_path('prism.css')).read().replace('fdf6e3', 'f8f8f8')))
+    #write('<script type="text/javascript">{}</script>\n'.format(
+    #    open(local_path('prism.js')).read()))
+        
     write('\n</head>\n')
     write('<body>\n')
     write('<address align=right>\n')    
     write('Document Number: {} <br />\n'.format(md.Meta['document-number'][0]))
-    write('Date: {} <br />\n'.format(md.Meta['date'][0]))
+    write('Date: {} <br />\n'.format(time.strftime('%Y-%m-%d', time.localtime())))
     write('Audience: {} <br />\n'.format(md.Meta['audience'][0]))
     write('Reply-To: {} <br />\n'.format('<br />'.join(md.Meta['authors'])))
     write('</address>\n')

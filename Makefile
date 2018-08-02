@@ -8,7 +8,7 @@ endef
 define add_better_paper
 PAPERS += $(1)
 
-$(1) : $(2) ./md/better_md.py ./md/style.html
+$(1) : $(2) ./md/better_md.py ./md/style.html ./md/prism.*
 	python ./md/better_md.py -i "$$<" -o "$$@" --references
 endef
 
