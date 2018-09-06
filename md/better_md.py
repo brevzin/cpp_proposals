@@ -86,10 +86,15 @@ class RefProcessor(Treeprocessor):
                         info['author'],
                         info['date'])
                 elif info['type'] == 'issue':
+                    if 'last_modified' in info:
+                        date = info['last_modified']
+                    else:
+                        date = info['date']
+                
                     desc.text = u'"{}" by {}, {}'.format(
                         info['title'],
                         info['submitter'],
-                        info['last_modified'])
+                        date)
 
 class TableCodeBlockProcessor(Preprocessor):
     def run(self, lines):
