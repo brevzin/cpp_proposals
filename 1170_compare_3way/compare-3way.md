@@ -150,3 +150,13 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 [alg
 Change the return type of `compare_3way` in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+
+## Alternative Approach
+
+Instead of having `compare_3way_type` itself define the logic, and `compare_3way()` end up having to redefine it, an alternate approach would be to specify the type trait in terms of the function:
+
+    :::cpp
+    template<class T, class U = T>
+      using compare_3way_type_t = decltype(compare_3way(declval<T const&>(), declval<U const&>()));
+      
+This would side-step the question of specializing the type trait (as it is now simply an alias template) and avoid any duplication. There is, however, no precedent for this approach in the library today.

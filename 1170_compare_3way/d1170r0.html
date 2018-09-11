@@ -595,6 +595,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#motivation">Motivation</a></li>
 <li><a href="#proposal">Proposal</a><ol>
 <li><a href="#wording">Wording</a></li>
+<li><a href="#alternative-approach">Alternative Approach</a></li>
 </ol>
 </li>
 </ol>
@@ -728,4 +729,12 @@ namespace std {
 </blockquote>
 <p>Change the return type of <code class="language-cpp">compare_3way</code> in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+
+<h3 id="alternative-approach">2.2. Alternative Approach</h3>
+<p>Instead of having <code class="language-cpp">compare_3way_type</code> itself define the logic, and <code class="language-cpp">compare_3way()</code> end up having to redefine it, an alternate approach would be to specify the type trait in terms of the function:</p>
+<pre class="codehilite"><code class="language-cpp">template&lt;class T, class U = T&gt;
+  using compare_3way_type_t = decltype(compare_3way(declval&lt;T const&amp;&gt;(), declval&lt;U const&amp;&gt;()));</code></pre>
+
+
+<p>This would side-step the question of specializing the type trait (as it is now simply an alias template) and avoid any duplication. There is, however, no precedent for this approach in the library today.</p>
 </html>
