@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>static operator()</title>
+<title>A type trait for std::compare_3way()'s type</title>
 <style type="text/css">html {
 	position: relative;
 	max-width: 1024px;
@@ -583,176 +583,149 @@ Prism.languages.nasm={comment:/;.*$/m,string:/(["'`])(?:\\.|(?!\1)[^\\\r\n])*\1/
 </head>
 <body>
 <address align=right>
-Document Number: D1169R0 <br />
+Document Number: D1170R0 <br />
 Date: 2018-09-11 <br />
-Audience: EWG, LEWG <br />
-Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Casey Carter, casey at carter dot net <br />
+Audience: LEWG <br />
+Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
-<hr /><h1 align=center><p>static <code class="language-cpp">operator()</code></p></h1>
+<hr /><h1 align=center><p>A type trait for <code class="language-cpp">std::compare_3way()</code>'s type</p></h1>
 <h2>Contents</h2>
 <div class="toc">
 <ol>
 <li><a href="#motivation">Motivation</a></li>
 <li><a href="#proposal">Proposal</a><ol>
-<li><a href="#language-wording">Language Wording</a></li>
-<li><a href="#library-wording">Library Wording</a></li>
+<li><a href="#wording">Wording</a></li>
 </ol>
 </li>
 </ol>
 </div>
 
 <h2 id="motivation">1. Motivation</h2>
-<p>The standard libary has always accepted arbitrary function objects - whether to be unary or binary predicates, or perform arbitrary operations. Function objects with call operator templates in particular have a significant advantage today over using overload sets since you can just pass them into algorithms. This makes, for instance, <code class="language-cpp">std::less&lt;&gt;{}</code> very useful.</p>
-<p>As part of the Ranges work, more and more function objects are being added to the standard library - the set of Customization Point Objects (CPOs). These objects are Callable, but they don't, as a rule, have any members. They simply exist to do what Eric Niebler termed the <a href="http://ericniebler.com/2014/10/21/customization-point-design-in-c11-and-beyond/">"Std Swap Two-Step"</a>. Nevertheless, the call operators of all of these types are non-static member functions. Because <em>all</em> call operators have to be non-static member functions. </p>
-<p>What this means is that if the call operator happens to not be inlined, an extra register must be used to pass in the <code class="language-cpp">this</code> pointer to the object - even if there is no need for it whatsoever. Here is a <a href="https://godbolt.org/z/ajTZo2">simple example</a>:</p>
-<pre class="codehilite"><code class="language-cpp">struct X {
-    bool operator()(int) const;
-    static bool f(int);
-};
+<p>For some types, in order to implement <code class="language-cpp">operator&lt;=&gt;()</code> you have to defer to the implementation of the 
+comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to <a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">implement <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">optional&lt;T&gt;</code></a>, the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
+constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;U&gt; const&amp; rhs)
+    -&gt; decltype(compare_3way(*lhs, *rhs));
 
-inline constexpr X x;
+template &lt;typename T, typename U&gt;
+constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, U const&amp; rhs)
+    -&gt; decltype(compare_3way(*lhs, rhs));
 
-int count_x(std::vector&lt;int&gt; const&amp; xs) {
-    return std::count_if(xs.begin(), xs.end(),
-#ifdef STATIC
-    X::f
-#else
-    x
-#endif
-    );
-}</code></pre>
+template &lt;typename T&gt;
+constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp;, nullopt_t)
+    -&gt; strong_ordering;</code></pre>
 
 
-<p><code class="language-cpp">x</code> is a global function object that has no members that is intended to be passed into various algorithms. But in order to work in algorithms, it needs to have a call operator - which must be non-static. You can see the difference in the generated asm btween using the function object as intended and passing in an equivalent static member function:</p>
+<p>We need to use <code class="language-cpp">std::compare_3way(*lhs, *rhs)</code> instead of writing <code class="language-cpp">lhs &lt;=&gt; rhs</code> to also handle those types which do not yet implement <code class="language-cpp">&lt;=&gt;</code>, and that function is <a href="http://eel.is/c++draft/alg.3way">specified</a> in a way to correctly address all the possible situations.</p>
+<p>Let's throw in a few more examples for implementations for <code class="language-cpp">vector</code> and <code class="language-cpp">expected</code>:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
+auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;U&gt; const&amp; rhs)
+    -&gt; decltype(compare_3way(lhs[0], rhs[0]));
+
+template &lt;typename T1, typename E1, typename T2, typename E2&gt;
+auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs, expected&lt;T2,E2&gt; const&amp; rhs)
+    -&gt; common_comparison_category_t&lt;
+            decltype(compare_3way(lhs.value(), rhs.value())),
+            decltype(compare_3way(lhs.error(), rhs.error()))&gt;;</code></pre>
+
+
+<p>We see the same thing over and over and over again. We need to know what comparison category to return, and this comparison category is a property of the types that we're comparing. </p>
+<p>That's a type trait. A type trait that's currently missing from the standard library.</p>
+<h2 id="proposal">2. Proposal</h2>
+<p>This paper proposes the addition of a new type trait based on the preexisting rules in [alg.3way] and respecifying <code class="language-cpp">std::compare_3way()</code> to use that trait in its return type instead of <code class="language-cpp">auto</code>. This mirrors the usage of <code class="language-cpp">std::invoke_result_t</code> as the return type of <code class="language-cpp">std::invoke()</code>, and so should be named either <code class="language-cpp">compare_3way_result</code> or <code class="language-cpp">compare_3way_type</code>.</p>
+<p>The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write <code class="language-cpp">compare_3way_type&lt;T&gt;</code> instead of <code class="language-cpp">compare_3way_type&lt;T,T&gt;</code>.</p>
+<p>The trait would allow for less cumbersome declarations of all of these operator templates:</p>
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-<p>Non-static call operator</p>
+<p>Today</p>
 </th>
 <th style="width:50%">
-<p>Static member function</p>
+<p>Proposed</p>
 </th>
 </tr>
 <tr>
 <td>
-<pre class="codehilite" data-line="8,14"><code class="language-nasm">count_x(std::vector&lt;int, std::allocator&lt;int&gt; &gt; const&amp;):
-        push    r12
-        push    rbp
-        push    rbx
-        sub     rsp, 16
-        mov     r12, QWORD PTR [rdi+8]
-        mov     rbx, QWORD PTR [rdi]
-        mov     BYTE PTR [rsp+15], 0
-        cmp     r12, rbx
-        je      .L5
-        xor     ebp, ebp
-.L4:
-        mov     esi, DWORD PTR [rbx]
-        lea     rdi, [rsp+15]
-        call    X::operator()(int) const
-        cmp     al, 1
-        sbb     rbp, -1
-        add     rbx, 4
-        cmp     r12, rbx
-        jne     .L4
-        add     rsp, 16
-        mov     eax, ebp
-        pop     rbx
-        pop     rbp
-        pop     r12
-        ret
-.L5:
-        add     rsp, 16
-        xor     eax, eax
-        pop     rbx
-        pop     rbp
-        pop     r12
-        ret</code></pre>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
+        optional&lt;U&gt; const&amp; rhs)
+    -&gt; decltype(compare_3way(*lhs, *rhs));</code></pre>
 </td>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-nasm">count_x(std::vector&lt;int, std::allocator&lt;int&gt; &gt; const&amp;):
-        push    r12
-        push    rbp
-        push    rbx
-        mov     r12, QWORD PTR [rdi+8]
-        mov     rbx, QWORD PTR [rdi]
-        cmp     r12, rbx
-        je      .L5
-        xor     ebp, ebp
-.L4:
-        mov     edi, DWORD PTR [rbx]
-        call    X::f(int)
-        cmp     al, 1
-        sbb     rbp, -1
-        add     rbx, 4
-        cmp     r12, rbx
-        jne     .L4
-        mov     eax, ebp
-        pop     rbx
-        pop     rbp
-        pop     r12
-        ret
-.L5:
-        pop     rbx
-        xor     eax, eax
-        pop     rbp
-        pop     r12
-        ret</code></pre>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
+        optional&lt;U&gt; const&amp; rhs)
+    -&gt; compare_3way_type_t&lt;T, U&gt;;</code></pre>
 </td>
 </tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
+        vector&lt;U&gt; const&amp; rhs)
+    -&gt; decltype(compare_3way(lhs[0], rhs[0]));</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
+        vector&lt;U&gt; const&amp; rhs)
+    -&gt; compare_3way_type_t&lt;T, U&gt;;</code></pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T1, typename E1,
+    typename T2, typename E2&gt;
+auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
+        expected&lt;T2,E2&gt; const&amp; rhs)
+    -&gt; common_comparison_category_t&lt;
+            decltype(compare_3way(
+                lhs.value(), rhs.value())),
+            decltype(compare_3way(
+                lhs.error(), rhs.error()))&gt;;</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T1, typename E1,
+    typename T2, typename E2&gt;
+auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
+        expected&lt;T2,E2&gt; const&amp; rhs)
+    -&gt; common_comparison_category_t&lt;
+            compare_3way_type_t&lt;T1, T2&gt;,
+            compare_3way_type_t&lt;E1, E2&gt;&gt;;</code></pre>
+</td>
+</tr>    
 </table>
 
-<p>Even in this simple example, you can see the extra zeroing out of <code class="language-cpp">[rsp+15]</code>, the extra <code class="language-cpp">lea</code> to move that zero-ed out area as the object parameter - which we know doesn't need to be used. This is wasteful, and seems to violate the fundamental philosophy that we don't pay for what we don't need.</p>
-<p>The typical way to express the idea that we don't need an object parameter is to declare functions <code class="language-cpp">static</code>. We just don't have that ability in this case.</p>
-<h2 id="proposal">2. Proposal</h2>
-<p>The proposal is to just allow the ability to make the call operator a static member function, instead of requiring it to be a non-static member function. We have many years of experience with member-less function objects being useful. Let's remove the unnecessary object parameter overhead.</p>
-<p>There are other operators that are currently required to be implemented as non-static member functions - all the unary operators, assignment, subscripting, and class member access. We do not believe that being able to declare any of these as static will have as much value, so we are not pursuing those at this time. </p>
-<p>A common source of function objects whose call operators could be static but are not are lambdas without any capture, so this proposal also seeks to implicitly mark those static as well. This has the potential to break code which explicitly relies on the fact that the call operator is a non-static member function:</p>
-<pre class="codehilite"><code class="language-cpp">auto four = []{ return 4; };
-auto p = &amp;decltype(four)::operator();
-(four.*p)(); // ok today, breaks with this proposal</code></pre>
+<h3 id="wording">2.1. Wording</h3>
+<p>Add the new trait and its use into the <code class="language-cpp">&lt;algorithm&gt;</code> synopsis in 23.4 [algorithm.sym]:</p>
+<blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
 
+namespace std {
+  // ...
 
-<p>The above code is pretty contrived, but a more direct example can be found in the deduction guide for <code class="language-cpp">std::function</code> today which succeeds only if the call operator of the provided object is of the form <code class="language-cpp">R(G::*)(A...)</code> (with optional trailing qualifiers). While this proposal will fix <code class="language-cpp">std::function</code>, it would break user code that relies on custom deduction gudies of the same style:</p>
-<pre class="codehilite"><code class="language-cpp">custom_function f = four; // ok today, f is a custom_function&lt;int(void)&gt;
-                          // breaks with this proposal</code></pre>
+  // [alg.3way], three-way comparison algorithms
+  </code><code><ins>template&lt;class T, class U = T> struct compare_3way_type;
 
+  template&lt;class T, class U = T>
+    using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
 
-<p>Additionally, while there are many, many function objects in the standard library as it exists today that would benefit from this feature (<code class="language-cpp">default_delete</code>, <code class="language-cpp">owner_less</code>, the five arithmetic operations, the six comparisons, the the three logical operations, and the four bitwise operations), such a change would be an ABI break, so we are not pursuing that at this time. There is one, new function object that we could change for C++20: <code class="language-cpp">identity</code>.</p>
-<h3 id="language-wording">2.1. Language Wording</h3>
-<p>Change 7.5.5.1 [expr.prim.lambda.closure] paragraph 4:</p>
+  template&lt;class T, class U>
+    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
+
+  // ...
+}</code></pre></blockquote>
+
+<p>Add a new specification for <code class="language-cpp">compare_3way_type</code> at the beginning of 23.7.11 [alg.3way]:</p>
 <blockquote>
-<p>The function call operator or operator template is declared <ins><code class="language-cpp">static</code> if the <em>lambda-expression</em> has no <em>lambda-capture</em>, otherwise it is non-static. If it is a non-static member function, it is declared</ins><code class="language-cpp">const</code> ([class.mfct.non-static]) if and only if the <em>lambda-expression</em>'s <em>parameter-declaration-clause</em> is not followed by <code class="language-cpp">mutable</code>. It is neither virtual nor declared <code class="language-cpp">volatile</code>. Any <em>noexcept-specifier</em> specified on a <em>lambda-expression</em> applies to the corresponding function call operator or operator template. An <em>attribute-specifier-seq</em> in a <em>lambda-declarator</em> appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a <code class="language-cpp">constexpr</code> function if either the corresponding <em>lambda-expression</em>'s <em>parameter-declaration-clause</em> is followed by <code class="language-cpp">constexpr</code>, or it satisfies the requirements for a <code class="language-cpp">constexpr</code> function. </p>
+<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, the member <code class="language-cpp">type</code> shall be either defined or not present as follows. Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote const lvalues of type <code class="language-cpp">T</code> and <code class="language-cpp">U</code>. </p>
+<ul>
+<li>If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall denote <code class="language-cpp">decltype(t &lt;=&gt; u)</code>.</li>
+<li>Otherwise, if the expressions <code class="language-cpp">t == u</code> and <code class="language-cpp">t &lt; u</code> are each well-formed and convertible to <code class="language-cpp">bool</code>, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall be <code class="language-cpp">strong_ordering</code>.</li>
+<li>Otherwise, if the expression <code class="language-cpp">t == u</code> is well-formed and convertible to <code class="language-cpp">bool</code>, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall be <code class="language-cpp">strong_equality</code>.</li>
+<li>Otherwise, there shall be no member <code class="language-cpp">type</code>.</li>
+</ul>
+<p>A program shall not specialize <code class="language-cpp">compare_3way_type</code>. </p>
 </blockquote>
-<p>Simplify 7.5.5.1 [expr.prim.lambda.closure] paragraph 7:</p>
-<blockquote>
-<p>The closure type for a non-generic <em>lambda-expression</em> with no <em>lambda-capture</em> whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator. The conversion is to “pointer to noexcept function” if the function call operator has a non-throwing exception specification. The value returned by this conversion function is the address of <del>a function <code class="language-cpp">F</code> that, when invoked, has the same effect as invoking the closure type's function call operator. F is a <code class="language-cpp">constexpr</code> function if the function call operator is a <code class="language-cpp">constexpr</code> function</del> <ins>the function call operator</ins>. For a generic lambda with no <em>lambda-capture</em>, the closure type has a conversion function template to pointer to function. The conversion function template has the same invented template parameter list, and the pointer to function has the same parameter types, as the function call operator template. The return type of the pointer to function shall behave as if it were a <em>decltype-specifier</em> denoting the return type of the corresponding function call operator template specialization.</p>
-</blockquote>
-<p>and 7.5.5.1 [expr.prim.lambda.closure] paragraph 9:</p>
-<blockquote>
-<p>The value returned by any given specialization of this conversion function template is the address of <del>a function <code class="language-cpp">F</code> that, when invoked, has the same effect as invoking the generic lambda's corresponding function call operator template specialization. <code class="language-cpp">F</code> is a <code class="language-cpp">constexpr</code> function if the corresponding specialization is a <code class="language-cpp">constexpr</code> function</del> <ins>the corresponding specialization of the function call operator template</ins>.</p>
-</blockquote>
-<p>Change 11.5 [over.oper] paragraph 6:</p>
-<blockquote>
-<p>An operator function shall either be a <del>non-static</del> member function or be a non-member function that has at least one parameter whose type is a class, a reference to a class, an enumeration, or a reference to an enumeration. It is not possible to change the precedence, grouping, or number of operands of operators. The meaning of the operators <code class="language-cpp">=</code>, (unary) <code class="language-cpp">&amp;</code>, and <code class="language-cpp">,</code> (comma), predefined for each type, can be changed for specific class and enumeration types by defining operator functions that implement these operators. Operator functions are inherited in the same manner as other base class functions.</p>
-</blockquote>
-<p>Change 11.5.4 [over.call] paragraph 1:</p>
-<blockquote>
-<p><code class="language-cpp">operator()</code> shall be a <del>non-static</del> member function with an arbitrary number of parameters. It can have default arguments. [...]</p>
-</blockquote>
-<h3 id="library-wording">2.2. Library Wording</h3>
-<p>Change 19.14.10 [func.identity], <code class="language-cpp">identity</code></p>
-<blockquote><pre class="codehilite"><code class="language-cpp">struct identity {
-  template&lt;class T>
-    </code><code><ins>static </ins></code><code class="language-cpp">constexpr T&& operator()(T&& x)</code><code><del> const</del></code><code class="language-cpp">;
-
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T>
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T&& operator()(T&& x)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Effects</i>: Equivalent to <code class="language-cpp">return std::forward&lt;T>(t)</code>.</blockquote>
-
-<p>Change the deduction guide for <code class="language-cpp">function</code> in 19.14.14.2.1 [func.wrap.func.con], paragraph 13:</p>
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F> function(F) -> function&lt;</code><code><i>see below</i></code><code class="language-cpp">>;</code></pre>
-<span style="margin-left:2em" /><i>Remarks</i>: This deduction guide participates in overload resolution only if <code class="language-cpp">&F::operator()</code> is well-formed when treated as an unevaluated operand. In that case, if <code class="language-cpp">decltype(&F::operator())</code> is <ins>either </ins>of the form <code>R(G::*)(A...) <i>cv</i> &<sub>opt</sub> noexcept<sub>opt</sub></code> for a class type <code class="language-cpp">G</code><ins> or of the form <code>R(*)(A...) noexcept<sub>opt</sub></code></ins>, then the deduced type is <code class="language-cpp">function&lt;R(A...)></code>.</blockquote>
+<p>Change the return type of <code class="language-cpp">compare_3way</code> in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:</p>
+<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 </html>

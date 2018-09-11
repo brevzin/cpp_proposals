@@ -1,4 +1,4 @@
-Title: constexpr INVOKE
+Title: constexpr <code><i>INVOKE</i></code>
 Document-Number: D1065R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG, LWG
@@ -73,6 +73,77 @@ This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-relat
 The entirety of the wording is the addition of the `constexpr` keyword in 22 places.
 
 ## Wording
+
+Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
+
+<blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
+  // [func.invoke], invoke
+  template&lt;class F, class... Args>
+    </code><code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;F, Args...> invoke(F&& f, Args&&... args)
+      noexcept(is_nothrow_invocable_v&lt;F, Args...>);
+
+  // [refwrap], reference_­wrapper
+  template&lt;class T> class reference_wrapper;
+
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(T&) noexcept;
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;const T> cref(const T&) noexcept;
+  template&lt;class T> void ref(const T&&) = delete;
+  template&lt;class T> void cref(const T&&) = delete;
+
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(reference_wrapper&lt;T>) noexcept;
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;const T> cref(reference_wrapper&lt;T>) noexcept;
+  
+  // [arithmetic.operations], arithmetic operations
+  // ...
+  
+  // [comparisons], comparisons
+  // ...
+
+  // [logical.operations], logical operations
+  // ...
+
+  // [bitwise.operations], bitwise operations
+  // ...
+
+  // [func.identity], identity
+  // ...
+
+  // [func.not_fn], function template not_­fn
+  template&lt;class F> </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> not_fn(F&& f);
+
+  // [func.bind], bind
+  template&lt;class T> struct is_bind_expression;
+  template&lt;class T> struct is_placeholder;
+
+  template&lt;class F, class... BoundArgs>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> bind(F&&, BoundArgs&&...);
+  template&lt;class R, class F, class... BoundArgs>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> bind(F&&, BoundArgs&&...);
+
+  namespace placeholders {
+    // M is the implementation-defined number of placeholders
+    see below _1;
+    see below _2;
+               .
+               .
+               .
+    see below _M;
+  }
+
+  // [func.memfn], member function adaptors
+  template&lt;class R, class T>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> mem_fn(R T::*) noexcept;
+
+  // ...    
+}</code></pre></blockquote>  
+
+Add `constexpr` to the requirements of <i>forwarding call wrapper</i> in 19.4.3 [func.require]
+
+> Every call wrapper ([func.def]) shall be <i>Cpp17MoveConstructible</i>. A <i>forwarding call wrapper</i> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step shall ensure that rvalue arguments are delivered as rvalue references and lvalue arguments are delivered as lvalue references. <ins>The defaulted move and copy constructor, respectively, of a forwarding call wrapper shall be a constexpr function if and only if
+all required element-wise initializations for copy and move, respectively, would satisfy the requirements for a constexpr function. The call operator of a forwarding call wrapper shall be a constexpr function if and only if the underlying call operation would satisfy the requirements of a constexpr function.</ins> A <i>simple call wrapper</i> is a forwarding call wrapper that is <i>Cpp17CopyConstructible</i> and <i>Cpp17CopyAssignable</i> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions. [ <i>Note</i>: In a typical implementation forwarding call wrappers have an overloaded function call operator of the form
+<pre class="codehilite"><code class="language-cpp">template&lt;class... UnBoundArgs>
+  </code><code><ins>constexpr</ins></code><code class="language-cpp"> R operator()(UnBoundArgs&&... unbound_args) </code><code><i>cv-qual</i>;</code></pre>
+<i>— end note </i>]
 
 Add `constexpr` to `std::invoke()` in 19.14.4 [func.invoke]
 
@@ -209,4 +280,4 @@ Add `constexpr` to `std::mem_fn()` in 19.14.13 [func.memfn]
 
 # Acknowledgements
 
-Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding `constexpr invoke` and suggesting that this proposal be written.
+Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding `constexpr invoke` and suggesting that this proposal be written. Thanks to Tomasz Kamiński and Tim Song for help on the wording.

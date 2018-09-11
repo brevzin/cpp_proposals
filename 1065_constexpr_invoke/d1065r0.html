@@ -584,11 +584,11 @@ Prism.languages.nasm={comment:/;.*$/m,string:/(["'`])(?:\\.|(?!\1)[^\\\r\n])*\1/
 <body>
 <address align=right>
 Document Number: D1065R0 <br />
-Date: 2018-09-06 <br />
+Date: 2018-09-11 <br />
 Audience: LEWG, LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
-<hr /><h1 align=center>constexpr INVOKE</h1>
+<hr /><h1 align=center><p>constexpr <code><i>INVOKE</i></code></p></h1>
 <h2>Contents</h2>
 <div class="toc">
 <ol>
@@ -660,6 +660,76 @@ int main() {
 <p>This proposal adds <code class="language-cpp">constexpr</code> to the following <code><i>INVOKE</i></code>-related machinery: <code class="language-cpp">invoke()</code>, <code class="language-cpp">reference_wrapper&lt;T&gt;</code>, <code class="language-cpp">not_fn()</code>, <code class="language-cpp">bind()</code>, and <code class="language-cpp">mem_fn()</code>. The remaining non-<code class="language-cpp">constexpr</code> elements of the library that are <code><i>INVOKE</i></code>-adjacent are <code class="language-cpp">function&lt;Sig&gt;</code>, <code class="language-cpp">packaged_task&lt;Sig&gt;</code>, <code class="language-cpp">async()</code>, <code class="language-cpp">thread</code>, and <code class="language-cpp">call_once()</code>.</p>
 <p>The entirety of the wording is the addition of the <code class="language-cpp">constexpr</code> keyword in 22 places.</p>
 <h3 id="wording">3.1. Wording</h3>
+<p>Add <code class="language-cpp">constexpr</code> to several places in the synopsis in 19.14.1 [functional.syn]</p>
+<blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
+  // [func.invoke], invoke
+  template&lt;class F, class... Args>
+    </code><code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;F, Args...> invoke(F&& f, Args&&... args)
+      noexcept(is_nothrow_invocable_v&lt;F, Args...>);
+
+  // [refwrap], reference_­wrapper
+  template&lt;class T> class reference_wrapper;
+
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(T&) noexcept;
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;const T> cref(const T&) noexcept;
+  template&lt;class T> void ref(const T&&) = delete;
+  template&lt;class T> void cref(const T&&) = delete;
+
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(reference_wrapper&lt;T>) noexcept;
+  template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;const T> cref(reference_wrapper&lt;T>) noexcept;
+
+  // [arithmetic.operations], arithmetic operations
+  // ...
+
+  // [comparisons], comparisons
+  // ...
+
+  // [logical.operations], logical operations
+  // ...
+
+  // [bitwise.operations], bitwise operations
+  // ...
+
+  // [func.identity], identity
+  // ...
+
+  // [func.not_fn], function template not_­fn
+  template&lt;class F> </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> not_fn(F&& f);
+
+  // [func.bind], bind
+  template&lt;class T> struct is_bind_expression;
+  template&lt;class T> struct is_placeholder;
+
+  template&lt;class F, class... BoundArgs>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> bind(F&&, BoundArgs&&...);
+  template&lt;class R, class F, class... BoundArgs>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> bind(F&&, BoundArgs&&...);
+
+  namespace placeholders {
+    // M is the implementation-defined number of placeholders
+    see below _1;
+    see below _2;
+               .
+               .
+               .
+    see below _M;
+  }
+
+  // [func.memfn], member function adaptors
+  template&lt;class R, class T>
+    </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> mem_fn(R T::*) noexcept;
+
+  // ...    
+}</code></pre></blockquote>
+
+<p>Add <code class="language-cpp">constexpr</code> to the requirements of <i>forwarding call wrapper</i> in 19.4.3 [func.require]</p>
+<blockquote>
+<p>Every call wrapper ([func.def]) shall be <i>Cpp17MoveConstructible</i>. A <i>forwarding call wrapper</i> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step shall ensure that rvalue arguments are delivered as rvalue references and lvalue arguments are delivered as lvalue references. <ins>The defaulted move and copy constructor, respectively, of a forwarding call wrapper shall be a constexpr function if and only if
+all required element-wise initializations for copy and move, respectively, would satisfy the requirements for a constexpr function. The call operator of a forwarding call wrapper shall be a constexpr function if and only if the underlying call operation would satisfy the requirements of a constexpr function.</ins> A <i>simple call wrapper</i> is a forwarding call wrapper that is <i>Cpp17CopyConstructible</i> and <i>Cpp17CopyAssignable</i> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions. [ <i>Note</i>: In a typical implementation forwarding call wrappers have an overloaded function call operator of the form
+<pre class="codehilite"><code class="language-cpp">template&lt;class... UnBoundArgs&gt;
+  </code><code><ins>constexpr</ins></code><code class="language-cpp"> R operator()(UnBoundArgs&amp;&amp;... unbound_args) </code><code><i>cv-qual</i>;</code></pre>
+<i>— end note </i>]</p>
+</blockquote>
 <p>Add <code class="language-cpp">constexpr</code> to <code class="language-cpp">std::invoke()</code> in 19.14.4 [func.invoke]</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F, class... Args>
 </code>  <code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;F, Args...> invoke(F&& f, Args&&... args)
@@ -783,6 +853,6 @@ template&lt;class... Args>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class R, class T> </code><code><ins>constexpr</ins> <i>unspecified</i> </code><code class="language-cpp">mem_fn(R T::* pm) noexcept;</code></pre></blockquote>
 
 <h2 id="acknowledgements">4. Acknowledgements</h2>
-<p>Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding <code class="language-cpp">constexpr invoke</code> and suggesting that this proposal be written.</p>
+<p>Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding <code class="language-cpp">constexpr invoke</code> and suggesting that this proposal be written. Thanks to Tomasz Kamiński and Tim Song for help on the wording.</p>
 <h2 id="references">5. References</h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1581">[CWG1581]</a><span style="margin-left: 5px;">"When are constexpr member functions defined?" by Richard Smith, 2012-10-29</span></li><li><a href="https://cplusplus.github.io/LWG/issue2894">[LWG2894]</a><span style="margin-left: 5px;">"The function template std::apply() is required to be constexpr, but std::invoke() isn't" by Great Britain, 2017-08-01</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0859r0.html">[P0859]</a><span style="margin-left: 5px;">"Core Issue 1581: When are constexpr member functions defined?" by Richard Smith, 2017-11-09</span></li></ul>
 </html>

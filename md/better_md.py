@@ -12,6 +12,7 @@ from markdown.treeprocessors import Treeprocessor
 from markdown.postprocessors import Postprocessor
 from markdown.preprocessors import Preprocessor
 from markdown.util import etree, string_type, isBlockLevel, AtomicString
+import lxml.etree
 
 from codehilite import CodeHiliteExtension
 from toc import TocExtension
@@ -169,6 +170,7 @@ def main(argv=None):
         'markdown.extensions.meta',
         CppBacktickExtension(),
         TableCodeBlockExtension()]
+    noref_md = markdown.Markdown(extensions=extensions)
     if args.references:
         extensions.append(RefExtension())
      
@@ -178,7 +180,15 @@ def main(argv=None):
     write('<html>\n')
     write('<head>\n')
     write('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n')
-    write('<title>{}</title>\n'.format(md.Meta['title'][0]))
+
+    def get_title(input):
+        title = noref_md.convert(input)
+        title_root = lxml.etree.fromstring(title)
+        lxml.etree.strip_tags(title_root, '*')
+        return title_root.text
+    
+    write('<title>{}</title>\n'.format(
+        get_title(md.Meta['title'][0])))
 
     def add_style(filename):
         suffix = filename.rsplit('.', 1)[1]
@@ -207,7 +217,8 @@ def main(argv=None):
     write('Audience: {} <br />\n'.format(md.Meta['audience'][0]))
     write('Reply-To: {} <br />\n'.format('<br />'.join(md.Meta['authors'])))
     write('</address>\n')
-    write('<hr /><h1 align=center>{}</h1>\n'.format(md.Meta['title'][0]))
+    write('<hr /><h1 align=center>{}</h1>\n'.format(
+        noref_md.convert(md.Meta['title'][0])))
     write('<h2>Contents</h2>\n')
     write('{}\n{}\n</html>'.format(md.toc, html.encode('utf-8')))
 

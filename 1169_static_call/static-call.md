@@ -1,4 +1,4 @@
-Title: static operator()
+Title: static `operator()`
 Document-Number: D1169R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Casey Carter, casey at carter dot net
@@ -43,7 +43,7 @@ Static member function
 </tr>
 <tr>
 <td>
-    :::nasm
+    :::nasm hl_lines="8,14"
     count_x(std::vector<int, std::allocator<int> > const&):
             push    r12
             push    rbp
@@ -122,11 +122,34 @@ The proposal is to just allow the ability to make the call operator a static mem
 
 There are other operators that are currently required to be implemented as non-static member functions - all the unary operators, assignment, subscripting, and class member access. We do not believe that being able to declare any of these as static will have as much value, so we are not pursuing those at this time. 
 
+A common source of function objects whose call operators could be static but are not are lambdas without any capture, so this proposal also seeks to implicitly mark those static as well. This has the potential to break code which explicitly relies on the fact that the call operator is a non-static member function:
+
+    :::cpp
+    auto four = []{ return 4; };
+    auto p = &decltype(four)::operator();
+    (four.*p)(); // ok today, breaks with this proposal
+    
+The above code is pretty contrived, but a more direct example can be found in the deduction guide for `std::function` today which succeeds only if the call operator of the provided object is of the form `R(G::*)(A...)` (with optional trailing qualifiers). While this proposal will fix `std::function`, it would break user code that relies on custom deduction gudies of the same style:
+
+    :::cpp
+    custom_function f = four; // ok today, f is a custom_function<int(void)>
+                              // breaks with this proposal
+
+Additionally, while there are many, many function objects in the standard library as it exists today that would benefit from this feature (`default_delete`, `owner_less`, the five arithmetic operations, the six comparisons, the the three logical operations, and the four bitwise operations), such a change would be an ABI break, so we are not pursuing that at this time. There is one, new function object that we could change for C++20: `identity`.
+
 ## Language Wording
 
 Change 7.5.5.1 [expr.prim.lambda.closure] paragraph 4:
 
-> The function call operator or operator template is declared <ins>`static` if the *lambda-expression* has no *capture*, otherwise it is non-static. If it is a non-static member function, it is declared</ins>`const` ([class.mfct.non-static]) if and only if the *lambda-expression*'s *parameter-declaration-clause* is not followed by `mutable`. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function. 
+> The function call operator or operator template is declared <ins>`static` if the *lambda-expression* has no *lambda-capture*, otherwise it is non-static. If it is a non-static member function, it is declared</ins>`const` ([class.mfct.non-static]) if and only if the *lambda-expression*'s *parameter-declaration-clause* is not followed by `mutable`. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function. 
+
+Simplify 7.5.5.1 [expr.prim.lambda.closure] paragraph 7:
+
+> The closure type for a non-generic *lambda-expression* with no *lambda-capture* whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator. The conversion is to “pointer to noexcept function” if the function call operator has a non-throwing exception specification. The value returned by this conversion function is the address of <del>a function `F` that, when invoked, has the same effect as invoking the closure type's function call operator. F is a `constexpr` function if the function call operator is a `constexpr` function</del> <ins>the function call operator</ins>. For a generic lambda with no *lambda-capture*, the closure type has a conversion function template to pointer to function. The conversion function template has the same invented template parameter list, and the pointer to function has the same parameter types, as the function call operator template. The return type of the pointer to function shall behave as if it were a *decltype-specifier* denoting the return type of the corresponding function call operator template specialization.
+
+and 7.5.5.1 [expr.prim.lambda.closure] paragraph 9:
+
+> The value returned by any given specialization of this conversion function template is the address of <del>a function `F` that, when invoked, has the same effect as invoking the generic lambda's corresponding function call operator template specialization. `F` is a `constexpr` function if the corresponding specialization is a `constexpr` function</del> <ins>the corresponding specialization of the function call operator template</ins>.
 
 Change 11.5 [over.oper] paragraph 6:
 
@@ -138,401 +161,7 @@ Change 11.5.4 [over.call] paragraph 1:
 
 ## Library Wording
 
-There are many function objects in the standard library which could have their call operators be declared static instead of non-static. 
-
-In 19.11.1.1.2 [unique.ptr.dltr.dflt], `default_delete<T>`:
-
-<blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
-  template&lt;class T> struct default_delete {
-    constexpr default_delete() noexcept = default;
-    template&lt;class U> default_delete(const default_delete&lt;U>&) noexcept;
-    </code><code><ins>static </ins></code><code class="language-cpp">void operator()(T*)</code><code><del> const</del>;
-  };
-}</code></pre>
-[...]
-<pre class="codehilite"><code><ins>static </ins></code><code class="language-cpp">void operator()(T* ptr)</code><code><del> const</del>;</code></pre>
-</blockquote>
-
-In 19.11.1.1.3 [unique.ptr.dltr.dflt1], `default_delete<T[]>`:
-
-<blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
-  template&lt;class T> struct default_delete&lt;T[]> {
-    constexpr default_delete() noexcept = default;
-    template&lt;class U> default_delete(const default_delete&lt;U[]>&) noexcept;
-    template&lt;class U> </code><code><ins>static </ins></code><code class="language-cpp">void operator()(U*)</code><code><del> const</del>;
-  };
-}</code></pre>
-[...]
-<pre class="codehilite"><code class="language-cpp">template&lt;class U> </code><code><ins>static </ins></code><code class="language-cpp">void operator()(U*)</code><code><del> const</del>;</code></pre>
-</blockquote>
-
-In 19.11.5 [util.smartptr.ownerless], `owner_less<T>`:
-
-<blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
-  template&lt;class T = void> struct owner_less;
-  
-  template&lt;class T> struct owner_less&lt;shared_ptr&lt;T>> {
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const shared_ptr&lt;T>&, const shared_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const shared_ptr&lt;T>&, const weak_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const weak_ptr&lt;T>&, const shared_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-  };
-  
-  template&lt;class T> struct owner_less<weak_ptr&lt;T>> {
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const weak_ptr&lt;T>&, const weak_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const shared_ptr&lt;T>&, const weak_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const weak_ptr&lt;T>&, const shared_ptr&lt;T>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-  };
-  
-  template&lt;> struct owner_less&lt;void> {
-    template&lt;class T, class U>
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const shared_ptr&lt;T>&, const shared_ptr&lt;U>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    template&lt;class T, class U>
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const shared_ptr&lt;T>&, const weak_ptr&lt;U>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    template&lt;class T, class U>
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const weak_ptr&lt;T>&, const shared_ptr&lt;U>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    template&lt;class T, class U>
-    </code><code><ins>static </ins></code><code class="language-cpp">bool operator()(const weak_ptr&lt;T>&, const weak_ptr&lt;U>&)</code><code><del> const</del></code><code class="language-cpp"> noexcept;
-    
-    using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-  };
-}</code></pre></blockquote>
-
-In 19.14.6.1 [arithmetic.operations.plus], `plus`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct plus {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x + y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct plus&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) + std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) + std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) + std::forward&lt;U>(u)</code>.</blockquote>
-
-In 19.14.6.2 [arithmetic.operations.minus], `minus`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct minus {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x - y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct minus&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) - std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) - std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) - std::forward&lt;U>(u)</code>.</blockquote>
-
-In 19.14.6.3 [arithmetic.operations.multiplies], `multiplies`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct multiplies {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x * y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct multiplies&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) * std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) * std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) * std::forward&lt;U>(u)</code>.</blockquote>
-
-In 19.14.6.4 [arithmetic.operations.divides], `divides`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct divides {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x / y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct divides&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) / std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) / std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) / std::forward&lt;U>(u)</code>.</blockquote>
-
-In 19.14.6.5 [arithmetic.operations.modulus], `modulus`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct modulus {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x % y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct modulus&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) % std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) % std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) % std::forward&lt;U>(u)</code>.</blockquote>
-
-In 19.14.6.6 [arithmetic.operations.negate], `negate`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct negate {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">-x</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct negate&lt;void> {
-  template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(-std::forward&lt;T>(t));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(-std::forward&lt;T>(t));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">-std::forward&lt;T>(t)</code>.</blockquote>
-
-In 19.14.7.1 [comparisons.equal_to], `equal_to`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct equal_to {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x == y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct equal_to&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) == std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) == std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) == std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.7.2 [comparisons.not_equal_to], `not_equal_to`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct not_equal_to {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x != y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct not_equal_to&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) != std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) != std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) != std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.7.3 [comparisons.greater], `greater`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct greater {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x > y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct greater&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) > std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) > std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) > std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.7.4 [comparisons.less], `less`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct less {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x < y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct less&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) < std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) < std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) < std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.7.5 [comparisons.greater_equal], `greater_equal`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct greater_equal {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x >= y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct greater_equal&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) >= std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) >= std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) >= std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.7.6 [comparisons.less_equal], `less_equal`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct less_equal {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x <= y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct less_equal&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) <= std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) <= std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) <= std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.8.1 [logical.operations.and], `logical_and`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct logical_and {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x && y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct logical_and&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) && std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) && std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) && std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.8.2 [logical.operations.or], `logical_or`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct logical_or {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x || y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct logical_or&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) || std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) || std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) || std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.8.3 [logical.operations.not], `logical_not`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct logical_not {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">!x</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct logical_not&lt;void> {
-  template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(!std::forward&lt;T>(t));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(!std::forward&lt;T>(t));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">!std::forward&lt;T>(t)</code>.</blockquote>
-
-In 19.14.9.1 [bitwise.operations.and], `bit_and`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct bit_and {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x & y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct bit_and&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) & std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) & std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) & std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.9.2 [bitwise.operations.or], `bit_or`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct bit_or {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x | y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct bit_or&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) | std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) | std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) | std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.9.3 [bitwise.operations.xor], `bit_xor`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct bit_xor {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x, const T& y)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">x ^ y</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct bit_xor&lt;void> {
-  template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) ^ std::forward&lt;U>(u));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T, class U> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t, U&& u)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(std::forward&lt;T>(t) ^ std::forward&lt;U>(u));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">std::forward&lt;T>(t) ^ std::forward&lt;U>(u)</code>.</blockquote>
-
-
-In 19.14.9.4 [bitwise.operations.not], `bit_not`
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T = void> struct bit_not {
-  </code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;
-};
-</code><code><ins>static </ins></code><code class="language-cpp">constexpr T operator()(const T& x)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
-<span style="margin-left:2em" /><i>1 Returns</i>: <code class="language-cpp">~x</code>.
-<pre class="codehilite"><code class="language-cpp">template&lt;> struct bit_not&lt;void> {
-  template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(~std::forward&lt;T>(t));
-    
-  using is_transparent = </code><code><i>unspecified</i></code><code class="language-cpp">;
-};
-template&lt;class T> </code><code><ins>static </ins></code><code class="language-cpp">constexpr auto operator()(T&& t)</code><code><del> const</del></code><code class="language-cpp">
-    -> decltype(~std::forward&lt;T>(t));</code></pre>
-<span style="margin-left:2em"><i>2 Returns</i>: <code class="language-cpp">~std::forward&lt;T>(t)</code>.</blockquote>
-
-
-In 19.14.10 [func.identity], `identity`
+Change 19.14.10 [func.identity], `identity`
 
 <blockquote><pre class="codehilite"><code class="language-cpp">struct identity {
   template&lt;class T>
@@ -544,4 +173,7 @@ template&lt;class T>
   </code><code><ins>static </ins></code><code class="language-cpp">constexpr T&& operator()(T&& x)</code><code><del> const</del></code><code class="language-cpp">;</code></pre>
 <span style="margin-left:2em" /><i>1 Effects</i>: Equivalent to <code class="language-cpp">return std::forward&lt;T>(t)</code>.</blockquote>
 
+Change the deduction guide for `function` in 19.14.14.2.1 [func.wrap.func.con], paragraph 13:
 
+<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F> function(F) -> function&lt;</code><code><i>see below</i></code><code class="language-cpp">>;</code></pre>
+<span style="margin-left:2em" /><i>Remarks</i>: This deduction guide participates in overload resolution only if <code class="language-cpp">&F::operator()</code> is well-formed when treated as an unevaluated operand. In that case, if <code class="language-cpp">decltype(&F::operator())</code> is <ins>either </ins>of the form <code>R(G::*)(A...) <i>cv</i> &<sub>opt</sub> noexcept<sub>opt</sub></code> for a class type <code class="language-cpp">G</code><ins> or of the form <code>R(*)(A...) noexcept<sub>opt</sub></code></ins>, then the deduced type is <code class="language-cpp">function&lt;R(A...)></code>.</blockquote>
