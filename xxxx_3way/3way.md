@@ -5,12 +5,12 @@ Audience: EWG
 
 # Motivation
 
-See David Stone's [I did not order this!](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md) for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` near-optimally for "wrapper" types. For a super brief run-down, the most straightforward approach to implementing `<=>` for `std::vector<T>` is (let's just assume `strong_ordering`):
+See David Stone's [I did not order this!](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md) for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` near-optimally for "wrapper" types. For a super brief run-down, the most straightforward approach to implementing `<=>` for `vector<T>` is (let's just assume `strong_ordering`):
 
     :::cpp
     template<typename T>
-    std::strong_ordering operator<=>(vector<T> const& lhs, vector<T> const& rhs) {
-        size_t min_size = std::min(lhs.size(), rhs.size());
+    strong_ordering operator<=>(vector<T> const& lhs, vector<T> const& rhs) {
+        size_t min_size = min(lhs.size(), rhs.size());
         for (size_t i = 0; i != min_size; ++i) {
             if (auto const cmp = compare_3way(lhs[i], rhs[i]); cmp != 0) {
                 return cmp;
@@ -40,10 +40,10 @@ So what we really have to do is write two... nearly identical functions:
 <td style="width:50%">
     :::cpp
     template<typename T>
-    std::strong_ordering operator<=>(vector<T> const& lhs,
+    strong_ordering operator<=>(vector<T> const& lhs,
             vector<T> const& rhs)
     {
-        size_t min_size = std::min(lhs.size(), rhs.size());
+        size_t min_size = min(lhs.size(), rhs.size());
         for (size_t i = 0; i != min_size; ++i) {
             auto const cmp = compare_3way(lhs[i], rhs[i]);
             if (cmp != 0) {
@@ -197,7 +197,7 @@ With that change, our spaceship for a totally ordered `vector`, as well as the n
             }
         }
         
-        size_t min_size = std::min(lhs.size(), rhs.size());
+        size_t min_size = min(lhs.size(), rhs.size());
         for (size_t i = 0; i != min_size; ++i) {
             // pass forward the comparison type - whatever we
             // do here is what we want to do lower as well
@@ -248,3 +248,45 @@ And this is actually optimal. For equality, we short-circuit. For ordering, we d
 With this model, doing an equality comparison on two `S`s will mean calling `operator<=>(lhs.names, rhs.names, eq)`, which will short-circuit on the sizes of the two `vector`s first and then just do an equality comparison on the underlying `string`s. And _that_ comparison will _also_ itself short-circuit on the sizes of the `string`s first. 
 
 This new suggested implementation of `<=>` for `vector` is admittedly quite a bit more complicated than our initial implementation. But it's arguably still quite a bit _less_ complicated than the code we have to write in C++17 today, and it's arguably less complicated than having to write 2 or 3 functions to achieve optimal performance - and still not really being able to do it. 
+
+It's also important to note that not all types actually need special treatment. For instance, here's a before and after comparison of how to implement the spaceship operator for `optional<T>` (throughout this paper I've been punting on dealing with the comparison categories, and I will continue to do that here as well):
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+Today (p0515/C++2a)
+</th>
+<th style="width:50%">
+Proposed
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp
+    template <typename T>
+    strong_ordering operator<=>(optional<T> const& lhs,
+        optional<T> const& rhs) 
+    {
+        if (lhs.has_value() && rhs.has_value()) {
+            return compare_3way(*lhs, *rhs);
+        } else {
+            return lhs.has_value() <=> rhs.has_value();
+        }
+    }
+</td>
+<td>
+    :::cpp
+    template <typename T, typename Comparison>
+    auto operator<=>(optional<T> const& lhs,
+            optional<T> const& rhs, Comparison cmp_type)
+        -> typename Comparison::strong
+    {
+        if (lhs.has_value() && rhs.has_value()) {
+            return compare_3way(*lhs, *rhs, cmp_type);
+        } else {
+            return lhs.has_value() <=> rhs.has_value();
+        }
+    }
+</td>
+</tr>
+</table>

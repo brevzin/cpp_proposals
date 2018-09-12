@@ -598,10 +598,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </div>
 
 <h2 id="motivation">1. Motivation</h2>
-<p>See David Stone's <a href="https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md">I did not order this!</a> for a very clear, very thorough description of the problem: it does not seem to be possible to implement <code class="language-cpp">&lt;=&gt;</code> near-optimally for "wrapper" types. For a super brief run-down, the most straightforward approach to implementing <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">std::vector&lt;T&gt;</code> is (let's just assume <code class="language-cpp">strong_ordering</code>):</p>
+<p>See David Stone's <a href="https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md">I did not order this!</a> for a very clear, very thorough description of the problem: it does not seem to be possible to implement <code class="language-cpp">&lt;=&gt;</code> near-optimally for "wrapper" types. For a super brief run-down, the most straightforward approach to implementing <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">vector&lt;T&gt;</code> is (let's just assume <code class="language-cpp">strong_ordering</code>):</p>
 <pre class="codehilite"><code class="language-cpp">template&lt;typename T&gt;
-std::strong_ordering operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs) {
-    size_t min_size = std::min(lhs.size(), rhs.size());
+strong_ordering operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs) {
+    size_t min_size = min(lhs.size(), rhs.size());
     for (size_t i = 0; i != min_size; ++i) {
         if (auto const cmp = compare_3way(lhs[i], rhs[i]); cmp != 0) {
             return cmp;
@@ -627,10 +627,10 @@ strong_ordering compare_3way(T const&amp; lhs, T const&amp; rhs) {
 <tr>
 <td style="width:50%">
 <pre style="background:transparent;border:0px"><code class="language-cpp">template&lt;typename T&gt;
-std::strong_ordering operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
+strong_ordering operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
         vector&lt;T&gt; const&amp; rhs)
 {
-    size_t min_size = std::min(lhs.size(), rhs.size());
+    size_t min_size = min(lhs.size(), rhs.size());
     for (size_t i = 0; i != min_size; ++i) {
         auto const cmp = compare_3way(lhs[i], rhs[i]);
         if (cmp != 0) {
@@ -763,7 +763,7 @@ auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp
         }
     }
 
-    size_t min_size = std::min(lhs.size(), rhs.size());
+    size_t min_size = min(lhs.size(), rhs.size());
     for (size_t i = 0; i != min_size; ++i) {
         // pass forward the comparison type - whatever we
         // do here is what we want to do lower as well
@@ -810,4 +810,42 @@ strong_ordering compare_3way(T const&amp; x, T const&amp; y, ord_t)
 
 <p>With this model, doing an equality comparison on two <code class="language-cpp">S</code>s will mean calling <code class="language-cpp">operator&lt;=&gt;(lhs.names, rhs.names, eq)</code>, which will short-circuit on the sizes of the two <code class="language-cpp">vector</code>s first and then just do an equality comparison on the underlying <code class="language-cpp">string</code>s. And <em>that</em> comparison will <em>also</em> itself short-circuit on the sizes of the <code class="language-cpp">string</code>s first. </p>
 <p>This new suggested implementation of <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">vector</code> is admittedly quite a bit more complicated than our initial implementation. But it's arguably still quite a bit <em>less</em> complicated than the code we have to write in C++17 today, and it's arguably less complicated than having to write 2 or 3 functions to achieve optimal performance - and still not really being able to do it. </p>
+<p>It's also important to note that not all types actually need special treatment. For instance, here's a before and after comparison of how to implement the spaceship operator for <code class="language-cpp">optional&lt;T&gt;</code> (throughout this paper I've been punting on dealing with the comparison categories, and I will continue to do that here as well):</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+<p>Today (p0515/C++2a)</p>
+</th>
+<th style="width:50%">
+<p>Proposed</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+strong_ordering operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
+    optional&lt;T&gt; const&amp; rhs) 
+{
+    if (lhs.has_value() &amp;&amp; rhs.has_value()) {
+        return compare_3way(*lhs, *rhs);
+    } else {
+        return lhs.has_value() &lt;=&gt; rhs.has_value();
+    }
+}</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename Comparison&gt;
+auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
+        optional&lt;T&gt; const&amp; rhs, Comparison cmp_type)
+    -&gt; typename Comparison::strong
+{
+    if (lhs.has_value() &amp;&amp; rhs.has_value()) {
+        return compare_3way(*lhs, *rhs, cmp_type);
+    } else {
+        return lhs.has_value() &lt;=&gt; rhs.has_value();
+    }
+}</code></pre>
+</td>
+</tr>
+</table>
 </html>
