@@ -129,7 +129,7 @@ A common source of function objects whose call operators could be static but are
     auto p = &decltype(four)::operator();
     (four.*p)(); // ok today, breaks with this proposal
     
-The above code is pretty contrived, but a more direct example can be found in the deduction guide for `std::function` today which succeeds only if the call operator of the provided object is of the form `R(G::*)(A...)` (with optional trailing qualifiers). While this proposal will fix `std::function`, it would break user code that relies on custom deduction gudies of the same style:
+The above code is pretty contrived, but a more direct example can be found in the deduction guide for `std::function` today which succeeds only if the call operator of the provided object is of the form `R(G::*)(A...)` (with optional trailing qualifiers). While this proposal will fix `std::function`, it would break user code that relies on custom deduction guides of the same style:
 
     :::cpp
     custom_function f = four; // ok today, f is a custom_function<int(void)>
