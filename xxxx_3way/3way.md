@@ -82,7 +82,9 @@ The only way to get efficiency is to have every type, even `S` above, implement 
 
 In order how to best figure out how to solve this problem for C++, it is helpful to look at how other languages have already addressed this issue. While P0515 listed many languages which have a three-way comparison returning a signed integer, there is another set of otherwise mostly-unrelated languages that take a different approach. 
 
-Rust, Kotlin, Swift, and Haskell are rather different languages in many respects. But they all solve this particular problem in basically the same way: they treat _equality_ and _comparison_ as separate operations. I want to focus specifically on Rust here as it's arguably the closest language to C++ of the group, but the other three are largely equivalent for the purposes of this specific discussion.
+### Rust
+
+Rust, Kotlin, Swift, Haskell, and Scala are rather different languages in many respects. But they all solve this particular problem in basically the same way: they treat _equality_ and _comparison_ as separate operations. I want to focus specifically on Rust here as it's arguably the closest language to C++ of the group, but the other three are largely equivalent for the purposes of this specific discussion.
 
 Rust deals in Traits (which are roughly analogous to C++0x concepts and Swift protocols) and it has four relevant Traits that have to do with comparisons:
 
@@ -156,7 +158,27 @@ Even if you don't know Rust (and I really don't know Rust), I think it would be 
 
 In other words, `eq` calls `eq` all the way down while doing short-circuiting whereas `cmp` calls `cmp` all the way down, and these are two separate functions. Both algorithms exactly match our implementation of `==` and `<=>` for `vector` above. Even though `cmp` performs a 3-way ordering, and you can use the result of `a.cmp(b)` to determine that `a == b`, it is _not_ the way that Rust (or other languages in this realm like Swift and Kotlin and Haskell) determine equality. 
 
-For completeness, Swift has [`Equatable`][5] and [`Comparable`][6] protocols. Kotlin has a [`Comparable`][7] interface and a separate `equals` method inherited from [`Any`][8]. Haskell has the [`Data.Eq`][9] and [`Data.Ord`][10] type classes. 
+### Swift
+
+Swift has [`Equatable`][5] and [`Comparable`][6] protocols. For types that conform to `Equatable`, `!=` is implicitly generated from `==`. For types that conform to `Comparable`, `>`, `>=`, and `<=` are implicitly generated from `<`.
+
+### Kotlin
+
+Kotlin, like Java, has a [`Comparable`][7] interface and a separate `equals` method inherited from [`Any`][8]. Unlike Java, it has [operator overloading][9]: `a == b` means `a?.equals(b) ?: (b === null)` and `a < b` means `a.compareTo(b) < 0`.
+
+`a == b` could be, but is not, translated as `a.compareTo(b) == 0`.
+
+### Haskell
+
+Haskell has the [`Data.Eq`][10] and [`Data.Ord`][11] type classes. `!=` is generated from `==` (or vice versa, depending on which definition is provided for `Eq`). If a `compare` method is provided to conform to `Ord`, `a < b` means `(compare a b) < 0`.
+
+`a == b` could be, but is not, translated as `(compare a b) == 0`. 
+
+### Scala
+
+Scala's equality operators come from the root [`Any`][12] interface, `a == b` means `if (a eq null) b eq null else a.equals(b)`. Its relational operators come from the [`Ordered`][13] trait, where `a < b` means `(a compare b) < 0`.
+
+`a == b` could be, but is not, translated as `(a compare b) == 0`. 
 
 # Proposal
 
@@ -291,8 +313,8 @@ There are many kinds of types for which the defaulted comparison semantics are i
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-[P0515/C++2a][11]
-[11]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
+[P0515/C++2a][14]
+[14]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
 </th>
 <th style="width:50%">
 Proposed
@@ -432,5 +454,8 @@ This paper most certainly would not exist with David Stone's extensive work in t
 [6]: https://developer.apple.com/documentation/swift/comparable "Comparable - Swift Standard Library"
 [7]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html "Comparable - Kotlin Programming Language"
 [8]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html "Any - Kotlin Programming Language"
-[9]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html "Data.Eq - Haskell documentation"
-[10]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html "Data.Ord - Haskell documentation"
+[9]: https://kotlinlang.org/docs/reference/operator-overloading.html#equals "Operator overloading - Kotlin Programming Language"
+[10]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html "Data.Eq - Haskell documentation"
+[11]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html "Data.Ord - Haskell documentation"
+[12]: https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean "Scala Standard Library - Any"
+[13]: https://www.scala-lang.org/api/current/scala/math/Ordered.html "Scala Standard Library - Ordered"
