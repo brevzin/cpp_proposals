@@ -7,7 +7,9 @@ import time
 import markdown
 from markdown.extensions import Extension
 #from markdown.extensions.codehilite import CodeHiliteExtension
-from markdown.inlinepatterns import LinkPattern, LINK_RE, BacktickPattern, BACKTICK_RE
+from markdown.inlinepatterns import (
+    LinkPattern, LINK_RE, BacktickPattern, BACKTICK_RE,
+    ReferencePattern, REFERENCE_RE, SHORT_REF_RE)
 from markdown.treeprocessors import Treeprocessor
 from markdown.postprocessors import Postprocessor
 from markdown.preprocessors import Preprocessor
@@ -20,14 +22,17 @@ from toc import TocExtension
 def local_path(filename):
     return os.path.join(sys.path[0], filename)
 
+def load_wg21():
+    wg21 = json.load(open(local_path('index.json')))
+    for key in sorted(wg21, reverse=True):
+        if key.startswith('P') and key[:5] not in wg21:
+            wg21[key[:5]] = wg21[key]
+    return wg21
+    
 class LinkSaver(LinkPattern):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, wg21, *args, **kwargs):
         super(LinkSaver, self).__init__(*args, **kwargs)
-        self.markdown.saved_links = set()
-        self.wg21 = json.load(open(local_path('index.json')))
-        for key in sorted(self.wg21, reverse=True):
-            if key.startswith('P') and key[:5] not in self.wg21:
-                self.wg21[key[:5]] = self.wg21[key]
+        self.wg21 = wg21
         
     def handleMatch(self, m):
         el = etree.Element('a')
@@ -50,14 +55,15 @@ class LinkSaver(LinkPattern):
             el.set("title", self.wg21[href.split('/')[-1].upper()]['title'])
         return el
 
+class RefSaver(ReferencePattern):
+    def makeTag(self, href, title, text):
+        return ReferencePattern.makeTag(self,
+            href, title.split('||')[0], text)
+        
 class RefProcessor(Treeprocessor):
-    def __init__(self, md):
+    def __init__(self, md, wg21):
         super(RefProcessor, self).__init__(md)
-
-        self.wg21 = json.load(open(local_path('index.json')))
-        for key in sorted(self.wg21, reverse=True):
-            if key.startswith('P') and key[:5] not in self.wg21:
-                self.wg21[key[:5]] = self.wg21[key]
+        self.wg21 = wg21
 
     def run(self, doc):
         wg21_links = []
@@ -67,35 +73,50 @@ class RefProcessor(Treeprocessor):
                 wg21_links.append(link.split('/')[-1].upper())
         wg21_links.sort()
 
-        if wg21_links:
+        if wg21_links or self.markdown.references:
             refs = etree.SubElement(doc, 'h1')
             refs.text = 'References'
-
             ul = etree.SubElement(doc, 'ul')
-            for link in wg21_links:
-                info = self.wg21[link]
-                li = etree.SubElement(ul, 'li')
-                a = etree.SubElement(li, 'a')
-                a.attrib["href"] = info['long_link']
-                a.text = '[{}]'.format(link)
+            
+        for link in wg21_links:
+            info = self.wg21[link]
+            li = etree.SubElement(ul, 'li')
+            a = etree.SubElement(li, 'a')
+            a.attrib["href"] = info['long_link']
+            a.text = '[{}]'.format(link)
 
-                desc = etree.SubElement(li, 'span')
-                desc.attrib['style'] = "margin-left: 5px;"
-                if info['type'] == 'paper':
-                    desc.text = u'"{}" by {}, {}'.format(
-                        info['title'],
-                        info['author'],
-                        info['date'])
-                elif info['type'] == 'issue':
-                    if 'last_modified' in info:
-                        date = info['last_modified']
-                    else:
-                        date = info['date']
-                
-                    desc.text = u'"{}" by {}, {}'.format(
-                        info['title'],
-                        info['submitter'],
-                        date)
+            desc = etree.SubElement(li, 'span')
+            desc.attrib['style'] = "margin-left: 5px;"
+            if info['type'] == 'paper':
+                desc.text = u'"{}" by {}, {}'.format(
+                    info['title'],
+                    info['author'],
+                    info['date'])
+            elif info['type'] == 'issue':
+                if 'last_modified' in info:
+                    date = info['last_modified']
+                else:
+                    date = info['date']
+            
+                desc.text = u'"{}" by {}, {}'.format(
+                    info['title'],
+                    info['submitter'],
+                    date)
+                        
+        for ref in sorted(self.markdown.references, key=int):
+            href, title = self.markdown.references[ref]
+            li = etree.SubElement(ul, 'li')
+            a = etree.SubElement(li, 'a')
+            a.attrib["href"] = href
+            a.text = '[{}]'.format(ref)
+            
+            desc = etree.SubElement(li, 'span')
+            desc.attrib['style'] = "margin-left: 5px;"
+            parts = title.split('||')
+            if len(parts) == 1:
+                desc.text = title
+            else:
+                desc.text = u'"{}" by {}, {}'.format(*parts)
 
 class TableCodeBlockProcessor(Preprocessor):
     def run(self, lines):
@@ -111,8 +132,8 @@ class TableCodeBlockProcessor(Preprocessor):
                 target = new_lines
                 new_lines.extend(
                     self.markdown.convert(u'\n'.join(to_markup))
-                        .replace('<pre class="codehilite">',
-                            '<pre style="background:transparent;border:0px">')
+                        .replace('<pre class="codehilite"',
+                            '<pre style="background:transparent;border:0px"')
                         .split('\n'))
                 to_markup = []
                 new_lines.append(line)
@@ -140,17 +161,25 @@ class CppBacktickExtension(Extension):
             
 class RefExtension(Extension):
     def extendMarkdown(self, md, md_globals):
-        md.inlinePatterns[u'link'] = LinkSaver(LINK_RE, md)
-        md.treeprocessors.add("refs", RefProcessor(md), '<toc')
+        md.saved_links = set()
+        wg21 = load_wg21()
+        md.inlinePatterns[u'link'] = LinkSaver(wg21, LINK_RE, md)
+        md.inlinePatterns[u'reference'] = RefSaver(REFERENCE_RE, md)
+        md.inlinePatterns[u'short_reference'] = RefSaver(SHORT_REF_RE, md)
+        md.treeprocessors.add("refs", RefProcessor(md, wg21), '<toc')
 
 class TableCodeBlockExtension(Extension):
     def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add("tbl_codeblock",
-            TableCodeBlockProcessor(
-                markdown.Markdown(extensions=[CodeHiliteExtension(use_pygments=False),
+        new_md = markdown.Markdown(extensions=[ CodeHiliteExtension(use_pygments=False),
                     CppBacktickExtension()
                     ])
-            ),
+        new_md.references = md.references
+        new_md.inlinePatterns[u'reference'] = RefSaver(REFERENCE_RE, new_md)
+        new_md.inlinePatterns[u'short_reference'] = RefSaver(SHORT_REF_RE, new_md)
+        
+                    
+        md.preprocessors.add("tbl_codeblock",
+            TableCodeBlockProcessor(new_md),
             '_begin')
         
 def main(argv=None):
