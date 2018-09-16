@@ -23,6 +23,7 @@ $(eval $(call add_better_paper,1065_constexpr_invoke/d1065r0.html,1065_constexpr
 $(eval $(call add_better_paper2,1169_static_call,d1169r0.html,static-call.md))
 $(eval $(call add_better_paper2,1170_compare_3way,d1170r0.html,compare-3way.md))
 $(eval $(call add_better_paper2,xxxx_3way,xxxx.html,3way.md))
+$(eval $(call add_better_paper2,xxxx_3way,xxxy.html,compare-redundant.md))
 
 all : $(PAPERS)
 .DEFAULT_GOAL := all
