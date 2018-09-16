@@ -75,7 +75,7 @@ What we have to do instead is to use a library function which was also introduce
             /* ill-formed, defined as deleted */
     }
 
-That this, this is an extra library function that lets use three-way comparisons with types that haven't yet opted into this new language feature. Since the typical case is that types won't have `<=>` implemented, we basically want to make sure that we use `compare_3way()` for the functionality that we need. In other words, the way we want to implement `<=>` for `optional<T>` and for `Y` is:
+That this, this is an extra library function that lets us use three-way comparisons with types that haven't yet opted into this new language feature. Since the typical case is that types won't have `<=>` implemented, we basically want to make sure that we use `compare_3way()` for the functionality that we need. In other words, the way we want to implement `<=>` for `optional<T>` and for `Y` is:
 
     :::cpp hl_lines="8,18,19"
     template <typename T>
