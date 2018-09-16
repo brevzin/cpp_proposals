@@ -158,27 +158,15 @@ Even if you don't know Rust (and I really don't know Rust), I think it would be 
 
 In other words, `eq` calls `eq` all the way down while doing short-circuiting whereas `cmp` calls `cmp` all the way down, and these are two separate functions. Both algorithms exactly match our implementation of `==` and `<=>` for `vector` above. Even though `cmp` performs a 3-way ordering, and you can use the result of `a.cmp(b)` to determine that `a == b`, it is _not_ the way that Rust (or other languages in this realm like Swift and Kotlin and Haskell) determine equality. 
 
-### Swift
+### Other Languages
 
-Swift has [`Equatable`][5] and [`Comparable`][6] protocols. For types that conform to `Equatable`, `!=` is implicitly generated from `==`. For types that conform to `Comparable`, `>`, `>=`, and `<=` are implicitly generated from `<`.
+Swift has [`Equatable`][5] and [`Comparable`][6] protocols. For types that conform to `Equatable`, `!=` is implicitly generated from `==`. For types that conform to `Comparable`, `>`, `>=`, and `<=` are implicitly generated from `<`. Swift does not have a 3-way comparison function.
 
-### Kotlin
+There are other languages that make roughly the same decision in this regard that Rust does: `==` and `!=` are generated from a function that does equality whereas the four relational operators are generated from a three-way comparison. Even though the three-way comparison _could_ be used to determine equality, it is not:
 
-Kotlin, like Java, has a [`Comparable`][7] interface and a separate `equals` method inherited from [`Any`][8]. Unlike Java, it has [operator overloading][9]: `a == b` means `a?.equals(b) ?: (b === null)` and `a < b` means `a.compareTo(b) < 0`.
-
-`a == b` could be, but is not, translated as `a.compareTo(b) == 0`.
-
-### Haskell
-
-Haskell has the [`Data.Eq`][10] and [`Data.Ord`][11] type classes. `!=` is generated from `==` (or vice versa, depending on which definition is provided for `Eq`). If a `compare` method is provided to conform to `Ord`, `a < b` means `(compare a b) < 0`.
-
-`a == b` could be, but is not, translated as `(compare a b) == 0`. 
-
-### Scala
-
-Scala's equality operators come from the root [`Any`][12] interface, `a == b` means `if (a eq null) b eq null else a.equals(b)`. Its relational operators come from the [`Ordered`][13] trait, where `a < b` means `(a compare b) < 0`.
-
-`a == b` could be, but is not, translated as `(a compare b) == 0`. 
+- Kotlin, like Java, has a [`Comparable`][7] interface and a separate `equals` method inherited from [`Any`][8]. Unlike Java, it has [operator overloading][9]: `a == b` means `a?.equals(b) ?: (b === null)` and `a < b` means `a.compareTo(b) < 0`.
+- Haskell has the [`Data.Eq`][10] and [`Data.Ord`][11] type classes. `!=` is generated from `==` (or vice versa, depending on which definition is provided for `Eq`). If a `compare` method is provided to conform to `Ord`, `a < b` means `(compare a b) < 0`.
+- Scala's equality operators come from the root [`Any`][12] interface, `a == b` means `if (a eq null) b eq null else a.equals(b)`. Its relational operators come from the [`Ordered`][13] trait, where `a < b` means `(a compare b) < 0`.
 
 # Proposal
 
