@@ -224,10 +224,9 @@ The consequence of writing all seven operators is that it makes `<=>` completely
 
 As if that wasn't enough, we would also lose any ability to improve performance with three-way comparisons. For many types, `<=>` can be better than consecutive calls to `==` and `<`. Now, consider `pair<T, T>`. If we're only providing `<=>` for such a type if `T` has `<=>`, that means we must still be providing `<` if `T` has `<`. If `T` has `<=>`, `T` has `<`, which means that our `pair<T,T>` provides everything. 
 
-Now suppose `T` has an efficient `<=>`, `pair<T, T>`'s `operator<` can't use it! Which means that the expression `p1 < p2`, instead of doing two calls to `T`'s efficient `<=>` has to instead do a call to `==` and then `<` twice. That could be a serious pessimization!
+Now suppose `T` has an efficient `<=>`, `pair<T, T>`'s `operator<` can't use it! Which means that the expression `p1 < p2`, instead of doing (up to) two calls to `T`'s efficient `<=>` has to instead do (up to) three calls to `T`'s `<`. And this argument could be extended out to `vector<T>`'s `operator<` which now potentially does up to `2N-1` calls to `T`'s `<` instead of up to `N` calls to `T`'s `<=>`. That could be a serious pessimization!
 
-Thus, `optional<T>` needs to provide `<=>` if `T` is comparable at all - not simply if `T` implements `<=>`. 
-
+Thus, `optional<T>` needs to provide `<=>` if `T` is comparable at all - not simply if `T` implements `<=>`, and `<=>` should substitute the existence of the other relational operators. 
 
 ## Unintentional comparison category strengthening
 
@@ -254,7 +253,7 @@ The conclusion of this is that yes, there is a problem. But the problem lies wit
 
 Note that this problem could easily be fixed by replacing the currently existing `==` and `!=` for these types with a `<=>` returning `weak_equality`. This is still a questionable choice, but at least you would observe the correct comparison category without otherwise breaking user code. Ideally, `==` and `!=` get replaced with a named function that itself returns `weak_equality`.
 
-This leaves the question of whether or not `<=>` was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated. As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have `<=>` perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary `<=>` operation if and only if it exists. 
+This leaves the question of whether or not `<=>` was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated (or more relevantly, as whether or not `<` was generated from `<=>` or from `<`). As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have `<=>` perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary `<=>` operation if and only if it exists. 
     
 [class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
