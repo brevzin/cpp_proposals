@@ -15,7 +15,9 @@ Consider a type like:
         auto operator<=>(S const&) const = default;
     };
     
-Today, this is ill-formed, because `vector` does not implement `<=>`. In order to make this work, we need to add that implementation, the most straightforward of which is (let's just assume `strong_ordering` and note that I'm deliberately not using `std::lexicographical_compare_3way()` for clarity):
+Today, this is ill-formed, because `vector` does not implement `<=>`. In order to make this work, we need to add that implementation. It is _not_ recommended that `vector` only provide `<=>`, but we will start there and it will become clear why that is the recommendation.
+
+The most straightforward implementation of `<=>` for `vector` is (let's just assume `strong_ordering` and note that I'm deliberately not using `std::lexicographical_compare_3way()` for clarity):
 
     :::cpp
     template<typename T>
@@ -274,8 +276,6 @@ Proposed
 
 The inverse lookup rules would also be changed. Whereas today `a == b` can find either `(a <=> b) == 0` or `0 == (b <=> a)`, the proposal is that it instead either find `a == b` or `b == a`. Likewise `a != b` would find either `!(a == b)` or `!(b == a)`, but never look for `<=>`.
 
-As an extra safety mechanism, we should enforce that if a type implements `<=>` that it also implements `==`. In the languages I've looked at, as well as the three-way comparison as it exists in the working draft today, ordering always implies equality.
-
 This means we have to write two functions instead of just `<=>`, but we get optimal performance. The issues with this approach are, from David (with one adjustment):
 
 > 1. Compared to the previous solution, this requires the user to type even more to opt-in to behavior that they almost always want (if you have defaulted relational operators, you probably want the equality operators). Because `operator<=>` is a new feature, we do not have any concerns of legacy code, so if the feature starts out as giving users all six comparison operators, it would be better if they must type only one line rather than having to type <del>three</del> <ins>two</ins>.
@@ -432,6 +432,41 @@ and has optimal comparison operators all the way down.
 
 The ability to do this is completely orthogonal to this proposal - given P0847, we could write `Ord` already. The point is simply to illustrate that defaulting two functions is not necessarily a large burden.
 
+## Extension: other means of defaulting `==`
+
+One of the concerns could be that we now require class authors to default both `==` and `<=>` and this seems like an unnecessary amount of function declarations to write. To that end, this proposal could be extended to generate a defaulted `operator==` from a couple different places.
+
+### Defaulted `==` from defaulted `<=>`
+
+This extension would be that a defaulted `operator<=>` also creates a defaulted `operator==`. The result would be no change in typing at all for classes that just want a default, member-wise total order (as in `A`) above. 
+
+The reasoning here is that having `<=>` certainly implies equality, and the likely intent behind choosing default, member-wise ordering is that you also want default, member-wise equality. 
+
+On the other hand, it seems a little strange that `<=>` never leads to the generation of an `==` operation (that is, `a == b` is no longer `(a <=> b) == 0`), `<=>` can nevertheless lead to the generation of an `==` _function_. But if a leading concern with this proposal is the requirement of an additional function declaration, this is surely worth doing.
+
+### Defaulted `==` from defaulted copy constructor/assignment
+
+A different potential extension is to take advantage of the clear ties between copying and equality. Stepanov's [Fundamentals of Generic Programming][stepanov.fogp] puts forward axioms that equate the semantics of copying with the semantics of equals. Copying gives you an equal object, which is an idea explicitly noted in [P0515R0](https://wg21.link/p0515r0):
+
+> Default comparison should do exactly the same thing as default copying.
+
+As originally suggested in [P0432](https://wg21.link/p0432) and [P0481](https://wg21.link/p0481), we could generate a default, memberwise comparison if the copy constructor is not user-provided and all the members are equality comparable.
+
+### Impact on example
+
+The earlier example was:
+
+    :::cpp
+    struct A {
+        auto operator<=>(A const&) const = default;
+    };
+    
+Today, `A` has all six comparison operators - all of which invoke `<=>`. This proposal prevents `==` and `!=` from working, so those need to be handled separately. The core proposal suggests that this be handled explictly - with an explicitly defaulted `operator==`.
+
+Both of these extensions lead to no change necessary for `A`. The former generates the defaulted `operator==` function from the existence of the defaulted `operator<=>`, the latter generates the defaulted `operator==` from the implicit copy constructor/assignment.
+
+Status quo and both of these extensions have the same _semantics_, but both extensions are likely to generate better code for defaulted `==`. 
+
 # Acknowledgements
 
 This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.
@@ -447,3 +482,4 @@ This paper most certainly would not exist without David Stone's extensive work i
 [haskell.ord]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html "Data.Ord - Haskell documentation"
 [scala.any]: https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean "Scala Standard Library - Any"
 [scala.ord]: https://www.scala-lang.org/api/current/scala/math/Ordered.html "Scala Standard Library - Ordered"
+[stepanov.fogp]: http://stepanovpapers.com/DeSt98.pdf "Fundamentals of Generic Programming||James C. Dehnert and Alexander Stepanov||1998"
