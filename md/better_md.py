@@ -1,4 +1,5 @@
 import argparse
+import collections
 import json
 import os
 import sys
@@ -103,7 +104,7 @@ class RefProcessor(Treeprocessor):
                     info['submitter'],
                     date)
                         
-        for ref in sorted(self.markdown.references, key=int):
+        for ref in sorted(self.markdown.references):
             href, title = self.markdown.references[ref]
             li = etree.SubElement(ul, 'li')
             a = etree.SubElement(li, 'a')
@@ -114,7 +115,10 @@ class RefProcessor(Treeprocessor):
             desc.attrib['style'] = "margin-left: 5px;"
             parts = title.split('||')
             if len(parts) == 1:
-                desc.text = title
+                if title[0] == '[' and title[-1] == ']':
+                    desc.text = u'Current Working Draft'.format(title)
+                else:
+                    desc.text = title
             else:
                 desc.text = u'"{}" by {}, {}'.format(*parts)
 
@@ -176,8 +180,7 @@ class TableCodeBlockExtension(Extension):
         new_md.references = md.references
         new_md.inlinePatterns[u'reference'] = RefSaver(REFERENCE_RE, new_md)
         new_md.inlinePatterns[u'short_reference'] = RefSaver(SHORT_REF_RE, new_md)
-        
-                    
+          
         md.preprocessors.add("tbl_codeblock",
             TableCodeBlockProcessor(new_md),
             '_begin')
@@ -202,8 +205,13 @@ def main(argv=None):
     noref_md = markdown.Markdown(extensions=extensions)
     if args.references:
         extensions.append(RefExtension())
-     
-    md = markdown.Markdown(extensions=extensions)
+    
+    class OrderedMarkdown(markdown.Markdown):
+        def registerExtensions(self, *args, **kwargs):
+            self.references = collections.OrderedDict()
+            markdown.Markdown.registerExtensions(self, *args, **kwargs)
+    
+    md = OrderedMarkdown(extensions=extensions)
     in_md = args.input.read().decode('utf-8')
     html = md.convert(in_md)
     write('<html>\n')

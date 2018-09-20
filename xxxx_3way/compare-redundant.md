@@ -58,9 +58,9 @@ But this doesn't even compile.
 
 The problem here is, not all types implement `<=>`. Indeed, at this moment, only the fundamental types do. So writing any sort of code that relies on the existence of `<=>` is highly limited in its functionality. 
 
-The provided implementation of `<=>` for `optional` relies on the existence of `<=>` for `T`. As a result, while it works great for `optional<int>`, it would not be a viable candidate for `optional<Ordered>`. Likewise, in order to default the implementation of `<=>` for `Y`, we need each to perform <code>x<sub>i</sub> <span class="token operator"><=></span> y<sub>i</sub></code> for each member (see [\[class.spaceship\]][1]), but as above, `Ordered` does not implement `<=>`, so this is ill-formed.
+The provided implementation of `<=>` for `optional` relies on the existence of `<=>` for `T`. As a result, while it works great for `optional<int>`, it would not be a viable candidate for `optional<Ordered>`. Likewise, in order to default the implementation of `<=>` for `Y`, we need each to perform <code>x<sub>i</sub> <span class="token operator"><=></span> y<sub>i</sub></code> for each member (see [\[class.spaceship\]][class.spaceship]), but as above, `Ordered` does not implement `<=>`, so this is ill-formed.
 
-What we have to do instead is to use a library function which was also introduced in P0515 but adopted by way of [P0768R1](https://wg21.link/p0768r1): [`std::compare_3way()`][2]. What this function does is add more fallback implementations, in a way best illustrated by this skeleton:
+What we have to do instead is to use a library function which was also introduced in P0515 but adopted by way of [P0768R1](https://wg21.link/p0768r1): [`std::compare_3way()`][alg.3way]. What this function does is add more fallback implementations, in a way best illustrated by this skeleton:
 
     :::cpp
     template<class T, class U>
@@ -205,6 +205,58 @@ Proposed
 </td>
 </tr>    
 </table>
+
+# Counter-arguments
+
+There are two counter-arguments I'm aware of to this proposal. What follows is an accounting of those arguments and my responses to them. 
+
+## The initial premise is false: `optional<T>` shouldn't always have `<=>`
+
+> `optional<T>` only has `<` if `T` has `<`, so `optional<T>` should only have `<=>` if `T` has `<=>`. In other words, the initial provided implementation is the correct implementation and the suggested one using `compare_3way()` is incorrect.
+
+There isn't anything particularly specific to `optional` in this argument, so we can extend this to: Any compound type should have `<=>` only if all of its constituents have `<=>`.
+
+This argument sounds seductive, and offers consistency with the way we write other operators. But it has some serious problems. 
+
+To start with, the implication here is that `optional<T>` (and by extension every compound type, and really by extension every type) would need now to conditionally implement _seven_ operators (all six preexisting comparisons, plus `<=>`) instead of the advertised _one_ operator. As a result, we lose a big advantage from `<=>`: the ability to write less code.
+
+The consequence of writing all seven operators is that it makes `<=>` completely useless. User code is not supposed to directly invoke `<=>` - user code is supposed to just use the comparison it needs. The idea of `<=>` is we simplify code by having `a < b` translate to `a <=> b < 0`. But if we always have all seven operators, this translation will never happen, since `operator<` exists and would be preferred. The only code that would actually invoke `<=>` is the code that directly uses `<=>` - and that code only exists in other implementations of `<=>`. At this point, it may as well not exist at all. 
+
+As if that wasn't enough, we would also lose any ability to improve performance with three-way comparisons. For many types, `<=>` can be better than consecutive calls to `==` and `<`. Now, consider `pair<T, T>`. If we're only providing `<=>` for such a type if `T` has `<=>`, that means we must still be providing `<` if `T` has `<`. If `T` has `<=>`, `T` has `<`, which means that our `pair<T,T>` provides everything. 
+
+Now suppose `T` has an efficient `<=>`, `pair<T, T>`'s `operator<` can't use it! Which means that the expression `p1 < p2`, instead of doing two calls to `T`'s efficient `<=>` has to instead do a call to `==` and then `<` twice. That could be a serious pessimization!
+
+Thus, `optional<T>` needs to provide `<=>` if `T` is comparable at all - not simply if `T` implements `<=>`. 
+
+
+## Unintentional comparison category strengthening
+
+> When a class author implements `<=>` for their type, they have to decide what comparison category to use as the return type. Other code could use that choice to make important decisions. But if we had `<=>` fallback to `compare_3way()`, we effectively are guessing what the intended comparison category was. `decltype(x <=> y)` might be a deliberate choice of the class author - or it might be compiler inference, and we can't tell. 
+
+> Moreover, we might get this wrong in a very confusing way that inadvertently strengthens the comparison category. For example, the following code is well-formed:
+>
+    :::cpp
+    bool foo(error_code const& a, error_condition const& b) {
+        return a == b;
+    }
+
+> because there exists an equality comparison between these [two types][syserr.compare]. These two types mean rather different things and obviously are not substitutible, but the proposed changed would nevertheless give `decltype(a <=> b)` the type `strong_equality` and that is a very misleading and strongly undesired result. 
+
+I have two responses to this argument. 
+
+First, practically speaking there is no difference between using `a <=> b` in this context and getting `strong_equality` and using `compare_3way(a, b)` in this context and getting `strong_equality`. The end result is the same - equally misleading, and the added weight on the meaning of `<=>` here is a distinction without a difference. In today's world, people will write `<=>` when they need a three-way comparison, find that it doesn't work, and then switch to `compare_3way()` - because `compare_3way()` solves a problem. I'm unconvinced that _specifically_ `<=>` yielding a misleading response is a poblem.
+
+Second, the fact that `compare_3way(a, b)` today and `a <=> b` with this proposal yields `strong_equality` is a problem - but it's not `<=>`'s problem, it's `error_code`'s problem. The decision to use `==` in this context is arguably a bad design decision. With the direction the standard library is going and the new concepts in Ranges in [P0898](https://wg21.link/p0898r3) (both terminology concepts and language `concept`s), we are adding semantic requirements on top of syntactic ones - and the lack of substitutibility between `error_code` and `error_condition` means that we're meeting the syntactic but not the semantic requirements of `EqualityComparableWith`. This is bad.
+
+Jonathan Müller recently wrote an in-depth series of blog posts on the [mathematics behind comparisons][muller.compare] which makes the compelling argument that the existence of `==` should be `strong_equality` only, and the existence of `==` and `<` should be `strong_ordering` only. Any other required comparison category should be a named function instead. This argument is very much in line with the principles behind Ranges. 
+
+The conclusion of this is that yes, there is a problem. But the problem lies with `error_code` and `error_condition` for violating expectations with the decision to improperly use `==` when it doesn't mean equality and substitutibility. Having `<=>` fall back to guessing at the comparison category and yielding `strong_ordering` or `strong_equality` works for types that follow good design guidance in their choice of using operators. 
+
+Note that this problem could easily be fixed by replacing the currently existing `==` and `!=` for these types with a `<=>` returning `weak_equality`. This is still a questionable choice, but at least you would observe the correct comparison category without otherwise breaking user code. Ideally, `==` and `!=` get replaced with a named function that itself returns `weak_equality`.
+
+This leaves the question of whether or not `<=>` was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated. As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have `<=>` perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary `<=>` operation if and only if it exists. 
     
-[1]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
-[2]: http://eel.is/c++draft/alg.3way "[alg.3way]"
+[class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
+[alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
+[syserr.compare]: http://eel.is/c++draft/syserr.compare "[syserr.compare]"
+[muller.compare]: https://foonathan.net/blog/2018/09/07/three-way-comparison.html "foonathan::blog() - Mathematics behind Mathematics behind Comparison #4: Three-Way Comparison||Jonathan Müller||2018-09-07"

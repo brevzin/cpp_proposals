@@ -5,7 +5,7 @@ Audience: EWG
 
 # Motivation
 
-[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!][1] for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief rundown.
+[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!][Stone.Order] for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief rundown.
 
 Consider a type like:
 
@@ -93,7 +93,7 @@ Rust deals in Traits (which are roughly analogous to C++0x concepts and Swift pr
 - `PartialOrd` (which allows for incomparability by returning `Option<Ordering>`, where `Ordering` is an enum)
 - `Ord` (a total order, which extends `Eq` and `PartialOrd`)
 
-The actual operators are [implicitly generated][2] from these traits, but not all from the same one. Importantly, `x == y` is translated as `PartialEq::eq(x, y)` whereas ` x < y` is translated as `PartialOrd::lt(x, y)` (which is effectively checking that `PartialOrd::partial_cmp(x, y)` is `Less`).
+The actual operators are [implicitly generated][rust.oper] from these traits, but not all from the same one. Importantly, `x == y` is translated as `PartialEq::eq(x, y)` whereas ` x < y` is translated as `PartialOrd::lt(x, y)` (which is effectively checking that `PartialOrd::partial_cmp(x, y)` is `Less`).
 
 That is, you don't get *six* functions for the price of one. You need to write _two functions_. 
 
@@ -102,12 +102,12 @@ Even if you don't know Rust (and I really don't know Rust), I think it would be 
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-[`Eq`][3]
-[3]: https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053 "Implementation of Eq for Slice"
+[`Eq`][Rust.Eq]
+[Rust.Eq]: https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053 "Implementation of Eq for Slice"
 </th>
 <th>
-[`Ord`][4]
-[4]: https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136 "Implementation of Ord for Slice"
+[`Ord`][Rust.Ord]
+[Rust.Ord]: https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136 "Implementation of Ord for Slice"
 </th>
 </tr>
 <tr>
@@ -160,13 +160,13 @@ In other words, `eq` calls `eq` all the way down while doing short-circuiting wh
 
 ### Other Languages
 
-Swift has [`Equatable`][5] and [`Comparable`][6] protocols. For types that conform to `Equatable`, `!=` is implicitly generated from `==`. For types that conform to `Comparable`, `>`, `>=`, and `<=` are implicitly generated from `<`. Swift does not have a 3-way comparison function.
+Swift has [`Equatable`][swift.eq] and [`Comparable`][swift.comp] protocols. For types that conform to `Equatable`, `!=` is implicitly generated from `==`. For types that conform to `Comparable`, `>`, `>=`, and `<=` are implicitly generated from `<`. Swift does not have a 3-way comparison function.
 
 There are other languages that make roughly the same decision in this regard that Rust does: `==` and `!=` are generated from a function that does equality whereas the four relational operators are generated from a three-way comparison. Even though the three-way comparison _could_ be used to determine equality, it is not:
 
-- Kotlin, like Java, has a [`Comparable`][7] interface and a separate `equals` method inherited from [`Any`][8]. Unlike Java, it has [operator overloading][9]: `a == b` means `a?.equals(b) ?: (b === null)` and `a < b` means `a.compareTo(b) < 0`.
-- Haskell has the [`Data.Eq`][10] and [`Data.Ord`][11] type classes. `!=` is generated from `==` (or vice versa, depending on which definition is provided for `Eq`). If a `compare` method is provided to conform to `Ord`, `a < b` means `(compare a b) < 0`.
-- Scala's equality operators come from the root [`Any`][12] interface, `a == b` means `if (a eq null) b eq null else a.equals(b)`. Its relational operators come from the [`Ordered`][13] trait, where `a < b` means `(a compare b) < 0`.
+- Kotlin, like Java, has a [`Comparable`][kotlin.comp] interface and a separate `equals` method inherited from [`Any`][kotlin.any]. Unlike Java, it has [operator overloading][kotlin.oper]: `a == b` means `a?.equals(b) ?: (b === null)` and `a < b` means `a.compareTo(b) < 0`.
+- Haskell has the [`Data.Eq`][haskell.eq] and [`Data.Ord`][haskell.ord] type classes. `!=` is generated from `==` (or vice versa, depending on which definition is provided for `Eq`). If a `compare` method is provided to conform to `Ord`, `a < b` means `(compare a b) < 0`.
+- Scala's equality operators come from the root [`Any`][scala.any] interface, `a == b` means `if (a eq null) b eq null else a.equals(b)`. Its relational operators come from the [`Ordered`][scala.ord] trait, where `a < b` means `(a compare b) < 0`.
 
 # Proposal
 
@@ -301,8 +301,8 @@ There are many kinds of types for which the defaulted comparison semantics are i
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-[P0515/C++2a][14]
-[14]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
+[P0515/C++2a][revzin.impl]
+[revzin.impl]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
 </th>
 <th style="width:50%">
 Proposed
@@ -434,16 +434,16 @@ The ability to do this is completely orthogonal to this proposal - given P0847, 
 
 # Acknowledgements
 
-This paper most certainly would not exist with David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.
+This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.
     
-[1]: https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md "I did not order this! Why is it on my bill?||David Stone||2018-08-06"
-[2]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators "Comparison Operators - The Rust Reference"
-[5]: https://developer.apple.com/documentation/swift/equatable "Equatable - Swift Standard Library"
-[6]: https://developer.apple.com/documentation/swift/comparable "Comparable - Swift Standard Library"
-[7]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html "Comparable - Kotlin Programming Language"
-[8]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html "Any - Kotlin Programming Language"
-[9]: https://kotlinlang.org/docs/reference/operator-overloading.html#equals "Operator overloading - Kotlin Programming Language"
-[10]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html "Data.Eq - Haskell documentation"
-[11]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html "Data.Ord - Haskell documentation"
-[12]: https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean "Scala Standard Library - Any"
-[13]: https://www.scala-lang.org/api/current/scala/math/Ordered.html "Scala Standard Library - Ordered"
+[Stone.Order]: https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md "I did not order this! Why is it on my bill?||David Stone||2018-08-06"
+[rust.oper]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators "Comparison Operators - The Rust Reference"
+[swift.eq]: https://developer.apple.com/documentation/swift/equatable "Equatable - Swift Standard Library"
+[swift.comp]: https://developer.apple.com/documentation/swift/comparable "Comparable - Swift Standard Library"
+[kotlin.comp]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html "Comparable - Kotlin Programming Language"
+[kotlin.any]: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html "Any - Kotlin Programming Language"
+[kotlin.oper]: https://kotlinlang.org/docs/reference/operator-overloading.html#equals "Operator overloading - Kotlin Programming Language"
+[haskell.eq]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html "Data.Eq - Haskell documentation"
+[haskell.ord]: http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html "Data.Ord - Haskell documentation"
+[scala.any]: https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean "Scala Standard Library - Any"
+[scala.ord]: https://www.scala-lang.org/api/current/scala/math/Ordered.html "Scala Standard Library - Ordered"
