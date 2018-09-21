@@ -218,15 +218,60 @@ There isn't anything particularly specific to `optional` in this argument, so we
 
 This argument sounds seductive, and offers consistency with the way we write other operators. But it has some serious problems. 
 
-To start with, the implication here is that `optional<T>` (and by extension every compound type, and really by extension every type) would need now to conditionally implement _seven_ operators (all six preexisting comparisons, plus `<=>`) instead of the advertised _one_ operator. As a result, we lose a big advantage from `<=>`: the ability to write less code.
+To start with, the implication here is that `optional<T>` (and by extension every compound type) would need now to conditionally implement _seven_ operators (all six preexisting comparisons, plus `<=>`) instead of the advertised _one_ operator. As a result, we lose a big advantage from `<=>`: the ability to write less code.
 
-The consequence of writing all seven operators is that it makes `<=>` completely useless. User code is not supposed to directly invoke `<=>` - user code is supposed to just use the comparison it needs. The idea of `<=>` is we simplify code by having `a < b` translate to `a <=> b < 0`. But if we always have all seven operators, this translation will never happen, since `operator<` exists and would be preferred. The only code that would actually invoke `<=>` is the code that directly uses `<=>` - and that code only exists in other implementations of `<=>`. At this point, it may as well not exist at all. 
+The consequence of writing all seven operators is that it makes `<=>` oddly useless. The only code that should invoke `<=>` is other types' implementations of `<=>`... so in order to invoke `optional<T>`'s `<=>` for a `T` that provides that operator, I would need to have a type that has such a thing as a member. In other words:
 
-As if that wasn't enough, we would also lose any ability to improve performance with three-way comparisons. For many types, `<=>` can be better than consecutive calls to `==` and `<`. Now, consider `pair<T, T>`. If we're only providing `<=>` for such a type if `T` has `<=>`, that means we must still be providing `<` if `T` has `<`. If `T` has `<=>`, `T` has `<`, which means that our `pair<T,T>` provides everything. 
+    :::cpp
+    struct WithSpaceship {
+        // ...
+        strong_ordering operator<=>(WithSpaceship const& rhs) const {
+            // ...
+        }
+    };
+    
+    struct X {
+        optional<WithSpaceship> opt_ws;
+        auto operator<=>(X const&) const = default;
+    };
+    
+    X x;
+    x.opt_ws < x.opt_ws; // calls optional's <, not <=>
+    x < x;               // calls optional's <=> via X's <=>
+    
+This is, in of itself, odd. Not only are we not saving code, but the extra operator that we're writing will rarely be used. 
 
-Now suppose `T` has an efficient `<=>`, `pair<T, T>`'s `operator<` can't use it! Which means that the expression `p1 < p2`, instead of doing (up to) two calls to `T`'s efficient `<=>` has to instead do (up to) three calls to `T`'s `<`. And this argument could be extended out to `vector<T>`'s `operator<` which now potentially does up to `2N-1` calls to `T`'s `<` instead of up to `N` calls to `T`'s `<=>`. That could be a serious pessimization!
+But the bigger consequence of this is that we lose the ability to improve performance with three-way comparisons. Typically, `<=>` can be better than consecutive calls to `<`. Consider `pair<T, T>`. If we're only providing `<=>` for such a type if `T` has `<=>`, that means we must still be providing `<` if `T` has `<`. If `T` has `<=>`, `T` has `<`, which means that our `pair<T,T>` provides everything. 
 
-Thus, `optional<T>` needs to provide `<=>` if `T` is comparable at all - not simply if `T` implements `<=>`, and `<=>` should substitute the existence of the other relational operators. 
+That looks something like this:
+
+    :::cpp
+    // < as it exists today, approximately
+    template <typename T, typename U>
+    bool operator<(pair<T,U> const& x, pair<T,U> const& y)
+    {
+        return x.first < y.first ||
+            (!(y.first < x.first) && x.second < y.second);
+    }
+        
+    // <=> as it would exist based on this reasoning
+    template <typename T, typename U>
+    auto operator<=>(pair<T,U> const& x, pair<T,U> const& y)
+        -> common_comparison_category_t<...>
+    {
+        if (auto cmp = x.first <=> y.first; cmp != 0) return cmp;
+        return x.second <=> y.second;
+    }
+    
+    pair<WithSpaceship, WithSpaceship> p = ...;
+    p < p;    // calls pair::operator<
+    p <=> p;  // calls pair::operator<=>
+
+`WithSpaceship` has an efficient `<=>`, but `pair`'s `operator<` can't use it! Which means that `p < p` has to call `<` three times, which in turn calls `WithSpaceship::operator<=>` three times. But `p <=> p` only has to call `<=>` twice.
+
+This argument could be extended out to `vector<T>`'s `operator<` which now potentially does up to `2N-1` calls to `T`'s `<` instead of up to `N` calls to `T`'s `<=>`. That could be a serious pessimization - one that would encourage people to actually write `<=>` in code! After all, if `(a <=> b) < 0` could potentially be faster than `a < b`, why would I write the latter? That would be a serious design error. 
+
+In short, only conditionally providing `<=>` for compound types not only defeats the goal of writing less code, but also defeats the goal of writing more performant code. I think the only conclusion is that compound types need to provide `<=>` whenever their underlying types are comparable at all and be an unconditinoal substitute for the other relational operators.
 
 ## Unintentional comparison category strengthening
 

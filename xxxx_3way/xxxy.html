@@ -584,7 +584,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: DxxxxRx <br />
-Date: 2018-09-20 <br />
+Date: 2018-09-21 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -794,11 +794,53 @@ auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
 </blockquote>
 <p>There isn't anything particularly specific to <code class="language-cpp">optional</code> in this argument, so we can extend this to: Any compound type should have <code class="language-cpp">&lt;=&gt;</code> only if all of its constituents have <code class="language-cpp">&lt;=&gt;</code>.</p>
 <p>This argument sounds seductive, and offers consistency with the way we write other operators. But it has some serious problems. </p>
-<p>To start with, the implication here is that <code class="language-cpp">optional&lt;T&gt;</code> (and by extension every compound type, and really by extension every type) would need now to conditionally implement <em>seven</em> operators (all six preexisting comparisons, plus <code class="language-cpp">&lt;=&gt;</code>) instead of the advertised <em>one</em> operator. As a result, we lose a big advantage from <code class="language-cpp">&lt;=&gt;</code>: the ability to write less code.</p>
-<p>The consequence of writing all seven operators is that it makes <code class="language-cpp">&lt;=&gt;</code> completely useless. User code is not supposed to directly invoke <code class="language-cpp">&lt;=&gt;</code> - user code is supposed to just use the comparison it needs. The idea of <code class="language-cpp">&lt;=&gt;</code> is we simplify code by having <code class="language-cpp">a &lt; b</code> translate to <code class="language-cpp">a &lt;=&gt; b &lt; 0</code>. But if we always have all seven operators, this translation will never happen, since <code class="language-cpp">operator&lt;</code> exists and would be preferred. The only code that would actually invoke <code class="language-cpp">&lt;=&gt;</code> is the code that directly uses <code class="language-cpp">&lt;=&gt;</code> - and that code only exists in other implementations of <code class="language-cpp">&lt;=&gt;</code>. At this point, it may as well not exist at all. </p>
-<p>As if that wasn't enough, we would also lose any ability to improve performance with three-way comparisons. For many types, <code class="language-cpp">&lt;=&gt;</code> can be better than consecutive calls to <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>. Now, consider <code class="language-cpp">pair&lt;T, T&gt;</code>. If we're only providing <code class="language-cpp">&lt;=&gt;</code> for such a type if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;=&gt;</code>, that means we must still be providing <code class="language-cpp">&lt;</code> if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;</code>. If <code class="language-cpp">T</code> has <code class="language-cpp">&lt;=&gt;</code>, <code class="language-cpp">T</code> has <code class="language-cpp">&lt;</code>, which means that our <code class="language-cpp">pair&lt;T,T&gt;</code> provides everything. </p>
-<p>Now suppose <code class="language-cpp">T</code> has an efficient <code class="language-cpp">&lt;=&gt;</code>, <code class="language-cpp">pair&lt;T, T&gt;</code>'s <code class="language-cpp">operator&lt;</code> can't use it! Which means that the expression <code class="language-cpp">p1 &lt; p2</code>, instead of doing (up to) two calls to <code class="language-cpp">T</code>'s efficient <code class="language-cpp">&lt;=&gt;</code> has to instead do (up to) three calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;</code>. And this argument could be extended out to <code class="language-cpp">vector&lt;T&gt;</code>'s <code class="language-cpp">operator&lt;</code> which now potentially does up to <code class="language-cpp">2N-1</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;</code> instead of up to <code class="language-cpp">N</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;=&gt;</code>. That could be a serious pessimization!</p>
-<p>Thus, <code class="language-cpp">optional&lt;T&gt;</code> needs to provide <code class="language-cpp">&lt;=&gt;</code> if <code class="language-cpp">T</code> is comparable at all - not simply if <code class="language-cpp">T</code> implements <code class="language-cpp">&lt;=&gt;</code>, and <code class="language-cpp">&lt;=&gt;</code> should substitute the existence of the other relational operators. </p>
+<p>To start with, the implication here is that <code class="language-cpp">optional&lt;T&gt;</code> (and by extension every compound type) would need now to conditionally implement <em>seven</em> operators (all six preexisting comparisons, plus <code class="language-cpp">&lt;=&gt;</code>) instead of the advertised <em>one</em> operator. As a result, we lose a big advantage from <code class="language-cpp">&lt;=&gt;</code>: the ability to write less code.</p>
+<p>The consequence of writing all seven operators is that it makes <code class="language-cpp">&lt;=&gt;</code> oddly useless. The only code that should invoke <code class="language-cpp">&lt;=&gt;</code> is other types' implementations of <code class="language-cpp">&lt;=&gt;</code>... so in order to invoke <code class="language-cpp">optional&lt;T&gt;</code>'s <code class="language-cpp">&lt;=&gt;</code> for a <code class="language-cpp">T</code> that provides that operator, I would need to have a type that has such a thing as a member. In other words:</p>
+<pre class="codehilite"><code class="language-cpp">struct WithSpaceship {
+    // ...
+    strong_ordering operator&lt;=&gt;(WithSpaceship const&amp; rhs) const {
+        // ...
+    }
+};
+
+struct X {
+    optional&lt;WithSpaceship&gt; opt_ws;
+    auto operator&lt;=&gt;(X const&amp;) const = default;
+};
+
+X x;
+x.opt_ws &lt; x.opt_ws; // calls optional's &lt;, not &lt;=&gt;
+x &lt; x;               // calls optional's &lt;=&gt; via X's &lt;=&gt;</code></pre>
+
+
+<p>This is, in of itself, odd. Not only are we not saving code, but the extra operator that we're writing will rarely be used. </p>
+<p>But the bigger consequence of this is that we lose the ability to improve performance with three-way comparisons. Typically, <code class="language-cpp">&lt;=&gt;</code> can be better than consecutive calls to <code class="language-cpp">&lt;</code>. Consider <code class="language-cpp">pair&lt;T, T&gt;</code>. If we're only providing <code class="language-cpp">&lt;=&gt;</code> for such a type if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;=&gt;</code>, that means we must still be providing <code class="language-cpp">&lt;</code> if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;</code>. If <code class="language-cpp">T</code> has <code class="language-cpp">&lt;=&gt;</code>, <code class="language-cpp">T</code> has <code class="language-cpp">&lt;</code>, which means that our <code class="language-cpp">pair&lt;T,T&gt;</code> provides everything. </p>
+<p>That looks something like this:</p>
+<pre class="codehilite"><code class="language-cpp">// &lt; as it exists today, approximately
+template &lt;typename T, typename U&gt;
+bool operator&lt;(pair&lt;T,U&gt; const&amp; x, pair&lt;T,U&gt; const&amp; y)
+{
+    return x.first &lt; y.first ||
+        (!(y.first &lt; x.first) &amp;&amp; x.second &lt; y.second);
+}
+
+// &lt;=&gt; as it would exist based on this reasoning
+template &lt;typename T, typename U&gt;
+auto operator&lt;=&gt;(pair&lt;T,U&gt; const&amp; x, pair&lt;T,U&gt; const&amp; y)
+    -&gt; common_comparison_category_t&lt;...&gt;
+{
+    if (auto cmp = x.first &lt;=&gt; y.first; cmp != 0) return cmp;
+    return x.second &lt;=&gt; y.second;
+}
+
+pair&lt;WithSpaceship, WithSpaceship&gt; p = ...;
+p &lt; p;    // calls pair::operator&lt;
+p &lt;=&gt; p;  // calls pair::operator&lt;=&gt;</code></pre>
+
+
+<p><code class="language-cpp">WithSpaceship</code> has an efficient <code class="language-cpp">&lt;=&gt;</code>, but <code class="language-cpp">pair</code>'s <code class="language-cpp">operator&lt;</code> can't use it! Which means that <code class="language-cpp">p &lt; p</code> has to call <code class="language-cpp">&lt;</code> three times, which in turn calls <code class="language-cpp">WithSpaceship::operator&lt;=&gt;</code> three times. But <code class="language-cpp">p &lt;=&gt; p</code> only has to call <code class="language-cpp">&lt;=&gt;</code> twice!</p>
+<p>This argument could be extended out to <code class="language-cpp">vector&lt;T&gt;</code>'s <code class="language-cpp">operator&lt;</code> which now potentially does up to <code class="language-cpp">2N-1</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;</code> instead of up to <code class="language-cpp">N</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;=&gt;</code>. That could be a serious pessimization!</p>
+<p>In short, only conditionally providing <code class="language-cpp">&lt;=&gt;</code> for compound types not only defeats the goal of writing less code, but also defeats the goal of writing more performant code. I think the only conclusion is that compound types need to provide <code class="language-cpp">&lt;=&gt;</code> whenever their underlying types are comparable at all and be an unconditinoal substitute for the other relational operators.</p>
 <h3 id="unintentional-comparison-category-strengthening">3.2. Unintentional comparison category strengthening</h3>
 <blockquote>
 <p>When a class author implements <code class="language-cpp">&lt;=&gt;</code> for their type, they have to decide what comparison category to use as the return type. Other code could use that choice to make important decisions. But if we had <code class="language-cpp">&lt;=&gt;</code> fallback to <code class="language-cpp">compare_3way()</code>, we effectively are guessing what the intended comparison category was. <code class="language-cpp">decltype(x &lt;=&gt; y)</code> might be a deliberate choice of the class author - or it might be compiler inference, and we can't tell. </p>
