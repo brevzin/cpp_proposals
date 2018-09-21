@@ -584,7 +584,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1170R0 <br />
-Date: 2018-09-15 <br />
+Date: 2018-09-21 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -595,15 +595,15 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#motivation">Motivation</a></li>
 <li><a href="#proposal">Proposal</a><ol>
 <li><a href="#wording">Wording</a></li>
-<li><a href="#alternative-approach">Alternative Approach</a></li>
 </ol>
 </li>
+<li><a href="#references">References</a></li>
 </ol>
 </div>
 
 <h2 id="motivation">1. Motivation</h2>
 <p>For some types, in order to implement <code class="language-cpp">operator&lt;=&gt;()</code> you have to defer to the implementation of the 
-comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to <a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">implement <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">optional&lt;T&gt;</code></a>, the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):</p>
+comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to <a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec" title="Implementing the spaceship operator for optional">implement <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">optional&lt;T&gt;</code></a>, the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
 constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;U&gt; const&amp; rhs)
     -&gt; decltype(compare_3way(*lhs, *rhs));
@@ -617,7 +617,7 @@ constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp;, nullopt_t)
     -&gt; strong_ordering;</code></pre>
 
 
-<p>We need to use <code class="language-cpp">std::compare_3way(*lhs, *rhs)</code> instead of writing <code class="language-cpp">lhs &lt;=&gt; rhs</code> to also handle those types which do not yet implement <code class="language-cpp">&lt;=&gt;</code>, and that function is <a href="http://eel.is/c++draft/alg.3way">specified</a> in a way to correctly address all the possible situations.</p>
+<p>We need to use <code class="language-cpp">std::compare_3way(*lhs, *rhs)</code> instead of writing <code class="language-cpp">lhs &lt;=&gt; rhs</code> to also handle those types which do not yet implement <code class="language-cpp">&lt;=&gt;</code>, and that function is <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">specified</a> in a way to correctly address all the possible situations.</p>
 <p>Let's throw in a few more examples for implementations for <code class="language-cpp">vector</code> and <code class="language-cpp">expected</code>:</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
 auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;U&gt; const&amp; rhs)
@@ -633,7 +633,7 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs, expected&lt;T2,E2&g
 <p>We see the same thing over and over and over again. We need to know what comparison category to return, and this comparison category is a property of the types that we're comparing. </p>
 <p>That's a type trait. A type trait that's currently missing from the standard library.</p>
 <h2 id="proposal">2. Proposal</h2>
-<p>This paper proposes the addition of a new type trait based on the preexisting rules in [alg.3way] and respecifying <code class="language-cpp">std::compare_3way()</code> to use that trait in its return type instead of <code class="language-cpp">auto</code>. This mirrors the usage of <code class="language-cpp">std::invoke_result_t</code> as the return type of <code class="language-cpp">std::invoke()</code>, and so should be named either <code class="language-cpp">compare_3way_result</code> or <code class="language-cpp">compare_3way_type</code>.</p>
+<p>This paper proposes the addition of a new type trait based on the preexisting rules in <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">[alg.3way]</a> and respecifying <code class="language-cpp">std::compare_3way()</code> to use that trait in its return type instead of <code class="language-cpp">auto</code>. This mirrors the usage of <code class="language-cpp">std::invoke_result_t</code> as the return type of <code class="language-cpp">std::invoke()</code>, and so should be named either <code class="language-cpp">compare_3way_result</code> or <code class="language-cpp">compare_3way_type</code>.</p>
 <p>The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write <code class="language-cpp">compare_3way_type&lt;T&gt;</code> instead of <code class="language-cpp">compare_3way_type&lt;T,T&gt;</code>.</p>
 <p>The trait would allow for less cumbersome declarations of all of these operator templates:</p>
 <table style="width:100%">
@@ -730,11 +730,5 @@ namespace std {
 <p>Change the return type of <code class="language-cpp">compare_3way</code> in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
-<h3 id="alternative-approach">2.2. Alternative Approach</h3>
-<p>Instead of having <code class="language-cpp">compare_3way_type</code> itself define the logic, and <code class="language-cpp">compare_3way()</code> end up having to redefine it, an alternate approach would be to specify the type trait in terms of the function:</p>
-<pre class="codehilite"><code class="language-cpp">template&lt;class T, class U = T&gt;
-  using compare_3way_type_t = decltype(compare_3way(declval&lt;T const&amp;&gt;(), declval&lt;U const&amp;&gt;()));</code></pre>
-
-
-<p>This would side-step the question of specializing the type trait (as it is now simply an alias template) and avoid any duplication. There is, however, no precedent for this approach in the library today.</p>
+<h2 id="references">3. References</h2><ul><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li></ul>
 </html>

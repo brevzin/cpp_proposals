@@ -6,7 +6,7 @@ Audience: LEWG
 # Motivation
 
 For some types, in order to implement `operator<=>()` you have to defer to the implementation of the 
-comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to [implement `operator<=>` for `optional<T>`](https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec), the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):
+comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to [implement `operator<=>` for `optional<T>`][revzin.impl], the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):
 
     :::cpp
     template <typename T, typename U>
@@ -21,7 +21,7 @@ comparison operators of other types. And more than that, you need to know what t
     constexpr auto operator<=>(optional<T> const&, nullopt_t)
         -> strong_ordering;
 
-We need to use `std::compare_3way(*lhs, *rhs)` instead of writing `lhs <=> rhs` to also handle those types which do not yet implement `<=>`, and that function is [specified](http://eel.is/c++draft/alg.3way) in a way to correctly address all the possible situations.
+We need to use `std::compare_3way(*lhs, *rhs)` instead of writing `lhs <=> rhs` to also handle those types which do not yet implement `<=>`, and that function is [specified][alg.3way] in a way to correctly address all the possible situations.
 
 Let's throw in a few more examples for implementations for `vector` and `expected`:
 
@@ -42,7 +42,7 @@ That's a type trait. A type trait that's currently missing from the standard lib
 
 # Proposal
 
-This paper proposes the addition of a new type trait based on the preexisting rules in [alg.3way] and respecifying `std::compare_3way()` to use that trait in its return type instead of `auto`. This mirrors the usage of `std::invoke_result_t` as the return type of `std::invoke()`, and so should be named either `compare_3way_result` or `compare_3way_type`.
+This paper proposes the addition of a new type trait based on the preexisting rules in [\[alg.3way\]][alg.3way] and respecifying `std::compare_3way()` to use that trait in its return type instead of `auto`. This mirrors the usage of `std::invoke_result_t` as the return type of `std::invoke()`, and so should be named either `compare_3way_result` or `compare_3way_type`.
 
 The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write `compare_3way_type<T>` instead of `compare_3way_type<T,T>`.
 
@@ -136,7 +136,7 @@ namespace std {
   // ...
 }</code></pre></blockquote>
 
-Add a new specification for `compare_3way_type` at the beginning of 23.7.11 [alg.3way]:
+Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
 
 > For the `compare_3way_type` type trait applied to the types `T` and `U`, the member `type` shall be either defined or not present as follows. Let `t` and `u` denote const lvalues of type `T` and `U`. 
 >
@@ -147,16 +147,9 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 [alg
  
  > A program shall not specialize `compare_3way_type`. 
  
-Change the return type of `compare_3way` in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:
+Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
-## Alternative Approach
-
-Instead of having `compare_3way_type` itself define the logic, and `compare_3way()` end up having to redefine it, an alternate approach would be to specify the type trait in terms of the function:
-
-    :::cpp
-    template<class T, class U = T>
-      using compare_3way_type_t = decltype(compare_3way(declval<T const&>(), declval<U const&>()));
-      
-This would side-step the question of specializing the type trait (as it is now simply an alias template) and avoid any duplication. There is, however, no precedent for this approach in the library today.
+[revzin.impl]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
+[alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
