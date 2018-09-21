@@ -1,5 +1,5 @@
 Title: A type trait for `std::compare_3way()`'s type
-Document-Number: D1170R0
+Document-Number: D1187R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
 
@@ -138,11 +138,13 @@ namespace std {
 
 Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
 
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member `type` shall be either defined or not present as follows. Let `t` and `u` denote const lvalues of type `T` and `U`. 
+>  The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
+
+> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member typedef `type` shall be either defined or not present as follows. Let `t` and `u` denote lvalues of types `T` and `U`. 
 >
- - If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall denote `decltype(t <=> u)`.
- - Otherwise, if the expressions `t == u` and `t < u` are each well-formed and convertible to `bool`, the member *typedef-name* `type` shall be `strong_ordering`.
- - Otherwise, if the expression `t == u` is well-formed and convertible to `bool`, the member *typedef-name* `type` shall be `strong_equality`.
+ - If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall equal `decltype(t <=> u)`.
+ - Otherwise, if the expressions `t == u` and `t < u` are each well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_ordering`.
+ - Otherwise, if the expression `t == u` is well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_equality`.
  - Otherwise, there shall be no member `type`.
  
  > A program shall not specialize `compare_3way_type`. 
@@ -150,6 +152,17 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[al
 Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+
+## Interaction with [P1186](https://wg21.link/p1186r0)
+
+P1186 proposed to obviate `std::compare_3way()` in favor of having `<=>` itself perform all of this logic. That paper getting adopted does not change the need for having a type trait like this, though it would make the specification much simpler as the library wording could simply defer to the core wording. 
+
+Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
+
+> The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
+
+> For the `compare_3way_type` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `T` and `U`. If the expression `t <=> u` is well formed, the member *typedef-name* type shall equal `decltype(t <=> u)`. Otherwise, there shall be no member `type`.
+
 
 [revzin.impl]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"

@@ -18,12 +18,12 @@ endef
 
 $(eval $(call add_paper,0847_deducing_this/d0847r1.html,./md/deducing-this.md))
 $(eval $(call add_better_paper2,1061_sb_pack,d1061r1.html,sb-extensions.md))
-$(eval $(call add_better_paper,overload_sets.html,./md/overload-sets.md))
 $(eval $(call add_better_paper,1065_constexpr_invoke/d1065r0.html,1065_constexpr_invoke/constexpr-invoke.md))
 $(eval $(call add_better_paper2,1169_static_call,d1169r0.html,static-call.md))
-$(eval $(call add_better_paper2,1170_compare_3way,d1170r0.html,compare-3way.md))
-$(eval $(call add_better_paper2,xxxx_3way,xxxx.html,3way.md))
-$(eval $(call add_better_paper2,xxxx_3way,xxxy.html,compare-redundant.md))
+$(eval $(call add_better_paper2,1170_overload_sets,overload_sets.html,overload-sets.md))
+$(eval $(call add_better_paper2,1185-7_spaceship,d1185r0.html,spaceship-no-eq.md))
+$(eval $(call add_better_paper2,1185-7_spaceship,d1186r0.html,spaceship-is-compare.md))
+$(eval $(call add_better_paper2,1185-7_spaceship,d1187r0.html,compare-trait.md))
 
 all : $(PAPERS)
 .DEFAULT_GOAL := all

@@ -1,5 +1,5 @@
 Title: Overload sets as function parameters
-Document-Number: DxxxxR0
+Document-Number: D1170R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Andrew Sutton, andrew dot n dot sutton at gmail dot com
 Audience: EWG, LEWG
@@ -57,7 +57,7 @@ which is usually seen in the wild in macro form:
     
     algorithm(getX(), OVERLOADS_OF(foo));
     
-This can be found, for instance, in [Boost.HOF](http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html "BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation") as `BOOST_HOF_LIFT`, and in a recent blog of Andrzej Krzemieński's on [this topic](https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/ "Functions in std | Andrzej's C++ blog").
+This can be found, for instance, in [Boost.HOF] as `BOOST_HOF_LIFT`, and in a recent blog of Andrzej Krzemieński's on [this topic][andrzej.funcs].
 
 However, this is a pretty unsatisfactory solution: we rely on a macro. Or even if not, we have to be vigilant about manually wrapping each and every function at every call site. Why "every"? Because otherwise, we might write code that works today but ends up being very brittle, easily broken. Consider a fairly trivial example:
 
@@ -102,9 +102,9 @@ But they are unfortunately not equivalent today, so we have to write the stuff o
 
 This is a real problem today. There are many, many higher-order functions that exist in C++ code. They exist in the standard library algorithms, they exist in user-provided libraries. With the adoption of [Ranges](https://wg21.link/p0896r2), we will get many more - both in terms of algorithms, projections on algorithms, and views. Higher-order functions are ubiquitous, and incredibly useful. Unfortunately, user problems in trying to pass callables to them are just as ubiquitous <sup>[\[1\]](https://stackoverflow.com/q/46587694/2069064) [\[2\]](https://stackoverflow.com/q/47984031/2069064) [\[3\]](https://stackoverflow.com/q/24874478/2069064) [\[4\]](https://stackoverflow.com/q/43502837/2069064) [\[5\]](https://stackoverflow.com/q/46146346/2069064) [\[6\]](https://stackoverflow.com/q/44730281/2069064) [\[7\]](https://stackoverflow.com/q/43141181/2069064) ...</sup>. It's important to give users a solution to this problem, that preferably is not reaching for a macro like `OVERLOADS_OF` or having to manually write a lambda (possibly inefficiently).
 
-Being able to write just the function name, as opposed to having to list the arguments and the body, is sometimes referred to as ["**point-free**" programming](https://en.wikipedia.org/wiki/Tacit_programming), a term more commonly used in languages like Haskell. Being able to write point-free in the context of C++ means being able to pass in names and have that _just work_ regardless of what the name happens to refer to. It means that any time `foo(x)` works that `algorithm(foo, x)` could be made to work also.
+Being able to write just the function name, as opposed to having to list the arguments and the body, is sometimes referred to as ["**point-free**" programming][point.free], a term more commonly used in languages like Haskell. Being able to write point-free in the context of C++ means being able to pass in names and have that _just work_ regardless of what the name happens to refer to. It means that any time `foo(x)` works that `algorithm(foo, x)` could be made to work also.
 
-Titus Winters in a [recent C++Now talk](https://youtu.be/2UmDvg5xv1U?t=284 "Modern C++ API Design: From Rvalue-References to Type Design") described the overload set as the atom of C++ API design. And yet, we cannot even pass this atom into other atoms with reaching for lambdas, forwarding references, and trailing return types.
+Titus Winters in a [recent C++Now talk][winters.modern] described the overload set as the atom of C++ API design. And yet, we cannot even pass this atom into other atoms with reaching for lambdas, forwarding references, and trailing return types.
 
 We can do better.
     
@@ -120,16 +120,16 @@ This problem has a long history attached to it, with two different tacks explore
     algorithm(getX(), []foo);
     std::invoke([]do_something, 42);
     
-This was rejected by EWG in the [Albuquerque](http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0), and would still have the same problem with placing the onus on the user to avoid brittleness at each and every call site. It is point-free though, and terse enough to be basically invisible. That discussion did conclude with this poll:
+This was rejected by EWG in the [Albuquerque][abq.p0834], and would still have the same problem with placing the onus on the user to avoid brittleness at each and every call site. It is point-free though, and terse enough to be basically invisible. That discussion did conclude with this poll:
 
 > *Are we interested in a core language feature for packing concrete overload sets?*
 
 >  <table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>3</td><td>4</td><td>14</td><td>0</td><td>1</td></table>
 
 
-[P0573](https://wg21.link/p0573r2) wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in [Albuquerque](http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2), and also did not even try to solve the point-free problem.
+[P0573](https://wg21.link/p0573r2) wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in [Albuquerque][abq.p0573], and also did not even try to solve the point-free problem.
 
-Despite this long history, we believe that this is a problem that needs to be solved. It is unreasonably difficult today to pass a function into another function. The increased emphasis on disallowing users from taking pointers to standard library functions and function templates directly pushes the issue. A significant portion of the discussion of [P0798](https://wg21.link/p0798r0) in LEWG in [Rapperswil](http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798) was about the problem of passing overload sets into functions - because the paper would simply introduce more places where users may want to do such a thing. Notably, LEWG took these polls:
+Despite this long history, we believe that this is a problem that needs to be solved. It is unreasonably difficult today to pass a function into another function. The increased emphasis on disallowing users from taking pointers to standard library functions and function templates directly pushes the issue. A significant portion of the discussion of [P0798](https://wg21.link/p0798r0) in LEWG in [Rapperswil][rap.p0798] was about the problem of passing overload sets into functions - because the paper would simply introduce more places where users may want to do such a thing. Notably, LEWG took these polls:
 
 > *Assuming the language gets fixed so we can pass overload sets to callables, we want something like this (either as a general monad syntax or specifically in optional).*
 
@@ -248,7 +248,7 @@ If the argument is an object, whether it is a function object or a pointer (or r
     
 The function parameter `f` will have the same underlying type as `square`. There is no synthesis of a new lambda in this scenario, we are just copying the lambda. 
 
-An `overload_set` can be deduced from an object if that object is callable. It must be either a pointer or reference to function or member function, or have class type with at least one declared `operator()` or one declared conversion function which can create a surrogate call function as per [\[over.call.object\]](http://eel.is/c++draft/over.call.object). For any other type, `overload_set` cannot be deduced:
+An `overload_set` can be deduced from an object if that object is callable. It must be either a pointer or reference to function or member function, or have class type with at least one declared `operator()` or one declared conversion function which can create a surrogate call function as per [\[over.call.object\]][over.call.object]. For any other type, `overload_set` cannot be deduced:
 
     :::cpp
     deduce(42);      // error
@@ -1124,3 +1124,12 @@ Perhaps also `overload_set<T>` could curry by default. Or provide a way to turn 
 # Acknowledgements
 
 Thanks to Tim Song for many conversations about all the trouble this proposal gets itself into, and to Simon Brand for invaluable feedback.
+
+[boost.hof]: http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html "BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation"
+[andrzej.funcs]: https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/ "Functions in std | Andrzej's C++ blog||Andrzej Krzemieński||2018-07-07"
+[point.free]: https://en.wikipedia.org/wiki/Tacit_programming "Tacit programming - Wikipedia"
+[winters.modern]: https://youtu.be/2UmDvg5xv1U?t=284 "Modern C++ API Design: From Rvalue-References to Type Design||Titus Winters||CppNow May 2018"
+[abq.p0573]: http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2 "ABQ Wiki Notes, P0573R2 - November 2017"
+[abq.p0834]: http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0 "ABQ Wiki Notes, P0834R0 - November 2017"
+[rap.p0798]: http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798 "RAP Wiki Notes, P0798R0 - June 2018"
+[over.call.object]: http://eel.is/c++draft/over.call.object "[over.call.object]"
