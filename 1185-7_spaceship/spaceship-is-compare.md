@@ -60,7 +60,7 @@ The problem here is, not all types implement `<=>`. Indeed, at this moment, only
 
 The provided implementation of `<=>` for `optional` relies on the existence of `<=>` for `T`. As a result, while it works great for `optional<int>`, it would not be a viable candidate for `optional<Ordered>`. Likewise, in order to default the implementation of `<=>` for `Y`, we need each to perform <code>x<sub>i</sub> <span class="token operator"><=></span> y<sub>i</sub></code> for each member (see [\[class.spaceship\]][class.spaceship]), but as above, `Ordered` does not implement `<=>`, so this is ill-formed.
 
-What we have to do instead is to use a library function which was also introduced in P0515 but adopted by way of [P0768R1](https://wg21.link/p0768r1): [`std::compare_3way()`][alg.3way]. What this function does is add more fallback implementations, in a way best illustrated by this skeleton:
+What we have to do instead is to use a library function which was also introduced in P0515 but adopted by way of [P0768R1](https://wg21.link/p0768r1): [`std::compare_3way()`][alg.3way]. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:
 
     :::cpp
     template<class T, class U>
@@ -121,6 +121,14 @@ Effectively, there are exactly two places that can correctly use `<=>`:
 2. The implementation of `std::compare_3way()`.
 
 That seems a waste of a perfectly good token that we have specially reserved for this occasion. `<=>` just seems like a much better spelling than `compare_3way`, especially given its ability to be used as an infix operator.
+
+## Reminiscences of `invoke()`
+
+We already have one example where we have a language feature that doesn't quite do everything we need it to do, so we have a library feature that fills in the gaps and thus needs to be used unconditionally: function calls and `std::invoke()`. In generic code today, anything constrained with `std::result_of` (before C++17), `std::invoke_result` or `std::is_invokable` (C++17 or later), or `Invocable` or `RegularInvocable` (C++20 after [P0898](https://wg21.link/p0898r3) needs to use `std::invoke()` to instead of normal function call syntax. Otherwise, types that meet the constraint but aren't usable with normal function call syntax (i.e. pointers to member functions and pointers to member data) will trigger hard errors. 
+
+I continue to view this as an unfortunate split, but we get away with this as a language because pointers to members are fairly rare compared to functions and functions objects, so the usual function call syntax just works the vast majority of the time. Additionally, function call syntax in used in user code all the time. 
+
+By contrast with `<=>`, the common case is types _not_ supporting `<=>` and `<=>` won't be commonly used in user code. So it is both true that the gaps that `compare_3way()` is filling are much more significant than the equivalent gaps that `invoke()` is filling as well as `<=>` being less useful in user code than normal function call syntax. 
 
 # Proposal
 
@@ -218,7 +226,7 @@ There isn't anything particularly specific to `optional` in this argument, so we
 
 This argument sounds seductive, and offers consistency with the way we write other operators. But it has some serious problems. 
 
-To start with, the implication here is that `optional<T>` (and by extension every compound type) would need now to conditionally implement _seven_ operators (all six preexisting comparisons, plus `<=>`) instead of the advertised _one_ operator. As a result, we lose a big advantage from `<=>`: the ability to write less code.
+To start with, the implication here is that `optional<T>` (and by extension every compound type) would need now to conditionally implement _seven_ operators (all six pre-existing comparisons, plus `<=>`) instead of the advertised _one_ operator. As a result, we lose a big advantage from `<=>`: the ability to write less code.
 
 The consequence of writing all seven operators is that it makes `<=>` oddly useless. The only code that should invoke `<=>` is other types' implementations of `<=>`... so in order to invoke `optional<T>`'s `<=>` for a `T` that provides that operator, I would need to have a type that has such a thing as a member. In other words:
 
@@ -271,11 +279,11 @@ That looks something like this:
 
 This argument could be extended out to `vector<T>`'s `operator<` which now potentially does up to `2N-1` calls to `T`'s `<` instead of up to `N` calls to `T`'s `<=>`. That could be a serious pessimization - one that would encourage people to actually write `<=>` in code! After all, if `(a <=> b) < 0` could potentially be faster than `a < b`, why would I write the latter? That would be a serious design error. 
 
-In short, only conditionally providing `<=>` for compound types not only defeats the goal of writing less code, but also defeats the goal of writing more performant code. I think the only conclusion is that compound types need to provide `<=>` whenever their underlying types are comparable at all and be an unconditinoal substitute for the other relational operators.
+In short, only conditionally providing `<=>` for compound types not only defeats the goal of writing less code, but also defeats the goal of writing more performant code. I think the only conclusion is that compound types need to provide `<=>` whenever their underlying types are comparable at all and be an unconditional substitute for the other relational operators.
 
 ## Unintentional comparison category strengthening
 
-> When a class author implements `<=>` for their type, they have to decide what comparison category to use as the return type. Other code could use that choice to make important decisions. But if we had `<=>` fallback to `compare_3way()`, we effectively are guessing what the intended comparison category was. `decltype(x <=> y)` might be a deliberate choice of the class author - or it might be compiler inference, and we can't tell. 
+> When a class author implements `<=>` for their type, they have to decide what comparison category to use as the return type. Other code could use that choice to make important decisions. But if we had `<=>` fall-back to `compare_3way()`, we effectively are guessing what the intended comparison category was. `decltype(x <=> y)` might be a deliberate choice of the class author - or it might be compiler inference, and we can't tell. 
 
 > Moreover, we might get this wrong in a very confusing way that inadvertently strengthens the comparison category. For example, the following code is well-formed:
 >
@@ -284,19 +292,19 @@ In short, only conditionally providing `<=>` for compound types not only defeats
         return a == b;
     }
 
-> because there exists an equality comparison between these [two types][syserr.compare]. These two types mean rather different things and obviously are not substitutible, but the proposed changed would nevertheless give `decltype(a <=> b)` the type `strong_equality` and that is a very misleading and strongly undesired result. 
+> because there exists an equality comparison between these [two types][syserr.compare]. These two types mean rather different things and obviously are not substitutable, but the proposed changed would nevertheless give `decltype(a <=> b)` the type `strong_equality` and that is a very misleading and strongly undesired result. 
 
 I have two responses to this argument. 
 
 First, practically speaking there is no difference between using `a <=> b` in this context and getting `strong_equality` and using `compare_3way(a, b)` in this context and getting `strong_equality`. The end result is the same - equally misleading, and the added weight on the meaning of `<=>` here is a distinction without a difference. In today's world, people will write `<=>` when they need a three-way comparison, find that it doesn't work, and then switch to `compare_3way()` - because `compare_3way()` solves a problem. 
 
-Moreover, even if we maintained that `a <=> b` is ill-formed (as it is today), that wouldn't change the fact that the provided valid implementation of `optional` using `compare_3way()` would give already us `optional(a) <=> optional(b)` as a valid operation whose type is `strong_equality`. As argued in the previous section, `optional` needs to implement `<=>`, and it needs to implement it in this way, so this comparison category strengthening already exists as an issue. I'm unconvinced that _specifically_ `<=>` yielding a misleading response _specifically_ on the underlying types is a poblem.
+Moreover, even if we maintained that `a <=> b` is ill-formed (as it is today), that wouldn't change the fact that the provided valid implementation of `optional` using `compare_3way()` would give already us `optional(a) <=> optional(b)` as a valid operation whose type is `strong_equality`. As argued in the previous section, `optional` needs to implement `<=>`, and it needs to implement it in this way, so this comparison category strengthening already exists as an issue. I'm unconvinced that _specifically_ `<=>` yielding a misleading response _specifically_ on the underlying types is a problem.
 
-Second, the fact that `compare_3way(a, b)` today and `a <=> b` with this proposal yields `strong_equality` is a problem - but it's not `<=>`'s problem, it's `error_code`'s problem. The decision to use `==` in this context is arguably a bad design decision. With the direction the standard library is going and the new concepts in Ranges in [P0898](https://wg21.link/p0898r3) (both terminology concepts and language `concept`s), we are adding semantic requirements on top of syntactic ones - and the lack of substitutibility between `error_code` and `error_condition` means that we're meeting the syntactic but not the semantic requirements of `EqualityComparableWith`. This is bad.
+Second, the fact that `compare_3way(a, b)` today and `a <=> b` with this proposal yields `strong_equality` is a problem - but it's not `<=>`'s problem, it's `error_code`'s problem. The decision to use `==` in this context is arguably a bad design decision. With the direction the standard library is going and the new concepts in Ranges in [P0898](https://wg21.link/p0898r3) (both terminology concepts and language `concept`s), we are adding semantic requirements on top of syntactic ones - and the lack of substitutability between `error_code` and `error_condition` means that we're meeting the syntactic but not the semantic requirements of `EqualityComparableWith`. This is bad.
 
 Jonathan Müller recently wrote an in-depth series of blog posts on the [mathematics behind comparisons][muller.compare] which makes the compelling argument that the existence of `==` should be `strong_equality` only, and the existence of `==` and `<` should be `strong_ordering` only. Any other required comparison category should be a named function instead. This argument is very much in line with the principles behind Ranges. 
 
-The conclusion of this is that yes, there is a problem. But the problem lies with `error_code` and `error_condition` for violating expectations with the decision to improperly use `==` when it doesn't mean equality and substitutibility. Having `<=>` fall back to guessing at the comparison category and yielding `strong_ordering` or `strong_equality` works for types that follow good design guidance in their choice of using operators. 
+The conclusion of this is that yes, there is a problem. But the problem lies with `error_code` and `error_condition` for violating expectations with the decision to improperly use `==` when it doesn't mean equality and substitutability. Having `<=>` fall back to guessing at the comparison category and yielding `strong_ordering` or `strong_equality` works for types that follow good design guidance in their choice of using operators. 
 
 Note that this problem could easily be fixed by replacing the currently existing `==` and `!=` for these types with a `<=>` returning `weak_equality`. This is still a questionable choice, but at least you would observe the correct comparison category without otherwise breaking user code. Ideally, `==` and `!=` get replaced with a named function that itself returns `weak_equality`.
 

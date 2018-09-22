@@ -584,7 +584,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1185R0 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-22 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -617,7 +617,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </div>
 
 <h2 id="motivation">1. Motivation</h2>
-<p><a href="https://wg21.link/p0515r3" title="Consistent comparison">P0515</a> introduced <code class="language-cpp">operator&lt;=&gt;</code> as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's <a href="https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md" title="I did not order this! Why is it on my bill?">I did not order this!</a> for a very clear, very thorough description of the problem: it does not seem to be possible to implement <code class="language-cpp">&lt;=&gt;</code> optimally for "wrapper" types. What follows is a super brief rundown.</p>
+<p><a href="https://wg21.link/p0515r3" title="Consistent comparison">P0515</a> introduced <code class="language-cpp">operator&lt;=&gt;</code> as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's <a href="https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md" title="I did not order this! Why is it on my bill?">I did not order this!</a> for a very clear, very thorough description of the problem: it does not seem to be possible to implement <code class="language-cpp">&lt;=&gt;</code> optimally for "wrapper" types. What follows is a super brief run-down.</p>
 <p>Consider a type like:</p>
 <pre class="codehilite"><code class="language-cpp">struct S {
     vector&lt;string&gt; names;
@@ -856,7 +856,7 @@ bool operator!=(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
 };</code></pre>
 
 
-<p>We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good tradeoff. But let's discuss those two points in more detail.</p>
+<p>We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good trade-off. But let's discuss those two points in more detail.</p>
 <p>It's tempting to want to shoehorn templates to solve this problem (such as by adding an extra argument to <code class="language-cpp">operator&lt;=&gt;</code>). But that's effectively using templates like a macro and doesn't seem like sound design.</p>
 <h3 id="implications-for-non-special-types">2.1. Implications for non-special types</h3>
 <p>There are many kinds of types for which the defaulted comparison semantics are incorrect, but nevertheless don't have to do anything different between equality and ordering. One such example is <code class="language-cpp">optional&lt;T&gt;</code>. Having to write two functions here gets exactly at David's point of duplication above:</p>
@@ -991,7 +991,7 @@ struct B : Eq { };</code></pre>
 <blockquote>
 <p>Default comparison should do exactly the same thing as default copying.</p>
 </blockquote>
-<p>As originally suggested in <a href="https://wg21.link/p0432" title="Implicit and Explicit Default Comparison Operators">P0432</a> and <a href="https://wg21.link/p0481" title="Bravely Default">P0481</a>, we could generate a default, memberwise comparison if the copy constructor is not user-provided and all the members are equality comparable.</p>
+<p>As originally suggested in <a href="https://wg21.link/p0432" title="Implicit and Explicit Default Comparison Operators">P0432</a> and <a href="https://wg21.link/p0481" title="Bravely Default">P0481</a>, we could generate a default, member-wise comparison if the copy constructor is not user-provided and all the members are equality comparable.</p>
 <h4 id="impact-on-example">2.3.3. Impact on example</h4>
 <p>The earlier example was:</p>
 <pre class="codehilite"><code class="language-cpp">struct A {
@@ -999,7 +999,7 @@ struct B : Eq { };</code></pre>
 };</code></pre>
 
 
-<p>Today, <code class="language-cpp">A</code> has all six comparison operators - all of which invoke <code class="language-cpp">&lt;=&gt;</code>. This proposal prevents <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> from working, so those need to be handled separately. The core proposal suggests that this be handled explictly - with an explicitly defaulted <code class="language-cpp">operator==</code>.</p>
+<p>Today, <code class="language-cpp">A</code> has all six comparison operators - all of which invoke <code class="language-cpp">&lt;=&gt;</code>. This proposal prevents <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> from working, so those need to be handled separately. The core proposal suggests that this be handled explicitly - with an explicitly defaulted <code class="language-cpp">operator==</code>.</p>
 <p>Both of these extensions lead to no change necessary for <code class="language-cpp">A</code>. The former generates the defaulted <code class="language-cpp">operator==</code> function from the existence of the defaulted <code class="language-cpp">operator&lt;=&gt;</code>, the latter generates the defaulted <code class="language-cpp">operator==</code> from the implicit copy constructor/assignment.</p>
 <p>Status quo and both of these extensions have the same <em>semantics</em>, but both extensions are likely to generate better code for defaulted <code class="language-cpp">==</code>. </p>
 <h2 id="acknowledgements">3. Acknowledgements</h2>

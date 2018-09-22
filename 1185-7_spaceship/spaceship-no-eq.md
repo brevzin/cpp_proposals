@@ -5,7 +5,7 @@ Audience: EWG
 
 # Motivation
 
-[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!][Stone.Order] for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief rundown.
+[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!][Stone.Order] for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief run-down.
 
 Consider a type like:
 
@@ -290,7 +290,7 @@ Getting back to our initial example, we would write:
         auto operator<=>(S const&) const = default;
     };
 
-We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good tradeoff. But let's discuss those two points in more detail.
+We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good trade-off. But let's discuss those two points in more detail.
 
 It's tempting to want to shoehorn templates to solve this problem (such as by adding an extra argument to `operator<=>`). But that's effectively using templates like a macro and doesn't seem like sound design.
 
@@ -450,7 +450,7 @@ A different potential extension is to take advantage of the clear ties between c
 
 > Default comparison should do exactly the same thing as default copying.
 
-As originally suggested in [P0432](https://wg21.link/p0432) and [P0481](https://wg21.link/p0481), we could generate a default, memberwise comparison if the copy constructor is not user-provided and all the members are equality comparable.
+As originally suggested in [P0432](https://wg21.link/p0432) and [P0481](https://wg21.link/p0481), we could generate a default, member-wise comparison if the copy constructor is not user-provided and all the members are equality comparable.
 
 ### Impact on example
 
@@ -461,7 +461,7 @@ The earlier example was:
         auto operator<=>(A const&) const = default;
     };
     
-Today, `A` has all six comparison operators - all of which invoke `<=>`. This proposal prevents `==` and `!=` from working, so those need to be handled separately. The core proposal suggests that this be handled explictly - with an explicitly defaulted `operator==`.
+Today, `A` has all six comparison operators - all of which invoke `<=>`. This proposal prevents `==` and `!=` from working, so those need to be handled separately. The core proposal suggests that this be handled explicitly - with an explicitly defaulted `operator==`.
 
 Both of these extensions lead to no change necessary for `A`. The former generates the defaulted `operator==` function from the existence of the defaulted `operator<=>`, the latter generates the defaulted `operator==` from the implicit copy constructor/assignment.
 
