@@ -2,11 +2,13 @@ import argparse
 import collections
 import json
 import os
+import re
 import sys
 import time
 
 import markdown
 from markdown.extensions import Extension
+from markdown.extensions.meta import MetaPreprocessor
 #from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.inlinepatterns import (
     LinkPattern, LINK_RE, BacktickPattern, BACKTICK_RE,
@@ -184,6 +186,25 @@ class TableCodeBlockExtension(Extension):
         md.preprocessors.add("tbl_codeblock",
             TableCodeBlockProcessor(new_md),
             '_begin')
+
+class BikeshedMetaPreprocessor(MetaPreprocessor):
+    def run(self, lines):
+        bikeshed = False
+        if lines[0].strip() == "<pre class='metadata'>":
+            bikeshed = True
+            lines.pop(0)
+        lines = MetaPreprocessor.run(self, lines)
+        if bikeshed and lines[0] == "</pre>":
+            lines.pop(0)
+        return lines
+            
+class MetadataExtension(Extension):
+    def extendMarkdown(self, md, md_globals):
+        markdown.extensions.meta.META_RE = re.compile(r'^[ ]{0,3}(?P<key>[A-Za-z0-9 _-]+):\s*(?P<value>.*)')
+    
+        md.preprocessors.add("meta",
+            BikeshedMetaPreprocessor(md),
+            ">normalize_whitespace")
         
 def main(argv=None):
     parser = argparse.ArgumentParser(
@@ -198,8 +219,8 @@ def main(argv=None):
     write = args.output.write
     
     extensions = [CodeHiliteExtension(use_pygments=False),
-        TocExtension(baselevel=2, anchorlink=False, title=None, marker=''),
-        'markdown.extensions.meta',
+        TocExtension(baselevel=2, anchorlink=False, title=None, marker='', permalink=True),
+        MetadataExtension(),
         CppBacktickExtension(),
         TableCodeBlockExtension()]
     noref_md = markdown.Markdown(extensions=extensions)
@@ -245,14 +266,28 @@ def main(argv=None):
     #    open(local_path('prism.css')).read().replace('fdf6e3', 'f8f8f8')))
     #write('<script type="text/javascript">{}</script>\n'.format(
     #    open(local_path('prism.js')).read()))
-        
+
+    def document_number():
+        doc = md.Meta.get('document-number')
+        if doc:
+            return doc[0]
+        return '{}R{}'.format(
+            md.Meta['shortname'][0],
+            md.Meta['level'][0])
+    
+    def authors():
+        authors = md.Meta.get('authors')
+        if authors:
+            return authors
+        return md.Meta.get('editor')
+    
     write('\n</head>\n')
     write('<body>\n')
     write('<address align=right>\n')    
-    write('Document Number: {} <br />\n'.format(md.Meta['document-number'][0]))
+    write('Document Number: {} <br />\n'.format(document_number()))
     write('Date: {} <br />\n'.format(time.strftime('%Y-%m-%d', time.localtime())))
     write('Audience: {} <br />\n'.format(md.Meta['audience'][0]))
-    write('Reply-To: {} <br />\n'.format('<br />'.join(md.Meta['authors'])))
+    write('Reply-To: {} <br />\n'.format(u'<br />'.join(authors()).encode('utf-8')))
     write('</address>\n')
     write('<hr /><h1 align=center>{}</h1>\n'.format(
         noref_md.convert(md.Meta['title'][0])))
