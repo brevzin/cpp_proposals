@@ -350,7 +350,7 @@ A common source of duplication of member functions revolves solely around wantin
         y.get();             // deduces Self as Y, returns int&
         cy.get();            // deduces Self as Y const, not Y, returns int const&
         
-        std::move(y).get();  // deduces Self as Y returns int&
+        std::move(y).get();  // deduces Self as Y, returns int&
         std::move(cy).get(); // deduces Self as Y const, returns int const&
     }
     
@@ -623,7 +623,7 @@ Just `const&` and `&&`
 </tr>
 </table>
 
-The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation; they are also simple to disable with a requires clause, now that the type can be captured.
+The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation; they are also simple to disable with a requires clause, now that the object type can be captured.
 
 ## Alternative solution
 
