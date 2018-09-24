@@ -350,11 +350,11 @@ A common source of duplication of member functions revolves solely around wantin
         y.get();             // deduces Self as Y, returns int&
         cy.get();            // deduces Self as Y const, not Y, returns int const&
         
-        std::move(y).get();  // deduces self as Y, returns int&
-        std::move(cy).get(); // deduces self as Y const, returns int const&
+        std::move(y).get();  // deduces Self as Y, returns int&
+        std::move(cy).get(); // deduces Self as Y const, returns int const&
     }
     
-This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it just means `const`. Without such a change to template deduction, `Self` would always just deduce as `Y` (and hence be pointless), `Self&` would deduce as `Y&` or `Y const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues - which is unnecessary.
+This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it just means `const`. Without such a change to template deduction, `Self` would always just deduce as `Y` (and hence be pointless), `Self&` would deduce as `Y&` or `Y const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues - which is unnecessary and leads to code bloat.
 
 Since the explicit member type is deduced from the object the function is called on, this has the interesting effect of possibly deducing _derived_ types, which can best be illustrated by the following example:    
     
@@ -623,7 +623,7 @@ Just `const&` and `&&`
 </tr>
 </table>
 
-The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation.
+The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation; they are also simple to disable with a requires clause, now that the object type can be captured.
 
 ## Alternative solution
 
@@ -665,11 +665,18 @@ Explicit object parameter
             
             return forward<Self>(*this).optional::m_value;
         }
-        
+       
+
+
+ 
         template <typename Self>
         constexpr auto operator->() Self {
             return addressof(this->optional::m_value);
         }
+
+
+
+
         
         template <typename Self, typename F>
         constexpr auto and_then(F&& f) Self&& {
@@ -739,7 +746,7 @@ Explicit object parameter
 
 There are a few syntactic extensions that would make it easier to deal with the case where we deduce a derived type but never actually want to use the derived type. 
 
-Today, it is legal to have use a *qualified-id* to directly access a member of a particular object in the hierarchy. But there does not exist a syntax (outside of a `static_cast`) to just get the base object. If we extend the access syntax to just allow for the naming of a type, we could get automatic qualification:
+Today, it is legal to use a *qualified-id* to directly access a member of a particular object in the hierarchy. But there does not exist a syntax (outside of a `static_cast`) to just get the base object. If we extend the access syntax to just allow for the naming of a type, we could get automatic qualification:
 
     :::cpp hl_lines="7"
     struct B {
@@ -775,6 +782,20 @@ We could also introduce a new "magic" cast that just gives us a pointer to the t
             auto b3 = this_cast(this);
         }
     };
+
+This problem extends further than just to `Self`, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains *deduction* (as opposed to removing candidates once they are deduced, as with `requires`, with the following straw-man syntax:
+
+    ::cpp
+    struct B;
+
+    template <typename T : B>
+    void foo(T&& x) {
+       static_assert(std::is_same_v<B, std::remove_reference_t<T>>);
+    }
+
+This would create a template function that may only generate functions that take a `B`, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.
+
+If we had that, we could use it to constrain the deduction of `Self`.
     
 # Real-World Examples
 
