@@ -1224,7 +1224,23 @@ struct override : B {
 };</code></pre>
 
 
-<p>We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much.</p>
+<p>We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much and make it more difficult to use. If we adopted the ability to provide an arbitrary identifier to name the object parameter, we would have to preferentially parse this identifier. Let's say we then added a new context-sensitive keyword, like <code class="language-cpp">super</code>. A user might try to write:</p>
+<pre class="codehilite"><code class="language-cpp">struct Y {
+    // intending to use the new context-sensitive keyword but
+    // really is providing a name to the object parameter
+    void a() super;
+
+    // same
+    void b() Y super;
+
+    // okay, these finally use the keyword as desired - the user
+    // has to provide an identifier, even if they don't want one
+    void c() _ super;
+    void d() Y _ super;
+};</code></pre>
+
+
+<p>Without an arbitrary identifier, <code class="language-cpp">a()</code> and <code class="language-cpp">b()</code> both treat <code class="language-cpp">super</code> as the context-sensitive keyword as likely intended, with the only edge case being in the scenario where you have a type named <code class="language-cpp">super</code>. </p>
 <h3 id="alternative-solution">3.10. Alternative solution<a class="self-link" href="#alternative-solution"></a></h3>
 <p>The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the <em>cv-</em> and <em>ref-qualifiers</em> are trailing rather than leading. </p>
 <p>The explicit parameter approach gave us the ability to have recursive lambdas without a new language feature:</p>

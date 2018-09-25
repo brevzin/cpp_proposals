@@ -678,8 +678,25 @@ However, the design briefly discussed in Rapperswil would have allowed an arbitr
         override* override() override override override; // #4
     };
     
-We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much.
+We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much and make it more difficult to use. If we adopted the ability to provide an arbitrary identifier to name the object parameter, we would have to preferentially parse this identifier. Let's say we then added a new context-sensitive keyword, like `super`. A user might try to write:
 
+    :::cpp
+    struct Y {
+        // intending to use the new context-sensitive keyword but
+        // really is providing a name to the object parameter
+        void a() super;
+        
+        // same
+        void b() Y super;
+        
+        // okay, these finally use the keyword as desired - the user
+        // has to provide an identifier, even if they don't want one
+        void c() _ super;
+        void d() Y _ super;
+    };
+
+Without an arbitrary identifier, `a()` and `b()` both treat `super` as the context-sensitive keyword as likely intended, with the only edge case being in the scenario where you have a type named `super`. 
+    
 ## Alternative solution
 
 The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the *cv-* and *ref-qualifiers* are trailing rather than leading. 
