@@ -375,7 +375,24 @@ ins {
 del {
 	color: #A00000
 }
-</style>
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
 <style type="text/css">/* PrismJS 1.15.0
 https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
 /**
@@ -584,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1065R0 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-25 <br />
 Audience: LEWG, LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -603,10 +620,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation</h2>
+<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>Currently, one of the most important utility functions in the standard libary, <code class="language-cpp">std::invoke()</code>, is not <code class="language-cpp">constexpr</code>. Even though <code class="language-cpp">std::apply()</code> and <code class="language-cpp">std::visit()</code>, both of which rely on <code><i>INVOKE</i></code>, are both <code class="language-cpp">constexpr</code>. The standard library thus finds itself in an odd state where <code class="language-cpp">std::invoke()</code> is and is not <code class="language-cpp">constexpr</code>. </p>
 <p>The reason that <code class="language-cpp">std::invoke()</code> is not <code class="language-cpp">constexpr</code> has some interesting history associated with it. But at this point, it is simply history, and there is no further blocker to making this change. This proposal resolves <a href="https://wg21.link/lwg2894" title="The function template std::apply() is required to be constexpr, but std::invoke() isn't">LWG 2894</a> but also goes one step further and addresses various other <code><i>INVOKE</i></code>-related machinery.</p>
-<h2 id="history">2. History</h2>
+<h2 id="history">2. History<a class="self-link" href="#history"></a></h2>
 <p>Our tale beings in April, 2015 with <a href="https://bugs.llvm.org/show_bug.cgi?id=23141" title="std::bind const-qualifying bound arguments captured by value when compiled as C++14">llvm bug 23141</a>, which presented this code which broke in clang in C++14 (but had compiled in C++11 mode) due to the introduction of a <code class="language-cpp">constexpr __invoke</code> (which ended up breaking range-v3):</p>
 <pre class="codehilite"><code class="language-cpp">#include &lt;functional&gt;
 #include &lt;type_traits&gt;
@@ -656,10 +673,10 @@ int main() {
 <p>These are incarnations of <a href="https://wg21.link/cwg1581" title="When are constexpr member functions defined?">CWG 1581</a>, which dealt with the question of when, exactly, are <code class="language-cpp">constexpr</code> functions defined. In the broken programs above, the <code class="language-cpp">constexpr</code> functions (the non-<code class="language-cpp">const</code> call operator of the binder object being returned in the first case and <code class="language-cpp">g()</code> in the second) were eagerly instantiated, triggering hard compile errors, in cases where the program ultimately would not have required their instantiation. </p>
 <p>Thankfully, this difficult problem has been resolved by the adoption of <a href="https://wg21.link/p0859" title="Core Issue 1581: When are constexpr member functions defined?">P0859</a> in Albuquerque, 2017. As a result, both of the above programs are valid. </p>
 <p>This issue was the blocker for having a <code class="language-cpp">constexpr std::invoke()</code> due to this eager instantiation issue - which no longer exists. </p>
-<h2 id="proposal">3. Proposal</h2>
+<h2 id="proposal">3. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>This proposal adds <code class="language-cpp">constexpr</code> to the following <code><i>INVOKE</i></code>-related machinery: <code class="language-cpp">invoke()</code>, <code class="language-cpp">reference_wrapper&lt;T&gt;</code>, <code class="language-cpp">not_fn()</code>, <code class="language-cpp">bind()</code>, and <code class="language-cpp">mem_fn()</code>. The remaining non-<code class="language-cpp">constexpr</code> elements of the library that are <code><i>INVOKE</i></code>-adjacent are <code class="language-cpp">function&lt;Sig&gt;</code>, <code class="language-cpp">packaged_task&lt;Sig&gt;</code>, <code class="language-cpp">async()</code>, <code class="language-cpp">thread</code>, and <code class="language-cpp">call_once()</code>.</p>
 <p>The entirety of the wording is the addition of the <code class="language-cpp">constexpr</code> keyword in 22 places.</p>
-<h3 id="wording">3.1. Wording</h3>
+<h3 id="wording">3.1. Wording<a class="self-link" href="#wording"></a></h3>
 <p>Add <code class="language-cpp">constexpr</code> to several places in the synopsis in 19.14.1 [functional.syn]</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
   // [func.invoke], invoke
@@ -852,7 +869,7 @@ template&lt;class... Args>
 <p>Add <code class="language-cpp">constexpr</code> to <code class="language-cpp">std::mem_fn()</code> in 19.14.13 [func.memfn]</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class R, class T> </code><code><ins>constexpr</ins> <i>unspecified</i> </code><code class="language-cpp">mem_fn(R T::* pm) noexcept;</code></pre></blockquote>
 
-<h2 id="acknowledgements">4. Acknowledgements</h2>
+<h2 id="acknowledgements">4. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding <code class="language-cpp">constexpr invoke</code> and suggesting that this proposal be written. Thanks to Tomasz Kamiński and Tim Song for help on the wording.</p>
-<h2 id="references">5. References</h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1581">[CWG1581]</a><span style="margin-left: 5px;">"When are constexpr member functions defined?" by Richard Smith, 2012-10-29</span></li><li><a href="https://cplusplus.github.io/LWG/issue2894">[LWG2894]</a><span style="margin-left: 5px;">"The function template std::apply() is required to be constexpr, but std::invoke() isn't" by Great Britain, 2017-08-01</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0859r0.html">[P0859]</a><span style="margin-left: 5px;">"Core Issue 1581: When are constexpr member functions defined?" by Richard Smith, 2017-11-09</span></li></ul>
+<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1581">[CWG1581]</a><span style="margin-left: 5px;">"When are constexpr member functions defined?" by Richard Smith, 2012-10-29</span></li><li><a href="https://cplusplus.github.io/LWG/issue2894">[LWG2894]</a><span style="margin-left: 5px;">"The function template std::apply() is required to be constexpr, but std::invoke() isn't" by Great Britain, 2017-08-01</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0859r0.html">[P0859]</a><span style="margin-left: 5px;">"Core Issue 1581: When are constexpr member functions defined?" by Richard Smith, 2017-11-09</span></li></ul>
 </html>

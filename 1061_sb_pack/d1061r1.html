@@ -375,7 +375,24 @@ ins {
 del {
 	color: #A00000
 }
-</style>
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
 <style type="text/css">/* PrismJS 1.15.0
 https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
 /**
@@ -584,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1061R1 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-25 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Jonathan Wakely, jonathan dot wakely at gmail dot com <br />
 </address>
@@ -600,7 +617,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Jonathan Wakely, 
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation</h2>
+<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a <code class="language-cpp">tuple</code>. Today, it's trivial to convert a pack to a <code class="language-cpp">tuple</code>, but it's somewhat more involved to convert a <code class="language-cpp">tuple</code> to a pack. You have to go through <a href="https://wg21.link/n3915" title="apply() call a function with arguments from a tuple (V3)"><code class="language-cpp">std::apply()</code></a>:</p>
 <pre class="codehilite"><code class="language-c++">std::tuple&lt;A, B, C&gt; tup = ...;
 std::apply([&amp;](auto&amp;&amp;... elems){
@@ -647,7 +664,7 @@ auto dot_product(P p, Q q) {
 </table>
 
 <p>Regardless of which option you dislike the least, both are limited to only <code class="language-cpp">std::tuple</code>s. We don't have the ability to do this at all for any of the other kinds of types that can be used in a <a href="https://wg21.link/p0144" title="Structured Bindings">structured binding declaration</a> - because we need to explicit list the correct number of identifiers, and we might not know how many there are.</p>
-<h2 id="proposal">2. Proposal</h2>
+<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading <code class="language-cpp">...</code>):</p>
 <pre class="codehilite"><code class="language-c++">std::tuple&lt;X, Y, Z&gt; f();
 auto [x,y,z] = f();          // OK today
@@ -756,7 +773,7 @@ double calc(int, int, int);
 double result = std::apply(calc, getPoint()); // ill-formed today, ok with proposed implementation</code></pre>
 
 
-<h2 id="wording">3. Wording</h2>
+<h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Add a new grammar option for <em>simple-declaration</em> to 10 [dcl.dcl]:</p>
 <blockquote>
 <i>simple-declaration:</i><br />
@@ -825,7 +842,7 @@ Such an element, in the context of the instantiation, is interpreted as follows:
 </ul>
 </blockquote>
 
-<h2 id="acknowledgements">4. Acknowledgements</h2>
+<h2 id="acknowledgements">4. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>Thanks to Michael Park and Tomasz Kamiński for their helpful feedback.</p>
-<h2 id="references">5. References</h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3915.pdf">[N3915]</a><span style="margin-left: 5px;">"apply() call a function with arguments from a tuple (V3)" by Peter Sommerlad, 2014-02-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0144r2.pdf">[P0144]</a><span style="margin-left: 5px;">"Structured Bindings" by Herb Sutter, 2016-03-16</span></li></ul>
+<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3915.pdf">[N3915]</a><span style="margin-left: 5px;">"apply() call a function with arguments from a tuple (V3)" by Peter Sommerlad, 2014-02-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0144r2.pdf">[P0144]</a><span style="margin-left: 5px;">"Structured Bindings" by Herb Sutter, 2016-03-16</span></li></ul>
 </html>

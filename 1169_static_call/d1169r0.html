@@ -375,7 +375,24 @@ ins {
 del {
 	color: #A00000
 }
-</style>
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
 <style type="text/css">/* PrismJS 1.15.0
 https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
 /**
@@ -584,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1169R0 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-25 <br />
 Audience: EWG, LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Casey Carter, casey at carter dot net <br />
 </address>
@@ -601,7 +618,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Casey Carter, cas
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation</h2>
+<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>The standard libary has always accepted arbitrary function objects - whether to be unary or binary predicates, or perform arbitrary operations. Function objects with call operator templates in particular have a significant advantage today over using overload sets since you can just pass them into algorithms. This makes, for instance, <code class="language-cpp">std::less&lt;&gt;{}</code> very useful.</p>
 <p>As part of the Ranges work, more and more function objects are being added to the standard library - the set of Customization Point Objects (CPOs). These objects are Callable, but they don't, as a rule, have any members. They simply exist to do what Eric Niebler termed the <a href="http://ericniebler.com/2014/10/21/customization-point-design-in-c11-and-beyond/">"Std Swap Two-Step"</a>. Nevertheless, the call operators of all of these types are non-static member functions. Because <em>all</em> call operators have to be non-static member functions. </p>
 <p>What this means is that if the call operator happens to not be inlined, an extra register must be used to pass in the <code class="language-cpp">this</code> pointer to the object - even if there is no need for it whatsoever. Here is a <a href="https://godbolt.org/z/ajTZo2">simple example</a>:</p>
@@ -704,7 +721,7 @@ int count_x(std::vector&lt;int&gt; const&amp; xs) {
 
 <p>Even in this simple example, you can see the extra zeroing out of <code class="language-cpp">[rsp+15]</code>, the extra <code class="language-cpp">lea</code> to move that zero-ed out area as the object parameter - which we know doesn't need to be used. This is wasteful, and seems to violate the fundamental philosophy that we don't pay for what we don't need.</p>
 <p>The typical way to express the idea that we don't need an object parameter is to declare functions <code class="language-cpp">static</code>. We just don't have that ability in this case.</p>
-<h2 id="proposal">2. Proposal</h2>
+<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>The proposal is to just allow the ability to make the call operator a static member function, instead of requiring it to be a non-static member function. We have many years of experience with member-less function objects being useful. Let's remove the unnecessary object parameter overhead.</p>
 <p>There are other operators that are currently required to be implemented as non-static member functions - all the unary operators, assignment, subscripting, and class member access. We do not believe that being able to declare any of these as static will have as much value, so we are not pursuing those at this time. </p>
 <p>A common source of function objects whose call operators could be static but are not are lambdas without any capture, so this proposal also seeks to implicitly mark those static as well. This has the potential to break code which explicitly relies on the fact that the call operator is a non-static member function:</p>
@@ -719,7 +736,7 @@ auto p = &amp;decltype(four)::operator();
 
 
 <p>Additionally, while there are many, many function objects in the standard library as it exists today that would benefit from this feature (<code class="language-cpp">default_delete</code>, <code class="language-cpp">owner_less</code>, the five arithmetic operations, the six comparisons, the the three logical operations, and the four bitwise operations), such a change would be an ABI break, so we are not pursuing that at this time. There is one, new function object that we could change for C++20: <code class="language-cpp">identity</code>.</p>
-<h3 id="language-wording">2.1. Language Wording</h3>
+<h3 id="language-wording">2.1. Language Wording<a class="self-link" href="#language-wording"></a></h3>
 <p>Change 7.5.5.1 [expr.prim.lambda.closure] paragraph 4:</p>
 <blockquote>
 <p>The function call operator or operator template is declared <ins><code class="language-cpp">static</code> if the <em>lambda-expression</em> has no <em>lambda-capture</em>, otherwise it is non-static. If it is a non-static member function, it is declared</ins><code class="language-cpp">const</code> ([class.mfct.non-static]) if and only if the <em>lambda-expression</em>'s <em>parameter-declaration-clause</em> is not followed by <code class="language-cpp">mutable</code>. It is neither virtual nor declared <code class="language-cpp">volatile</code>. Any <em>noexcept-specifier</em> specified on a <em>lambda-expression</em> applies to the corresponding function call operator or operator template. An <em>attribute-specifier-seq</em> in a <em>lambda-declarator</em> appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a <code class="language-cpp">constexpr</code> function if either the corresponding <em>lambda-expression</em>'s <em>parameter-declaration-clause</em> is followed by <code class="language-cpp">constexpr</code>, or it satisfies the requirements for a <code class="language-cpp">constexpr</code> function. </p>
@@ -740,7 +757,7 @@ auto p = &amp;decltype(four)::operator();
 <blockquote>
 <p><code class="language-cpp">operator()</code> shall be a <del>non-static</del> member function with an arbitrary number of parameters. It can have default arguments. [...]</p>
 </blockquote>
-<h3 id="library-wording">2.2. Library Wording</h3>
+<h3 id="library-wording">2.2. Library Wording<a class="self-link" href="#library-wording"></a></h3>
 <p>Change 19.14.10 [func.identity], <code class="language-cpp">identity</code></p>
 <blockquote><pre class="codehilite"><code class="language-cpp">struct identity {
   template&lt;class T>

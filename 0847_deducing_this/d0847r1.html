@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D0847R1 <br />
-Date: 2018-09-22 <br />
+Date: 2018-09-25 <br />
 Audience: EWG <br />
 Reply-To: Gašper Ažman, gasper dot azman at gmail dot com<br />Simon Brand, simon at codeplay dot com<br />Ben Deane, ben at elbeno dot com<br />Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -623,6 +623,7 @@ Reply-To: Gašper Ažman, gasper dot azman at gmail dot com<br />Simon Brand, si
 <li><a href="#can-static-member-functions-have-an-explicit-object-type">Can static member functions have an explicit object type?</a></li>
 <li><a href="#interplays-with-capturing-this-and-this-in-lambdas">Interplays with capturing [this] and [*this] in lambdas</a></li>
 <li><a href="#translating-code-to-use-explicit-member-types">Translating code to use explicit member types</a></li>
+<li><a href="#parsing-issues">Parsing issues</a></li>
 <li><a href="#alternative-solution">Alternative solution</a></li>
 <li><a href="#potential-extensions">Potential Extensions</a></li>
 </ol>
@@ -659,7 +660,7 @@ void foo(int) Self&amp;&amp; self;</code></pre>
 
 <p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>9</td><td>11</td><td>10</td><td>5</td><td>2</td></table></p>
 </blockquote>
-<p>This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier), and is discussed at length in an <a href="#alternative-solution">alternative solution</a>. The syntax change is:</p>
+<p>This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier - see <a href="#parsing-issues">parsing issues</a>), and is discussed at length in an <a href="#alternative-solution">alternative solution</a>. The syntax change is:</p>
 <table style="width:100%">
 <tr>
 <th style="width:50%">
@@ -940,12 +941,12 @@ void ex(Y&amp; y, Y const&amp; cy) {
     y.get();             // deduces Self as Y, returns int&amp;
     cy.get();            // deduces Self as Y const, not Y, returns int const&amp;
 
-    std::move(y).get();  // deduces self as Y, returns int&amp;
-    std::move(cy).get(); // deduces self as Y const, returns int const&amp;
+    std::move(y).get();  // deduces Self as Y, returns int&amp;
+    std::move(cy).get(); // deduces Self as Y const, returns int const&amp;
 }</code></pre>
 
 
-<p>This mimics today's behavior where a trailing <code class="language-cpp">const</code> qualifier does not mean <code class="language-cpp">const&amp;</code>, it just means <code class="language-cpp">const</code>. Without such a change to template deduction, <code class="language-cpp">Self</code> would always just deduce as <code class="language-cpp">Y</code> (and hence be pointless), <code class="language-cpp">Self&amp;</code> would deduce as <code class="language-cpp">Y&amp;</code> or <code class="language-cpp">Y const&amp;</code> but not allow binding to rvalues, and <code class="language-cpp">Self&amp;&amp;</code> would give us different functions for lvalues and rvalues - which is unnecessary.</p>
+<p>This mimics today's behavior where a trailing <code class="language-cpp">const</code> qualifier does not mean <code class="language-cpp">const&amp;</code>, it just means <code class="language-cpp">const</code>. Without such a change to template deduction, <code class="language-cpp">Self</code> would always just deduce as <code class="language-cpp">Y</code> (and hence be pointless), <code class="language-cpp">Self&amp;</code> would deduce as <code class="language-cpp">Y&amp;</code> or <code class="language-cpp">Y const&amp;</code> but not allow binding to rvalues, and <code class="language-cpp">Self&amp;&amp;</code> would give us different functions for lvalues and rvalues - which is unnecessary and leads to code bloat.</p>
 <p>Since the explicit member type is deduced from the object the function is called on, this has the interesting effect of possibly deducing <em>derived</em> types, which can best be illustrated by the following example:    </p>
 <pre class="codehilite"><code class="language-cpp">struct B {
     int i = 0;
@@ -1178,8 +1179,53 @@ auto pmf2 = &amp;Z::h&lt;DZ const&amp;, double&gt;
 </tr>
 </table>
 
-<p>The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation.</p>
-<h3 id="alternative-solution">3.9. Alternative solution<a class="self-link" href="#alternative-solution"></a></h3>
+<p>The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation; they are also simple to disable with a requires clause, now that the object type can be captured.</p>
+<h3 id="parsing-issues">3.9. Parsing issues<a class="self-link" href="#parsing-issues"></a></h3>
+<p>With the addition of a new type name after the <em>parameter-declaration-clause</em>, we potentially run into a clash with the existing <em>virt-specifier</em>s. In other words, this:</p>
+<pre class="codehilite"><code class="language-cpp">struct B {
+    virtual B* override() = 0;
+};
+
+struct override : B {
+    override* override() override override; // #1
+    override* override() override;          // #2
+    override* override();                   // #3
+};</code></pre>
+
+
+<p>The same problem would occur with <code class="language-cpp">final</code>. </p>
+<p>Dealing with <code class="language-cpp">#3</code> is easy - there is nothing to do. For <code class="language-cpp">#1</code> and <code class="language-cpp">#2</code>, the rule we propose is that we try to parse the explicit member type <em>first</em>, if possible. That is, for <code class="language-cpp">#2</code>, this is a member function with an explicit member type <code class="language-cpp">override</code> (that happens to override <code class="language-cpp">B::override</code>) but does not actually have a <em>virt-specifier</em>. For <code class="language-cpp">#1</code> then, the first use of <code class="language-cpp">override</code> is the explicit object type and the second use would be the <em>virt-specifier</em> <code class="language-cpp">override</code>. This changes the meaning of <code class="language-cpp">#2</code> from what it is today, but in practice we don't think anybody actually writes this seriously so it is unlikely to break real code.</p>
+<p>As a result, this would be ill-formed:</p>
+<pre class="codehilite"><code class="language-cpp">struct D : B {
+    D* override() override D; // error
+};</code></pre>
+
+
+<p>because <code class="language-cpp">override</code> cannot be the explicit member type, so it's treated as the <em>virt-specifier</em>, and then <code class="language-cpp">D</code> cannot go in that spot.</p>
+<p>But both of these would be okay, with <code class="language-cpp">override const</code> being the explicit member type:</p>
+<pre class="codehilite"><code class="language-cpp">struct override : B {
+    override* override() override const override; // ok
+    override* override() const override override; // ok
+};</code></pre>
+
+
+<p>In the presented design, the type name is something that can be looked up - it's going to be the class name or a template parameter name or something. So adopting new context-sensitive keywords is also unlikely to cause a problem.</p>
+<p>However, the design briefly discussed in Rapperswil would have allowed an arbitrary trailing identifier. That is:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    template &lt;typename Self&gt;
+    auto&amp; foo() Self&amp;&amp; self {
+        return self.i; // &lt;== self.i instead of this-&gt;i
+    }
+    int i;
+};
+
+struct override : B {
+    override* override() override override override; // #4
+};</code></pre>
+
+
+<p>We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much.</p>
+<h3 id="alternative-solution">3.10. Alternative solution<a class="self-link" href="#alternative-solution"></a></h3>
 <p>The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the <em>cv-</em> and <em>ref-qualifiers</em> are trailing rather than leading. </p>
 <p>The explicit parameter approach gave us the ability to have recursive lambdas without a new language feature:</p>
 <pre class="codehilite"><code class="language-cpp">auto fib = [](this auto const&amp; self, int n) {
@@ -1213,10 +1259,18 @@ struct optional {
         return forward&lt;Self&gt;(*this).optional::m_value;
     }
 
+
+
+
+
     template &lt;typename Self&gt;
     constexpr auto operator-&gt;() Self {
         return addressof(this-&gt;optional::m_value);
     }
+
+
+
+
 
     template &lt;typename Self, typename F&gt;
     constexpr auto and_then(F&amp;&amp; f) Self&amp;&amp; {
@@ -1281,9 +1335,9 @@ struct optional {
 </tr>
 </table>
 
-<h3 id="potential-extensions">3.10. Potential Extensions<a class="self-link" href="#potential-extensions"></a></h3>
+<h3 id="potential-extensions">3.11. Potential Extensions<a class="self-link" href="#potential-extensions"></a></h3>
 <p>There are a few syntactic extensions that would make it easier to deal with the case where we deduce a derived type but never actually want to use the derived type. </p>
-<p>Today, it is legal to have use a <em>qualified-id</em> to directly access a member of a particular object in the hierarchy. But there does not exist a syntax (outside of a <code class="language-cpp">static_cast</code>) to just get the base object. If we extend the access syntax to just allow for the naming of a type, we could get automatic qualification:</p>
+<p>Today, it is legal to use a <em>qualified-id</em> to directly access a member of a particular object in the hierarchy. But there does not exist a syntax (outside of a <code class="language-cpp">static_cast</code>) to just get the base object. If we extend the access syntax to just allow for the naming of a type, we could get automatic qualification:</p>
 <pre class="codehilite" data-line="7"><code class="language-cpp">struct B {
     int i;
 
@@ -1318,6 +1372,17 @@ void ex(B&amp; b, D const&amp; cd) {
 };</code></pre>
 
 
+<p>This problem extends further than just to <code class="language-cpp">Self</code>, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains <em>deduction</em> (as opposed to removing candidates once they are deduced, as with <code class="language-cpp">requires</code>, with the following straw-man syntax:</p>
+<pre class="codehilite"><code class="language-cpp">struct B;
+
+template &lt;typename T : B&gt;
+void foo(T&amp;&amp; x) {
+   static_assert(std::is_same_v&lt;B, std::remove_reference_t&lt;T&gt;&gt;);
+}</code></pre>
+
+
+<p>This would create a template function that may only generate functions that take a <code class="language-cpp">B</code>, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
+<p>If we had that, we could use it to constrain the deduction of <code class="language-cpp">Self</code>.</p>
 <h2 id="real-world-examples">4. Real-World Examples<a class="self-link" href="#real-world-examples"></a></h2>
 <h3 id="deduplicating-code">4.1. Deduplicating Code<a class="self-link" href="#deduplicating-code"></a></h3>
 <p>This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.</p>

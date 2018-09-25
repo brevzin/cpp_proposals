@@ -375,7 +375,24 @@ ins {
 del {
 	color: #A00000
 }
-</style>
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
 <style type="text/css">/* PrismJS 1.15.0
 https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
 /**
@@ -584,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1170R0 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-25 <br />
 Audience: EWG, LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, andrew dot n dot sutton at gmail dot com <br />
 </address>
@@ -620,7 +637,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, an
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation</h2>
+<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>Calling a function in C++ in pretty fundamental. But abstracting that function call, the most basic generalization, doesn't always work out neatly. </p>
 <p>Anytime today that we can write:</p>
 <pre class="codehilite"><code class="language-cpp">namespace N {
@@ -706,7 +723,7 @@ std::invoke(do_something, 42);</code></pre>
 <p>Being able to write just the function name, as opposed to having to list the arguments and the body, is sometimes referred to as <a href="https://en.wikipedia.org/wiki/Tacit_programming" title="Tacit programming - Wikipedia">"<strong>point-free</strong>" programming</a>, a term more commonly used in languages like Haskell. Being able to write point-free in the context of C++ means being able to pass in names and have that <em>just work</em> regardless of what the name happens to refer to. It means that any time <code class="language-cpp">foo(x)</code> works that <code class="language-cpp">algorithm(foo, x)</code> could be made to work also.</p>
 <p>Titus Winters in a <a href="https://youtu.be/2UmDvg5xv1U?t=284" title="Modern C++ API Design: From Rvalue-References to Type Design">recent C++Now talk</a> described the overload set as the atom of C++ API design. And yet, we cannot even pass this atom into other atoms with reaching for lambdas, forwarding references, and trailing return types.</p>
 <p>We can do better.</p>
-<h2 id="history">2. History</h2>
+<h2 id="history">2. History<a class="self-link" href="#history"></a></h2>
 <p>This problem has a long history attached to it, with two different tacks explored.</p>
 <p><a href="https://wg21.link/p0119r2" title="Overload sets as function arguments">P0119</a> proposed a syntax-free, "just make it work" approach: synthesize a lambda if, based on a heuristic, it's likely the intended behavior (e.g. if the name nominates an overload set). Unfortunately, this solution fails, as demonstrated in <a href="https://wg21.link/p0382r0" title="Comments on P0119: Overload sets as function arguments">P0382</a>.</p>
 <p><a href="https://wg21.link/n3617" title="Lifting overload sets into function objects">N3617</a> (also <a href="https://wg21.link/ewg65" title="N3617 Lifting overload sets into function objects">EWG65</a>) and later <a href="https://wg21.link/p0834r0" title="Lifting overload sets into objects">P0834</a> proposed syntax for the caller to use to explicitly synthesize an overload set:</p>
@@ -728,7 +745,7 @@ std::invoke([]do_something, 42);</code></pre>
 <p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>5</td><td>4</td><td>3</td><td>1</td><td>1</td></table></p>
 </blockquote>
 <p>This is a problem that needs solving, and it has to be solved at the language level.</p>
-<h2 id="proposal">3. Proposal</h2>
+<h2 id="proposal">3. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>The community tried to solve this problem without adding any syntax, and it tried to solve this problem by adding syntax on the caller's site. We propose a new approach: adding syntax on the function declaration itself. That is, rather than having overload sets as function <em>arguments</em> we instead have overload sets as function <em>parameters</em>.</p>
 <p>We propose a new magic library type, <code class="language-cpp">std::overload_set&lt;T&gt;</code> (see <a href="#alternative-spellings">alternative spellings</a>) that will deduce an overload set, and we will call this new object an <em>overload set object</em>. The fundamental goal driving the design of <code class="language-cpp">overload_set</code> is that anywhere <code class="language-cpp">foo(a, b, c)</code> works today, <code class="language-cpp">std::overload_set(foo)(a, b, c)</code> should also work and have the same meaning:</p>
 <pre class="codehilite"><code class="language-cpp">void foo(int);      // #1
@@ -751,7 +768,7 @@ f(2, 3);                   // ok: calls #2</code></pre>
 
 <p>The difference is that, instead of burdening the caller to annotate each and every function, it's up to the API to do that annotation. There are many more callers than callees, so this seems like it places the burden on the correct party. APIs that use <code class="language-cpp">overload_set</code> would be very friendly for users, and would allow for a point-free style.</p>
 <p>For legacy APIs that do not use <code class="language-cpp">overload_set</code> for their callables, <code class="language-cpp">overload_set</code> can be used on the call site as a substitute for the macro. This is admittedly much longer than the <code class="language-cpp">[]</code> proposed in P0834/N3617, but it is at least substantially better than a macro. And legacy APIs can be easily transitioned to take advantage of this feature by simply adding <a href="#standard-library-functions-now-and-future">another overload</a>.</p>
-<h3 id="implementation-details">3.1. Implementation details</h3>
+<h3 id="implementation-details">3.1. Implementation details<a class="self-link" href="#implementation-details"></a></h3>
 <p>An <code class="language-cpp">overload_set&lt;T&gt;</code> contains a <code class="language-cpp">T</code> and has a call operator that forwards to <code class="language-cpp">T</code>'s call operator. Its copy and move constructors and assignment operators are defaulted, its other constructors are unspecified.</p>
 <p>A hypothetical implementation might look like:</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
@@ -785,7 +802,7 @@ public:
 
 
 <p>With appropriate deduction guides. An open question is whether or not an <code class="language-cpp">overload_set&lt;T&gt;</code> should be (explicitly or implicitly) convertible to a <code class="language-cpp">T</code>.</p>
-<h3 id="constraining-on-overload_set">3.2. Constraining on <code class="language-cpp">overload_set</code></h3>
+<h3 id="constraining-on-overload_set">3.2. Constraining on <code class="language-cpp">overload_set</code><a class="self-link" href="#constraining-on-overload_set"></a></h3>
 <p>Since <code class="language-cpp">overload_set&lt;T&gt;</code> simply contains a <code class="language-cpp">T</code>, and its call operators are based on <code class="language-cpp">T</code>s, this interacts very well with how template constraints are written:</p>
 <pre class="codehilite"><code class="language-cpp">// SFINAE constraint has the desired effect
 template &lt;typename F, enable_if_t&lt;is_invocable_v&lt;F&amp;, int&gt;, int&gt; = 0&gt;
@@ -806,10 +823,10 @@ void bar(overload_set&lt;F&gt; f) {
 }</code></pre>
 
 
-<h3 id="deduction-rules">3.3. Deduction rules</h3>
+<h3 id="deduction-rules">3.3. Deduction rules<a class="self-link" href="#deduction-rules"></a></h3>
 <p>The annotation <code class="language-cpp">overload_set</code> will trigger new deduction rules based not just on the type of the argument it is being deduced from, but also on its <em>name</em>, and even the token sequence.</p>
 <p>There are many cases we're proposing, each will synthesize a slightly different function object. We will go over these proposed deduction rules in detail, and then <a href="#summary-of-deduction-rules">summarize them</a>.</p>
-<h4 id="deducing-from-an-object">3.3.1. Deducing from an object</h4>
+<h4 id="deducing-from-an-object">3.3.1. Deducing from an object<a class="self-link" href="#deducing-from-an-object"></a></h4>
 <p>If the argument is an object, whether it is a function object or a pointer (or reference) to function or pointer to member, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as the object's type:</p>
 <pre class="codehilite"><code class="language-cpp">auto square = [](int i){ return i * i; };
 
@@ -858,7 +875,7 @@ assert(c.i == 3);</code></pre>
 
 <p>This allows the API to avoid copying if it so desires. </p>
 <p>This rule gives the appearance of the <code class="language-cpp">&amp;</code> simply being in the wrong place. But there is a difference between <code class="language-cpp">overload_set&lt;T&amp;&gt;</code> (an overload set object which is a reference to a callable object) and <code class="language-cpp">overload_set&lt;T&gt;&amp;</code> (a reference to an overload set object).</p>
-<h4 id="deducing-from-a-name-of-a-function">3.3.2. Deducing from a name of a function</h4>
+<h4 id="deducing-from-a-name-of-a-function">3.3.2. Deducing from a name of a function<a class="self-link" href="#deducing-from-a-name-of-a-function"></a></h4>
 <p>If the argument is the (qualified or unqualified) name of a function, function template, static member function or static member function template, or an overload set containing any number of either, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as a synthesized lambda in the style of <code class="language-cpp">OVERLOADS_OF</code>:</p>
 <pre class="codehilite"><code class="language-cpp">[](auto&amp;&amp; ...args) noexcept(noexcept(name(FWD(args)...)))
         -&gt; decltype(name(FWD(args)...)) {
@@ -950,7 +967,7 @@ f(N::X{}); // ok or error?</code></pre>
 
 
 <p>Does that call succeed (ADL finding <code class="language-cpp">N::foo</code>) or does the synthesized function behave as if <code class="language-cpp">(foo)(FWD(args)...)</code>, which would not consider ADL, and hence fail with no matching overload?</p>
-<h5 id="deducing-from-a-name-that-cannot-be-found-by-unqualified-lookup">3.3.2.1. Deducing from a name that cannot be found by unqualified lookup</h5>
+<h5 id="deducing-from-a-name-that-cannot-be-found-by-unqualified-lookup">3.3.2.1. Deducing from a name that cannot be found by unqualified lookup<a class="self-link" href="#deducing-from-a-name-that-cannot-be-found-by-unqualified-lookup"></a></h5>
 <p>Consider a slight variation from an example from the previous section:</p>
 <pre class="codehilite" data-line="7,12,16"><code class="language-cpp">void g(int);
 void h(int);
@@ -983,7 +1000,7 @@ over_f(N::X{});</code></pre>
 <p>The motivation of this paper is very much to allow for the separation of the function from its arguments, and since in the original example <code class="language-cpp">f(N::X{})</code> would work (by finding <code class="language-cpp">N::f</code> via ADL), we firmly believe that <code class="language-cpp">std::overload_set(f)(N::X{})</code> should work as well.</p>
 <p>In order to achieve that goal, we amend the previous stated rule to also synthesize the same kind of lambda from an unqualified name for which lookup finds nothing. </p>
 <p>We can safely reject any attempt to use a qualified name for which we cannot find any candidates. </p>
-<h4 id="deducing-from-partial-class-member-access">3.3.3. Deducing from partial class member access</h4>
+<h4 id="deducing-from-partial-class-member-access">3.3.3. Deducing from partial class member access<a class="self-link" href="#deducing-from-partial-class-member-access"></a></h4>
 <p>If the argument is a partial class member access, of the forms <code class="language-cpp">x.y</code>, <code class="language-cpp">x-&gt;y</code>, or, in the context of a member function, <code class="language-cpp">y</code>, where <code class="language-cpp">y</code> is the name of a member function, member function template, overload set of member functions, or an object that is callable in some way, then <code class="language-cpp">overload_set&lt;T&gt;</code> deduces <code class="language-cpp">T</code> as a synthesized type which captures the class object or pointer.</p>
 <p>The rule here is that <code class="language-cpp">overload_set(obj.mem)</code> will copy <code class="language-cpp">obj</code>, just as <code class="language-cpp">overload_set(ptr-&gt;mem)</code> will copy <code class="language-cpp">ptr</code>. This gives the user control over how the object is captures to invoke the member function. If capture-by-copy is desired, use the dot access syntax. If capture-by-reference is desired, then either take a pointer to your object (i.e. <code class="language-cpp">overload_set((&amp;obj).mem)</code>) or wrap it in a reference (i.e. <code class="language-cpp">overload_set(std::ref(obj).mem)</code>). </p>
 <pre class="codehilite"><code class="language-cpp">std::string s = &quot;hello&quot;;    
@@ -1039,7 +1056,7 @@ std::transform(src.begin(), src.end(),
     f);</code></pre>
 
 
-<h4 id="deducing-from-a-type-member-access">3.3.4. Deducing from a type-member access</h4>
+<h4 id="deducing-from-a-type-member-access">3.3.4. Deducing from a type-member access<a class="self-link" href="#deducing-from-a-type-member-access"></a></h4>
 <p>When it comes to member functions, we depart somewhat from our initially stated goal of having the validity of <code class="language-cpp">foo(a, b, c)</code> imply the validity of <code class="language-cpp">std::overload_set(foo)(a, b, c)</code>. While member functions are conceptually functions that take, as their first argument, an instance of the class type, that is not the way they are spelled (despite <code class="language-cpp">INVOKE</code>). Moreover, we cannot use <code class="language-cpp">&amp;Class::mem</code> as a launching point for a special deduction rule, since that already is a pointer to member function and would be covered by the object rules.</p>
 <p>However, invoking member functions in such a way is still highly useful today, and will become even more highly in demand with the adoption of Ranges and its heavy use of projections. The motivating example for projections in <a href="https://wg21.link/N4128" title="Ranges for the Standard Library, Revision 1">N4128</a> was:</p>
 <pre class="codehilite"><code class="language-cpp">std::sort(a, std::less&lt;&gt;(), &amp;employee::last);
@@ -1160,7 +1177,7 @@ auto p = std::lower_bound(a, &quot;Parent&quot;, std::less&lt;&gt;(), employee.l
 
 
 <p>And then just... not have to worry about anything. It just works. </p>
-<h4 id="deducing-from-an-operator-function-id">3.3.5. Deducing from an <em>operator-function-id</em></h4>
+<h4 id="deducing-from-an-operator-function-id">3.3.5. Deducing from an <em>operator-function-id</em><a class="self-link" href="#deducing-from-an-operator-function-id"></a></h4>
 <p>Going one step further from the previous cases, we want to further allow the synthesis of a lambda overload set from the name of an <em>operator-function-id</em>. This will synthesize a unary, binary, or hybrid callable depending on the operator in question. </p>
 <p>Many of these cases are already covered by preexisting function objects in <code class="language-cpp">&lt;functional&gt;</code>. <code class="language-cpp">std::overload_set(operator&lt;)</code> is <code class="language-cpp">std::less()</code>, <code class="language-cpp">std::overload_set(operator==)</code> is <code class="language-cpp">std::equal_to()</code>, and so forth. So why do we need them? </p>
 <p>The main argument is a question of readability. Everyone is familiar with the operators, they jump out more than names of objects. Not everyone is familiar with all of the equivalent names - very few are familiar with all of them. </p>
@@ -1208,7 +1225,7 @@ auto p = std::lower_bound(a, &quot;Parent&quot;, (&lt;), employee.last);</code><
 inv(a, b, c); // equivalent to std::invoke(a, b, c);</code></pre>
 
 
-<h4 id="deducing-from-a-type-name">3.3.6. Deducing from a type name</h4>
+<h4 id="deducing-from-a-type-name">3.3.6. Deducing from a type name<a class="self-link" href="#deducing-from-a-type-name"></a></h4>
 <p>One final place situation we want to handle is when the function or overload set we're invoking is actually a constructor. In this case, the name isn't the name of a function or a function template, it's the name of a type:</p>
 <pre class="codehilite"><code class="language-cpp">struct X {
     X(int);
@@ -1228,7 +1245,7 @@ std::vector&lt;X&gt; makeXs(std::vector&lt;int&gt; const&amp; input) {
 
 
 <p>A type name very much behaves as if it were an overload set that, when invoked, produces an instance of that type. The <code class="language-cpp">emplace()</code> functions are very much forwarding arguments to that type function. Being able to deduce an overload set object from a type name just cements that model.</p>
-<h4 id="summary-of-deduction-rules">3.3.7. Summary of deduction rules</h4>
+<h4 id="summary-of-deduction-rules">3.3.7. Summary of deduction rules<a class="self-link" href="#summary-of-deduction-rules"></a></h4>
 <p>The following table goes through all the rules presented above. For each row, on the left is some declaration <code>std::overload_set <i>name</i> = <i>tokens</i>;</code> and on the right is an declaration for the type <code class="language-cpp">T</code> that would be synthesized for <code class="language-cpp">std::overload_set&lt;T&gt;</code> in this deduction.</p>
 <table style="width:100%">
 <tr>
@@ -1481,7 +1498,7 @@ std::overload_set j = Person.id;</code></pre>
 </tr>
 </table>
 
-<h3 id="standard-library-functions-now-and-future">3.4. Standard library functions, now and future</h3>
+<h3 id="standard-library-functions-now-and-future">3.4. Standard library functions, now and future<a class="self-link" href="#standard-library-functions-now-and-future"></a></h3>
 <p>One of the papers mentioned earlier, P0798, proposed a handful of new member functions for <code class="language-cpp">std::optional</code>. Currently these just all deduce their arguments in the same way as all other standard library function templates. But if we, instead, specify them to deduce an overload set parameter:</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
 struct optional {
@@ -1527,14 +1544,14 @@ constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p) {
 
 
 <p>All existing, viable calls to <code class="language-cpp">find_if</code> will continue to call the existing overload. It is a better match. But a wide variety of new calls to <code class="language-cpp">find_if()</code> suddenly become possible where they weren't before! This isn't perfect - we still allow users to take pointers to functions and member functions if those happen to work today. But it's a big step in better usability for everyone.</p>
-<h3 id="alternative-spellings">3.5. Alternative spellings</h3>
+<h3 id="alternative-spellings">3.5. Alternative spellings<a class="self-link" href="#alternative-spellings"></a></h3>
 <p>The name <code class="language-cpp">overload_set</code> makes a judgement about what is being passed, which may not actually be an overload set. We are very open to considering other names. Unfortunately <code class="language-cpp">function</code> is taken, but some alternatives might be:</p>
 <ul>
 <li><code class="language-cpp">invocable&lt;T&gt;</code></li>
 <li><code class="language-cpp">callable&lt;T&gt;</code></li>
 <li><code class="language-cpp">[] T</code> (along the lines of N3617/P0834)</li>
 </ul>
-<h3 id="other-potential-avenues">3.6. Other potential avenues</h3>
+<h3 id="other-potential-avenues">3.6. Other potential avenues<a class="self-link" href="#other-potential-avenues"></a></h3>
 <p>Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (<code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>). </p>
 <p>But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? Well, how about (references and forwarding omitted for brevity):</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename F, typename G&gt;
@@ -1579,7 +1596,7 @@ auto g4 = (not) * f;</code></pre>
 
 <p>The composition choices aren't necessarily shorter than using <code class="language-cpp">not_fn</code>. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. </p>
 <p>Perhaps also <code class="language-cpp">overload_set&lt;T&gt;</code> could curry by default. Or provide a way to turn an <code class="language-cpp">overload_set&lt;T&gt;</code> into a <code class="language-cpp">curried_overload_set&lt;T&gt;</code>. With a more encompassing idea of what a callable is, these tools become much easier to write. </p>
-<h2 id="acknowledgements">4. Acknowledgements</h2>
+<h2 id="acknowledgements">4. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>Thanks to Tim Song for many conversations about all the trouble this proposal gets itself into, and to Simon Brand for invaluable feedback.</p>
-<h2 id="references">5. References</h2><ul><li><a href="https://cplusplus.github.io/EWG/ewg-active.html#65">[EWG65]</a><span style="margin-left: 5px;">"N3617 Lifting overload sets into function objects" by Philipp Juschka, 2015-05-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3617.htm">[N3617]</a><span style="margin-left: 5px;">"Lifting overload sets into function objects" by Philipp Juschka, 2013-03-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4128.html">[N4128]</a><span style="margin-left: 5px;">"Ranges for the Standard Library, Revision 1" by E. Niebler, S. Parent, A. Sutton, 2014-10-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0119r2.pdf">[P0119R2]</a><span style="margin-left: 5px;">"Overload sets as function arguments" by Andrew Sutton, 2016-05-28</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0356r3.html">[P0356R3]</a><span style="margin-left: 5px;">"Simplified partial function application" by Tomasz Kamiński, 2017-11-09</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0382r0.html">[P0382R0]</a><span style="margin-left: 5px;">"Comments on P0119: Overload sets as function arguments" by Tomasz Kamiński, 2016-05-29</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">[P0551R3]</a><span style="margin-left: 5px;">"Thou Shalt Not Specialize std Function Templates!" by Walter E. Brown, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0573r2.html">[P0573R2]</a><span style="margin-left: 5px;">"Abbreviated Lambdas for Fun and Profit" by Barry Revzin, Tomasz Kamiński, 2017-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798R0]</a><span style="margin-left: 5px;">"Monadic operations for std::optional" by Simon Brand, 2017-10-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0834r0.html">[P0834R0]</a><span style="margin-left: 5px;">"Lifting overload sets into objects" by Michael Dominiak, 2017-10-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r2.pdf">[P0896R2]</a><span style="margin-left: 5px;">"The One Ranges Proposal" by Eric Niebler, Casey Carter, Christopher Di Bella, 2018-06-25</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0921r0.pdf">[P0921R0]</a><span style="margin-left: 5px;">"Standard Library Compatibility Promises" by Titus Winters, 2018-02-01</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2">[abq.p0573]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0573R2 - November 2017</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0">[abq.p0834]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0834R0 - November 2017</span></li><li><a href="https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/">[andrzej.funcs]</a><span style="margin-left: 5px;">"Functions in std | Andrzej's C++ blog" by Andrzej Krzemieński, 2018-07-07</span></li><li><a href="http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html">[boost.hof]</a><span style="margin-left: 5px;">BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation</span></li><li><a href="http://eel.is/c++draft/over.call.object">[over.call.object]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://en.wikipedia.org/wiki/Tacit_programming">[point.free]</a><span style="margin-left: 5px;">Tacit programming - Wikipedia</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798">[rap.p0798]</a><span style="margin-left: 5px;">RAP Wiki Notes, P0798R0 - June 2018</span></li><li><a href="https://youtu.be/2UmDvg5xv1U?t=284">[winters.modern]</a><span style="margin-left: 5px;">"Modern C++ API Design: From Rvalue-References to Type Design" by Titus Winters, CppNow May 2018</span></li></ul>
+<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/EWG/ewg-active.html#65">[EWG65]</a><span style="margin-left: 5px;">"N3617 Lifting overload sets into function objects" by Philipp Juschka, 2015-05-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3617.htm">[N3617]</a><span style="margin-left: 5px;">"Lifting overload sets into function objects" by Philipp Juschka, 2013-03-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4128.html">[N4128]</a><span style="margin-left: 5px;">"Ranges for the Standard Library, Revision 1" by E. Niebler, S. Parent, A. Sutton, 2014-10-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0119r2.pdf">[P0119R2]</a><span style="margin-left: 5px;">"Overload sets as function arguments" by Andrew Sutton, 2016-05-28</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0356r3.html">[P0356R3]</a><span style="margin-left: 5px;">"Simplified partial function application" by Tomasz Kamiński, 2017-11-09</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0382r0.html">[P0382R0]</a><span style="margin-left: 5px;">"Comments on P0119: Overload sets as function arguments" by Tomasz Kamiński, 2016-05-29</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">[P0551R3]</a><span style="margin-left: 5px;">"Thou Shalt Not Specialize std Function Templates!" by Walter E. Brown, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0573r2.html">[P0573R2]</a><span style="margin-left: 5px;">"Abbreviated Lambdas for Fun and Profit" by Barry Revzin, Tomasz Kamiński, 2017-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798R0]</a><span style="margin-left: 5px;">"Monadic operations for std::optional" by Simon Brand, 2017-10-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0834r0.html">[P0834R0]</a><span style="margin-left: 5px;">"Lifting overload sets into objects" by Michael Dominiak, 2017-10-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r2.pdf">[P0896R2]</a><span style="margin-left: 5px;">"The One Ranges Proposal" by Eric Niebler, Casey Carter, Christopher Di Bella, 2018-06-25</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0921r0.pdf">[P0921R0]</a><span style="margin-left: 5px;">"Standard Library Compatibility Promises" by Titus Winters, 2018-02-01</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2">[abq.p0573]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0573R2 - November 2017</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0">[abq.p0834]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0834R0 - November 2017</span></li><li><a href="https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/">[andrzej.funcs]</a><span style="margin-left: 5px;">"Functions in std | Andrzej's C++ blog" by Andrzej Krzemieński, 2018-07-07</span></li><li><a href="http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html">[boost.hof]</a><span style="margin-left: 5px;">BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation</span></li><li><a href="http://eel.is/c++draft/over.call.object">[over.call.object]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://en.wikipedia.org/wiki/Tacit_programming">[point.free]</a><span style="margin-left: 5px;">Tacit programming - Wikipedia</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798">[rap.p0798]</a><span style="margin-left: 5px;">RAP Wiki Notes, P0798R0 - June 2018</span></li><li><a href="https://youtu.be/2UmDvg5xv1U?t=284">[winters.modern]</a><span style="margin-left: 5px;">"Modern C++ API Design: From Rvalue-References to Type Design" by Titus Winters, CppNow May 2018</span></li></ul>
 </html>

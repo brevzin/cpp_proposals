@@ -375,7 +375,24 @@ ins {
 del {
 	color: #A00000
 }
-</style>
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
 <style type="text/css">/* PrismJS 1.15.0
 https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
 /**
@@ -584,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1187R0 <br />
-Date: 2018-09-21 <br />
+Date: 2018-09-25 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -602,7 +619,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation</h2>
+<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>For some types, in order to implement <code class="language-cpp">operator&lt;=&gt;()</code> you have to defer to the implementation of the 
 comparison operators of other types. And more than that, you need to know what the comparison category is for those types you defer to in order to know what comparison category to return. When I went through the exercise of trying to <a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec" title="Implementing the spaceship operator for optional">implement <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">optional&lt;T&gt;</code></a>, the declarations of the three functions ended up looking like this (rewritten here as non-member operator templates just for clarity):</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
@@ -633,7 +650,7 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs, expected&lt;T2,E2&g
 
 <p>We see the same thing over and over and over again. We need to know what comparison category to return, and this comparison category is a property of the types that we're comparing. </p>
 <p>That's a type trait. A type trait that's currently missing from the standard library.</p>
-<h2 id="proposal">2. Proposal</h2>
+<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>This paper proposes the addition of a new type trait based on the preexisting rules in <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">[alg.3way]</a> and respecifying <code class="language-cpp">std::compare_3way()</code> to use that trait in its return type instead of <code class="language-cpp">auto</code>. This mirrors the usage of <code class="language-cpp">std::invoke_result_t</code> as the return type of <code class="language-cpp">std::invoke()</code>, and so should be named either <code class="language-cpp">compare_3way_result</code> or <code class="language-cpp">compare_3way_type</code>.</p>
 <p>The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write <code class="language-cpp">compare_3way_type&lt;T&gt;</code> instead of <code class="language-cpp">compare_3way_type&lt;T,T&gt;</code>.</p>
 <p>The trait would allow for less cumbersome declarations of all of these operator templates:</p>
@@ -698,7 +715,7 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
 </tr>    
 </table>
 
-<h3 id="wording">2.1. Wording</h3>
+<h3 id="wording">2.1. Wording<a class="self-link" href="#wording"></a></h3>
 <p>Add the new trait and its use into the <code class="language-cpp">&lt;algorithm&gt;</code> synopsis in 23.4 [algorithm.sym]:</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
 
@@ -732,12 +749,12 @@ namespace std {
 <p>Change the return type of <code class="language-cpp">compare_3way</code> in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:</p>
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
-<h3 id="interaction-with-p1186">2.2. Interaction with <a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">P1186</a></h3>
+<h3 id="interaction-with-p1186">2.2. Interaction with <a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">P1186</a><a class="self-link" href="#interaction-with-p1186"></a></h3>
 <p>P1186 proposed to obviate <code class="language-cpp">std::compare_3way()</code> in favor of having <code class="language-cpp">&lt;=&gt;</code> itself perform all of this logic. That paper getting adopted does not change the need for having a type trait like this, though it would make the specification much simpler as the library wording could simply defer to the core wording. </p>
 <p>Add a new specification for <code class="language-cpp">compare_3way_type</code> at the beginning of 23.7.11 [alg.3way]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_3way_type</code> template defined in this subclause is undefined.</p>
 <p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> type shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
 </blockquote>
-<h2 id="references">3. References</h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-09-21</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li></ul>
+<h2 id="references">3. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-09-21</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li></ul>
 </html>

@@ -37,7 +37,7 @@ This poll is full adopted in this revision - changing the behavior of explicit o
 
 >  <table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>9</td><td>11</td><td>10</td><td>5</td><td>2</td></table>
 
-This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier), and is discussed at length in an [alternative solution](#alternative-solution). The syntax change is:
+This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier - see [parsing issues](#parsing-issues)), and is discussed at length in an [alternative solution](#alternative-solution). The syntax change is:
 
 <table style="width:100%">
 <tr>
@@ -625,6 +625,61 @@ Just `const&` and `&&`
 
 The first two cases are neatly and exactly handled. For the third case, there is no direct equivalent - but such situations are typically just laziness on the part of the library developer rather than having a meaningful foundation; they are also simple to disable with a requires clause, now that the object type can be captured.
 
+## Parsing issues
+
+With the addition of a new type name after the *parameter-declaration-clause*, we potentially run into a clash with the existing *virt-specifier*s. In other words, this:
+
+    :::cpp
+    struct B {
+        virtual B* override() = 0;
+    };
+    
+    struct override : B {
+        override* override() override override; // #1
+        override* override() override;          // #2
+        override* override();                   // #3
+    };
+
+The same problem would occur with `final`. 
+
+Dealing with `#3` is easy - there is nothing to do. For `#1` and `#2`, the rule we propose is that we try to parse the explicit member type _first_, if possible. That is, for `#2`, this is a member function with an explicit member type `override` (that happens to override `B::override`) but does not actually have a *virt-specifier*. For `#1` then, the first use of `override` is the explicit object type and the second use would be the *virt-specifier* `override`. This changes the meaning of `#2` from what it is today, but in practice we don't think anybody actually writes this seriously so it is unlikely to break real code.
+
+As a result, this would be ill-formed:
+
+    :::cpp
+    struct D : B {
+        D* override() override D; // error
+    };
+
+because `override` cannot be the explicit member type, so it's treated as the *virt-specifier*, and then `D` cannot go in that spot.
+
+But both of these would be okay, with `override const` being the explicit member type:
+
+    :::cpp
+    struct override : B {
+        override* override() override const override; // ok
+        override* override() const override override; // ok
+    };
+    
+In the presented design, the type name is something that can be looked up - it's going to be the class name or a template parameter name or something. So adopting new context-sensitive keywords is also unlikely to cause a problem.
+
+However, the design briefly discussed in Rapperswil would have allowed an arbitrary trailing identifier. That is:
+
+    :::cpp
+    struct X {
+        template <typename Self>
+        auto& foo() Self&& self {
+            return self.i; // <== self.i instead of this->i
+        }
+        int i;
+    };
+    
+    struct override : B {
+        override* override() override override override; // #4
+    };
+    
+We feel that this would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much.
+
 ## Alternative solution
 
 The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the *cv-* and *ref-qualifiers* are trailing rather than leading. 
@@ -668,6 +723,7 @@ Explicit object parameter
        
 
 
+ 
  
         template <typename Self>
         constexpr auto operator->() Self {
