@@ -859,14 +859,18 @@ We could also introduce a new "magic" cast that just gives us a pointer to the t
 This problem extends further than just to `Self`, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains *deduction* (as opposed to removing candidates once they are deduced, as with `requires`, with the following straw-man syntax:
 
     ::cpp
-    struct B;
+    struct B { };
+    struct D : B { };
 
     template <typename T : B>
     void foo(T&& x) {
        static_assert(std::is_same_v<B, std::remove_reference_t<T>>);
     }
+    
+    foo(B{}); // calls foo<B>
+    foo(D{}); // also calls foo<B>
 
-This would create a template function that may only generate functions that take a `B`, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.
+This would create a function template that may only generate functions that take a `B`, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.
 
 If we had that, we could use it to constrain the deduction of `Self`.
     

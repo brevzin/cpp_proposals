@@ -1389,15 +1389,19 @@ void ex(B&amp; b, D const&amp; cd) {
 
 
 <p>This problem extends further than just to <code class="language-cpp">Self</code>, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains <em>deduction</em> (as opposed to removing candidates once they are deduced, as with <code class="language-cpp">requires</code>, with the following straw-man syntax:</p>
-<pre class="codehilite"><code class="language-cpp">struct B;
+<pre class="codehilite"><code class="language-cpp">struct B { };
+struct D : B { };
 
 template &lt;typename T : B&gt;
 void foo(T&amp;&amp; x) {
    static_assert(std::is_same_v&lt;B, std::remove_reference_t&lt;T&gt;&gt;);
-}</code></pre>
+}
+
+foo(B{}); // calls foo&lt;B&gt;
+foo(D{}); // also calls foo&lt;B&gt;</code></pre>
 
 
-<p>This would create a template function that may only generate functions that take a <code class="language-cpp">B</code>, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
+<p>This would create a function template that may only generate functions that take a <code class="language-cpp">B</code>, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
 <p>If we had that, we could use it to constrain the deduction of <code class="language-cpp">Self</code>.</p>
 <h2 id="real-world-examples">4. Real-World Examples<a class="self-link" href="#real-world-examples"></a></h2>
 <h3 id="deduplicating-code">4.1. Deduplicating Code<a class="self-link" href="#deduplicating-code"></a></h3>
