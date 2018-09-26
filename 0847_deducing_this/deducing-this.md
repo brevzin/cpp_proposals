@@ -26,7 +26,7 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
 
 >  <table style="font-size=8px"><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>0</td><td>2</td><td>9</td><td>14</td><td>12</td></table>
 
-This poll is full adopted in this revision - changing the behavior of explicit object parameter functions from modeling member functions to modeling non-member `friend`s.
+This poll is fully adopted in this revision - changing the behavior of explicit object parameter functions from modeling member functions to modeling non-member `friend`s.
 
 > *Encourage putting this-type identifier stuff in usual cv-ref qualifier location?*
 
@@ -378,10 +378,10 @@ Since the explicit member type is deduced from the object the function is called
     B const cb{};
     D d{};
 
-    b.foo();            // #1
-    cb.foo();           // #2
-    d.foo();            // #3
-    std::move(d).foo(); // #4
+    b.get();            // #1
+    cb.get();           // #2
+    d.get();            // #3
+    std::move(d).get(); // #4
 
 The proposed behavior of these calls is:
 
@@ -699,7 +699,7 @@ Without an arbitrary identifier, `a()` and `b()` both treat `super` as the conte
     
 ## Alternative solution
 
-The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the *cv-* and *ref-qualifiers* are trailing rather than leading. 
+The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the *cv-* and *ref-qualifiers* are trailing rather than leading. 
 
 The explicit parameter approach gave us the ability to have recursive lambdas without a new language feature:
 
@@ -711,9 +711,9 @@ The explicit parameter approach gave us the ability to have recursive lambdas wi
     
 While this proposal lets us give a name to the lambda's _type_, it does not let us give a name to the lambda _instance_. So such recursion would still require a new language feature, such as [P0839](https://wg21.link/p0839).
 
-However, it would prevent us from being able to just deduce `const`-ness, as this proposal does. 
+However, [P0839](https://wg21.link/p0839) would prevent us from being able to just deduce `const`-ness, as this proposal does. 
 
-Additionally, a named object parameter is arguably less confusing than having `this` potentially refer to a different type - and makes it less surprising that we cannot directly acces our members without said parameter. Here is a comparison between this proposal and the R0 proposal adjusted for requiring explicit access for the initial `optional` example. They are pretty similar:
+Additionally, a named object parameter is arguably less confusing than having `this` potentially refer to a different type - and makes it less surprising that we cannot directly access our members without said parameter. Here is a comparison between this proposal and the R0 proposal adjusted for requiring explicit access for the initial `optional` example. They are pretty similar:
 
 <table style="width:100%">
 <tr>
@@ -859,9 +859,15 @@ We could also introduce a new "magic" cast that just gives us a pointer to the t
 This problem extends further than just to `Self`, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains *deduction* (as opposed to removing candidates once they are deduced, as with `requires`, with the following straw-man syntax:
 
     ::cpp
-    struct B { };
+    struct B {
+        template <typename Self : B>
+        auto front(this Self&& self) {
+
+        }
+    };
     struct D : B { };
 
+    // also works for free functions
     template <typename T : B>
     void foo(T&& x) {
        static_assert(std::is_same_v<B, std::remove_reference_t<T>>);
@@ -872,8 +878,6 @@ This problem extends further than just to `Self`, though. It is common to only w
 
 This would create a function template that may only generate functions that take a `B`, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.
 
-If we had that, we could use it to constrain the deduction of `Self`.
-    
 # Real-World Examples
 
 ## Deduplicating Code
