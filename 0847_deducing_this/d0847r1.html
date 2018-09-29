@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D0847R1 <br />
-Date: 2018-09-25 <br />
+Date: 2018-09-28 <br />
 Audience: EWG <br />
 Reply-To: Gašper Ažman, gasper dot azman at gmail dot com<br />Simon Brand, simon at codeplay dot com<br />Ben Deane, ben at elbeno dot com<br />Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -646,53 +646,13 @@ Reply-To: Gašper Ažman, gasper dot azman at gmail dot com<br />Simon Brand, si
 
 <h2 id="revision-history">1. Revision History<a class="self-link" href="#revision-history"></a></h2>
 <h3 id="changes-since-r0">1.1. Changes since r0<a class="self-link" href="#changes-since-r0"></a></h3>
-<p><a href="https://wg21.link/p0847r0" title="Deducing this">P0847R0</a> was presented in Rapperswil in June 2018 using an already adjusted syntax from the one used in the paper, using <code class="language-cpp">this Self&amp;&amp; self</code> to indicate the explicit object parameter rather than <code class="language-cpp">Self&amp;&amp; this self</code>. EWG took <a href="" title="RAP Wiki notes, P0847R0 - June 2018">two direction polls</a> there:</p>
-<blockquote>
-<p><em>If an explicitly named (e.g. <code class="language-cpp">self</code>) object parameter, should <code class="language-cpp">this</code> be implicitly or explicitly usable in member function body?</em></p>
-<p><table style="font-size=8px"><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>0</td><td>2</td><td>9</td><td>14</td><td>12</td></table></p>
-</blockquote>
-<p>This poll is full adopted in this revision - changing the behavior of explicit object parameter functions from modeling member functions to modeling non-member <code class="language-cpp">friend</code>s.</p>
-<blockquote>
-<p><em>Encourage putting this-type identifier stuff in usual cv-ref qualifier location?</em></p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename Self&gt;
-void foo(int) Self&amp;&amp; self;</code></pre>
-
-
-<p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>9</td><td>11</td><td>10</td><td>5</td><td>2</td></table></p>
-</blockquote>
-<p>This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier - see <a href="#parsing-issues">parsing issues</a>), and is discussed at length in an <a href="#alternative-solution">alternative solution</a>. The syntax change is:</p>
-<table style="width:100%">
-<tr>
-<th style="width:50%">
-<p>As presented in Rapperswil</p>
-</th>
-<th style="width:50%">
-<p>This proposal</p>
-</th>
-</tr>
-<tr>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
-struct optional {
-  template &lt;typename Self&gt;
-  constexpr like_t&lt;Self&amp;&amp;, T&gt; operator*(this Self&amp;&amp;) {
-    return forward_like&lt;Self&gt;(*this).m_value;
-  }
-};</code></pre>
-</td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
-struct optional {
-  template &lt;typename Self&gt;
-  constexpr like_t&lt;Self&amp;&amp;, T&gt; operator*() Self&amp;&amp; {
-    return forward&lt;Self&gt;(*this).optional::m_value;
-  }
-};</code></pre>
-</td>
-</tr>
-</table>
-
-<p>This new revision also proposes a slight change in template deduction rules specific to the new explicit member type. </p>
+<p><a href="https://wg21.link/p0847r0" title="Deducing this">P0847R0</a> was presented in Rapperswil in June 2018 using an already adjusted syntax from the one used in the paper, using <code class="language-cpp">this Self&amp;&amp; self</code> to indicate the explicit object parameter rather than the <code class="language-cpp">Self&amp;&amp; this self</code> that appeared in r0 of this paper. </p>
+<p>EWG strongly encouraged us to look in two new directions:</p>
+<ul>
+<li>a different syntax, placing the type of the object parameter after the member function parameter declarations (where the <em>cv-ref</em> qualifiers are today)</li>
+<li>a different name lookup scheme, to not have implicit/unqualified access from inside of new-style member functions that have an explicit self-type annotation (regardless of syntax).</li>
+</ul>
+<p>This revision carefully explores both of these directions.</p>
 <h2 id="motivation">2. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="language-cpp">const</code> and non-<code class="language-cpp">const</code> overload of a particular member (Of course it was possible to also want <code class="language-cpp">volatile</code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' <a href="https://www.aristeia.com/books.html" title="Effective C++, Third Edition">"Effective C++"</a>, Item 3:</p>
 <pre class="codehilite"><code class="language-cpp">class TextBlock {
@@ -967,10 +927,10 @@ B b{};
 B const cb{};
 D d{};
 
-b.foo();            // #1
-cb.foo();           // #2
-d.foo();            // #3
-std::move(d).foo(); // #4</code></pre>
+b.get();            // #1
+cb.get();           // #2
+d.get();            // #3
+std::move(d).get(); // #4</code></pre>
 
 
 <p>The proposed behavior of these calls is:</p>
@@ -1242,7 +1202,7 @@ struct override : B {
 
 <p>Without an arbitrary identifier, <code class="language-cpp">a()</code> and <code class="language-cpp">b()</code> both treat <code class="language-cpp">super</code> as the context-sensitive keyword as likely intended, with the only edge case being in the scenario where you have a type named <code class="language-cpp">super</code>. </p>
 <h3 id="alternative-solution">3.10. Alternative solution<a class="self-link" href="#alternative-solution"></a></h3>
-<p>The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the this pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the <em>cv-</em> and <em>ref-qualifiers</em> are trailing rather than leading. </p>
+<p>The initial revision approached the problem of deducing the object parameter with the introduction of an explicit object parameter rather than an explicit member type. The explicit object parameter fits more closely with many programmers' mental model of the <code class="language-cpp">this</code> pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. The explicit member type is more consistent with the member functions we have today where the <em>cv-</em> and <em>ref-qualifiers</em> are trailing rather than leading. </p>
 <p>The explicit parameter approach gave us the ability to have recursive lambdas without a new language feature:</p>
 <pre class="codehilite"><code class="language-cpp">auto fib = [](this auto const&amp; self, int n) {
     if (n &lt; 2) return n;
@@ -1251,8 +1211,8 @@ struct override : B {
 
 
 <p>While this proposal lets us give a name to the lambda's <em>type</em>, it does not let us give a name to the lambda <em>instance</em>. So such recursion would still require a new language feature, such as <a href="https://wg21.link/p0839" title="Recursive Lambdas">P0839</a>.</p>
-<p>However, it would prevent us from being able to just deduce <code class="language-cpp">const</code>-ness, as this proposal does. </p>
-<p>Additionally, a named object parameter is arguably less confusing than having <code class="language-cpp">this</code> potentially refer to a different type - and makes it less surprising that we cannot directly acces our members without said parameter. Here is a comparison between this proposal and the R0 proposal adjusted for requiring explicit access for the initial <code class="language-cpp">optional</code> example. They are pretty similar:</p>
+<p>However, <a href="https://wg21.link/p0839" title="Recursive Lambdas">P0839</a> would prevent us from being able to just deduce <code class="language-cpp">const</code>-ness, as this proposal does. </p>
+<p>Additionally, a named object parameter is arguably less confusing than having <code class="language-cpp">this</code> potentially refer to a different type - and makes it less surprising that we cannot directly access our members without said parameter. Here is a comparison between this proposal and the R0 proposal adjusted for requiring explicit access for the initial <code class="language-cpp">optional</code> example. They are pretty similar:</p>
 <table style="width:100%">
 <tr>
 <th style="width:50%">
@@ -1389,9 +1349,15 @@ void ex(B&amp; b, D const&amp; cd) {
 
 
 <p>This problem extends further than just to <code class="language-cpp">Self</code>, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. Any "make it easy to get the base class pointer"-style feature suffers extra instantiations when we only really want the instantiations for the base class. A complementary feature could be proposed that constrains <em>deduction</em> (as opposed to removing candidates once they are deduced, as with <code class="language-cpp">requires</code>, with the following straw-man syntax:</p>
-<pre class="codehilite"><code class="language-cpp">struct B { };
+<pre class="codehilite"><code class="language-cpp">struct B {
+    template &lt;typename Self : B&gt;
+    auto front(this Self&amp;&amp; self) {
+
+    }
+};
 struct D : B { };
 
+// also works for free functions
 template &lt;typename T : B&gt;
 void foo(T&amp;&amp; x) {
    static_assert(std::is_same_v&lt;B, std::remove_reference_t&lt;T&gt;&gt;);
@@ -1402,7 +1368,6 @@ foo(D{}); // also calls foo&lt;B&gt;</code></pre>
 
 
 <p>This would create a function template that may only generate functions that take a <code class="language-cpp">B</code>, ensuring that, when they participate in overload resolution, we don't generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
-<p>If we had that, we could use it to constrain the deduction of <code class="language-cpp">Self</code>.</p>
 <h2 id="real-world-examples">4. Real-World Examples<a class="self-link" href="#real-world-examples"></a></h2>
 <h3 id="deduplicating-code">4.1. Deduplicating Code<a class="self-link" href="#deduplicating-code"></a></h3>
 <p>This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.</p>

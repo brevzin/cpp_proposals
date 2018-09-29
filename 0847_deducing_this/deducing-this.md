@@ -20,59 +20,14 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
 
 ## Changes since r0
 
-[P0847R0](https://wg21.link/p0847r0) was presented in Rapperswil in June 2018 using an already adjusted syntax from the one used in the paper, using `this Self&& self` to indicate the explicit object parameter rather than `Self&& this self`. EWG took [two direction polls][rap.p0847r0] there:
+[P0847R0](https://wg21.link/p0847r0) was presented in Rapperswil in June 2018 using an already adjusted syntax from the one used in the paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of this paper. 
 
-> *If an explicitly named (e.g. `self`) object parameter, should `this` be implicitly or explicitly usable in member function body?*
+EWG strongly encouraged us to look in two new directions:
 
->  <table style="font-size=8px"><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>0</td><td>2</td><td>9</td><td>14</td><td>12</td></table>
+- a different syntax, placing the type of the object parameter after the member function parameter declarations (where the *cv-ref* qualifiers are today)
+- a different name lookup scheme, to not have implicit/unqualified access from inside of new-style member functions that have an explicit self-type annotation (regardless of syntax).
 
-This poll is fully adopted in this revision - changing the behavior of explicit object parameter functions from modeling member functions to modeling non-member `friend`s.
-
-> *Encourage putting this-type identifier stuff in usual cv-ref qualifier location?*
-
->
-    :::cpp
-    template <typename Self>
-    void foo(int) Self&& self;
-
->  <table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>9</td><td>11</td><td>10</td><td>5</td><td>2</td></table>
-
-This revision as presented adopts a slight variant of the direction suggested by this poll (without an identifier - see [parsing issues](#parsing-issues)), and is discussed at length in an [alternative solution](#alternative-solution). The syntax change is:
-
-<table style="width:100%">
-<tr>
-<th style="width:50%">
-As presented in Rapperswil
-</th>
-<th style="width:50%">
-This proposal
-</th>
-</tr>
-<tr>
-<td>
-    :::cpp
-    template <typename T>
-    struct optional {
-      template <typename Self>
-      constexpr like_t<Self&&, T> operator*(this Self&&) {
-        return forward_like<Self>(*this).m_value;
-      }
-    };
-</td>
-<td>
-    :::cpp
-    template <typename T>
-    struct optional {
-      template <typename Self>
-      constexpr like_t<Self&&, T> operator*() Self&& {
-        return forward<Self>(*this).optional::m_value;
-      }
-    };
-</td>
-</tr>
-</table>
-
-This new revision also proposes a slight change in template deduction rules specific to the new explicit member type. 
+This revision carefully explores both of these directions.
 
 # Motivation
 
