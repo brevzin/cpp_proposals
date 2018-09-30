@@ -1230,7 +1230,21 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="12e8b0fe4124c61d54577c0e5abbad0fb63cff6b" name="document-revision">
+  <meta content="4a614726b00b3a6b23d596a26faed33b955dda75" name="document-revision">
+<style>
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+</style>
 <style>/* style-md-lists */
 
 /* This is a weird hack for me not yet following the commonmark spec
@@ -1501,7 +1515,8 @@ pre .property::before, pre .property::after {
         <li><a href="#interplays-with-capturing-this"><span class="secno">3.2.9</span> <span class="content">Interplays with capturing <code class="highlight"><c- p>[</c-><c- k>this</c-><c- p>]</c-></code> and <code class="highlight"><c- p>[</c-><c- o>*</c-><c- k>this</c-><c- p>]</c-></code> in lambdas</span></a>
         <li><a href="#parsing-issues"><span class="secno">3.2.10</span> <span class="content">Parsing issues</span></a>
        </ol>
-      <li><a href="#potential-extensions"><span class="secno">3.3</span> <span class="content">Potential Extensions</span></a>
+      <li><a href="#comparison"><span class="secno">3.3</span> <span class="content">Comparison of the options</span></a>
+      <li><a href="#potential-extensions"><span class="secno">3.4</span> <span class="content">Potential Extensions</span></a>
      </ol>
     <li>
      <a href="#real-world-examples"><span class="secno">4</span> <span class="content">Real-World Examples</span></a>
@@ -2213,7 +2228,110 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    <p>Either the <code class="highlight"><c- n>quux</c-></code> or <code class="highlight"><c- n>quuz</c-></code> examples don’t work, by making the implicit versions ill-formed. Or we end up with this <code class="highlight"><c- n>cosnt</c-></code> typo problem. Neither seem great.</p>
-   <h3 class="heading settled" data-level="3.3" id="potential-extensions"><span class="secno">3.3. </span><span class="content">Potential Extensions</span><a class="self-link" href="#potential-extensions"></a></h3>
+   <h3 class="heading settled" data-level="3.3" id="comparison"><span class="secno">3.3. </span><span class="content">Comparison of the options</span><a class="self-link" href="#comparison"></a></h3>
+   <p>We provide here a table of how the three main syntaxes (explicit object parameter, explicit member type with optional identifier, explicit member type without identifer) compare against a wide variety of metrics.</p>
+   <table>
+    <tbody>
+     <tr>
+      <th>
+      <th>Explicit Object Parameter
+      <th>Explicit Member Type<br>with optional identifier
+      <th>Explicit Member Type<br>without identifier
+     <tr>
+      <th>Familiarity
+      <td>This syntax isn’t very "C++-ic" in the sense that we’d have two different places where <em>cv</em>- and <em>ref</em>-qualifiers appear. But it would be familiar to those coming from other languages.
+      <td colspan="2">This syntax would keep the <em>cv</em>- and <em>ref</em>-qualifiers where they already are, so is a natural extension in that sense.
+     <tr>
+      <th>Safety with derived objects<sup>†</sup>
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible
+      <td>Difficult and verbose since <code class="highlight"><c- k>this</c-></code> refers to derived object
+     <tr>
+      <th>Parsing issues
+      <td>None
+      <td>Definite problems, have to choose a parsing strategy. Could limit further extensions with context-sensitive keywords.
+      <td>Some problems
+     <tr>
+      <th>Code bloat<sup>‡</sup>
+      <td>Cannot simply deduce <code class="highlight"><c- k>const</c-></code>/non-<code class="highlight"><c- k>const</c-></code>, so would nearly always have to resort to <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>.
+      <td>Not an issue.
+      <td>Not an issue.
+     <tr>
+      <th colspan="4">Use-cases that could be addressed
+     <tr>
+      <th><a href="#deduplicating-code">Deduplication</a>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+     <tr>
+      <th><a href="#crtp">Better CRTP</a>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+     <tr>
+      <th><a href="#sfinae-friendly-callables">Perfect, SFINAE-friendly callables</a>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+     <tr>
+      <th><a href="#recursive-lambdas">Recursive lambdas</a>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="del">
+        <center>No</center>
+       </div>
+     <tr>
+      <th><a href="#by-value-member-functions">By-value member functions</a>
+      <td>
+       <div class="ins">
+        <center>Yes</center>
+       </div>
+      <td>
+       <div class="del">
+        <center>No</center>
+       </div>
+      <td>
+       <div class="del">
+        <center>No</center>
+       </div>
+   </table>
+   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">potential extension</a>.</p>
+   <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?</p>
+   <h3 class="heading settled" data-level="3.4" id="potential-extensions"><span class="secno">3.4. </span><span class="content">Potential Extensions</span><a class="self-link" href="#potential-extensions"></a></h3>
    <p>One of the pitfalls mentioned in having a deduced object parameter or a deduced member type is when all you want to do is deduce the <em>cv</em>-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it’s not intended!</p>
    <p>We could propose some kind of "make it easy to get the base class pointer"-style syntax, but even if we had such a thing, the feature would suffer from extra instantiations. For <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code>, we really only want four instantiations: <code class="highlight"><c- o>&amp;</c-></code>, <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- o>&amp;&amp;</c-></code>, and <code class="highlight"><c- k>const</c-><c- o>&amp;&amp;</c-></code>. If some inherits from <code class="highlight"><c- n>optional</c-></code>, we don’t want additional extra instantiations of those functions - which won’t do anything new anyway. This is code bloat - and error prone.</p>
    <p>This problem extends further than just to <code class="highlight"><c- n>Self</c-></code>, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. A complementary feature could be proposed that constrains <em>deduction</em> (as opposed to removing candidates once they are deduced, as with <code class="highlight"><c- n>requires</c-></code>, with the following straw-man syntax:</p>

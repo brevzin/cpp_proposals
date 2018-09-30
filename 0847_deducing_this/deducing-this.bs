@@ -33,6 +33,21 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
 }
 </pre>
 
+<style>
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+</style>
+
 # Revision History # {#revision-history}
 
 ## Changes since r0 ## {#changes-since-r0}
@@ -917,6 +932,78 @@ struct C {
 
 Either the `quux` or `quuz` examples don't work, by making the implicit versions ill-formed. Or we end up with this `cosnt` typo problem. Neither seem great. 
 
+## Comparison of the options ## {#comparison}
+
+We provide here a table of how the three main syntaxes (explicit object parameter, explicit member type with optional identifier, explicit member type without identifer) compare against a wide variety of metrics.
+
+<table>
+<tr>
+<th />
+<th>Explicit Object Parameter</th>
+<th>Explicit Member Type<br />with optional identifier</th>
+<th>Explicit Member Type<br />without identifier</th>
+</tr>
+<tr>
+<th>Familiarity</th>
+<td>This syntax isn't very "C++-ic" in the sense that we'd have two different places where *cv*- and *ref*-qualifiers appear. But it would be familiar to those coming from other languages.</td>
+<td colspan="2">This syntax would keep the *cv*- and *ref*-qualifiers where they already are, so is a natural extension in that sense.</td>
+</tr>
+<tr>
+<th>Safety with derived objects<sup>&dagger;</sup></th>
+<td>Easy, if `this` is accessible</td>
+<td>Easy, if `this` is accessible</td>
+<td>Difficult and verbose since `this` refers to derived object</td>
+</tr>
+<tr>
+<th>Parsing issues</th>
+<td>None</td>
+<td>Definite problems, have to choose a parsing strategy. Could limit further extensions with context-sensitive keywords.</td>
+<td>Some problems</td>
+</tr>
+<tr>
+<th>Code bloat<sup>&Dagger;</sup></th>
+<td>Cannot simply deduce `const`/non-`const`, so would nearly always have to resort to `Self&&`.</td>
+<td>Not an issue.</td>
+<td>Not an issue.</td>
+</tr>
+<tr>
+<th colspan="4">Use-cases that could be addressed</th>
+</tr>
+<tr>
+<th>[Deduplication](#deduplicating-code)</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+</tr>
+<tr>
+<th>[Better CRTP](#crtp)</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+</tr>
+<tr>
+<th>[Perfect, SFINAE-friendly callables](#sfinae-friendly-callables)</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+</tr>
+<tr>
+<th>[Recursive lambdas](#recursive-lambdas)</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="del"><center>No</center></div></td>
+</tr>
+<tr>
+<th>[By-value member functions](#by-value-member-functions)</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="del"><center>No</center></div></td>
+<td><div class="del"><center>No</center></div></td>
+</tr>
+</table>
+
+<sup>&dagger;</sup>Basically: how easy is it to write member functions that want to deduce *cv-qualifiers* and value category without inadvertently referencing the derived object. This table assumes we do not adopt the [potential extension](#potential-extensions).
+
+<sup>&Dagger;</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?
 
 ## Potential Extensions ## {#potential-extensions}
 
