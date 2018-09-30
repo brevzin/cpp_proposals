@@ -1,5 +1,5 @@
 <pre class='metadata'>
-Title: Deducing `this`
+Title: Deducing this
 Status: D
 ED: http://wg21.link/P0847
 Shortname: D0847
@@ -23,6 +23,12 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
         "title": "Effective C++, Third Edition",
         "href": "https://www.aristeia.com/books.html",
         "date": "2005"
+    },
+    "P1169R0": {
+        "authors": ["Barry Revzin", "Casey Carter"],
+        "title": "static operator()",
+        "href": "https://wg21.link/p1169r0",
+        "date": "2018"
     }
 }
 </pre>
@@ -392,7 +398,7 @@ struct optional {
 </tr>
 </table>
 
-Note that the two syntaxes with explicit member type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about [by value `this`](#by-value-this).
+Note that the two syntaxes with explicit member type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
 
 ## Proposed semantics ## {#proposed-semantics}
 
@@ -863,7 +869,7 @@ We feel that allowing for an arbitrary identifier would be grabbing too much rea
 ```cpp
 struct Y {
     // intending to use the new context-sensitive keyword but
-    // really is providing a name to the object parameter
+    // really is providing a name to the object parameter?
     void a() super;
     
     // same
@@ -877,7 +883,41 @@ struct Y {
 ```
 
 Without an arbitrary identifier, `a()` and `b()` both treat `super` as the context-sensitive keyword as likely intended, with the only edge case being in the scenario where you have a type named `super`. 
+
+Now consider the following:
+
+```cpp
+struct Z {
+    void foo() cosnt;
+};
+```
+
+The user made a typo and wrote `cosnt` instead of `const`. Today, not a problem, this is ill-formed and the compiler will helpfully point out your problem.
+
+But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly `Z` and that explicit object is named `cosnt`. Notably, this member function is *not* const!
+
+We could have to have parsing rules like: try to parse the type. If we find a type, then try to parse an identifier. And only then, consider things like the *virt-specifier*s. That's... complicated. It also doesn't quite mesh with a mental model a user might form about what this syntax means: that we have an implicitly provided member type which is the class type:
+
+```c++
+struct C {
+    void foo();   // implicit
+    void foo() C; // explicit
     
+    void bar() const&;   // implicit
+    void bar() C const&; // explicit
+    
+    // so it seems like it should follow that...
+    void quux() self;          // implicit
+    void quux() C self;        // explicit
+    
+    void quuz() const& self;   // implicit
+    void quuz() C const& self; // explicit
+};
+```
+
+Either the `quux` or `quuz` examples don't work, by making the implicit versions ill-formed. Or we end up with this `cosnt` typo problem. Neither seem great. 
+
+
 ## Potential Extensions ## {#potential-extensions}
 
 One of the pitfalls mentioned in having a deduced object parameter or a deduced member type is when all you want to do is deduce the *cv*-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it's not intended! 
@@ -910,7 +950,14 @@ This would create a function template that may only generate functions that take
 
 # Real-World Examples # {#real-world-examples}
 
-## Deduplicating Code ## {#deduplicationg-code}
+What follows are several examples of the different kinds of problems that can be solved with this proposal. We provide examples using two different syntaxes, where possible:
+
+- the explicit object parameter syntax, with `this` accessible but implicit lookup disallowed
+- the explicit object type syntax, with no identifier allowed
+
+We are not using the straw-man [extension](#potential-extensions) syntax to constrain deduction - instead we just carefully ensure correctness, where relevant.
+
+## Deduplicating Code ## {#deduplicating-code}
 
 This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.
 
@@ -918,12 +965,9 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">
-C++17
-</th>
-<th style="width:50%">
-This proposal
-</th>
+<th style="width:33%">C++17</th>
+<th style="width:33%">Explicit object parameter</th>
+<th style="width:33%">Explicit member type</th>
 </tr>
 <tr>
 <td>
@@ -950,9 +994,22 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](std::size_t position) Self {
+  auto& operator[](this Self&&, std::size_t position) {
     // ...
     return this->text[position];
+  }
+  // ...
+};
+```
+</td>
+<td>
+```cpp
+class TextBlock {
+public:
+  template <typename Self>
+  auto& operator[](std::size_t position) Self {
+    // ...
+    return this->TextBlock::text[position];
   }
   // ...
 };
@@ -983,8 +1040,21 @@ template <typename T>
 class optional {
   // ...
   template <typename Self>
-  constexpr auto operator->() Self {
+  constexpr auto operator->(this Self&&) {
     return std::addressof(this->m_value);
+  }
+  // ...
+};
+```
+</td>
+<td>
+```cpp
+template <typename T>
+class optional {
+  // ...
+  template <typename Self>
+  constexpr auto operator->() Self {
+    return std::addressof(this->optional::m_value);
   }
   // ...
 };
@@ -1051,14 +1121,35 @@ template <typename T>
 class optional {
   // ...
   template <typename Self>
-  constexpr like_t<Self, T>&& operator*() Self&& {
+  constexpr like_t<Self, T>&& operator*(this Self&&) {
     return forward_like<Self>(*this).m_value;
   }
 
   template <typename Self>
-  constexpr like_t<Self, T>&& value() Self&& {
+  constexpr like_t<Self, T>&& value(this Self&&) {
     if (this->has_value()) {
-      return forward_like<Self>(*this).m_value;
+      return forward_like<Self>(*this).m_value);
+    }
+    throw bad_optional_access();
+  }
+  // ...
+};
+```
+</td>
+<td>
+```cpp
+template <typename T>
+class optional {
+  // ...
+  template <typename Self>
+  constexpr like_t<Self, T>&& operator*() Self&& {
+    return forward<Self>(*this).optional::m_value;
+  }
+
+  template <typename Self>
+  constexpr like_t<Self, T>&& value() Self&& {
+    if (this->optional::has_value()) {
+      return forward<Self>(*this).optional::m_value;
     }
     throw bad_optional_access();
   }
@@ -1136,24 +1227,49 @@ template <typename T>
 class optional {
   // ...
   template <typename Self, typename F>
-  constexpr auto and_then(F&& f) Self&& {
+  constexpr auto and_then(this Self&&, F&& f) {
     using val = decltype((
-        forward<Self>(*this).m_value));
+        forward_like<Self>(*this).m_value));
     using result = invoke_result_t<F, val>;
 
     static_assert(
       is_optional<result>::value,
       "F must return an optional");
 
-    return has_value()
+    return this->has_value()
         ? invoke(forward<F>(f),
-                 forward<Self>(self).m_value)
+                 forward_like<Self>(*this).m_value)
         : nullopt;
   }
   // ...
 };
 ```
 </td>
+<td>
+```cpp
+template <typename T>
+class optional {
+  // ...
+  template <typename Self, typename F>
+  constexpr auto and_then(F&& f) Self&& {
+    using val = decltype((
+        forward<Self>(*this).optional::m_value));
+    using result = invoke_result_t<F, val>;
+
+    static_assert(
+      is_optional<result>::value,
+      "F must return an optional");
+
+    return this->optional::has_value()
+        ? invoke(forward<F>(f),
+                 forward<Self>(self).optional::m_value)
+        : nullopt;
+  }
+  // ...
+};
+```
+</td>
+</tr>
 </table>
 
 Keep in mind that there are a few more functions in P0798 that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.
@@ -1162,17 +1278,14 @@ For those that dislike returning auto in these cases, it is very easy to write a
 
 ## CRTP, without the C, R, or even T ## {#crtp}
 
-Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit object parameters that deduce to the derived objects already, we don't need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn't even need to be a template:
+Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit objects that deduce to the derived objects already, we don't need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn't even need to be a template:
 
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">
-C++17
-</th>
-<th style="width:50%">
-Proposed
-</th>
+<th style="width:33%">C++17</th>
+<th style="width:33%">Explicit object parameter</th>
+<th style="width:33%">Explicit member type</th>
 </tr>
 <tr>
 <td>
@@ -1189,6 +1302,24 @@ struct add_postfix_increment {
 };
 
 struct some_type : add_postfix_increment<some_type> {
+    some_type& operator++() { ... }
+};
+```
+</td>
+<td>
+```cpp
+struct add_postfix_increment {
+    template <typename Self>
+    auto operator++(this Self&& self, int) {
+        auto tmp = self;
+        ++self;
+        return tmp;
+    }
+};
+
+
+
+struct some_type : add_postfix_increment {
     some_type& operator++() { ... }
 };
 ```
@@ -1214,7 +1345,7 @@ struct some_type : add_postfix_increment {
 </tr>
 </table>
 
-The example at right isn't much shorter, but it is certainly simpler.
+The proposed examples aren't much shorter, but they are certainly simpler.
 
 ### Builder pattern ### {#builder-pattern}
 
@@ -1236,12 +1367,9 @@ But now, we want to create a specialized builder that has new operations `d()` a
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">
-C++ today
-</th>
-<th>
-Proposed
-</th>
+<th style="width:33%">C++17</th>
+<th style="width:33%">Explicit object parameter</th>
+<th style="width:33%">Explicit member type</th>
 </tr>
 <tr>
 <td>
@@ -1272,13 +1400,35 @@ Special().a().d().e().a();
 ```cpp
 struct Builder {
     template <typename Self>
-    Self& a() Self&& { /* ... */; return self; }
+    Self& a(this Self&& self) { /* ... */; return self; }
     
     template <typename Self>
-    Self& b() Self&& { /* ... */; return self; }        
+    Self& b(this Self&& self) { /* ... */; return self; }
     
     template <typename Self>
-    Self& c() Self&& { /* ... */; return self; }        
+    Self& c(this Self&& self) { /* ... */; return self; }
+};
+
+struct Special : Builder {
+    Special& d() { /* ... */; return *this; }
+    Special& e() { /* ... */; return *this; }
+};
+
+Builder().a().b().a().b().c();
+Special().a().d().e().a();
+```
+</td>
+<td>
+```cpp
+struct Builder {
+    template <typename Self>
+    Self& a() Self { /* ... */; return self; }
+    
+    template <typename Self>
+    Self& b() Self { /* ... */; return self; }        
+    
+    template <typename Self>
+    Self& c() Self { /* ... */; return self; }        
 };
 
 struct Special : Builder {
@@ -1297,16 +1447,13 @@ The code on the right is dramatically easier to understand and more accessible t
 
 But what, there's more.
 
-What if we add a _super_-specialized builder, that is a more special form of `Special`? Now we need `Special` to itself opt-in to CRTP so it knows which type to pass to `Builder` so that everything in the hierarchy can return the correct type. It's roughly at this point that people just give up and start gently weeping. But with this proposal, no problem!
+What if we add a *super*-specialized builder, that is a more special form of `Special`? Now we need `Special` to itself opt-in to CRTP so it knows which type to pass to `Builder` so that everything in the hierarchy can return the correct type. It's roughly at this point that people just give up and start gently weeping. But with this proposal, no problem!
     
 <table style="width:100%">
 <tr>
-<th style="width:50%">
-C++ today
-</th>
-<th>
-Proposed
-</th>
+<th style="width:33%">C++17</th>
+<th style="width:33%">Explicit object parameter</th>
+<th style="width:33%">Explicit member type</th>
 </tr>
 <tr>
 <td>
@@ -1348,25 +1495,57 @@ Super().a().d().f().e();
 ```cpp
 struct Builder {
     template <typename Self>
-    Self& a() Self&& { /* ... */; return self; }
+    Self& a(this Self&& self) { /* ... */; return self; }
     
     template <typename Self>
-    Self& b() Self&& { /* ... */; return self; }        
+    Self& b(this Self&& self) { /* ... */; return self; }        
     
     template <typename Self>
-    Self& c() Self&& { /* ... */; return self; }        
+    Self& c(this Self&& self) { /* ... */; return self; }        
 };
 
 struct Special : Builder {
     template <typename Self>
-    Self& d() Self&& { /* ... */; return self; }
+    Self& d(this Self&& self) { /* ... */; return self; }
     
     template <typename Self>
-    Self& e() Self&& { /* ... */; return self; }
+    Self& e(this Self&& self) { /* ... */; return self; }
 };
 
 struct Super : Special {
-    Super& f() Self&& { /* ... */; return *this; }
+    template <typename Self>
+    Self& f(this Self&& self) { /* ... */; return *this; }
+};
+
+Builder().a().b().a().b().c();
+Special().a().d().e().a();
+Super().a().d().f().e();
+```
+</td>
+<td>
+```cpp
+struct Builder {
+    template <typename Self>
+    Self& a() Self { /* ... */; return self; }
+    
+    template <typename Self>
+    Self& b() Self { /* ... */; return self; }        
+    
+    template <typename Self>
+    Self& c() Self { /* ... */; return self; }        
+};
+
+struct Special : Builder {
+    template <typename Self>
+    Self& d() Self { /* ... */; return self; }
+    
+    template <typename Self>
+    Self& e() Self { /* ... */; return self; }
+};
+
+struct Super : Special {
+    template <typename Self>
+    Self& f() Self { /* ... */; return *this; }
 };
 
 Builder().a().b().a().b().c();
@@ -1379,87 +1558,27 @@ Super().a().d().f().e();
 
 That is just so much easier on the right. There are simply so many situations where this idiom, if available, would give programmers an easier, accessible solution to problems that they just cannot easily solve today.
 
-### A new syntax for opt-in ### {#new-syntax-opt-in}
-
-Today, with [[P0515R3]], the way that you opt-in to a defaulted comparison is via:
-
-```cpp
-struct A {
-    int i;
-    char c;
-    double d;
-    
-    auto operator<=>(A const&) const = default;
-};
-```
-    
-This isn't that much to type, and it's a massive improvement over the C++17 implementation of equivalent functionality. But in larger classes, it's easy to lose these kinds of important declarations in the noise. We could use this new non-CRTP version of CRTP to provide a novel annotation for types, which would lead to even less typing for this kind of opt-in while also ensuring that the annotation that is provided is much more visible. 
-
-<table style="width:100%">
-<tr>
-<th style="width:50%">
-C++ today
-</th>
-<th>
-Proposed
-</th>
-</tr>
-<tr>
-<td>
-```cpp
-struct A {
-    int i;
-    char c;
-    double d;
-    
-    auto operator<=>(A const&) const = default;
-};
-```
-</td>
-<td>
-```cpp
-struct Ord {
-    template <typename Self>
-    auto operator<=>(Self const& rhs) Self const& = default;
-};
-
-struct A
-    : Ord // <== first thing we write
-{
-    int i;
-    char c;
-    double d;
-    
-    // no other declarations
-};
-```
-</td>
-</tr>
-</table>
+Note that the `Super` implementations with this proposal just went ahead and opted in to further derivation, since it's just a no-brainer at this point.
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
-This proposal allows you to store values in a lambda and then either move or copy them out, depending on the lambda is invoked. We could already do this today for class types:
+The explicit object parameter syntax also allows for an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we open up the possibility of allowing a lambda to reference itself. In order to do this, we need a way to *name* the lambda. The explicit member type syntax that does not allow for an identifier *does not* help us solve this problem. 
 
 ```cpp
-template <typename T>
-struct Holder {
-    T value;
-    
-    T&        operator()() &       { return value; }
-    T const&  operator()() const&  { return value; }
-    T&&       operator()() &&      { return move(value); }
-    T const&& operator()() const&& { return move(value); }
+// as proposed in P0839
+auto fib = [] self (int n) {
+    if (n < 2) return n;
+    return self(n-1) + self(n-2);
 };
-```
-    
-But now you can do this with a lambda too:
 
-```cpp
-auto holder = [value=...]<typename Self>() Self&& {
-    return static_cast<decltype((value))>(value);
+// this proposal
+auto fib = [](this auto const& self, int n) {
+    if (n < 2) return n;
+    return self(n-1) + self(n-2);
 };
 ```
+
+This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so `self` in this example is the closure object.
 
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
@@ -1526,8 +1645,35 @@ std::not_fn(fun{})();         // ok!? Returns false
 
 Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.
 
-This proposal solves both problems by simply allowing `this` to be deduced. The following is a complete implementation of `std::not_fn`:
+This proposal solves both problems by simply allowing `this` to be deduced. The following is a complete implementation of `std::not_fn`. For simplicity, it makes use of `BOOST_HOF_RETURNS` from [Boost.HOF](https://www.boost.org/doc/libs/1_68_0/libs/hof/doc/html/include/boost/hof/returns.html) to avoid having to duplicate expressions:
 
+<table style="width:100%">
+<tr>
+<th style="width:50%">Explicit object parameter</th>
+<th style="width:50%">Explicit member type</th>
+</tr>
+<tr>
+<td>
+```cpp
+template <typename F>
+struct call_wrapper {
+    F f;
+
+    template <typename Self, typename... Args>
+    auto operator()(this Self&&, Args&&... args)
+        BOOST_HOF_RETURNS(
+            !invoke(
+                forward_like<Self>(this->f),
+                forward<Args>(args)...))
+};
+
+template <typename F>
+auto not_fn(F&& f) {
+    return call_wrapper<decay_t<F>>{forward<F>(f)};
+}
+```
+</td>
+<td>
 ```cpp
 template <typename F>
 struct call_wrapper {
@@ -1535,17 +1681,24 @@ struct call_wrapper {
 
     template <typename Self, typename... Args>
     auto operator()(Args&&... args) Self&&
-        -> decltype(!invoke(forward_like<Self>(this->f), forward<Args>(args)...))
-    {
-        return !invoke(forward_like<Self>(this->f), forward<Args>(args)...);
-    }
+        BOOST_HOF_RETURNS(
+            !invoke(
+                forward_like<Self>(this->call_wrapper::f),
+                forward<Args>(args)...))
 };
 
 template <typename F>
 auto not_fn(F&& f) {
     return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
+```
+</td>
+</tr>
+</table>
 
+With either syntax:
+
+```c++
 not_fn(unfriendly{})(1); // ok
 not_fn(fun{})();         // error
 ```
@@ -1561,17 +1714,107 @@ Note that this could also be implemented as a lambda completely within the body 
 ```cpp
 template <typename F>
 auto not_fn(F&& f) {
-    return [f=forward<F>(f)]<typename Self, typename... Args>(auto&&.. args) Self&&
-        -> decltype(!invoke(forward_like<Self>(f), forward<Args>(args)...))
-    {
-        return !invoke(forward_like<Self>(f), forward<Args>(args)...);
-    };
+    return [f=forward<F>(f)](this auto&& self, auto&&.. args)
+        BOOST_HOF_RETURNS(
+            !invoke(
+                forward_like<decltype(self)>(f),
+                forward<decltype(args)>(args)...))
+        ;
 }
 ```
 
 ## By-value member functions ## {#by-value-member-functions}
 
-TBD.
+It's been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is `std::string_view`. [Abseil Tip #1](https://abseil.io/tips/1) for instance, states:
+
+> Unlike other string types, you should pass `string_view` by value just like you would an int or a double because `string_view` is a small value.
+
+However, today there is one place where you simply *cannot* pass types like `string_view` by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection! 
+
+Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
+
+```c++
+template <class charT, class traits = char_traits<charT>>
+class basic_string_view {
+private:
+    const_pointer data_;
+    size_type size_;
+public:
+    constexpr const_iterator begin(this basic_string_view self) {
+        return self.data_;
+    }
+    
+    constexpr const_iterator end(this basic_string_view self) {
+        return self.data_ + self.size_;
+    }
+    
+    constexpr size_t size(this basic_string_view self) {
+        return self.size_;
+    }
+    
+    constexpr const_reference operator[](this basic_string_view self, size_type pos) {
+        return self.data_[pos];
+    }
+};
+```
+
+Most of the member functions can be rewritten this way for a free performance boost.
+
+The same can be said for types that aren't just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of `less_than`:
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">C++17</th>
+<th style="width:50%">Explicit Object Parameter</th>
+</tr>
+<tr>
+<td>
+```c++
+struct less_than {
+    template <typename T, typename U>
+    bool operator()(T const& lhs, U const& rhs) {
+        return lhs < rhs;
+    }
+};
+```
+</td>
+<td>
+```c++
+struct less_than {
+    template <typename T, typename U>
+    bool operator()(this less_than,
+            T const& lhs, U const& rhs) {
+        return lhs < rhs;
+    }
+};
+```
+</td>
+</tr>
+</table>
+
+Today, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object. That's more work that's completely unnecessary. Copying it is free - the compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
+
+# Suggested Polls # {#suggested-polls}
+
+We would like to suggest the following polls on this proposal:
+
+1. Do we want a solution in this direction of this paper? That is, do we want a syntax that allows for deducing the qualifiers and value category of the object parameter for non-static member functions?
+
+2. [Three-way] We want that solution to be 
+    - explicit object parameter 
+    - explicit member type with optional identifier 
+    - explicit member type with no identifier?
+
+3. [Only if 2a/b is preferred, three-way] If there is an explicit object parameter or explicit member type, then: 
+    - `this` should be inaccessible and every access must be qualified 
+    - `this` is accessible but every access must be qualified 
+    - `this` is accessible and implicit lookup is permitted.
+
+4. [Only if 2c is preferred] If there is an explicit member type, should implicit lookup be allowed?
+
+# Wording # {#wording}
+
+TBD
 
 # Acknowledgements # {#acknowledgements}
 

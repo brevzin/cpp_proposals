@@ -2,7 +2,7 @@
  <head>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <title>D0847R1: Deducing `this`</title>
+  <title>D0847R1: Deducing this</title>
 <style data-fill-with="stylesheet">/******************************************************************************
  *                   Style sheet for the W3C specifications                   *
  *
@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="2eedd7160d86a4264b64f8e0fdcfb8ffad9b7e28" name="document-revision">
+  <meta content="12e8b0fe4124c61d54577c0e5abbad0fb63cff6b" name="document-revision">
 <style>/* style-md-lists */
 
 /* This is a weird hack for me not yet following the commonmark spec
@@ -1439,7 +1439,7 @@ pre .property::before, pre .property::after {
  <body class="h-entry">
   <div class="head">
    <p data-fill-with="logo"></p>
-   <h1 class="p-name no-ref" id="title">D0847R1<br>Deducing `this`</h1>
+   <h1 class="p-name no-ref" id="title">D0847R1<br>Deducing this</h1>
    <h2 class="no-num no-toc no-ref heading settled" id="subtitle"><span class="content">Draft Proposal, <time class="dt-updated" datetime="2018-09-30">2018-09-30</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
@@ -1506,18 +1506,19 @@ pre .property::before, pre .property::after {
     <li>
      <a href="#real-world-examples"><span class="secno">4</span> <span class="content">Real-World Examples</span></a>
      <ol class="toc">
-      <li><a href="#deduplicationg-code"><span class="secno">4.1</span> <span class="content">Deduplicating Code</span></a>
+      <li><a href="#deduplicating-code"><span class="secno">4.1</span> <span class="content">Deduplicating Code</span></a>
       <li>
        <a href="#crtp"><span class="secno">4.2</span> <span class="content">CRTP, without the C, R, or even T</span></a>
        <ol class="toc">
         <li><a href="#builder-pattern"><span class="secno">4.2.1</span> <span class="content">Builder pattern</span></a>
-        <li><a href="#new-syntax-opt-in"><span class="secno">4.2.2</span> <span class="content">A new syntax for opt-in</span></a>
        </ol>
       <li><a href="#recursive-lambdas"><span class="secno">4.3</span> <span class="content">Recursive Lambdas</span></a>
       <li><a href="#sfinae-friendly-callables"><span class="secno">4.4</span> <span class="content">SFINAE-friendly callables</span></a>
       <li><a href="#by-value-member-functions"><span class="secno">4.5</span> <span class="content">By-value member functions</span></a>
      </ol>
-    <li><a href="#acknowledgements"><span class="secno">5</span> <span class="content">Acknowledgements</span></a>
+    <li><a href="#suggested-polls"><span class="secno">5</span> <span class="content">Suggested Polls</span></a>
+    <li><a href="#wording"><span class="secno">6</span> <span class="content">Wording</span></a>
+    <li><a href="#acknowledgements"><span class="secno">7</span> <span class="content">Acknowledgements</span></a>
     <li>
      <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
      <ol class="toc">
@@ -1827,7 +1828,7 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    </table>
-   <p>Note that the two syntaxes with explicit member type declare the <code class="highlight"><c- n>self</c-></code> parameter to just have type <code class="highlight"><c- n>Self</c-></code> while the explicit object parameter syntax still uses <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>. This will be explained further in the section about [by value <code class="highlight"><c- k>this</c-></code>](#by-value-this).</p>
+   <p>Note that the two syntaxes with explicit member type declare the <code class="highlight"><c- n>self</c-></code> parameter to just have type <code class="highlight"><c- n>Self</c-></code> while the explicit object parameter syntax still uses <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>. This will be explained further in the section about taking <code class="highlight"><c- k>this</c-></code> <a href="#by-value-this">by value</a>.</p>
    <h3 class="heading settled" data-level="3.2" id="proposed-semantics"><span class="secno">3.2. </span><span class="content">Proposed semantics</span><a class="self-link" href="#proposed-semantics"></a></h3>
    <p>What follows is a description of how deducing <code class="highlight"><c- k>this</c-></code> affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth.</p>
    <p>This is a strict extension to the language; nearly all existing syntax remains valid. See <a href="#parsing-issues">parsing issues</a> for the pathological case that may change meaning.</p>
@@ -2175,7 +2176,7 @@ pre .property::before, pre .property::after {
    <p>We feel that allowing for an arbitrary identifier would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much and make it more difficult to use. Let’s say we then added a new context-sensitive keyword, like <code class="highlight"><c- n>super</c-></code>. A user might try to write:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Y</c-> <c- p>{</c->
     <c- c1>// intending to use the new context-sensitive keyword but</c->
-    <c- c1>// really is providing a name to the object parameter</c->
+    <c- c1>// really is providing a name to the object parameter?</c->
     <c- b>void</c-> <c- n>a</c-><c- p>()</c-> <c- n>super</c-><c- p>;</c->
     
     <c- c1>// same</c->
@@ -2188,6 +2189,30 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    <p>Without an arbitrary identifier, <code class="highlight"><c- n>a</c-><c- p>()</c-></code> and <code class="highlight"><c- n>b</c-><c- p>()</c-></code> both treat <code class="highlight"><c- n>super</c-></code> as the context-sensitive keyword as likely intended, with the only edge case being in the scenario where you have a type named <code class="highlight"><c- n>super</c-></code>.</p>
+   <p>Now consider the following:</p>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Z</c-> <c- p>{</c->
+    <c- b>void</c-> <c- n>foo</c-><c- p>()</c-> <c- n>cosnt</c-><c- p>;</c->
+<c- p>};</c->
+</pre>
+   <p>The user made a typo and wrote <code class="highlight"><c- n>cosnt</c-></code> instead of <code class="highlight"><c- k>const</c-></code>. Today, not a problem, this is ill-formed and the compiler will helpfully point out your problem.</p>
+   <p>But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly <code class="highlight"><c- n>Z</c-></code> and that explicit object is named <code class="highlight"><c- n>cosnt</c-></code>. Notably, this member function is <em>not</em> const!</p>
+   <p>We could have to have parsing rules like: try to parse the type. If we find a type, then try to parse an identifier. And only then, consider things like the <em>virt-specifier</em>s. That’s... complicated. It also doesn’t quite mesh with a mental model a user might form about what this syntax means: that we have an implicitly provided member type which is the class type:</p>
+<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>C</c-> <c- p>{</c->
+    <c- b>void</c-> <c- n>foo</c-><c- p>();</c->   <c- c1>// implicit</c->
+    <c- b>void</c-> <c- nf>foo</c-><c- p>()</c-> <c- n>C</c-><c- p>;</c-> <c- c1>// explicit</c->
+    
+    <c- b>void</c-> <c- nf>bar</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>;</c->   <c- c1>// implicit</c->
+    <c- b>void</c-> <c- nf>bar</c-><c- p>()</c-> <c- n>C</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>;</c-> <c- c1>// explicit</c->
+    
+    <c- c1>// so it seems like it should follow that...</c->
+    <c- b>void</c-> <c- nf>quux</c-><c- p>()</c-> <c- n>self</c-><c- p>;</c->          <c- c1>// implicit</c->
+    <c- b>void</c-> <c- nf>quux</c-><c- p>()</c-> <c- n>C</c-> <c- n>self</c-><c- p>;</c->        <c- c1>// explicit</c->
+    
+    <c- b>void</c-> <c- nf>quuz</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>self</c-><c- p>;</c->   <c- c1>// implicit</c->
+    <c- b>void</c-> <c- nf>quuz</c-><c- p>()</c-> <c- n>C</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>self</c-><c- p>;</c-> <c- c1>// explicit</c->
+<c- p>};</c->
+</pre>
+   <p>Either the <code class="highlight"><c- n>quux</c-></code> or <code class="highlight"><c- n>quuz</c-></code> examples don’t work, by making the implicit versions ill-formed. Or we end up with this <code class="highlight"><c- n>cosnt</c-></code> typo problem. Neither seem great.</p>
    <h3 class="heading settled" data-level="3.3" id="potential-extensions"><span class="secno">3.3. </span><span class="content">Potential Extensions</span><a class="self-link" href="#potential-extensions"></a></h3>
    <p>One of the pitfalls mentioned in having a deduced object parameter or a deduced member type is when all you want to do is deduce the <em>cv</em>-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it’s not intended!</p>
    <p>We could propose some kind of "make it easy to get the base class pointer"-style syntax, but even if we had such a thing, the feature would suffer from extra instantiations. For <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code>, we really only want four instantiations: <code class="highlight"><c- o>&amp;</c-></code>, <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- o>&amp;&amp;</c-></code>, and <code class="highlight"><c- k>const</c-><c- o>&amp;&amp;</c-></code>. If some inherits from <code class="highlight"><c- n>optional</c-></code>, we don’t want additional extra instantiations of those functions - which won’t do anything new anyway. This is code bloat - and error prone.</p>
@@ -2212,14 +2237,23 @@ pre .property::before, pre .property::after {
 </pre>
    <p>This would create a function template that may only generate functions that take a <code class="highlight"><c- n>B</c-></code>, ensuring that, when they participate in overload resolution, we don’t generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
    <h2 class="heading settled" data-level="4" id="real-world-examples"><span class="secno">4. </span><span class="content">Real-World Examples</span><a class="self-link" href="#real-world-examples"></a></h2>
-   <h3 class="heading settled" data-level="4.1" id="deduplicationg-code"><span class="secno">4.1. </span><span class="content">Deduplicating Code</span><a class="self-link" href="#deduplicationg-code"></a></h3>
+   <p>What follows are several examples of the different kinds of problems that can be solved with this proposal. We provide examples using two different syntaxes, where possible:</p>
+   <ul>
+    <li data-md>
+     <p>the explicit object parameter syntax, with <code class="highlight"><c- k>this</c-></code> accessible but implicit lookup disallowed</p>
+    <li data-md>
+     <p>the explicit object type syntax, with no identifier allowed</p>
+   </ul>
+   <p>We are not using the straw-man <a href="#potential-extensions">extension</a> syntax to constrain deduction - instead we just carefully ensure correctness, where relevant.</p>
+   <h3 class="heading settled" data-level="4.1" id="deduplicating-code"><span class="secno">4.1. </span><span class="content">Deduplicating Code</span><a class="self-link" href="#deduplicating-code"></a></h3>
    <p>This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.</p>
    <p>The particular implementation of optional is Simon’s, and can be viewed on <a href="https://github.com/TartanLlama/optional">GitHub</a>, and this example includes some functions that are proposed in <a data-link-type="biblio" href="#biblio-p0798r0">[P0798R0]</a>, with minor changes to better suit this format:</p>
    <table style="width:100%">
     <tbody>
      <tr>
-      <th style="width:50%"> C++17 
-      <th style="width:50%"> This proposal 
+      <th style="width:33%">C++17
+      <th style="width:33%">Explicit object parameter
+      <th style="width:33%">Explicit member type
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>class</c-> <c- nc>TextBlock</c-> <c- p>{</c->
@@ -2242,9 +2276,20 @@ pre .property::before, pre .property::after {
 <pre class="language-cpp highlight"><c- k>class</c-> <c- nc>TextBlock</c-> <c- p>{</c->
 <c- k>public</c-><c- o>:</c->
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-  <c- k>auto</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- n>Self</c-> <c- p>{</c->
+  <c- k>auto</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>,</c-> <c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- p>{</c->
     <c- c1>// ...</c->
     <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>text</c-><c- p>[</c-><c- n>position</c-><c- p>];</c->
+  <c- p>}</c->
+  <c- c1>// ...</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>class</c-> <c- nc>TextBlock</c-> <c- p>{</c->
+<c- k>public</c-><c- o>:</c->
+  <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+  <c- k>auto</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- n>Self</c-> <c- p>{</c->
+    <c- c1>// ...</c->
+    <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>TextBlock</c-><c- o>::</c-><c- n>text</c-><c- p>[</c-><c- n>position</c-><c- p>];</c->
   <c- p>}</c->
   <c- c1>// ...</c->
 <c- p>};</c->
@@ -2270,8 +2315,19 @@ pre .property::before, pre .property::after {
 <c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
   <c- c1>// ...</c->
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-  <c- k>constexpr</c-> <c- k>auto</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- k>auto</c-> <c- k>operator</c-><c- o>-></c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>addressof</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
+  <c- p>}</c->
+  <c- c1>// ...</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>T</c-><c- o>></c->
+<c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
+  <c- c1>// ...</c->
+  <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+  <c- k>constexpr</c-> <c- k>auto</c-> <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c->
+    <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>addressof</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>);</c->
   <c- p>}</c->
   <c- c1>// ...</c->
 <c- p>};</c->
@@ -2333,14 +2389,33 @@ pre .property::before, pre .property::after {
 <c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
   <c- c1>// ...</c->
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
 
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- n>value</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>)</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
-      <c- k>return</c-> <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
+      <c- k>return</c-> <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>);</c->
+    <c- p>}</c->
+    <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
+  <c- p>}</c->
+  <c- c1>// ...</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>T</c-><c- o>></c->
+<c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
+  <c- c1>// ...</c->
+  <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>;</c->
+  <c- p>}</c->
+
+  <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+  <c- k>constexpr</c-> <c- n>like_t</c-><c- o>&lt;</c-><c- n>Self</c-><c- p>,</c-> <c- n>T</c-><c- o>>&amp;&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+    <c- k>if</c-> <c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>optional</c-><c- o>::</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
+      <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>;</c->
     <c- p>}</c->
     <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
   <c- p>}</c->
@@ -2413,18 +2488,40 @@ pre .property::before, pre .property::after {
 <c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
   <c- c1>// ...</c->
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- p>,</c-> <c- k>typename</c-> <c- n>F</c-><c- o>></c->
-  <c- k>constexpr</c-> <c- k>auto</c-> <c- n>and_then</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- k>auto</c-> <c- n>and_then</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>,</c-> <c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- p>{</c->
     <c- k>using</c-> <c- n>val</c-> <c- o>=</c-> <c- k>decltype</c-><c- p>((</c->
-        <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>));</c->
+        <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>));</c->
     <c- k>using</c-> <c- n>result</c-> <c- o>=</c-> <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- n>val</c-><c- o>></c-><c- p>;</c->
 
     <c- k>static_assert</c-><c- p>(</c->
       <c- n>is_optional</c-><c- o>&lt;</c-><c- n>result</c-><c- o>>::</c-><c- n>value</c-><c- p>,</c->
       <c- s>"F must return an optional"</c-><c- p>);</c->
 
-    <c- k>return</c-> <c- nf>has_value</c-><c- p>()</c->
+    <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>has_value</c-><c- p>()</c->
         <c- o>?</c-> <c- n>invoke</c-><c- p>(</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c->
-                 <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>self</c-><c- p>).</c-><c- n>m_value</c-><c- p>)</c->
+                 <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>)</c->
+        <c- o>:</c-> <c- n>nullopt</c-><c- p>;</c->
+  <c- p>}</c->
+  <c- c1>// ...</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>T</c-><c- o>></c->
+<c- k>class</c-> <c- nc>optional</c-> <c- p>{</c->
+  <c- c1>// ...</c->
+  <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- p>,</c-> <c- k>typename</c-> <c- n>F</c-><c- o>></c->
+  <c- k>constexpr</c-> <c- k>auto</c-> <c- n>and_then</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+    <c- k>using</c-> <c- n>val</c-> <c- o>=</c-> <c- k>decltype</c-><c- p>((</c->
+        <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>));</c->
+    <c- k>using</c-> <c- n>result</c-> <c- o>=</c-> <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- n>val</c-><c- o>></c-><c- p>;</c->
+
+    <c- k>static_assert</c-><c- p>(</c->
+      <c- n>is_optional</c-><c- o>&lt;</c-><c- n>result</c-><c- o>>::</c-><c- n>value</c-><c- p>,</c->
+      <c- s>"F must return an optional"</c-><c- p>);</c->
+
+    <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>optional</c-><c- o>::</c-><c- n>has_value</c-><c- p>()</c->
+        <c- o>?</c-> <c- n>invoke</c-><c- p>(</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c->
+                 <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>self</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>)</c->
         <c- o>:</c-> <c- n>nullopt</c-><c- p>;</c->
   <c- p>}</c->
   <c- c1>// ...</c->
@@ -2434,12 +2531,13 @@ pre .property::before, pre .property::after {
    <p>Keep in mind that there are a few more functions in P0798 that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.</p>
    <p>For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.</p>
    <h3 class="heading settled" data-level="4.2" id="crtp"><span class="secno">4.2. </span><span class="content">CRTP, without the C, R, or even T</span><a class="self-link" href="#crtp"></a></h3>
-   <p>Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit object parameters that deduce to the derived objects already, we don’t need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn’t even need to be a template:</p>
+   <p>Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit objects that deduce to the derived objects already, we don’t need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn’t even need to be a template:</p>
    <table style="width:100%">
     <tbody>
      <tr>
-      <th style="width:50%"> C++17 
-      <th style="width:50%"> Proposed 
+      <th style="width:33%">C++17
+      <th style="width:33%">Explicit object parameter
+      <th style="width:33%">Explicit member type
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Derived</c-><c- o>></c->
@@ -2460,6 +2558,22 @@ pre .property::before, pre .property::after {
       <td>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>add_postfix_increment</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- k>auto</c-> <c- k>operator</c-><c- o>++</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>,</c-> <c- b>int</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>auto</c-> <c- n>tmp</c-> <c- o>=</c-> <c- n>self</c-><c- p>;</c->
+        <c- o>++</c-><c- n>self</c-><c- p>;</c->
+        <c- k>return</c-> <c- n>tmp</c-><c- p>;</c->
+    <c- p>}</c->
+<c- p>};</c->
+
+
+
+<c- k>struct</c-> <c- nl>some_type</c-> <c- p>:</c-> <c- n>add_postfix_increment</c-> <c- p>{</c->
+    <c- n>some_type</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>++</c-><c- p>()</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>add_postfix_increment</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
     <c- n>Self</c-> <c- k>operator</c-><c- o>++</c-><c- p>(</c-><c- b>int</c-><c- p>)</c-> <c- n>Self</c-> <c- p>{</c->
         <c- n>Self</c-> <c- n>tmp</c-><c- p>(</c-><c- n>self</c-><c- p>);</c->
         <c- o>++</c-><c- n>self</c-><c- p>;</c->
@@ -2474,7 +2588,7 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    </table>
-   <p>The example at right isn’t much shorter, but it is certainly simpler.</p>
+   <p>The proposed examples aren’t much shorter, but they are certainly simpler.</p>
    <h4 class="heading settled" data-level="4.2.1" id="builder-pattern"><span class="secno">4.2.1. </span><span class="content">Builder pattern</span><a class="self-link" href="#builder-pattern"></a></h4>
    <p>However, once we start to do any more with CRTP, it can get increasingly complex very fast... whereas with this proposal, it stays remarkably simple.</p>
    <p>Let’s say we have a builder that does a lot of things. We might start with:</p>
@@ -2490,8 +2604,9 @@ pre .property::before, pre .property::after {
    <table style="width:100%">
     <tbody>
      <tr>
-      <th style="width:50%"> C++ today 
-      <th> Proposed 
+      <th style="width:33%">C++17
+      <th style="width:33%">Explicit object parameter
+      <th style="width:33%">Explicit member type
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>D</c-><c- o>=</c-><c- b>void</c-><c- o>></c->
@@ -2518,13 +2633,33 @@ pre .property::before, pre .property::after {
       <td>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Builder</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+<c- p>};</c->
+
+<c- k>struct</c-> <c- nl>Special</c-> <c- p>:</c-> <c- n>Builder</c-> <c- p>{</c->
+    <c- n>Special</c-><c- o>&amp;</c-> <c- n>d</c-><c- p>()</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c-> <c- p>}</c->
+    <c- n>Special</c-><c- o>&amp;</c-> <c- n>e</c-><c- p>()</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c-> <c- p>}</c->
+<c- p>};</c->
+
+<c- n>Builder</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>c</c-><c- p>();</c->
+<c- n>Special</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>d</c-><c- p>().</c-><c- n>e</c-><c- p>().</c-><c- n>a</c-><c- p>();</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Builder</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
 <c- p>};</c->
 
 <c- k>struct</c-> <c- nl>Special</c-> <c- p>:</c-> <c- n>Builder</c-> <c- p>{</c->
@@ -2538,12 +2673,13 @@ pre .property::before, pre .property::after {
    </table>
    <p>The code on the right is dramatically easier to understand and more accessible to more programmers than the code on the left.</p>
    <p>But what, there’s more.</p>
-   <p>What if we add a _super_-specialized builder, that is a more special form of <code class="highlight"><c- n>Special</c-></code>? Now we need <code class="highlight"><c- n>Special</c-></code> to itself opt-in to CRTP so it knows which type to pass to <code class="highlight"><c- n>Builder</c-></code> so that everything in the hierarchy can return the correct type. It’s roughly at this point that people just give up and start gently weeping. But with this proposal, no problem!</p>
+   <p>What if we add a <em>super</em>-specialized builder, that is a more special form of <code class="highlight"><c- n>Special</c-></code>? Now we need <code class="highlight"><c- n>Special</c-></code> to itself opt-in to CRTP so it knows which type to pass to <code class="highlight"><c- n>Builder</c-></code> so that everything in the hierarchy can return the correct type. It’s roughly at this point that people just give up and start gently weeping. But with this proposal, no problem!</p>
    <table style="width:100%">
     <tbody>
      <tr>
-      <th style="width:50%"> C++ today 
-      <th> Proposed 
+      <th style="width:33%">C++17
+      <th style="width:33%">Explicit object parameter
+      <th style="width:33%">Explicit member type
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>D</c-><c- o>=</c-><c- b>void</c-><c- o>></c->
@@ -2581,25 +2717,55 @@ pre .property::before, pre .property::after {
       <td>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Builder</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
 <c- p>};</c->
 
 <c- k>struct</c-> <c- nl>Special</c-> <c- p>:</c-> <c- n>Builder</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>d</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>d</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- n>Self</c-><c- o>&amp;</c-> <c- n>e</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>e</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
 <c- p>};</c->
 
 <c- k>struct</c-> <c- nl>Super</c-> <c- p>:</c-> <c- n>Special</c-> <c- p>{</c->
-    <c- n>Super</c-><c- o>&amp;</c-> <c- n>f</c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c-> <c- p>}</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>f</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c-> <c- p>}</c->
+<c- p>};</c->
+
+<c- n>Builder</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>c</c-><c- p>();</c->
+<c- n>Special</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>d</c-><c- p>().</c-><c- n>e</c-><c- p>().</c-><c- n>a</c-><c- p>();</c->
+<c- n>Super</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>d</c-><c- p>().</c-><c- n>f</c-><c- p>().</c-><c- n>e</c-><c- p>();</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Builder</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>b</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+    
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>c</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->        
+<c- p>};</c->
+
+<c- k>struct</c-> <c- nl>Special</c-> <c- p>:</c-> <c- n>Builder</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>d</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+    
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>e</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- n>self</c-><c- p>;</c-> <c- p>}</c->
+<c- p>};</c->
+
+<c- k>struct</c-> <c- nl>Super</c-> <c- p>:</c-> <c- n>Special</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
+    <c- n>Self</c-><c- o>&amp;</c-> <c- n>f</c-><c- p>()</c-> <c- n>Self</c-> <c- p>{</c-> <c- d>/* ... */</c-><c- p>;</c-> <c- k>return</c-> <c- o>*</c-><c- k>this</c-><c- p>;</c-> <c- p>}</c->
 <c- p>};</c->
 
 <c- n>Builder</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>a</c-><c- p>().</c-><c- n>b</c-><c- p>().</c-><c- n>c</c-><c- p>();</c->
@@ -2608,66 +2774,22 @@ pre .property::before, pre .property::after {
 </pre>
    </table>
    <p>That is just so much easier on the right. There are simply so many situations where this idiom, if available, would give programmers an easier, accessible solution to problems that they just cannot easily solve today.</p>
-   <h4 class="heading settled" data-level="4.2.2" id="new-syntax-opt-in"><span class="secno">4.2.2. </span><span class="content">A new syntax for opt-in</span><a class="self-link" href="#new-syntax-opt-in"></a></h4>
-   <p>Today, with <a data-link-type="biblio" href="#biblio-p0515r3">[P0515R3]</a>, the way that you opt-in to a defaulted comparison is via:</p>
-<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>A</c-> <c- p>{</c->
-    <c- b>int</c-> <c- n>i</c-><c- p>;</c->
-    <c- b>char</c-> <c- n>c</c-><c- p>;</c->
-    <c- b>double</c-> <c- n>d</c-><c- p>;</c->
-    
-    <c- k>auto</c-> <c- k>operator</c-><c- o>&lt;=></c-><c- p>(</c-><c- n>A</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>)</c-> <c- k>const</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
-<c- p>};</c->
-</pre>
-   <p>This isn’t that much to type, and it’s a massive improvement over the C++17 implementation of equivalent functionality. But in larger classes, it’s easy to lose these kinds of important declarations in the noise. We could use this new non-CRTP version of CRTP to provide a novel annotation for types, which would lead to even less typing for this kind of opt-in while also ensuring that the annotation that is provided is much more visible.</p>
-   <table style="width:100%">
-    <tbody>
-     <tr>
-      <th style="width:50%"> C++ today 
-      <th> Proposed 
-     <tr>
-      <td>
-<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>A</c-> <c- p>{</c->
-    <c- b>int</c-> <c- n>i</c-><c- p>;</c->
-    <c- b>char</c-> <c- n>c</c-><c- p>;</c->
-    <c- b>double</c-> <c- n>d</c-><c- p>;</c->
-    
-    <c- k>auto</c-> <c- k>operator</c-><c- o>&lt;=></c-><c- p>(</c-><c- n>A</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>)</c-> <c- k>const</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
-<c- p>};</c->
-</pre>
-      <td>
-<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Ord</c-> <c- p>{</c->
-    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
-    <c- k>auto</c-> <c- k>operator</c-><c- o>&lt;=></c-><c- p>(</c-><c- n>Self</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- n>Self</c-> <c- k>const</c-><c- o>&amp;</c-> <c- o>=</c-> <c- k>default</c-><c- p>;</c->
+   <p>Note that the <code class="highlight"><c- n>Super</c-></code> implementations with this proposal just went ahead and opted in to further derivation, since it’s just a no-brainer at this point.</p>
+   <h3 class="heading settled" data-level="4.3" id="recursive-lambdas"><span class="secno">4.3. </span><span class="content">Recursive Lambdas</span><a class="self-link" href="#recursive-lambdas"></a></h3>
+   <p>The explicit object parameter syntax also allows for an alternative solution to implementing a recursive lambda as compared to <a data-link-type="biblio" href="#biblio-p0839r0">[P0839R0]</a>, since now we open up the possibility of allowing a lambda to reference itself. In order to do this, we need a way to <em>name</em> the lambda. The explicit member type syntax that does not allow for an identifier <em>does not</em> help us solve this problem.</p>
+<pre class="language-cpp highlight"><c- c1>// as proposed in P0839</c->
+<c- k>auto</c-> <c- n>fib</c-> <c- o>=</c-> <c- p>[]</c-> <c- n>self</c-> <c- p>(</c-><c- b>int</c-> <c- n>n</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>if</c-> <c- p>(</c-><c- n>n</c-> <c- o>&lt;</c-> <c- mi>2</c-><c- p>)</c-> <c- k>return</c-> <c- n>n</c-><c- p>;</c->
+    <c- k>return</c-> <c- nf>self</c-><c- p>(</c-><c- n>n</c-><c- o>-</c-><c- mi>1</c-><c- p>)</c-> <c- o>+</c-> <c- n>self</c-><c- p>(</c-><c- n>n</c-><c- o>-</c-><c- mi>2</c-><c- p>);</c->
 <c- p>};</c->
 
-<c- k>struct</c-> <c- nl>A</c->
-    <c- p>:</c-> <c- n>Ord</c-> <c- c1>// &lt;== first thing we write</c->
-<c- p>{</c->
-    <c- b>int</c-> <c- n>i</c-><c- p>;</c->
-    <c- b>char</c-> <c- n>c</c-><c- p>;</c->
-    <c- b>double</c-> <c- n>d</c-><c- p>;</c->
-    
-    <c- c1>// no other declarations</c->
+<c- c1>// this proposal</c->
+<c- k>auto</c-> <c- n>fib</c-> <c- o>=</c-> <c- p>[](</c-><c- k>this</c-> <c- k>auto</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>self</c-><c- p>,</c-> <c- b>int</c-> <c- n>n</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>if</c-> <c- p>(</c-><c- n>n</c-> <c- o>&lt;</c-> <c- mi>2</c-><c- p>)</c-> <c- k>return</c-> <c- n>n</c-><c- p>;</c->
+    <c- k>return</c-> <c- nf>self</c-><c- p>(</c-><c- n>n</c-><c- o>-</c-><c- mi>1</c-><c- p>)</c-> <c- o>+</c-> <c- n>self</c-><c- p>(</c-><c- n>n</c-><c- o>-</c-><c- mi>2</c-><c- p>);</c->
 <c- p>};</c->
 </pre>
-   </table>
-   <h3 class="heading settled" data-level="4.3" id="recursive-lambdas"><span class="secno">4.3. </span><span class="content">Recursive Lambdas</span><a class="self-link" href="#recursive-lambdas"></a></h3>
-   <p>This proposal allows you to store values in a lambda and then either move or copy them out, depending on the lambda is invoked. We could already do this today for class types:</p>
-<pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>T</c-><c- o>></c->
-<c- k>struct</c-> <c- n>Holder</c-> <c- p>{</c->
-    <c- n>T</c-> <c- n>value</c-><c- p>;</c->
-    
-    <c- n>T</c-><c- o>&amp;</c->        <c- k>operator</c-><c- p>()()</c-> <c- o>&amp;</c->       <c- p>{</c-> <c- k>return</c-> <c- n>value</c-><c- p>;</c-> <c- p>}</c->
-    <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c->  <c- k>operator</c-><c- p>()()</c-> <c- k>const</c-><c- o>&amp;</c->  <c- p>{</c-> <c- k>return</c-> <c- n>value</c-><c- p>;</c-> <c- p>}</c->
-    <c- n>T</c-><c- o>&amp;&amp;</c->       <c- k>operator</c-><c- p>()()</c-> <c- o>&amp;&amp;</c->      <c- p>{</c-> <c- k>return</c-> <c- n>move</c-><c- p>(</c-><c- n>value</c-><c- p>);</c-> <c- p>}</c->
-    <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- k>operator</c-><c- p>()()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c-> <c- k>return</c-> <c- n>move</c-><c- p>(</c-><c- n>value</c-><c- p>);</c-> <c- p>}</c->
-<c- p>};</c->
-</pre>
-   <p>But now you can do this with a lambda too:</p>
-<pre class="language-cpp highlight"><c- k>auto</c-> <c- n>holder</c-> <c- o>=</c-> <c- p>[</c-><c- n>value</c-><c- o>=</c-><c- p>...]</c-><c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
-    <c- k>return</c-> <c- k>static_cast</c-><c- o>&lt;</c-><c- k>decltype</c-><c- p>((</c-><c- n>value</c-><c- p>))</c-><c- o>></c-><c- p>(</c-><c- n>value</c-><c- p>);</c->
-<c- p>};</c->
-</pre>
+   <p>This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so <code class="highlight"><c- n>self</c-></code> in this example is the closure object.</p>
    <h3 class="heading settled" data-level="4.4" id="sfinae-friendly-callables"><span class="secno">4.4. </span><span class="content">SFINAE-friendly callables</span><a class="self-link" href="#sfinae-friendly-callables"></a></h3>
    <p>A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in <a data-link-type="biblio" href="#biblio-p0826r0">[P0826R0]</a>. Consider what happens if we implement <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>not_fn</c-><c- p>()</c-></code>, as currently specified:</p>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
@@ -2725,25 +2847,52 @@ pre .property::before, pre .property::after {
                               <c- c1>// candidate.</c->
 </pre>
    <p>Gracefully handling SFINAE-unfriendly callables is <strong>not solvable</strong> in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four <em>cv</em>/ref-qualifiers leads to a pair of overloads: one enabled and one <code class="highlight"><c- n>deleted</c-></code>.</p>
-   <p>This proposal solves both problems by simply allowing <code class="highlight"><c- k>this</c-></code> to be deduced. The following is a complete implementation of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>not_fn</c-></code>:</p>
+   <p>This proposal solves both problems by simply allowing <code class="highlight"><c- k>this</c-></code> to be deduced. The following is a complete implementation of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>not_fn</c-></code>. For simplicity, it makes use of <code class="highlight"><c- n>BOOST_HOF_RETURNS</c-></code> from <a href="https://www.boost.org/doc/libs/1_68_0/libs/hof/doc/html/include/boost/hof/returns.html">Boost.HOF</a> to avoid having to duplicate expressions:</p>
+   <table style="width:100%">
+    <tbody>
+     <tr>
+      <th style="width:50%">Explicit object parameter
+      <th style="width:50%">Explicit member type
+     <tr>
+      <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
 <c- k>struct</c-> <c- n>call_wrapper</c-> <c- p>{</c->
     <c- n>F</c-> <c- n>f</c-><c- p>;</c->
 
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- p>,</c-> <c- k>typename</c-><c- p>...</c-> <c- n>Args</c-><c- o>></c->
-    <c- k>auto</c-> <c- k>operator</c-><c- p>()(</c-><c- n>Args</c-><c- o>&amp;&amp;</c-><c- p>...</c-> <c- n>args</c-><c- p>)</c-> <c- n>Self</c-><c- o>&amp;&amp;</c->
-        <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- o>!</c-><c- n>invoke</c-><c- p>(</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>f</c-><c- p>),</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...))</c->
-    <c- p>{</c->
-        <c- k>return</c-> <c- o>!</c-><c- n>invoke</c-><c- p>(</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>f</c-><c- p>),</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...);</c->
-    <c- p>}</c->
+    <c- k>auto</c-> <c- k>operator</c-><c- p>()(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-><c- p>,</c-> <c- n>Args</c-><c- o>&amp;&amp;</c-><c- p>...</c-> <c- n>args</c-><c- p>)</c->
+        <c- n>BOOST_HOF_RETURNS</c-><c- p>(</c->
+            <c- o>!</c-><c- n>invoke</c-><c- p>(</c->
+                <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>f</c-><c- p>),</c->
+                <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...))</c->
 <c- p>};</c->
 
 <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
 <c- k>auto</c-> <c- n>not_fn</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>call_wrapper</c-><c- o>&lt;</c-><c- n>decay_t</c-><c- o>&lt;</c-><c- n>F</c-><c- o>>></c-><c- p>{</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>)};</c->
 <c- p>}</c->
+</pre>
+      <td>
+<pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
+<c- k>struct</c-> <c- n>call_wrapper</c-> <c- p>{</c->
+    <c- n>F</c-> <c- n>f</c-><c- p>;</c->
 
-<c- n>not_fn</c-><c- p>(</c-><c- n>unfriendly</c-><c- p>{})(</c-><c- mi>1</c-><c- p>);</c-> <c- c1>// ok</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- p>,</c-> <c- k>typename</c-><c- p>...</c-> <c- n>Args</c-><c- o>></c->
+    <c- k>auto</c-> <c- k>operator</c-><c- p>()(</c-><c- n>Args</c-><c- o>&amp;&amp;</c-><c- p>...</c-> <c- n>args</c-><c- p>)</c-> <c- n>Self</c-><c- o>&amp;&amp;</c->
+        <c- n>BOOST_HOF_RETURNS</c-><c- p>(</c->
+            <c- o>!</c-><c- n>invoke</c-><c- p>(</c->
+                <c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>call_wrapper</c-><c- o>::</c-><c- n>f</c-><c- p>),</c->
+                <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...))</c->
+<c- p>};</c->
+
+<c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
+<c- k>auto</c-> <c- n>not_fn</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>return</c-> <c- n>call_wrapper</c-><c- o>&lt;</c-><c- n>decay_t</c-><c- o>&lt;</c-><c- n>F</c-><c- o>>></c-><c- p>{</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>)};</c->
+<c- p>}</c->
+</pre>
+   </table>
+   <p>With either syntax:</p>
+<pre class="language-c++ highlight"><c- n>not_fn</c-><c- p>(</c-><c- n>unfriendly</c-><c- p>{})(</c-><c- mi>1</c-><c- p>);</c-> <c- c1>// ok</c->
 <c- n>not_fn</c-><c- p>(</c-><c- n>fun</c-><c- p>{})();</c->         <c- c1>// error</c->
 </pre>
    <p>Here, there is only one overload with everything deduced together. The first example now works correctly. <code class="highlight"><c- n>Self</c-></code> gets deduced as <code class="highlight"><c- n>call_wrapper</c-><c- o>&lt;</c-><c- n>unfriendly</c-><c- o>></c-></code>, and the one <code class="highlight"><c- k>operator</c-><c- p>()</c-></code> will only consider <code class="highlight"><c- n>unfriendly</c-></code>'s non-<code class="highlight"><c- k>const</c-></code> call operator. The <code class="highlight"><c- k>const</c-></code> one is simply never considered, so does not have an opportunity to cause problems. The call works.</p>
@@ -2752,16 +2901,102 @@ pre .property::before, pre .property::after {
    <p>Note that this could also be implemented as a lambda completely within the body of <code class="highlight"><c- n>not_fn</c-></code>:</p>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
 <c- k>auto</c-> <c- n>not_fn</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- p>{</c->
-    <c- k>return</c-> <c- p>[</c-><c- n>f</c-><c- o>=</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>)]</c-><c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- p>,</c-> <c- k>typename</c-><c- p>...</c-> <c- n>Args</c-><c- o>></c-><c- p>(</c-><c- k>auto</c-><c- o>&amp;&amp;</c-><c- p>..</c-> <c- n>args</c-><c- p>)</c-> <c- n>Self</c-><c- o>&amp;&amp;</c->
-        <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- o>!</c-><c- n>invoke</c-><c- p>(</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...))</c->
-    <c- p>{</c->
-        <c- k>return</c-> <c- o>!</c-><c- n>invoke</c-><c- p>(</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Args</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...);</c->
-    <c- p>};</c->
+    <c- k>return</c-> <c- p>[</c-><c- n>f</c-><c- o>=</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>)](</c-><c- k>this</c-> <c- k>auto</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>,</c-> <c- k>auto</c-><c- o>&amp;&amp;</c-><c- p>..</c-> <c- n>args</c-><c- p>)</c->
+        <c- n>BOOST_HOF_RETURNS</c-><c- p>(</c->
+            <c- o>!</c-><c- n>invoke</c-><c- p>(</c->
+                <c- n>forward_like</c-><c- o>&lt;</c-><c- k>decltype</c-><c- p>(</c-><c- n>self</c-><c- p>)</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c->
+                <c- n>forward</c-><c- o>&lt;</c-><c- k>decltype</c-><c- p>(</c-><c- n>args</c-><c- p>)</c-><c- o>></c-><c- p>(</c-><c- n>args</c-><c- p>)...))</c->
+        <c- p>;</c->
 <c- p>}</c->
 </pre>
    <h3 class="heading settled" data-level="4.5" id="by-value-member-functions"><span class="secno">4.5. </span><span class="content">By-value member functions</span><a class="self-link" href="#by-value-member-functions"></a></h3>
-   <p>TBD.</p>
-   <h2 class="heading settled" data-level="5" id="acknowledgements"><span class="secno">5. </span><span class="content">Acknowledgements</span><a class="self-link" href="#acknowledgements"></a></h2>
+   <p>It’s been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>string_view</c-></code>. <a href="https://abseil.io/tips/1">Abseil Tip #1</a> for instance, states:</p>
+   <blockquote>
+    <p>Unlike other string types, you should pass <code class="highlight"><c- n>string_view</c-></code> by value just like you would an int or a double because <code class="highlight"><c- n>string_view</c-></code> is a small value.</p>
+   </blockquote>
+   <p>However, today there is one place where you simply <em>cannot</em> pass types like <code class="highlight"><c- n>string_view</c-></code> by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection!</p>
+   <p>Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible <em>only</em> with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of <code class="highlight"><c- n>basic_string_view</c-></code> assuming that we are just using <code class="highlight"><c- n>charT</c-> <c- k>const</c-><c- o>*</c-></code> as <code class="highlight"><c- n>iterator</c-></code>:</p>
+<pre class="language-c++ highlight"><c- n>template</c-> <c- o>&lt;</c-><c- n>class</c-> <c- n>charT</c-><c- p>,</c-> <c- n>class</c-> <c- n>traits</c-> <c- o>=</c-> <c- n>char_traits</c-><c- o>&lt;</c-><c- n>charT</c-><c- o>>></c->
+<c- n>class</c-> <c- n>basic_string_view</c-> <c- p>{</c->
+<c- nl>private</c-><c- p>:</c->
+    <c- n>const_pointer</c-> <c- n>data_</c-><c- p>;</c->
+    <c- n>size_type</c-> <c- n>size_</c-><c- p>;</c->
+<c- nl>public</c-><c- p>:</c->
+    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>begin</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>end</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-> <c- o>+</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- b>size_t</c-> <c- n>size</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- n>const_reference</c-> <c- n>operator</c-><c- p>[](</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>,</c-> <c- n>size_type</c-> <c- n>pos</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>[</c-><c- n>pos</c-><c- p>];</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+   <p>Most of the member functions can be rewritten this way for a free performance boost.</p>
+   <p>The same can be said for types that aren’t just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of <code class="highlight"><c- n>less_than</c-></code>:</p>
+   <table style="width:100%">
+    <tbody>
+     <tr>
+      <th style="width:50%">C++17
+      <th style="width:50%">Explicit Object Parameter
+     <tr>
+      <td>
+<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
+    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
+    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
+    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
+    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>this</c-> <c- n>less_than</c-><c- p>,</c->
+            <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+   </table>
+   <p>Today, invoking <code class="highlight"><c- n>less_than</c-><c- p>()(</c-><c- n>x</c-><c- p>,</c-> <c- n>y</c-><c- p>)</c-></code> still requires an implicit reference to the <code class="highlight"><c- n>less_than</c-></code> object. That’s more work that’s completely unnecessary. Copying it is free - the compiler knows it doesn’t have to do anything. We <em>want</em> to pass <code class="highlight"><c- n>less_than</c-></code> by value here. Indeed, this specific situation is the main motivation for <a data-link-type="biblio" href="#biblio-p1169r0">[P1169R0]</a>.</p>
+   <h2 class="heading settled" data-level="5" id="suggested-polls"><span class="secno">5. </span><span class="content">Suggested Polls</span><a class="self-link" href="#suggested-polls"></a></h2>
+   <p>We would like to suggest the following polls on this proposal:</p>
+   <ol>
+    <li data-md>
+     <p>Do we want a solution in this direction of this paper? That is, do we want a syntax that allows for deducing the qualifiers and value category of the object parameter for non-static member functions?</p>
+    <li data-md>
+     <p>[Three-way] We want that solution to be</p>
+     <ul>
+      <li data-md>
+       <p>explicit object parameter</p>
+      <li data-md>
+       <p>explicit member type with optional identifier</p>
+      <li data-md>
+       <p>explicit member type with no identifier?</p>
+     </ul>
+    <li data-md>
+     <p>[Only if 2a/b is preferred, three-way] If there is an explicit object parameter or explicit member type, then:</p>
+     <ul>
+      <li data-md>
+       <p><code class="highlight"><c- k>this</c-></code> should be inaccessible and every access must be qualified</p>
+      <li data-md>
+       <p><code class="highlight"><c- k>this</c-></code> is accessible but every access must be qualified</p>
+      <li data-md>
+       <p><code class="highlight"><c- k>this</c-></code> is accessible and implicit lookup is permitted.</p>
+     </ul>
+    <li data-md>
+     <p>[Only if 2c is preferred] If there is an explicit member type, should implicit lookup be allowed?</p>
+   </ol>
+   <h2 class="heading settled" data-level="6" id="wording"><span class="secno">6. </span><span class="content">Wording</span><a class="self-link" href="#wording"></a></h2>
+   <p>TBD</p>
+   <h2 class="heading settled" data-level="7" id="acknowledgements"><span class="secno">7. </span><span class="content">Acknowledgements</span><a class="self-link" href="#acknowledgements"></a></h2>
    <p>The authors would like to thank:</p>
    <ul>
     <li data-md>
@@ -2910,14 +3145,16 @@ pre .property::before, pre .property::after {
   <dl>
    <dt id="biblio-effective">[Effective]
    <dd>Scott Meyers. <a href="https://www.aristeia.com/books.html">Effective C++, Third Edition</a>. 2005. URL: <a href="https://www.aristeia.com/books.html">https://www.aristeia.com/books.html</a>
-   <dt id="biblio-p0515r3">[P0515R3]
-   <dd>Herb Sutter, Jens Maurer, Walter E. Brown. <a href="https://wg21.link/p0515r3">Consistent comparison</a>. 10 November 2017. URL: <a href="https://wg21.link/p0515r3">https://wg21.link/p0515r3</a>
    <dt id="biblio-p0798r0">[P0798R0]
    <dd>Simon Brand. <a href="https://wg21.link/p0798r0">Monadic operations for std::optional</a>. 6 October 2017. URL: <a href="https://wg21.link/p0798r0">https://wg21.link/p0798r0</a>
    <dt id="biblio-p0826r0">[P0826R0]
    <dd>Agustín Bergé. <a href="https://wg21.link/p0826r0">SFINAE-friendly std::bind</a>. 12 October 2017. URL: <a href="https://wg21.link/p0826r0">https://wg21.link/p0826r0</a>
+   <dt id="biblio-p0839r0">[P0839R0]
+   <dd>Richard Smith. <a href="https://wg21.link/p0839r0">Recursive Lambdas</a>. 16 October 2017. URL: <a href="https://wg21.link/p0839r0">https://wg21.link/p0839r0</a>
    <dt id="biblio-p0847r0">[P0847R0]
    <dd>Gašper Ažman, Simon Brand, Ben Deane, Barry Revzin. <a href="https://wg21.link/p0847r0">Deducing this</a>. 12 February 2018. URL: <a href="https://wg21.link/p0847r0">https://wg21.link/p0847r0</a>
    <dt id="biblio-p0929r2">[P0929R2]
    <dd>Jens Maurer. <a href="https://wg21.link/p0929r2">Checking for abstract class types</a>. 6 June 2018. URL: <a href="https://wg21.link/p0929r2">https://wg21.link/p0929r2</a>
+   <dt id="biblio-p1169r0">[P1169R0]
+   <dd>Barry Revzin; Casey Carter. <a href="https://wg21.link/p1169r0">static operator()</a>. 2018. URL: <a href="https://wg21.link/p1169r0">https://wg21.link/p1169r0</a>
   </dl>
