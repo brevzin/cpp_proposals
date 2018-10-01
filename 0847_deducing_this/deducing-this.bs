@@ -1901,7 +1901,66 @@ We would like to suggest the following polls on this proposal:
 
 # Wording # {#wording}
 
-TBD
+Change 7.6.1.2 [expr.call], paragraph 7:
+
+> If the function is a non-static member function <ins>without an explicit object parameter</ins>, the `this` parameter of the function is initialized with a pointer to the object of the call, converted as if by an explicit type conversion. <ins>If the function is a non-static member function with an explicit object parameter, the explicit object parameter is initialized with the object of the call and each subsequent parameter is initialized with its corresponding argument.</ins>
+
+Add to the grammar of 9.2.3.5 [dcl.fct], paragraph 3, the ability to provide an explicit object parameter:
+
+> A type of either form is a <i>function type</i>.<br />
+> &nbsp;&nbsp;&nbsp;<i>parameter-declaration-clause:</i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list<sub>opt</sub></i>`...`<sub><i>opt</i></sub><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list</i>`,` `...`<br />
+> <br />
+> &nbsp;&nbsp;&nbsp;<i>parameter-declaration-list:</i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration</i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list</i>`,` <i>parameter-declaration</i><br />
+> <br />
+> &nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration</i>:<br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator</i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator `=` initializer-clause</i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ins><i>attribute-specifier-seq<sub>opt</sub> `this` decl-specifier-seq declarator</i></ins><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub></i><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ins><i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq `this` abstract-declarator<sub>opt</sub></i></ins><br />
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub> `=` initializer-clause</i><br />
+
+Add a paragraph to 9.2.3.5 [dcl.fct], before paragraph 6:
+
+<div class="ins">A *parameter-declaration* that contains the `this` keyword is known as an *explicit object parameter*. An explicit object parameter shall only be the first *parameter-declaration* in a *parameter-declaration-list*. A function type with an explicit object parameter shall not have a *cv-qualifier-seq* or a *ref-qualifier-seq* and shall only appear as the function type for a non-static member function. 
+</div>
+
+Add a sentence to 9.2.3.6 [dcl.fct.default]:
+
+> If an *initializer-clause* is specified in a *parameter-declaration* this *initializer-clause* is used as a default argument. <ins>An explicit object parameter shall not have an *initializer-clause*.</ins> [*Note*: Default arguments will be used in calls where trailing arguments are missing ([expr.call]). —*end note*]
+
+Insert a bullet to 9.4.2 [dcl.fct.def.default], paragraph 1:
+
+> A function definition whose *function-body* is of the form `= default ;` is called an *explicitly-defaulted* definition. A function that is explicitly defaulted shall
+>   - be a special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and
+>   - not have default arguments.
+>   - <ins>not have an explicit object parameter.</ins>
+
+Add an extra requirement to 10.3.4 [class.ctor], paragraph 1:
+
+> The *class-name* shall not be a *typedef-name*. In a constructor declaration, each *decl-specifier* in the optional *decl-specifier-seq* shall be `friend`, `inline`, `constexpr`, or an *explicit-specifier*. <ins>A constructor shall not have an explicit object parameter.</ins>
+
+Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 4:
+
+> A non-static member function <ins>without an explicit object parameter</ins> may be declared `const`, `volatile`, or `const volatile`. These *cv*-qualifiers affect the type of the `this` pointer. They also affect the function type of the member function; a member function declared `const` is a *const* member function, a member function declared `volatile` is a *volatile* member function and a member function declared `const volatile` is a *const volatile member function*.
+
+Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 5:
+
+> A non-static member function <ins>without an explicit object parameter</ins> may be declared with a *ref-qualifier* ([dcl.fct]); see [over.match.funcs].
+
+Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 6:
+
+> A non-static member function <ins>without an explicit object parameter</ins> may be declared virtual ([class.virtual]) or pure virtual ([class.abstract]).
+
+Change the specification for the `this` pointer in 10.3.2.1 [class.this]:
+
+> In the body of a non-static ([class.mfct]) member function, the keyword `this` is a prvalue whose value is the address of the object for which the function is called. <del>The type of `this` in a member function of a class `X` is `X*`. If the member function is declared `const`, the type of `this` is `const X*`, if the member function is declared `volatile`, the type of `this` is `volatile X*`, and if the member function is declared `const volatile`, the type of `this` is `const volatile X*`.</del> <ins>The type of `this` is determined as follows:
+>    - <ins>if the non-static member function of a class `X` does not have an explicit object parameter, then the type of `this` is *cv-qualifier-seq* `X*`;</ins>
+>    - <ins>otherwise, let *cv* be the *cv-qualifiers* of the possibly deduced explicit object parameter. Then the type of `this` is *cv* `X*`</ins>
 
 # Acknowledgements # {#acknowledgements}
 

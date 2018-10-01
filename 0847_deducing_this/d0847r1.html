@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="4a614726b00b3a6b23d596a26faed33b955dda75" name="document-revision">
+  <meta content="77486b1a5eb1ece263d3363a539e5ea17efe05dc" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -3113,7 +3113,92 @@ pre .property::before, pre .property::after {
      <p>[Only if 2c is preferred] If there is an explicit member type, should implicit lookup be allowed?</p>
    </ol>
    <h2 class="heading settled" data-level="6" id="wording"><span class="secno">6. </span><span class="content">Wording</span><a class="self-link" href="#wording"></a></h2>
-   <p>TBD</p>
+   <p>Change 7.6.1.2 [expr.call], paragraph 7:</p>
+   <blockquote>
+    <p>
+     If the function is a non-static member function 
+     <ins>without an explicit object parameter</ins>
+     , the <code class="highlight"><c- k>this</c-></code> parameter of the function is initialized with a pointer to the object of the call, converted as if by an explicit type conversion. 
+     <ins>If the function is a non-static member function with an explicit object parameter, the explicit object parameter is initialized with the object of the call and each subsequent parameter is initialized with its corresponding argument.</ins>
+    </p>
+   </blockquote>
+   <p>Add to the grammar of 9.2.3.5 [dcl.fct], paragraph 3, the ability to provide an explicit object parameter:</p>
+   <blockquote>
+    <p>
+     A type of either form is a <i>function type</i>.<br>    <i>parameter-declaration-clause:</i><br>       <i>parameter-declaration-list<sub>opt</sub></i><code class="highlight"><c- p>...</c-></code><sub><i>opt</i></sub><br>       <i>parameter-declaration-list</i><code class="highlight"><c- p>,</c-></code> <code class="highlight"><c- p>...</c-></code><br> <br>    <i>parameter-declaration-list:</i><br>       <i>parameter-declaration</i><br>       <i>parameter-declaration-list</i><code class="highlight"><c- p>,</c-></code> <i>parameter-declaration</i><br> <br>     <i>parameter-declaration</i>:<br>         <i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator</i><br>         <i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator <code class="highlight"><c- o>=</c-></code> initializer-clause</i><br>         
+     <ins><i>attribute-specifier-seq<sub>opt</sub> <code class="highlight"><c- k>this</c-></code> decl-specifier-seq declarator</i></ins>
+     <br>         <i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub></i><br>         
+     <ins><i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq <code class="highlight"><c- k>this</c-></code> abstract-declarator<sub>opt</sub></i></ins>
+     <br>         <i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub> <code class="highlight"><c- o>=</c-></code> initializer-clause</i><br>
+    </p>
+   </blockquote>
+   <p>Add a paragraph to 9.2.3.5 [dcl.fct], before paragraph 6:</p>
+   <div class="ins">A <em>parameter-declaration</em> that contains the <code class="highlight"><c- k>this</c-></code> keyword is known as an <em>explicit object parameter</em>. An explicit object parameter shall only be the first <em>parameter-declaration</em> in a <em>parameter-declaration-list</em>. A function type with an explicit object parameter shall not have a <em>cv-qualifier-seq</em> or a <em>ref-qualifier-seq</em> and shall only appear as the function type for a non-static member function. </div>
+   <p>Add a sentence to 9.2.3.6 [dcl.fct.default]:</p>
+   <blockquote>
+    <p>
+     If an <em>initializer-clause</em> is specified in a <em>parameter-declaration</em> this <em>initializer-clause</em> is used as a default argument. 
+     <ins>An explicit object parameter shall not have an <em>initializer-clause</em>.</ins>
+      [<em>Note</em>: Default arguments will be used in calls where trailing arguments are missing ([expr.call]). —<em>end note</em>]
+    </p>
+   </blockquote>
+   <p>Insert a bullet to 9.4.2 [dcl.fct.def.default], paragraph 1:</p>
+   <blockquote>
+    <p>A function definition whose <em>function-body</em> is of the form <code class="highlight"><c- o>=</c-> <c- k>default</c-> <c- p>;</c-></code> is called an <em>explicitly-defaulted</em> definition. A function that is explicitly defaulted shall</p>
+    <ul>
+     <li data-md>
+      <p>be a special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and</p>
+     <li data-md>
+      <p>not have default arguments.</p>
+     <li data-md>
+      <ins>not have an explicit object parameter.</ins>
+    </ul>
+   </blockquote>
+   <p>Add an extra requirement to 10.3.4 [class.ctor], paragraph 1:</p>
+   <blockquote>
+    <p>
+     The <em>class-name</em> shall not be a <em>typedef-name</em>. In a constructor declaration, each <em>decl-specifier</em> in the optional <em>decl-specifier-seq</em> shall be <code class="highlight"><c- k>friend</c-></code>, <code class="highlight"><c- kr>inline</c-></code>, <code class="highlight"><c- k>constexpr</c-></code>, or an <em>explicit-specifier</em>. 
+     <ins>A constructor shall not have an explicit object parameter.</ins>
+    </p>
+   </blockquote>
+   <p>Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 4:</p>
+   <blockquote>
+    <p>
+     A non-static member function 
+     <ins>without an explicit object parameter</ins>
+      may be declared <code class="highlight"><c- k>const</c-></code>, <code class="highlight"><c- k>volatile</c-></code>, or <code class="highlight"><c- k>const</c-> <c- k>volatile</c-></code>. These <em>cv</em>-qualifiers affect the type of the <code class="highlight"><c- k>this</c-></code> pointer. They also affect the function type of the member function; a member function declared <code class="highlight"><c- k>const</c-></code> is a <em>const</em> member function, a member function declared <code class="highlight"><c- k>volatile</c-></code> is a <em>volatile</em> member function and a member function declared <code class="highlight"><c- k>const</c-> <c- k>volatile</c-></code> is a <em>const volatile member function</em>.
+    </p>
+   </blockquote>
+   <p>Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 5:</p>
+   <blockquote>
+    <p>
+     A non-static member function 
+     <ins>without an explicit object parameter</ins>
+      may be declared with a <em>ref-qualifier</em> ([dcl.fct]); see [over.match.funcs].
+    </p>
+   </blockquote>
+   <p>Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 6:</p>
+   <blockquote>
+    <p>
+     A non-static member function 
+     <ins>without an explicit object parameter</ins>
+      may be declared virtual ([class.virtual]) or pure virtual ([class.abstract]).
+    </p>
+   </blockquote>
+   <p>Change the specification for the <code class="highlight"><c- k>this</c-></code> pointer in 10.3.2.1 [class.this]:</p>
+   <blockquote>
+    <p>
+     In the body of a non-static ([class.mfct]) member function, the keyword <code class="highlight"><c- k>this</c-></code> is a prvalue whose value is the address of the object for which the function is called. 
+     <del>The type of <code class="highlight"><c- k>this</c-></code> in a member function of a class <code class="highlight"><c- n>X</c-></code> is <code class="highlight"><c- n>X</c-><c- o>*</c-></code>. If the member function is declared <code class="highlight"><c- k>const</c-></code>, the type of <code class="highlight"><c- k>this</c-></code> is <code class="highlight"><c- k>const</c-> <c- n>X</c-><c- o>*</c-></code>, if the member function is declared <code class="highlight"><c- k>volatile</c-></code>, the type of <code class="highlight"><c- k>this</c-></code> is <code class="highlight"><c- k>volatile</c-> <c- n>X</c-><c- o>*</c-></code>, and if the member function is declared <code class="highlight"><c- k>const</c-> <c- k>volatile</c-></code>, the type of <code class="highlight"><c- k>this</c-></code> is <code class="highlight"><c- k>const</c-> <c- k>volatile</c-> <c- n>X</c-><c- o>*</c-></code>.</del>
+     <ins>The type of <code class="highlight"><c- k>this</c-></code> is determined as follows:</ins>
+    </p>
+    <ul>
+     <li data-md>
+      <ins>if the non-static member function of a class <code class="highlight"><c- n>X</c-></code> does not have an explicit object parameter, then the type of <code class="highlight"><c- k>this</c-></code> is <em>cv-qualifier-seq</em> <code class="highlight"><c- n>X</c-><c- o>*</c-></code>;</ins>
+     <li data-md>
+      <ins>otherwise, let <em>cv</em> be the <em>cv-qualifiers</em> of the possibly deduced explicit object parameter. Then the type of <code class="highlight"><c- k>this</c-></code> is <em>cv</em> <code class="highlight"><c- n>X</c-><c- o>*</c-></code></ins>
+    </ul>
+   </blockquote>
    <h2 class="heading settled" data-level="7" id="acknowledgements"><span class="secno">7. </span><span class="content">Acknowledgements</span><a class="self-link" href="#acknowledgements"></a></h2>
    <p>The authors would like to thank:</p>
    <ul>
