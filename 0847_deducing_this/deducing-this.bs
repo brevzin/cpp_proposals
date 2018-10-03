@@ -238,8 +238,8 @@ The proposal is also sufficiently general and sufficiently orthogonal that it al
 
 - [recursive lambdas](#recursive-lambdas)
 - a new approach to [mixins](#crtp), a CRTP without the CRT
-- perfect, sfinae-friendly [call wrappers](#sfinae-friendly-callables)
 - more efficient member function [invocation](#by-value-member-functions)
+- perfect, sfinae-friendly [call wrappers](#sfinae-friendly-callables)
 
 These will be explored in detail in the [examples](#real-world-examples) section.
 
@@ -1688,6 +1688,77 @@ int num_leaves(Tree const& tree) {
 ```
 In the calls to `visit`, `self` isn't the lambda - `self` is the `overload` wrapper. This just works.
 
+## By-value member functions ## {#by-value-member-functions}
+
+It's been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is `std::string_view`. [Abseil Tip #1](https://abseil.io/tips/1) for instance, states:
+
+> Unlike other string types, you should pass `string_view` by value just like you would an int or a double because `string_view` is a small value.
+
+However, today there is one place where you simply *cannot* pass types like `string_view` by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection! 
+
+Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
+
+```c++
+template <class charT, class traits = char_traits<charT>>
+class basic_string_view {
+private:
+    const_pointer data_;
+    size_type size_;
+public:
+    constexpr const_iterator begin(this basic_string_view self) {
+        return self.data_;
+    }
+    
+    constexpr const_iterator end(this basic_string_view self) {
+        return self.data_ + self.size_;
+    }
+    
+    constexpr size_t size(this basic_string_view self) {
+        return self.size_;
+    }
+    
+    constexpr const_reference operator[](this basic_string_view self, size_type pos) {
+        return self.data_[pos];
+    }
+};
+```
+
+Most of the member functions can be rewritten this way for a free performance boost.
+
+The same can be said for types that aren't just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of `less_than`:
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">C++17</th>
+<th style="width:50%">Explicit Object Parameter</th>
+</tr>
+<tr>
+<td>
+```c++
+struct less_than {
+    template <typename T, typename U>
+    bool operator()(T const& lhs, U const& rhs) {
+        return lhs < rhs;
+    }
+};
+```
+</td>
+<td>
+```c++
+struct less_than {
+    template <typename T, typename U>
+    bool operator()(this less_than,
+            T const& lhs, U const& rhs) {
+        return lhs < rhs;
+    }
+};
+```
+</td>
+</tr>
+</table>
+
+Today, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object. That's more work that's completely unnecessary. Copying it is free - the compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
+
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
 A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in [[P0826R0]]. Consider what happens if we implement `std::not_fn()`, as currently specified:
@@ -1830,77 +1901,6 @@ auto not_fn(F&& f) {
         ;
 }
 ```
-
-## By-value member functions ## {#by-value-member-functions}
-
-It's been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is `std::string_view`. [Abseil Tip #1](https://abseil.io/tips/1) for instance, states:
-
-> Unlike other string types, you should pass `string_view` by value just like you would an int or a double because `string_view` is a small value.
-
-However, today there is one place where you simply *cannot* pass types like `string_view` by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection! 
-
-Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
-
-```c++
-template <class charT, class traits = char_traits<charT>>
-class basic_string_view {
-private:
-    const_pointer data_;
-    size_type size_;
-public:
-    constexpr const_iterator begin(this basic_string_view self) {
-        return self.data_;
-    }
-    
-    constexpr const_iterator end(this basic_string_view self) {
-        return self.data_ + self.size_;
-    }
-    
-    constexpr size_t size(this basic_string_view self) {
-        return self.size_;
-    }
-    
-    constexpr const_reference operator[](this basic_string_view self, size_type pos) {
-        return self.data_[pos];
-    }
-};
-```
-
-Most of the member functions can be rewritten this way for a free performance boost.
-
-The same can be said for types that aren't just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of `less_than`:
-
-<table style="width:100%">
-<tr>
-<th style="width:50%">C++17</th>
-<th style="width:50%">Explicit Object Parameter</th>
-</tr>
-<tr>
-<td>
-```c++
-struct less_than {
-    template <typename T, typename U>
-    bool operator()(T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
-};
-```
-</td>
-<td>
-```c++
-struct less_than {
-    template <typename T, typename U>
-    bool operator()(this less_than,
-            T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
-};
-```
-</td>
-</tr>
-</table>
-
-Today, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object. That's more work that's completely unnecessary. Copying it is free - the compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
 
 # Suggested Polls # {#suggested-polls}
 

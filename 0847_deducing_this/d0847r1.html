@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="e835f3a3a3b919e728cef5ad003bbd56b0d0aa48" name="document-revision">
+  <meta content="4d4d62853ea1709f03db29567b8610f06eb8b332" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1528,8 +1528,8 @@ pre .property::before, pre .property::after {
         <li><a href="#builder-pattern"><span class="secno">4.2.1</span> <span class="content">Builder pattern</span></a>
        </ol>
       <li><a href="#recursive-lambdas"><span class="secno">4.3</span> <span class="content">Recursive Lambdas</span></a>
-      <li><a href="#sfinae-friendly-callables"><span class="secno">4.4</span> <span class="content">SFINAE-friendly callables</span></a>
-      <li><a href="#by-value-member-functions"><span class="secno">4.5</span> <span class="content">By-value member functions</span></a>
+      <li><a href="#by-value-member-functions"><span class="secno">4.4</span> <span class="content">By-value member functions</span></a>
+      <li><a href="#sfinae-friendly-callables"><span class="secno">4.5</span> <span class="content">SFINAE-friendly callables</span></a>
      </ol>
     <li><a href="#suggested-polls"><span class="secno">5</span> <span class="content">Suggested Polls</span></a>
     <li><a href="#wording"><span class="secno">6</span> <span class="content">Wording</span></a>
@@ -1705,9 +1705,9 @@ pre .property::before, pre .property::after {
     <li data-md>
      <p>a new approach to <a href="#crtp">mixins</a>, a CRTP without the CRT</p>
     <li data-md>
-     <p>perfect, sfinae-friendly <a href="#sfinae-friendly-callables">call wrappers</a></p>
-    <li data-md>
      <p>more efficient member function <a href="#by-value-member-functions">invocation</a></p>
+    <li data-md>
+     <p>perfect, sfinae-friendly <a href="#sfinae-friendly-callables">call wrappers</a></p>
    </ul>
    <p>These will be explored in detail in the <a href="#real-world-examples">examples</a> section.</p>
    <h3 class="heading settled" data-level="3.1" id="proposed-syntaxes"><span class="secno">3.1. </span><span class="content">Proposed Syntaxes</span><a class="self-link" href="#proposed-syntaxes"></a></h3>
@@ -2926,7 +2926,64 @@ pre .property::before, pre .property::after {
 <c- p>}</c->
 </pre>
    In the calls to <code class="highlight"><c- n>visit</c-></code>, <code class="highlight"><c- n>self</c-></code> isn’t the lambda - <code class="highlight"><c- n>self</c-></code> is the <code class="highlight"><c- n>overload</c-></code> wrapper. This just works. 
-   <h3 class="heading settled" data-level="4.4" id="sfinae-friendly-callables"><span class="secno">4.4. </span><span class="content">SFINAE-friendly callables</span><a class="self-link" href="#sfinae-friendly-callables"></a></h3>
+   <h3 class="heading settled" data-level="4.4" id="by-value-member-functions"><span class="secno">4.4. </span><span class="content">By-value member functions</span><a class="self-link" href="#by-value-member-functions"></a></h3>
+   <p>It’s been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>string_view</c-></code>. <a href="https://abseil.io/tips/1">Abseil Tip #1</a> for instance, states:</p>
+   <blockquote>
+    <p>Unlike other string types, you should pass <code class="highlight"><c- n>string_view</c-></code> by value just like you would an int or a double because <code class="highlight"><c- n>string_view</c-></code> is a small value.</p>
+   </blockquote>
+   <p>However, today there is one place where you simply <em>cannot</em> pass types like <code class="highlight"><c- n>string_view</c-></code> by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection!</p>
+   <p>Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible <em>only</em> with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of <code class="highlight"><c- n>basic_string_view</c-></code> assuming that we are just using <code class="highlight"><c- n>charT</c-> <c- k>const</c-><c- o>*</c-></code> as <code class="highlight"><c- n>iterator</c-></code>:</p>
+<pre class="language-c++ highlight"><c- n>template</c-> <c- o>&lt;</c-><c- n>class</c-> <c- n>charT</c-><c- p>,</c-> <c- n>class</c-> <c- n>traits</c-> <c- o>=</c-> <c- n>char_traits</c-><c- o>&lt;</c-><c- n>charT</c-><c- o>>></c->
+<c- n>class</c-> <c- n>basic_string_view</c-> <c- p>{</c->
+<c- nl>private</c-><c- p>:</c->
+    <c- n>const_pointer</c-> <c- n>data_</c-><c- p>;</c->
+    <c- n>size_type</c-> <c- n>size_</c-><c- p>;</c->
+<c- nl>public</c-><c- p>:</c->
+    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>begin</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>end</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-> <c- o>+</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- b>size_t</c-> <c- n>size</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
+    <c- p>}</c->
+    
+    <c- n>constexpr</c-> <c- n>const_reference</c-> <c- n>operator</c-><c- p>[](</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>,</c-> <c- n>size_type</c-> <c- n>pos</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>[</c-><c- n>pos</c-><c- p>];</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+   <p>Most of the member functions can be rewritten this way for a free performance boost.</p>
+   <p>The same can be said for types that aren’t just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of <code class="highlight"><c- n>less_than</c-></code>:</p>
+   <table style="width:100%">
+    <tbody>
+     <tr>
+      <th style="width:50%">C++17
+      <th style="width:50%">Explicit Object Parameter
+     <tr>
+      <td>
+<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
+    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
+    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+      <td>
+<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
+    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
+    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>this</c-> <c- n>less_than</c-><c- p>,</c->
+            <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
+    <c- p>}</c->
+<c- p>};</c->
+</pre>
+   </table>
+   <p>Today, invoking <code class="highlight"><c- n>less_than</c-><c- p>()(</c-><c- n>x</c-><c- p>,</c-> <c- n>y</c-><c- p>)</c-></code> still requires an implicit reference to the <code class="highlight"><c- n>less_than</c-></code> object. That’s more work that’s completely unnecessary. Copying it is free - the compiler knows it doesn’t have to do anything. We <em>want</em> to pass <code class="highlight"><c- n>less_than</c-></code> by value here. Indeed, this specific situation is the main motivation for <a data-link-type="biblio" href="#biblio-p1169r0">[P1169R0]</a>.</p>
+   <h3 class="heading settled" data-level="4.5" id="sfinae-friendly-callables"><span class="secno">4.5. </span><span class="content">SFINAE-friendly callables</span><a class="self-link" href="#sfinae-friendly-callables"></a></h3>
    <p>A seemingly unrelated problem to the question of code quadruplication is that of writing these numerous overloads for function wrappers, as demonstrated in <a data-link-type="biblio" href="#biblio-p0826r0">[P0826R0]</a>. Consider what happens if we implement <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>not_fn</c-><c- p>()</c-></code>, as currently specified:</p>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
 <c- k>class</c-> <c- nc>call_wrapper</c-> <c- p>{</c->
@@ -3045,63 +3102,6 @@ pre .property::before, pre .property::after {
         <c- p>;</c->
 <c- p>}</c->
 </pre>
-   <h3 class="heading settled" data-level="4.5" id="by-value-member-functions"><span class="secno">4.5. </span><span class="content">By-value member functions</span><a class="self-link" href="#by-value-member-functions"></a></h3>
-   <p>It’s been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>string_view</c-></code>. <a href="https://abseil.io/tips/1">Abseil Tip #1</a> for instance, states:</p>
-   <blockquote>
-    <p>Unlike other string types, you should pass <code class="highlight"><c- n>string_view</c-></code> by value just like you would an int or a double because <code class="highlight"><c- n>string_view</c-></code> is a small value.</p>
-   </blockquote>
-   <p>However, today there is one place where you simply <em>cannot</em> pass types like <code class="highlight"><c- n>string_view</c-></code> by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection!</p>
-   <p>Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible <em>only</em> with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of <code class="highlight"><c- n>basic_string_view</c-></code> assuming that we are just using <code class="highlight"><c- n>charT</c-> <c- k>const</c-><c- o>*</c-></code> as <code class="highlight"><c- n>iterator</c-></code>:</p>
-<pre class="language-c++ highlight"><c- n>template</c-> <c- o>&lt;</c-><c- n>class</c-> <c- n>charT</c-><c- p>,</c-> <c- n>class</c-> <c- n>traits</c-> <c- o>=</c-> <c- n>char_traits</c-><c- o>&lt;</c-><c- n>charT</c-><c- o>>></c->
-<c- n>class</c-> <c- n>basic_string_view</c-> <c- p>{</c->
-<c- nl>private</c-><c- p>:</c->
-    <c- n>const_pointer</c-> <c- n>data_</c-><c- p>;</c->
-    <c- n>size_type</c-> <c- n>size_</c-><c- p>;</c->
-<c- nl>public</c-><c- p>:</c->
-    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>begin</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>;</c->
-    <c- p>}</c->
-    
-    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>end</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-> <c- o>+</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
-    <c- p>}</c->
-    
-    <c- n>constexpr</c-> <c- b>size_t</c-> <c- n>size</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
-    <c- p>}</c->
-    
-    <c- n>constexpr</c-> <c- n>const_reference</c-> <c- n>operator</c-><c- p>[](</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>,</c-> <c- n>size_type</c-> <c- n>pos</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>[</c-><c- n>pos</c-><c- p>];</c->
-    <c- p>}</c->
-<c- p>};</c->
-</pre>
-   <p>Most of the member functions can be rewritten this way for a free performance boost.</p>
-   <p>The same can be said for types that aren’t just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of <code class="highlight"><c- n>less_than</c-></code>:</p>
-   <table style="width:100%">
-    <tbody>
-     <tr>
-      <th style="width:50%">C++17
-      <th style="width:50%">Explicit Object Parameter
-     <tr>
-      <td>
-<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
-    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
-    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
-    <c- p>}</c->
-<c- p>};</c->
-</pre>
-      <td>
-<pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
-    <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
-    <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>this</c-> <c- n>less_than</c-><c- p>,</c->
-            <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
-        <c- k>return</c-> <c- n>lhs</c-> <c- o>&lt;</c-> <c- n>rhs</c-><c- p>;</c->
-    <c- p>}</c->
-<c- p>};</c->
-</pre>
-   </table>
-   <p>Today, invoking <code class="highlight"><c- n>less_than</c-><c- p>()(</c-><c- n>x</c-><c- p>,</c-> <c- n>y</c-><c- p>)</c-></code> still requires an implicit reference to the <code class="highlight"><c- n>less_than</c-></code> object. That’s more work that’s completely unnecessary. Copying it is free - the compiler knows it doesn’t have to do anything. We <em>want</em> to pass <code class="highlight"><c- n>less_than</c-></code> by value here. Indeed, this specific situation is the main motivation for <a data-link-type="biblio" href="#biblio-p1169r0">[P1169R0]</a>.</p>
    <h2 class="heading settled" data-level="5" id="suggested-polls"><span class="secno">5. </span><span class="content">Suggested Polls</span><a class="self-link" href="#suggested-polls"></a></h2>
    <p>We would like to suggest the following polls on this proposal:</p>
    <ol>
