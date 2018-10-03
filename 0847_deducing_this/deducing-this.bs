@@ -675,26 +675,6 @@ We think there are three approaches here that we could take:
 
 3. `this` is always accessible and points to the base subobject; and we allow implicit lookup as in C++17. This is mostly the same as the previous choice, except that now `f1` is well-formed and exactly equivalent to `f2`.
 
-The wording of EWG poll in Rapperswil was:
-
-> If an explicitly named (e.g. `self`) object parameter, should `this` be implicitly or explicitly usable in member function body?
-
-Which suggests slight variations of options 1 and 2 above where we differentiate based on whether the explicit object parameter is *named* or not. In other words, potentially:
-
-```c++
-struct B {
-    int i = 0;
-    
-    // ok: object parameter not named, so 'this' is implicitly accessible
-    template <typename Self> auto&& f1a(this Self&&) { return i; }
-    
-    // error: object parameter named, so 'this' is inaccessible
-    template <typename Self> auto&& f1b(this Self&& self) { return i; }
-};
-```
-
-That seems a little too subtle a differentiation.
-
 Here is a comparison of the implementation of `optional::value()` that is very careful about not accessing anything from the derived object, based on these three name lookup semantics:
 
 <table style="width:100%">
