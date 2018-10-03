@@ -535,7 +535,7 @@ struct X {
 
 Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column today - and potentially the non-const overload would not be a viable candidate if `obj` were const. 
 
-With either of the proposed syntaxes, either explicit object or explicit type, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
+With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
 
 The only change with how we lookup candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter would be the object parameter, and the second listed parameter would correspond to the first called argument.
 
@@ -545,6 +545,7 @@ The behaviors of the three columns as proposed are exactly equivalent.
 
 The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter &mdash; which is new for the language.
 
+
 ### Type deduction ### {#type-deduction}
 
 One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.
@@ -553,8 +554,8 @@ If either the explicit object parameter's type or trailing object type is a dedu
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Trailing object type</th>
+<th style="width:50%">[[#syntax-1]]</th>
+<th style="width:50%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -592,7 +593,8 @@ void ex(X& x, D& d) {
 </tr>
 </table>
 
-It's important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications of [name lookup within member function bodies](#name-lookup-within-member-functions), and also leads to a potential [template deduction extension](#potential-extensions).
+It's important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and also leads to a potential [template deduction extension](#potential-extensions).
+
 
 ### By value `this` ### {#by-value-this}
 
@@ -611,7 +613,7 @@ struct less_than {
 less_than{}(4, 5);
 ```
 
-Following the proposing rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [by-value member functions](#by-value-member-functions).
+Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [by-value member functions](#by-value-member-functions).
 
 In the case of trailing object type, what does this mean:
 
