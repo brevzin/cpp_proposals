@@ -277,7 +277,7 @@ A call to a member function will interpret the object parameter as the first arg
 
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
-### Explicit member type, with identifier ### {#explicit-member-type-with-identifier}
+### Trailing object type, with identifier ### {#trailing-object-type-with-identifier}
 
 Today, member functions can optionally have a *cv-qualifier* and can optionally have a *ref-qualifier*. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:
 
@@ -303,9 +303,9 @@ void ex(X& x, D const& d) {
 
 Effectively, this is taking the previously introduced explicit object parameter syntax and simply declaring it after in the parameter declaration clause instead of at the front of it. Existing member functions behave as if the class name were just omitted. 
 
-Member functions with an explicit member type cannot be `static`. 
+Member functions with an trailing object type cannot be `static`. 
     
-### Explicit member type, without identifier ### {#explicit-member-type-without-identifier}
+### Trailing object type, without identifier ### {#trailing-object-type-without-identifier}
 
 Similar to the above, except without a possible identifier. 
 
@@ -343,10 +343,10 @@ There are several options we have as to the semantics of `this` within member fu
 Explicit object parameter
 </th>
 <th style="width:33%">
-Explicit member type<br />with identifier
+Trailing object type<br />with identifier
 </th>
 <th style="width:33%">
-Explicit member type<br />without identifier
+Trailing object type<br />without identifier
 </th>
 </tr>
 <tr>
@@ -413,7 +413,7 @@ struct optional {
 </tr>
 </table>
 
-Note that the two syntaxes with explicit member type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
+Note that the two syntaxes with trailing object type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
 
 ## Proposed semantics ## {#proposed-semantics}
 
@@ -425,7 +425,7 @@ This is a strict extension to the language; nearly all existing syntax remains v
 
 Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
 
-For non-static member functions using any of the new syntax (whether an **explicit** object parameter or a full **explicit** member type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept.
+For non-static member functions using any of the new syntax (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept.
 
 <table style="width:100%">
 <tr>
@@ -494,12 +494,12 @@ The only change as far as candidates are considered is that the proposal allows 
 
 One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.
 
-If either the explicit object parameter's type or explicit member type is a deduced reference type, all of the usual template deduction rules apply as expected:
+If either the explicit object parameter's type or trailing object type is a deduced reference type, all of the usual template deduction rules apply as expected:
 
 <table style="width:100%">
 <tr>
 <th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Explicit member type</th>
+<th style="width:50%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -541,7 +541,7 @@ It's important to stress that deduction can deduce a derived type. In the last l
 
 ### By value `this` ### {#by-value-this}
 
-But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an explicit member type diverge. For both syntaxes, there is a clear meaning - it's just that it is very different clear meaning.
+But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it's just that it is very different clear meaning.
 
 In the case of explicit object parameter, what does this mean:
 
@@ -558,7 +558,7 @@ less_than{}(4, 5);
 
 Following the proposing rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [by-value member functions](#by-value-member-functions).
 
-In the case of explicit member type, what does this mean:
+In the case of trailing object type, what does this mean:
 
 ```c++
 template <typename T, size_t N>
@@ -586,9 +586,9 @@ This mimics today's behavior where a trailing `const` qualifier does not mean `c
 
 ### Name lookup: within member functions ### {#name-lookup-within-member-functions}
 
-So far, we've only considered how member functions with explicit member types get found with name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave.
+So far, we've only considered how member functions with trailing object types get found with name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave.
 
-Since either the explicit object parameter or member type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. And we need to carefully consider how name lookup works in this context.
+Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. And we need to carefully consider how name lookup works in this context.
 
 To avoid repetition, we'll use an explicit object parameter for this example:
     
@@ -691,9 +691,9 @@ auto&& value(this Self&&) {
 
 Note that with the last two choices here - we do not even provide a name to the explicit object parameter, which is a good way to sidestep any problems with incorrect access. 
 
-What do these options mean if we consider an explicit member type syntax? If we provide an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter. It's just that the named parameter is in a different location in the declaration - otherwise it has the same meaning. 
+What do these options mean if we consider an trailing object type syntax? If we provide an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter. It's just that the named parameter is in a different location in the declaration - otherwise it has the same meaning. 
 
-But if we take the explicit member type syntax without an identifier, we can't have this differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`:
+But if we take the trailing object type syntax without an identifier, we can't have this differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`:
 
 ```cpp
 struct X {
@@ -830,7 +830,7 @@ No. Static member functions currently do not have an implicit object parameter, 
 
 ### Interplays with capturing `[this]` and `[*this]` in lambdas ### {#interplays-with-capturing-this}
 
-Providing either an explicit object parameter or explicit member type for lambdas still works, but the rules for what `this` means in a lambda today still apply: `this` can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:
+Providing either an explicit object parameter or trailing object type for lambdas still works, but the rules for what `this` means in a lambda today still apply: `this` can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:
 
 ```cpp
 struct X {
@@ -871,7 +871,7 @@ struct override : B {
 
 The same problem would occur with `final`. 
 
-In order to disambiguate between a trailing explicit member type, a trailing arbitrary identifier, and a *virt-specifier* (or any future trailing context-sensitive keyword), we would have to adopt set a preference - which would probably be to parse out the type first, the identifier second (if an identifier is allowed), and then anything else last.
+In order to disambiguate between a trailing trailing object type, a trailing arbitrary identifier, and a *virt-specifier* (or any future trailing context-sensitive keyword), we would have to adopt set a preference - which would probably be to parse out the type first, the identifier second (if an identifier is allowed), and then anything else last.
 
 If we go with the syntax that allows for an identifier: `#1` would have an explicit object of type `override` named `override` that is an `override`, `#2` would just declare an object with an identifier that does not make use of the override *virt-specifier*, and `#3` would provide an explicit object type without an identifier. Notably today, `#3` is valid code - and it would remain valid code, but the meaning of the `override` identifier would change. 
 
@@ -911,7 +911,7 @@ The user made a typo and wrote `cosnt` instead of `const`. Today, not a problem,
 
 But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly `Z` and that explicit object is named `cosnt`. Notably, this member function is *not* const!
 
-We could have to have parsing rules like: try to parse the type. If we find a type, then try to parse an identifier. And only then, consider things like the *virt-specifier*s. That's... complicated. It also doesn't quite mesh with a mental model a user might form about what this syntax means: that we have an implicitly provided member type which is the class type:
+We could have to have parsing rules like: try to parse the type. If we find a type, then try to parse an identifier. And only then, consider things like the *virt-specifier*s. That's... complicated. It also doesn't quite mesh with a mental model a user might form about what this syntax means: that we have an implicitly provided object type which is the class type:
 
 ```c++
 struct C {
@@ -934,14 +934,14 @@ Either the `quux` or `quuz` examples don't work, by making the implicit versions
 
 ## Comparison of the options ## {#comparison}
 
-We provide here a table of how the three main syntaxes (explicit object parameter, explicit member type with optional identifier, explicit member type without identifer) compare against a wide variety of metrics.
+We provide here a table of how the three main syntaxes (explicit object parameter, trailing object type with optional identifier, trailing object type without identifier) compare against a wide variety of metrics.
 
 <table>
 <tr>
 <th />
 <th>Explicit Object Parameter</th>
-<th>Explicit Member Type<br />with optional identifier</th>
-<th>Explicit Member Type<br />without identifier</th>
+<th>Trailing Object Type<br />with optional identifier</th>
+<th>Trailing Object Type<br />without identifier</th>
 </tr>
 <tr>
 <th>Familiarity</th>
@@ -1007,7 +1007,7 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 
 ## Potential Extensions ## {#potential-extensions}
 
-One of the pitfalls mentioned in having a deduced object parameter or a deduced member type is when all you want to do is deduce the *cv*-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it's not intended! 
+One of the pitfalls mentioned in having a deduced object parameter or a deduced trailing object type is when all you want to do is deduce the *cv*-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it's not intended! 
 
 We could propose some kind of "make it easy to get the base class pointer"-style syntax, but even if we had such a thing, the feature would suffer from extra instantiations. For `optional::value()`, we really only want four instantiations: `&`, `const&`, `&&`, and `const&&`. If some inherits from `optional`, we don't want additional extra instantiations of those functions - which won't do anything new anyway. This is code bloat - and error prone. 
 
@@ -1054,7 +1054,7 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 <tr>
 <th style="width:33%">C++17</th>
 <th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Explicit member type</th>
+<th style="width:33%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -1372,7 +1372,7 @@ Today, a common design pattern is the Curiously Recurring Template Pattern. This
 <tr>
 <th style="width:33%">C++17</th>
 <th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Explicit member type</th>
+<th style="width:33%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -1456,7 +1456,7 @@ But now, we want to create a specialized builder that has new operations `d()` a
 <tr>
 <th style="width:33%">C++17</th>
 <th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Explicit member type</th>
+<th style="width:33%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -1540,7 +1540,7 @@ What if we add a *super*-specialized builder, that is a more special form of `Sp
 <tr>
 <th style="width:33%">C++17</th>
 <th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Explicit member type</th>
+<th style="width:33%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -1649,7 +1649,7 @@ Note that the `Super` implementations with this proposal just went ahead and opt
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
-The explicit object parameter syntax also allows for an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we open up the possibility of allowing a lambda to reference itself. In order to do this, we need a way to *name* the lambda. The explicit member type syntax that does not allow for an identifier *does not* help us solve this problem. 
+The explicit object parameter syntax also allows for an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we open up the possibility of allowing a lambda to reference itself. In order to do this, we need a way to *name* the lambda. The trailing object type syntax that does not allow for an identifier *does not* help us solve this problem. 
 
 ```cpp
 // as proposed in P0839
@@ -1737,7 +1737,7 @@ This proposal solves both problems by simply allowing `this` to be deduced. The 
 <table style="width:100%">
 <tr>
 <th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Explicit member type</th>
+<th style="width:50%">Trailing object type</th>
 </tr>
 <tr>
 <td>
@@ -1889,15 +1889,17 @@ We would like to suggest the following polls on this proposal:
 
 2. [Three-way] We want that solution to be 
     - explicit object parameter 
-    - explicit member type with optional identifier 
-    - explicit member type with no identifier?
+    - trailing object type with optional identifier 
+    - trailing object type with no identifier?
 
-3. [Only if 2a/b is preferred, three-way] If there is an explicit object parameter or explicit member type, then: 
+3. [Only if 2a/b is preferred, three-way] If there is an explicit object parameter or trailing object type, then: 
     - `this` should be inaccessible and every access must be qualified 
     - `this` is accessible but every access must be qualified 
     - `this` is accessible and implicit lookup is permitted.
 
-4. [Only if 2c is preferred] If there is an explicit member type, should implicit lookup be allowed?
+4. [Only if 2c is preferred] If there is an trailing objcet type, should implicit lookup be allowed?
+
+5. Should we pursue a solution along the lines presented [extension](#potential-extensions) `typename T: B`?
 
 # Wording # {#wording}
 
