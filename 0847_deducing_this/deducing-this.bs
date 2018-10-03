@@ -1450,7 +1450,7 @@ struct Builder {
 Builder().a().b().a().b().c();    
 ```
 
-But now, we want to create a specialized builder that has new operations `d()` and `e()`. This specialized builder needs new member functions, and we don't want to burden existing users with them. But we also want `Special().a().d()` to work - so we need to use CRTP to _conditionally_ return either a `Builder&` or a `Special&`:
+But now, we want to create a specialized builder that has new operations `d()` and `e()`. This specialized builder needs new member functions, and we don't want to burden existing users with them. But we also want `Special().a().d()` to work - so we need to use CRTP to *conditionally* return either a `Builder&` or a `Special&`:
 
 <table style="width:100%">
 <tr>
@@ -1509,13 +1509,13 @@ Special().a().d().e().a();
 ```cpp
 struct Builder {
     template <typename Self>
-    Self& a() Self { /* ... */; return self; }
+    Self& a() Self { /* ... */; return *this; }
     
     template <typename Self>
-    Self& b() Self { /* ... */; return self; }        
+    Self& b() Self { /* ... */; return *this; }        
     
     template <typename Self>
-    Self& c() Self { /* ... */; return self; }        
+    Self& c() Self { /* ... */; return *this; }        
 };
 
 struct Special : Builder {
@@ -1601,7 +1601,7 @@ struct Special : Builder {
 
 struct Super : Special {
     template <typename Self>
-    Self& f(this Self&& self) { /* ... */; return *this; }
+    Self& f(this Self&& self) { /* ... */; return self; }
 };
 
 Builder().a().b().a().b().c();
@@ -1613,21 +1613,21 @@ Super().a().d().f().e();
 ```cpp
 struct Builder {
     template <typename Self>
-    Self& a() Self { /* ... */; return self; }
+    Self& a() Self { /* ... */; return *this; }
     
     template <typename Self>
-    Self& b() Self { /* ... */; return self; }        
+    Self& b() Self { /* ... */; return *this; }        
     
     template <typename Self>
-    Self& c() Self { /* ... */; return self; }        
+    Self& c() Self { /* ... */; return *this; }        
 };
 
 struct Special : Builder {
     template <typename Self>
-    Self& d() Self { /* ... */; return self; }
+    Self& d() Self { /* ... */; return *this; }
     
     template <typename Self>
-    Self& e() Self { /* ... */; return self; }
+    Self& e() Self { /* ... */; return *this; }
 };
 
 struct Super : Special {
@@ -1666,6 +1666,27 @@ auto fib = [](this auto const& self, int n) {
 ```
 
 This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so `self` in this example is the closure object.
+
+This can be combined with the new style of mixins where we can automatically deduce the most derived object. Here is a simple recursive lambda that counts the number of leaves in a tree:
+
+```c++
+struct Node;
+using Tree = variant<Leaf, Node*>;
+struct Node {
+    Tree left;
+    Tree right;
+};
+
+int num_leaves(Tree const& tree) {
+    return visit(overload(        // <-----------------------------------+
+        [](Leaf const&) { return 1; },                           //      |
+        [](this auto self, Node* n) -> int {                     //      |
+            return visit(self, n->left) + visit(self, n->right); // <----+    
+        }
+    ), tree);
+}
+```
+In the calls to `visit`, `self` isn't the lambda - `self` is the `overload` wrapper. This just works.
 
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
