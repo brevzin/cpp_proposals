@@ -273,13 +273,45 @@ void ex(X& x, D const& d) {
 
 Member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
 
-A call to a member function will interpret the object parameter as the first argument to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth. 
+A call to a member function will interpret the object argument as the first (`this`-annotated) parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth. 
 
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
+
+### Explicit object parameter, sans identifier ### {#explicit-object-parameter-no-id}
+
+A non-static member function can be declared to take `this` as its first parameter. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules, and instead of remaining a pointer, becomes a reference, fixing a long-standing oversight of the language, stemming from before references were invented.
+
+```cpp
+struct X {
+    void foo(X const& this, int i);
+    
+    template <typename Self>
+    void bar(Self&& this);
+};
+
+struct D : X { };
+
+void ex(X& x, D const& d) {
+    x.foo(42);          // 'this' is bound to 'x', 'i' is 42
+    x.bar();            // deduces Self as X&, calls X::bar<X&>
+    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    
+    d.foo(17);          // 'this' is bound to 'd'
+    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+}
+```
+
+As before, member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
+
+A call to a member function will interpret the object argument as the first, `this` parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth. 
+
+Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
+
+
 ### Trailing object type, with identifier ### {#trailing-object-type-with-identifier}
 
-Today, member functions can optionally have a *cv-qualifier* and can optionally have a *ref-qualifier*. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:
+In C++17, member functions can optionally have a *cv-qualifier* and can optionally have a *ref-qualifier*. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:
 
 ```cpp
 struct X {
@@ -304,7 +336,8 @@ void ex(X& x, D const& d) {
 Effectively, this is taking the previously introduced explicit object parameter syntax and simply declaring it after in the parameter declaration clause instead of at the front of it. Existing member functions behave as if the class name were just omitted. 
 
 Member functions with an trailing object type cannot be `static`. 
-    
+   
+ 
 ### Trailing object type, without identifier ### {#trailing-object-type-without-identifier}
 
 Similar to the above, except without a possible identifier. 
@@ -330,24 +363,18 @@ void ex(X& x, D const& d) {
 ```
 
 Because we need a way to refer to the derived object and we no longer have a way to name it, `this` would become a const pointer to the specified type after having its reference stripped. In the previous syntaxes, `this` could either retain its current meaning or cease to exist at all (see [name lookup](#name-lookup-within-member-functions)), but without an extra name we need to have `this` refer to the object parameter - which in some cases means that `this` would be a pointer to a derived type.
+
     
 ### Quick comparison ### {#quick-comparison}
 
-A brief example demonstrating how to write `optional::value()` and `optional::operator->()` in just two functions with no duplication (instead of six) with each of the three proposed syntaxes.
+A brief example demonstrating how to write `optional::value()` and `optional::operator->()` in just two functions with no duplication (instead of six) with each of the four proposed syntaxes.
 
 There are several options we have as to the semantics of `this` within member function bodies, so this quick example just takes the most conservative approach - it is merely meant to be illustrative:
 
 <table style="width:100%">
 <tr>
-<th style="width:33%">
-Explicit object parameter
-</th>
-<th style="width:33%">
-Trailing object type<br />with identifier
-</th>
-<th style="width:33%">
-Trailing object type<br />without identifier
-</th>
+<th style="width:50%"> Explicit object parameter with identifier </th>
+<th style="width:50%"> Explicit `this` object parameter </th>
 </tr>
 <tr>
 <td>
@@ -370,6 +397,32 @@ struct optional {
 };
 ```
 </td>
+<td>
+```cpp
+template <typename T>
+struct optional {
+  template <typename Self>
+  constexpr auto&& value(Self&& this) {
+    if (!this.has_value()) {
+      throw bad_optional_access();
+    }
+        
+    return forward<Self>(*this).m_value;
+  }
+    
+  template <typename Self>
+  constexpr auto operator->(Self&& this) {
+    return addressof(this.m_value);
+  }
+};
+```
+</td>
+</tr>
+<tr>
+<th> Trailing object type with identifier </th>
+<th> Trailing object type without identifier </th>
+</tr>
+<tr>
 <td>
 ```cpp
 template <typename T>
@@ -415,17 +468,19 @@ struct optional {
 
 Note that the two syntaxes with trailing object type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
 
+
 ## Proposed semantics ## {#proposed-semantics}
 
 What follows is a description of how deducing `this` affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth. 
 
-This is a strict extension to the language; nearly all existing syntax remains valid. See [parsing issues](#parsing-issues) for the pathological case that may change meaning. 
+This is a strict extension to the language; nearly all existing syntax remains valid. See [parsing issues](#parsing-issues) for the pathological case that may change meaning should the trailing syntaxes be chosen.
+
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
 
-Today, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
+In C++17, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
 
-For non-static member functions using any of the new syntax (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept.
+For non-static member functions using any of the new syntax (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.
 
 <table style="width:100%">
 <tr>
@@ -488,7 +543,7 @@ We are not changing anything about overload *resolution* - simply extending the 
 
 The behaviors of the three columns as proposed are exactly equivalent.
 
-The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter - which is new for the language.
+The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter &mdash; which is new for the language.
 
 ### Type deduction ### {#type-deduction}
 
@@ -580,9 +635,10 @@ void ex(A& a, A const&, ca) {
 
 But with normal member function declarations today, we don't have this same notion of a "value" - the implicit object parameter is always a reference. We're used to writing either nothing or `const` at the end of member functions. Which is analogous to writing `C` or `C const`. It would follow that allowing the deduction of a naked (i.e. non-reference) template parameter to preserve *cv*-qualifiers would do the expected thing and be useful. 
 
-In other words, we propose that `ca[0]` deduces `Self` as `A const` in the previous example. 
+In other words, should the trailing syntax be chosen, we propose that `ca[0]` deduces `Self` as `A const` in the previous example. 
     
-This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it just means `const`. Without such a change to template deduction, `Self` would always just deduce as `A` (and hence be pointless), `Self&` would deduce as `A&` or `A const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues - which is unnecessary and leads to code bloat.
+This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it just means `const`. Without such a change to template deduction, `Self` would always just deduce as `A` (and hence be pointless), `Self&` would deduce as `A&` or `A const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues &mdash; which is unnecessary and leads to code bloat.
+
 
 ### Name lookup: within member functions ### {#name-lookup-within-member-functions}
 
@@ -590,7 +646,7 @@ So far, we've only considered how member functions with trailing object types ge
 
 Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. And we need to carefully consider how name lookup works in this context.
 
-To avoid repetition, we'll use an explicit object parameter for this example:
+To avoid repetition, we'll use an explicit object parameter for this example: (Other syntaxes have identical or a subset of these possibilities, with possibly some renaming).
     
 ```cpp
 struct B {
@@ -613,11 +669,11 @@ The question is: what do each of these five functions do? Should any of them be 
 
 We think there are three approaches here that we could take:
 
-1. If there is an explicit object parameter, `this` is inaccessible and you need to qualify every access. There is no implicit lookup of members through `this`. This makes `f1` through `f4` ill-formed and only `f5` is well-formed. However, while `B().f5()` returns a reference to `B::i`, `D().f5()` returns a reference to `D::i`, since `self` is a reference to `D`.
+1. If there is an explicit object parameter, `this` is inaccessible, and every access needs to be through `self`. There is no implicit lookup of members through `this`. This makes `f1` through `f4` ill-formed and only `f5` is well-formed. However, while `B().f5()` returns a reference to `B::i`, `D().f5()` returns a reference to `D::i`, since `self` is a reference to `D`.
 
 2. If there is an explicit object parameter, `this` is accessible and points to the base subobject. There is no implicit lookup of members, all access must be through `this` or `self` explicitly. This makes `f1` ill-formed. But `f2` would be well-formed and always return a reference to `B::i`. Importantly, `this` would be *dependent* if the explicit object parameter was deduced - `this->i` is always going to be an `int` but it could be an `int` or an `int const` depending on whether the `B` object is const. `f3` would always be well-formed and would be the right way to return a forwarding reference to `B::i`. `f4` would be well-formed when invoked on a `B` but ill-formed if invoked on a `D` (because of the requested implicit downcast). And `f5` would be well-formed, as before.
 
-3. Regardless, `this` is accessible and points to the base subobject and we allow implicit lookup as today. This is mostly the same as the previous choice, except that now `f1` is well-formed and exactly equivalent to `f2`.
+3. `this` is always accessible and points to the base subobject; and we allow implicit lookup as in C++17. This is mostly the same as the previous choice, except that now `f1` is well-formed and exactly equivalent to `f2`.
 
 The wording of EWG poll in Rapperswil was:
 
@@ -907,7 +963,7 @@ struct Z {
 };
 ```
 
-The user made a typo and wrote `cosnt` instead of `const`. Today, not a problem, this is ill-formed and the compiler will helpfully point out your problem.
+The user made a typo and wrote `cosnt` instead of `const`. In C++17, not a problem, this is ill-formed and the compiler will helpfully point out your problem.
 
 But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly `Z` and that explicit object is named `cosnt`. Notably, this member function is *not* const!
 
@@ -1757,7 +1813,7 @@ struct less_than {
 </tr>
 </table>
 
-Today, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object. That's more work that's completely unnecessary. Copying it is free - the compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
+In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object. That's more work that's completely unnecessary. Copying it is free - the compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
 
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
@@ -1994,3 +2050,8 @@ The authors would like to thank:
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
 - Amy Worthington, Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
 - Guilherme Hartmann for his guidance with the implementation
+- Richard Smith, Jens Maurer, and Hubert Tong for help with wording
+
+<!--
+ vim: ft=markdown wrap linebreak nolist textwidth=0 wrapmargin=0
+-->
