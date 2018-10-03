@@ -247,7 +247,7 @@ These will be explored in detail in the [examples](#real-world-examples) section
 
 There are three different syntaxes that we can use to solve this problem. We will use them throughout the examples in the rest of proposal. This section just briefly goes through the syntax options - the semantics will be more thoroughly explained in later sections.
 
-### Explicit object parameter ### {#explicit-object-parameter}
+### Explicit `this`-annotated parameter ### {#syntax-1}
 
 A non-static member function can be declared to take as its first parameter an *explicit object parameter*, denoted with the prefixed keyword `this`. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules:
 
@@ -278,7 +278,7 @@ A call to a member function will interpret the object argument as the first (`th
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
 
-### Explicit object parameter, sans identifier ### {#explicit-object-parameter-no-id}
+### Explicit `this` parameter ### {#syntax-2}
 
 A non-static member function can be declared to take `this` as its first parameter. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules, and instead of remaining a pointer, becomes a reference, fixing a long-standing oversight of the language, stemming from before references were invented.
 
@@ -302,14 +302,14 @@ void ex(X& x, D const& d) {
 }
 ```
 
-As before, member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
+As with [[#syntax-1]], member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
 
 A call to a member function will interpret the object argument as the first, `this` parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth. 
 
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
 
-### Trailing object type, with identifier ### {#trailing-object-type-with-identifier}
+### Trailing type with identifier ### {#syntax-3}
 
 In C++17, member functions can optionally have a *cv-qualifier* and can optionally have a *ref-qualifier*. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:
 
@@ -338,7 +338,7 @@ Effectively, this is taking the previously introduced explicit object parameter 
 Member functions with an trailing object type cannot be `static`. 
    
  
-### Trailing object type, without identifier ### {#trailing-object-type-without-identifier}
+### Trailing object type sans identifier ### {#syntax-4}
 
 Similar to the above, except without a possible identifier. 
 
@@ -373,8 +373,8 @@ There are several options we have as to the semantics of `this` within member fu
 
 <table style="width:100%">
 <tr>
-<th style="width:50%"> Explicit object parameter with identifier </th>
-<th style="width:50%"> Explicit `this` object parameter </th>
+<th style="width:50%"> [[#syntax-1]] </th>
+<th style="width:50%"> [[#syntax-2]] </th>
 </tr>
 <tr>
 <td>
@@ -419,8 +419,8 @@ struct optional {
 </td>
 </tr>
 <tr>
-<th> Trailing object type with identifier </th>
-<th> Trailing object type without identifier </th>
+<th> [[#syntax-3]] </th>
+<th> [[#syntax-4]] </th>
 </tr>
 <tr>
 <td>
@@ -466,27 +466,27 @@ struct optional {
 </tr>
 </table>
 
-Note that the two syntaxes with trailing object type declare the `self` parameter to just have type `Self` while the explicit object parameter syntax still uses `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
+Note that the two syntaxes with trailing object type declare the object parameter to just have type `Self`, while the explicit object parameter syntaxes still use `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
 
 
 ## Proposed semantics ## {#proposed-semantics}
 
 What follows is a description of how deducing `this` affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth. 
 
-This is a strict extension to the language; nearly all existing syntax remains valid. See [parsing issues](#parsing-issues) for the pathological case that may change meaning should the trailing syntaxes be chosen.
+This is a strict extension to the language; nearly all existing syntax remains valid. See [[#parsing-issues]] for the pathological case that may change meaning should the trailing syntaxes be chosen.
 
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
 
 In C++17, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
 
-For non-static member functions using any of the new syntax (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.
+For non-static member functions using any of the new syntaxes (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.
 
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">With Explicit Object</th>
-<th style="width:33%">With Explicit Type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -535,7 +535,7 @@ struct X {
 
 Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column today - and potentially the non-const overload would not be a viable candidate if `obj` were const. 
 
-With either of the proposed syntaxes, either explicit object or explicit type, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
+With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
 
 The only change with how we lookup candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter would be the object parameter, and the second listed parameter would correspond to the first called argument.
 
@@ -545,6 +545,7 @@ The behaviors of the three columns as proposed are exactly equivalent.
 
 The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter &mdash; which is new for the language.
 
+
 ### Type deduction ### {#type-deduction}
 
 One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.
@@ -553,8 +554,8 @@ If either the explicit object parameter's type or trailing object type is a dedu
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Trailing object type</th>
+<th style="width:50%">[[#syntax-1]]</th>
+<th style="width:50%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -592,7 +593,8 @@ void ex(X& x, D& d) {
 </tr>
 </table>
 
-It's important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications of [name lookup within member function bodies](#name-lookup-within-member-functions), and also leads to a potential [template deduction extension](#potential-extensions).
+It's important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and also leads to a potential [template deduction extension](#potential-extensions).
+
 
 ### By value `this` ### {#by-value-this}
 
@@ -611,7 +613,7 @@ struct less_than {
 less_than{}(4, 5);
 ```
 
-Following the proposing rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [by-value member functions](#by-value-member-functions).
+Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [[#by-value-member-functions]].
 
 In the case of trailing object type, what does this mean:
 
@@ -725,11 +727,14 @@ auto&& value(this Self&&) {
 </tr>
 </table>
 
-Note that with the last two choices here - we do not even provide a name to the explicit object parameter, which is a good way to sidestep any problems with incorrect access. 
+Note that with the last two choices, we do not even provide a name to the explicit object parameter, since it is not needed.
 
-What do these options mean if we consider an trailing object type syntax? If we provide an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter. It's just that the named parameter is in a different location in the declaration - otherwise it has the same meaning. 
 
-But if we take the trailing object type syntax without an identifier, we can't have this differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`:
+What do these options mean if we consider the trailing type syntax? If we allow an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter &mdash; it's just that the named parameter is in a different location in the declaration, but otherwise has the same meaning. 
+
+If we take the trailing object type syntax *without an identifier*, we can't have differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`.
+
+Something similar happens in the *Explicit `this`* syntax: `this` behaves exaclty as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
 
 ```cpp
 struct X {
@@ -749,7 +754,7 @@ struct X {
 };
 ```
 
-For some of these member functions, `this` might not point to an `X` - it might point to a type derived from `X`. With this syntax, we end up with a slightly different choice of syntaxes:
+For some of these member functions, `this` might not point to an `X` - it might point to a type derived from `X`. With the trailing type syntax, we end up with a slightly different choice of syntaxes:
 
 ```c++
 struct B {
