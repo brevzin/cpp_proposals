@@ -980,30 +980,34 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 <table>
 <tr>
 <th />
-<th>Explicit Object Parameter</th>
-<th>Trailing Object Type<br />with optional identifier</th>
-<th>Trailing Object Type<br />without identifier</th>
+<th>[[#syntax-1]]</th>
+<th>[[#syntax-2]]</th>
+<th>[[#syntax-3]]</th>
+<th>[[#syntax-4]]</th>
 </tr>
 <tr>
 <th>Familiarity</th>
 <td>This syntax isn't very "C++-ic" in the sense that we'd have two different places where *cv*- and *ref*-qualifiers appear. But it would be familiar to those coming from other languages.</td>
+<td>Same unfamiliarity as at-left, but now `this` is a reference instead of a pointer.</td>
 <td colspan="2">This syntax would keep the *cv*- and *ref*-qualifiers where they already are, so is a natural extension in that sense.</td>
 </tr>
 <tr>
 <th>Safety with derived objects<sup>&dagger;</sup></th>
 <td>Easy, if `this` is accessible</td>
+<td>Difficult and verbose since `this` refers to derived object</td>
 <td>Easy, if `this` is accessible</td>
 <td>Difficult and verbose since `this` refers to derived object</td>
 </tr>
 <tr>
 <th>Parsing issues</th>
 <td>None</td>
+<td>None</td>
 <td>Definite problems, have to choose a parsing strategy. Could limit further extensions with context-sensitive keywords.</td>
 <td>Some problems</td>
 </tr>
 <tr>
 <th>Code bloat<sup>&Dagger;</sup></th>
-<td>Cannot simply deduce `const`/non-`const`, so would nearly always have to resort to `Self&&`.</td>
+<td colspan="2">Cannot simply deduce `const`/non-`const`, so would nearly always have to resort to `Self&&`.</td>
 <td>Not an issue.</td>
 <td>Not an issue.</td>
 </tr>
@@ -1011,34 +1015,39 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 <th colspan="4">Use-cases that could be addressed</th>
 </tr>
 <tr>
-<th>[Deduplication](#deduplicating-code)</th>
+<th>[[#deduplicating-code]]</th>
 <td><div class="ins"><center>Yes</center></div></td>
-<td><div class="ins"><center>Yes</center></div></td>
-<td><div class="ins"><center>Yes</center></div></td>
-</tr>
-<tr>
-<th>[Better CRTP](#crtp)</th>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 </tr>
 <tr>
-<th>[Perfect, SFINAE-friendly callables](#sfinae-friendly-callables)</th>
+<th>[[#crtp]]</th>
+<td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 </tr>
 <tr>
-<th>[Recursive lambdas](#recursive-lambdas)</th>
+<th>[[#recursive-lambdas]]</th>
+<td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="del"><center>No</center></div></td>
 </tr>
 <tr>
-<th>[By-value member functions](#by-value-member-functions)</th>
+<th>[[#by-value-member-functions]]</th>
+<td><div class="ins"><center>Yes</center></div></td>
 <td><div class="ins"><center>Yes</center></div></td>
 <td><div class="del"><center>No</center></div></td>
 <td><div class="del"><center>No</center></div></td>
+</tr>
+<tr>
+<th>[[#sfinae-friendly-callables]]</th>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
+<td><div class="ins"><center>Yes</center></div></td>
 </tr>
 </table>
 
