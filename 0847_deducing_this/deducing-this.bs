@@ -635,7 +635,7 @@ void ex(A& a, A const&, ca) {
 }
 ```
 
-But with normal member function declarations today, we don't have this same notion of a "value" - the implicit object parameter is always a reference. We're used to writing either nothing or `const` at the end of member functions. Which is analogous to writing `C` or `C const`. It would follow that allowing the deduction of a naked (i.e. non-reference) template parameter to preserve *cv*-qualifiers would do the expected thing and be useful. 
+But with normal member function declarations today, we don't have this same notion of a "value" - the implicit object parameter is always a reference. We're used to writing either nothing or `const` at the end of member functions, which is analogous to writing `C` or `C const`. It would follow that allowing the deduction of a naked (i.e. non-reference) template parameter to preserve *cv*-qualifiers would do the expected thing and be useful. 
 
 In other words, should the trailing syntax be chosen, we propose that `ca[0]` deduces `Self` as `A const` in the previous example. 
     
@@ -648,7 +648,7 @@ So far, we've only considered how member functions with trailing object types ge
 
 Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. And we need to carefully consider how name lookup works in this context.
 
-To avoid repetition, we'll use an explicit object parameter for this example: (Other syntaxes have identical or a subset of these possibilities, with possibly some renaming).
+To avoid repetition, we'll use an explicit object parameter for this example. Other syntaxes have identical or a subset of these possibilities, modulo some renaming.
     
 ```cpp
 struct B {
@@ -1949,19 +1949,20 @@ We would like to suggest the following polls on this proposal:
 
 1. Do we want a solution in this direction of this paper? That is, do we want a syntax that allows for deducing the qualifiers and value category of the object parameter for non-static member functions?
 
-2. [Three-way] We want that solution to be 
-    - explicit object parameter 
-    - trailing object type with optional identifier 
-    - trailing object type with no identifier?
+2. [Four-way] We want that solution to be 
+    - [[#syntax-1]]
+    - [[#syntax-2]]
+    - [[#syntax-3]]
+    - [[#syntax-4]]
 
-3. [Only if 2a/b is preferred, three-way] If there is an explicit object parameter or trailing object type, then: 
+3. [three-way] Only if [[#syntax-1]] or [[#syntax-3]] is chosen:
     - `this` should be inaccessible and every access must be qualified 
     - `this` is accessible but every access must be qualified 
     - `this` is accessible and implicit lookup is permitted.
 
-4. [Only if 2c is preferred] If there is an trailing objcet type, should implicit lookup be allowed?
+4. Only if [[#syntax-2]] or [[#syntax-4]] is chosen: If there is an trailing object type, should implicit lookup be allowed?
 
-5. Should we pursue a solution along the lines presented [extension](#potential-extensions) `typename T: B`?
+5. Should we pursue a solution along the lines presented [[#potential-extensions]] `typename T: B`?
 
 # Wording # {#wording}
 
