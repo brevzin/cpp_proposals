@@ -247,7 +247,7 @@ These will be explored in detail in the [examples](#real-world-examples) section
 
 There are three different syntaxes that we can use to solve this problem. We will use them throughout the examples in the rest of proposal. This section just briefly goes through the syntax options - the semantics will be more thoroughly explained in later sections.
 
-### Explicit object parameter ### {#explicit-object-parameter}
+### Explicit `this`-annotated parameter ### {#syntax-1}
 
 A non-static member function can be declared to take as its first parameter an *explicit object parameter*, denoted with the prefixed keyword `this`. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules:
 
@@ -278,7 +278,7 @@ A call to a member function will interpret the object argument as the first (`th
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
 
-### Explicit object parameter, sans identifier ### {#explicit-object-parameter-no-id}
+### Explicit `this` parameter ### {#syntax-2}
 
 A non-static member function can be declared to take `this` as its first parameter. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules, and instead of remaining a pointer, becomes a reference, fixing a long-standing oversight of the language, stemming from before references were invented.
 
@@ -302,14 +302,14 @@ void ex(X& x, D const& d) {
 }
 ```
 
-As before, member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
+As with [[#syntax-1]], member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
 
 A call to a member function will interpret the object argument as the first, `this` parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth. 
 
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for `d.bar()`).
 
 
-### Trailing object type, with identifier ### {#trailing-object-type-with-identifier}
+### Trailing type with identifier ### {#syntax-3}
 
 In C++17, member functions can optionally have a *cv-qualifier* and can optionally have a *ref-qualifier*. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:
 
@@ -338,7 +338,7 @@ Effectively, this is taking the previously introduced explicit object parameter 
 Member functions with an trailing object type cannot be `static`. 
    
  
-### Trailing object type, without identifier ### {#trailing-object-type-without-identifier}
+### Trailing object type sans identifier ### {#syntax-4}
 
 Similar to the above, except without a possible identifier. 
 
@@ -675,26 +675,6 @@ We think there are three approaches here that we could take:
 
 3. `this` is always accessible and points to the base subobject; and we allow implicit lookup as in C++17. This is mostly the same as the previous choice, except that now `f1` is well-formed and exactly equivalent to `f2`.
 
-The wording of EWG poll in Rapperswil was:
-
-> If an explicitly named (e.g. `self`) object parameter, should `this` be implicitly or explicitly usable in member function body?
-
-Which suggests slight variations of options 1 and 2 above where we differentiate based on whether the explicit object parameter is *named* or not. In other words, potentially:
-
-```c++
-struct B {
-    int i = 0;
-    
-    // ok: object parameter not named, so 'this' is implicitly accessible
-    template <typename Self> auto&& f1a(this Self&&) { return i; }
-    
-    // error: object parameter named, so 'this' is inaccessible
-    template <typename Self> auto&& f1b(this Self&& self) { return i; }
-};
-```
-
-That seems a little too subtle a differentiation.
-
 Here is a comparison of the implementation of `optional::value()` that is very careful about not accessing anything from the derived object, based on these three name lookup semantics:
 
 <table style="width:100%">
@@ -745,11 +725,14 @@ auto&& value(this Self&&) {
 </tr>
 </table>
 
-Note that with the last two choices here - we do not even provide a name to the explicit object parameter, which is a good way to sidestep any problems with incorrect access. 
+Note that with the last two choices, we do not even provide a name to the explicit object parameter, since it is not needed.
 
-What do these options mean if we consider an trailing object type syntax? If we provide an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter. It's just that the named parameter is in a different location in the declaration - otherwise it has the same meaning. 
 
-But if we take the trailing object type syntax without an identifier, we can't have this differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`:
+What do these options mean if we consider the trailing type syntax? If we allow an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter &mdash; it's just that the named parameter is in a different location in the declaration, but otherwise has the same meaning. 
+
+If we take the trailing object type syntax *without an identifier*, we can't have differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`.
+
+Something similar happens in the *Explicit `this`* syntax: `this` behaves exaclty as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
 
 ```cpp
 struct X {
@@ -769,7 +752,7 @@ struct X {
 };
 ```
 
-For some of these member functions, `this` might not point to an `X` - it might point to a type derived from `X`. With this syntax, we end up with a slightly different choice of syntaxes:
+For some of these member functions, `this` might not point to an `X` - it might point to a type derived from `X`. With the trailing type syntax, we end up with a slightly different choice of syntaxes:
 
 ```c++
 struct B {
