@@ -33,17 +33,7 @@ The most straightforward implementation of `<=>` for `vector` is (let's just ass
 
 On the one hand, this is great. We wrote one function instead of six, and this function is really easy to understand too. On top of that, this is a really good implementation for `<`!  As good as you can get. And our code for `S` works (assuming we do something similar for `string`).
 
-On the other hand, as David goes through in a lot of detail (seriously, read it) this is quite bad for `==`. We're failing to short-circuit early on size differences, and on top of that, we're doing more work in the body than we need to. `compare_3way()` on types that don't implement `<=>` will basically do:
-
-    :::cpp
-    template <typename T>
-    strong_ordering compare_3way(T const& lhs, T const& rhs) {
-        if (x == y) return strong_ordering::equal;
-        if (x < y) return strong_ordering::less;
-        return strong_ordering::greater;
-    }    
-    
-If we're doing `==` on the outer container, we don't care if `lhs[i] != rhs[i]` because `lhs[i] < rhs[i]` or `lhs[i] > rhs[i]`. We just care that they're unequal. So this extra comparison is unnecessary. Granted, this is one extra unwanted comparison as compared to the arbitrarily many unwanted comparisons from not short-circuiting, but it's still less than ideal.
+On the other hand, as David goes through in a lot of detail (seriously, read it) this is quite bad for `==`. We're failing to short-circuit early on size differences! If two containers have a large common prefix, despite being different sizes, that's an enormous amount of extra work!
 
 In order to do `==` efficiently, we have to short-circuit and do `==` all the way down. That is:
 
@@ -67,18 +57,54 @@ In order to do `==` efficiently, we have to short-circuit and do `==` all the wa
         return true;
     }
     
-    // ... and have to write this one manually today
+## Why this is really bad
+
+This is really bad on several levels, significant levels.
+
+First, since `==` falls back on `<=>`, it's easy to fall into the trap that once `v1 == v2` compiles and gives the correct answer, we're done. If we didn't implement the efficient `==`, outside of very studious code review, we'd have no way of finding out. The problem is that `v1 <=> v2 == 0` would always give the _correct_ answer (assuming we correctly implemented `<=>`). How do you write a test to ensure that we did the short circuiting? The only way you could do it is to time some pathological case - comparing a vector containing a million entries against a vector containing those same million entries plus `1` - and checking if it was fast?
+
+Second, the above isn't even complete yet. Because even if we were careful enough to write `==`, we'd get an efficient `v1 == v2`... but still an inefficient `v1 != v2`, because that one would call `<=>`. We would have to also write this manually:
+    
+    :::cpp
     template<typename T>
     bool operator!=(vector<T> const& lhs, vector<T> const& rhs)
     {
         return !(lhs == rhs);
     }
 
-We have the initial problem that we have this false sense of security - the easy thing we wrote generates bad code.
+Third, this compounds _further_ for any types that have something like this as a member. Getting back to our `S` above:
 
-But even if we write this more efficient `==` for containers (`vector`, `string`, etc.), this still doesn't solve our problem. When we do an equality comparison on our `S` above, that will still go through `<=>` which calls `<=>` all the way down!
+    :::cpp
+    struct S {
+        vector<string> names;
+        auto operator<=>(S const&) const = default;
+    };
+    
+Even if we correctly implemented `==`, `!=`, and `<=>` for `vector` and `string`, comparing two `S`s for equality _still_ calls `<=>` and is _still_ a completely silent pessimization. Which _again_ we cannot test functionally, only with a timer.
 
-The only way to get efficiency is to have every type, even `S` above, implement both not just `<=>` but also `==` and `!=`. That is the status quo today and the problem that needs to be solved.
+And then, it somehow gets even worse, because it's be easy to fall into yet another trap: you somehow have the diligence to remember that you need to explicitly define `==` for this type and you do it this way:
+
+    :::cpp
+    struct S {
+        vector<string> names;
+        auto operator<=>(S const&) const = default;
+        bool operator==(S const&) const = default; // problem solved, right?
+    };
+    
+But what does defaulting `operator==` actually do? It [invokes `<=>`](http://eel.is/c++draft/class.rel.eq "[class.rel.eq]"). So here's explicit code that seems sensible to add to attempt to address this problem, that does absolutely nothing to address this problem. 
+
+The only way to get efficiency is to have every type, even `S` above, implement both not just `<=>` but also `==` and `!=`. By hand. 
+
+    :::cpp
+    struct S {
+        vector<string> names;
+        auto operator<=>(S const&) const = default;
+        bool operator==(S const& rhs) const { return names == rhs.names; }
+        bool operator!=(S const& rhs) const { return names != rhs.names; }
+    };
+
+That is the status quo today and the problem that needs to be solved.
+    
 
 ## Other Languages
 
@@ -276,7 +302,90 @@ Proposed
 
 The inverse lookup rules would also be changed. Whereas today `a == b` can find either `(a <=> b) == 0` or `0 == (b <=> a)`, the proposal is that it instead either find `a == b` or `b == a`. Likewise `a != b` would find either `!(a == b)` or `!(b == a)`, but never look for `<=>`.
 
-This means we have to write two functions instead of just `<=>`, but we get optimal performance. The issues with this approach are, from David (with one adjustment):
+Going along with the proposed rewrite changes, this proposal suggests we change the rules for defaulting `==` so that instead of generating a function that just invokes `<=>` it generates a member-wise equality check (in the same way that `<=>` today generates a member-wise `<=>`). Defaulted `!=` would require the existence of `==` and simply invoke it.
+
+In other words:
+
+<table style="width:100%">
+<tr>
+<th style="width:33%">
+Sample Code
+</th>
+<th style="width:33%">
+Meaning Today (P0515/C++2a)
+</th>
+<th>
+Proposed Meaning
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp
+    struct X {
+      A a;
+      B b;
+      C c;
+        
+      auto operator<=>(X const&) const = default;
+      bool operator==(X const&) const = default;
+      bool operator!=(X const&) const = default;
+    };
+</td>
+<td>
+    :::cpp
+    struct X {
+      A a;
+      B b;
+      C c;
+        
+      ??? operator<=>(X const& rhs) const {
+        if (auto cmp = a <=> rhs.a; cmp != 0)
+          return cmp;
+        if (auto cmp = b <=> rhs.b; cmp != 0)
+          return cmp;
+        return c <=> rhs.c;
+      }
+      
+      bool operator==(X const& rhs) const {
+        return (*this <=> rhs) == 0;
+      }
+      
+      bool operator!=(X const& rhs) const {
+        return (*this <=> rhs) != 0;
+      }
+    };
+</td>
+<td>
+    :::cpp
+    struct X {
+      A a;
+      B b;
+      C c;
+        
+      ??? operator<=>(X const& rhs) const {
+        if (auto cmp = a <=> rhs.a; cmp != 0)
+          return cmp;
+        if (auto cmp = b <=> rhs.b; cmp != 0)
+          return cmp;
+        return c <=> rhs.c;
+      }
+      
+      bool operator==(X const& rhs) const {
+        return a == rhs.a &&
+          b == rhs.b &&
+          c == rhs.c;
+      }
+      
+      bool operator!=(X const& rhs) const {
+        return !(*this == rhs);
+      }
+    };
+</td>
+</tr>
+</table>
+
+
+This means that for complex types (like containers), we have to write two functions instead of just `<=>` and for compound types (like aggregates), we have to default two functions instead of just `<=>`... but we get optimal performance. The issues with this approach are, from David (with one adjustment):
 
 > 1. Compared to the previous solution, this requires the user to type even more to opt-in to behavior that they almost always want (if you have defaulted relational operators, you probably want the equality operators). Because `operator<=>` is a new feature, we do not have any concerns of legacy code, so if the feature starts out as giving users all six comparison operators, it would be better if they must type only one line rather than having to type <del>three</del> <ins>two</ins>.
 > 2. It is a natural side-effect of computing less than vs. greater than that you compute equal to. It is strange that we define an operator that can tell us whether things are equal, but we use it to generate all comparisons other than equal and not equal. For the large set of types for which `operator<=>` alone is sufficient, it also means that users who are not using the default (they are explicitly defining the comparisons) must define two operators that encode much of the same logic of comparison. This mandatory duplication invites bugs as the code is changed under maintenance.
@@ -293,6 +402,10 @@ Getting back to our initial example, we would write:
 We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good trade-off. But let's discuss those two points in more detail.
 
 It's tempting to want to shoehorn templates to solve this problem (such as by adding an extra argument to `operator<=>`). But that's effectively using templates like a macro and doesn't seem like sound design.
+
+# Important implications
+
+There are several important implications of this proposal that I want to make sure get covered.
 
 ## Implications for non-special types
 
@@ -432,11 +545,33 @@ and has optimal comparison operators all the way down.
 
 The ability to do this is completely orthogonal to this proposal - given P0847, we could write `Ord` already. The point is simply to illustrate that defaulting two functions is not necessarily a large burden.
 
-## Extension: other means of defaulting `==`
+## Implications for comparison categories
+
+One of the features of P0515 is that you could default `<=>` to, instead of returning an order, simply return some kind of equality:
+
+    :::cpp
+    struct X {
+        std::strong_equality operator<=>(X const&) const = default;
+    };
+    
+In a world where neither `==` nor `!=` would be generated from `<=>`, this no longer makes any sense to allow. We could have to require that the return type of `<=>` be some kind of ordering - that is, at least `std::partial_ordering`. Allowing the declaration of `X` above would be misleading, at best. 
+
+However, there may still be a need to differentiate between `std::strong_equality` and `std::weak_equality`. The only place left to do this would be `operator==`. As in:
+
+    :::cpp
+    struct X {
+        std::strong_equality operator==(X const&) const = default;
+    };
+    
+Do we want to allow this? We would have to either make both `strong_equality` and `weak_equality` be implicitly convertible to `bool`. This would allow seeing what the comparison category of `decltype(x == x)` is. Or we would have to introduce new language magic that would hide the above declaration with an `operator==` that returns `bool` that invokes the other hidden one, which seems overly complex.
+
+I am not sure what the right answer is for this subproblem. 
+
+# Extension: other means of defaulting `==`
 
 One of the concerns could be that we now require class authors to default both `==` and `<=>` and this seems like an unnecessary amount of function declarations to write. To that end, this proposal could be extended to generate a defaulted `operator==` from a couple different places.
 
-### Defaulted `==` from defaulted `<=>`
+## Defaulted `==` from defaulted `<=>`
 
 This extension would be that a defaulted `operator<=>` also creates a defaulted `operator==`. The result would be no change in typing at all for classes that just want a default, member-wise total order (as in `A`) above. 
 
@@ -444,7 +579,7 @@ The reasoning here is that having `<=>` certainly implies equality, and the like
 
 On the other hand, it seems a little strange that `<=>` never leads to the generation of an `==` operation (that is, `a == b` is no longer `(a <=> b) == 0`), `<=>` can nevertheless lead to the generation of an `==` _function_. But if a leading concern with this proposal is the requirement of an additional function declaration, this is surely worth doing.
 
-### Defaulted `==` from defaulted copy constructor/assignment
+## Defaulted `==` from defaulted copy constructor/assignment
 
 A different potential extension is to take advantage of the clear ties between copying and equality. Stepanov's [Fundamentals of Generic Programming][stepanov.fogp] puts forward axioms that equate the semantics of copying with the semantics of equals. Copying gives you an equal object, which is an idea explicitly noted in [P0515R0](https://wg21.link/p0515r0):
 
@@ -452,7 +587,7 @@ A different potential extension is to take advantage of the clear ties between c
 
 As originally suggested in [P0432](https://wg21.link/p0432) and [P0481](https://wg21.link/p0481), we could generate a default, member-wise comparison if the copy constructor is not user-provided and all the members are equality comparable.
 
-### Impact on example
+## Impact on example
 
 The earlier example was:
 

@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1185R0 <br />
-Date: 2018-09-29 <br />
+Date: 2018-10-05 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -610,6 +610,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <div class="toc">
 <ol>
 <li><a href="#motivation">Motivation</a><ol>
+<li><a href="#why-this-is-really-bad">Why this is really bad</a></li>
 <li><a href="#other-languages">Other Languages</a><ol>
 <li><a href="#rust">Rust</a></li>
 <li><a href="#other-languages_1">Other Languages</a></li>
@@ -617,15 +618,17 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </li>
 </ol>
 </li>
-<li><a href="#proposal">Proposal</a><ol>
+<li><a href="#proposal">Proposal</a></li>
+<li><a href="#important-implications">Important implications</a><ol>
 <li><a href="#implications-for-non-special-types">Implications for non-special types</a></li>
 <li><a href="#implications-for-defaulting">Implications for defaulting</a></li>
+<li><a href="#implications-for-comparison-categories">Implications for comparison categories</a></li>
+</ol>
+</li>
 <li><a href="#extension-other-means-of-defaulting">Extension: other means of defaulting ==</a><ol>
 <li><a href="#defaulted-from-defaulted">Defaulted == from defaulted &lt;=&gt;</a></li>
 <li><a href="#defaulted-from-defaulted-copy-constructorassignment">Defaulted == from defaulted copy constructor/assignment</a></li>
 <li><a href="#impact-on-example">Impact on example</a></li>
-</ol>
-</li>
 </ol>
 </li>
 <li><a href="#acknowledgements">Acknowledgements</a></li>
@@ -657,16 +660,7 @@ strong_ordering operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt
 
 
 <p>On the one hand, this is great. We wrote one function instead of six, and this function is really easy to understand too. On top of that, this is a really good implementation for <code class="language-cpp">&lt;</code>!  As good as you can get. And our code for <code class="language-cpp">S</code> works (assuming we do something similar for <code class="language-cpp">string</code>).</p>
-<p>On the other hand, as David goes through in a lot of detail (seriously, read it) this is quite bad for <code class="language-cpp">==</code>. We're failing to short-circuit early on size differences, and on top of that, we're doing more work in the body than we need to. <code class="language-cpp">compare_3way()</code> on types that don't implement <code class="language-cpp">&lt;=&gt;</code> will basically do:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
-strong_ordering compare_3way(T const&amp; lhs, T const&amp; rhs) {
-    if (x == y) return strong_ordering::equal;
-    if (x &lt; y) return strong_ordering::less;
-    return strong_ordering::greater;
-}</code></pre>
-
-
-<p>If we're doing <code class="language-cpp">==</code> on the outer container, we don't care if <code class="language-cpp">lhs[i] != rhs[i]</code> because <code class="language-cpp">lhs[i] &lt; rhs[i]</code> or <code class="language-cpp">lhs[i] &gt; rhs[i]</code>. We just care that they're unequal. So this extra comparison is unnecessary. Granted, this is one extra unwanted comparison as compared to the arbitrarily many unwanted comparisons from not short-circuiting, but it's still less than ideal.</p>
+<p>On the other hand, as David goes through in a lot of detail (seriously, read it) this is quite bad for <code class="language-cpp">==</code>. We're failing to short-circuit early on size differences! If two containers have a large common prefix, despite being different sizes, that's an enormous amount of extra work!</p>
 <p>In order to do <code class="language-cpp">==</code> efficiently, we have to short-circuit and do <code class="language-cpp">==</code> all the way down. That is:</p>
 <pre class="codehilite"><code class="language-cpp">template&lt;typename T&gt;
 bool operator==(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
@@ -685,22 +679,50 @@ bool operator==(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
     }
 
     return true;
-}
+}</code></pre>
 
-// ... and have to write this one manually today
-template&lt;typename T&gt;
+
+<h3 id="why-this-is-really-bad">1.1. Why this is really bad<a class="self-link" href="#why-this-is-really-bad"></a></h3>
+<p>This is really bad on several levels, significant levels.</p>
+<p>First, since <code class="language-cpp">==</code> falls back on <code class="language-cpp">&lt;=&gt;</code>, it's easy to fall into the trap that once <code class="language-cpp">v1 == v2</code> compiles and gives the correct answer, we're done. If we didn't implement the efficient <code class="language-cpp">==</code>, outside of very studious code review, we'd have no way of finding out. The problem is that <code class="language-cpp">v1 &lt;=&gt; v2 == 0</code> would always give the <em>correct</em> answer (assuming we correctly implemented <code class="language-cpp">&lt;=&gt;</code>). How do you write a test to ensure that we did the short circuiting? The only way you could do it is to time some pathological case - comparing a vector containing a million entries against a vector containing those same million entries plus <code class="language-cpp">1</code> - and checking if it was fast?</p>
+<p>Second, the above isn't even complete yet. Because even if we were careful enough to write <code class="language-cpp">==</code>, we'd get an efficient <code class="language-cpp">v1 == v2</code>... but still an inefficient <code class="language-cpp">v1 != v2</code>, because that one would call <code class="language-cpp">&lt;=&gt;</code>. We would have to also write this manually:</p>
+<pre class="codehilite"><code class="language-cpp">template&lt;typename T&gt;
 bool operator!=(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
 {
     return !(lhs == rhs);
 }</code></pre>
 
 
-<p>We have the initial problem that we have this false sense of security - the easy thing we wrote generates bad code.</p>
-<p>But even if we write this more efficient <code class="language-cpp">==</code> for containers (<code class="language-cpp">vector</code>, <code class="language-cpp">string</code>, etc.), this still doesn't solve our problem. When we do an equality comparison on our <code class="language-cpp">S</code> above, that will still go through <code class="language-cpp">&lt;=&gt;</code> which calls <code class="language-cpp">&lt;=&gt;</code> all the way down!</p>
-<p>The only way to get efficiency is to have every type, even <code class="language-cpp">S</code> above, implement both not just <code class="language-cpp">&lt;=&gt;</code> but also <code class="language-cpp">==</code> and <code class="language-cpp">!=</code>. That is the status quo today and the problem that needs to be solved.</p>
-<h3 id="other-languages">1.1. Other Languages<a class="self-link" href="#other-languages"></a></h3>
+<p>Third, this compounds <em>further</em> for any types that have something like this as a member. Getting back to our <code class="language-cpp">S</code> above:</p>
+<pre class="codehilite"><code class="language-cpp">struct S {
+    vector&lt;string&gt; names;
+    auto operator&lt;=&gt;(S const&amp;) const = default;
+};</code></pre>
+
+
+<p>Even if we correctly implemented <code class="language-cpp">==</code>, <code class="language-cpp">!=</code>, and <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">vector</code> and <code class="language-cpp">string</code>, comparing two <code class="language-cpp">S</code>s for equality <em>still</em> calls <code class="language-cpp">&lt;=&gt;</code> and is <em>still</em> a completely silent pessimization. Which <em>again</em> we cannot test functionally, only with a timer.</p>
+<p>And then, it somehow gets even worse, because it's be easy to fall into yet another trap: you somehow have the diligence to remember that you need to explicitly define <code class="language-cpp">==</code> for this type and you do it this way:</p>
+<pre class="codehilite"><code class="language-cpp">struct S {
+    vector&lt;string&gt; names;
+    auto operator&lt;=&gt;(S const&amp;) const = default;
+    bool operator==(S const&amp;) const = default; // problem solved, right?
+};</code></pre>
+
+
+<p>But what does defaulting <code class="language-cpp">operator==</code> actually do? It <a href="http://eel.is/c++draft/class.rel.eq" title="[class.rel.eq]">invokes <code class="language-cpp">&lt;=&gt;</code></a>. So here's explicit code that seems sensible to add to attempt to address this problem, that does absolutely nothing to address this problem. </p>
+<p>The only way to get efficiency is to have every type, even <code class="language-cpp">S</code> above, implement both not just <code class="language-cpp">&lt;=&gt;</code> but also <code class="language-cpp">==</code> and <code class="language-cpp">!=</code>. By hand. </p>
+<pre class="codehilite"><code class="language-cpp">struct S {
+    vector&lt;string&gt; names;
+    auto operator&lt;=&gt;(S const&amp;) const = default;
+    bool operator==(S const&amp; rhs) const { return names == rhs.names; }
+    bool operator!=(S const&amp; rhs) const { return names != rhs.names; }
+};</code></pre>
+
+
+<p>That is the status quo today and the problem that needs to be solved.</p>
+<h3 id="other-languages">1.2. Other Languages<a class="self-link" href="#other-languages"></a></h3>
 <p>In order how to best figure out how to solve this problem for C++, it is helpful to look at how other languages have already addressed this issue. While P0515 listed many languages which have a three-way comparison returning a signed integer, there is another set of otherwise mostly-unrelated languages that take a different approach. </p>
-<h4 id="rust">1.1.1. Rust<a class="self-link" href="#rust"></a></h4>
+<h4 id="rust">1.2.1. Rust<a class="self-link" href="#rust"></a></h4>
 <p>Rust, Kotlin, Swift, Haskell, and Scala are rather different languages in many respects. But they all solve this particular problem in basically the same way: they treat <em>equality</em> and <em>comparison</em> as separate operations. I want to focus specifically on Rust here as it's arguably the closest language to C++ of the group, but the other three are largely equivalent for the purposes of this specific discussion.</p>
 <p>Rust deals in Traits (which are roughly analogous to C++0x concepts and Swift protocols) and it has four relevant Traits that have to do with comparisons:</p>
 <ul>
@@ -766,7 +788,7 @@ bool operator!=(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
 </table>
 
 <p>In other words, <code class="language-cpp">eq</code> calls <code class="language-cpp">eq</code> all the way down while doing short-circuiting whereas <code class="language-cpp">cmp</code> calls <code class="language-cpp">cmp</code> all the way down, and these are two separate functions. Both algorithms exactly match our implementation of <code class="language-cpp">==</code> and <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">vector</code> above. Even though <code class="language-cpp">cmp</code> performs a 3-way ordering, and you can use the result of <code class="language-cpp">a.cmp(b)</code> to determine that <code class="language-cpp">a == b</code>, it is <em>not</em> the way that Rust (or other languages in this realm like Swift and Kotlin and Haskell) determine equality. </p>
-<h4 id="other-languages_1">1.1.2. Other Languages<a class="self-link" href="#other-languages_1"></a></h4>
+<h4 id="other-languages_1">1.2.2. Other Languages<a class="self-link" href="#other-languages_1"></a></h4>
 <p>Swift has <a href="https://developer.apple.com/documentation/swift/equatable" title="Equatable - Swift Standard Library"><code class="language-cpp">Equatable</code></a> and <a href="https://developer.apple.com/documentation/swift/comparable" title="Comparable - Swift Standard Library"><code class="language-cpp">Comparable</code></a> protocols. For types that conform to <code class="language-cpp">Equatable</code>, <code class="language-cpp">!=</code> is implicitly generated from <code class="language-cpp">==</code>. For types that conform to <code class="language-cpp">Comparable</code>, <code class="language-cpp">&gt;</code>, <code class="language-cpp">&gt;=</code>, and <code class="language-cpp">&lt;=</code> are implicitly generated from <code class="language-cpp">&lt;</code>. Swift does not have a 3-way comparison function.</p>
 <p>There are other languages that make roughly the same decision in this regard that Rust does: <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> are generated from a function that does equality whereas the four relational operators are generated from a three-way comparison. Even though the three-way comparison <em>could</em> be used to determine equality, it is not:</p>
 <ul>
@@ -858,7 +880,84 @@ bool operator!=(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
 </table>
 
 <p>The inverse lookup rules would also be changed. Whereas today <code class="language-cpp">a == b</code> can find either <code class="language-cpp">(a &lt;=&gt; b) == 0</code> or <code class="language-cpp">0 == (b &lt;=&gt; a)</code>, the proposal is that it instead either find <code class="language-cpp">a == b</code> or <code class="language-cpp">b == a</code>. Likewise <code class="language-cpp">a != b</code> would find either <code class="language-cpp">!(a == b)</code> or <code class="language-cpp">!(b == a)</code>, but never look for <code class="language-cpp">&lt;=&gt;</code>.</p>
-<p>This means we have to write two functions instead of just <code class="language-cpp">&lt;=&gt;</code>, but we get optimal performance. The issues with this approach are, from David (with one adjustment):</p>
+<p>Going along with the proposed rewrite changes, this proposal suggests we change the rules for defaulting <code class="language-cpp">==</code> so that instead of generating a function that just invokes <code class="language-cpp">&lt;=&gt;</code> it generates a member-wise equality check (in the same way that <code class="language-cpp">&lt;=&gt;</code> today generates a member-wise <code class="language-cpp">&lt;=&gt;</code>). Defaulted <code class="language-cpp">!=</code> would require the existence of <code class="language-cpp">==</code> and simply invoke it.</p>
+<p>In other words:</p>
+<table style="width:100%">
+<tr>
+<th style="width:33%">
+<p>Sample Code</p>
+</th>
+<th style="width:33%">
+<p>Meaning Today (P0515/C++2a)</p>
+</th>
+<th>
+<p>Proposed Meaning</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+  A a;
+  B b;
+  C c;
+
+  auto operator&lt;=&gt;(X const&amp;) const = default;
+  bool operator==(X const&amp;) const = default;
+  bool operator!=(X const&amp;) const = default;
+};</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+  A a;
+  B b;
+  C c;
+
+  ??? operator&lt;=&gt;(X const&amp; rhs) const {
+    if (auto cmp = a &lt;=&gt; rhs.a; cmp != 0)
+      return cmp;
+    if (auto cmp = b &lt;=&gt; rhs.b; cmp != 0)
+      return cmp;
+    return c &lt;=&gt; rhs.c;
+  }
+
+  bool operator==(X const&amp; rhs) const {
+    return (*this &lt;=&gt; rhs) == 0;
+  }
+
+  bool operator!=(X const&amp; rhs) const {
+    return (*this &lt;=&gt; rhs) != 0;
+  }
+};</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">struct X {
+  A a;
+  B b;
+  C c;
+
+  ??? operator&lt;=&gt;(X const&amp; rhs) const {
+    if (auto cmp = a &lt;=&gt; rhs.a; cmp != 0)
+      return cmp;
+    if (auto cmp = b &lt;=&gt; rhs.b; cmp != 0)
+      return cmp;
+    return c &lt;=&gt; rhs.c;
+  }
+
+  bool operator==(X const&amp; rhs) const {
+    return a == rhs.a &amp;&amp;
+      b == rhs.b &amp;&amp;
+      c == rhs.c;
+  }
+
+  bool operator!=(X const&amp; rhs) const {
+    return !(*this == rhs);
+  }
+};</code></pre>
+</td>
+</tr>
+</table>
+
+<p>This means that for complex types (like containers), we have to write two functions instead of just <code class="language-cpp">&lt;=&gt;</code> and for compound types (like aggregates), we have to default two functions instead of just <code class="language-cpp">&lt;=&gt;</code>... but we get optimal performance. The issues with this approach are, from David (with one adjustment):</p>
 <blockquote>
 <ol>
 <li>Compared to the previous solution, this requires the user to type even more to opt-in to behavior that they almost always want (if you have defaulted relational operators, you probably want the equality operators). Because <code class="language-cpp">operator&lt;=&gt;</code> is a new feature, we do not have any concerns of legacy code, so if the feature starts out as giving users all six comparison operators, it would be better if they must type only one line rather than having to type <del>three</del> <ins>two</ins>.</li>
@@ -875,7 +974,9 @@ bool operator!=(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt; const&amp; rhs)
 
 <p>We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good trade-off. But let's discuss those two points in more detail.</p>
 <p>It's tempting to want to shoehorn templates to solve this problem (such as by adding an extra argument to <code class="language-cpp">operator&lt;=&gt;</code>). But that's effectively using templates like a macro and doesn't seem like sound design.</p>
-<h3 id="implications-for-non-special-types">2.1. Implications for non-special types<a class="self-link" href="#implications-for-non-special-types"></a></h3>
+<h2 id="important-implications">3. Important implications<a class="self-link" href="#important-implications"></a></h2>
+<p>There are several important implications of this proposal that I want to make sure get covered.</p>
+<h3 id="implications-for-non-special-types">3.1. Implications for non-special types<a class="self-link" href="#implications-for-non-special-types"></a></h3>
 <p>There are many kinds of types for which the defaulted comparison semantics are incorrect, but nevertheless don't have to do anything different between equality and ordering. One such example is <code class="language-cpp">optional&lt;T&gt;</code>. Having to write two functions here gets exactly at David's point of duplication above:</p>
 <table style="width:100%">
 <tr>
@@ -935,7 +1036,7 @@ constexpr auto operator==(optional&lt;T&gt; const&amp; lhs,
 <li>These two functions may be duplicated, but they give us optimal performance - writing the one <code class="language-cpp">&lt;=&gt;</code> to generate all six comparison functions does not. </li>
 <li>The amount of special types of this kind - types that have non-default comparison behavior but perform the same algorithm for both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;=&gt;</code> - is fairly small. Most container types would have separate algorithms. Typical types default both, or just default <code class="language-cpp">==</code>. The canonical examples that would need special behavior are <code class="language-cpp">std::array</code> and <code class="language-cpp">std::forward_list</code> (which either have fixed or unknown size and thus cannot short-circuit) and <code class="language-cpp">std::optional</code> and <code class="language-cpp">std::variant</code> (which can't do default comparison). So this particular duplication is a fairly limited problem.</li>
 </ol>
-<h3 id="implications-for-defaulting">2.2. Implications for defaulting<a class="self-link" href="#implications-for-defaulting"></a></h3>
+<h3 id="implications-for-defaulting">3.2. Implications for defaulting<a class="self-link" href="#implications-for-defaulting"></a></h3>
 <p>As previously hinted, this proposal implies the need for defaulting <em>two</em> functions instead of <em>one</em>. This section makes this difference more explicit:</p>
 <table style="width:100%">
 <tr>
@@ -997,19 +1098,35 @@ struct B : Eq { };</code></pre>
 
 <p>and has optimal comparison operators all the way down.</p>
 <p>The ability to do this is completely orthogonal to this proposal - given P0847, we could write <code class="language-cpp">Ord</code> already. The point is simply to illustrate that defaulting two functions is not necessarily a large burden.</p>
-<h3 id="extension-other-means-of-defaulting">2.3. Extension: other means of defaulting <code class="language-cpp">==</code><a class="self-link" href="#extension-other-means-of-defaulting"></a></h3>
+<h3 id="implications-for-comparison-categories">3.3. Implications for comparison categories<a class="self-link" href="#implications-for-comparison-categories"></a></h3>
+<p>One of the features of P0515 is that you could default <code class="language-cpp">&lt;=&gt;</code> to, instead of returning an order, simply return some kind of equality:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    std::strong_equality operator&lt;=&gt;(X const&amp;) const = default;
+};</code></pre>
+
+
+<p>In a world where neither <code class="language-cpp">==</code> nor <code class="language-cpp">!=</code> would be generated from <code class="language-cpp">&lt;=&gt;</code>, this no longer makes any sense to allow. We could have to require that the return type of <code class="language-cpp">&lt;=&gt;</code> be some kind of ordering - that is, at least <code class="language-cpp">std::partial_ordering</code>. Allowing the declaration of <code class="language-cpp">X</code> above would be misleading, at best. </p>
+<p>However, there may still be a need to differentiate between <code class="language-cpp">std::strong_equality</code> and <code class="language-cpp">std::weak_equality</code>. The only place left to do this would be <code class="language-cpp">operator==</code>. As in:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    std::strong_equality operator==(X const&amp;) const = default;
+};</code></pre>
+
+
+<p>Do we want to allow this? We would have to either make both <code class="language-cpp">strong_equality</code> and <code class="language-cpp">weak_equality</code> be implicitly convertible to <code class="language-cpp">bool</code>. This would allow seeing what the comparison category of <code class="language-cpp">decltype(x == x)</code> is. Or we would have to introduce new language magic that would hide the above declaration with an <code class="language-cpp">operator==</code> that returns <code class="language-cpp">bool</code> that invokes the other hidden one, which seems overly complex.</p>
+<p>I am not sure what the right answer is for this subproblem. </p>
+<h2 id="extension-other-means-of-defaulting">4. Extension: other means of defaulting <code class="language-cpp">==</code><a class="self-link" href="#extension-other-means-of-defaulting"></a></h2>
 <p>One of the concerns could be that we now require class authors to default both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;=&gt;</code> and this seems like an unnecessary amount of function declarations to write. To that end, this proposal could be extended to generate a defaulted <code class="language-cpp">operator==</code> from a couple different places.</p>
-<h4 id="defaulted-from-defaulted">2.3.1. Defaulted <code class="language-cpp">==</code> from defaulted <code class="language-cpp">&lt;=&gt;</code><a class="self-link" href="#defaulted-from-defaulted"></a></h4>
+<h3 id="defaulted-from-defaulted">4.1. Defaulted <code class="language-cpp">==</code> from defaulted <code class="language-cpp">&lt;=&gt;</code><a class="self-link" href="#defaulted-from-defaulted"></a></h3>
 <p>This extension would be that a defaulted <code class="language-cpp">operator&lt;=&gt;</code> also creates a defaulted <code class="language-cpp">operator==</code>. The result would be no change in typing at all for classes that just want a default, member-wise total order (as in <code class="language-cpp">A</code>) above. </p>
 <p>The reasoning here is that having <code class="language-cpp">&lt;=&gt;</code> certainly implies equality, and the likely intent behind choosing default, member-wise ordering is that you also want default, member-wise equality. </p>
 <p>On the other hand, it seems a little strange that <code class="language-cpp">&lt;=&gt;</code> never leads to the generation of an <code class="language-cpp">==</code> operation (that is, <code class="language-cpp">a == b</code> is no longer <code class="language-cpp">(a &lt;=&gt; b) == 0</code>), <code class="language-cpp">&lt;=&gt;</code> can nevertheless lead to the generation of an <code class="language-cpp">==</code> <em>function</em>. But if a leading concern with this proposal is the requirement of an additional function declaration, this is surely worth doing.</p>
-<h4 id="defaulted-from-defaulted-copy-constructorassignment">2.3.2. Defaulted <code class="language-cpp">==</code> from defaulted copy constructor/assignment<a class="self-link" href="#defaulted-from-defaulted-copy-constructorassignment"></a></h4>
+<h3 id="defaulted-from-defaulted-copy-constructorassignment">4.2. Defaulted <code class="language-cpp">==</code> from defaulted copy constructor/assignment<a class="self-link" href="#defaulted-from-defaulted-copy-constructorassignment"></a></h3>
 <p>A different potential extension is to take advantage of the clear ties between copying and equality. Stepanov's <a href="http://stepanovpapers.com/DeSt98.pdf" title="Fundamentals of Generic Programming">Fundamentals of Generic Programming</a> puts forward axioms that equate the semantics of copying with the semantics of equals. Copying gives you an equal object, which is an idea explicitly noted in <a href="https://wg21.link/p0515r0" title="Consistent comparison">P0515R0</a>:</p>
 <blockquote>
 <p>Default comparison should do exactly the same thing as default copying.</p>
 </blockquote>
 <p>As originally suggested in <a href="https://wg21.link/p0432" title="Implicit and Explicit Default Comparison Operators">P0432</a> and <a href="https://wg21.link/p0481" title="Bravely Default">P0481</a>, we could generate a default, member-wise comparison if the copy constructor is not user-provided and all the members are equality comparable.</p>
-<h4 id="impact-on-example">2.3.3. Impact on example<a class="self-link" href="#impact-on-example"></a></h4>
+<h3 id="impact-on-example">4.3. Impact on example<a class="self-link" href="#impact-on-example"></a></h3>
 <p>The earlier example was:</p>
 <pre class="codehilite"><code class="language-cpp">struct A {
     auto operator&lt;=&gt;(A const&amp;) const = default;
@@ -1019,7 +1136,7 @@ struct B : Eq { };</code></pre>
 <p>Today, <code class="language-cpp">A</code> has all six comparison operators - all of which invoke <code class="language-cpp">&lt;=&gt;</code>. This proposal prevents <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> from working, so those need to be handled separately. The core proposal suggests that this be handled explicitly - with an explicitly defaulted <code class="language-cpp">operator==</code>.</p>
 <p>Both of these extensions lead to no change necessary for <code class="language-cpp">A</code>. The former generates the defaulted <code class="language-cpp">operator==</code> function from the existence of the defaulted <code class="language-cpp">operator&lt;=&gt;</code>, the latter generates the defaulted <code class="language-cpp">operator==</code> from the implicit copy constructor/assignment.</p>
 <p>Status quo and both of these extensions have the same <em>semantics</em>, but both extensions are likely to generate better code for defaulted <code class="language-cpp">==</code>. </p>
-<h2 id="acknowledgements">3. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
+<h2 id="acknowledgements">5. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.</p>
-<h2 id="references">4. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0432r0.html">[P0432]</a><span style="margin-left: 5px;">"Implicit and Explicit Default Comparison Operators" by David Stone, 2016-09-18</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0481r0.pdf">[P0481]</a><span style="margin-left: 5px;">"Bravely Default" by Tony Van Eerd, 2016-10-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r0.pdf">[P0515R0]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, 2017-02-05</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0847r0.html">[P0847R0]</a><span style="margin-left: 5px;">"Deducing this" by Gašper Ažman, Simon Brand, Ben Deane, Barry Revzin, 2018-02-12</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html">[haskell.eq]</a><span style="margin-left: 5px;">Data.Eq - Haskell documentation</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html">[haskell.ord]</a><span style="margin-left: 5px;">Data.Ord - Haskell documentation</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">[kotlin.any]</a><span style="margin-left: 5px;">Any - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html">[kotlin.comp]</a><span style="margin-left: 5px;">Comparable - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/docs/reference/operator-overloading.html#equals">[kotlin.oper]</a><span style="margin-left: 5px;">Operator overloading - Kotlin Programming Language</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053">[rust.eq]</a><span style="margin-left: 5px;">Implementation of Eq for Slice</span></li><li><a href="https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators">[rust.oper]</a><span style="margin-left: 5px;">Comparison Operators - The Rust Reference</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136">[rust.ord]</a><span style="margin-left: 5px;">Implementation of Ord for Slice</span></li><li><a href="https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean">[scala.any]</a><span style="margin-left: 5px;">Scala Standard Library - Any</span></li><li><a href="https://www.scala-lang.org/api/current/scala/math/Ordered.html">[scala.ord]</a><span style="margin-left: 5px;">Scala Standard Library - Ordered</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li><li><a href="https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md">[stone.order]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="https://developer.apple.com/documentation/swift/comparable">[swift.comp]</a><span style="margin-left: 5px;">Comparable - Swift Standard Library</span></li><li><a href="https://developer.apple.com/documentation/swift/equatable">[swift.eq]</a><span style="margin-left: 5px;">Equatable - Swift Standard Library</span></li></ul>
+<h2 id="references">6. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0432r0.html">[P0432]</a><span style="margin-left: 5px;">"Implicit and Explicit Default Comparison Operators" by David Stone, 2016-09-18</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0481r0.pdf">[P0481]</a><span style="margin-left: 5px;">"Bravely Default" by Tony Van Eerd, 2016-10-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r0.pdf">[P0515R0]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, 2017-02-05</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0847r0.html">[P0847R0]</a><span style="margin-left: 5px;">"Deducing this" by Gašper Ažman, Simon Brand, Ben Deane, Barry Revzin, 2018-02-12</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html">[haskell.eq]</a><span style="margin-left: 5px;">Data.Eq - Haskell documentation</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html">[haskell.ord]</a><span style="margin-left: 5px;">Data.Ord - Haskell documentation</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">[kotlin.any]</a><span style="margin-left: 5px;">Any - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html">[kotlin.comp]</a><span style="margin-left: 5px;">Comparable - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/docs/reference/operator-overloading.html#equals">[kotlin.oper]</a><span style="margin-left: 5px;">Operator overloading - Kotlin Programming Language</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053">[rust.eq]</a><span style="margin-left: 5px;">Implementation of Eq for Slice</span></li><li><a href="https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators">[rust.oper]</a><span style="margin-left: 5px;">Comparison Operators - The Rust Reference</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136">[rust.ord]</a><span style="margin-left: 5px;">Implementation of Ord for Slice</span></li><li><a href="https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean">[scala.any]</a><span style="margin-left: 5px;">Scala Standard Library - Any</span></li><li><a href="https://www.scala-lang.org/api/current/scala/math/Ordered.html">[scala.ord]</a><span style="margin-left: 5px;">Scala Standard Library - Ordered</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li><li><a href="https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md">[stone.order]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="https://developer.apple.com/documentation/swift/comparable">[swift.comp]</a><span style="margin-left: 5px;">Comparable - Swift Standard Library</span></li><li><a href="https://developer.apple.com/documentation/swift/equatable">[swift.eq]</a><span style="margin-left: 5px;">Equatable - Swift Standard Library</span></li></ul>
 </html>
