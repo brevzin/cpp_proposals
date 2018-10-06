@@ -975,7 +975,7 @@ Either the `quux` or `quuz` examples don't work, by making the implicit versions
 
 ## Comparison of the options ## {#comparison}
 
-We provide here a table of how the three main syntaxes (explicit object parameter, trailing object type with optional identifier, trailing object type without identifier) compare against a wide variety of metrics.
+We provide here a table of how the four main syntaxes compare against a wide variety of metrics:
 
 <table>
 <tr>
@@ -993,10 +993,10 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 </tr>
 <tr>
 <th>Safety with derived objects<sup>&dagger;</sup></th>
-<td>Easy, if `this` is accessible</td>
-<td>Difficult and verbose since `this` refers to derived object</td>
-<td>Easy, if `this` is accessible</td>
-<td>Difficult and verbose since `this` refers to derived object</td>
+<td>Easy, if `this` is accessible. Difficult and verbose otherwise. </td>
+<td>Difficult and verbose. </td>
+<td>Easy, if `this` is accessible. Difficult and verbose otherwise. </td>
+<td>Difficult and verbose.</td>
 </tr>
 <tr>
 <th>Parsing issues</th>
@@ -1011,8 +1011,21 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 <td>Not an issue.</td>
 <td>Not an issue.</td>
 </tr>
+</table>
+
+<sup>&dagger;</sup>Basically: how easy is it to write member functions that want to deduce *cv-qualifiers* and value category without inadvertently referencing the derived object. This table assumes we do not adopt the [[#potential-extensions]]. The syntaxes that do not have a differentiation for the base class subobject will definitely have trouble here. 
+
+<sup>&Dagger;</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?
+
+As well as how well they compare against the variety of use-cases that we have been able to come up with for this feature:
+
+<table>
 <tr>
-<th colspan="4">Use-cases that could be addressed</th>
+<th />
+<th>[[#syntax-1]]</th>
+<th>[[#syntax-2]]</th>
+<th>[[#syntax-3]]</th>
+<th>[[#syntax-4]]</th>
 </tr>
 <tr>
 <th>[[#deduplicating-code]]</th>
@@ -1050,10 +1063,6 @@ We provide here a table of how the three main syntaxes (explicit object paramete
 <td><div class="ins"><center>Yes</center></div></td>
 </tr>
 </table>
-
-<sup>&dagger;</sup>Basically: how easy is it to write member functions that want to deduce *cv-qualifiers* and value category without inadvertently referencing the derived object. This table assumes we do not adopt the [potential extension](#potential-extensions).
-
-<sup>&Dagger;</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?
 
 ## Potential Extensions ## {#potential-extensions}
 
@@ -1969,9 +1978,7 @@ We would like to suggest the following polls on this proposal:
     - `this` is accessible but every access must be qualified 
     - `this` is accessible and implicit lookup is permitted.
 
-4. Only if [[#syntax-2]] or [[#syntax-4]] is chosen: If there is an trailing object type, should implicit lookup be allowed?
-
-5. Should we pursue a solution along the lines presented [[#potential-extensions]] `typename T: B`?
+4. Should we pursue a solution along the lines presented [[#potential-extensions]] `typename T: B`?
 
 # Wording # {#wording}
 

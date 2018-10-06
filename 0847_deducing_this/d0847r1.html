@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="c6d3fc19cd98b2030c79709b2c22cfe206633d6c" name="document-revision">
+  <meta content="e58eb56a6a24db26a36550e1d10b23f58f63da14" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2011,13 +2011,13 @@ pre .property::before, pre .property::after {
     <c- n>ca</c-><c- p>[</c-><c- mi>0</c-><c- p>];</c-> <c- c1>// deduces Self=A, same function</c->
 <c- p>}</c->
 </pre>
-   <p>But with normal member function declarations today, we don’t have this same notion of a "value" - the implicit object parameter is always a reference. We’re used to writing either nothing or <code class="highlight"><c- k>const</c-></code> at the end of member functions. Which is analogous to writing <code class="highlight"><c- n>C</c-></code> or <code class="highlight"><c- n>C</c-> <c- k>const</c-></code>. It would follow that allowing the deduction of a naked (i.e. non-reference) template parameter to preserve <em>cv</em>-qualifiers would do the expected thing and be useful.</p>
+   <p>But with normal member function declarations today, we don’t have this same notion of a "value" - the implicit object parameter is always a reference. We’re used to writing either nothing or <code class="highlight"><c- k>const</c-></code> at the end of member functions, which is analogous to writing <code class="highlight"><c- n>C</c-></code> or <code class="highlight"><c- n>C</c-> <c- k>const</c-></code>. It would follow that allowing the deduction of a naked (i.e. non-reference) template parameter to preserve <em>cv</em>-qualifiers would do the expected thing and be useful.</p>
    <p>In other words, should the trailing syntax be chosen, we propose that <code class="highlight"><c- n>ca</c-><c- p>[</c-><c- mi>0</c-><c- p>]</c-></code> deduces <code class="highlight"><c- n>Self</c-></code> as <code class="highlight"><c- n>A</c-> <c- k>const</c-></code> in the previous example.</p>
    <p>This mimics today’s behavior where a trailing <code class="highlight"><c- k>const</c-></code> qualifier does not mean <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, it just means <code class="highlight"><c- k>const</c-></code>. Without such a change to template deduction, <code class="highlight"><c- n>Self</c-></code> would always just deduce as <code class="highlight"><c- n>A</c-></code> (and hence be pointless), <code class="highlight"><c- n>Self</c-><c- o>&amp;</c-></code> would deduce as <code class="highlight"><c- n>A</c-><c- o>&amp;</c-></code> or <code class="highlight"><c- n>A</c-> <c- k>const</c-><c- o>&amp;</c-></code> but not allow binding to rvalues, and <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code> would give us different functions for lvalues and rvalues — which is unnecessary and leads to code bloat.</p>
    <h4 class="heading settled" data-level="3.2.4" id="name-lookup-within-member-functions"><span class="secno">3.2.4. </span><span class="content">Name lookup: within member functions</span><a class="self-link" href="#name-lookup-within-member-functions"></a></h4>
    <p>So far, we’ve only considered how member functions with trailing object types get found with name lookup and how they deduce that parameter. Now let’s move on to how the bodies of these functions actually behave.</p>
    <p>Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing <em>derived</em> types. And we need to carefully consider how name lookup works in this context.</p>
-   <p>To avoid repetition, we’ll use an explicit object parameter for this example: (Other syntaxes have identical or a subset of these possibilities, with possibly some renaming).</p>
+   <p>To avoid repetition, we’ll use an explicit object parameter for this example. Other syntaxes have identical or a subset of these possibilities, modulo some renaming.</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>B</c-> <c- p>{</c->
     <c- b>int</c-> <c- n>i</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
 
@@ -2259,7 +2259,7 @@ pre .property::before, pre .property::after {
 </pre>
    <p>Either the <code class="highlight"><c- n>quux</c-></code> or <code class="highlight"><c- n>quuz</c-></code> examples don’t work, by making the implicit versions ill-formed. Or we end up with this <code class="highlight"><c- n>cosnt</c-></code> typo problem. Neither seem great.</p>
    <h3 class="heading settled" data-level="3.3" id="comparison"><span class="secno">3.3. </span><span class="content">Comparison of the options</span><a class="self-link" href="#comparison"></a></h3>
-   <p>We provide here a table of how the three main syntaxes (explicit object parameter, trailing object type with optional identifier, trailing object type without identifier) compare against a wide variety of metrics.</p>
+   <p>We provide here a table of how the four main syntaxes compare against a wide variety of metrics:</p>
    <table>
     <tbody>
      <tr>
@@ -2275,10 +2275,10 @@ pre .property::before, pre .property::after {
       <td colspan="2">This syntax would keep the <em>cv</em>- and <em>ref</em>-qualifiers where they already are, so is a natural extension in that sense.
      <tr>
       <th>Safety with derived objects<sup>†</sup>
-      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible
-      <td>Difficult and verbose since <code class="highlight"><c- k>this</c-></code> refers to derived object
-      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible
-      <td>Difficult and verbose since <code class="highlight"><c- k>this</c-></code> refers to derived object
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible. Difficult and verbose otherwise. 
+      <td>Difficult and verbose. 
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible. Difficult and verbose otherwise. 
+      <td>Difficult and verbose.
      <tr>
       <th>Parsing issues
       <td>None
@@ -2290,8 +2290,18 @@ pre .property::before, pre .property::after {
       <td colspan="2">Cannot simply deduce <code class="highlight"><c- k>const</c-></code>/non-<code class="highlight"><c- k>const</c-></code>, so would nearly always have to resort to <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>.
       <td>Not an issue.
       <td>Not an issue.
+   </table>
+   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not have a differentiation for the base class subobject will definitely have trouble here.</p>
+   <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?</p>
+   <p>As well as how well they compare against the variety of use-cases that we have been able to come up with for this feature:</p>
+   <table>
+    <tbody>
      <tr>
-      <th colspan="4">Use-cases that could be addressed
+      <th>
+      <th><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
+      <th><a href="#syntax-2">§3.1.2 Explicit this parameter</a>
+      <th><a href="#syntax-3">§3.1.3 Trailing type with identifier</a>
+      <th><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
      <tr>
       <th><a href="#deduplicating-code">§4.1 Deduplicating Code</a>
       <td>
@@ -2383,8 +2393,6 @@ pre .property::before, pre .property::after {
         <center>Yes</center>
        </div>
    </table>
-   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">potential extension</a>.</p>
-   <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?</p>
    <h3 class="heading settled" data-level="3.4" id="potential-extensions"><span class="secno">3.4. </span><span class="content">Potential Extensions</span><a class="self-link" href="#potential-extensions"></a></h3>
    <p>One of the pitfalls mentioned in having a deduced object parameter or a deduced trailing object type is when all you want to do is deduce the <em>cv</em>-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it’s not intended!</p>
    <p>We could propose some kind of "make it easy to get the base class pointer"-style syntax, but even if we had such a thing, the feature would suffer from extra instantiations. For <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code>, we really only want four instantiations: <code class="highlight"><c- o>&amp;</c-></code>, <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- o>&amp;&amp;</c-></code>, and <code class="highlight"><c- k>const</c-><c- o>&amp;&amp;</c-></code>. If some inherits from <code class="highlight"><c- n>optional</c-></code>, we don’t want additional extra instantiations of those functions - which won’t do anything new anyway. This is code bloat - and error prone.</p>
@@ -3162,17 +3170,19 @@ pre .property::before, pre .property::after {
     <li data-md>
      <p>Do we want a solution in this direction of this paper? That is, do we want a syntax that allows for deducing the qualifiers and value category of the object parameter for non-static member functions?</p>
     <li data-md>
-     <p>[Three-way] We want that solution to be</p>
+     <p>[Four-way] We want that solution to be</p>
      <ul>
       <li data-md>
-       <p>explicit object parameter</p>
+       <p><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a></p>
       <li data-md>
-       <p>trailing object type with optional identifier</p>
+       <p><a href="#syntax-2">§3.1.2 Explicit this parameter</a></p>
       <li data-md>
-       <p>trailing object type with no identifier?</p>
+       <p><a href="#syntax-3">§3.1.3 Trailing type with identifier</a></p>
+      <li data-md>
+       <p><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a></p>
      </ul>
     <li data-md>
-     <p>[Only if 2a/b is preferred, three-way] If there is an explicit object parameter or trailing object type, then:</p>
+     <p>[three-way] Only if <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> or <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> is chosen:</p>
      <ul>
       <li data-md>
        <p><code class="highlight"><c- k>this</c-></code> should be inaccessible and every access must be qualified</p>
@@ -3182,9 +3192,7 @@ pre .property::before, pre .property::after {
        <p><code class="highlight"><c- k>this</c-></code> is accessible and implicit lookup is permitted.</p>
      </ul>
     <li data-md>
-     <p>[Only if 2c is preferred] If there is an trailing objcet type, should implicit lookup be allowed?</p>
-    <li data-md>
-     <p>Should we pursue a solution along the lines presented <a href="#potential-extensions">extension</a> <code class="highlight"><c- k>typename</c-> <c- nl>T</c-><c- p>:</c-> <c- n>B</c-></code>?</p>
+     <p>Should we pursue a solution along the lines presented <a href="#potential-extensions">§3.4 Potential Extensions</a> <code class="highlight"><c- k>typename</c-> <c- nl>T</c-><c- p>:</c-> <c- n>B</c-></code>?</p>
    </ol>
    <h2 class="heading settled" data-level="6" id="wording"><span class="secno">6. </span><span class="content">Wording</span><a class="self-link" href="#wording"></a></h2>
    <p>Change 7.6.1.2 [expr.call], paragraph 7:</p>
