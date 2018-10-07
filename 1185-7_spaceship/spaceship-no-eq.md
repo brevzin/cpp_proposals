@@ -651,6 +651,32 @@ Change 11.3.1.2 [over.match.oper] paragraph 3.4:
 
 > For the relational ([expr.rel]) <del>and equality ([expr.eq])</del> operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator `<=>`. For the relational ([expr.rel])<del>, equality ([expr.eq]),</del> and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <=> for which the rewritten expression 0 @ (y <=> x) is well-formed using that operator<=>.  <ins>For the `!=` (not equal to) operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator `==` for which the rewritten expression `!(x == y)` is well-formed using that operator `==`. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x) @ true` is well-formed using that operator `==`.</ins> *[ Note:* A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. *—end note]* In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
 
+## Wording for redefining strong structural equality
+
+Remove 10.10.1 [class.compare.default] paragraph 2:
+
+> <del>A three-way comparison operator for a class type `C` is a _structural comparison operator_ if it is defined as defaulted in the definition of `C`, and all three-way comparison operators it invokes are structural comparison operators. A type `T` has _strong structural equality_ if, for a glvalue `x` of type `const T`, `x <=> x` is a valid expression of type `std​::​strong_ordering` or `std​::​strong_equality` and either does not invoke a three-way comparison operator or invokes a structural comparison operator.</del>
+
+And replace it with:
+
+> <ins>An `==` (equal to) operator is a _structural equality operator_ if:</ins>
+> 
+> - <ins>it is a built-in candidate ([over.built]) where neither argument has floating point type, or</ins>
+> - <ins>it is an operator for a class type `C` that is defined as defaulted in the definition of `C` and all `==` operators it invokes are structure equality operators.</ins>
+>
+> <ins>A type `T` has _strong structural equality_ if, for a glvalue `x` of type `const T`, `x == x` is a valid expression of type `bool` and invokes a structural equality operator.
+
+## Wording for defaulted `<=>` generating a defaulted `==`
+
+Add to 10.10.3 [class.rel.eq], below the description of defaulted `==`:
+
+> <ins>If the class definition does not explicitly declare an `==` (equal to) operator function ([expr.eq]) and declares a defaulted three-way comparison operator function ([class.spaceship]) that is not defined as deleted, a defaulted `==` operator function is declared *implicitly*. The implicitly-declared `==` operator for a class `X` will have the form</ins>  
+
+> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&, const X&)</code></ins>  
+
+> <ins>and will follow the rules described above. 
+    
+
 # Acknowledgements
 
 This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.
