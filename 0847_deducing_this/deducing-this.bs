@@ -336,7 +336,7 @@ void ex(X& x, D const& d) {
 }
 ```
 
-Effectively, this is taking the previously introduced [[#syntax-1]] and simply declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with an parameter declaration, where current-syntax member functions behave as if the class name were just omitted. 
+Effectively, this is taking the previously introduced [[#syntax-1]] and simply declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with a parameter declaration, where current-syntax member functions behave as if the class name were just omitted. 
 
 Member functions with an trailing object type cannot be `static`. 
    
@@ -478,7 +478,7 @@ Note that the two syntaxes with trailing object type declare the object paramete
 
 What follows is a description of how deducing `this` affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth. 
 
-This is a strict extension to the language; depending on the syntax chose, either all or nearly all existing syntax remains valid (see [[#parsing-issues]] for the pathological case that may change meaning should [[#syntax-3]] or [[#syntax-4]] be chosen).
+This is a strict extension to the language; depending on the syntax chosen, either all or nearly all existing syntax remains valid (see [[#parsing-issues]] for the pathological case that may change meaning should [[#syntax-3]] or [[#syntax-4]] be chosen).
 
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
@@ -542,7 +542,7 @@ Name lookup on an expression like `obj.foo()` today would find both overloads of
 
 With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
 
-The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter would be the object parameter, and the second listed parameter would correspond to the first called argument.
+The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter is bound to the object argument, and the second listed parameter would correspond to the first argument of the call expression.
 
 This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include nonstatic member functions and member function templates writtein in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
 
