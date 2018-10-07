@@ -68,12 +68,12 @@ In C++03, member functions could have *cv*-qualifications, so it was possible to
 ```c++
 class TextBlock {
 public:
-  char const& operator[](std::size_t position) const {
+  char const& operator[](size_t position) const {
     // ...
     return text[position];
   }
 
-  char& operator[](std::size_t position) {
+  char& operator[](size_t position) {
     return const_cast<char&>(
       static_cast<TextBlock const&>(*this)[position]
     );
@@ -120,7 +120,7 @@ class optional {
 
   constexpr T&& value() && {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -128,7 +128,7 @@ class optional {
   constexpr T const&&
   value() const&& {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -183,12 +183,12 @@ class optional {
   }
 
   constexpr T&& value() && {
-    return value_impl(std::move(*this));
+    return value_impl(move(*this));
   }
 
   constexpr T const&&
   value() const&& {
-    return value_impl(std::move(*this));
+    return value_impl(move(*this));
   }
 
 private:
@@ -198,7 +198,7 @@ private:
     if (!opt.has_value()) {
       throw bad_optional_access();
     }
-    return std::forward<Opt>(opt).m_value;
+    return forward<Opt>(opt).m_value;
   }
   // ...
 };
@@ -216,7 +216,7 @@ class optional {
     template <typename Opt>
     friend decltype(auto) value(Opt&& o) {
         if (o.has_value()) {
-            return std::forward<Opt>(o).m_value;
+            return forward<Opt>(o).m_value;
         }
         throw bad_optional_access();
     }
@@ -245,6 +245,10 @@ The proposal is also sufficiently general and orthogonal that it allows for seve
 
 These are explored in detail in the [examples](#real-world-examples) section.
 
+This proposal assumes the existence of two library additions, though it does not propose them:
+
+- `like_t`, a metafunction that applies the *cv*- and *ref*-qualifiers of the first type onto the second (e.g. `like_t<int&, double>` is `double&`, `like_t<X const&&, Y>` is `Y const&&`, etc.)
+- `forward_like`, a version of `forward` that is intended to forward a variable not based on its own type but instead based on some other type. `forward_like<T>(u)` is short-hand for `forward<like_t<T,decltype(u)>>(u)`.
 
 ## Proposed Syntaxes ## {#proposed-syntaxes}
 
@@ -266,12 +270,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'self' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'self' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'self' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'self' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -283,16 +287,16 @@ Following normal deduction rules, the template parameter corresponding to the ex
 
 #### Lambda version #### {#syntax-1-lambda}
 
-The lambda versions of the above, for reference:
+The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured](this auto&& self) -> decltype(auto) { 
-  return std::forward_like<decltype(self)>(captured);
+  return forward_like<decltype(self)>(captured);
 }
 
 [captured]<class Self>(this Self&& self) -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -314,12 +318,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'this' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'this' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'this' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'this' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -332,16 +336,16 @@ Following normal deduction rules, the template parameter corresponding to the ex
 
 #### Lambda version #### {#syntax-2-lambda}
 
-The lambda versions of the above, for reference:
+The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured](auto&& this) -> decltype(auto) { 
-  return std::forward_like<decltype(this)>(captured);
+  return forward_like<decltype(this)>(captured);
 }
 
 [captured]<class Self>(Self&& this) -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -361,12 +365,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'self' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'self' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'self' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'self' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -380,9 +384,9 @@ Member functions with an trailing object type cannot be `static`.
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured]<class Self>() Self&& self -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -404,12 +408,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // this is a X const*
-    x.bar();            // deduces Self as X&, this is a X*
-    std::move(x).bar(); // deduces Self as X, this is a X*
+    x.foo(42);      // this is a X const*
+    x.bar();        // deduces Self as X&, this is a X*
+    move(x).bar();  // deduces Self as X, this is a X*
     
-    d.foo(17);          // this is a X const*
-    d.bar();            // deduces Self as D const&, this is a D const*
+    d.foo(17);      // this is a X const*
+    d.bar();        // deduces Self as D const&, this is a D const*
 }
 ```
 
@@ -423,9 +427,9 @@ Refer to [[#name-lookup-within-member-functions]] for a discussion of the variou
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured]<class Self>() Self&& -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -454,7 +458,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*self).m_value;
+    return forward<Self>(self).m_value;
   }
     
   template <typename Self>
@@ -474,7 +478,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*this).m_value;
+    return forward<Self>(this).m_value;
   }
     
   template <typename Self>
@@ -500,7 +504,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*self).m_value;
+    return forward<Self>(self).m_value;
   }
     
   template <typename Self>
@@ -600,13 +604,13 @@ struct X {
 </tr>
 </table>
 
-Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column - and potentially the non-`const` overload would not be a viable candidate if `obj` were `const`. 
+Name lookup on an expression like `obj.foo()` in C++17 would find both overloads of `foo` in the first column, with the non-const overload discarded should `obj` be const.
 
-With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-`const` one potentially not being a viable candidate.
+With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo`, with identical behaviour to C++17.
 
 The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter is bound to the object argument, and the second listed parameter would correspond to the first argument of the call expression.
 
-This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include non-static member functions and member function templates written in in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
+This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include nonstatic member functions and member function templates written in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
 
 The behaviors of the three columns as proposed are exactly equivalent.
 
@@ -617,7 +621,7 @@ The only change as far as candidates are considered is that the proposal allows 
 
 One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.
 
-If either the explicit object parameter's type or trailing object type is a deduced reference type, all of the usual template deduction rules apply as expected:
+If the type of the object parameter is a deduced template parameter, all of the usual template deduction rules apply as expected:
 
 <table style="width:100%">
 <tr>
@@ -660,7 +664,7 @@ void ex(X& x, D& d) {
 </tr>
 </table>
 
-It's important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and also leads to a potential [template deduction extension](#potential-extensions).
+It's important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and also leads to a potential [template deduction extension](#potential-extensions).
 
 
 ### By value `this` ### {#by-value-this}
@@ -812,7 +816,7 @@ What do these options mean if we consider the trailing type syntax? If we allow 
 
 If we take the trailing object type syntax *without an identifier*, we can't have differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`.
 
-Something similar happens in the *Explicit `this`* syntax: `this` behaves exactly as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
+The same is true of the [[#syntax-2]] syntax: `this` is the only name that exists and refers to the most derived object, so implicit access is disallowed.
 
 ```cpp
 struct X {
@@ -824,7 +828,7 @@ struct X {
     void e() X&&;        // this is a X* const (same as c)
     
     template <typename S>
-    void f() S;          // this is a S* const (which be a pointer to const or not!)
+    void f() S;          // this is a S* const (which can be a pointer to const or not!)
     template <typename S>
     void g() S&;         // this is a S* const
     template <typename S>
@@ -968,17 +972,15 @@ auto z = &B::f1;   // ok
 z(D());            // ok
 ```
 
-Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons, taking a pointer to `&B::f1` is okay (its type is `int(*)(D)`) and that function pointer can be invoked with a `D`. Invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]). 
+Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons, taking a pointer to `&B::f1` is okay (its type is `int(*)(D)`) and that function pointer can be invoked with a `D`. Invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [[#by-value-this]]).
                 
 ### Teachability Implications ### {#teachability-implications}
 
 Explicitly naming the object as the `this`-designated first parameter fits with many programmers' mental model of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how `std::bind`, `std::thread`, `std::function`, and so forth work with a member function pointer by making the pointer explicit.
 
-A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more in keeping with the rest of C++. The ability to deduce this type follows once we have a place where we can name it.
+A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more idiomatic C++ in this sense. The ability to deduce this type follows once we have a place where we can name it.
 
-We do not believe there are teachability problems with either choice of syntax. However, 
-
-While having `this` become dependent is novel, requiring all access through `this` and forbidding "free" member access ensures that these functions will still be clear to write and understand. 
+We do not believe there are teachability problems with either choice of syntax.
 
 
 ### Can `static` member functions have an explicit object type? ### {#static-member-functions}
@@ -1022,9 +1024,9 @@ struct X {
 
 ### Parsing issues ### {#parsing-issues}
 
-The explicit object parameter syntax has no parsing issues that we are aware of.
+The object parameter syntaxes ([[#syntax-1]] and [[#syntax-2]]) have no parsing issues that we are aware of.
 
-With the addition of a new type name after the *parameter-declaration-clause*, we potentially run into a clash with the existing *virt-specifier*s. Especially if we allow for an arbitrary identifier.
+However, with the addition of a new type name after the *parameter-declaration-clause* (in [[#syntax-3]] and [[#syntax-4]]), we potentially run into a clash with the existing *virt-specifier*s. Especially if we allow for an arbitrary identifier.
 
 Consider:
 
@@ -1224,7 +1226,7 @@ struct Derived : Base { };
 // also works for free functions
 template <typename T : Base>
 void foo(T&& x) {
-   static_assert(std::is_same_v<Base, std::remove_reference_t<T>>);
+   static_assert(is_same_v<Base, remove_reference_t<T>>);
 }
 
 Base{}.front(); // calls Base::front<Base>
@@ -1263,12 +1265,12 @@ The particular implementation of optional can be viewed on [GitHub](https://gith
 ```cpp
 class TextBlock {
 public:
-  char const& operator[](std::size_t position) const {
+  char const& operator[](size_t position) const {
     // ...
     return text[position];
   }
 
-  char& operator[](std::size_t position) {
+  char& operator[](size_t position) {
     return const_cast<char&>(
       static_cast<TextBlock const&>
         (this)[position]
@@ -1283,7 +1285,7 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](this Self&&, std::size_t position) {
+  auto& operator[](this Self&&, size_t position) {
     // ...
     return this->text[position];
   }
@@ -1296,7 +1298,7 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](std::size_t position) Self {
+  auto& operator[](size_t position) Self {
     // ...
     return this->TextBlock::text[position];
   }
@@ -1312,12 +1314,12 @@ template <typename T>
 class optional {
   // ...
   constexpr T* operator->() {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
 
   constexpr T const*
   operator->() const {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
   // ...
 };
@@ -1330,7 +1332,7 @@ class optional {
   // ...
   template <typename Self>
   constexpr auto operator->(this Self&&) {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
   // ...
 };
@@ -1343,7 +1345,7 @@ class optional {
   // ...
   template <typename Self>
   constexpr auto operator->() Self {
-    return std::addressof(this->optional::m_value);
+    return addressof(this->optional::m_value);
   }
   // ...
 };
@@ -1365,12 +1367,12 @@ class optional {
   }
 
   constexpr T&& operator*() && {
-    return std::move(this->m_value);
+    return move(this->m_value);
   }
 
   constexpr T const&&
   operator*() const&& {
-    return std::move(this->m_value);
+    return move(this->m_value);
   }
 
   constexpr T& value() & {
@@ -1389,14 +1391,14 @@ class optional {
 
   constexpr T&& value() && {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
 
   constexpr T const&& value() const&& {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -1476,7 +1478,7 @@ class optional {
 
     return has_value()
         ? invoke(forward<F>(f),
-                 std::move(**this))
+                 move(**this))
         : nullopt;
   }
 
@@ -1503,7 +1505,7 @@ class optional {
 
     return has_value()
         ? invoke(forward<F>(f),
-                 std::move(**this))
+                 move(**this))
         : nullopt;
   }
   // ...
@@ -1902,9 +1904,9 @@ This section presents some of the cases for by-value member functions.
 Say you wanted to provide a `.sorted()` method on a data structure. Such a method naturally wants to operate on a copy. Taking the parameter by value will correctly move into the parameter if the original object is an rvalue.
 
 ```cpp
-struct my_vector : std::vector<int> {
+struct my_vector : vector<int> {
   auto sorted(this my_vector self) -> my_vector {
-    std::sort(self.begin(), self.end());
+    sort(self.begin(), self.end());
     return self;
   }
 };
@@ -2007,7 +2009,7 @@ public:
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<std::decay_t<F>>{std::forward<F>(f)};
+    return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 
@@ -2017,13 +2019,13 @@ As described in the paper, this implementation has two pathological cases: one i
 struct unfriendly {
     template <typename T>
     auto operator()(T v) {
-        static_assert(std::is_same_v<T, int>);
+        static_assert(is_same_v<T, int>);
         return v;
     }
 
     template <typename T>
     auto operator()(T v) const {
-        static_assert(std::is_same_v<T, double>);
+        static_assert(is_same_v<T, double>);
         return v;
     }
 };

@@ -653,6 +653,7 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs, expected&lt;T2,E2&g
 <h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>This paper proposes the addition of a new type trait based on the preexisting rules in <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">[alg.3way]</a> and respecifying <code class="language-cpp">std::compare_3way()</code> to use that trait in its return type instead of <code class="language-cpp">auto</code>. This mirrors the usage of <code class="language-cpp">std::invoke_result_t</code> as the return type of <code class="language-cpp">std::invoke()</code>, and so should be named either <code class="language-cpp">compare_3way_result</code> or <code class="language-cpp">compare_3way_type</code>.</p>
 <p>The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write <code class="language-cpp">compare_3way_type&lt;T&gt;</code> instead of <code class="language-cpp">compare_3way_type&lt;T,T&gt;</code>.</p>
+<p>Because comparison should not modify its arguments and <code class="language-cpp">compare_3way()</code> takes its arguments by reference to const anyway, <code class="language-cpp">compare_3way_type</code> is specified in such a way as to not require adding <code class="language-cpp">const&amp;</code> to every argument all the time. </p>
 <p>The trait would allow for less cumbersome declarations of all of these operator templates:</p>
 <table style="width:100%">
 <tr>
@@ -674,7 +675,7 @@ constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
 <pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
 constexpr auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
         optional&lt;U&gt; const&amp; rhs)
-    -&gt; compare_3way_type_t&lt;T const&amp;, U const&amp;&gt;;</code></pre>
+    -&gt; compare_3way_type_t&lt;T, U&gt;;</code></pre>
 </td>
 </tr>
 <tr>
@@ -688,7 +689,7 @@ auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
 <pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
 auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs,
         vector&lt;U&gt; const&amp; rhs)
-    -&gt; compare_3way_type_t&lt;T const&amp;, U const&amp;&gt;;</code></pre>
+    -&gt; compare_3way_type_t&lt;T, U&gt;;</code></pre>
 </td>
 </tr>
 <tr>
@@ -709,8 +710,8 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
 auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
         expected&lt;T2,E2&gt; const&amp; rhs)
     -&gt; common_comparison_category_t&lt;
-            compare_3way_type_t&lt;T1 const&amp;, T2 const&amp;&gt;,
-            compare_3way_type_t&lt;E1 const&amp;, E2 const&amp;&gt;&gt;;</code></pre>
+            compare_3way_type_t&lt;T1, T2&gt;,
+            compare_3way_type_t&lt;E1, E2&gt;&gt;;</code></pre>
 </td>
 </tr>    
 </table>
@@ -729,7 +730,7 @@ namespace std {
     using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
 
   template&lt;class T, class U>
-    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
+    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
 
   // ...
 }</code></pre></blockquote>
@@ -737,7 +738,7 @@ namespace std {
 <p>Add a new specification for <code class="language-cpp">compare_3way_type</code> at the beginning of 23.7.11 [alg.3way]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_3way_type</code> template defined in this subclause is undefined.</p>
-<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, the member typedef <code class="language-cpp">type</code> shall be either defined or not present as follows. Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>. </p>
+<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, the member typedef <code class="language-cpp">type</code> shall be either defined or not present as follows. Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. </p>
 <ul>
 <li>If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>.</li>
 <li>Otherwise, if the expressions <code class="language-cpp">t == u</code> and <code class="language-cpp">t &lt; u</code> are each well-formed and convertible to <code class="language-cpp">bool</code>, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall equal <code class="language-cpp">strong_ordering</code>.</li>
@@ -747,14 +748,14 @@ namespace std {
 <p>A program shall not specialize <code class="language-cpp">compare_3way_type</code>. </p>
 </blockquote>
 <p>Change the return type of <code class="language-cpp">compare_3way</code> in 23.7.11 [alg.3way]. Its specification is largely repeated from the above, but the repetition is necessary:</p>
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
 <h3 id="interaction-with-p1186">2.2. Interaction with <a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">P1186</a><a class="self-link" href="#interaction-with-p1186"></a></h3>
 <p>P1186 proposed to obviate <code class="language-cpp">std::compare_3way()</code> in favor of having <code class="language-cpp">&lt;=&gt;</code> itself perform all of this logic. That paper getting adopted does not change the need for having a type trait like this, though it would make the specification much simpler as the library wording could simply defer to the core wording. </p>
 <p>Add a new specification for <code class="language-cpp">compare_3way_type</code> at the beginning of 23.7.11 [alg.3way]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_3way_type</code> template defined in this subclause is undefined.</p>
-<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> type shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
+<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> type shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
 </blockquote>
 <h2 id="references">3. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li></ul>
 </html>
