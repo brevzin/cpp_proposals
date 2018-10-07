@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="d7ae7c89096c4511ae2f89ae0b054f8a786e5b95" name="document-revision">
+  <meta content="fd11d66849add1cabb21505106ca3bf0cfc8c5bf" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -3016,25 +3016,25 @@ pre .property::before, pre .property::after {
    </blockquote>
    <p>However, today there is one place where you simply <em>cannot</em> pass types like <code class="highlight"><c- n>string_view</c-></code> by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection!</p>
    <p>Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible <em>only</em> with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of <code class="highlight"><c- n>basic_string_view</c-></code> assuming that we are just using <code class="highlight"><c- n>charT</c-> <c- k>const</c-><c- o>*</c-></code> as <code class="highlight"><c- n>iterator</c-></code>:</p>
-<pre class="language-c++ highlight"><c- n>template</c-> <c- o>&lt;</c-><c- n>class</c-> <c- n>charT</c-><c- p>,</c-> <c- n>class</c-> <c- n>traits</c-> <c- o>=</c-> <c- n>char_traits</c-><c- o>&lt;</c-><c- n>charT</c-><c- o>>></c->
-<c- n>class</c-> <c- n>basic_string_view</c-> <c- p>{</c->
-<c- nl>private</c-><c- p>:</c->
+<pre class="highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>class</c-> <c- nc>charT</c-><c- p>,</c-> <c- k>class</c-> <c- nc>traits</c-> <c- o>=</c-> <c- n>char_traits</c-><c- o>&lt;</c-><c- n>charT</c-><c- o>>></c->
+<c- k>class</c-> <c- nc>basic_string_view</c-> <c- p>{</c->
+<c- k>private</c-><c- o>:</c->
     <c- n>const_pointer</c-> <c- n>data_</c-><c- p>;</c->
     <c- n>size_type</c-> <c- n>size_</c-><c- p>;</c->
-<c- nl>public</c-><c- p>:</c->
-    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>begin</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+<c- k>public</c-><c- o>:</c->
+    <c- k>constexpr</c-> <c- n>const_iterator</c-> <c- n>begin</c-><c- p>(</c-><c- k>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
         <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>;</c->
     <c- p>}</c->
     
-    <c- n>constexpr</c-> <c- n>const_iterator</c-> <c- n>end</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>constexpr</c-> <c- n>const_iterator</c-> <c- n>end</c-><c- p>(</c-><c- k>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
         <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-> <c- o>+</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
     <c- p>}</c->
     
-    <c- n>constexpr</c-> <c- b>size_t</c-> <c- n>size</c-><c- p>(</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>constexpr</c-> <c- b>size_t</c-> <c- n>size</c-><c- p>(</c-><c- k>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>)</c-> <c- p>{</c->
         <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>size_</c-><c- p>;</c->
     <c- p>}</c->
     
-    <c- n>constexpr</c-> <c- n>const_reference</c-> <c- n>operator</c-><c- p>[](</c-><c- n>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>,</c-> <c- n>size_type</c-> <c- n>pos</c-><c- p>)</c-> <c- p>{</c->
+    <c- k>constexpr</c-> <c- n>const_reference</c-> <c- k>operator</c-><c- p>[](</c-><c- k>this</c-> <c- n>basic_string_view</c-> <c- n>self</c-><c- p>,</c-> <c- n>size_type</c-> <c- n>pos</c-><c- p>)</c-> <c- p>{</c->
         <c- k>return</c-> <c- n>self</c-><c- p>.</c-><c- n>data_</c-><c- p>[</c-><c- n>pos</c-><c- p>];</c->
     <c- p>}</c->
 <c- p>};</c->
