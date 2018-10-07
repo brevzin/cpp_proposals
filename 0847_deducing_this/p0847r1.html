@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="4b29868fecc81b4a6dc16aafd2cfe548d74ed085" name="document-revision">
+  <meta content="90948da76bb5a6b5482dc937a7aed6c6bb50fcb1" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1512,7 +1512,7 @@ pre .property::before, pre .property::after {
           <li><a href="#syntax-3-lambda"><span class="secno">3.1.3.1</span> <span class="content">Lambda version</span></a>
          </ol>
         <li>
-         <a href="#syntax-4"><span class="secno">3.1.4</span> <span class="content">Trailing object type sans identifier</span></a>
+         <a href="#syntax-4"><span class="secno">3.1.4</span> <span class="content">Trailing type sans identifier</span></a>
          <ol class="toc">
           <li><a href="#syntax-4-lambda"><span class="secno">3.1.4.1</span> <span class="content">Lambda version</span></a>
          </ol>
@@ -1852,7 +1852,7 @@ pre .property::before, pre .property::after {
 <c- p>}</c->
 </pre>
    <p>One should note that this syntax obviates <code class="highlight"><c- k>mutable</c-></code> and <code class="highlight"><c- k>const</c-></code> qualifiers for the lambda, as well as introduces significant parsing issues due to <code class="highlight"><c- n>self</c-></code> being completely freeform as well as optional.</p>
-   <h4 class="heading settled" data-level="3.1.4" id="syntax-4"><span class="secno">3.1.4. </span><span class="content">Trailing object type sans identifier</span><a class="self-link" href="#syntax-4"></a></h4>
+   <h4 class="heading settled" data-level="3.1.4" id="syntax-4"><span class="secno">3.1.4. </span><span class="content">Trailing type sans identifier</span><a class="self-link" href="#syntax-4"></a></h4>
    <p>Similar to the above, except without a possible identifier.</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
     <c- b>void</c-> <c- n>foo</c-><c- p>(</c-><c- b>int</c-> <c- n>i</c-><c- p>)</c-> <c- n>X</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>;</c->
@@ -1929,7 +1929,7 @@ pre .property::before, pre .property::after {
 </pre>
      <tr>
       <th> <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> 
-      <th> <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a> 
+      <th> <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a> 
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>T</c-><c- o>></c->
@@ -1971,7 +1971,7 @@ pre .property::before, pre .property::after {
    <p>Note that the two syntaxes with trailing object type declare the object parameter to just have type <code class="highlight"><c- n>Self</c-></code>, while the explicit object parameter syntaxes still use <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>. This is explained further in the section about taking <code class="highlight"><c- k>this</c-></code> <a href="#by-value-this">by value</a>.</p>
    <h3 class="heading settled" data-level="3.2" id="proposed-semantics"><span class="secno">3.2. </span><span class="content">Proposed semantics</span><a class="self-link" href="#proposed-semantics"></a></h3>
    <p>What follows is a description of how deducing <code class="highlight"><c- k>this</c-></code> affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth.</p>
-   <p>This is a strict extension to the language; depending on the syntax chosen, either all or nearly all existing syntax remains valid (see <a href="#parsing-issues">§3.2.10 Parsing issues</a> for the pathological case that may change meaning should <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> or <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a> be chosen).</p>
+   <p>This is a strict extension to the language; depending on the syntax chosen, either all or nearly all existing syntax remains valid (see <a href="#parsing-issues">§3.2.10 Parsing issues</a> for the pathological case that may change meaning should <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> or <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a> be chosen).</p>
    <h4 class="heading settled" data-level="3.2.1" id="name-lookup-candidate-functions"><span class="secno">3.2.1. </span><span class="content">Name lookup: candidate functions</span><a class="self-link" href="#name-lookup-candidate-functions"></a></h4>
    <p><strong>In C++17</strong>, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup includes both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to <em>cv</em> <code class="highlight"><c- n>X</c-></code> (where the reference and <em>cv</em> qualifiers are determined based on the function’s qualifiers) which binds to the object on which the function was invoked.</p>
    <p>For non-static member functions using <strong>any of the new syntaxes</strong> (whether an <strong>explicit</strong> object parameter or a full <strong>explicit</strong> trailing object type), lookup will work the same way as other member functions in C++17, except rather than implicitly determining the type of the object parameter based on the <em>cv</em>- and <em>ref</em>-qualifiers of the member function, these are explicitly determined by the provided type of the explicit object parameter. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.</p>
@@ -1980,7 +1980,7 @@ pre .property::before, pre .property::after {
      <tr>
       <th style="width:33%">C++17
       <th style="width:33%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
@@ -2032,7 +2032,7 @@ pre .property::before, pre .property::after {
     <tbody>
      <tr>
       <th style="width:50%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:50%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:50%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
@@ -2301,10 +2301,10 @@ pre .property::before, pre .property::after {
    <h5 class="heading settled" data-level="3.2.9.1" id="capture-this-with-id"><span class="secno">3.2.9.1. </span><span class="content">Syntaxes with an identifier</span><a class="self-link" href="#capture-this-with-id"></a></h5>
    <p>For <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and <a href="#syntax-3">§3.1.3 Trailing type with identifier</a>, interoperability is perfect, since they do not impact the meaning of <code class="highlight"><c- k>this</c-></code> in a function body. The introduced identifier (ie. <code class="highlight"><c- n>self</c-></code>) can then be used to refer to the lambda instance from the body.</p>
    <h5 class="heading settled" data-level="3.2.9.2" id="capture-this-no-id"><span class="secno">3.2.9.2. </span><span class="content">Syntaxes without an identifier</span><a class="self-link" href="#capture-this-no-id"></a></h5>
-   <p>For <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, things are more complex, since they use <code class="highlight"><c- k>this</c-></code> for their own purposes.</p>
-   <p>The sensible meaning differs for <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, since they introduce their parameters in different ways.</p>
+   <p>For <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>, things are more complex, since they use <code class="highlight"><c- k>this</c-></code> for their own purposes.</p>
+   <p>The sensible meaning differs for <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>, since they introduce their parameters in different ways.</p>
    <p>With <a href="#syntax-2">§3.1.2 Explicit this parameter</a>, <code class="highlight"><c- k>this</c-></code> is a parameter of the implied type. Parameters shadow closure members, so <code class="highlight"><c- k>this</c-></code> should as well, so capturing <code class="highlight"><c- k>this</c-></code> in lambdas becomes <em>a lot</em> less powerful. A possible solution would be to allow explicit referencing of closure members in this case, and so <code class="highlight"><c- k>this</c-><c- p>.</c-><c- k>this</c-></code> would become the captured <code class="highlight"><c- k>this</c-></code> object.</p>
-   <p>With <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, behaviour must stay the same, and so there is no possible way to refer to the lambda object. This effectively prohibits <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a> from solving the recursive lambda problem. The rules for what <code class="highlight"><c- k>this</c-></code> means in a lambda today still apply: <code class="highlight"><c- k>this</c-></code> can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:</p>
+   <p>With <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>, behaviour must stay the same, and so there is no possible way to refer to the lambda object. This effectively prohibits <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a> from solving the recursive lambda problem. The rules for what <code class="highlight"><c- k>this</c-></code> means in a lambda today still apply: <code class="highlight"><c- k>this</c-></code> can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
     <c- b>int</c-> <c- n>x</c-><c- p>,</c-> <c- n>y</c-><c- p>;</c->
 
@@ -2386,7 +2386,7 @@ pre .property::before, pre .property::after {
       <th style="width: 20%;"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
       <th style="width: 18%;"><a href="#syntax-2">§3.1.2 Explicit this parameter</a>
       <th style="width: 20%;"><a href="#syntax-3">§3.1.3 Trailing type with identifier</a>
-      <th style="width: 20%;"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width: 20%;"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <th>Familiarity
       <td>Novel to C++, familiar to users of other languages. Adds an additional way to define <em>cv</em>- and <em>ref</em> qualifiers.
@@ -2410,7 +2410,7 @@ pre .property::before, pre .property::after {
       <td>Not an issue.
       <td>Not an issue.
    </table>
-   <p><sup>†</sup><em>Safety with derived objects</em>: how easy it is to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing a shadowing member of the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not introduce an identifier (<a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>) have no way of providing a non-verbose way of referring to members of the base class, and are therefore marked as "Verbose".</p>
+   <p><sup>†</sup><em>Safety with derived objects</em>: how easy it is to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing a shadowing member of the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not introduce an identifier (<a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>) have no way of providing a non-verbose way of referring to members of the base class, and are therefore marked as "Verbose".</p>
    <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem? Note that one can always use the old-but-improved trick of deferring to a templated implementation, but now without the casts. The problem is minimal.</p>
    <h4 class="heading settled" data-level="3.3.1" id="use-case-table"><span class="secno">3.3.1. </span><span class="content">Use-case analysis</span><a class="self-link" href="#use-case-table"></a></h4>
    <p>We evaluated how well the various syntax options work for the various use-cases they are meant to solve:</p>
@@ -2421,7 +2421,7 @@ pre .property::before, pre .property::after {
       <th><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
       <th><a href="#syntax-2">§3.1.2 Explicit this parameter</a>
       <th><a href="#syntax-3">§3.1.3 Trailing type with identifier</a>
-      <th><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <th><a href="#deduplicating-code">§4.1 Deduplicating Code</a>
       <td>
@@ -2556,7 +2556,7 @@ pre .property::before, pre .property::after {
      <tr>
       <th style="width:33%">C++17
       <th style="width:33%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>class</c-> <c- nc>TextBlock</c-> <c- p>{</c->
@@ -2840,7 +2840,7 @@ pre .property::before, pre .property::after {
      <tr>
       <th style="width:33%">C++17
       <th style="width:33%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Derived</c-><c- o>></c->
@@ -2909,7 +2909,7 @@ pre .property::before, pre .property::after {
      <tr>
       <th style="width:33%">C++17
       <th style="width:33%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>D</c-><c- o>=</c-><c- b>void</c-><c- o>></c->
@@ -2982,7 +2982,7 @@ pre .property::before, pre .property::after {
      <tr>
       <th style="width:33%">C++17
       <th style="width:33%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:33%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>D</c-><c- o>=</c-><c- b>void</c-><c- o>></c->
@@ -3243,7 +3243,7 @@ pre .property::before, pre .property::after {
     <tbody>
      <tr>
       <th style="width:50%"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th style="width:50%"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width:50%"><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>
      <tr>
       <td>
 <pre class="language-cpp highlight"><c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
@@ -3315,7 +3315,7 @@ pre .property::before, pre .property::after {
       <li data-md>
        <p><a href="#syntax-3">§3.1.3 Trailing type with identifier</a></p>
       <li data-md>
-       <p><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a></p>
+       <p><a href="#syntax-4">§3.1.4 Trailing type sans identifier</a></p>
      </ul>
     <li data-md>
      <p>[three-way] Only if <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> or <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> is chosen:</p>
