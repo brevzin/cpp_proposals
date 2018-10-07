@@ -6,7 +6,7 @@ Shortname: P0847
 Level: 1
 Date: 2018-10-07
 Editor: Gašper Ažman, gasper dot azman at gmail dot com
-Editor: Simon Brand, simon at codeplay dot com
+Editor: Simon Brand, simon dot brand at microsoft dot com
 Editor: Ben Deane, ben at elbeno dot com
 Editor: Barry Revzin, barry dot revzin at gmail dot com
 Group: wg21
@@ -59,11 +59,11 @@ EWG strongly encouraged us to look in two new directions:
 - a different syntax, placing the type of the object parameter after the member function parameter declarations (where the *cv-ref* qualifiers are today)
 - a different name lookup scheme, to not have implicit/unqualified access from inside of new-style member functions that have an explicit self-type annotation (regardless of syntax).
 
-This revision carefully explores both of these directions and presents different syntaxes and lookup schemes and discusses in depth multiple different use-cases and how each of the syntaxes can or cannot address the use-cases. 
+This revision carefully explores both of these directions, presents different syntaxes and lookup schemes, and discusses in depth multiple different use-cases and how each of the syntaxes can or cannot address the use-cases. 
 
 # Motivation # {#motivation}
 
-In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member (Of course it was possible to also want `volatile` overloads, but those are less common). In these cases, both overloads do the same thing &mdash; the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" [[Effective]], Item 3:
+In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member (Of course it was possible to also want `volatile` overloads, but those are less common). In these cases, both overloads do the same thing &mdash; the only difference is in the types accessed and used. This was handled by either duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" [[Effective]], Item 3:
 
 ```c++
 class TextBlock {
@@ -84,7 +84,7 @@ public:
 
 Arguably, neither the duplication or the delegation via `const_cast` are great solutions, but they work.
 
-In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: `&`, `const&`, `&&`, or `const&&`. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for `optional<T>::value()`. The way to implement it would be something like:
+In C++11, member functions acquired a new axis to specialize on: ref-qualifiers. Now, instead of potentially needing two overloads of a single member function, we might need four: `&`, `const&`, `&&`, or `const&&`. We have three approaches to deal with this: we implement the same member four times, we can have three of the overloads delegate to the fourth, or we can have all four delegate to a helper, private static member function. One example might be the overload set for `optional<T>::value()`. One could implement this like so:
 
 <table style="width:100%">
 <tr>
@@ -207,7 +207,7 @@ private:
 </tr>
 </table>
 
-It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite, except for the fact it's impossible; we *have* to implement it this way. It seems we should be able to abstract away the qualifiers. And we can... for non-member functions, where we simply don't have this problem:
+This is not a complicated function. Far from. But more or less repeating the same code four times, or employing artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite. Unfortunately, this is impossible; we *have* to implement it this way. It seems we should be able to abstract away the qualifiers. And we can... for non-member functions, where this problem doesn't apply:
 
 ```cpp
 template <typename T>
@@ -224,9 +224,9 @@ class optional {
 };
 ```
 
-This is great - it's just one function, which handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.
+This is great - it's a single function which handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.
 
-There are many, many cases where we need two or four overloads of the same member function for different `const`- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't, simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.
+There are many, many cases where we need two or four overloads of the same member function for different `const`- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't, due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than: write it, then write it again, then write it two more times.
 
 
 # Proposal # {#proposal}
@@ -235,7 +235,7 @@ We propose a new way of declaring non-static member functions that will allow fo
 
 We believe that the ability to write *cv-ref qualifier*-aware member function templates without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily. 
 
-The proposal is also sufficiently general and sufficiently orthogonal that it allows for several new exciting features and design patterns for C++:
+The proposal is also sufficiently general and orthogonal that it allows for several new exciting features and design patterns for C++:
 
 - [recursive lambdas](#recursive-lambdas)
 - a new approach to [mixins](#crtp), a CRTP without the CRT
@@ -248,12 +248,12 @@ These are explored in detail in the [examples](#real-world-examples) section.
 
 ## Proposed Syntaxes ## {#proposed-syntaxes}
 
-There are four syntax options for solving this problem. We will use them throughout the examples in the rest of proposal; this section just briefly introduces the options. The semantics are more thoroughly explained in later sections. The various syntaxes imply subtly different semantics; the differences are called out where relevant. This paper takes the position that only one be chosen, depending on the desired characteristics.
+There are four syntactic options for solving this problem. We will use them throughout the examples in the rest of proposal; this section briefly introduces the options. The semantics are more thoroughly explained in later sections. The various syntaxes imply subtly different semantics, and the differences are called out where relevant. This paper takes the position that only one be chosen, depending on the desired characteristics.
 
 
 ### Explicit `this`-annotated parameter ### {#syntax-1}
 
-A non-static member function can be declared to take as its first parameter an *explicit object parameter*, denoted with the prefixed keyword `this`. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules:
+A non-static member function can be declared to take as its first parameter an *explicit object parameter*, denoted with the prefixed keyword `this`. Once we elevate the object parameter to a proper function parameter, it can be deduced following normal function template deduction rules:
 
 ```cpp
 struct X {
@@ -301,7 +301,7 @@ This allows the lambdas to either move or copy from the capture, depending on wh
 
 ### Explicit `this` parameter ### {#syntax-2}
 
-A non-static member function can be declared to take `this` as its first parameter. As with [[#syntax-1]], once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules. In this case, instead of remaining a pointer, `this` becomes a reference (of the type the parameter type would suggest), fixing a long-standing oversight of the language, stemming from before references were invented.
+A non-static member function can be declared to take `this` as its first parameter. As with [[#syntax-1]], once we elevate the object parameter to a proper function parameter, it can be deduced following normal function template deduction rules. In this case, instead of remaining a pointer, `this` becomes a reference (of the type the parameter type would suggest), fixing a long-standing oversight of the language, stemming from before references were invented.
 
 ```cpp
 struct X {
@@ -370,7 +370,7 @@ void ex(X& x, D const& d) {
 }
 ```
 
-Effectively, this is taking the previously introduced [[#syntax-1]] and simply declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with a parameter declaration, where current-syntax member functions behave as if the class name were just omitted. 
+Effectively, this is taking the previously introduced [[#syntax-1]] and declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with a parameter declaration, where current-syntax member functions behave as if the class name were omitted. 
 
 Member functions with an trailing object type cannot be `static`. 
 
@@ -436,7 +436,7 @@ One should note that this syntax obviates `mutable` and `const` qualifiers for t
 
 A brief example demonstrating how to write `optional::value()` and `optional::operator->()` in just two functions with no duplication (instead of six) with each of the four proposed syntaxes.
 
-There are several options we have as to the semantics of `this` within member function bodies, so this quick example just takes the most conservative approach - it is merely meant to be illustrative:
+There are several options we have as to the semantics of `this` within member function bodies, so this quick example takes the most conservative approach - it is merely meant to be illustrative:
 
 <table style="width:100%">
 <tr>
@@ -533,7 +533,7 @@ struct optional {
 </tr>
 </table>
 
-Note that the two syntaxes with trailing object type declare the object parameter to just have type `Self`, while the explicit object parameter syntaxes still use `Self&&`. This is explained further in the section about taking `this` [by value](#by-value-this).
+Note that the two syntaxes with trailing object type declare the object parameter to have type `Self`, while the explicit object parameter syntaxes still use `Self&&`. This is explained further in the section about taking `this` [by value](#by-value-this).
 
 
 ## Proposed semantics ## {#proposed-semantics}
@@ -600,13 +600,13 @@ struct X {
 </tr>
 </table>
 
-Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column today - and potentially the non-const overload would not be a viable candidate if `obj` were const. 
+Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column - and potentially the non-`const` overload would not be a viable candidate if `obj` were `const`. 
 
-With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
+With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-`const` one potentially not being a viable candidate.
 
 The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter is bound to the object argument, and the second listed parameter would correspond to the first argument of the call expression.
 
-This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include nonstatic member functions and member function templates writtein in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
+This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include non-static member functions and member function templates written in in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
 
 The behaviors of the three columns as proposed are exactly equivalent.
 
@@ -665,7 +665,7 @@ It's important to stress that deduction can deduce a derived type. In the last l
 
 ### By value `this` ### {#by-value-this}
 
-But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it's just that it is very different clear meaning.
+But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - however, it is very different clear meaning.
 
 #### By value `this` in explicit syntaxes #### {#by-value-this-explicit}
 
@@ -684,9 +684,9 @@ less_than{}(4, 5);
 
 Clearly, the parameter specification should not lie, and the first parameter (`less_than{}`) is passed by value.
 
-Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For reasons to do this, see [[#by-value-member-functions]].
+Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning - but we've never been able to take an object parameter by value before. For reasons to do this, see [[#by-value-member-functions]].
 
-However, with a by-value explicit object parameter, we still have the answer the question of what does `this` refer to within the function body? Regardless of the choice we make for [[#name-lookup-within-member-functions]], there is only one meaningful semantic choice here: there is no `this`. In the above example, `less_than` doesn't *refer* to the object parameter, it *is* the only object parameter. Declaring a function in this way is equivalent to declaring a non-member `friend` function, except that we effectively opt-in to the usual member function call syntax. This though also determines its pointer type - it is a free function type.
+However, with a by-value explicit object parameter, we still have to answer the question of what does `this` refer to within the function body? Regardless of the choice we make for [[#name-lookup-within-member-functions]], there is only one meaningful semantic choice here: there is no `this`. In the above example, `less_than` doesn't *refer* to the object parameter, it *is* the only object parameter. Declaring a function in this way is equivalent to declaring a non-member `friend` function, except that we effectively opt-in to the usual member function call syntax. This though also determines its pointer type - it is a free function type.
 
 
 #### By value `this` in trailing syntaxes #### {#by-value-this-trailing}
@@ -703,7 +703,7 @@ struct array {
 
 Clearly, since the object type is an *optional* part of the syntax, omitting it should produce the same results as currently.
 
-A common source of duplication of member functions revolves solely around wanting non-`const` and `const` overloads of a member function - that otherwise do exactly the same thing. The normal template deduction rules would drop *cv*-qualifiers, meaning that:
+A common source of duplication of member functions revolves solely around wanting non-`const` and `const` overloads of a member function that otherwise do exactly the same thing. The normal template deduction rules would drop *cv*-qualifiers, meaning that:
 
 ```c++
 using A = array<int, 10>;
@@ -717,14 +717,14 @@ But with normal member function declarations today, we don't have this same noti
 
 In other words, should the trailing syntax be chosen, we propose that `ca[0]` deduces `Self` as `A const` in the previous example. 
     
-This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it just means `const`. Without such a change to template deduction, `Self` would always just deduce as `A` (and hence be pointless), `Self&` would deduce as `A&` or `A const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues &mdash; which is unnecessary and leads to code bloat.
+This mimics today's behavior where a trailing `const` qualifier does not mean `const&`, it only means `const`. Without such a change to template deduction, `Self` would always deduce as `A` (and hence be pointless), `Self&` would deduce as `A&` or `A const&` but not allow binding to rvalues, and `Self&&` would give us different functions for lvalues and rvalues &mdash; which is unnecessary and leads to code bloat.
 
 
 ### Name lookup: within member functions ### {#name-lookup-within-member-functions}
 
-So far, we've only considered how member functions with trailing object types get found with name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave.
+So far, we've only considered how member functions with trailing object types get found by name lookup and how they deduce that parameter. Now let's move on to how the bodies of these functions actually behave.
 
-Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. And we need to carefully consider how name lookup works in this context.
+Since either the explicit object parameter or trailing object type is deduced from the object the function is called on, this has the interesting effect of possibly deducing *derived* types. We need to carefully consider how name lookup works in this context.
 
 To avoid repetition, we'll use an explicit object parameter for this example. Other syntaxes have identical or a subset of these possibilities, modulo some renaming.
     
@@ -808,11 +808,11 @@ auto&& value(this Self&&) {
 Note that with the last two choices, we do not even provide a name (though we could have) to the explicit object parameter, since it is not needed.
 
 
-What do these options mean if we consider the trailing type syntax? If we allow an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter &mdash; it's just that the named parameter is in a different location in the declaration, but otherwise has the same meaning. 
+What do these options mean if we consider the trailing type syntax? If we allow an *identifier*, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter. The named parameter is in a different location in the declaration, but otherwise has the same meaning. 
 
 If we take the trailing object type syntax *without an identifier*, we can't have differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`.
 
-Something similar happens in the *Explicit `this`* syntax: `this` behaves exaclty as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
+Something similar happens in the *Explicit `this`* syntax: `this` behaves exactly as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
 
 ```cpp
 struct X {
@@ -851,7 +851,7 @@ First, note that `f3` and `f4` are exactly equivalent with this syntax - since `
 
 2. `this` is implicitly accessible - but since `this` is no longer necessarily a pointer to `B`, `f1` does not necessary return `B::i`.
 
-What this means is that, without an identifier, there is no way to syntactically differentiate between *specifically* accessing something in `B` and accessing something through whatever is deduced as the object parameter. The same is true if, having an identifier, if we choose option #1 (`this` is always inaccessible). We would have to write one of the following:
+This means that without an identifier, there is no way to syntactically differentiate between *specifically* accessing something in `B` and accessing something through whatever is deduced as the object parameter. The same is true if, having an identifier, if we choose option #1 (`this` is always inaccessible). We would have to write one of the following:
 
 ```cpp
 // for each of these examples, we are using 'self' as the named
@@ -890,7 +890,7 @@ struct Y {
     
 `Y::f`, `Y::g`, and `Y::h` are equivalent from a signature standpoint, so all of them have the type `int(Y::*)(int, int) const&`.
 
-Where this becomes interesting is when deduction kicks in. These rules would be the same regardless of syntax, so we'll use the explicit object parameter syntax to avoid repetition:
+This becomes interesting when deduction kicks in. These rules would be the same regardless of syntax, so we'll use the explicit object parameter syntax to avoid repetition:
 
 ```cpp
 struct B {
@@ -937,7 +937,7 @@ struct B {
 struct D : B { };
 ```
 
-Following the precedent of [[P0929R2]], we think this should be fine, if strange. If `D` is incomplete, we just postpone checking until the point of call (or formation of pointer to member, etc.). At that point, the call will simply either not be viable or the formation of pointer-to-member would be ill-formed.
+Following the precedent of [[P0929R2]], we think this should be fine, if strange. If `D` is incomplete, we postpone checking until the point of call (or formation of pointer to member, etc.). At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
 
 For non-related, complete classes or non-classes:
 
@@ -968,13 +968,13 @@ auto z = &B::f1;   // ok
 z(D());            // ok
 ```
 
-Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons, taking a pointer to `&B::f1` is okay (its type is `int(*)(D)`) and that function pointer can be invoked with a `D`. Actually invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]). 
+Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons, taking a pointer to `&B::f1` is okay (its type is `int(*)(D)`) and that function pointer can be invoked with a `D`. Invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]). 
                 
 ### Teachability Implications ### {#teachability-implications}
 
 Explicitly naming the object as the `this`-designated first parameter fits with many programmers' mental model of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how `std::bind`, `std::thread`, `std::function`, and so forth work with a member function pointer by making the pointer explicit.
 
-A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more "C++-ic" in this sense. The ability to deduce this type follows once we have a place where we can name it.
+A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more in keeping with the rest of C++. The ability to deduce this type follows once we have a place where we can name it.
 
 We do not believe there are teachability problems with either choice of syntax. However, 
 
@@ -993,7 +993,7 @@ Depending on the chosen syntax, the impacts differ.
 
 #### Syntaxes with an identifier #### {#capture-this-with-id}
 
-For [[#syntax-1]] and [[#syntax-3]], interoperability is perfect, since they do not impact the meaning of `this` in a function body. The introduced identifier (ie. `self`) can then be used to refer to the lambda instance from the body.
+For [[#syntax-1]] and [[#syntax-3]], interoperability is perfect, since they do not impact the meaning of `this` in a function body. The introduced identifier (i.e. `self`) can then be used to refer to the lambda instance from the body.
 
 
 #### Syntaxes without an identifier #### {#capture-this-no-id}
@@ -1022,7 +1022,7 @@ struct X {
 
 ### Parsing issues ### {#parsing-issues}
 
-The explicit object parameter syntax has no parsing issues that we are aware of. It is purely a syntax extension. 
+The explicit object parameter syntax has no parsing issues that we are aware of.
 
 With the addition of a new type name after the *parameter-declaration-clause*, we potentially run into a clash with the existing *virt-specifier*s. Especially if we allow for an arbitrary identifier.
 
@@ -1043,15 +1043,15 @@ struct override : B {
 
 The same problem would occur with `final`. 
 
-In order to disambiguate between a trailing trailing object type, a trailing arbitrary identifier, and a *virt-specifier* (or any future trailing context-sensitive keyword), we would have to adopt set a preference - which would probably be to parse out the type first, the identifier second (if an identifier is allowed), and then anything else last.
+In order to disambiguate between a trailing object type, a trailing arbitrary identifier, and a *virt-specifier* (or any future trailing context-sensitive keyword), we would have to specify a preference - which would probably be to parse out the type first, the identifier second (if an identifier is allowed), and then anything else last.
 
-If we go with the syntax that allows for an identifier: `#1` would have an explicit object of type `override` named `override` that is an `override`, `#2` would just declare an object with an identifier that does not make use of the override *virt-specifier*, and `#3` would provide an explicit object type without an identifier. Notably today, `#3` is valid code - and it would remain valid code, but the meaning of the `override` identifier would change. 
+If we go with the syntax that allows for an identifier: `#1` would have an explicit object of type `override` named `override` that is an `override`, `#2` would declare an object with an identifier that does not make use of the override *virt-specifier*, and `#3` would provide an explicit object type without an identifier. Notably today, `#3` is valid code - and it would remain valid code, but the meaning of the `override` identifier would change. 
 
 If we go with the syntax that does *not* allow for an identifier: `#1` would be ill-formed, `#2` would declare an explicit object having type `override` that has the *virt-specifier* `override`, and `#3` would likewise change meaning. 
 
 In practice, we don't think anybody actually writes code like this seriously, so it is unlikely to break real code.
    
-We feel that allowing for an arbitrary identifier would be grabbing too much real estate with minimal benefit - as it would constrain further evolution of the standard too much and make it more difficult to use. Let's say we then added a new context-sensitive keyword, like `super`. A user might try to write:
+Allowing for an arbitrary identifier would be grabbing too much real estate with minimal benefit, as it would constrain further evolution of the standard too much and make it more difficult to use. Let's say we then added a new context-sensitive keyword, like `super`. A user might try to write:
 
 ```cpp
 struct Y {
@@ -1081,7 +1081,7 @@ struct Z {
 
 The user made a typo and wrote `cosnt` instead of `const`. In C++17, not a problem, this is ill-formed and the compiler will helpfully point out your problem.
 
-But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly `Z` and that explicit object is named `cosnt`. Notably, this member function is *not* const!
+But if we allow an arbitrary trailing identifier, and we would try to parse an identifier even without an explicit type, this could would suddenly become well-formed: we would be declaring a member function with explicit object type that is implicitly `Z` and that explicit object is named `cosnt`. Notably, this member function is *not* `const`!
 
 We could have to have parsing rules like: try to parse the type. If we find a type, then try to parse an identifier. And only then, consider things like the *virt-specifier*s. That's... complicated. It also doesn't quite mesh with a mental model a user might form about what this syntax means: that we have an implicitly provided object type which is the class type:
 
@@ -1138,7 +1138,7 @@ We provide here a table of how the four main syntaxes compare against a variety 
 </tr>
 <tr>
 <th>Code bloat<sup>&Dagger;</sup></th>
-<td colspan="2">Cannot simply deduce `const`/non-`const`, so would nearly always have to resort to `Self&&`.</td>
+<td colspan="2">Cannot deduce `const`/non-`const`, so would nearly always have to resort to `Self&&`.</td>
 <td>Not an issue.</td>
 <td>Not an issue.</td>
 </tr>
@@ -1203,16 +1203,16 @@ We evaluated how well the various syntax options work for the various use-cases 
 
 ## Potential Extensions ## {#potential-extensions}
 
-This section lists some extensions that this paper does not propose, since they have not been completely explored yet. Nevertheless, the authors believe that certain concerns that the proposed feature raises may be alleviated by showing there are possible solutions to those issues.
+This section lists some extensions that this paper does not propose, since they have not been completely explored yet. Nevertheless, we believe that certain concerns that the proposed feature raises may be alleviated by showing there are possible solutions to those issues.
 
 
 ### Constrained Deduction ### {#constrained-deduction}
 
-One of the pitfalls mentioned in having a deduced object parameter or a deduced trailing object type is when all you want to do is deduce the *cv*-qualifiers and value category of the object parameter, but you end up deducing a derived type as well, as any access through an object that might have derived type could inadvertently refer to a shadowed member in the derived class. While this is definitely desirable (and very powerful) in the case of mixins, it isn't desirable in other situations. The un-needed extra template instantiations are also not welcome.
+We mentioned earlier one of the pitfalls in having a deduced object parameter or a deduced trailing object type, which occurs when you only want to deduce the *cv*-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. This happens becaule any access through an object that might have derived type could inadvertently refer to a shadowed member in the derived class. While this is definitely desirable (and very powerful) in the case of mixins, it isn't desirable in other situations. The unnecessary template instantiations are also not welcome.
 
 One family of possible solutions could be summarised as **make it easy to get the base class pointer**. All such solutions still suffer from extra instantiations, however. For `optional::value()`, we really only want four instantiations: `&`, `const&`, `&&`, and `const&&`. If something inherits from `optional`, we don't want additional instantiations of those functions for the derived types - which won't do anything new anyway. This is code bloat.
 
-C++ already has this long-recognised problem for free function templates, however. The authors have heard many a gripe from library vendors regarding this problem, even before this paper was introduced, as it is common to only want to deduce the ref-qualifier in all sorts of contexts. Therefore, it might make sense to tackle this issue more generally. A complementary feature could be proposed that constrains *type deduction* (as opposed to removing candidates once they are deduced, as `requires` accomplishes), with the following straw-man syntax:
+C++ already has this long-recognised problem for free function templates, however. We have heard many a gripe from library vendors regarding this problem, even before this paper was introduced, as it is common to only want to deduce the ref-qualifier in all sorts of contexts. Therefore, it might make sense to tackle this issue more generally. A complementary feature could be proposed that constrains *type deduction* (as opposed to removing candidates once they are deduced, as `requires` accomplishes), with the following straw-man syntax:
 
 ```cpp
 struct Base {
@@ -1244,13 +1244,13 @@ What follows are several examples of the different kinds of problems that can be
 - the explicit object parameter syntax, with `this` accessible but implicit lookup disallowed
 - the explicit object type syntax, with no identifier allowed
 
-We are not using the straw-man [extension](#potential-extensions) syntax to constrain deduction - instead we just carefully ensure correctness, where relevant.
+We are not using the straw-man [extension](#potential-extensions) syntax to constrain deduction - instead we carefully ensure correctness, where relevant.
 
 ## Deduplicating Code ## {#deduplicating-code}
 
 This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of how repeated code can be reduced.
 
-The particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional), and this example includes some functions that are proposed in [[P0798R0]], with minor changes to better suit this format:
+The particular implementation of optional can be viewed on [GitHub](https://github.com/TartanLlama/optional), and this example includes some functions that are proposed in [[P0798R0]], with minor changes to better suit this format:
 
 <table style="width:100%">
 <tr>
@@ -1563,11 +1563,11 @@ class optional {
 
 Keep in mind that there are a few more functions in P0798 that have this lead to this explosion of overloads, so the code difference and clarity is dramatic.
 
-For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. Certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.
+For those that dislike returning auto in these cases, it is very easy to write a metafunction that matches the appropriate qualifiers from a type. This is certainly simpler than copying and pasting code and hoping that the minor changes were made correctly in every case.
 
 ## CRTP, without the C, R, or even T ## {#crtp}
 
-Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template, as a way of achieving static polymorphism. If we wanted to just outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit objects that deduce to the derived objects already, we don't need any curious recurrence. We can just use standard inheritance and let deduction just do its thing. The base class doesn't even need to be a template:
+Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template argument to a base class template as a way of achieving static polymorphism. If we wanted to outsource implementing postfix incrementing to a base, we could use CRTP for that. But with explicit objects that deduce to the derived objects already, we don't need this pattern. We can use standard inheritance and let deduction rules do the work. The base class doesn't even need to be a template:
 
 
 <table style="width:100%">
@@ -1639,7 +1639,7 @@ The proposed examples aren't much shorter, but they are certainly simpler.
 
 ### Builder pattern ### {#builder-pattern}
 
-However, once we start to do any more with CRTP, it can get increasingly complex very fast... whereas with this proposal, it stays remarkably simple.
+However, once we start to do any more with CRTP, it can get increasingly complex very fast. This proposal keeps it simple.
 
 Let's say we have a builder that does a lot of things. We might start with:
 
@@ -1737,7 +1737,7 @@ The code on the right is dramatically easier to understand and more accessible t
 
 But what, there's more.
 
-What if we add a *super*-specialized builder, that is a more special form of `Special`? Now we need `Special` to itself opt-in to CRTP so it knows which type to pass to `Builder` so that everything in the hierarchy can return the correct type. It's roughly at this point that people just give up and start gently weeping. But with this proposal, no problem!
+What if we add a *super*-specialized builder, that is a more special form of `Special`? Now we need `Special` to itself opt-in to CRTP so it knows which type to pass to `Builder` so that everything in the hierarchy can return the correct type. It's roughly at this point that people give up and start gently weeping. But with this proposal, no problem!
     
 <table style="width:100%">
 <tr>
@@ -1846,9 +1846,9 @@ Super().a().d().f().e();
 </tr>
 </table>  
 
-That is just so much easier on the right. There are simply so many situations where this idiom, if available, would give programmers an easier, accessible solution to problems that they just cannot easily solve today.
+That is so much easier on the right. There are so many situations where this idiom, if available, would give programmers an easier, accessible solution to problems that they cannot easily solve today.
 
-Note that the `Super` implementations with this proposal just went ahead and opted in to further derivation, since it's just a no-brainer at this point.
+Note that the `Super` implementations with this proposal went ahead and opted in to further derivation, since it's a no-brainer at this point.
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
@@ -1868,7 +1868,7 @@ auto fib = [](this auto const& self, int n) {
 };
 ```
 
-This simply works following the established rules. The call operator of the closure object can have an explicit object parameter too, so `self` in this example is the closure object.
+This works following the established rules. The call operator of the closure object can have an explicit object parameter too, so `self` in this example is the closure object.
 
 This can be combined with the new style of mixins where we can automatically deduce the most derived object. Here is a simple recursive lambda that counts the number of leaves in a tree:
 
@@ -1917,11 +1917,11 @@ Wonderful. No templates needed, even!
 
 It's been established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is `std::string_view`. [Abseil Tip #1](https://abseil.io/tips/1) for instance, states:
 
-> Unlike other string types, you should pass `string_view` by value just like you would an int or a double because `string_view` is a small value.
+> Unlike other string types, you should pass `string_view` by value just like you would an `int` or a `double` because `string_view` is a small value.
 
-However, today there is one place where you simply *cannot* pass types like `string_view` by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection! 
+However, today there is one place where you *cannot* pass types like `string_view` by value: to their own member functions! The implicit object parameter is always a reference - so any such member functions that do not get inlined incur a double indirection! 
 
-Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
+Any member function of such small types that does not do any modifications could, as an easy performance optimization take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are using `charT const*` as `iterator`:
 
 <xmp highlight="c++">
 template <class charT, class traits = char_traits<charT>>
@@ -1950,7 +1950,7 @@ public:
 
 Most of the member functions can be rewritten this way for a free performance boost.
 
-The same can be said for types that aren't just cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of `less_than`:
+The same can be said for types that aren't only cheap to copy, but also have no state at all. This was mentioned earlier, but compare these two implementations of `less_than`:
 
 <table style="width:100%">
 <tr>
@@ -2050,7 +2050,7 @@ std::not_fn(fun{})();         // ok!? Returns false
 
 Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.
 
-This proposal solves both problems by simply allowing `this` to be deduced. The following is a complete implementation of `std::not_fn`. For simplicity, it makes use of `BOOST_HOF_RETURNS` from [Boost.HOF](https://www.boost.org/doc/libs/1_68_0/libs/hof/doc/html/include/boost/hof/returns.html) to avoid having to duplicate expressions:
+This proposal solves both problems by allowing `this` to be deduced. The following is a complete implementation of `std::not_fn`. For simplicity, it makes use of `BOOST_HOF_RETURNS` from [Boost.HOF](https://www.boost.org/doc/libs/1_68_0/libs/hof/doc/html/include/boost/hof/returns.html) to avoid having to duplicate expressions:
 
 <table style="width:100%">
 <tr>
@@ -2108,7 +2108,7 @@ not_fn(unfriendly{})(1); // ok
 not_fn(fun{})();         // error
 ```
 
-Here, there is only one overload with everything deduced together. The first example now works correctly. `Self` gets deduced as `call_wrapper<unfriendly>`, and the one `operator()` will only consider `unfriendly`'s non-`const` call operator. The `const` one is simply never considered, so does not have an opportunity to cause problems. The call works. 
+Here, there is only one overload with everything deduced together. The first example now works correctly. `Self` gets deduced as `call_wrapper<unfriendly>`, and the one `operator()` will only consider `unfriendly`'s non-`const` call operator. The `const` one is never even considered, so does not have an opportunity to cause problems. The call works. 
 
 The second example now fails correctly. Previously, we had four candidates: the two non-`const` ones were removed from the overload set due to `fun`'s non-`const` call operator being `delete`d, and the two `const` ones which were viable. But now, we only have one candidate. `Self` gets deduced as `call_wrapper<fun>`, which requires `fun`'s non-`const` call operator to be well-formed. Since it is not, the call is an error. There is no opportunity for fallback since there is only one overload ever considered. 
 
