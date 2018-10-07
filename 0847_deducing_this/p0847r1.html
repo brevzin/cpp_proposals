@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="512cb235fbebfa0a571974cb07063043a68ec265" name="document-revision">
+  <meta content="e38edf0c539fd1d12b92e3e0f3e85564ca6d8a8c" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2027,7 +2027,7 @@ pre .property::before, pre .property::after {
    <p>The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter — which is new for the language.</p>
    <h4 class="heading settled" data-level="3.2.2" id="type-deduction"><span class="secno">3.2.2. </span><span class="content">Type deduction</span><a class="self-link" href="#type-deduction"></a></h4>
    <p>One of the main motivations of this proposal is to deduce the <em>cv</em>-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.</p>
-   <p>If either the explicit object parameter’s type or trailing object type is a deduced reference type, all of the usual template deduction rules apply as expected:</p>
+   <p>If either the type of the object parameter is a deduced template parameter, all of the usual template deduction rules apply as expected:</p>
    <table style="width:100%">
     <tbody>
      <tr>
@@ -2063,7 +2063,7 @@ pre .property::before, pre .property::after {
 <c- p>}</c->
 </pre>
    </table>
-   <p>It’s important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, <code class="highlight"><c- n>Self</c-></code> deduces as <code class="highlight"><c- n>D</c-><c- o>&amp;</c-></code>. This has implications for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, and also leads to a potential <a href="#potential-extensions">template deduction extension</a>.</p>
+   <p>It’s important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, <code class="highlight"><c- n>Self</c-></code> deduces as <code class="highlight"><c- n>D</c-><c- o>&amp;</c-></code>. This has implications for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, and also leads to a potential <a href="#potential-extensions">template deduction extension</a>.</p>
    <h4 class="heading settled" data-level="3.2.3" id="by-value-this"><span class="secno">3.2.3. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code></span><a class="self-link" href="#by-value-this"></a></h4>
    <p>But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it’s just that it is very different clear meaning.</p>
    <h5 class="heading settled" data-level="3.2.3.1" id="by-value-this-explicit"><span class="secno">3.2.3.1. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code> in explicit syntaxes</span><a class="self-link" href="#by-value-this-explicit"></a></h5>
