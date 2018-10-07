@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="d77211397318f67863c3f254a7b855d90cfd7301" name="document-revision">
+  <meta content="28f171eef5c08c4b20172bf54d0dfc45eb4ce227" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1496,10 +1496,26 @@ pre .property::before, pre .property::after {
       <li>
        <a href="#proposed-syntaxes"><span class="secno">3.1</span> <span class="content">Proposed Syntaxes</span></a>
        <ol class="toc">
-        <li><a href="#syntax-1"><span class="secno">3.1.1</span> <span class="content">Explicit <code class="highlight"><c- k>this</c-></code>-annotated parameter</span></a>
-        <li><a href="#syntax-2"><span class="secno">3.1.2</span> <span class="content">Explicit <code class="highlight"><c- k>this</c-></code> parameter</span></a>
-        <li><a href="#syntax-3"><span class="secno">3.1.3</span> <span class="content">Trailing type with identifier</span></a>
-        <li><a href="#syntax-4"><span class="secno">3.1.4</span> <span class="content">Trailing object type sans identifier</span></a>
+        <li>
+         <a href="#syntax-1"><span class="secno">3.1.1</span> <span class="content">Explicit <code class="highlight"><c- k>this</c-></code>-annotated parameter</span></a>
+         <ol class="toc">
+          <li><a href="#syntax-1-lambda"><span class="secno">3.1.1.1</span> <span class="content">Lambda version</span></a>
+         </ol>
+        <li>
+         <a href="#syntax-2"><span class="secno">3.1.2</span> <span class="content">Explicit <code class="highlight"><c- k>this</c-></code> parameter</span></a>
+         <ol class="toc">
+          <li><a href="#syntax-2-lambda"><span class="secno">3.1.2.1</span> <span class="content">Lambda version</span></a>
+         </ol>
+        <li>
+         <a href="#syntax-3"><span class="secno">3.1.3</span> <span class="content">Trailing type with identifier</span></a>
+         <ol class="toc">
+          <li><a href="#syntax-3-lambda"><span class="secno">3.1.3.1</span> <span class="content">Lambda version</span></a>
+         </ol>
+        <li>
+         <a href="#syntax-4"><span class="secno">3.1.4</span> <span class="content">Trailing object type sans identifier</span></a>
+         <ol class="toc">
+          <li><a href="#syntax-4-lambda"><span class="secno">3.1.4.1</span> <span class="content">Lambda version</span></a>
+         </ol>
         <li><a href="#quick-comparison"><span class="secno">3.1.5</span> <span class="content">Quick comparison</span></a>
        </ol>
       <li>
@@ -1507,17 +1523,35 @@ pre .property::before, pre .property::after {
        <ol class="toc">
         <li><a href="#name-lookup-candidate-functions"><span class="secno">3.2.1</span> <span class="content">Name lookup: candidate functions</span></a>
         <li><a href="#type-deduction"><span class="secno">3.2.2</span> <span class="content">Type deduction</span></a>
-        <li><a href="#by-value-this"><span class="secno">3.2.3</span> <span class="content">By value <code class="highlight"><c- k>this</c-></code></span></a>
+        <li>
+         <a href="#by-value-this"><span class="secno">3.2.3</span> <span class="content">By value <code class="highlight"><c- k>this</c-></code></span></a>
+         <ol class="toc">
+          <li><a href="#by-value-this-explicit"><span class="secno">3.2.3.1</span> <span class="content">By value <code class="highlight"><c- k>this</c-></code> in explicit syntaxes</span></a>
+          <li><a href="#by-value-this-trailing"><span class="secno">3.2.3.2</span> <span class="content">By value <code class="highlight"><c- k>this</c-></code> in trailing syntaxes</span></a>
+         </ol>
         <li><a href="#name-lookup-within-member-functions"><span class="secno">3.2.4</span> <span class="content">Name lookup: within member functions</span></a>
         <li><a href="#writing-function-pointer-types"><span class="secno">3.2.5</span> <span class="content">Writing the function pointer types for such functions</span></a>
         <li><a href="#pathological-cases"><span class="secno">3.2.6</span> <span class="content">Pathological cases</span></a>
         <li><a href="#teachability-implications"><span class="secno">3.2.7</span> <span class="content">Teachability Implications</span></a>
         <li><a href="#static-member-functions"><span class="secno">3.2.8</span> <span class="content">Can <code class="highlight"><c- k>static</c-></code> member functions have an explicit object type?</span></a>
-        <li><a href="#interplays-with-capturing-this"><span class="secno">3.2.9</span> <span class="content">Interplays with capturing <code class="highlight"><c- p>[</c-><c- k>this</c-><c- p>]</c-></code> and <code class="highlight"><c- p>[</c-><c- o>*</c-><c- k>this</c-><c- p>]</c-></code> in lambdas</span></a>
+        <li>
+         <a href="#interplays-with-capturing-this"><span class="secno">3.2.9</span> <span class="content">Interplays with capturing <code class="highlight"><c- p>[</c-><c- k>this</c-><c- p>]</c-></code> and <code class="highlight"><c- p>[</c-><c- o>*</c-><c- k>this</c-><c- p>]</c-></code> in lambdas</span></a>
+         <ol class="toc">
+          <li><a href="#capture-this-with-id"><span class="secno">3.2.9.1</span> <span class="content">Syntaxes with an identifier</span></a>
+          <li><a href="#capture-this-no-id"><span class="secno">3.2.9.2</span> <span class="content">Syntaxes without an identifier</span></a>
+         </ol>
         <li><a href="#parsing-issues"><span class="secno">3.2.10</span> <span class="content">Parsing issues</span></a>
        </ol>
-      <li><a href="#comparison"><span class="secno">3.3</span> <span class="content">Comparison of the options</span></a>
-      <li><a href="#potential-extensions"><span class="secno">3.4</span> <span class="content">Potential Extensions</span></a>
+      <li>
+       <a href="#comparison"><span class="secno">3.3</span> <span class="content">Comparison of the options</span></a>
+       <ol class="toc">
+        <li><a href="#use-case-table"><span class="secno">3.3.1</span> <span class="content">Use-case analysis</span></a>
+       </ol>
+      <li>
+       <a href="#potential-extensions"><span class="secno">3.4</span> <span class="content">Potential Extensions</span></a>
+       <ol class="toc">
+        <li><a href="#constrained-deduction"><span class="secno">3.4.1</span> <span class="content">Constrained Deduction</span></a>
+       </ol>
      </ol>
     <li>
      <a href="#real-world-examples"><span class="secno">4</span> <span class="content">Real-World Examples</span></a>
@@ -1529,7 +1563,12 @@ pre .property::before, pre .property::after {
         <li><a href="#builder-pattern"><span class="secno">4.2.1</span> <span class="content">Builder pattern</span></a>
        </ol>
       <li><a href="#recursive-lambdas"><span class="secno">4.3</span> <span class="content">Recursive Lambdas</span></a>
-      <li><a href="#by-value-member-functions"><span class="secno">4.4</span> <span class="content">By-value member functions</span></a>
+      <li>
+       <a href="#by-value-member-functions"><span class="secno">4.4</span> <span class="content">By-value member functions</span></a>
+       <ol class="toc">
+        <li><a href="#move-into-parameter"><span class="secno">4.4.1</span> <span class="content">For move-into-parameter chaining</span></a>
+        <li><a href="#by-value-member-functions-for-performance"><span class="secno">4.4.2</span> <span class="content">For performance</span></a>
+       </ol>
       <li><a href="#sfinae-friendly-callables"><span class="secno">4.5</span> <span class="content">SFINAE-friendly callables</span></a>
      </ol>
     <li><a href="#suggested-polls"><span class="secno">5</span> <span class="content">Suggested Polls</span></a>
@@ -1707,6 +1746,8 @@ pre .property::before, pre .property::after {
     <li data-md>
      <p>efficiency by avoiding double indirection with <a href="#by-value-member-functions">invocation</a></p>
     <li data-md>
+     <p><a href="#by-value-member-functions">move-or-copy-into-parameter support for member functions</a></p>
+    <li data-md>
      <p>perfect, sfinae-friendly <a href="#sfinae-friendly-callables">call wrappers</a></p>
    </ul>
    <p>These are explored in detail in the <a href="#real-world-examples">examples</a> section.</p>
@@ -1735,6 +1776,18 @@ pre .property::before, pre .property::after {
    <p>Member functions with an explicit object parameter cannot be <code class="highlight"><c- k>static</c-></code> or have <em>cv</em>- or <em>ref</em>-qualifiers.</p>
    <p>A call to a member function will interpret the object argument as the first (<code class="highlight"><c- k>this</c-></code>-annotated) parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth.</p>
    <p>Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for <code class="highlight"><c- n>d</c-><c- p>.</c-><c- n>bar</c-><c- p>()</c-></code>).</p>
+   <h5 class="heading settled" data-level="3.1.1.1" id="syntax-1-lambda"><span class="secno">3.1.1.1. </span><span class="content">Lambda version</span><a class="self-link" href="#syntax-1-lambda"></a></h5>
+   <p>The lambda versions of the above, for reference:</p>
+<pre class="language-cpp highlight"><c- n>std</c-><c- o>::</c-><c- n>vector</c-> <c- n>captured</c-> <c- o>=</c-> <c- p>{</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>};</c->
+<c- p>[</c-><c- n>captured</c-><c- p>](</c-><c- k>this</c-> <c- k>auto</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c-> 
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- k>decltype</c-><c- p>(</c-><c- n>self</c-><c- p>)</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+
+<c- p>[</c-><c- n>captured</c-><c- p>]</c-><c- o>&lt;</c-><c- k>class</c-> <c- nc>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>)</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c->
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+</pre>
+   <p>This allows the lambdas to either move or copy from the capture, depending on whether the lambda is an lvalue or an rvalue.</p>
    <h4 class="heading settled" data-level="3.1.2" id="syntax-2"><span class="secno">3.1.2. </span><span class="content">Explicit <code class="highlight"><c- k>this</c-></code> parameter</span><a class="self-link" href="#syntax-2"></a></h4>
    <p>A non-static member function can be declared to take <code class="highlight"><c- k>this</c-></code> as its first parameter. As with <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>, once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules. In this case, instead of remaining a pointer, <code class="highlight"><c- k>this</c-></code> becomes a reference (of the type the parameter type would suggest), fixing a long-standing oversight of the language, stemming from before references were invented.</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
@@ -1758,6 +1811,17 @@ pre .property::before, pre .property::after {
    <p>As with <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>, member functions with an explicit object parameter cannot be <code class="highlight"><c- k>static</c-></code> or have <em>cv</em>- or <em>ref</em>-qualifiers.</p>
    <p>A call to a member function will interpret the object argument as the first, <code class="highlight"><c- k>this</c-></code> parameter to such a member function, the first argument in the parenthesized expression list as the second parameter, and so forth.</p>
    <p>Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class the member function is declared in (as in the example above for <code class="highlight"><c- n>d</c-><c- p>.</c-><c- n>bar</c-><c- p>()</c-></code>).</p>
+   <h5 class="heading settled" data-level="3.1.2.1" id="syntax-2-lambda"><span class="secno">3.1.2.1. </span><span class="content">Lambda version</span><a class="self-link" href="#syntax-2-lambda"></a></h5>
+   <p>The lambda versions of the above, for reference:</p>
+<pre class="language-cpp highlight"><c- n>std</c-><c- o>::</c-><c- n>vector</c-> <c- n>captured</c-> <c- o>=</c-> <c- p>{</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>};</c->
+<c- p>[</c-><c- n>captured</c-><c- p>](</c-><c- k>auto</c-><c- o>&amp;&amp;</c-> <c- k>this</c-><c- p>)</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c-> 
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- k>decltype</c-><c- p>(</c-><c- k>this</c-><c- p>)</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+
+<c- p>[</c-><c- n>captured</c-><c- p>]</c-><c- o>&lt;</c-><c- k>class</c-> <c- nc>Self</c-><c- o>></c-><c- p>(</c-><c- n>Self</c-><c- o>&amp;&amp;</c-> <c- k>this</c-><c- p>)</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c->
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+</pre>
    <h4 class="heading settled" data-level="3.1.3" id="syntax-3"><span class="secno">3.1.3. </span><span class="content">Trailing type with identifier</span><a class="self-link" href="#syntax-3"></a></h4>
    <p>In C++17, member functions can optionally have a <em>cv-qualifier</em> and can optionally have a <em>ref-qualifier</em>. We can extend this to allow a full type and an identifier - so that the trailer of the member function declaration effectively becomes a variable declaration for the object parameter:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
@@ -1780,6 +1844,14 @@ pre .property::before, pre .property::after {
 </pre>
    <p>Effectively, this is taking the previously introduced <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and simply declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with a parameter declaration, where current-syntax member functions behave as if the class name were just omitted.</p>
    <p>Member functions with an trailing object type cannot be <code class="highlight"><c- k>static</c-></code>.</p>
+   <h5 class="heading settled" data-level="3.1.3.1" id="syntax-3-lambda"><span class="secno">3.1.3.1. </span><span class="content">Lambda version</span><a class="self-link" href="#syntax-3-lambda"></a></h5>
+   <p>The lambda versions of the above, for reference:</p>
+<pre class="language-cpp highlight"><c- n>std</c-><c- o>::</c-><c- n>vector</c-> <c- n>captured</c-> <c- o>=</c-> <c- p>{</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>};</c->
+<c- p>[</c-><c- n>captured</c-><c- p>]</c-><c- o>&lt;</c-><c- k>class</c-> <c- nc>Self</c-><c- o>></c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c->
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+</pre>
+   <p>One should note that this syntax obviates <code class="highlight"><c- k>mutable</c-></code> and <code class="highlight"><c- k>const</c-></code> qualifiers for the lambda, as well as introduces significant parsing issues due to <code class="highlight"><c- n>self</c-></code> being completely freeform as well as optional.</p>
    <h4 class="heading settled" data-level="3.1.4" id="syntax-4"><span class="secno">3.1.4. </span><span class="content">Trailing object type sans identifier</span><a class="self-link" href="#syntax-4"></a></h4>
    <p>Similar to the above, except without a possible identifier.</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
@@ -1802,6 +1874,14 @@ pre .property::before, pre .property::after {
 </pre>
    <p>Because we need a way to refer to the derived object and we no longer introduce an identifier for it, we are forced to use <code class="highlight"><c- k>this</c-></code>. The optionality of introducing a type-identifier would suggest that <code class="highlight"><c- k>this</c-></code> not change meaning in the body of such a member function; in other words, <code class="highlight"><c- k>this</c-></code> stays a pointer to an appropriately cv-ref qualified object.</p>
    <p>Refer to <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a> for a discussion of the various ways we can handle name lookup in the member function bodies for the various syntaxes.</p>
+   <h5 class="heading settled" data-level="3.1.4.1" id="syntax-4-lambda"><span class="secno">3.1.4.1. </span><span class="content">Lambda version</span><a class="self-link" href="#syntax-4-lambda"></a></h5>
+   <p>The lambda versions of the above, for reference:</p>
+<pre class="language-cpp highlight"><c- n>std</c-><c- o>::</c-><c- n>vector</c-> <c- n>captured</c-> <c- o>=</c-> <c- p>{</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>};</c->
+<c- p>[</c-><c- n>captured</c-><c- p>]</c-><c- o>&lt;</c-><c- k>class</c-> <c- nc>Self</c-><c- o>></c-><c- p>()</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- k>auto</c-><c- p>)</c-> <c- p>{</c->
+  <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>forward_like</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>captured</c-><c- p>);</c->
+<c- p>}</c->
+</pre>
+   <p>One should note that this syntax obviates <code class="highlight"><c- k>mutable</c-></code> and <code class="highlight"><c- k>const</c-></code> qualifiers for the lambda.</p>
    <h4 class="heading settled" data-level="3.1.5" id="quick-comparison"><span class="secno">3.1.5. </span><span class="content">Quick comparison</span><a class="self-link" href="#quick-comparison"></a></h4>
    <p>A brief example demonstrating how to write <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code> and <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- k>operator</c-><c- o>-></c-><c- p>()</c-></code> in just two functions with no duplication (instead of six) with each of the four proposed syntaxes.</p>
    <p>There are several options we have as to the semantics of <code class="highlight"><c- k>this</c-></code> within member function bodies, so this quick example just takes the most conservative approach - it is merely meant to be illustrative:</p>
@@ -1986,7 +2066,8 @@ pre .property::before, pre .property::after {
    <p>It’s important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, <code class="highlight"><c- n>Self</c-></code> deduces as <code class="highlight"><c- n>D</c-><c- o>&amp;</c-></code>. This has implications for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, and also leads to a potential <a href="#potential-extensions">template deduction extension</a>.</p>
    <h4 class="heading settled" data-level="3.2.3" id="by-value-this"><span class="secno">3.2.3. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code></span><a class="self-link" href="#by-value-this"></a></h4>
    <p>But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it’s just that it is very different clear meaning.</p>
-   <p>In the case of the object parameter syntaxes, what does this mean:</p>
+   <h5 class="heading settled" data-level="3.2.3.1" id="by-value-this-explicit"><span class="secno">3.2.3.1. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code> in explicit syntaxes</span><a class="self-link" href="#by-value-this-explicit"></a></h5>
+   <p>In the case of <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and <a href="#syntax-2">§3.1.2 Explicit this parameter</a>, what should this mean:</p>
 <pre class="language-c++ highlight"><c- k>struct</c-> <c- n>less_than</c-> <c- p>{</c->
     <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- kr>typename</c-> <c- n>U</c-><c- o>></c->
     <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>this</c-> <c- n>less_than</c-><c- p>,</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>lhs</c-><c- p>,</c-> <c- n>U</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>rhs</c-><c- p>)</c-> <c- p>{</c->
@@ -1996,15 +2077,18 @@ pre .property::before, pre .property::after {
 
 <c- n>less_than</c-><c- p>{}(</c-><c- mi>4</c-><c- p>,</c-> <c- mi>5</c-><c- p>);</c->
 </pre>
-   <p>Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It’s just that we’ve never been able to take an object parameter by value before. For why we might want to do this, see <a href="#by-value-member-functions">§4.4 By-value member functions</a>.</p>
-   <p>However, with a by-value explicit object parameter, we still have the answer the question of what does <code class="highlight"><c- k>this</c-></code> refer to within the function body? Regardless of the choice we make for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, there is only one meaningful semantic choice here: there is no <code class="highlight"><c- k>this</c-></code>. In the above example, <code class="highlight"><c- n>less_than</c-></code> doesn’t <em>refer</em> to the object parameter, it <em>is</em> the only object parameter. Declaring a function in this way is equivalent to declaring a non-member <code class="highlight"><c- k>friend</c-></code> function, except that we effectively opt-in to the usual member function call syntax.</p>
-   <p>In the case of trailing object type, what does this mean:</p>
+   <p>Clearly, the parameter specification should not lie, and the first parameter (<code class="highlight"><c- n>less_than</c-><c- p>{}</c-></code>) is passed by value.</p>
+   <p>Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It’s just that we’ve never been able to take an object parameter by value before. For reasons to do this, see <a href="#by-value-member-functions">§4.4 By-value member functions</a>.</p>
+   <p>However, with a by-value explicit object parameter, we still have the answer the question of what does <code class="highlight"><c- k>this</c-></code> refer to within the function body? Regardless of the choice we make for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, there is only one meaningful semantic choice here: there is no <code class="highlight"><c- k>this</c-></code>. In the above example, <code class="highlight"><c- n>less_than</c-></code> doesn’t <em>refer</em> to the object parameter, it <em>is</em> the only object parameter. Declaring a function in this way is equivalent to declaring a non-member <code class="highlight"><c- k>friend</c-></code> function, except that we effectively opt-in to the usual member function call syntax. This though also determines its pointer type - it is a free function type.</p>
+   <h5 class="heading settled" data-level="3.2.3.2" id="by-value-this-trailing"><span class="secno">3.2.3.2. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code> in trailing syntaxes</span><a class="self-link" href="#by-value-this-trailing"></a></h5>
+   <p>In the case of trailing object type, what should this mean:</p>
 <pre class="language-c++ highlight"><c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>T</c-><c- p>,</c-> <c- b>size_t</c-> <c- n>N</c-><c- o>></c->
 <c- k>struct</c-> <c- n>array</c-> <c- p>{</c->
     <c- n>template</c-> <c- o>&lt;</c-><c- kr>typename</c-> <c- n>Self</c-><c- o>></c->
     <c- k>auto</c-><c- o>&amp;</c-> <c- n>operator</c-><c- p>[](</c-><c- b>size_t</c-><c- p>)</c-> <c- n>Self</c-><c- p>;</c->
 <c- p>};</c->
 </pre>
+   <p>Clearly, since the object type is an <em>optional</em> part of the syntax, omitting it should produce the same results as currently.</p>
    <p>A common source of duplication of member functions revolves solely around wanting non-<code class="highlight"><c- k>const</c-></code> and <code class="highlight"><c- k>const</c-></code> overloads of a member function - that otherwise do exactly the same thing. The normal template deduction rules would drop <em>cv</em>-qualifiers, meaning that:</p>
 <pre class="language-c++ highlight"><c- n>using</c-> <c- n>A</c-> <c- o>=</c-> <c- n>array</c-><c- o>&lt;</c-><c- b>int</c-><c- p>,</c-> <c- mi>10</c-><c- o>></c-><c- p>;</c->
 <c- b>void</c-> <c- nf>ex</c-><c- p>(</c-><c- n>A</c-><c- o>&amp;</c-> <c- n>a</c-><c- p>,</c-> <c- n>A</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- n>ca</c-><c- p>)</c-> <c- p>{</c->
@@ -2084,7 +2168,7 @@ pre .property::before, pre .property::after {
 <c- p>}</c->
 </pre>
    </table>
-   <p>Note that with the last two choices, we do not even provide a name to the explicit object parameter, since it is not needed.</p>
+   <p>Note that with the last two choices, we do not even provide a name (though we could have) to the explicit object parameter, since it is not needed.</p>
    <p>What do these options mean if we consider the trailing type syntax? If we allow an <em>identifier</em>, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter — it’s just that the named parameter is in a different location in the declaration, but otherwise has the same meaning.</p>
    <p>If we take the trailing object type syntax <em>without an identifier</em>, we can’t have differentiation between what <code class="highlight"><c- k>this</c-></code> might refer to and what <code class="highlight"><c- n>self</c-></code> might refer to. We can really only have one possible name: <code class="highlight"><c- k>this</c-></code>. And <code class="highlight"><c- k>this</c-></code> would now have to change types: <code class="highlight"><c- k>this</c-></code> becomes a <code class="highlight"><c- k>const</c-></code> pointer to <code class="highlight"><c- n>remove_reference_t</c-><c- o>&lt;</c-><c- n>T</c-><c- o>></c-></code>.</p>
    <p>Something similar happens in the *Explicit <code class="highlight"><c- k>this</c-></code>* syntax: <code class="highlight"><c- k>this</c-></code> behaves exaclty as <code class="highlight"><c- n>self</c-></code> does in the <code class="highlight"><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-></code> syntax , and implicit access is disallowed, there is no choice.</p>
@@ -2213,7 +2297,14 @@ pre .property::before, pre .property::after {
    <h4 class="heading settled" data-level="3.2.8" id="static-member-functions"><span class="secno">3.2.8. </span><span class="content">Can <code class="highlight"><c- k>static</c-></code> member functions have an explicit object type?</span><a class="self-link" href="#static-member-functions"></a></h4>
    <p>No. Static member functions currently do not have an implicit object parameter, and therefore have no reason to provide an explicit one.</p>
    <h4 class="heading settled" data-level="3.2.9" id="interplays-with-capturing-this"><span class="secno">3.2.9. </span><span class="content">Interplays with capturing <code class="highlight"><c- p>[</c-><c- k>this</c-><c- p>]</c-></code> and <code class="highlight"><c- p>[</c-><c- o>*</c-><c- k>this</c-><c- p>]</c-></code> in lambdas</span><a class="self-link" href="#interplays-with-capturing-this"></a></h4>
-   <p>Providing either an explicit object parameter or trailing object type for lambdas still works, but the rules for what <code class="highlight"><c- k>this</c-></code> means in a lambda today still apply: <code class="highlight"><c- k>this</c-></code> can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:</p>
+   <p>Depending on the chosen syntax, the impacts differ.</p>
+   <h5 class="heading settled" data-level="3.2.9.1" id="capture-this-with-id"><span class="secno">3.2.9.1. </span><span class="content">Syntaxes with an identifier</span><a class="self-link" href="#capture-this-with-id"></a></h5>
+   <p>For <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and <a href="#syntax-3">§3.1.3 Trailing type with identifier</a>, interoperability is perfect, since they do not impact the meaning of <code class="highlight"><c- k>this</c-></code> in a function body. The introduced identifier (ie. <code class="highlight"><c- n>self</c-></code>) can then be used to refer to the lambda instance from the body.</p>
+   <h5 class="heading settled" data-level="3.2.9.2" id="capture-this-no-id"><span class="secno">3.2.9.2. </span><span class="content">Syntaxes without an identifier</span><a class="self-link" href="#capture-this-no-id"></a></h5>
+   <p>For <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, things are more complex, since they use <code class="highlight"><c- k>this</c-></code> for their own purposes.</p>
+   <p>The sensible meaning differs for <a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, since they introduce their parameters in different ways.</p>
+   <p>With <a href="#syntax-2">§3.1.2 Explicit this parameter</a>, <code class="highlight"><c- k>this</c-></code> is a parameter of the implied type. Parameters shadow closure members, so <code class="highlight"><c- k>this</c-></code> should as well, so capturing <code class="highlight"><c- k>this</c-></code> in lambdas becomes <em>a lot</em> less powerful. A possible solution would be to allow explicit referencing of closure members in this case, and so <code class="highlight"><c- k>this</c-><c- p>.</c-><c- k>this</c-></code> would become the captured <code class="highlight"><c- k>this</c-></code> object.</p>
+   <p>With <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>, behaviour must stay the same, and so there is no possible way to refer to the lambda object. This effectively prohibits <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a> from solving the recursive lambda problem. The rules for what <code class="highlight"><c- k>this</c-></code> means in a lambda today still apply: <code class="highlight"><c- k>this</c-></code> can only ever refer to a captured member pointer of an outer member function, and never be a pointer to the lambda instance itself:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
     <c- b>int</c-> <c- n>x</c-><c- p>,</c-> <c- n>y</c-><c- p>;</c->
 
@@ -2226,7 +2317,6 @@ pre .property::before, pre .property::after {
     <c- p>}</c->
 <c- p>};</c->
 </pre>
-   <p>If other language features play with what <code class="highlight"><c- k>this</c-></code> means, they are completely orthogonal and do not have interplays with this proposal. However, it should be obvious that developers have great potential for introducing hard-to-read code if they are at all changing the meaning of <code class="highlight"><c- k>this</c-></code> in function bodies, especially in conjunction with this proposal.</p>
    <h4 class="heading settled" data-level="3.2.10" id="parsing-issues"><span class="secno">3.2.10. </span><span class="content">Parsing issues</span><a class="self-link" href="#parsing-issues"></a></h4>
    <p>The explicit object parameter syntax has no parsing issues that we are aware of. It is purely a syntax extension.</p>
    <p>With the addition of a new type name after the <em>parameter-declaration-clause</em>, we potentially run into a clash with the existing <em>virt-specifier</em>s. Especially if we allow for an arbitrary identifier.</p>
@@ -2288,7 +2378,7 @@ pre .property::before, pre .property::after {
 </pre>
    <p>Either the <code class="highlight"><c- n>quux</c-></code> or <code class="highlight"><c- n>quuz</c-></code> examples don’t work, by making the implicit versions ill-formed. Or we end up with this <code class="highlight"><c- n>cosnt</c-></code> typo problem. Neither seem great.</p>
    <h3 class="heading settled" data-level="3.3" id="comparison"><span class="secno">3.3. </span><span class="content">Comparison of the options</span><a class="self-link" href="#comparison"></a></h3>
-   <p>We provide here a table of how the four main syntaxes compare against a wide variety of metrics:</p>
+   <p>We provide here a table of how the four main syntaxes compare against a variety of metrics:</p>
    <table>
     <tbody>
      <tr>
@@ -2320,9 +2410,10 @@ pre .property::before, pre .property::after {
       <td>Not an issue.
       <td>Not an issue.
    </table>
-   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not introduce an identifier (<a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>) have no way of providing a non-verbose way of referring to members of the base class.</p>
+   <p><sup>†</sup><em>Safety with derived objects</em>: how easy it is to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing a shadowing member of the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not introduce an identifier (<a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>) have no way of providing a non-verbose way of referring to members of the base class, and are therefore marked as "Verbose".</p>
    <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem? Note that one can always use the old-but-improved trick of deferring to a templated implementation, but now without the casts. The problem is minimal.</p>
-   <p>As well as how well they compare against the variety of use-cases that we have been able to come up with for this feature:</p>
+   <h4 class="heading settled" data-level="3.3.1" id="use-case-table"><span class="secno">3.3.1. </span><span class="content">Use-case analysis</span><a class="self-link" href="#use-case-table"></a></h4>
+   <p>We evaluated how well the various syntax options work for the various use-cases they are meant to solve:</p>
    <table>
     <tbody>
      <tr>
@@ -2375,7 +2466,7 @@ pre .property::before, pre .property::after {
        </div>
       <td>
        <div class="ins">
-        <center>Yes</center>
+        <center>Yes†</center>
        </div>
       <td>
        <div class="ins">
@@ -2422,29 +2513,32 @@ pre .property::before, pre .property::after {
         <center>Yes</center>
        </div>
    </table>
+   <p>† While both <a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and <a href="#syntax-2">§3.1.2 Explicit this parameter</a> support recursive lambdas, nestedly-recursive lambdas are easier if one can assign an identifier in a natural way. <a href="#syntax-2">§3.1.2 Explicit this parameter</a> also has unwelcome interactions with the capturing of <code class="highlight"><c- k>this</c-></code> in the lambda capture, since the parameter <code class="highlight"><c- k>this</c-></code> must shadow the captured one.</p>
    <h3 class="heading settled" data-level="3.4" id="potential-extensions"><span class="secno">3.4. </span><span class="content">Potential Extensions</span><a class="self-link" href="#potential-extensions"></a></h3>
-   <p>One of the pitfalls mentioned in having a deduced object parameter or a deduced trailing object type is when all you want to do is deduce the <em>cv</em>-qualifiers and value category of the object parameter, but you end up deducing a derived type as well. Any access through an object that might have derived type could be error-prone if it’s not intended!</p>
-   <p>We could propose some kind of "make it easy to get the base class pointer"-style syntax, but even if we had such a thing, the feature would suffer from extra instantiations. For <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code>, we really only want four instantiations: <code class="highlight"><c- o>&amp;</c-></code>, <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- o>&amp;&amp;</c-></code>, and <code class="highlight"><c- k>const</c-><c- o>&amp;&amp;</c-></code>. If some inherits from <code class="highlight"><c- n>optional</c-></code>, we don’t want additional extra instantiations of those functions - which won’t do anything new anyway. This is code bloat - and error prone.</p>
-   <p>This problem extends further than just to <code class="highlight"><c- n>Self</c-></code>, though. It is common to only want to deduce the ref-qualifier in all sorts of contexts. A complementary feature could be proposed that constrains <em>deduction</em> (as opposed to removing candidates once they are deduced, as with <code class="highlight"><c- n>requires</c-></code>, with the following straw-man syntax:</p>
-<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>B</c-> <c- p>{</c->
-    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- nl>Self</c-> <c- p>:</c-> <c- n>B</c-><c- o>></c->
+   <p>This section lists some extensions that this paper does not propose, since they have not been completely explored yet. Nevertheless, the authors believe that certain concerns that the proposed feature raises may be alleviated by showing there are possible solutions to those issues.</p>
+   <h4 class="heading settled" data-level="3.4.1" id="constrained-deduction"><span class="secno">3.4.1. </span><span class="content">Constrained Deduction</span><a class="self-link" href="#constrained-deduction"></a></h4>
+   <p>One of the pitfalls mentioned in having a deduced object parameter or a deduced trailing object type is when all you want to do is deduce the <em>cv</em>-qualifiers and value category of the object parameter, but you end up deducing a derived type as well, as any access through an object that might have derived type could inadvertently refer to a shadowed member in the derived class. While this is definitely desirable (and very powerful) in the case of mixins, it isn’t desirable in other situations. The un-needed extra template instantiations are also not welcome.</p>
+   <p>One family of possible solutions could be summarised as <strong>make it easy to get the base class pointer</strong>. All such solutions still suffer from extra instantiations, however. For <code class="highlight"><c- n>optional</c-><c- o>::</c-><c- n>value</c-><c- p>()</c-></code>, we really only want four instantiations: <code class="highlight"><c- o>&amp;</c-></code>, <code class="highlight"><c- k>const</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- o>&amp;&amp;</c-></code>, and <code class="highlight"><c- k>const</c-><c- o>&amp;&amp;</c-></code>. If something inherits from <code class="highlight"><c- n>optional</c-></code>, we don’t want additional instantiations of those functions for the derived types - which won’t do anything new anyway. This is code bloat.</p>
+   <p>C++ already has this long-recognised problem for free function templates, however. The authors have heard many a gripe from library vendors regarding this problem, even before this paper was introduced, as it is common to only want to deduce the ref-qualifier in all sorts of contexts. Therefore, it might make sense to tackle this issue more generally. A complementary feature could be proposed that constrains <em>type deduction</em> (as opposed to removing candidates once they are deduced, as <code class="highlight"><c- n>requires</c-></code> accomplishes), with the following straw-man syntax:</p>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- n>Base</c-> <c- p>{</c->
+    <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- nl>Self</c-> <c- p>:</c-> <c- n>Base</c-><c- o>></c->
     <c- k>auto</c-> <c- n>front</c-><c- p>(</c-><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-><c- p>);</c->
 <c- p>};</c->
-<c- k>struct</c-> <c- nl>D</c-> <c- p>:</c-> <c- n>B</c-> <c- p>{</c-> <c- p>};</c->
+<c- k>struct</c-> <c- nl>Derived</c-> <c- p>:</c-> <c- n>Base</c-> <c- p>{</c-> <c- p>};</c->
 
 <c- c1>// also works for free functions</c->
-<c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- nl>T</c-> <c- p>:</c-> <c- n>B</c-><c- o>></c->
+<c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- nl>T</c-> <c- p>:</c-> <c- n>Base</c-><c- o>></c->
 <c- b>void</c-> <c- n>foo</c-><c- p>(</c-><c- n>T</c-><c- o>&amp;&amp;</c-> <c- n>x</c-><c- p>)</c-> <c- p>{</c->
-   <c- k>static_assert</c-><c- p>(</c-><c- n>std</c-><c- o>::</c-><c- n>is_same_v</c-><c- o>&lt;</c-><c- n>B</c-><c- p>,</c-> <c- n>std</c-><c- o>::</c-><c- n>remove_reference_t</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>></c-><c- p>);</c->
+   <c- k>static_assert</c-><c- p>(</c-><c- n>std</c-><c- o>::</c-><c- n>is_same_v</c-><c- o>&lt;</c-><c- n>Base</c-><c- p>,</c-> <c- n>std</c-><c- o>::</c-><c- n>remove_reference_t</c-><c- o>&lt;</c-><c- n>T</c-><c- o>>></c-><c- p>);</c->
 <c- p>}</c->
 
-<c- n>B</c-><c- p>{}.</c-><c- n>front</c-><c- p>();</c-> <c- c1>// calls B::front&lt;B></c->
-<c- n>D</c-><c- p>{}.</c-><c- n>front</c-><c- p>();</c-> <c- c1>// also calls B::front&lt;B></c->
+<c- n>Base</c-><c- p>{}.</c-><c- n>front</c-><c- p>();</c-> <c- c1>// calls Base::front&lt;Base></c->
+<c- n>Derived</c-><c- p>{}.</c-><c- n>front</c-><c- p>();</c-> <c- c1>// also calls Base::front&lt;Base></c->
 
-<c- n>foo</c-><c- p>(</c-><c- n>B</c-><c- p>{});</c-> <c- c1>// calls foo&lt;B></c->
-<c- n>foo</c-><c- p>(</c-><c- n>D</c-><c- p>{});</c-> <c- c1>// also calls foo&lt;B></c->
+<c- n>foo</c-><c- p>(</c-><c- n>Base</c-><c- p>{});</c-> <c- c1>// calls foo&lt;Base></c->
+<c- n>foo</c-><c- p>(</c-><c- n>Derived</c-><c- p>{});</c-> <c- c1>// also calls foo&lt;Base></c->
 </pre>
-   <p>This would create a function template that may only generate functions that take a <code class="highlight"><c- n>B</c-></code>, ensuring that, when they participate in overload resolution, we don’t generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
+   <p>This would create a function template that may only generate functions that take a <code class="highlight"><c- n>Base</c-></code>, ensuring that, when they participate in overload resolution, we don’t generate additional instantiations. Such a proposal would change how templates participate in overload resolution, however, and is not to be attempted haphazardly.</p>
    <h2 class="heading settled" data-level="4" id="real-world-examples"><span class="secno">4. </span><span class="content">Real-World Examples</span><a class="self-link" href="#real-world-examples"></a></h2>
    <p>What follows are several examples of the different kinds of problems that can be solved with this proposal. We provide examples using two different syntaxes, where possible:</p>
    <ul>
@@ -3018,7 +3112,19 @@ pre .property::before, pre .property::after {
 </pre>
    In the calls to <code class="highlight"><c- n>visit</c-></code>, <code class="highlight"><c- n>self</c-></code> isn’t the lambda - <code class="highlight"><c- n>self</c-></code> is the <code class="highlight"><c- n>overload</c-></code> wrapper. This just works. 
    <h3 class="heading settled" data-level="4.4" id="by-value-member-functions"><span class="secno">4.4. </span><span class="content">By-value member functions</span><a class="self-link" href="#by-value-member-functions"></a></h3>
-   <p>It’s been fairly well established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>string_view</c-></code>. <a href="https://abseil.io/tips/1">Abseil Tip #1</a> for instance, states:</p>
+   <p>This section presents some of the cases for by-value member functions.</p>
+   <h4 class="heading settled" data-level="4.4.1" id="move-into-parameter"><span class="secno">4.4.1. </span><span class="content">For move-into-parameter chaining</span><a class="self-link" href="#move-into-parameter"></a></h4>
+   <p>Say you wanted to provide a <code class="highlight"><c- p>.</c-><c- n>sorted</c-><c- p>()</c-></code> method on a data structure. Such a method naturally wants to operate on a copy. Taking the parameter by value will correctly move into the parameter if the original object is an rvalue.</p>
+<pre class="language-cpp highlight"><c- k>struct</c-> <c- nl>my_vector</c-> <c- p>:</c-> <c- n>std</c-><c- o>::</c-><c- n>vector</c-><c- o>&lt;</c-><c- b>int</c-><c- o>></c-> <c- p>{</c->
+  <c- k>auto</c-> <c- n>sorted</c-><c- p>(</c-><c- k>this</c-> <c- n>my_vector</c-> <c- n>self</c-><c- p>)</c-> <c- o>-></c-> <c- n>my_vector</c-> <c- p>{</c->
+    <c- n>std</c-><c- o>::</c-><c- n>sort</c-><c- p>(</c-><c- n>self</c-><c- p>.</c-><c- n>begin</c-><c- p>(),</c-> <c- n>self</c-><c- p>.</c-><c- n>end</c-><c- p>());</c->
+    <c- k>return</c-> <c- n>self</c-><c- p>;</c->
+  <c- p>}</c->
+<c- p>};</c->
+</pre>
+   <p>Wonderful. No templates needed, even!</p>
+   <h4 class="heading settled" data-level="4.4.2" id="by-value-member-functions-for-performance"><span class="secno">4.4.2. </span><span class="content">For performance</span><a class="self-link" href="#by-value-member-functions-for-performance"></a></h4>
+   <p>It’s been established that if you want the best performance, you should pass small types by value to avoid the indirection penalty. One such small type is <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>string_view</c-></code>. <a href="https://abseil.io/tips/1">Abseil Tip #1</a> for instance, states:</p>
    <blockquote>
     <p>Unlike other string types, you should pass <code class="highlight"><c- n>string_view</c-></code> by value just like you would an int or a double because <code class="highlight"><c- n>string_view</c-></code> is a small value.</p>
    </blockquote>
@@ -3230,7 +3336,7 @@ pre .property::before, pre .property::after {
     <li data-md>
      <p>Jonathan Wakely, for bringing us all together by pointing out we were writing the same paper, twice</p>
     <li data-md>
-     <p>Chandler Carruth for a lot of feedback and guidance around design issues</p>
+     <p>Chandler Carruth for a lot of feedback and guidance around many design issues, but especially for help with use cases and the pointer-types for by-value passing</p>
     <li data-md>
      <p>Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of <code class="highlight"><c- k>this</c-></code> inside function bodies</p>
     <li data-md>
@@ -3239,6 +3345,10 @@ pre .property::before, pre .property::after {
      <p>Guilherme Hartmann for his guidance with the implementation</p>
     <li data-md>
      <p>Richard Smith, Jens Maurer, and Hubert Tong for help with wording</p>
+    <li data-md>
+     <p>Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration</p>
+    <li data-md>
+     <p>Eva Conti for furious copy editing, patience, and moral support</p>
    </ul>
   </main>
 <script>
