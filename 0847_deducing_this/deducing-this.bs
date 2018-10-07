@@ -986,31 +986,31 @@ We provide here a table of how the four main syntaxes compare against a wide var
 
 <table>
 <tr>
-<th />
-<th>[[#syntax-1]]</th>
-<th>[[#syntax-2]]</th>
-<th>[[#syntax-3]]</th>
-<th>[[#syntax-4]]</th>
+<th style='width: 8%;' />
+<th style='width: 20%;'>[[#syntax-1]]</th>
+<th style='width: 18%;'>[[#syntax-2]]</th>
+<th style='width: 20%;'>[[#syntax-3]]</th>
+<th style='width: 20%;'>[[#syntax-4]]</th>
 </tr>
 <tr>
 <th>Familiarity</th>
-<td>This syntax isn't very "C++-ic" in the sense that we'd have two different places where *cv*- and *ref*-qualifiers appear. But it would be familiar to those coming from other languages.</td>
-<td>Same unfamiliarity as at-left, but now `this` is a reference instead of a pointer.</td>
+<td>Novel to C++, familiar to users of other languages. Adds an additional way to define *cv*- and *ref* qualifiers.</td>
+<td>Same unfamiliarity as at-left; `this` behaves consistently with its declaration.</td>
 <td colspan="2">This syntax would keep the *cv*- and *ref*-qualifiers where they already are, so is a natural extension in that sense.</td>
 </tr>
 <tr>
 <th>Safety with derived objects<sup>&dagger;</sup></th>
-<td>Easy, if `this` is accessible. Difficult and verbose otherwise. </td>
+<td>Easy, if `this` is accessible, verbose otherwise. </td>
 <td>Difficult and verbose. </td>
-<td>Easy, if `this` is accessible. Difficult and verbose otherwise. </td>
-<td>Difficult and verbose.</td>
+<td>Easy, if `this` is accessible, verbose otherwise. </td>
+<td>Verbose.</td>
 </tr>
 <tr>
 <th>Parsing issues</th>
 <td>None</td>
 <td>None</td>
-<td>Definite problems, have to choose a parsing strategy. Could limit further extensions with context-sensitive keywords.</td>
-<td>Some problems</td>
+<td>Definite problems, have to choose a parsing strategy. Limits further extensions with context-sensitive keywords.</td>
+<td>Some problems.</td>
 </tr>
 <tr>
 <th>Code bloat<sup>&Dagger;</sup></th>
@@ -1020,9 +1020,9 @@ We provide here a table of how the four main syntaxes compare against a wide var
 </tr>
 </table>
 
-<sup>&dagger;</sup>Basically: how easy is it to write member functions that want to deduce *cv-qualifiers* and value category without inadvertently referencing the derived object. This table assumes we do not adopt the [[#potential-extensions]]. The syntaxes that do not have a differentiation for the base class subobject will definitely have trouble here. 
+<sup>&dagger;</sup>Basically: how easy is it to write member functions that want to deduce *cv-qualifiers* and value category without inadvertently referencing the derived object. This table assumes we do not adopt the [[#potential-extensions]]. The syntaxes that do not introduce an identifier ([[#syntax-2]] and [[#syntax-4]]) have no way of providing a non-verbose way of referring to members of the base class.
 
-<sup>&Dagger;</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?
+<sup>&Dagger;</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem? Note that one can always use the old-but-improved trick of deferring to a templated implementation, but now without the casts. The problem is minimal.
 
 As well as how well they compare against the variety of use-cases that we have been able to come up with for this feature:
 
