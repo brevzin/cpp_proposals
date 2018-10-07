@@ -63,19 +63,19 @@ This revision carefully explores both of these directions and presents different
 
 # Motivation # {#motivation}
 
-In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member (Of course it was possible to also want `volatile` overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" [[Effective]], Item 3:
+In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member (Of course it was possible to also want `volatile` overloads, but those are less common). In these cases, both overloads do the same thing &mdash; the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" [[Effective]], Item 3:
 
 ```c++
 class TextBlock {
 public:
-  const char& operator[](std::size_t position) const {
+  char const& operator[](std::size_t position) const {
     // ...
     return text[position];
   }
 
   char& operator[](std::size_t position) {
     return const_cast<char&>(
-      static_cast<const TextBlock&>(*this)[position]
+      static_cast<TextBlock const&>(*this)[position]
     );
   }
   // ...
@@ -111,7 +111,7 @@ class optional {
     throw bad_optional_access();
   }
 
-  constexpr const T& value() const& {
+  constexpr T const& value() const& {
     if (has_value()) {
       return this->m_value;
     }
@@ -125,7 +125,7 @@ class optional {
     throw bad_optional_access();
   }
 
-  constexpr const T&&
+  constexpr T const&&
   value() const&& {
     if (has_value()) {
       return std::move(this->m_value);
@@ -147,7 +147,7 @@ class optional {
         *this).value());
   }
 
-  constexpr const T& value() const& {
+  constexpr T const& value() const& {
     if (has_value()) {
       return this->m_value;
     }
@@ -160,9 +160,9 @@ class optional {
         *this).value());
   }
 
-  constexpr const T&&
+  constexpr T const&&
   value() const&& {
-    return static_cast<const T&&>(
+    return static_cast<T const&&>(
       value());
   }
   // ...
@@ -178,7 +178,7 @@ class optional {
     return value_impl(*this);
   }
 
-  constexpr const T& value() const& {
+  constexpr T const& value() const& {
     return value_impl(*this);
   }
 
@@ -186,7 +186,7 @@ class optional {
     return value_impl(std::move(*this));
   }
 
-  constexpr const T&&
+  constexpr T const&&
   value() const&& {
     return value_impl(std::move(*this));
   }
@@ -1263,14 +1263,14 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 ```cpp
 class TextBlock {
 public:
-  const char& operator[](std::size_t position) const {
+  char const& operator[](std::size_t position) const {
     // ...
     return text[position];
   }
 
   char& operator[](std::size_t position) {
     return const_cast<char&>(
-      static_cast<const TextBlock&>
+      static_cast<TextBlock const&>
         (this)[position]
     );
   }
@@ -1315,7 +1315,7 @@ class optional {
     return std::addressof(this->m_value);
   }
 
-  constexpr const T*
+  constexpr T const*
   operator->() const {
     return std::addressof(this->m_value);
   }
@@ -1360,7 +1360,7 @@ class optional {
     return this->m_value;
   }
 
-  constexpr const T& operator*() const& {
+  constexpr T const& operator*() const& {
     return this->m_value;
   }
 
@@ -1368,7 +1368,7 @@ class optional {
     return std::move(this->m_value);
   }
 
-  constexpr const T&&
+  constexpr T const&&
   operator*() const&& {
     return std::move(this->m_value);
   }
@@ -1380,7 +1380,7 @@ class optional {
     throw bad_optional_access();
   }
 
-  constexpr const T& value() const& {
+  constexpr T const& value() const& {
     if (has_value()) {
       return this->m_value;
     }
@@ -1394,7 +1394,7 @@ class optional {
     throw bad_optional_access();
   }
 
-  constexpr const T&& value() const&& {
+  constexpr T const&& value() const&& {
     if (has_value()) {
       return std::move(this->m_value);
     }
@@ -1483,7 +1483,7 @@ class optional {
   template <typename F>
   constexpr auto and_then(F&& f) const& {
     using result =
-      invoke_result_t<F, const T&>;
+      invoke_result_t<F, T const&>;
     static_assert(
       is_optional<result>::value,
       "F must return an optional");
@@ -1496,7 +1496,7 @@ class optional {
   template <typename F>
   constexpr auto and_then(F&& f) const&& {
     using result =
-      invoke_result_t<F, const T&&>;
+      invoke_result_t<F, T const&&>;
     static_assert(
       is_optional<result>::value,
       "F must return an optional");
@@ -2000,7 +2000,7 @@ public:
 
     template <typename... Args>
     auto operator()(Args&&... ) const&
-        -> decltype(!declval<invoke_result_t<const F&, Args...>>());
+        -> decltype(!declval<invoke_result_t<F const&, Args...>>());
 
     // ... same for && and const && ...
 };

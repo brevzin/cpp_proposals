@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="5441bb59dd5fc3e7fbfa8bdd0eac1d70a860219d" name="document-revision">
+  <meta content="00956dd0af8fb20579e35582f345464f3f06f615" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1593,17 +1593,17 @@ pre .property::before, pre .property::after {
    </ul>
    <p>This revision carefully explores both of these directions and presents different syntaxes and lookup schemes and discusses in depth multiple different use-cases and how each of the syntaxes can or cannot address the use-cases.</p>
    <h2 class="heading settled" data-level="2" id="motivation"><span class="secno">2. </span><span class="content">Motivation</span><a class="self-link" href="#motivation"></a></h2>
-   <p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="highlight"><c- k>const</c-></code> and non-<code class="highlight"><c- k>const</c-></code> overload of a particular member (Of course it was possible to also want <code class="highlight"><c- k>volatile</c-></code> overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" <a data-link-type="biblio" href="#biblio-effective">[Effective]</a>, Item 3:</p>
+   <p>In C++03, member functions could have <em>cv</em>-qualifications, so it was possible to have scenarios where a particular class would want both a <code class="highlight"><c- k>const</c-></code> and non-<code class="highlight"><c- k>const</c-></code> overload of a particular member (Of course it was possible to also want <code class="highlight"><c- k>volatile</c-></code> overloads, but those are less common). In these cases, both overloads do the same thing — the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" <a data-link-type="biblio" href="#biblio-effective">[Effective]</a>, Item 3:</p>
 <pre class="language-c++ highlight"><c- n>class</c-> <c- n>TextBlock</c-> <c- p>{</c->
 <c- nl>public</c-><c- p>:</c->
-  <c- k>const</c-> <c- b>char</c-><c- o>&amp;</c-> <c- n>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- k>const</c-> <c- p>{</c->
+  <c- b>char</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- k>const</c-> <c- p>{</c->
     <c- c1>// ...</c->
     <c- k>return</c-> <c- n>text</c-><c- p>[</c-><c- n>position</c-><c- p>];</c->
   <c- p>}</c->
 
   <c- b>char</c-><c- o>&amp;</c-> <c- n>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>const_cast</c-><c- o>&lt;</c-><c- b>char</c-><c- o>&amp;></c-><c- p>(</c->
-      <c- n>static_cast</c-><c- o>&lt;</c-><c- k>const</c-> <c- n>TextBlock</c-><c- o>&amp;></c-><c- p>(</c-><c- o>*</c-><c- n>this</c-><c- p>)[</c-><c- n>position</c-><c- p>]</c->
+      <c- n>static_cast</c-><c- o>&lt;</c-><c- n>TextBlock</c-> <c- k>const</c-><c- o>&amp;></c-><c- p>(</c-><c- o>*</c-><c- n>this</c-><c- p>)[</c-><c- n>position</c-><c- p>]</c->
     <c- p>);</c->
   <c- p>}</c->
   <c- c1>// ...</c->
@@ -1629,7 +1629,7 @@ pre .property::before, pre .property::after {
     <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
       <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>;</c->
     <c- p>}</c->
@@ -1643,7 +1643,7 @@ pre .property::before, pre .property::after {
     <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c->
   <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
       <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
@@ -1663,7 +1663,7 @@ pre .property::before, pre .property::after {
         <c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>value</c-><c- p>());</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
       <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>;</c->
     <c- p>}</c->
@@ -1676,9 +1676,9 @@ pre .property::before, pre .property::after {
         <c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>value</c-><c- p>());</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c->
   <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
-    <c- k>return</c-> <c- k>static_cast</c-><c- o>&lt;</c-><c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;></c-><c- p>(</c->
+    <c- k>return</c-> <c- k>static_cast</c-><c- o>&lt;</c-><c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;></c-><c- p>(</c->
       <c- n>value</c-><c- p>());</c->
   <c- p>}</c->
   <c- c1>// ...</c->
@@ -1692,7 +1692,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- n>value_impl</c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>);</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>value_impl</c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>);</c->
   <c- p>}</c->
 
@@ -1700,7 +1700,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- n>value_impl</c-><c- p>(</c-><c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>));</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c->
   <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>value_impl</c-><c- p>(</c-><c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>));</c->
   <c- p>}</c->
@@ -2561,14 +2561,14 @@ pre .property::before, pre .property::after {
       <td>
 <pre class="language-cpp highlight"><c- k>class</c-> <c- nc>TextBlock</c-> <c- p>{</c->
 <c- k>public</c-><c- o>:</c->
-  <c- k>const</c-> <c- b>char</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- k>const</c-> <c- p>{</c->
+  <c- b>char</c-> <c- k>const</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- k>const</c-> <c- p>{</c->
     <c- c1>// ...</c->
     <c- k>return</c-> <c- n>text</c-><c- p>[</c-><c- n>position</c-><c- p>];</c->
   <c- p>}</c->
 
   <c- b>char</c-><c- o>&amp;</c-> <c- k>operator</c-><c- p>[](</c-><c- n>std</c-><c- o>::</c-><c- b>size_t</c-> <c- n>position</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- k>const_cast</c-><c- o>&lt;</c-><c- b>char</c-><c- o>&amp;></c-><c- p>(</c->
-      <c- k>static_cast</c-><c- o>&lt;</c-><c- k>const</c-> <c- n>TextBlock</c-><c- o>&amp;></c->
+      <c- k>static_cast</c-><c- o>&lt;</c-><c- n>TextBlock</c-> <c- k>const</c-><c- o>&amp;></c->
         <c- p>(</c-><c- k>this</c-><c- p>)[</c-><c- n>position</c-><c- p>]</c->
     <c- p>);</c->
   <c- p>}</c->
@@ -2606,7 +2606,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>addressof</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>*</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>*</c->
   <c- k>operator</c-><c- o>-></c-><c- p>()</c-> <c- k>const</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>addressof</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
   <c- p>}</c->
@@ -2644,7 +2644,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
 
@@ -2652,7 +2652,7 @@ pre .property::before, pre .property::after {
     <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c->
   <c- k>operator</c-><c- o>*</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
   <c- p>}</c->
@@ -2664,7 +2664,7 @@ pre .property::before, pre .property::after {
     <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
       <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>;</c->
     <c- p>}</c->
@@ -2678,7 +2678,7 @@ pre .property::before, pre .property::after {
     <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
   <c- p>}</c->
 
-  <c- k>constexpr</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
+  <c- k>constexpr</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- n>value</c-><c- p>()</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
     <c- k>if</c-> <c- p>(</c-><c- n>has_value</c-><c- p>())</c-> <c- p>{</c->
       <c- k>return</c-> <c- n>std</c-><c- o>::</c-><c- n>move</c-><c- p>(</c-><c- k>this</c-><c- o>-></c-><c- n>m_value</c-><c- p>);</c->
     <c- p>}</c->
@@ -2760,7 +2760,7 @@ pre .property::before, pre .property::after {
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
   <c- k>constexpr</c-> <c- k>auto</c-> <c- n>and_then</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- k>const</c-><c- o>&amp;</c-> <c- p>{</c->
     <c- k>using</c-> <c- n>result</c-> <c- o>=</c->
-      <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;></c-><c- p>;</c->
+      <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;></c-><c- p>;</c->
     <c- k>static_assert</c-><c- p>(</c->
       <c- n>is_optional</c-><c- o>&lt;</c-><c- n>result</c-><c- o>>::</c-><c- n>value</c-><c- p>,</c->
       <c- s>"F must return an optional"</c-><c- p>);</c->
@@ -2773,7 +2773,7 @@ pre .property::before, pre .property::after {
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>F</c-><c- o>></c->
   <c- k>constexpr</c-> <c- k>auto</c-> <c- n>and_then</c-><c- p>(</c-><c- n>F</c-><c- o>&amp;&amp;</c-> <c- n>f</c-><c- p>)</c-> <c- k>const</c-><c- o>&amp;&amp;</c-> <c- p>{</c->
     <c- k>using</c-> <c- n>result</c-> <c- o>=</c->
-      <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- k>const</c-> <c- n>T</c-><c- o>&amp;&amp;></c-><c- p>;</c->
+      <c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-><c- p>,</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;&amp;></c-><c- p>;</c->
     <c- k>static_assert</c-><c- p>(</c->
       <c- n>is_optional</c-><c- o>&lt;</c-><c- n>result</c-><c- o>>::</c-><c- n>value</c-><c- p>,</c->
       <c- s>"F must return an optional"</c-><c- p>);</c->
@@ -3193,7 +3193,7 @@ pre .property::before, pre .property::after {
 
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-><c- p>...</c-> <c- n>Args</c-><c- o>></c->
     <c- k>auto</c-> <c- k>operator</c-><c- p>()(</c-><c- n>Args</c-><c- o>&amp;&amp;</c-><c- p>...</c-> <c- p>)</c-> <c- k>const</c-><c- o>&amp;</c->
-        <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- o>!</c-><c- n>declval</c-><c- o>&lt;</c-><c- n>invoke_result_t</c-><c- o>&lt;</c-><c- k>const</c-> <c- n>F</c-><c- o>&amp;</c-><c- p>,</c-> <c- n>Args</c-><c- p>...</c-><c- o>>></c-><c- p>());</c->
+        <c- o>-></c-> <c- k>decltype</c-><c- p>(</c-><c- o>!</c-><c- n>declval</c-><c- o>&lt;</c-><c- n>invoke_result_t</c-><c- o>&lt;</c-><c- n>F</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- n>Args</c-><c- p>...</c-><c- o>>></c-><c- p>());</c->
 
     <c- c1>// ... same for &amp;&amp; and const &amp;&amp; ...</c->
 <c- p>};</c->
