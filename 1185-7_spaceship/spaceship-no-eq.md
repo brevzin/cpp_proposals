@@ -1,5 +1,5 @@
 Title: `<=> != ==`
-Document-Number: D1185R0
+Document-Number: P1185R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG
 
@@ -200,7 +200,24 @@ There are other languages that make roughly the same decision in this regard tha
 
 Fundamentally, we have two sets of operations: equality and comparison. In order to be efficient and not throw away performance, we need to implement them separately. `operator<=>()` as specified in the working draft today generating all six functions just doesn't seem to be a good solution.
 
-We can do something similar to the Rust model above and first described in [this section](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md#make-operator-create-only-operator-operator-operator-and-operator) of the previously linked paper: require two separate functions to implement all the functionality. That is, change the rewrite rules for how the lookup for operators works to the following (in all cases, `a @ b` prefers `a @ b` if it exists, as it does today):
+This paper proposes to do something similar to the Rust model above and first described in [this section](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md#make-operator-create-only-operator-operator-operator-and-operator) of the previously linked paper: require two separate functions to implement all the functionality. 
+
+The proposal has two core components:
+
+- change the candidate set for operator lookup
+- change the meaning of defaulted equality operators
+
+And two optional components:
+
+- change how we define [_strong structural equality_](http://eel.is/c++draft/class.compare#def:equality,strong_structural "[class.compare]"), which is important for [P0732R2](https://wg21.link/p0732r2)
+- change defaulted `<=>` to also generate a defaulted `==`
+
+
+## Change the candidate set for operator lookup
+
+Today, lookup for any of the relational and equality operators will also consider [`operator<=>`](http://eel.is/c++draft/over.match.oper#3.4), but preferring [the actual used operator](http://eel.is/c++draft/over.match.best#1.10). 
+
+The proposed change is for the equality operators to _not_ consider `<=>` candidates. Instead, inequality will consider equality as a candidate. In other words, here is the proposed set of candidates. There are no changes proposed for the relational operators, only for the equality ones:
 
 <table>
 <th>
@@ -221,11 +238,14 @@ Proposed
 </td>
 <td>
     :::cpp
+    a == b
     (a <=> b) == 0
+    0 == (b <=> a)
 </td>
 <td>
     :::cpp
-    a == b // no rewrite
+    a == b
+    b == a
 </td>
 </tr>
 <tr>
@@ -235,11 +255,15 @@ Proposed
 </td>
 <td>
     :::cpp
+    a != b
     (a <=> b) != 0
+    0 != (a <=> b)
 </td>
 <td>
     :::cpp
+    a != b
     !(a == b)
+    !(b == a)
 </td>
 </tr>
 <tr>
@@ -247,13 +271,11 @@ Proposed
     :::cpp
     a < b
 </td>
-<td>
+<td colspan="2">
     :::cpp
+    a < b
     (a <=> b) < 0
-</td>
-<td>
-    :::cpp
-    (a <=> b) < 0  // unchanged
+    0 < (b <=> a)
 </td>
 </tr>
 <tr>
@@ -261,13 +283,11 @@ Proposed
     :::cpp
     a <= b
 </td>
-<td>
+<td colspan="2">
     :::cpp
+    a <= b
     (a <=> b) <= 0
-</td>
-<td>
-    :::cpp
-    (a <=> b) <= 0 // unchanged
+    0 <= (b <=> a)
 </td>
 </tr>
 <tr>
@@ -275,13 +295,11 @@ Proposed
     :::cpp
     a > b
 </td>
-<td>
+<td colspan="2">
     :::cpp
+    a > b
     (a <=> b) > 0
-</td>
-<td>
-    :::cpp
-    (a <=> b) > 0  // unchanged
+    0 > (b <=> a)
 </td>
 </tr>
 <tr>
@@ -289,22 +307,22 @@ Proposed
     :::cpp
     a >= b
 </td>
-<td>
+<td colspan="2">
     :::cpp
+    a >= b
     (a <=> b) >= 0
-</td>
-<td>
-    :::cpp
-    (a <=> b) >= 0 // unchanged
+    0 >= (b <=> a)
 </td>
 </tr>
 </table>
 
-The inverse lookup rules would also be changed. Whereas today `a == b` can find either `(a <=> b) == 0` or `0 == (b <=> a)`, the proposal is that it instead either find `a == b` or `b == a`. Likewise `a != b` would find either `!(a == b)` or `!(b == a)`, but never look for `<=>`.
+In short, `==` and `!=` never invoke `<=>` implicitly. 
 
-Going along with the proposed rewrite changes, this proposal suggests we change the rules for defaulting `==` so that instead of generating a function that just invokes `<=>` it generates a member-wise equality check (in the same way that `<=>` today generates a member-wise `<=>`). Defaulted `!=` would require the existence of `==` and simply invoke it.
+## Change the meaning of defaulted equality operators
 
-In other words:
+As mentioned earlier, in the current working draft, defaulting `==` or `!=` generates a function that invokes `<=>`. This paper proposes that defaulting `==` generates a member-wise equality comparison and that defaulting `!=` generate a call to negated `==`.
+
+That is:
 
 <table style="width:100%">
 <tr>
@@ -384,32 +402,127 @@ Proposed Meaning
 </tr>
 </table>
 
+These two changes ensure that the equality operators and the relational operators remain segregated. 
 
-This means that for complex types (like containers), we have to write two functions instead of just `<=>` and for compound types (like aggregates), we have to default two functions instead of just `<=>`... but we get optimal performance. The issues with this approach are, from David (with one adjustment):
+## Change how we define strong structural equality
 
-> 1. Compared to the previous solution, this requires the user to type even more to opt-in to behavior that they almost always want (if you have defaulted relational operators, you probably want the equality operators). Because `operator<=>` is a new feature, we do not have any concerns of legacy code, so if the feature starts out as giving users all six comparison operators, it would be better if they must type only one line rather than having to type <del>three</del> <ins>two</ins>.
-> 2. It is a natural side-effect of computing less than vs. greater than that you compute equal to. It is strange that we define an operator that can tell us whether things are equal, but we use it to generate all comparisons other than equal and not equal. For the large set of types for which `operator<=>` alone is sufficient, it also means that users who are not using the default (they are explicitly defining the comparisons) must define two operators that encode much of the same logic of comparison. This mandatory duplication invites bugs as the code is changed under maintenance.
+[P0732R2](https://wg21.link/p0732r2) relies on _strong structural equality_ as the criteria to allow a class to be used as a non-type template parameter - which is based on having a defaulted `<=>` that itself only calls defaulted `<=>` recursively all the way down and has type either `strong_ordering` or `strong_equality`.
+
+This criteria clashes somewhat with this proposal, which is fundamentally about not making `<=>` be about equality. So it would remain odd if, for instance, we rely on a defaulted `<=>` whose return type is `strong_equality` (which itself can never be used to determine actual equality).
+
+We have two options here:
+
+1. Do nothing. Do not change the rules here at all, still require defaulted `<=>` for use as a non-type template parameter. This means that there may be types which don't have a natural ordering for which we would have to both default `==` and default `<=>` (with `strong_equality`), the latter being a function that _only_ exists to opt-in to this behavior. 
+
+2. Change the definition of strong structural equality to use `==` instead. The wording here would have to be slightly more complex: define a type `T` as having strong structural equality if each subobject recursively has defaulted `==` and none of the subobjects are floating point types. 
+
+The impact of this change revolves around the code necessary to write a type that is intended to only be equality-comparable (not ordered) but also usable as a non-type template parameter: only `operator==` would be necessary.
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+Do nothing
+</th>
+<th style="width:50%">
+Change definition
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp
+    struct C {
+        int i;
+        bool operator==(C const&) const = default;
+        strong_equality operator<=>(C const&) const = default;
+    };
+
+    template <C x>
+    struct Z { };
+</td>
+<td>
+    :::cpp
+    struct C {
+        int i;
+        bool operator==(C const&) const = default;
+    };
+
+    template <C x>
+    struct Z { };
+</td>
+</tr>
+</table>
+
+## Change defaulted `<=>` to also generate a defaulted `==`
+
+One of the important consequences of this proposal is that if you simply want lexicographic, member-wise, ordering for your type - you need to default _two_ functions (`==` and `<=>`) instead of just one (`<=>`):
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+P0515/C++2a
+</th>
+<th style="width:50%">
+Proposed
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp
+    // all six
+    struct A {
+        auto operator<=>(A const&) const = default;
+    };
+    
+    
+    // just equality, no relational
+    struct B {
+        strong_equality operator<=>(B const&) const = default;
+    };
+</td>
+<td>
+    :::cpp
+    // all six
+    struct A {
+        bool operator==(A const&) const = default;
+        auto operator<=>(A const&) const = default;
+    };
+    
+    // just equality, no relational
+    struct B {
+        bool operator==(B const&) const = default;
+    };
+</td>
+</tr>
+</table>
+
+Arguably, `A` isn't terrible here and `B` is somewhat simpler. But it makes this proposal seem like it's fighting against the promise of P0515 of making a trivial opt-in to ordering. 
+
+As an optional extension, this paper proposes that a defaulted `<=>` operator also generate a defaulted `==`. We can do this regardless of whether the return type of the defaulted `<=>` is provided or not, since even `weak_equality` implies `==`.
+
+This change, combined with the core proposal, means that one single defaulted operator is sufficient for full comparison. The difference is that, with this proposal, we still get optimal equality.
+
+This change may also obviate the need for the previous optional extension of changing the definition of strong structural extension. But even still, the changes are worth considering separately. 
+
+# Important implications
+
+This proposal means that for complex types (like containers), we have to write two functions instead of just `<=>`. But we really have to do that anyway if we want performance. Even though the two `vector` functions are very similar, and for `optional` they are even more similar (see below), this seems like a very necessary change.
+
+For compound types (like aggregates), depending on the preference of the previous choices, we either have to default to functions instead or still just default `<=>`... but we get optimal performance. 
 
 Getting back to our initial example, we would write:
 
     :::cpp
     struct S {
         vector<string> names;
-        bool operator==(S const&) const = default;
+        bool operator==(S const&) const = default; // (*) if 2.4 not adopted
         auto operator<=>(S const&) const = default;
     };
 
-We have to explicitly default two functions, but we can get optimal behavior out of this - which seems like a good trade-off. But let's discuss those two points in more detail.
+Even if we choose to require defaulting `operator==` in this example, the fact that `<=>` is no longer considered as a candidate for equality means that the worst case of forgetting this function is that equality _does not compile_. That is a substantial improvement over the alternative where equality compiles and has subtly worse performance that will be very difficult to catch.
 
-It's tempting to want to shoehorn templates to solve this problem (such as by adding an extra argument to `operator<=>`). But that's effectively using templates like a macro and doesn't seem like sound design.
+## Implications for types that have special, but not different, comparisons
 
-# Important implications
-
-There are several important implications of this proposal that I want to make sure get covered.
-
-## Implications for non-special types
-
-There are many kinds of types for which the defaulted comparison semantics are incorrect, but nevertheless don't have to do anything different between equality and ordering. One such example is `optional<T>`. Having to write two functions here gets exactly at David's point of duplication above:
+There are many kinds of types for which the defaulted comparison semantics are incorrect, but nevertheless don't have to do anything different between equality and ordering. One such example is `optional<T>`. Having to write two functions here is extremely duplicative:
 
 <table style="width:100%">
 <tr>
@@ -465,85 +578,13 @@ Proposed
 </tr>
 </table>
 
-As is probably obvious, the implementations of `==` and `<=>` are basically identical: the only difference is that `==` calls `==` and `<=>` calls `<=>` (or really `compare_3way`). 
+As is probably obvious, the implementations of `==` and `<=>` are basically identical: the only difference is that `==` calls `==` and `<=>` calls `<=>` (or really `compare_3way`). It may be very tempting to implement `==` to just call `<=>`, but that would be wrong! It's critical that `==` call `==` all the way down.
 
-But it's important to keep in mind three things.
+It's important to keep in mind three things.
 
 1. In C++17 we'd have to write six functions, so writing two is a large improvement. 
 2. These two functions may be duplicated, but they give us optimal performance - writing the one `<=>` to generate all six comparison functions does not. 
 3. The amount of special types of this kind - types that have non-default comparison behavior but perform the same algorithm for both `==` and `<=>` - is fairly small. Most container types would have separate algorithms. Typical types default both, or just default `==`. The canonical examples that would need special behavior are `std::array` and `std::forward_list` (which either have fixed or unknown size and thus cannot short-circuit) and `std::optional` and `std::variant` (which can't do default comparison). So this particular duplication is a fairly limited problem.
-
-## Implications for defaulting
-
-As previously hinted, this proposal implies the need for defaulting _two_ functions instead of _one_. This section makes this difference more explicit:
-
-<table style="width:100%">
-<tr>
-<th style="width:50%">
-P0515/C++2a
-</th>
-<th style="width:50%">
-Proposed
-</th>
-</tr>
-<tr>
-<td>
-    :::cpp
-    // all six
-    struct A {
-        auto operator<=>(A const&) const = default;
-    };
-    
-    
-    // just equality, no relational
-    struct B {
-        strong_equality operator<=>(B const&) const = default;
-    };
-</td>
-<td>
-    :::cpp
-    // all six
-    struct A {
-        bool operator==(A const&) const = default;
-        auto operator<=>(A const&) const = default;
-    };
-    
-    // just equality, no relational
-    struct B {
-        bool operator==(B const&) const = default;
-    };
-</td>
-</tr>
-</table>
-
-Arguably, `A` isn't so bad here and `B` is somewhat simpler. But if [P0847](https://wg21.link/p0847r0) is adopted, we could move the defaulting logic into a new-style mixin and simply use inheritance as a way of adopting this functionality:
-
-    :::cpp
-    struct Eq {
-        template <typename Self>
-        bool operator==(this Self const&, Self const&) = default;
-    };
-    
-    struct Ord : Eq {
-        template <typename Self>
-        auto operator<=>(this Self const&, Self const&) = default;
-    };
-    
-    struct A : Ord { };    
-    struct B : Eq { };
-
-And now we're defaulting zero functions instead of one.
-
-Our initial motivating example becomes:
-
-    :::cpp
-    struct S : Ord {
-        vector<string> names;
-    };
-    
-and has optimal comparison operators all the way down.
-
-The ability to do this is completely orthogonal to this proposal - given P0847, we could write `Ord` already. The point is simply to illustrate that defaulting two functions is not necessarily a large burden.
 
 ## Implications for comparison categories
 
@@ -554,53 +595,61 @@ One of the features of P0515 is that you could default `<=>` to, instead of retu
         std::strong_equality operator<=>(X const&) const = default;
     };
     
-In a world where neither `==` nor `!=` would be generated from `<=>`, this no longer makes any sense to allow. We could have to require that the return type of `<=>` be some kind of ordering - that is, at least `std::partial_ordering`. Allowing the declaration of `X` above would be misleading, at best. 
+In a world where neither `==` nor `!=` would be generated from `<=>`, this no longer makes much sense. We could have to require that the return type of `<=>` be some kind of ordering - that is, at least `std::partial_ordering`. Allowing the declaration of `X` above would be misleading, at best. 
 
-However, there may still be a need to differentiate between `std::strong_equality` and `std::weak_equality`. The only place left to do this would be `operator==`. As in:
+This means there may not be a way to differentiate between `std::strong_equality` and `std::weak_equality`. The only other place to do this kind of differentiation would be if we somehow allowed it in the return of `operator==`:
 
     :::cpp
     struct X {
         std::strong_equality operator==(X const&) const = default;
     };
-    
-Do we want to allow this? We would have to either make both `strong_equality` and `weak_equality` be implicitly convertible to `bool`. This would allow seeing what the comparison category of `decltype(x == x)` is. Or we would have to introduce new language magic that would hide the above declaration with an `operator==` that returns `bool` that invokes the other hidden one, which seems overly complex.
 
-I am not sure what the right answer is for this subproblem. 
+And I'm not sure this makes any sense. 
 
-# Extension: other means of defaulting `==`
+# Wording
 
-One of the concerns could be that we now require class authors to default both `==` and `<=>` and this seems like an unnecessary amount of function declarations to write. To that end, this proposal could be extended to generate a defaulted `operator==` from a couple different places.
+What follows is the wording from the core sections of the proposal (2.1 and 2.2).
 
-## Defaulted `==` from defaulted `<=>`
+Change 10.10.3 [class.rel.eq] paragraph 2:
 
-This extension would be that a defaulted `operator<=>` also creates a defaulted `operator==`. The result would be no change in typing at all for classes that just want a default, member-wise total order (as in `A`) above. 
+> The <ins>relational</ins> operator function with parameters `x` and `y` is defined as deleted if
 
-The reasoning here is that having `<=>` certainly implies equality, and the likely intent behind choosing default, member-wise ordering is that you also want default, member-wise equality. 
+> - overload resolution ([over.match]), as applied to `x <=> y` (also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function, or
+> - the operator `@` cannot be applied to the return type of `x <=> y` or `y <=> x`.
 
-On the other hand, it seems a little strange that `<=>` never leads to the generation of an `==` operation (that is, `a == b` is no longer `(a <=> b) == 0`), `<=>` can nevertheless lead to the generation of an `==` _function_. But if a leading concern with this proposal is the requirement of an additional function declaration, this is surely worth doing.
+> Otherwise, the operator function yields `x <=> y @ 0` if an operator<=> with the original order of parameters was selected, or `0 @ y <=> x` otherwise.
 
-## Defaulted `==` from defaulted copy constructor/assignment
+Add a new paragraph after 10.10.3 [class.rel.eq] paragraph 2:
 
-A different potential extension is to take advantage of the clear ties between copying and equality. Stepanov's [Fundamentals of Generic Programming][stepanov.fogp] puts forward axioms that equate the semantics of copying with the semantics of equals. Copying gives you an equal object, which is an idea explicitly noted in [P0515R0](https://wg21.link/p0515r0):
+> <ins>The return value `V` of type `bool` of the defaulted `==` (equal to) operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects ([class.spaceship]) for `x` and `y` until the first index `i` where <code>x<sub>i</sub> == y<sub>i</sub></code> yields a value result which, contextually converted to bool, yields `false`. If no such index exists, `V` is `true`. Otherwise, `V` is `false`.</ins>
 
-> Default comparison should do exactly the same thing as default copying.
+Add another new paragraph after 10.10.3 [class.rel.eq] paragraph 2:
 
-As originally suggested in [P0432](https://wg21.link/p0432) and [P0481](https://wg21.link/p0481), we could generate a default, member-wise comparison if the copy constructor is not user-provided and all the members are equality comparable.
+> <ins>The `!=` (not equal to) operator function with parameters `x` and `y` is defined as deleted if</ins>
 
-## Impact on example
+> - <ins>overload resolution ([over.match]), as applied to `x == y` (also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function, or</ins>
+> - <ins>the negation operator cannot be applied to the return type of `x == y` or `y == x`.</ins>
 
-The earlier example was:
+> <ins>Otherwise, the `!=` operator function yields `!(x == y)` if an operator `==` with the original order of parameters was selected, or `!(y == x)` otherwise.</ins>
 
-    :::cpp
-    struct A {
-        auto operator<=>(A const&) const = default;
-    };
-    
-Today, `A` has all six comparison operators - all of which invoke `<=>`. This proposal prevents `==` and `!=` from working, so those need to be handled separately. The core proposal suggests that this be handled explicitly - with an explicitly defaulted `operator==`.
+Change the example in [class.rel.eq] paragraph 3:
 
-Both of these extensions lead to no change necessary for `A`. The former generates the defaulted `operator==` function from the existence of the defaulted `operator<=>`, the latter generates the defaulted `operator==` from the implicit copy constructor/assignment.
+<blockquote><pre><code class="language-cpp">struct C {
+  friend std::strong_equality operator<=>(const C&, const C&);
+  </code><code><del>friend bool operator==(const C& x, const C& y) = default; // OK, returns x <=> y == 0</del></code><code class="language-cpp">
+  bool operator<(const C&) = default;                       // OK, function is deleted
+  </code><code><ins>bool operator!=(const C&) = default;                      // OK, function is deleted</ins>
+};
 
-Status quo and both of these extensions have the same _semantics_, but both extensions are likely to generate better code for defaulted `==`. 
+<ins>struct D {
+  int i;
+  friend bool operator==(const D& x, const D& y) const = default; // OK, returns x.i == y.i
+  bool operator!=(const D& z) const = default;                    // OK, returns !(*this == z)
+};</ins></code></pre></blockquote>
+
+Change 11.3.1.2 [over.match.oper] paragraph 3.4:
+
+> For the relational ([expr.rel]) <del>and equality ([expr.eq])</del> operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator `<=>`. For the relational ([expr.rel])<del>, equality ([expr.eq]),</del> and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <=> for which the rewritten expression 0 @ (y <=> x) is well-formed using that operator<=>.  <ins>For the `!=` (not equal to) operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator `==` for which the rewritten expression `!(x == y)` is well-formed using that operator `==`. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x) @ true` is well-formed using that operator `==`.</ins> *[ Note:* A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. *—end note]* In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
 
 # Acknowledgements
 
