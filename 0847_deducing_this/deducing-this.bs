@@ -1,10 +1,10 @@
 <pre class='metadata'>
 Title: Deducing this
-Status: D
+Status: P
 ED: http://wg21.link/P0847
-Shortname: D0847
+Shortname: P0847
 Level: 1
-Date: 2018-09-30
+Date: 2018-10-07
 Editor: Gašper Ažman, gasper dot azman at gmail dot com
 Editor: Simon Brand, simon at codeplay dot com
 Editor: Ben Deane, ben at elbeno dot com
@@ -65,7 +65,7 @@ This revision carefully explores both of these directions and presents different
 
 In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member (Of course it was possible to also want `volatile` overloads, but those are less common). In these cases, both overloads do the same thing - the only difference is in the types accessed and used. This was handled by either simply duplicating the function, adjusting types and qualifications as necessary, or having one delegate to the other. An example of the latter can be found in Scott Meyers' "Effective C++" [[Effective]], Item 3:
 
-```cpp
+```c++
 class TextBlock {
 public:
   const char& operator[](std::size_t position) const {
@@ -605,7 +605,7 @@ It's important to stress that deduction can deduce a derived type. In the last l
 
 But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it's just that it is very different clear meaning.
 
-In the case of explicit object parameter, what does this mean:
+In the case of the object parameter syntaxes, what does this mean:
 
 ```c++
 struct less_than {
@@ -619,6 +619,8 @@ less_than{}(4, 5);
 ```
 
 Following the proposed rules for candidate lookup - the call operator here would be a candidate, with the object parameter binding to the object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all - it has a clear and obvious meaning. It's just that we've never been able to take an object parameter by value before. For why we might want to do this, see [[#by-value-member-functions]].
+
+However, with a by-value explicit object parameter, we still have the answer the question of what does `this` refer to within the function body? Regardless of the choice we make for [[#name-lookup-within-member-functions]], there is only one meaningful semantic choice here: there is no `this`. In the above example, `less_than` doesn't *refer* to the object parameter, it *is* the only object parameter. Declaring a function in this way is equivalent to declaring a non-member `friend` function, except that we effectively opt-in to the usual member function call syntax. 
 
 In the case of trailing object type, what does this mean:
 

@@ -27,7 +27,7 @@ $(eval $(call add_better_paper,1170_overload_sets,p1170r0.html,overload-sets.md)
 $(eval $(call add_better_paper,1185-7_spaceship,p1185r0.html,spaceship-no-eq.md))
 $(eval $(call add_better_paper,1185-7_spaceship,p1186r0.html,spaceship-is-compare.md))
 $(eval $(call add_better_paper,1185-7_spaceship,p1187r0.html,compare-trait.md))
-$(eval $(call bikeshed_paper,0847_deducing_this,d0847r1.html,deducing-this.bs))
+$(eval $(call bikeshed_paper,0847_deducing_this,p0847r1.html,deducing-this.bs))
 
 all : $(PAPERS)
 .DEFAULT_GOAL := all
