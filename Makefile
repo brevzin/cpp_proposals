@@ -23,7 +23,7 @@ endef
 $(eval $(call add_better_paper,1061_sb_pack,d1061r1.html,sb-extensions.md))
 $(eval $(call add_better_paper,1065_constexpr_invoke,p1065r0.html,constexpr-invoke.md))
 $(eval $(call add_better_paper,1169_static_call,p1169r0.html,static-call.md))
-$(eval $(call add_better_paper,1170_overload_sets,overload_sets.html,overload-sets.md))
+$(eval $(call add_better_paper,1170_overload_sets,p1170r0.html,overload-sets.md))
 $(eval $(call add_better_paper,1185-7_spaceship,p1185r0.html,spaceship-no-eq.md))
 $(eval $(call add_better_paper,1185-7_spaceship,p1186r0.html,spaceship-is-compare.md))
 $(eval $(call add_better_paper,1185-7_spaceship,p1187r0.html,compare-trait.md))

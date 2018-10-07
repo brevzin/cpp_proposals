@@ -1,7 +1,7 @@
 Title: Overload sets as function parameters
-Document-Number: D1170R0
+Document-Number: P1170R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
-Authors: Andrew Sutton, andrew dot n dot sutton at gmail dot com
+Authors: Andrew Sutton, asutton at uakron dot edu
 Audience: EWG, LEWG
 
 # Motivation
@@ -120,14 +120,14 @@ This problem has a long history attached to it, with two different tacks explore
     algorithm(getX(), []foo);
     std::invoke([]do_something, 42);
     
-This was rejected by EWG in the [Albuquerque][abq.p0834], and would still have the same problem with placing the onus on the user to avoid brittleness at each and every call site. It is point-free though, and terse enough to be basically invisible. That discussion did conclude with this poll:
+This was rejected by EWG in the [Albuquerque][abq.p0834], but it is a syntax that has many benefits. It is point-free and terse enough as to be practically invisible. It would still place the onus on the user to avoid brittleness at each call site, but it is a very manageable burden. That discussion did conclude with this poll:
 
 > *Are we interested in a core language feature for packing concrete overload sets?*
 
 >  <table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>3</td><td>4</td><td>14</td><td>0</td><td>1</td></table>
 
 
-[P0573](https://wg21.link/p0573r2) wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in [Albuquerque][abq.p0573], and also did not even try to solve the point-free problem.
+[P0573](https://wg21.link/p0573r2) wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in [Albuquerque][abq.p0573], and did not even try to solve the point-free problem.
 
 Despite this long history, we believe that this is a problem that needs to be solved. It is unreasonably difficult today to pass a function into another function. The increased emphasis on disallowing users from taking pointers to standard library functions and function templates directly pushes the issue. A significant portion of the discussion of [P0798](https://wg21.link/p0798r0) in LEWG in [Rapperswil][rap.p0798] was about the problem of passing overload sets into functions - because the paper would simply introduce more places where users may want to do such a thing. Notably, LEWG took these polls:
 

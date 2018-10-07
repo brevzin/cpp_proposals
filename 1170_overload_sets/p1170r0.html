@@ -600,10 +600,10 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 </head>
 <body>
 <address align=right>
-Document Number: D1170R0 <br />
-Date: 2018-09-29 <br />
+Document Number: P1170R0 <br />
+Date: 2018-10-07 <br />
 Audience: EWG, LEWG <br />
-Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, andrew dot n dot sutton at gmail dot com <br />
+Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, asutton at uakron dot edu <br />
 </address>
 <hr /><h1 align=center><p>Overload sets as function parameters</p></h1>
 <h2>Contents</h2>
@@ -731,12 +731,12 @@ std::invoke(do_something, 42);</code></pre>
 std::invoke([]do_something, 42);</code></pre>
 
 
-<p>This was rejected by EWG in the <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0" title="ABQ Wiki Notes, P0834R0 - November 2017">Albuquerque</a>, and would still have the same problem with placing the onus on the user to avoid brittleness at each and every call site. It is point-free though, and terse enough to be basically invisible. That discussion did conclude with this poll:</p>
+<p>This was rejected by EWG in the <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0" title="ABQ Wiki Notes, P0834R0 - November 2017">Albuquerque</a>, but it is a syntax that has many benefits. It is point-free and terse enough as to be practically invisible. It would still place the onus on the user to avoid brittleness at each call site, but it is a very manageable burden. That discussion did conclude with this poll:</p>
 <blockquote>
 <p><em>Are we interested in a core language feature for packing concrete overload sets?</em></p>
 <p><table><tr><th>SF</th><th>F</th><th>N</th><th>A</th><th>SA</th></tr><tr><td>3</td><td>4</td><td>14</td><td>0</td><td>1</td></table></p>
 </blockquote>
-<p><a href="https://wg21.link/p0573r2" title="Abbreviated Lambdas for Fun and Profit">P0573</a> wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2" title="ABQ Wiki Notes, P0573R2 - November 2017">Albuquerque</a>, and also did not even try to solve the point-free problem.</p>
+<p><a href="https://wg21.link/p0573r2" title="Abbreviated Lambdas for Fun and Profit">P0573</a> wouldn't have directly solved this problem, but would have at least made writing the direct lambda less burdensome. It was also rejected in <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2" title="ABQ Wiki Notes, P0573R2 - November 2017">Albuquerque</a>, and did not even try to solve the point-free problem.</p>
 <p>Despite this long history, we believe that this is a problem that needs to be solved. It is unreasonably difficult today to pass a function into another function. The increased emphasis on disallowing users from taking pointers to standard library functions and function templates directly pushes the issue. A significant portion of the discussion of <a href="https://wg21.link/p0798r0" title="Monadic operations for std::optional">P0798</a> in LEWG in <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798" title="RAP Wiki Notes, P0798R0 - June 2018">Rapperswil</a> was about the problem of passing overload sets into functions - because the paper would simply introduce more places where users may want to do such a thing. Notably, LEWG took these polls:</p>
 <blockquote>
 <p><em>Assuming the language gets fixed so we can pass overload sets to callables, we want something like this (either as a general monad syntax or specifically in optional).</em></p>
