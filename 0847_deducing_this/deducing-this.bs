@@ -600,9 +600,9 @@ struct X {
 </tr>
 </table>
 
-Name lookup on an expression like `obj.foo()` today would find both overloads of `foo` in the first column today - and potentially the non-const overload would not be a viable candidate if `obj` were const. 
+Name lookup on an expression like `obj.foo()` in C++17 would find both overloads of `foo` in the first column, with the non-const overload discarded should `obj` be const.
 
-With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
+With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo`, with identical behaviour to C++17.
 
 The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter is bound to the object argument, and the second listed parameter would correspond to the first argument of the call expression.
 
