@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="596a9f07b142c42af1b58b3ec3ab31075dc26ce0" name="document-revision">
+  <meta content="050562f2fcea064fe0e33750a155c996cab0a214" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2830,7 +2830,7 @@ pre .property::before, pre .property::after {
 
     <c- k>return</c-> <c- k>this</c-><c- o>-></c-><c- n>optional</c-><c- o>::</c-><c- n>has_value</c-><c- p>()</c->
         <c- o>?</c-> <c- n>invoke</c-><c- p>(</c-><c- n>forward</c-><c- o>&lt;</c-><c- n>F</c-><c- o>></c-><c- p>(</c-><c- n>f</c-><c- p>),</c->
-                 <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>self</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>)</c->
+                 <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>optional</c-><c- o>::</c-><c- n>m_value</c-><c- p>)</c->
         <c- o>:</c-> <c- n>nullopt</c-><c- p>;</c->
   <c- p>}</c->
   <c- c1>// ...</c->
@@ -2884,8 +2884,8 @@ pre .property::before, pre .property::after {
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>add_postfix_increment</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
     <c- n>Self</c-> <c- k>operator</c-><c- o>++</c-><c- p>(</c-><c- b>int</c-><c- p>)</c-> <c- n>Self</c-> <c- p>{</c->
-        <c- n>Self</c-> <c- n>tmp</c-><c- p>(</c-><c- n>self</c-><c- p>);</c->
-        <c- o>++</c-><c- n>self</c-><c- p>;</c->
+        <c- n>Self</c-> <c- n>tmp</c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>);</c->
+        <c- o>++*</c-><c- k>this</c-><c- p>;</c->
         <c- k>return</c-> <c- n>tmp</c-><c- p>;</c->
     <c- p>}</c->
 <c- p>};</c->
@@ -2981,7 +2981,7 @@ pre .property::before, pre .property::after {
 </pre>
    </table>
    <p>The code on the right is dramatically easier to understand and more accessible to more programmers than the code on the left.</p>
-   <p>But what, there’s more.</p>
+   <p>But wait, there’s more.</p>
    <p>What if we add a <em>super</em>-specialized builder, that is a more special form of <code class="highlight"><c- n>Special</c-></code>? Now we need <code class="highlight"><c- n>Special</c-></code> to itself opt-in to CRTP so it knows which type to pass to <code class="highlight"><c- n>Builder</c-></code> so that everything in the hierarchy can return the correct type. It’s roughly at this point that people give up and start gently weeping. But with this proposal, no problem!</p>
    <table style="width:100%">
     <tbody>
@@ -3110,7 +3110,7 @@ pre .property::before, pre .property::after {
 <c- b>int</c-> <c- nf>num_leaves</c-><c- p>(</c-><c- n>Tree</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>tree</c-><c- p>)</c-> <c- p>{</c->
     <c- k>return</c-> <c- n>visit</c-><c- p>(</c-><c- n>overload</c-><c- p>(</c->        <c- c1>// &lt;-----------------------------------+</c->
         <c- p>[](</c-><c- n>Leaf</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>)</c-> <c- p>{</c-> <c- k>return</c-> <c- mi>1</c-><c- p>;</c-> <c- p>},</c->                           <c- c1>//      |</c->
-        <c- p>[](</c-><c- n>this</c-> <c- k>auto</c-> <c- n>self</c-><c- p>,</c-> <c- n>Node</c-><c- o>*</c-> <c- n>n</c-><c- p>)</c-> <c- o>-></c-> <c- b>int</c-> <c- p>{</c->                     <c- c1>//      |</c->
+        <c- p>[](</c-><c- n>this</c-> <c- k>auto</c-> <c- k>const</c-><c- o>&amp;</c-> <c- n>self</c-><c- p>,</c-> <c- n>Node</c-><c- o>*</c-> <c- n>n</c-><c- p>)</c-> <c- o>-></c-> <c- b>int</c-> <c- p>{</c->              <c- c1>//      |</c->
             <c- k>return</c-> <c- n>visit</c-><c- p>(</c-><c- n>self</c-><c- p>,</c-> <c- n>n</c-><c- o>-></c-><c- n>left</c-><c- p>)</c-> <c- o>+</c-> <c- n>visit</c-><c- p>(</c-><c- n>self</c-><c- p>,</c-> <c- n>n</c-><c- o>-></c-><c- n>right</c-><c- p>);</c-> <c- c1>// &lt;----+    </c->
         <c- p>}</c->
     <c- p>),</c-> <c- n>tree</c-><c- p>);</c->

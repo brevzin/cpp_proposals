@@ -1553,7 +1553,7 @@ class optional {
 
     return this->optional::has_value()
         ? invoke(forward<F>(f),
-                 forward<Self>(self).optional::m_value)
+                 forward<Self>(*this).optional::m_value)
         : nullopt;
   }
   // ...
@@ -1620,8 +1620,8 @@ struct some_type : add_postfix_increment {
 struct add_postfix_increment {
     template <typename Self>
     Self operator++(int) Self {
-        Self tmp(self);
-        ++self;
+        Self tmp(*this);
+        ++*this;
         return tmp;
     }
 };
@@ -1737,7 +1737,7 @@ Special().a().d().e().a();
 
 The code on the right is dramatically easier to understand and more accessible to more programmers than the code on the left.
 
-But what, there's more.
+But wait, there's more.
 
 What if we add a *super*-specialized builder, that is a more special form of `Special`? Now we need `Special` to itself opt-in to CRTP so it knows which type to pass to `Builder` so that everything in the hierarchy can return the correct type. It's roughly at this point that people give up and start gently weeping. But with this proposal, no problem!
     
@@ -1885,7 +1885,7 @@ struct Node {
 int num_leaves(Tree const& tree) {
     return visit(overload(        // <-----------------------------------+
         [](Leaf const&) { return 1; },                           //      |
-        [](this auto self, Node* n) -> int {                     //      |
+        [](this auto const& self, Node* n) -> int {              //      |
             return visit(self, n->left) + visit(self, n->right); // <----+    
         }
     ), tree);
