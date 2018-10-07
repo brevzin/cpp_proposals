@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="b405846ac0be72d9163edc59728575cb045af168" name="document-revision">
+  <meta content="38695ae68f88c94cf626a2fa73423b6abf5ce43c" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2178,7 +2178,7 @@ pre .property::before, pre .property::after {
    <p>Note that with the last two choices, we do not even provide a name (though we could have) to the explicit object parameter, since it is not needed.</p>
    <p>What do these options mean if we consider the trailing type syntax? If we allow an <em>identifier</em>, then the name lookup semantics would be exactly the same as they would be for having an explicit object parameter — it’s just that the named parameter is in a different location in the declaration, but otherwise has the same meaning.</p>
    <p>If we take the trailing object type syntax <em>without an identifier</em>, we can’t have differentiation between what <code class="highlight"><c- k>this</c-></code> might refer to and what <code class="highlight"><c- n>self</c-></code> might refer to. We can really only have one possible name: <code class="highlight"><c- k>this</c-></code>. And <code class="highlight"><c- k>this</c-></code> would now have to change types: <code class="highlight"><c- k>this</c-></code> becomes a <code class="highlight"><c- k>const</c-></code> pointer to <code class="highlight"><c- n>remove_reference_t</c-><c- o>&lt;</c-><c- n>T</c-><c- o>></c-></code>.</p>
-   <p>Something similar happens in the *Explicit <code class="highlight"><c- k>this</c-></code>* syntax: <code class="highlight"><c- k>this</c-></code> behaves exaclty as <code class="highlight"><c- n>self</c-></code> does in the <code class="highlight"><c- k>this</c-> <c- n>Self</c-><c- o>&amp;&amp;</c-> <c- n>self</c-></code> syntax , and implicit access is disallowed, there is no choice.</p>
+   <p>The same is true of the <a href="#syntax-2">§3.1.2 Explicit this parameter</a> syntax: <code class="highlight"><c- k>this</c-></code> is the only name that exists and refers to the most derived object, so implicit access is disallowed.</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>X</c-> <c- p>{</c->
     <c- b>void</c-> <c- n>a</c-><c- p>();</c->            <c- c1>// this is a X* const</c->
     <c- b>void</c-> <c- nf>b</c-><c- p>()</c-> <c- k>const</c-><c- p>;</c->      <c- c1>// this is a X const* const</c->
@@ -2188,7 +2188,7 @@ pre .property::before, pre .property::after {
     <c- b>void</c-> <c- nf>e</c-><c- p>()</c-> <c- n>X</c-><c- o>&amp;&amp;</c-><c- p>;</c->        <c- c1>// this is a X* const (same as c)</c->
     
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>S</c-><c- o>></c->
-    <c- b>void</c-> <c- n>f</c-><c- p>()</c-> <c- n>S</c-><c- p>;</c->          <c- c1>// this is a S* const (which be a pointer to const or not!)</c->
+    <c- b>void</c-> <c- n>f</c-><c- p>()</c-> <c- n>S</c-><c- p>;</c->          <c- c1>// this is a S* const (which can be a pointer to const or not!)</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>S</c-><c- o>></c->
     <c- b>void</c-> <c- n>g</c-><c- p>()</c-> <c- n>S</c-><c- o>&amp;</c-><c- p>;</c->         <c- c1>// this is a S* const</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>S</c-><c- o>></c->
@@ -2298,7 +2298,7 @@ pre .property::before, pre .property::after {
    <p>Even though both <code class="highlight"><c- n>D</c-><c- p>().</c-><c- n>f1</c-><c- p>()</c-></code> and <code class="highlight"><c- n>B</c-><c- p>().</c-><c- n>f1</c-><c- p>()</c-></code> are ill-formed, for different reasons, taking a pointer to <code class="highlight"><c- o>&amp;</c-><c- n>B</c-><c- o>::</c-><c- n>f1</c-></code> is okay (its type is <code class="highlight"><c- b>int</c-><c- p>(</c-><c- o>*</c-><c- p>)(</c-><c- n>D</c-><c- p>)</c-></code>) and that function pointer can be invoked with a <code class="highlight"><c- n>D</c-></code>. Actually invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]).</p>
    <h4 class="heading settled" data-level="3.2.7" id="teachability-implications"><span class="secno">3.2.7. </span><span class="content">Teachability Implications</span><a class="self-link" href="#teachability-implications"></a></h4>
    <p>Explicitly naming the object as the <code class="highlight"><c- k>this</c-></code>-designated first parameter fits with many programmers' mental model of the <code class="highlight"><c- k>this</c-></code> pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>bind</c-></code>, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- kr>thread</c-></code>, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>function</c-></code>, and so forth work with a member function pointer by making the pointer explicit.</p>
-   <p>A natural extension of having trailing <em>cv-</em> and <em>ref-qualifiers</em> to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more "C++-ic" in this sense. The ability to deduce this type follows once we have a place where we can name it.</p>
+   <p>A natural extension of having trailing <em>cv-</em> and <em>ref-qualifiers</em> to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more idiomatic C++ in this sense. The ability to deduce this type follows once we have a place where we can name it.</p>
    <p>We do not believe there are teachability problems with either choice of syntax. However,</p>
    <p>While having <code class="highlight"><c- k>this</c-></code> become dependent is novel, requiring all access through <code class="highlight"><c- k>this</c-></code> and forbidding "free" member access ensures that these functions will still be clear to write and understand.</p>
    <h4 class="heading settled" data-level="3.2.8" id="static-member-functions"><span class="secno">3.2.8. </span><span class="content">Can <code class="highlight"><c- k>static</c-></code> member functions have an explicit object type?</span><a class="self-link" href="#static-member-functions"></a></h4>

@@ -816,7 +816,7 @@ What do these options mean if we consider the trailing type syntax? If we allow 
 
 If we take the trailing object type syntax *without an identifier*, we can't have differentiation between what `this` might refer to and what `self` might refer to. We can really only have one possible name: `this`. And `this` would now have to change types: `this` becomes a `const` pointer to `remove_reference_t<T>`.
 
-Something similar happens in the *Explicit `this`* syntax: `this` behaves exaclty as `self` does in the `this Self&& self` syntax , and implicit access is disallowed, there is no choice.
+The same is true of the [[#syntax-2]] syntax: `this` is the only name that exists and refers to the most derived object, so implicit access is disallowed.
 
 ```cpp
 struct X {
@@ -828,7 +828,7 @@ struct X {
     void e() X&&;        // this is a X* const (same as c)
     
     template <typename S>
-    void f() S;          // this is a S* const (which be a pointer to const or not!)
+    void f() S;          // this is a S* const (which can be a pointer to const or not!)
     template <typename S>
     void g() S&;         // this is a S* const
     template <typename S>
@@ -978,7 +978,7 @@ Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons
 
 Explicitly naming the object as the `this`-designated first parameter fits with many programmers' mental model of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how `std::bind`, `std::thread`, `std::function`, and so forth work with a member function pointer by making the pointer explicit.
 
-A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more "C++-ic" in this sense. The ability to deduce this type follows once we have a place where we can name it.
+A natural extension of having trailing *cv-* and *ref-qualifiers* to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more idiomatic C++ in this sense. The ability to deduce this type follows once we have a place where we can name it.
 
 We do not believe there are teachability problems with either choice of syntax. However, 
 
