@@ -68,12 +68,12 @@ In C++03, member functions could have *cv*-qualifications, so it was possible to
 ```c++
 class TextBlock {
 public:
-  char const& operator[](std::size_t position) const {
+  char const& operator[](size_t position) const {
     // ...
     return text[position];
   }
 
-  char& operator[](std::size_t position) {
+  char& operator[](size_t position) {
     return const_cast<char&>(
       static_cast<TextBlock const&>(*this)[position]
     );
@@ -120,7 +120,7 @@ class optional {
 
   constexpr T&& value() && {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -128,7 +128,7 @@ class optional {
   constexpr T const&&
   value() const&& {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -183,12 +183,12 @@ class optional {
   }
 
   constexpr T&& value() && {
-    return value_impl(std::move(*this));
+    return value_impl(move(*this));
   }
 
   constexpr T const&&
   value() const&& {
-    return value_impl(std::move(*this));
+    return value_impl(move(*this));
   }
 
 private:
@@ -198,7 +198,7 @@ private:
     if (!opt.has_value()) {
       throw bad_optional_access();
     }
-    return std::forward<Opt>(opt).m_value;
+    return forward<Opt>(opt).m_value;
   }
   // ...
 };
@@ -216,7 +216,7 @@ class optional {
     template <typename Opt>
     friend decltype(auto) value(Opt&& o) {
         if (o.has_value()) {
-            return std::forward<Opt>(o).m_value;
+            return forward<Opt>(o).m_value;
         }
         throw bad_optional_access();
     }
@@ -245,6 +245,10 @@ The proposal is also sufficiently general and sufficiently orthogonal that it al
 
 These are explored in detail in the [examples](#real-world-examples) section.
 
+This proposal assumes the existence of a two library additions, though it does not propose them: 
+
+- `like_t`, a metafunction that applies the *cv*- and *ref*-qualifiers of the first type onto the second (e.g. `like_t<int&, double>` is `double&`, `like_t<X const&&, Y>` is `Y const&&`, `like_t<X const&, Y&>` is `Y&`, etc.)
+- `forward_like`, a version of `forward` that is intended to forward a variable not based on its own type but instead based on some other type. `forward_like<T>(u)` is short-hand for `forward<like_t<T,decltype(u)>>(u)`.
 
 ## Proposed Syntaxes ## {#proposed-syntaxes}
 
@@ -266,12 +270,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'self' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'self' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'self' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'self' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -286,13 +290,13 @@ Following normal deduction rules, the template parameter corresponding to the ex
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured](this auto&& self) -> decltype(auto) { 
-  return std::forward_like<decltype(self)>(captured);
+  return forward_like<decltype(self)>(captured);
 }
 
 [captured]<class Self>(this Self&& self) -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -314,12 +318,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'this' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'this' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'this' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'this' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -335,13 +339,13 @@ Following normal deduction rules, the template parameter corresponding to the ex
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured](auto&& this) -> decltype(auto) { 
-  return std::forward_like<decltype(this)>(captured);
+  return forward_like<decltype(this)>(captured);
 }
 
 [captured]<class Self>(Self&& this) -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -361,12 +365,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // 'self' is bound to 'x', 'i' is 42
-    x.bar();            // deduces Self as X&, calls X::bar<X&>
-    std::move(x).bar(); // deduces Self as X, calls X::bar<X>
+    x.foo(42);      // 'self' is bound to 'x', 'i' is 42
+    x.bar();        // deduces Self as X&, calls X::bar<X&>
+    move(x).bar();  // deduces Self as X, calls X::bar<X>
     
-    d.foo(17);          // 'self' is bound to 'd'
-    d.bar();            // deduces Self as D const&, calls X::bar<D const&>
+    d.foo(17);      // 'self' is bound to 'd'
+    d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
@@ -380,9 +384,9 @@ Member functions with an trailing object type cannot be `static`.
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured]<class Self>() Self&& self -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -404,12 +408,12 @@ struct X {
 struct D : X { };
 
 void ex(X& x, D const& d) {
-    x.foo(42);          // this is a X const*
-    x.bar();            // deduces Self as X&, this is a X*
-    std::move(x).bar(); // deduces Self as X, this is a X*
+    x.foo(42);      // this is a X const*
+    x.bar();        // deduces Self as X&, this is a X*
+    move(x).bar();  // deduces Self as X, this is a X*
     
-    d.foo(17);          // this is a X const*
-    d.bar();            // deduces Self as D const&, this is a D const*
+    d.foo(17);      // this is a X const*
+    d.bar();        // deduces Self as D const&, this is a D const*
 }
 ```
 
@@ -423,9 +427,9 @@ Refer to [[#name-lookup-within-member-functions]] for a discussion of the variou
 The lambda version of the above, for reference:
 
 ```cpp
-std::vector captured = {1, 2, 3, 4};
+vector captured = {1, 2, 3, 4};
 [captured]<class Self>() Self&& -> decltype(auto) {
-  return std::forward_like<Self>(captured);
+  return forward_like<Self>(captured);
 }
 ```
 
@@ -1224,7 +1228,7 @@ struct Derived : Base { };
 // also works for free functions
 template <typename T : Base>
 void foo(T&& x) {
-   static_assert(std::is_same_v<Base, std::remove_reference_t<T>>);
+   static_assert(is_same_v<Base, remove_reference_t<T>>);
 }
 
 Base{}.front(); // calls Base::front<Base>
@@ -1263,12 +1267,12 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 ```cpp
 class TextBlock {
 public:
-  char const& operator[](std::size_t position) const {
+  char const& operator[](size_t position) const {
     // ...
     return text[position];
   }
 
-  char& operator[](std::size_t position) {
+  char& operator[](size_t position) {
     return const_cast<char&>(
       static_cast<TextBlock const&>
         (this)[position]
@@ -1283,7 +1287,7 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](this Self&&, std::size_t position) {
+  auto& operator[](this Self&&, size_t position) {
     // ...
     return this->text[position];
   }
@@ -1296,7 +1300,7 @@ public:
 class TextBlock {
 public:
   template <typename Self>
-  auto& operator[](std::size_t position) Self {
+  auto& operator[](size_t position) Self {
     // ...
     return this->TextBlock::text[position];
   }
@@ -1312,12 +1316,12 @@ template <typename T>
 class optional {
   // ...
   constexpr T* operator->() {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
 
   constexpr T const*
   operator->() const {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
   // ...
 };
@@ -1330,7 +1334,7 @@ class optional {
   // ...
   template <typename Self>
   constexpr auto operator->(this Self&&) {
-    return std::addressof(this->m_value);
+    return addressof(this->m_value);
   }
   // ...
 };
@@ -1343,7 +1347,7 @@ class optional {
   // ...
   template <typename Self>
   constexpr auto operator->() Self {
-    return std::addressof(this->optional::m_value);
+    return addressof(this->optional::m_value);
   }
   // ...
 };
@@ -1365,12 +1369,12 @@ class optional {
   }
 
   constexpr T&& operator*() && {
-    return std::move(this->m_value);
+    return move(this->m_value);
   }
 
   constexpr T const&&
   operator*() const&& {
-    return std::move(this->m_value);
+    return move(this->m_value);
   }
 
   constexpr T& value() & {
@@ -1389,14 +1393,14 @@ class optional {
 
   constexpr T&& value() && {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
 
   constexpr T const&& value() const&& {
     if (has_value()) {
-      return std::move(this->m_value);
+      return move(this->m_value);
     }
     throw bad_optional_access();
   }
@@ -1476,7 +1480,7 @@ class optional {
 
     return has_value()
         ? invoke(forward<F>(f),
-                 std::move(**this))
+                 move(**this))
         : nullopt;
   }
 
@@ -1503,7 +1507,7 @@ class optional {
 
     return has_value()
         ? invoke(forward<F>(f),
-                 std::move(**this))
+                 move(**this))
         : nullopt;
   }
   // ...
@@ -1902,9 +1906,9 @@ This section presents some of the cases for by-value member functions.
 Say you wanted to provide a `.sorted()` method on a data structure. Such a method naturally wants to operate on a copy. Taking the parameter by value will correctly move into the parameter if the original object is an rvalue.
 
 ```cpp
-struct my_vector : std::vector<int> {
+struct my_vector : vector<int> {
   auto sorted(this my_vector self) -> my_vector {
-    std::sort(self.begin(), self.end());
+    sort(self.begin(), self.end());
     return self;
   }
 };
@@ -2007,7 +2011,7 @@ public:
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<std::decay_t<F>>{std::forward<F>(f)};
+    return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 
@@ -2017,13 +2021,13 @@ As described in the paper, this implementation has two pathological cases: one i
 struct unfriendly {
     template <typename T>
     auto operator()(T v) {
-        static_assert(std::is_same_v<T, int>);
+        static_assert(is_same_v<T, int>);
         return v;
     }
 
     template <typename T>
     auto operator()(T v) const {
-        static_assert(std::is_same_v<T, double>);
+        static_assert(is_same_v<T, double>);
         return v;
     }
 };
