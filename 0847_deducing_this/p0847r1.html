@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="3a57683e2ca9ea223a270bfd088a6be5e2896f2c" name="document-revision">
+  <meta content="3c154493544ec88de02afad487f924833028cfb7" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2299,8 +2299,7 @@ pre .property::before, pre .property::after {
    <h4 class="heading settled" data-level="3.2.7" id="teachability-implications"><span class="secno">3.2.7. </span><span class="content">Teachability Implications</span><a class="self-link" href="#teachability-implications"></a></h4>
    <p>Explicitly naming the object as the <code class="highlight"><c- k>this</c-></code>-designated first parameter fits with many programmers' mental model of the <code class="highlight"><c- k>this</c-></code> pointer being the first parameter to member functions "under the hood" and is comparable to usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>bind</c-></code>, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- kr>thread</c-></code>, <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>function</c-></code>, and so forth work with a member function pointer by making the pointer explicit.</p>
    <p>A natural extension of having trailing <em>cv-</em> and <em>ref-qualifiers</em> to non-static member functions is providing an explicit type that those qualifiers refer to, instead of the implied class type. This keeps all of the qualifiers in the same place, which is more idiomatic C++ in this sense. The ability to deduce this type follows once we have a place where we can name it.</p>
-   <p>We do not believe there are teachability problems with either choice of syntax. However,</p>
-   <p>While having <code class="highlight"><c- k>this</c-></code> become dependent is novel, requiring all access through <code class="highlight"><c- k>this</c-></code> and forbidding "free" member access ensures that these functions will still be clear to write and understand.</p>
+   <p>We do not believe there are teachability problems with either choice of syntax.</p>
    <h4 class="heading settled" data-level="3.2.8" id="static-member-functions"><span class="secno">3.2.8. </span><span class="content">Can <code class="highlight"><c- k>static</c-></code> member functions have an explicit object type?</span><a class="self-link" href="#static-member-functions"></a></h4>
    <p>No. Static member functions currently do not have an implicit object parameter, and therefore have no reason to provide an explicit one.</p>
    <h4 class="heading settled" data-level="3.2.9" id="interplays-with-capturing-this"><span class="secno">3.2.9. </span><span class="content">Interplays with capturing <code class="highlight"><c- p>[</c-><c- k>this</c-><c- p>]</c-></code> and <code class="highlight"><c- p>[</c-><c- o>*</c-><c- k>this</c-><c- p>]</c-></code> in lambdas</span><a class="self-link" href="#interplays-with-capturing-this"></a></h4>
@@ -2325,8 +2324,8 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    <h4 class="heading settled" data-level="3.2.10" id="parsing-issues"><span class="secno">3.2.10. </span><span class="content">Parsing issues</span><a class="self-link" href="#parsing-issues"></a></h4>
-   <p>The explicit object parameter syntax has no parsing issues that we are aware of. It is purely a syntax extension.</p>
-   <p>With the addition of a new type name after the <em>parameter-declaration-clause</em>, we potentially run into a clash with the existing <em>virt-specifier</em>s. Especially if we allow for an arbitrary identifier.</p>
+   <p>The object parameter syntaxes (<a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a> and <a href="#syntax-2">§3.1.2 Explicit this parameter</a>) have no parsing issues that we are aware of. They are purely a syntax extension.</p>
+   <p>However, with the addition of a new type name after the <em>parameter-declaration-clause</em> (in <a href="#syntax-3">§3.1.3 Trailing type with identifier</a> and <a href="#syntax-4">§3.1.4 Trailing type sans identifier</a>), we potentially run into a clash with the existing <em>virt-specifier</em>s. Especially if we allow for an arbitrary identifier.</p>
    <p>Consider:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>B</c-> <c- p>{</c->
     <c- k>virtual</c-> <c- n>B</c-><c- o>*</c-> <c- k>override</c-><c- p>()</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c->
