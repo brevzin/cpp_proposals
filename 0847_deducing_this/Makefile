@@ -1,5 +1,9 @@
-all:
+all: p0847r1.html
+
+deducing-this.html: deducing-this.bs
 	bikeshed deducing-this.bs 
-	cp deducing-this.html p0847r1.html
+
+p0847r1.html: deducing-this.html
+	cp $< $@
 
 
