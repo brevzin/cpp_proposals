@@ -207,7 +207,7 @@ private:
 </tr>
 </table>
 
-It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite. Except we can't really. We *have* to implement it this way. It seems like we should be able to abstract away the qualifiers. And we can... sort of. As a non-member function, we simply don't have this problem:
+It's not like this is a complicated function. Far from. But more or less repeating the same code four times, or artificial delegation to avoid doing so, is the kind of thing that begs for a rewrite, except for the fact it's impossible; we *have* to implement it this way. It seems we should be able to abstract away the qualifiers. And we can... for non-member functions, where we simply don't have this problem:
 
 ```cpp
 template <typename T>
@@ -224,28 +224,31 @@ class optional {
 };
 ```
 
-This is great - it's just one function, that handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.
+This is great - it's just one function, which handles all four cases for us. Except it's a non-member function, not a member function. Different semantics, different syntax, doesn't help.
 
-There are many, many cases in code-bases where we need two or four overloads of the same member function for different `const`- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.
+There are many, many cases where we need two or four overloads of the same member function for different `const`- or ref-qualifiers. More than that, there are likely many cases that a class should have four overloads of a particular member function, but doesn't, simply due to laziness by the developer. We think that there are sufficiently many such cases that they merit a better solution than simply: write it, then write it again, then write it two more times.
+
 
 # Proposal # {#proposal}
 
 We propose a new way of declaring non-static member functions that will allow for deducing the type and value category of the class instance parameter, while still being invocable with regular member function syntax. 
 
-We believe that the ability to write *cv-ref qualifier*-aware member functions without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily. 
+We believe that the ability to write *cv-ref qualifier*-aware member function templates without duplication will improve code maintainability, decrease the likelihood of bugs, and allow users to write fast, correct code more easily. 
 
 The proposal is also sufficiently general and sufficiently orthogonal that it allows for several new exciting features and design patterns for C++:
 
 - [recursive lambdas](#recursive-lambdas)
 - a new approach to [mixins](#crtp), a CRTP without the CRT
-- more efficient member function [invocation](#by-value-member-functions)
+- efficiency by avoiding double indirection with [invocation](#by-value-member-functions)
 - perfect, sfinae-friendly [call wrappers](#sfinae-friendly-callables)
 
-These will be explored in detail in the [examples](#real-world-examples) section.
+These are explored in detail in the [examples](#real-world-examples) section.
+
 
 ## Proposed Syntaxes ## {#proposed-syntaxes}
 
-There are three different syntaxes that we can use to solve this problem. We will use them throughout the examples in the rest of proposal. This section just briefly goes through the syntax options - the semantics will be more thoroughly explained in later sections.
+There are four syntax options for solving this problem. We will use them throughout the examples in the rest of proposal; this section just briefly introduces the options. The semantics are more thoroughly explained in later sections. The various syntaxes imply subtly different semantics; the differences are called out where relevant. This paper takes the position that only one be chosen, depending on the desired characteristics.
+
 
 ### Explicit `this`-annotated parameter ### {#syntax-1}
 
@@ -280,7 +283,7 @@ Following normal deduction rules, the template parameter corresponding to the ex
 
 ### Explicit `this` parameter ### {#syntax-2}
 
-A non-static member function can be declared to take `this` as its first parameter. Once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules, and instead of remaining a pointer, becomes a reference, fixing a long-standing oversight of the language, stemming from before references were invented.
+A non-static member function can be declared to take `this` as its first parameter. As with [[#syntax-1]], once we elevate the object parameter to a proper function parameter, it can easily be deduced following normal function template deduction rules. In this case, instead of remaining a pointer, `this` becomes a reference (of the type the parameter type would suggest), fixing a long-standing oversight of the language, stemming from before references were invented.
 
 ```cpp
 struct X {
@@ -333,7 +336,7 @@ void ex(X& x, D const& d) {
 }
 ```
 
-Effectively, this is taking the previously introduced explicit object parameter syntax and simply declaring it after in the parameter declaration clause instead of at the front of it. Existing member functions behave as if the class name were just omitted. 
+Effectively, this is taking the previously introduced [[#syntax-1]] and simply declaring it after the parameter declaration clause instead of at the front of it. This effectively extends the grammar with an parameter declaration, where current-syntax member functions behave as if the class name were just omitted. 
 
 Member functions with an trailing object type cannot be `static`. 
    
@@ -362,9 +365,11 @@ void ex(X& x, D const& d) {
 }
 ```
 
-Because we need a way to refer to the derived object and we no longer have a way to name it, `this` would become a const pointer to the specified type after having its reference stripped. In the previous syntaxes, `this` could either retain its current meaning or cease to exist at all (see [name lookup](#name-lookup-within-member-functions)), but without an extra name we need to have `this` refer to the object parameter - which in some cases means that `this` would be a pointer to a derived type.
+Because we need a way to refer to the derived object and we no longer introduce an identifier for it, we are forced to use `this`. The optionality of introducing a type-identifier would suggest that `this` not change meaning in the body of such a member function; in other words, `this` stays a pointer to an appropriately cv-ref qualified object.
 
-    
+Refer to [[#name-lookup-within-member-functions]] for a discussion of the various ways we can handle name lookup in the member function bodies for the various syntaxes.
+
+
 ### Quick comparison ### {#quick-comparison}
 
 A brief example demonstrating how to write `optional::value()` and `optional::operator->()` in just two functions with no duplication (instead of six) with each of the four proposed syntaxes.
@@ -466,21 +471,21 @@ struct optional {
 </tr>
 </table>
 
-Note that the two syntaxes with trailing object type declare the object parameter to just have type `Self`, while the explicit object parameter syntaxes still use `Self&&`. This will be explained further in the section about taking `this` [by value](#by-value-this).
+Note that the two syntaxes with trailing object type declare the object parameter to just have type `Self`, while the explicit object parameter syntaxes still use `Self&&`. This is explained further in the section about taking `this` [by value](#by-value-this).
 
 
 ## Proposed semantics ## {#proposed-semantics}
 
 What follows is a description of how deducing `this` affects all the important language constructs: name lookup, type deduction, overload resolution, and so forth. 
 
-This is a strict extension to the language; nearly all existing syntax remains valid. See [[#parsing-issues]] for the pathological case that may change meaning should the trailing syntaxes be chosen.
+This is a strict extension to the language; depending on the syntax chose, either all or nearly all existing syntax remains valid (see [[#parsing-issues]] for the pathological case that may change meaning should [[#syntax-3]] or [[#syntax-4]] be chosen).
 
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
 
-In C++17, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup will include both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
+**In C++17**, when either invoking a named function or an operator (including the call operator) on an object of class type, name lookup includes both static and non-static member functions found by regular class lookup. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's qualifiers) which binds to the object on which the function was invoked. 
 
-For non-static member functions using any of the new syntaxes (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions today, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.
+For non-static member functions using **any of the new syntaxes** (whether an **explicit** object parameter or a full **explicit** trailing object type), lookup will work the same way as other member functions in C++17, except rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are explicitly determined by the provided type of the explicit object parameter. The following examples illustrate this concept; the two other syntaxes are omitted for brevity, since they behave identically.
 
 <table style="width:100%">
 <tr>
@@ -537,9 +542,9 @@ Name lookup on an expression like `obj.foo()` today would find both overloads of
 
 With any of the proposed syntaxes, `obj.foo()` would continue to find both overloads of `foo` - with the non-const one potentially not being a viable candidate.
 
-The only change with how we lookup candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter would be the object parameter, and the second listed parameter would correspond to the first called argument.
+The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter would be the object parameter, and the second listed parameter would correspond to the first called argument.
 
-We are not changing anything about overload *resolution* - simply extending the candidate set to include this new way of writing a non-static member function. We're simply being explicit rather than implicit about the object parameter. Given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
+This paper does not propose any changes to overload *resolution*; merely extending the candidate set to include nonstatic member functions and member function templates writtein in a new syntax. Therefore, given a call to `x.foo()`, overload resolution would still select the first `foo()` overload if `x` isn't `const` and the second if it is.
 
 The behaviors of the three columns as proposed are exactly equivalent.
 
