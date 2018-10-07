@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="151ff852b1284ca5c70c453b87922c558154db6b" name="document-revision">
+  <meta content="512cb235fbebfa0a571974cb07063043a68ec265" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2019,10 +2019,10 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 </pre>
    </table>
-   <p>Name lookup on an expression like <code class="highlight"><c- n>obj</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code> today would find both overloads of <code class="highlight"><c- n>foo</c-></code> in the first column today - and potentially the non-const overload would not be a viable candidate if <code class="highlight"><c- n>obj</c-></code> were const.</p>
-   <p>With any of the proposed syntaxes, <code class="highlight"><c- n>obj</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code> would continue to find both overloads of <code class="highlight"><c- n>foo</c-></code> - with the non-const one potentially not being a viable candidate.</p>
+   <p>Name lookup on an expression like <code class="highlight"><c- n>obj</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code> in C++17 would find both overloads of <code class="highlight"><c- n>foo</c-></code> in the first column, with the non-const overload discarded should <code class="highlight"><c- n>obj</c-></code> be const.</p>
+   <p>With any of the proposed syntaxes, <code class="highlight"><c- n>obj</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code> would continue to find both overloads of <code class="highlight"><c- n>foo</c-></code>, with identical behaviour to C++17.</p>
    <p>The only change in how we look up candidate functions is that, in the case of an explicit object parameter, the argument list is shifted by one. The first listed parameter is bound to the object argument, and the second listed parameter would correspond to the first argument of the call expression.</p>
-   <p>This paper does not propose any changes to overload <em>resolution</em>; merely extending the candidate set to include nonstatic member functions and member function templates writtein in a new syntax. Therefore, given a call to <code class="highlight"><c- n>x</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code>, overload resolution would still select the first <code class="highlight"><c- n>foo</c-><c- p>()</c-></code> overload if <code class="highlight"><c- n>x</c-></code> isn’t <code class="highlight"><c- k>const</c-></code> and the second if it is.</p>
+   <p>This paper does not propose any changes to overload <em>resolution</em>; merely extending the candidate set to include nonstatic member functions and member function templates written in a new syntax. Therefore, given a call to <code class="highlight"><c- n>x</c-><c- p>.</c-><c- n>foo</c-><c- p>()</c-></code>, overload resolution would still select the first <code class="highlight"><c- n>foo</c-><c- p>()</c-></code> overload if <code class="highlight"><c- n>x</c-></code> isn’t <code class="highlight"><c- k>const</c-></code> and the second if it is.</p>
    <p>The behaviors of the three columns as proposed are exactly equivalent.</p>
    <p>The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter — which is new for the language.</p>
    <h4 class="heading settled" data-level="3.2.2" id="type-deduction"><span class="secno">3.2.2. </span><span class="content">Type deduction</span><a class="self-link" href="#type-deduction"></a></h4>
