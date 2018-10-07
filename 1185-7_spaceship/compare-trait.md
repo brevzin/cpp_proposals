@@ -1,5 +1,5 @@
 Title: A type trait for `std::compare_3way()`'s type
-Document-Number: D1187R0
+Document-Number: P1187R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
 
@@ -70,7 +70,7 @@ Proposed
     template <typename T, typename U>
     constexpr auto operator<=>(optional<T> const& lhs,
             optional<U> const& rhs)
-        -> compare_3way_type_t<T, U>;
+        -> compare_3way_type_t<T const&, U const&>;
 </td>
 </tr>
 <tr>
@@ -86,7 +86,7 @@ Proposed
     template <typename T, typename U>
     auto operator<=>(vector<T> const& lhs,
             vector<U> const& rhs)
-        -> compare_3way_type_t<T, U>;
+        -> compare_3way_type_t<T const&, U const&>;
 </td>
 </tr>
 <tr>
@@ -109,8 +109,8 @@ Proposed
     auto operator<=>(expected<T1,E1> const& lhs,
             expected<T2,E2> const& rhs)
         -> common_comparison_category_t<
-                compare_3way_type_t<T1, T2>,
-                compare_3way_type_t<E1, E2>>;
+                compare_3way_type_t<T1 const&, T2 const&>,
+                compare_3way_type_t<E1 const&, E2 const&>>;
 </td>
 </tr>    
 </table>
@@ -131,7 +131,7 @@ namespace std {
     using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
   
   template&lt;class T, class U>
-    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
+    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
     
   // ...
 }</code></pre></blockquote>
@@ -151,7 +151,7 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[al
  
 Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
 
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
 ## Interaction with [P1186](https://wg21.link/p1186r0)
 

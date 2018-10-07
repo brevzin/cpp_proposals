@@ -1,5 +1,5 @@
 Title: static `operator()`
-Document-Number: D1169R0
+Document-Number: P1169R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Casey Carter, casey at carter dot net
 Audience: EWG, LEWG

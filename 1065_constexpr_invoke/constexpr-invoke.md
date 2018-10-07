@@ -1,5 +1,5 @@
 Title: constexpr <code><i>INVOKE</i></code>
-Document-Number: D1065R0
+Document-Number: P1065R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG, LWG
 

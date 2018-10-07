@@ -1,5 +1,5 @@
 Title: When do you actually use `<=>`?
-Document-Number: D1186R0
+Document-Number: P1186R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG, LEWG
 
