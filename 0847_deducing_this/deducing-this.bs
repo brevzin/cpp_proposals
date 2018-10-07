@@ -28,7 +28,7 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
         "authors": ["Barry Revzin", "Casey Carter"],
         "title": "static operator()",
         "href": "https://wg21.link/p1169r0",
-        "date": "2018"
+        "date": "7 October 2018"
     }
 }
 </pre>
@@ -901,11 +901,28 @@ struct B {
 struct D : B { };
 ```
 
-The type of `&B::foo<B>` is `void (B::*)() &&` and the type of `&B::foo<B const&>` is `void (B::*)() const&`. This is just a normal member function.
+The type of `&B::foo<B>` is `void (B::*)() &&` and the type of `&B::foo<B const&>` is `void (B::*)() const&`. This is just a normal member function. The type of `&D::foo<B>` is `void (B::*)() &&`. This is effectively the same thing that would happen if `foo` were a normal, C++17 member function. The type of `&B::foo<D>` is `void (D::*)() &&`. That is, it is as if it were a member function of `D`. 
 
-The type of `&D::foo<B>` is `void (B::*)() &&`. This is effectively the same thing that would happen if `foo` were a normal, C++17 member function.
+For either [[#syntax-1]] or [[#syntax-2]], by-value object parameters can be allowed. Taking the address of these functions does not give you a pointer to member function, it gives you a pointer to function (following their semantics as being effectively non-member `friend` functions):
 
-The type of `&B::foo<D>` is `void (D::*)() &&`. That is, it is as if it were a member function of `D`. 
+```c++
+template <typename T>
+struct less_than {
+    bool operator()(this less_than, T const&, T const&);
+};
+```
+
+The type of `&less_than<int>::operator()` is `bool(*)(less_than<int>, int const&, int const&)`. And so it follows the usual rules of invocation:
+
+```c++
+less_than<int> lt;
+auto p = &less_than<int>::operator();
+
+lt(1, 2);            // ok
+p(lt, 1, 2);         // ok
+(lt.*p)(1, 2);       // error: p is not a pointer to member function
+invoke(p, lt, 1, 2); // ok
+```
 
 
 ### Pathological cases ### {#pathological-cases}
@@ -934,6 +951,24 @@ struct B {
 
 The declaration can be immediately diagnosed as ill-formed. 
 
+Another interesting case, courtesy of Jens Maurer:
+
+```cpp
+struct D;
+struct B {
+  int f1(this D);
+};
+struct D1 : B { };
+struct D2 : B { };
+struct D : D1, D2 { };
+
+int x = D().f1();  // error: ambiguous lookup
+int y = B().f1();  // error: B is not implicitly convertible to D
+auto z = &B::f1;   // ok
+z(D());            // ok
+```
+
+Even though both `D().f1()` and `B().f1()` are ill-formed, for different reasons, taking a pointer to `&B::f1` is okay (its type is `int(*)(D)`) and that function pointer can be invoked with a `D`. Actually invoking this function does not require any sort of further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]). 
                 
 ### Teachability Implications ### {#teachability-implications}
 
@@ -1220,8 +1255,8 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1538,8 +1573,8 @@ Today, a common design pattern is the Curiously Recurring Template Pattern. This
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1623,8 +1658,8 @@ But now, we want to create a specialized builder that has new operations `d()` a
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1707,8 +1742,8 @@ What if we add a *super*-specialized builder, that is a more special form of `Sp
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1888,7 +1923,7 @@ However, today there is one place where you simply *cannot* pass types like `str
 
 Any member function of such small types that does not do any modifications could as an easy performance optimization simply take the object parameter by value. This is possible *only* with the explicit object parameter syntax (there is no way to express this idea with a trailing type). Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
 
-```c++
+<xmp highlight="c++">
 template <class charT, class traits = char_traits<charT>>
 class basic_string_view {
 private:
@@ -1911,7 +1946,7 @@ public:
         return self.data_[pos];
     }
 };
-```
+</xmp>
 
 Most of the member functions can be rewritten this way for a free performance boost.
 
@@ -1920,27 +1955,27 @@ The same can be said for types that aren't just cheap to copy, but also have no 
 <table style="width:100%">
 <tr>
 <th style="width:50%">C++17</th>
-<th style="width:50%">Explicit Object Parameter</th>
+<th style="width:50%">[[#syntax-1]]</th>
 </tr>
 <tr>
 <td>
 ```c++
 struct less_than {
-    template <typename T, typename U>
-    bool operator()(T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
+  template <typename T, typename U>
+  bool operator()(T const& lhs, U const& rhs) {
+    return lhs < rhs;
+  }
 };
 ```
 </td>
 <td>
 ```c++
 struct less_than {
-    template <typename T, typename U>
-    bool operator()(this less_than,
-            T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
+  template <typename T, typename U>
+  bool operator()(this less_than,
+          T const& lhs, U const& rhs) {
+    return lhs < rhs;
+  }
 };
 ```
 </td>
@@ -2002,14 +2037,15 @@ struct fun {
 };
 
 std::not_fn(unfriendly{})(1); // static assert!
-                              // even though the non-const overload is viable and would be the best
-                              // match, during overload resolution, both overloads of unfriendly have
-                              // to be instantiated - and the second one is a hard compile error.
+                              // even though the non-const overload is viable and would be the
+                              // best match, during overload resolution, both overloads of
+                              // unfriendly have to be instantiated - and the second one is a
+                              // hard compile error.
 
 std::not_fn(fun{})();         // ok!? Returns false
-                              // even though we want the non-const overload to be deleted, the const
-                              // overload of the call_wrapper ends up being viable - and the only viable
-                              // candidate.
+                              // even though we want the non-const overload to be deleted, the
+                              // const overload of the call_wrapper ends up being viable - and
+                              // the only viable candidate.
 ```
 
 Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.
@@ -2018,27 +2054,27 @@ This proposal solves both problems by simply allowing `this` to be deduced. The 
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Trailing object type</th>
+<th style="width:50%">[[#syntax-1]]</th>
+<th style="width:50%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
 ```cpp
 template <typename F>
 struct call_wrapper {
-    F f;
+  F f;
 
-    template <typename Self, typename... Args>
-    auto operator()(this Self&&, Args&&... args)
-        BOOST_HOF_RETURNS(
-            !invoke(
-                forward_like<Self>(this->f),
-                forward<Args>(args)...))
+  template <typename Self, typename... Args>
+  auto operator()(this Self&&, Args&&... args)
+    BOOST_HOF_RETURNS(
+      !invoke(
+        forward_like<Self>(this->f),
+        forward<Args>(args)...))
 };
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<decay_t<F>>{forward<F>(f)};
+  return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 </td>
@@ -2046,19 +2082,19 @@ auto not_fn(F&& f) {
 ```cpp
 template <typename F>
 struct call_wrapper {
-    F f;
+  F f;
 
-    template <typename Self, typename... Args>
-    auto operator()(Args&&... args) Self&&
-        BOOST_HOF_RETURNS(
-            !invoke(
-                forward_like<Self>(this->call_wrapper::f),
-                forward<Args>(args)...))
+  template <typename Self, typename... Args>
+  auto operator()(Args&&... args) Self&&
+    BOOST_HOF_RETURNS(
+      !invoke(
+        forward_like<Self>(this->call_wrapper::f),
+        forward<Args>(args)...))
 };
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<decay_t<F>>{forward<F>(f)};
+  return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 </td>
@@ -2110,69 +2146,6 @@ We would like to suggest the following polls on this proposal:
     - `this` is accessible and implicit lookup is permitted.
 
 4. Should we pursue a solution along the lines presented [[#potential-extensions]] `typename T: B`?
-
-# Wording # {#wording}
-
-Change 7.6.1.2 [expr.call], paragraph 7:
-
-> If the function is a non-static member function <ins>without an explicit object parameter</ins>, the `this` parameter of the function is initialized with a pointer to the object of the call, converted as if by an explicit type conversion. <ins>If the function is a non-static member function with an explicit object parameter, the explicit object parameter is initialized with the object of the call and each subsequent parameter is initialized with its corresponding argument.</ins>
-
-Add to the grammar of 9.2.3.5 [dcl.fct], paragraph 3, the ability to provide an explicit object parameter:
-
-> A type of either form is a <i>function type</i>.<br />
-> &nbsp;&nbsp;&nbsp;<i>parameter-declaration-clause:</i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list<sub>opt</sub></i>`...`<sub><i>opt</i></sub><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list</i>`,` `...`<br />
-> <br />
-> &nbsp;&nbsp;&nbsp;<i>parameter-declaration-list:</i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration</i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration-list</i>`,` <i>parameter-declaration</i><br />
-> <br />
-> &nbsp;&nbsp;&nbsp;&nbsp;<i>parameter-declaration</i>:<br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator</i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq declarator `=` initializer-clause</i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ins><i>attribute-specifier-seq<sub>opt</sub> `this` decl-specifier-seq declarator</i></ins><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub></i><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ins><i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq `this` abstract-declarator<sub>opt</sub></i></ins><br />
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>attribute-specifier-seq<sub>opt</sub> decl-specifier-seq abstract-declarator<sub>opt</sub> `=` initializer-clause</i><br />
-
-Add a paragraph to 9.2.3.5 [dcl.fct], before paragraph 6:
-
-<div class="ins">A *parameter-declaration* that contains the `this` keyword is known as an *explicit object parameter*. An explicit object parameter shall only be the first *parameter-declaration* in a *parameter-declaration-list*. A function type with an explicit object parameter shall not have a *cv-qualifier-seq* or a *ref-qualifier-seq* and shall only appear as the function type for a non-static member function. 
-</div>
-
-Add a sentence to 9.2.3.6 [dcl.fct.default]:
-
-> If an *initializer-clause* is specified in a *parameter-declaration* this *initializer-clause* is used as a default argument. <ins>An explicit object parameter shall not have an *initializer-clause*.</ins> [*Note*: Default arguments will be used in calls where trailing arguments are missing ([expr.call]). —*end note*]
-
-Insert a bullet to 9.4.2 [dcl.fct.def.default], paragraph 1:
-
-> A function definition whose *function-body* is of the form `= default ;` is called an *explicitly-defaulted* definition. A function that is explicitly defaulted shall
->   - be a special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and
->   - not have default arguments.
->   - <ins>not have an explicit object parameter.</ins>
-
-Add an extra requirement to 10.3.4 [class.ctor], paragraph 1:
-
-> The *class-name* shall not be a *typedef-name*. In a constructor declaration, each *decl-specifier* in the optional *decl-specifier-seq* shall be `friend`, `inline`, `constexpr`, or an *explicit-specifier*. <ins>A constructor shall not have an explicit object parameter.</ins>
-
-Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 4:
-
-> A non-static member function <ins>without an explicit object parameter</ins> may be declared `const`, `volatile`, or `const volatile`. These *cv*-qualifiers affect the type of the `this` pointer. They also affect the function type of the member function; a member function declared `const` is a *const* member function, a member function declared `volatile` is a *volatile* member function and a member function declared `const volatile` is a *const volatile member function*.
-
-Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 5:
-
-> A non-static member function <ins>without an explicit object parameter</ins> may be declared with a *ref-qualifier* ([dcl.fct]); see [over.match.funcs].
-
-Add an extra clause to 10.3.2 [class.mfct.non-static], paragraph 6:
-
-> A non-static member function <ins>without an explicit object parameter</ins> may be declared virtual ([class.virtual]) or pure virtual ([class.abstract]).
-
-Change the specification for the `this` pointer in 10.3.2.1 [class.this]:
-
-> In the body of a non-static ([class.mfct]) member function, the keyword `this` is a prvalue whose value is the address of the object for which the function is called. <del>The type of `this` in a member function of a class `X` is `X*`. If the member function is declared `const`, the type of `this` is `const X*`, if the member function is declared `volatile`, the type of `this` is `volatile X*`, and if the member function is declared `const volatile`, the type of `this` is `const volatile X*`.</del> <ins>The type of `this` is determined as follows:
->    - <ins>if the non-static member function of a class `X` does not have an explicit object parameter, then the type of `this` is *cv-qualifier-seq* `X*`;</ins>
->    - <ins>otherwise, let *cv* be the *cv-qualifiers* of the possibly deduced explicit object parameter. Then the type of `this` is *cv* `X*`</ins>
 
 # Acknowledgements # {#acknowledgements}
 

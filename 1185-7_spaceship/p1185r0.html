@@ -630,7 +630,11 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#implications-for-comparison-categories">Implications for comparison categories</a></li>
 </ol>
 </li>
-<li><a href="#wording">Wording</a></li>
+<li><a href="#wording">Wording</a><ol>
+<li><a href="#wording-for-redefining-strong-structural-equality">Wording for redefining strong structural equality</a></li>
+<li><a href="#wording-for-defaulted-generating-a-defaulted">Wording for defaulted &lt;=&gt; generating a defaulted ==</a></li>
+</ol>
+</li>
 <li><a href="#acknowledgements">Acknowledgements</a></li>
 <li><a href="#references">References</a></li>
 </ol>
@@ -1190,6 +1194,27 @@ constexpr auto operator==(optional&lt;T&gt; const&amp; lhs,
 <p>Change 11.3.1.2 [over.match.oper] paragraph 3.4:</p>
 <blockquote>
 <p>For the relational ([expr.rel]) <del>and equality ([expr.eq])</del> operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">&lt;=&gt;</code> for which the rewritten expression <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> is well-formed using that operator <code class="language-cpp">&lt;=&gt;</code>. For the relational ([expr.rel])<del>, equality ([expr.eq]),</del> and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator &lt;=&gt; for which the rewritten expression 0 @ (y &lt;=&gt; x) is well-formed using that operator&lt;=&gt;.  <ins>For the <code class="language-cpp">!=</code> (not equal to) operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">!(x == y)</code> is well-formed using that operator <code class="language-cpp">==</code>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(y == x) @ true</code> is well-formed using that operator <code class="language-cpp">==</code>.</ins> <em>[ Note:</em> A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. <em>—end note]</em> In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.</p>
+</blockquote>
+<h3 id="wording-for-redefining-strong-structural-equality">4.1. Wording for redefining strong structural equality<a class="self-link" href="#wording-for-redefining-strong-structural-equality"></a></h3>
+<p>Remove 10.10.1 [class.compare.default] paragraph 2:</p>
+<blockquote>
+<p><del>A three-way comparison operator for a class type <code class="language-cpp">C</code> is a <em>structural comparison operator</em> if it is defined as defaulted in the definition of <code class="language-cpp">C</code>, and all three-way comparison operators it invokes are structural comparison operators. A type <code class="language-cpp">T</code> has <em>strong structural equality</em> if, for a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const T</code>, <code class="language-cpp">x &lt;=&gt; x</code> is a valid expression of type <code class="language-cpp">std​::​strong_ordering</code> or <code class="language-cpp">std​::​strong_equality</code> and either does not invoke a three-way comparison operator or invokes a structural comparison operator.</del></p>
+</blockquote>
+<p>And replace it with:</p>
+<blockquote>
+<p><ins>An <code class="language-cpp">==</code> (equal to) operator is a <em>structural equality operator</em> if:</ins></p>
+<ul>
+<li><ins>it is a built-in candidate ([over.built]) where neither argument has floating point type, or</ins></li>
+<li><ins>it is an operator for a class type <code class="language-cpp">C</code> that is defined as defaulted in the definition of <code class="language-cpp">C</code> and all <code class="language-cpp">==</code> operators it invokes are structure equality operators.</ins></li>
+</ul>
+<p><ins>A type <code class="language-cpp">T</code> has <em>strong structural equality</em> if, for a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const T</code>, <code class="language-cpp">x == x</code> is a valid expression of type <code class="language-cpp">bool</code> and invokes a structural equality operator.</p>
+</blockquote>
+<h3 id="wording-for-defaulted-generating-a-defaulted">4.2. Wording for defaulted <code class="language-cpp">&lt;=&gt;</code> generating a defaulted <code class="language-cpp">==</code><a class="self-link" href="#wording-for-defaulted-generating-a-defaulted"></a></h3>
+<p>Add to 10.10.3 [class.rel.eq], below the description of defaulted <code class="language-cpp">==</code>:</p>
+<blockquote>
+<p><ins>If the class definition does not explicitly declare an <code class="language-cpp">==</code> (equal to) operator function ([expr.eq]) and declares a defaulted three-way comparison operator function ([class.spaceship]) that is not defined as deleted, a defaulted <code class="language-cpp">==</code> operator function is declared <em>implicitly</em>. The implicitly-declared <code class="language-cpp">==</code> operator for a class <code class="language-cpp">X</code> will have the form</ins>  </p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&amp;, const X&amp;)</code></ins>  </p>
+<p><ins>and will follow the rules described above. </p>
 </blockquote>
 <h2 id="acknowledgements">5. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me.</p>
