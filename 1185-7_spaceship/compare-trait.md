@@ -46,6 +46,8 @@ This paper proposes the addition of a new type trait based on the preexisting ru
 
 The trait should be a binary type trait, since ultimately we're comparing two things, but for convenience for common cases, the second type parameter should be defaulted to the first, so that users can simply write `compare_3way_type<T>` instead of `compare_3way_type<T,T>`.
 
+Because comparison should not modify its arguments and `compare_3way()` takes its arguments by reference to const anyway, `compare_3way_type` is specified in such a way as to not require adding `const&` to every argument all the time.
+
 The trait would allow for less cumbersome declarations of all of these operator templates:
 
 <table style="width:100%">
@@ -70,7 +72,7 @@ Proposed
     template <typename T, typename U>
     constexpr auto operator<=>(optional<T> const& lhs,
             optional<U> const& rhs)
-        -> compare_3way_type_t<T const&, U const&>;
+        -> compare_3way_type_t<T, U>;
 </td>
 </tr>
 <tr>
@@ -86,7 +88,7 @@ Proposed
     template <typename T, typename U>
     auto operator<=>(vector<T> const& lhs,
             vector<U> const& rhs)
-        -> compare_3way_type_t<T const&, U const&>;
+        -> compare_3way_type_t<T, U>;
 </td>
 </tr>
 <tr>
@@ -109,8 +111,8 @@ Proposed
     auto operator<=>(expected<T1,E1> const& lhs,
             expected<T2,E2> const& rhs)
         -> common_comparison_category_t<
-                compare_3way_type_t<T1 const&, T2 const&>,
-                compare_3way_type_t<E1 const&, E2 const&>>;
+                compare_3way_type_t<T1, T2>,
+                compare_3way_type_t<E1, E2>>;
 </td>
 </tr>    
 </table>
@@ -131,7 +133,7 @@ namespace std {
     using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
   
   template&lt;class T, class U>
-    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
+    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
     
   // ...
 }</code></pre></blockquote>
@@ -140,7 +142,7 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[al
 
 >  The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
 
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member typedef `type` shall be either defined or not present as follows. Let `t` and `u` denote lvalues of types `T` and `U`. 
+> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member typedef `type` shall be either defined or not present as follows. Let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`.
 >
  - If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall equal `decltype(t <=> u)`.
  - Otherwise, if the expressions `t == u` and `t < u` are each well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_ordering`.
@@ -151,7 +153,7 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[al
  
 Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
 
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;const T&, const U&></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
+<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
 
 ## Interaction with [P1186](https://wg21.link/p1186r0)
 
@@ -161,7 +163,7 @@ Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[al
 
 > The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
 
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `T` and `U`. If the expression `t <=> u` is well formed, the member *typedef-name* type shall equal `decltype(t <=> u)`. Otherwise, there shall be no member `type`.
+> For the `compare_3way_type` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`. If the expression `t <=> u` is well formed, the member *typedef-name* type shall equal `decltype(t <=> u)`. Otherwise, there shall be no member `type`.
 
 
 [revzin.impl]: https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec "Implementing the spaceship operator for optional||Barry Revzin||2017-11-16"
