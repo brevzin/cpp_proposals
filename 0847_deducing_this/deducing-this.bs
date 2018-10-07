@@ -1144,8 +1144,8 @@ The particular implementation of optional is Simon's, and can be viewed on [GitH
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1462,8 +1462,8 @@ Today, a common design pattern is the Curiously Recurring Template Pattern. This
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1546,8 +1546,8 @@ But now, we want to create a specialized builder that has new operations `d()` a
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1630,8 +1630,8 @@ What if we add a *super*-specialized builder, that is a more special form of `Sp
 <table style="width:100%">
 <tr>
 <th style="width:33%">C++17</th>
-<th style="width:33%">Explicit object parameter</th>
-<th style="width:33%">Trailing object type</th>
+<th style="width:33%">[[#syntax-1]]</th>
+<th style="width:33%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
@@ -1821,27 +1821,27 @@ The same can be said for types that aren't just cheap to copy, but also have no 
 <table style="width:100%">
 <tr>
 <th style="width:50%">C++17</th>
-<th style="width:50%">Explicit Object Parameter</th>
+<th style="width:50%">[[#syntax-1]]</th>
 </tr>
 <tr>
 <td>
 ```c++
 struct less_than {
-    template <typename T, typename U>
-    bool operator()(T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
+  template <typename T, typename U>
+  bool operator()(T const& lhs, U const& rhs) {
+    return lhs < rhs;
+  }
 };
 ```
 </td>
 <td>
 ```c++
 struct less_than {
-    template <typename T, typename U>
-    bool operator()(this less_than,
-            T const& lhs, U const& rhs) {
-        return lhs < rhs;
-    }
+  template <typename T, typename U>
+  bool operator()(this less_than,
+          T const& lhs, U const& rhs) {
+    return lhs < rhs;
+  }
 };
 ```
 </td>
@@ -1920,27 +1920,27 @@ This proposal solves both problems by simply allowing `this` to be deduced. The 
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">Explicit object parameter</th>
-<th style="width:50%">Trailing object type</th>
+<th style="width:50%">[[#syntax-1]]</th>
+<th style="width:50%">[[#syntax-4]]</th>
 </tr>
 <tr>
 <td>
 ```cpp
 template <typename F>
 struct call_wrapper {
-    F f;
+  F f;
 
-    template <typename Self, typename... Args>
-    auto operator()(this Self&&, Args&&... args)
-        BOOST_HOF_RETURNS(
-            !invoke(
-                forward_like<Self>(this->f),
-                forward<Args>(args)...))
+  template <typename Self, typename... Args>
+  auto operator()(this Self&&, Args&&... args)
+    BOOST_HOF_RETURNS(
+      !invoke(
+        forward_like<Self>(this->f),
+        forward<Args>(args)...))
 };
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<decay_t<F>>{forward<F>(f)};
+  return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 </td>
@@ -1948,19 +1948,19 @@ auto not_fn(F&& f) {
 ```cpp
 template <typename F>
 struct call_wrapper {
-    F f;
+  F f;
 
-    template <typename Self, typename... Args>
-    auto operator()(Args&&... args) Self&&
-        BOOST_HOF_RETURNS(
-            !invoke(
-                forward_like<Self>(this->call_wrapper::f),
-                forward<Args>(args)...))
+  template <typename Self, typename... Args>
+  auto operator()(Args&&... args) Self&&
+    BOOST_HOF_RETURNS(
+      !invoke(
+        forward_like<Self>(this->call_wrapper::f),
+        forward<Args>(args)...))
 };
 
 template <typename F>
 auto not_fn(F&& f) {
-    return call_wrapper<decay_t<F>>{forward<F>(f)};
+  return call_wrapper<decay_t<F>>{forward<F>(f)};
 }
 ```
 </td>
