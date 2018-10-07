@@ -1903,14 +1903,15 @@ struct fun {
 };
 
 std::not_fn(unfriendly{})(1); // static assert!
-                              // even though the non-const overload is viable and would be the best
-                              // match, during overload resolution, both overloads of unfriendly have
-                              // to be instantiated - and the second one is a hard compile error.
+                              // even though the non-const overload is viable and would be the
+                              // best match, during overload resolution, both overloads of
+                              // unfriendly have to be instantiated - and the second one is a
+                              // hard compile error.
 
 std::not_fn(fun{})();         // ok!? Returns false
-                              // even though we want the non-const overload to be deleted, the const
-                              // overload of the call_wrapper ends up being viable - and the only viable
-                              // candidate.
+                              // even though we want the non-const overload to be deleted, the
+                              // const overload of the call_wrapper ends up being viable - and
+                              // the only viable candidate.
 ```
 
 Gracefully handling SFINAE-unfriendly callables is **not solvable** in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four *cv*/ref-qualifiers leads to a pair of overloads: one enabled and one `deleted`.

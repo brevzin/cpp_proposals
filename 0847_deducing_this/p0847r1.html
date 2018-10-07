@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="fd11d66849add1cabb21505106ca3bf0cfc8c5bf" name="document-revision">
+  <meta content="ffe87ddcc5be90ea1426b6ffd4009c42737cbe51" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -3113,14 +3113,15 @@ pre .property::before, pre .property::after {
 <c- p>};</c->
 
 <c- n>std</c-><c- o>::</c-><c- n>not_fn</c-><c- p>(</c-><c- n>unfriendly</c-><c- p>{})(</c-><c- mi>1</c-><c- p>);</c-> <c- c1>// static assert!</c->
-                              <c- c1>// even though the non-const overload is viable and would be the best</c->
-                              <c- c1>// match, during overload resolution, both overloads of unfriendly have</c->
-                              <c- c1>// to be instantiated - and the second one is a hard compile error.</c->
+                              <c- c1>// even though the non-const overload is viable and would be the</c->
+                              <c- c1>// best match, during overload resolution, both overloads of</c->
+                              <c- c1>// unfriendly have to be instantiated - and the second one is a</c->
+                              <c- c1>// hard compile error.</c->
 
 <c- n>std</c-><c- o>::</c-><c- n>not_fn</c-><c- p>(</c-><c- n>fun</c-><c- p>{})();</c->         <c- c1>// ok!? Returns false</c->
-                              <c- c1>// even though we want the non-const overload to be deleted, the const</c->
-                              <c- c1>// overload of the call_wrapper ends up being viable - and the only viable</c->
-                              <c- c1>// candidate.</c->
+                              <c- c1>// even though we want the non-const overload to be deleted, the</c->
+                              <c- c1>// const overload of the call_wrapper ends up being viable - and</c->
+                              <c- c1>// the only viable candidate.</c->
 </pre>
    <p>Gracefully handling SFINAE-unfriendly callables is <strong>not solvable</strong> in C++ today. Preventing fallback can be solved by the addition of yet another four overloads, so that each of the four <em>cv</em>/ref-qualifiers leads to a pair of overloads: one enabled and one <code class="highlight"><c- n>deleted</c-></code>.</p>
    <p>This proposal solves both problems by simply allowing <code class="highlight"><c- k>this</c-></code> to be deduced. The following is a complete implementation of <code class="highlight"><c- n>std</c-><c- o>::</c-><c- n>not_fn</c-></code>. For simplicity, it makes use of <code class="highlight"><c- n>BOOST_HOF_RETURNS</c-></code> from <a href="https://www.boost.org/doc/libs/1_68_0/libs/hof/doc/html/include/boost/hof/returns.html">Boost.HOF</a> to avoid having to duplicate expressions:</p>
