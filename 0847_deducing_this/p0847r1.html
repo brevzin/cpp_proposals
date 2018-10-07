@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="7c78c50cf2c322f461d5cb64c5114ab298e44c21" name="document-revision">
+  <meta content="b405846ac0be72d9163edc59728575cb045af168" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1751,10 +1751,10 @@ pre .property::before, pre .property::after {
      <p>perfect, sfinae-friendly <a href="#sfinae-friendly-callables">call wrappers</a></p>
    </ul>
    <p>These are explored in detail in the <a href="#real-world-examples">examples</a> section.</p>
-   <p>This proposal assumes the existence of a two library additions, though it does not propose them:</p>
+   <p>This proposal assumes the existence of two library additions, though it does not propose them:</p>
    <ul>
     <li data-md>
-     <p><code class="highlight"><c- n>like_t</c-></code>, a metafunction that applies the <em>cv</em>- and <em>ref</em>-qualifiers of the first type onto the second (e.g. <code class="highlight"><c- n>like_t</c-><c- o>&lt;</c-><c- b>int</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>double</c-><c- o>></c-></code> is <code class="highlight"><c- b>double</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- n>like_t</c-><c- o>&lt;</c-><c- n>X</c-> <c- k>const</c-><c- o>&amp;&amp;</c-><c- p>,</c-> <c- n>Y</c-><c- o>></c-></code> is <code class="highlight"><c- n>Y</c-> <c- k>const</c-><c- o>&amp;&amp;</c-></code>, <code class="highlight"><c- n>like_t</c-><c- o>&lt;</c-><c- n>X</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- n>Y</c-><c- o>&amp;></c-></code> is <code class="highlight"><c- n>Y</c-><c- o>&amp;</c-></code>, etc.)</p>
+     <p><code class="highlight"><c- n>like_t</c-></code>, a metafunction that applies the <em>cv</em>- and <em>ref</em>-qualifiers of the first type onto the second (e.g. <code class="highlight"><c- n>like_t</c-><c- o>&lt;</c-><c- b>int</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>double</c-><c- o>></c-></code> is <code class="highlight"><c- b>double</c-><c- o>&amp;</c-></code>, <code class="highlight"><c- n>like_t</c-><c- o>&lt;</c-><c- n>X</c-> <c- k>const</c-><c- o>&amp;&amp;</c-><c- p>,</c-> <c- n>Y</c-><c- o>></c-></code> is <code class="highlight"><c- n>Y</c-> <c- k>const</c-><c- o>&amp;&amp;</c-></code>, etc.)</p>
     <li data-md>
      <p><code class="highlight"><c- n>forward_like</c-></code>, a version of <code class="highlight"><c- n>forward</c-></code> that is intended to forward a variable not based on its own type but instead based on some other type. <code class="highlight"><c- n>forward_like</c-><c- o>&lt;</c-><c- n>T</c-><c- o>></c-><c- p>(</c-><c- n>u</c-><c- p>)</c-></code> is short-hand for <code class="highlight"><c- n>forward</c-><c- o>&lt;</c-><c- n>like_t</c-><c- o>&lt;</c-><c- n>T</c-><c- p>,</c-><c- k>decltype</c-><c- p>(</c-><c- n>u</c-><c- p>)</c-><c- o>>></c-><c- p>(</c-><c- n>u</c-><c- p>)</c-></code>.</p>
    </ul>
@@ -1907,7 +1907,7 @@ pre .property::before, pre .property::after {
       <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
     <c- p>}</c->
         
-    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- n>self</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
+    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>self</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
     
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
@@ -1925,7 +1925,7 @@ pre .property::before, pre .property::after {
       <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
     <c- p>}</c->
         
-    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
+    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- k>this</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
     
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
@@ -1947,7 +1947,7 @@ pre .property::before, pre .property::after {
       <c- k>throw</c-> <c- n>bad_optional_access</c-><c- p>();</c->
     <c- p>}</c->
         
-    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- o>*</c-><c- n>self</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
+    <c- k>return</c-> <c- n>forward</c-><c- o>&lt;</c-><c- n>Self</c-><c- o>></c-><c- p>(</c-><c- n>self</c-><c- p>).</c-><c- n>m_value</c-><c- p>;</c->
   <c- p>}</c->
     
   <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->
@@ -2034,7 +2034,7 @@ pre .property::before, pre .property::after {
    <p>The only change as far as candidates are considered is that the proposal allows for deduction of the object parameter — which is new for the language.</p>
    <h4 class="heading settled" data-level="3.2.2" id="type-deduction"><span class="secno">3.2.2. </span><span class="content">Type deduction</span><a class="self-link" href="#type-deduction"></a></h4>
    <p>One of the main motivations of this proposal is to deduce the <em>cv</em>-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.</p>
-   <p>If either the explicit object parameter’s type or trailing object type is a deduced reference type, all of the usual template deduction rules apply as expected:</p>
+   <p>If the type of the object parameter is a deduced template parameter, all of the usual template deduction rules apply as expected:</p>
    <table style="width:100%">
     <tbody>
      <tr>
@@ -2070,7 +2070,7 @@ pre .property::before, pre .property::after {
 <c- p>}</c->
 </pre>
    </table>
-   <p>It’s important to stress that deduction can deduce a derived type. In the last line, regardless of syntax, <code class="highlight"><c- n>Self</c-></code> deduces as <code class="highlight"><c- n>D</c-><c- o>&amp;</c-></code>. This has implications for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, and also leads to a potential <a href="#potential-extensions">template deduction extension</a>.</p>
+   <p>It’s important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, <code class="highlight"><c- n>Self</c-></code> deduces as <code class="highlight"><c- n>D</c-><c- o>&amp;</c-></code>. This has implications for <a href="#name-lookup-within-member-functions">§3.2.4 Name lookup: within member functions</a>, and also leads to a potential <a href="#potential-extensions">template deduction extension</a>.</p>
    <h4 class="heading settled" data-level="3.2.3" id="by-value-this"><span class="secno">3.2.3. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code></span><a class="self-link" href="#by-value-this"></a></h4>
    <p>But what if the explicit type does not have reference type? This is one key point where the proposed rules for having an explicit object parameter and having an trailing object type diverge. For both syntaxes, there is a clear meaning - it’s just that it is very different clear meaning.</p>
    <h5 class="heading settled" data-level="3.2.3.1" id="by-value-this-explicit"><span class="secno">3.2.3.1. </span><span class="content">By value <code class="highlight"><c- k>this</c-></code> in explicit syntaxes</span><a class="self-link" href="#by-value-this-explicit"></a></h5>

@@ -245,9 +245,9 @@ The proposal is also sufficiently general and sufficiently orthogonal that it al
 
 These are explored in detail in the [examples](#real-world-examples) section.
 
-This proposal assumes the existence of a two library additions, though it does not propose them: 
+This proposal assumes the existence of two library additions, though it does not propose them:
 
-- `like_t`, a metafunction that applies the *cv*- and *ref*-qualifiers of the first type onto the second (e.g. `like_t<int&, double>` is `double&`, `like_t<X const&&, Y>` is `Y const&&`, `like_t<X const&, Y&>` is `Y&`, etc.)
+- `like_t`, a metafunction that applies the *cv*- and *ref*-qualifiers of the first type onto the second (e.g. `like_t<int&, double>` is `double&`, `like_t<X const&&, Y>` is `Y const&&`, etc.)
 - `forward_like`, a version of `forward` that is intended to forward a variable not based on its own type but instead based on some other type. `forward_like<T>(u)` is short-hand for `forward<like_t<T,decltype(u)>>(u)`.
 
 ## Proposed Syntaxes ## {#proposed-syntaxes}
@@ -458,7 +458,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*self).m_value;
+    return forward<Self>(self).m_value;
   }
     
   template <typename Self>
@@ -478,7 +478,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*this).m_value;
+    return forward<Self>(this).m_value;
   }
     
   template <typename Self>
@@ -504,7 +504,7 @@ struct optional {
       throw bad_optional_access();
     }
         
-    return forward<Self>(*self).m_value;
+    return forward<Self>(self).m_value;
   }
     
   template <typename Self>
@@ -621,7 +621,7 @@ The only change as far as candidates are considered is that the proposal allows 
 
 One of the main motivations of this proposal is to deduce the *cv*-qualifiers and value category of the class object, so the explicit member object or type needs to be deducible from the object that the member function is invoked on.
 
-If either the type of the object parameter is a deduced template parameter, all of the usual template deduction rules apply as expected:
+If the type of the object parameter is a deduced template parameter, all of the usual template deduction rules apply as expected:
 
 <table style="width:100%">
 <tr>
