@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="348ac575434181c6642968d56bc28a1ce7934ca3" name="document-revision">
+  <meta content="d77211397318f67863c3f254a7b855d90cfd7301" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2292,36 +2292,36 @@ pre .property::before, pre .property::after {
    <table>
     <tbody>
      <tr>
-      <th>
-      <th><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
-      <th><a href="#syntax-2">§3.1.2 Explicit this parameter</a>
-      <th><a href="#syntax-3">§3.1.3 Trailing type with identifier</a>
-      <th><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
+      <th style="width: 8%;">
+      <th style="width: 20%;"><a href="#syntax-1">§3.1.1 Explicit this-annotated parameter</a>
+      <th style="width: 18%;"><a href="#syntax-2">§3.1.2 Explicit this parameter</a>
+      <th style="width: 20%;"><a href="#syntax-3">§3.1.3 Trailing type with identifier</a>
+      <th style="width: 20%;"><a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>
      <tr>
       <th>Familiarity
-      <td>This syntax isn’t very "C++-ic" in the sense that we’d have two different places where <em>cv</em>- and <em>ref</em>-qualifiers appear. But it would be familiar to those coming from other languages.
-      <td>Same unfamiliarity as at-left, but now <code class="highlight"><c- k>this</c-></code> is a reference instead of a pointer.
+      <td>Novel to C++, familiar to users of other languages. Adds an additional way to define <em>cv</em>- and <em>ref</em> qualifiers.
+      <td>Same unfamiliarity as at-left; <code class="highlight"><c- k>this</c-></code> behaves consistently with its declaration.
       <td colspan="2">This syntax would keep the <em>cv</em>- and <em>ref</em>-qualifiers where they already are, so is a natural extension in that sense.
      <tr>
       <th>Safety with derived objects<sup>†</sup>
-      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible. Difficult and verbose otherwise. 
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible, verbose otherwise. 
       <td>Difficult and verbose. 
-      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible. Difficult and verbose otherwise. 
-      <td>Difficult and verbose.
+      <td>Easy, if <code class="highlight"><c- k>this</c-></code> is accessible, verbose otherwise. 
+      <td>Verbose.
      <tr>
       <th>Parsing issues
       <td>None
       <td>None
-      <td>Definite problems, have to choose a parsing strategy. Could limit further extensions with context-sensitive keywords.
-      <td>Some problems
+      <td>Definite problems, have to choose a parsing strategy. Limits further extensions with context-sensitive keywords.
+      <td>Some problems.
      <tr>
       <th>Code bloat<sup>‡</sup>
       <td colspan="2">Cannot simply deduce <code class="highlight"><c- k>const</c-></code>/non-<code class="highlight"><c- k>const</c-></code>, so would nearly always have to resort to <code class="highlight"><c- n>Self</c-><c- o>&amp;&amp;</c-></code>.
       <td>Not an issue.
       <td>Not an issue.
    </table>
-   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not have a differentiation for the base class subobject will definitely have trouble here.</p>
-   <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem?</p>
+   <p><sup>†</sup>Basically: how easy is it to write member functions that want to deduce <em>cv-qualifiers</em> and value category without inadvertently referencing the derived object. This table assumes we do not adopt the <a href="#potential-extensions">§3.4 Potential Extensions</a>. The syntaxes that do not introduce an identifier (<a href="#syntax-2">§3.1.2 Explicit this parameter</a> and <a href="#syntax-4">§3.1.4 Trailing object type sans identifier</a>) have no way of providing a non-verbose way of referring to members of the base class.</p>
+   <p><sup>‡</sup>Code bloat in the sense of: do we have to produce more instantiations than would be minimally necessary to solve the problem? Note that one can always use the old-but-improved trick of deferring to a templated implementation, but now without the casts. The problem is minimal.</p>
    <p>As well as how well they compare against the variety of use-cases that we have been able to come up with for this feature:</p>
    <table>
     <tbody>
