@@ -653,16 +653,16 @@ Change 11.3.1.2 [over.match.oper] paragraph 3.4:
 
 ## Wording for redefining strong structural equality
 
-Remove 10.10.1 [class.compare.default] paragraph 2:
+Replace 10.10.1 [class.compare.default] paragraph 2:
 
 > <del>A three-way comparison operator for a class type `C` is a _structural comparison operator_ if it is defined as defaulted in the definition of `C`, and all three-way comparison operators it invokes are structural comparison operators. A type `T` has _strong structural equality_ if, for a glvalue `x` of type `const T`, `x <=> x` is a valid expression of type `std​::​strong_ordering` or `std​::​strong_equality` and either does not invoke a three-way comparison operator or invokes a structural comparison operator.</del>
 
-And replace it with:
+with:
 
 > <ins>An `==` (equal to) operator is a _structural equality operator_ if:</ins>
 > 
 > - <ins>it is a built-in candidate ([over.built]) where neither argument has floating point type, or</ins>
-> - <ins>it is an operator for a class type `C` that is defined as defaulted in the definition of `C` and all `==` operators it invokes are structure equality operators.</ins>
+> - <ins>it is an operator for a class type `C` that is defined as defaulted in the definition of `C` and all `==` operators it invokes are structural equality operators.</ins>
 >
 > <ins>A type `T` has _strong structural equality_ if, for a glvalue `x` of type `const T`, `x == x` is a valid expression of type `bool` and invokes a structural equality operator.
 
