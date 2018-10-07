@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="01d0307d09e88b57612fffe89138f36e158304a5" name="document-revision">
+  <meta content="219135e00afa303ac7fd082f6df6e001ad1cfa94" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -2164,7 +2164,15 @@ pre .property::before, pre .property::after {
     <c- b>bool</c-> <c- n>operator</c-><c- p>()(</c-><c- n>this</c-> <c- n>less_than</c-><c- p>,</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- n>T</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>);</c->
 <c- p>};</c->
 </pre>
-   <p>The type of <code class="highlight"><c- o>&amp;</c-><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>>::</c-><c- k>operator</c-><c- p>()</c-></code> is <code class="highlight"><c- b>bool</c-><c- p>(</c-><c- o>*</c-><c- p>)(</c-><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>></c-><c- p>,</c-> <c- b>int</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>int</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>)</c-></code>.</p>
+   <p>The type of <code class="highlight"><c- o>&amp;</c-><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>>::</c-><c- k>operator</c-><c- p>()</c-></code> is <code class="highlight"><c- b>bool</c-><c- p>(</c-><c- o>*</c-><c- p>)(</c-><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>></c-><c- p>,</c-> <c- b>int</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>int</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>)</c-></code>. And so it follows the usual rules of invocation:</p>
+<pre class="language-c++ highlight"><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>></c-> <c- n>lt</c-><c- p>;</c->
+<c- k>auto</c-> <c- n>p</c-> <c- o>=</c-> <c- o>&amp;</c-><c- n>less_than</c-><c- o>&lt;</c-><c- b>int</c-><c- o>>::</c-><c- n>operator</c-><c- p>();</c->
+
+<c- n>lt</c-><c- p>(</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c->            <c- c1>// ok</c->
+<c- n>p</c-><c- p>(</c-><c- n>lt</c-><c- p>,</c-> <c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c->         <c- c1>// ok</c->
+<c- p>(</c-><c- n>lt</c-><c- p>.</c-><c- o>*</c-><c- n>p</c-><c- p>)(</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c->       <c- c1>// error: p is not a pointer to member function</c->
+<c- n>invoke</c-><c- p>(</c-><c- n>p</c-><c- p>,</c-> <c- n>lt</c-><c- p>,</c-> <c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c-> <c- c1>// ok</c->
+</pre>
    <h4 class="heading settled" data-level="3.2.6" id="pathological-cases"><span class="secno">3.2.6. </span><span class="content">Pathological cases</span><a class="self-link" href="#pathological-cases"></a></h4>
    <p>It is important to mention the pathological cases. First, what happens if <code class="highlight"><c- n>D</c-></code> is incomplete but becomes valid later:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>D</c-><c- p>;</c->

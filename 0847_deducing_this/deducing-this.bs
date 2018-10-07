@@ -840,7 +840,17 @@ struct less_than {
 };
 ```
 
-The type of `&less_than<int>::operator()` is `bool(*)(less_than<int>, int const&, int const&)`. 
+The type of `&less_than<int>::operator()` is `bool(*)(less_than<int>, int const&, int const&)`. And so it follows the usual rules of invocation:
+
+```c++
+less_than<int> lt;
+auto p = &less_than<int>::operator();
+
+lt(1, 2);            // ok
+p(lt, 1, 2);         // ok
+(lt.*p)(1, 2);       // error: p is not a pointer to member function
+invoke(p, lt, 1, 2); // ok
+```
 
 ### Pathological cases ### {#pathological-cases}
 
