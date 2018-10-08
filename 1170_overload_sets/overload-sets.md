@@ -1072,15 +1072,22 @@ The name `overload_set` makes a judgement about what is being passed, which may 
 
 Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (`tuple`, `optional`, `variant`). 
 
-But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? Well, how about (references and forwarding omitted for brevity):
+But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? We can use F#'s syntax for [function composition][f#.comp]: `<<` and `>>` (references and forwarding omitted for brevity):
 
     :::cpp
+    // g, then f
     template <typename F, typename G>
-    auto operator*(overload_set<F> f, overload_set<G> g) {
+    auto operator<<(overload_set<F> f, overload_set<G> g) {
         return [=](auto... xs) -> decltype(f(g(xs...)))
             return f(g(xs...));
         }
     }
+    
+    // f, then g
+    template <typename F, typename G>
+    auto operator>>(overload_set<F> f, overload_set<G> g) {
+        return g << f;
+    }    
 
 This let's us replace another of the standard library's function objects. We have `std::not_fn()`, which takes one function object and produces a new function objects whose effects are negating the original one. But with function composition, we don't need a special function like `not_fn`. We can just compose with negation:
 
@@ -1103,21 +1110,31 @@ With composition
 <td>
     :::cpp
     // We could use the preexisting function object
-    auto g1 = std::negate() * f;
+    auto g1 = f >> std::negate();
     
     // Or we could use the new ability to use operator-function-ids
-    auto g2 = operator! * f;
+    auto g2 = f >> operator!;
     
     // Or we could use the new ability to use parenthesized operators
-    auto g3 = (!) * f;
+    auto g3 = f >> (!);
         
     // Or we could spell out the !
-    auto g4 = (not) * f;
+    auto g4 = f >> (not);
 </td>
 </tr>
 </table>
 
-The composition choices aren't necessarily shorter than using `not_fn`. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. 
+The composition choices aren't necessarily shorter than using `not_fn`. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. It's arguably much more expressive.
+
+Composition isn't the only thing we could do with multiple functions - we could also combine multiple operations together. For instance, `f(x) * g(x)` could be expressed as `(f * g)(x)`:
+
+    :::cpp
+    template <typename F, typename G>
+    auto operator*(overload_set<F> f, overload_set<G> g) {
+        return [=](auto x) -> decltype(f(x) * g(x))
+            return f(x) * g(x);
+        }
+    }    
     
 Perhaps also `overload_set<T>` could curry by default. Or provide a way to turn an `overload_set<T>` into a `curried_overload_set<T>`. With a more encompassing idea of what a callable is, these tools become much easier to write. 
 
@@ -1133,3 +1150,4 @@ Thanks to Tim Song for many conversations about all the trouble this proposal ge
 [abq.p0834]: http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0 "ABQ Wiki Notes, P0834R0 - November 2017"
 [rap.p0798]: http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798 "RAP Wiki Notes, P0798R0 - June 2018"
 [over.call.object]: http://eel.is/c++draft/over.call.object "[over.call.object]"
+[f#.comp]: https://fsharpforfunandprofit.com/posts/function-composition/ "Function associativity and composition | F# for fun and profit"

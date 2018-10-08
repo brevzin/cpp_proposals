@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: P1170R0 <br />
-Date: 2018-10-07 <br />
+Date: 2018-10-08 <br />
 Audience: EWG, LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Andrew Sutton, asutton at uakron dot edu <br />
 </address>
@@ -1553,12 +1553,19 @@ constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p) {
 </ul>
 <h3 id="other-potential-avenues">3.6. Other potential avenues<a class="self-link" href="#other-potential-avenues"></a></h3>
 <p>Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (<code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>). </p>
-<p>But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? Well, how about (references and forwarding omitted for brevity):</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename F, typename G&gt;
-auto operator*(overload_set&lt;F&gt; f, overload_set&lt;G&gt; g) {
+<p>But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? We can use F#'s syntax for <a href="https://fsharpforfunandprofit.com/posts/function-composition/" title="Function associativity and composition | F# for fun and profit">function composition</a>: <code class="language-cpp">&lt;&lt;</code> and <code class="language-cpp">&gt;&gt;</code> (references and forwarding omitted for brevity):</p>
+<pre class="codehilite"><code class="language-cpp">// g, then f
+template &lt;typename F, typename G&gt;
+auto operator&lt;&lt;(overload_set&lt;F&gt; f, overload_set&lt;G&gt; g) {
     return [=](auto... xs) -&gt; decltype(f(g(xs...)))
         return f(g(xs...));
     }
+}
+
+// f, then g
+template &lt;typename F, typename G&gt;
+auto operator&gt;&gt;(overload_set&lt;F&gt; f, overload_set&lt;G&gt; g) {
+    return g &lt;&lt; f;
 }</code></pre>
 
 
@@ -1580,23 +1587,32 @@ auto g = std::not_fn(f);</code></pre>
 </td>
 <td>
 <pre style="background:transparent;border:0px"><code class="language-cpp">// We could use the preexisting function object
-auto g1 = std::negate() * f;
+auto g1 = f &gt;&gt; std::negate();
 
 // Or we could use the new ability to use operator-function-ids
-auto g2 = operator! * f;
+auto g2 = f &gt;&gt; operator!;
 
 // Or we could use the new ability to use parenthesized operators
-auto g3 = (!) * f;
+auto g3 = f &gt;&gt; (!);
 
 // Or we could spell out the !
-auto g4 = (not) * f;</code></pre>
+auto g4 = f &gt;&gt; (not);</code></pre>
 </td>
 </tr>
 </table>
 
-<p>The composition choices aren't necessarily shorter than using <code class="language-cpp">not_fn</code>. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. </p>
+<p>The composition choices aren't necessarily shorter than using <code class="language-cpp">not_fn</code>. But it's one less thing to have to be aware of, one less thing to keep track of. You just need to know about negation. It's arguably much more expressive.</p>
+<p>Composition isn't the only thing we could do with multiple functions - we could also combine multiple operations together. For instance, <code class="language-cpp">f(x) * g(x)</code> could be expressed as <code class="language-cpp">(f * g)(x)</code>:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename F, typename G&gt;
+auto operator*(overload_set&lt;F&gt; f, overload_set&lt;G&gt; g) {
+    return [=](auto x) -&gt; decltype(f(x) * g(x))
+        return f(x) * g(x);
+    }
+}</code></pre>
+
+
 <p>Perhaps also <code class="language-cpp">overload_set&lt;T&gt;</code> could curry by default. Or provide a way to turn an <code class="language-cpp">overload_set&lt;T&gt;</code> into a <code class="language-cpp">curried_overload_set&lt;T&gt;</code>. With a more encompassing idea of what a callable is, these tools become much easier to write. </p>
 <h2 id="acknowledgements">4. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>Thanks to Tim Song for many conversations about all the trouble this proposal gets itself into, and to Simon Brand for invaluable feedback.</p>
-<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/EWG/ewg-active.html#65">[EWG65]</a><span style="margin-left: 5px;">"N3617 Lifting overload sets into function objects" by Philipp Juschka, 2015-05-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3617.htm">[N3617]</a><span style="margin-left: 5px;">"Lifting overload sets into function objects" by Philipp Juschka, 2013-03-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4128.html">[N4128]</a><span style="margin-left: 5px;">"Ranges for the Standard Library, Revision 1" by E. Niebler, S. Parent, A. Sutton, 2014-10-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0119r2.pdf">[P0119R2]</a><span style="margin-left: 5px;">"Overload sets as function arguments" by Andrew Sutton, 2016-05-28</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0356r3.html">[P0356R3]</a><span style="margin-left: 5px;">"Simplified partial function application" by Tomasz Kamiński, 2017-11-09</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0382r0.html">[P0382R0]</a><span style="margin-left: 5px;">"Comments on P0119: Overload sets as function arguments" by Tomasz Kamiński, 2016-05-29</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">[P0551R3]</a><span style="margin-left: 5px;">"Thou Shalt Not Specialize std Function Templates!" by Walter E. Brown, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0573r2.html">[P0573R2]</a><span style="margin-left: 5px;">"Abbreviated Lambdas for Fun and Profit" by Barry Revzin, Tomasz Kamiński, 2017-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798R0]</a><span style="margin-left: 5px;">"Monadic operations for std::optional" by Simon Brand, 2017-10-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0834r0.html">[P0834R0]</a><span style="margin-left: 5px;">"Lifting overload sets into objects" by Michael Dominiak, 2017-10-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r2.pdf">[P0896R2]</a><span style="margin-left: 5px;">"The One Ranges Proposal" by Eric Niebler, Casey Carter, Christopher Di Bella, 2018-06-25</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0921r0.pdf">[P0921R0]</a><span style="margin-left: 5px;">"Standard Library Compatibility Promises" by Titus Winters, 2018-02-01</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2">[abq.p0573]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0573R2 - November 2017</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0">[abq.p0834]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0834R0 - November 2017</span></li><li><a href="https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/">[andrzej.funcs]</a><span style="margin-left: 5px;">"Functions in std | Andrzej's C++ blog" by Andrzej Krzemieński, 2018-07-07</span></li><li><a href="http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html">[boost.hof]</a><span style="margin-left: 5px;">BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation</span></li><li><a href="http://eel.is/c++draft/over.call.object">[over.call.object]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://en.wikipedia.org/wiki/Tacit_programming">[point.free]</a><span style="margin-left: 5px;">Tacit programming - Wikipedia</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798">[rap.p0798]</a><span style="margin-left: 5px;">RAP Wiki Notes, P0798R0 - June 2018</span></li><li><a href="https://youtu.be/2UmDvg5xv1U?t=284">[winters.modern]</a><span style="margin-left: 5px;">"Modern C++ API Design: From Rvalue-References to Type Design" by Titus Winters, CppNow May 2018</span></li></ul>
+<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/EWG/ewg-active.html#65">[EWG65]</a><span style="margin-left: 5px;">"N3617 Lifting overload sets into function objects" by Philipp Juschka, 2015-05-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3617.htm">[N3617]</a><span style="margin-left: 5px;">"Lifting overload sets into function objects" by Philipp Juschka, 2013-03-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4128.html">[N4128]</a><span style="margin-left: 5px;">"Ranges for the Standard Library, Revision 1" by E. Niebler, S. Parent, A. Sutton, 2014-10-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0119r2.pdf">[P0119R2]</a><span style="margin-left: 5px;">"Overload sets as function arguments" by Andrew Sutton, 2016-05-28</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0356r3.html">[P0356R3]</a><span style="margin-left: 5px;">"Simplified partial function application" by Tomasz Kamiński, 2017-11-09</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0382r0.html">[P0382R0]</a><span style="margin-left: 5px;">"Comments on P0119: Overload sets as function arguments" by Tomasz Kamiński, 2016-05-29</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">[P0551R3]</a><span style="margin-left: 5px;">"Thou Shalt Not Specialize std Function Templates!" by Walter E. Brown, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0573r2.html">[P0573R2]</a><span style="margin-left: 5px;">"Abbreviated Lambdas for Fun and Profit" by Barry Revzin, Tomasz Kamiński, 2017-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0798r0.html">[P0798R0]</a><span style="margin-left: 5px;">"Monadic operations for std::optional" by Simon Brand, 2017-10-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0834r0.html">[P0834R0]</a><span style="margin-left: 5px;">"Lifting overload sets into objects" by Michael Dominiak, 2017-10-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r2.pdf">[P0896R2]</a><span style="margin-left: 5px;">"The One Ranges Proposal" by Eric Niebler, Casey Carter, Christopher Di Bella, 2018-06-25</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0921r0.pdf">[P0921R0]</a><span style="margin-left: 5px;">"Standard Library Compatibility Promises" by Titus Winters, 2018-02-01</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0573R2">[abq.p0573]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0573R2 - November 2017</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0834R0">[abq.p0834]</a><span style="margin-left: 5px;">ABQ Wiki Notes, P0834R0 - November 2017</span></li><li><a href="https://akrzemi1.wordpress.com/2018/07/07/functions-in-std/">[andrzej.funcs]</a><span style="margin-left: 5px;">"Functions in std | Andrzej's C++ blog" by Andrzej Krzemieński, 2018-07-07</span></li><li><a href="http://boost-hof.readthedocs.io/en/latest/include/boost/hof/lift.html">[boost.hof]</a><span style="margin-left: 5px;">BOOST_HOF_LIFT - Boost.HigherOrderFunctions 0.6 documentation</span></li><li><a href="https://fsharpforfunandprofit.com/posts/function-composition/">[f#.comp]</a><span style="margin-left: 5px;">Function associativity and composition | F# for fun and profit</span></li><li><a href="http://eel.is/c++draft/over.call.object">[over.call.object]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://en.wikipedia.org/wiki/Tacit_programming">[point.free]</a><span style="margin-left: 5px;">Tacit programming - Wikipedia</span></li><li><a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0798">[rap.p0798]</a><span style="margin-left: 5px;">RAP Wiki Notes, P0798R0 - June 2018</span></li><li><a href="https://youtu.be/2UmDvg5xv1U?t=284">[winters.modern]</a><span style="margin-left: 5px;">"Modern C++ API Design: From Rvalue-References to Type Design" by Titus Winters, CppNow May 2018</span></li></ul>
 </html>
