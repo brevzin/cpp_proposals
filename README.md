@@ -20,3 +20,4 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 - [p0848r0 - Conditionally Trivial Special Member Functions](https://rawgit.com/brevzin/cpp_proposals/master/0848_special_members/p0848r0.html), with Casey Carter. Pending discussion in EWG.
 - [p0893r1 - Chaining comparisons](https://rawgit.com/brevzin/cpp_proposals/master/0893_chain_comparisons/p0893r1.html), with Herb Sutter. Discussed by EWG in Jacksonville, returning to EWG with many changes.
 - [p1061r0 - Structured bindings can introduce a Pack](https://rawgit.com/brevzin/cpp_proposals/master/1061_sb_pack/p1061r0.html), with Jonathan Wakely. Will be in pre-Rapperswil mailing, pending discussion in EWG.
+- [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely. Will be in pre-Rapperswil mailing, pending discussion in EWG.
