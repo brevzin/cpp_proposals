@@ -22,5 +22,5 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 - [p1169r0 - static `operator()`](1169_static_call/p1169r0.html), with Casey Carter.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
 - [p1185r0 - `<=> != ==`](1185-7_spaceship/p1185r0.html).
-- [p1185r0 - When do you actually use `<=>`?](1185-7_spaceship/p1186r0.html).
-- [p1185r0 - A type trait for `std::compare_3way()`'s type](1185-7_spaceship/p1187r0.html).
+- [p1186r0 - When do you actually use `<=>`?](1185-7_spaceship/p1186r0.html).
+- [p1187r0 - A type trait for `std::compare_3way()`'s type](1185-7_spaceship/p1187r0.html).
