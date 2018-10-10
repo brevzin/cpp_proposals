@@ -1,5 +1,3 @@
-# C++ Proposals for WG21
-
 Just a bunch of proposals for standardization that I've worked on. This is probably not up to date, since I always forget to push. And yes, some python / markdown stuff notwithstanding, I just write my proposals directly in HTML. No, I don't know why. Rendered [here](https://brevzin.github.io/cpp_proposals).
 
 ### Accepted to Working Draft
@@ -16,7 +14,13 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Pending
 
-- [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with imon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. 
+- [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. 
 - [p0848r0 - Conditionally Trivial Special Member Functions](0848_special_members/p0848r0.html), with Casey Carter.
 - [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter.
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
+- [p1065r0 - constexpr `INVOKE`](1065_constexpr_invoke/d1065r0.html).
+- [p1169r0 - static `operator()`](1169_static_call/p1169r0.html), with Casey Carter.
+- [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
+- [p1185r0 - `<=> != ==`](1185-7_spaceship/p1185r0.html).
+- [p1185r0 - When do you actually use `<=>`?](1185-7_spaceship/p1186r0.html).
+- [p1185r0 - A type trait for `std::compare_3way()`'s type](1185-7_spaceship/p1187r0.html).
