@@ -16,7 +16,7 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 - [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. 
 - [p0848r0 - Conditionally Trivial Special Member Functions](0848_special_members/p0848r0.html), with Casey Carter.
-- [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter.
+- [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter. R0 was discussed in Jacksonville.
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
 - [p1065r0 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r0.html).
 - [p1169r0 - static `operator()`](1169_static_call/p1169r0.html), with Casey Carter.
