@@ -119,45 +119,35 @@ Proposed
 
 ## Wording
 
+In light of the adoption of [P1186](https://wg21.link/p1186) by EWG in San Diego in 2018, we simply need a trait based on the type of `<=>`.
+
 Add the new trait and its use into the `<compare>` synopsis in 23.4 [algorithm.sym]:
 
 <blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
 
 namespace std {
-  // ...
+  [...]
   
   // [alg.3way], three-way comparison algorithms
   </code><code><ins>template&lt;class T, class U = T> struct compare_3way_type;
   
   template&lt;class T, class U = T>
     using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
-  
-  template&lt;class T, class U>
-    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
-    
-  // ...
+
+  template&lt;class T, class U&gt;
+    constexpr auto compare_3way(const T& a, const U& b);
+  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
+  template&lt;class InputIterator1, class InputIterator2&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);    
+  [...]
 }</code></pre></blockquote>
-
-Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
-
->  The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
-
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member typedef `type` shall be either defined or not present as follows. Let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`.
->
- - If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall equal `decltype(t <=> u)`.
- - Otherwise, if the expressions `t == u` and `t < u` are each well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_ordering`.
- - Otherwise, if the expression `t == u` is well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_equality`.
- - Otherwise, there shall be no member `type`.
- 
- > A program shall not specialize `compare_3way_type`. 
- 
-Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
-
-## Interaction with [P1186](https://wg21.link/p1186r0)
-
-P1186 proposed to obviate `std::compare_3way()` in favor of having `<=>` itself perform all of this logic. That paper getting adopted does not change the need for having a type trait like this, though it would make the specification much simpler as the library wording could simply defer to the core wording. 
 
 Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
 

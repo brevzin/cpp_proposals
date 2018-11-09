@@ -360,10 +360,10 @@ Add a new comparison function object to 19.14.7 [comparisons]:
 And a new clause after 19.14.7.6, named "Class template `compare_3way`":
 
 <blockquote><ins><pre><code>template&lt;class T = void&gt; struct compare_3way {
-  constexpr bool operator()(const T& x, const T& y) const;
+  constexpr auto operator()(const T& x, const T& y) const;
 };</code></pre>
 
-<p><code>constexpr bool operator()(const T& x, const T& y) const;</code>
+<p><code>constexpr auto operator()(const T& x, const T& y) const;</code>
 
 <p><i>Returns</i>: <code>x &lt;=&gt; y</code>.
 
@@ -400,7 +400,7 @@ Remove `std::compare_3way()` from synopsis in 23.4 [algorithm.syn]:
   [...]
 }</code></pre></blockquote>
 
-Remove the specification of `std::compare_3way()` of 23.7.11 [alg.3way]:
+Remove the specification of `std::compare_3way()` of 23.7.11 \[alg.3way\]:
 
 <blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
 
@@ -412,7 +412,7 @@ Remove the specification of `std::compare_3way()` of 23.7.11 [alg.3way]:
 <li>Otherwise, the function is defined as deleted.
 </ul></del></blockquote>
     
-Change the specification of `std::lexicographical_compare_3way` in 23.7.11 [alg.3way] paragraph 4:
+Change the specification of `std::lexicographical_compare_3way` in 23.7.11 \[alg.3way\] paragraph 4:
 
 <blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
   constexpr auto
