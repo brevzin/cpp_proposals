@@ -121,35 +121,28 @@ Proposed
 
 In light of the adoption of [P1186](https://wg21.link/p1186) by EWG in San Diego in 2018, we simply need a trait based on the type of `<=>`.
 
-Add the new trait and its use into the `<compare>` synopsis in 23.4 [algorithm.sym]:
+Add the new trait and its use into the `<compare>` synopsis in 16.11.1 [compare.syn]:
 
-<blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
-
-namespace std {
+<blockquote><pre><code>namespace std {
   [...]
   
-  // [alg.3way], three-way comparison algorithms
-  </code><code><ins>template&lt;class T, class U = T> struct compare_3way_type;
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
   
-  template&lt;class T, class U = T>
-    using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
-
-  template&lt;class T, class U&gt;
-    constexpr auto compare_3way(const T& a, const U& b);
-  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
-    constexpr auto
-      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
-                                   InputIterator2 b2, InputIterator2 e2,
-                                   Cmp comp)
-        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
-  template&lt;class InputIterator1, class InputIterator2&gt;
-    constexpr auto
-      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
-                                   InputIterator2 b2, InputIterator2 e2);    
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_3way_type;</ins>
+  
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</ins>
   [...]
 }</code></pre></blockquote>
 
-Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
+Add a new specification for `compare_3way_type` in a new clause after 16.11.3 \[cmp.common\] named \[cmp.3way\]:
 
 > The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
 

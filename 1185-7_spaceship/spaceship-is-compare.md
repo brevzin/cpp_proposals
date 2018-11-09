@@ -329,35 +329,27 @@ of parameters, or `(x <=> y) @` 0 otherwise, using the selected rewritten `opera
 
 ## Library Wording
 
-Add a new comparison function object to the synopsis in 19.14.1 [functional.syn]:
+Add a new comparison function object to the synopsis in 16.11.1 [compare.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
-  // [comparisons], comparisons
-  template&lt;class T = void&gt; struct equal_to;
-  template&lt;class T = void&gt; struct not_equal_to;
-  template&lt;class T = void&gt; struct greater;
-  template&lt;class T = void&gt; struct less;
-  template&lt;class T = void&gt; struct greater_equal;
-  template&lt;class T = void&gt; struct less_equal;
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
+  
+  <ins>// [cmp.3way], compare_3way</ins>
   <ins>template&lt;class T = void&gt; struct compare_3way;</ins>
-  template&lt;&gt; struct equal_to&lt;void&gt;;
-  template&lt;&gt; struct not_equal_to&lt;void&gt;;
-  template&lt;&gt; struct greater&lt;void&gt;;
-  template&lt;&gt; struct less&lt;void&gt;;
-  template&lt;&gt; struct greater_equal&lt;void&gt;;
-  template&lt;&gt; struct less_equal&lt;void&gt;;
   <ins>template&lt;&gt; struct compare_3way&lt;void&gt;;</ins>
   [...]
 }</code></pre></blockquote>  
 
-Add a new comparison function object to 19.14.7 [comparisons]:
+Add a specification for `compare_3way` to a new clause after 16.11.3 [cmp.common] named [cmp.3way]:
 
-> The library provides basic function object classes for all of the comparison operators in the language ([expr.rel], [expr.eq]<ins>, [expr.spaceship]</ins>).
-
-> For templates <code>less</code>, <code>greater</code>, <code>less_equal</code>, <del>and</del> <code>greater_equal,</code>, <ins>and <code>compare_3way</code>,</ins> the specializations for any pointer type yield a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by the built-in operators <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code><ins>, <code>&lt;=&gt;</code></ins>. [ Note: When a < b is well-defined for pointers a and b of type P, this implies <code>(a &lt; b) == less&lt;P&gt;()(a, b)</code>, <code>(a &gt; b) == greater&lt;P&gt;()(a, b)</code>, and so forth. — end note ] For template specializations <code>less&lt;void&gt;</code>, <code>greater&lt;void&gt;</code>, <code>less_equal&lt;void&gt;</code>, <del>and</del> <code>greater_equal&lt;void&gt;</code>, <ins>and <code>compare_3way&lt;void&gt;</code>,</ins> if the call operator calls a built-in operator comparing pointers, the call operator yields a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by those built-in operators.
-
-And a new clause after 19.14.7.6, named "Class template `compare_3way`":
+> <ins>The specializations of <code>compare_3way</code> for any pointer type yield a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by the built-in operator <code>&lt;=&gt;</code>. For template specialization <code>compare_3way&lt;void&gt;</code>, if the call operator calls a built-in operator comparing pointers, the call operator yields a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by that built-in operator.</ins>
 
 <blockquote><ins><pre><code>template&lt;class T = void&gt; struct compare_3way {
   constexpr auto operator()(const T& x, const T& y) const;

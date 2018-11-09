@@ -717,34 +717,27 @@ auto operator&lt;=&gt;(expected&lt;T1,E1&gt; const&amp; lhs,
 
 <h3 id="wording">2.1. Wording<a class="self-link" href="#wording"></a></h3>
 <p>In light of the adoption of <a href="https://wg21.link/p1186" title="When do you actually use &lt;=&gt;?">P1186</a> by EWG in San Diego in 2018, we simply need a trait based on the type of <code class="language-cpp">&lt;=&gt;</code>.</p>
-<p>Add the new trait and its use into the <code class="language-cpp">&lt;compare&gt;</code> synopsis in 23.4 [algorithm.sym]:</p>
-<blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
-
-namespace std {
+<p>Add the new trait and its use into the <code class="language-cpp">&lt;compare&gt;</code> synopsis in 16.11.1 [compare.syn]:</p>
+<blockquote><pre><code>namespace std {
   [...]
 
-  // [alg.3way], three-way comparison algorithms
-  </code><code><ins>template&lt;class T, class U = T> struct compare_3way_type;
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
 
-  template&lt;class T, class U = T>
-    using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_3way_type;</ins>
 
-  template&lt;class T, class U&gt;
-    constexpr auto compare_3way(const T& a, const U& b);
-  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
-    constexpr auto
-      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
-                                   InputIterator2 b2, InputIterator2 e2,
-                                   Cmp comp)
-        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
-  template&lt;class InputIterator1, class InputIterator2&gt;
-    constexpr auto
-      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
-                                   InputIterator2 b2, InputIterator2 e2);    
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</ins>
   [...]
 }</code></pre></blockquote>
 
-<p>Add a new specification for <code class="language-cpp">compare_3way_type</code> at the beginning of 23.7.11 [alg.3way]:</p>
+<p>Add a new specification for <code class="language-cpp">compare_3way_type</code> in a new clause after 16.11.3 [cmp.common] named [cmp.3way]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_3way_type</code> template defined in this subclause is undefined.</p>
 <p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> type shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
