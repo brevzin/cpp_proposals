@@ -1,5 +1,5 @@
 Title: `<=> != ==`
-Document-Number: P1185R0
+Document-Number: D1185R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG
 
@@ -608,50 +608,13 @@ And I'm not sure this makes any sense.
 
 # Wording
 
-What follows is the wording from the core sections of the proposal (2.1 and 2.2).
+Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
-Change 10.10.3 [class.rel.eq] paragraph 2:
+> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, a `==` operator function is declared implicitly. The implicitly-declared `==` operator for a class `X` will have the form</ins>  
 
-> The <ins>relational</ins> operator function with parameters `x` and `y` is defined as deleted if
+> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
 
-> - overload resolution ([over.match]), as applied to `x <=> y` (also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function, or
-> - the operator `@` cannot be applied to the return type of `x <=> y` or `y <=> x`.
-
-> Otherwise, the operator function yields `x <=> y @ 0` if an operator<=> with the original order of parameters was selected, or `0 @ y <=> x` otherwise.
-
-Add a new paragraph after 10.10.3 [class.rel.eq] paragraph 2:
-
-> <ins>The return value `V` of type `bool` of the defaulted `==` (equal to) operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects ([class.spaceship]) for `x` and `y` until the first index `i` where <code>x<sub>i</sub> == y<sub>i</sub></code> yields a value result which, contextually converted to bool, yields `false`. If no such index exists, `V` is `true`. Otherwise, `V` is `false`.</ins>
-
-Add another new paragraph after 10.10.3 [class.rel.eq] paragraph 2:
-
-> <ins>The `!=` (not equal to) operator function with parameters `x` and `y` is defined as deleted if</ins>
-
-> - <ins>overload resolution ([over.match]), as applied to `x == y` (also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function, or</ins>
-> - <ins>the negation operator cannot be applied to the return type of `x == y` or `y == x`.</ins>
-
-> <ins>Otherwise, the `!=` operator function yields `!(x == y)` if an operator `==` with the original order of parameters was selected, or `!(y == x)` otherwise.</ins>
-
-Change the example in [class.rel.eq] paragraph 3:
-
-<blockquote><pre><code class="language-cpp">struct C {
-  friend std::strong_equality operator<=>(const C&, const C&);
-  </code><code><del>friend bool operator==(const C& x, const C& y) = default; // OK, returns x <=> y == 0</del></code><code class="language-cpp">
-  bool operator<(const C&) = default;                       // OK, function is deleted
-  </code><code><ins>bool operator!=(const C&) = default;                      // OK, function is deleted</ins>
-};
-
-<ins>struct D {
-  int i;
-  friend bool operator==(const D& x, const D& y) const = default; // OK, returns x.i == y.i
-  bool operator!=(const D& z) const = default;                    // OK, returns !(*this == z)
-};</ins></code></pre></blockquote>
-
-Change 11.3.1.2 [over.match.oper] paragraph 3.4:
-
-> For the relational ([expr.rel]) <del>and equality ([expr.eq])</del> operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator `<=>`. For the relational ([expr.rel])<del>, equality ([expr.eq]),</del> and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <=> for which the rewritten expression 0 @ (y <=> x) is well-formed using that operator<=>.  <ins>For the `!=` (not equal to) operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator `==` for which the rewritten expression `!(x == y)` is well-formed using that operator `==`. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x) @ true` is well-formed using that operator `==`.</ins> *[ Note:* A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. *—end note]* In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
-
-## Wording for redefining strong structural equality
+> <ins>and is defined as defaulted.
 
 Replace 10.10.1 [class.compare.default] paragraph 2:
 
@@ -659,22 +622,98 @@ Replace 10.10.1 [class.compare.default] paragraph 2:
 
 with:
 
-> <ins>An `==` (equal to) operator is a _structural equality operator_ if:</ins>
-> 
-> - <ins>it is a built-in candidate ([over.built]) where neither argument has floating point type, or</ins>
-> - <ins>it is an operator for a class type `C` that is defined as defaulted in the definition of `C` and all `==` operators it invokes are structural equality operators.</ins>
->
-> <ins>A type `T` has _strong structural equality_ if, for a glvalue `x` of type `const T`, `x == x` is a valid expression of type `bool` and invokes a structural equality operator.
+> <ins>An `==` operator for a class type `C` is a _structural equality operator_ if it is defined as defaulted in the definition of `C`, all `==` operators it invokes are structural equality operators, and none of `C`'s non-static data members have floating point type. A type `T` has _strong structural equality_ if it is not a floating point type and, for a glvalue `x` of type `const T`, `x == x` is a valid expression of type `bool` and either does not invoke an `==` operator or invokes a structural equality operator.
 
-## Wording for defaulted `<=>` generating a defaulted `==`
+Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:
 
-Add to 10.10.3 [class.rel.eq], below the description of defaulted `==`:
+> <ins>The direct base class subobjects of C, in the order of their declaration in the base-specifier-list of C, followed
+by the non-static data members of C, in the order of their declaration in the member-specification of C,
+form a list of subobjects. In that list, any subobject of array type is recursively expanded to the sequence
+of its elements, in the order of increasing subscript. Let <code>x<sub>i</sub></code> be an lvalue denoting the i
+th element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code>
+is formed by a sequence of derived-to-base conversions (11.3.3.1), class member access expressions (7.6.1.5), and array subscript expressions (7.6.1.1)
+applied to x. It is unspecified whether virtual base class subobjects appear more than once in the expanded list of subobjects.</ins>
 
-> <ins>If the class definition does not explicitly declare an `==` (equal to) operator function ([expr.eq]) and declares a defaulted three-way comparison operator function ([class.spaceship]) that is not defined as deleted, a defaulted `==` operator function is declared *implicitly*. The implicitly-declared `==` operator for a class `X` will have the form</ins>  
+Before 10.10.2 [class.spaceship], insert a new subclause [class.eq] referring specifically to equality and inequality containing the following:
 
-> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&, const X&)</code></ins>  
+> <ins>A defaulted equality operator (7.6.10) function shall have a declared return type `bool`.
 
-> <ins>and will follow the rules described above. 
+> <ins>A defaulted `==` operator function for a class `C` is defined as deleted unless, for each <code>x<sub>i</sub></code> in the expanded list of subobjects for an object `x` of type `C`, <code>x<sub>i</sub> == x<sub>i</sub></code> is a valid expression and contextually convertible to `bool`.
+
+> <ins>The return value `V` of a defaulted `==` operator function with parameters `x` and `y` is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where <code>x<sub>i</sub> == y<sub>i</sub></code> yields a result value which, when contextually converted to bool, yields `false`. If no such index exists, `V` is `true`. Otherwise, `V` is `false`.</ins>
+
+> <ins>A defaulted `!=` operator function for a class `C` with parameters `x` and `y` is defined as deleted if</ins>
+
+> - <ins>overload resolution ([over.match]), as applied to `x == y` (also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function, or</ins>
+> - <ins>`x == y` or `y == x` cannot be contextually converted to `bool`.</ins>
+
+> <ins>Otherwise, the operator function yields `(x == y) ? false : true` if an operator `==` with the original order of parameters was selected, or `(y == x) ? false : true` otherwise.</ins>
+
+<blockquote><ins><i>[Example -</i>
+<pre><code>struct D {
+  int i;
+  friend bool operator==(const D& x, const D& y) = default; // OK, returns x.i == y.i
+  bool operator!=(const D& z) const = default;              // OK, returns (*this == z) ? false : true
+};</code></pre>
+
+<i> - end example]</i></ins></blockquote>
+
+Remove all of 10.10.2 [class.spaceship] paragraph 1. Most of it was moved to 10.10.1, one sentence in it will be moved to the next paragraph:
+
+> <del>The direct base class subobjects of C, in the order of their declaration in the base-specifier-list of C, followed
+by the non-static data members of C, in the order of their declaration in the member-specification of C,
+form a list of subobjects. In that list, any subobject of array type is recursively expanded to the sequence
+of its elements, in the order of increasing subscript. Let xi be an lvalue denoting the i
+th element in the
+expanded list of subobjects for an object x (of length n), where xi
+is formed by a sequence of derived-to-base
+conversions (11.3.3.1), class member access expressions (7.6.1.5), and array subscript expressions (7.6.1.1)
+applied to x. The type of the expression <code>x<sub>i</sub> <=> x<sub>i</sub></code>
+is denoted by <code>R<sub>i</sub></code>. It is unspecified whether virtual base class subobjects are compared more than once.</del>
+
+Add a new sentence to the start of 10.10.2 [class.spaceship] paragraph 2 (which will become paragraph 1):
+
+> <ins>Given an expanded list of subobjects for an object `x` of type `C`, the type of the expression <code>x<sub>i</sub> <=> x<sub>i</sub></code>
+is denoted by <code>R<sub>i</sub></code></ins>. If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R<sub>0</sub>, R<sub>1</sub>, . . . , R<sub>n−1</sub></code>. [...]
+
+Rename clause "Other Comparison operators" [class.rel.eq] to "Relational Operators" [class.rel]. Remove the equality reference from 10.10.3 [class.rel.eq] paragraph 1:
+
+> A defaulted relational (7.6.9) <del>or equality (7.6.10)</del> operator function for some operator @ shall have a declared
+return type bool.
+
+Change the example in [class.rel.eq] paragraph 3:
+
+<blockquote><pre><code class="language-cpp">struct C {
+  friend std::strong_equality operator<=>(const C&, const C&);
+  </code><code><del>friend bool operator==(const C& x, const C& y) = default; // OK, returns x <=> y == 0</del></code><code class="language-cpp">
+  bool operator<(const C&) = default;                       // OK, function is deleted  
+};</code></pre></blockquote>
+
+Change 11.3.1.2 [over.match.oper] paragraph 3.4:
+
+> - [...]
+> - For the relational ([expr.rel]) <del>and equality ([expr.eq])</del> operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator `<=>`. For the relational ([expr.rel])<del>, equality ([expr.eq]),</del> and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <=> for which the rewritten expression 0 @ (y <=> x) is well-formed using that operator<=>.  <ins>For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator `==` for which the rewritten expression `(x == y)` is well-formed when contextually converted to `bool` using that operator `==`. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x)` is well-formed when contextually converted to `bool` using that operator `==`.</ins> *[ Note:* A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. *—end note]* In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
+
+Change 11.3.1.2 [over.match.oper] paragraph 8:
+
+>  If a rewritten candidate is selected by overload resolution for <del>an</del> <ins>a relational or three-way comparison</ins> operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
+of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. <ins>If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate. If a rewritten candidate is selected by overload resolution for a `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.</ins>
+
+Change 12.1 [temp.param]/4 to refer to `==` instead of `<=>`:
+
+> a type that is literal, has strong structural equality ([class.compare.default]), has no mutable or volatile subobjects, and in which if there is a defaulted member <del><code>operator&lt;=&gt;</code></del> <ins><code>operator==</code></ins>, then it is declared public,
+
+Change the example in 12.1 [temp.param]/p6 to default `==` instead of `<=>`.
+
+<blockquote><pre><code>struct A { friend auto <del>operator&lt;=&gt;</del> <ins>operator==</ins>(const A&, const A&) = default; };</code></pre></blockquote>
+
+Change the example in 12.3.2 [temp.arg.nontype]/p4 to default `==` instead of `<=>` (and additionally fix its arity):
+
+<blockquote><pre><code>auto <del>operator&lt;=&gt;(A, A)</del> <ins>operator==(const A&) const</ins> = default;</code></pre></blockquote>
+
+Change 12.5 [temp.type] to refer to `==` instead of `<=>`:
+
+> - their remaining corresponding non-type template-arguments have the same type and value after conversion to the type of the template-parameter, where they are considered to have the same value if they compare equal with <del><code>operator&lt;=&gt;</code></del> <ins><code>operator==</code></ins>, and
     
 
 # Acknowledgements

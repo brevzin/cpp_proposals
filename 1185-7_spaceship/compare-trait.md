@@ -1,5 +1,5 @@
 Title: A type trait for `std::compare_3way()`'s type
-Document-Number: P1187R0
+Document-Number: D1187R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
 
@@ -119,7 +119,7 @@ Proposed
 
 ## Wording
 
-Add the new trait and its use into the `<algorithm>` synopsis in 23.4 [algorithm.sym]:
+Add the new trait and its use into the `<compare>` synopsis in 23.4 [algorithm.sym]:
 
 <blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
 

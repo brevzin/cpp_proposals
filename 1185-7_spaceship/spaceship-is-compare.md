@@ -310,6 +310,22 @@ Note that this problem could easily be fixed by replacing the currently existing
 
 This leaves the question of whether or not `<=>` was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated (or more relevantly, as whether or not `<` was generated from `<=>` or from `<`). As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have `<=>` perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary `<=>` operation if and only if it exists. 
     
+# Wording
+
+## Core Language Wording
+
+Add new wording to 11.3.1.2 [over.match.oper], paragraph 3.4:
+
+> For the relational (7.6.9), equality (7.6.10), and three-way
+comparison (7.6.8) operators, the rewritten candidates also include a synthesized candidate, with the
+order of the two parameters reversed, for each member, non-member, and built-in candidate for the
+`operator <=>` for which the rewritten expression `0 @ (y <=> x)` is well-formed using that `operator<=>`. <ins>For the three-way comparison operator, if neither the original nor the rewritten candidate are well-formed, then:
+> - If the expressions `x == y` and `x < y` are each well-formed and convertible to `bool`, the original returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+
+
+
+## Library Wording
+    
 [class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
 [syserr.compare]: http://eel.is/c++draft/syserr.compare "[syserr.compare]"
