@@ -610,11 +610,11 @@ And I'm not sure this makes any sense.
 
 Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
-> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, a `==` operator function is declared implicitly. The implicitly-declared `==` operator for a class `X` will have the form</ins>  
+> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, a `==` operator function is declared implicitly. The implicitly-declared `==` operator for a class `X` is an inline public member, will have the form</ins>  
 
 > &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
 
-> <ins>and is defined as defaulted.
+> <ins>and is defined as defaulted in the definition of `X`.
 
 Replace 10.10.1 [class.compare.default] paragraph 2:
 

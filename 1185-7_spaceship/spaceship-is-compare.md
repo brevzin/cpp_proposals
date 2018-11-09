@@ -314,17 +314,22 @@ This leaves the question of whether or not `<=>` was explicitly provided or infe
 
 ## Core Language Wording
 
-Add new wording to 11.3.1.2 [over.match.oper], paragraph 3.4:
+Add a new paragraph to 11.3.1.2 [over.match.oper] after paragraph 8:
 
-> For the relational (7.6.9), equality (7.6.10), and three-way
-comparison (7.6.8) operators, the rewritten candidates also include a synthesized candidate, with the
-order of the two parameters reversed, for each member, non-member, and built-in candidate for the
-`operator <=>` for which the rewritten expression `0 @ (y <=> x)` is well-formed using that `operator<=>`. <ins>For the three-way comparison operator, if neither the original nor the rewritten candidate are well-formed, then:
-> - If the expressions `x == y` and `x < y` are each well-formed and convertible to `bool`, the original returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+> If a rewritten candidate is selected by overload resolution for an operator `@`, `x @ y` is interpreted as the
+rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
+of parameters, or `(x <=> y) @` 0 otherwise, using the selected rewritten `operator<=>` candidate.
 
-
+<blockquote><ins>If no viable candidate is found for overload resolution for a three-way comparison operator, then
+<ul>
+<li>If the expressions <code>x == y</code> and <code>x < y</code> are each well-formed when contextually converted to <code>bool</code>, then <code>x &lt;=&gt; y</code> is interpreted as the rewritten expression <code>((x == y) ? strong_ordering::equal : ((x < y) ? strong_ordering::less : strong_ordering::greater))</code>;
+<li>Otherwise, if the expression <code>x == y</code> is well-formed when contextually converted to <code>bool</code>, then <code>x &lt;=&gt; y</code> is interpreted as the rewritten expression <code>(x == y) ? strong_equality::equal : strong_equality::nonequal</code>;
+<li>Otherwise, the expression is ill-formed.
+<ul></ins></blockquote>
 
 ## Library Wording
+
+TBD.
     
 [class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
