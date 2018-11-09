@@ -903,6 +903,96 @@ of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @</code> 0 otherwis
 <ul></ins></blockquote>
 
 <h3 id="library-wording">4.2. Library Wording<a class="self-link" href="#library-wording"></a></h3>
-<p>TBD.</p>
+<p>Add a new comparison function object to the synopsis in 19.14.1 [functional.syn]:</p>
+<blockquote><pre><code>namespace std {
+  [...]
+  // [comparisons], comparisons
+  template&lt;class T = void&gt; struct equal_to;
+  template&lt;class T = void&gt; struct not_equal_to;
+  template&lt;class T = void&gt; struct greater;
+  template&lt;class T = void&gt; struct less;
+  template&lt;class T = void&gt; struct greater_equal;
+  template&lt;class T = void&gt; struct less_equal;
+  <ins>template&lt;class T = void&gt; struct compare_3way;</ins>
+  template&lt;&gt; struct equal_to&lt;void&gt;;
+  template&lt;&gt; struct not_equal_to&lt;void&gt;;
+  template&lt;&gt; struct greater&lt;void&gt;;
+  template&lt;&gt; struct less&lt;void&gt;;
+  template&lt;&gt; struct greater_equal&lt;void&gt;;
+  template&lt;&gt; struct less_equal&lt;void&gt;;
+  <ins>template&lt;&gt; struct compare_3way&lt;void&gt;;</ins>
+  [...]
+}</code></pre></blockquote>
+
+<p>Add a new comparison function object to 19.14.7 [comparisons]:</p>
+<blockquote>
+<p>The library provides basic function object classes for all of the comparison operators in the language ([expr.rel], [expr.eq]<ins>, [expr.spaceship]</ins>).</p>
+<p>For templates <code>less</code>, <code>greater</code>, <code>less_equal</code>, <del>and</del> <code>greater_equal,</code>, <ins>and <code>compare_3way</code>,</ins> the specializations for any pointer type yield a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by the built-in operators <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code><ins>, <code>&lt;=&gt;</code></ins>. [ Note: When a &lt; b is well-defined for pointers a and b of type P, this implies <code>(a &lt; b) == less&lt;P&gt;()(a, b)</code>, <code>(a &gt; b) == greater&lt;P&gt;()(a, b)</code>, and so forth. — end note ] For template specializations <code>less&lt;void&gt;</code>, <code>greater&lt;void&gt;</code>, <code>less_equal&lt;void&gt;</code>, <del>and</del> <code>greater_equal&lt;void&gt;</code>, <ins>and <code>compare_3way&lt;void&gt;</code>,</ins> if the call operator calls a built-in operator comparing pointers, the call operator yields a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by those built-in operators.</p>
+</blockquote>
+<p>And a new clause after 19.14.7.6, named "Class template <code class="language-cpp">compare_3way</code>":</p>
+<blockquote><ins><pre><code>template&lt;class T = void&gt; struct compare_3way {
+  constexpr bool operator()(const T& x, const T& y) const;
+};</code></pre>
+
+<p><code>constexpr bool operator()(const T& x, const T& y) const;</code>
+
+<p><i>Returns</i>: <code>x &lt;=&gt; y</code>.
+
+<p><pre><code>template&lt;&gt; struct compare_3way&lt;void&gt; {
+  template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));
+
+  using is_transparent = unspecified;
+};</code></pre>
+
+<pre><code>template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));</code></pre>
+
+<p><i>Returns</i>: <code>std​::​forward&lt;T&gt;(t) &lt;=&gt; std​::​forward&lt;U&gt;(u)</code>.
+</ins></blockquote>
+
+<p>Remove <code class="language-cpp">std::compare_3way()</code> from synopsis in 23.4 [algorithm.syn]:</p>
+<blockquote><pre><code>namespace std {
+  [...]
+  // [alg.3way], three-way comparison algorithms
+  <del>template&lt;class T, class U&gt;</del>
+  <del>  constexpr auto compare_3way(const T& a, const U& b);</del>
+  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
+  template&lt;class InputIterator1, class InputIterator2&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);
+  [...]
+}</code></pre></blockquote>
+
+<p>Remove the specification of <code class="language-cpp">std::compare_3way()</code> of 23.7.11 <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">alg.3way</a>:</p>
+<blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
+
+<p><i>Effects</i>: Compares two values and produces a result of the strongest applicable comparison category type:
+<ul>
+<li> Returns a <=> b if that expression is well-formed.
+<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_­equality​::​equal when a == b is true, and otherwise returns strong_­equality​::​nonequal.
+<li>Otherwise, the function is defined as deleted.
+</ul></del></blockquote>
+
+<p>Change the specification of <code class="language-cpp">std::lexicographical_compare_3way</code> in 23.7.11 <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]">alg.3way</a> paragraph 4:</p>
+<blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
+  constexpr auto
+    lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                 InputIterator2 b2, InputIterator2 e2);</code></pre>
+
+<i>Effects</i>: Equivalent to:
+<pre><code>return lexicographical_compare_3way(b1, e1, b2, e2, <ins>compare_3way());</ins>
+                                    <del>[](const auto& t, const auto& u) {</del>
+                                    <del>  return compare_3way(t, u);</del>
+                                    <del>});</del></code></pre>
+</blockquote>
+
 <h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0768r1.pdf">[P0768R1]</a><span style="margin-left: 5px;">"Library Support for the Spaceship (Comparison) Operator" by Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0898r3.pdf">[P0898R3]</a><span style="margin-left: 5px;">"Standard Library Concepts" by Casey Carter, Eric Niebler, 2018-06-08</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="http://eel.is/c++draft/class.spaceship">[class.spaceship]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://foonathan.net/blog/2018/09/07/three-way-comparison.html">[muller.compare]</a><span style="margin-left: 5px;">"foonathan::blog() - Mathematics behind Mathematics behind Comparison #4: Three-Way Comparison" by Jonathan Müller, 2018-09-07</span></li><li><a href="http://eel.is/c++draft/syserr.compare">[syserr.compare]</a><span style="margin-left: 5px;">Current Working Draft</span></li></ul>
 </html>

@@ -329,7 +329,103 @@ of parameters, or `(x <=> y) @` 0 otherwise, using the selected rewritten `opera
 
 ## Library Wording
 
-TBD.
+Add a new comparison function object to the synopsis in 19.14.1 [functional.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // [comparisons], comparisons
+  template&lt;class T = void&gt; struct equal_to;
+  template&lt;class T = void&gt; struct not_equal_to;
+  template&lt;class T = void&gt; struct greater;
+  template&lt;class T = void&gt; struct less;
+  template&lt;class T = void&gt; struct greater_equal;
+  template&lt;class T = void&gt; struct less_equal;
+  <ins>template&lt;class T = void&gt; struct compare_3way;</ins>
+  template&lt;&gt; struct equal_to&lt;void&gt;;
+  template&lt;&gt; struct not_equal_to&lt;void&gt;;
+  template&lt;&gt; struct greater&lt;void&gt;;
+  template&lt;&gt; struct less&lt;void&gt;;
+  template&lt;&gt; struct greater_equal&lt;void&gt;;
+  template&lt;&gt; struct less_equal&lt;void&gt;;
+  <ins>template&lt;&gt; struct compare_3way&lt;void&gt;;</ins>
+  [...]
+}</code></pre></blockquote>  
+
+Add a new comparison function object to 19.14.7 [comparisons]:
+
+> The library provides basic function object classes for all of the comparison operators in the language ([expr.rel], [expr.eq]<ins>, [expr.spaceship]</ins>).
+
+> For templates <code>less</code>, <code>greater</code>, <code>less_equal</code>, <del>and</del> <code>greater_equal,</code>, <ins>and <code>compare_3way</code>,</ins> the specializations for any pointer type yield a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by the built-in operators <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code><ins>, <code>&lt;=&gt;</code></ins>. [ Note: When a < b is well-defined for pointers a and b of type P, this implies <code>(a &lt; b) == less&lt;P&gt;()(a, b)</code>, <code>(a &gt; b) == greater&lt;P&gt;()(a, b)</code>, and so forth. — end note ] For template specializations <code>less&lt;void&gt;</code>, <code>greater&lt;void&gt;</code>, <code>less_equal&lt;void&gt;</code>, <del>and</del> <code>greater_equal&lt;void&gt;</code>, <ins>and <code>compare_3way&lt;void&gt;</code>,</ins> if the call operator calls a built-in operator comparing pointers, the call operator yields a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by those built-in operators.
+
+And a new clause after 19.14.7.6, named "Class template `compare_3way`":
+
+<blockquote><ins><pre><code>template&lt;class T = void&gt; struct compare_3way {
+  constexpr bool operator()(const T& x, const T& y) const;
+};</code></pre>
+
+<p><code>constexpr bool operator()(const T& x, const T& y) const;</code>
+
+<p><i>Returns</i>: <code>x &lt;=&gt; y</code>.
+
+<p><pre><code>template&lt;&gt; struct compare_3way&lt;void&gt; {
+  template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));
+
+  using is_transparent = unspecified;
+};</code></pre>
+
+<pre><code>template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));</code></pre>
+
+<p><i>Returns</i>: <code>std​::​forward&lt;T&gt;(t) &lt;=&gt; std​::​forward&lt;U&gt;(u)</code>.
+</ins></blockquote>
+
+Remove `std::compare_3way()` from synopsis in 23.4 [algorithm.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // [alg.3way], three-way comparison algorithms
+  <del>template&lt;class T, class U&gt;</del>
+  <del>  constexpr auto compare_3way(const T& a, const U& b);</del>
+  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
+  template&lt;class InputIterator1, class InputIterator2&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);
+  [...]
+}</code></pre></blockquote>
+
+Remove the specification of `std::compare_3way()` of 23.7.11 [alg.3way]:
+
+<blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
+
+<p><i>Effects</i>: Compares two values and produces a result of the strongest applicable comparison category type:
+<ul>
+<li> Returns a <=> b if that expression is well-formed.
+<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_­equality​::​equal when a == b is true, and otherwise returns strong_­equality​::​nonequal.
+<li>Otherwise, the function is defined as deleted.
+</ul></del></blockquote>
+    
+Change the specification of `std::lexicographical_compare_3way` in 23.7.11 [alg.3way] paragraph 4:
+
+<blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
+  constexpr auto
+    lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                 InputIterator2 b2, InputIterator2 e2);</code></pre>
+
+<i>Effects</i>: Equivalent to:
+<pre><code>return lexicographical_compare_3way(b1, e1, b2, e2, <ins>compare_3way());</ins>
+                                    <del>[](const auto& t, const auto& u) {</del>
+                                    <del>  return compare_3way(t, u);</del>
+                                    <del>});</del></code></pre>
+</blockquote>
+                                    
     
 [class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"
