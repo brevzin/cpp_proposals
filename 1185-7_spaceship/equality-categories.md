@@ -53,7 +53,7 @@ And they also do not make sense as the return type of `operator==` because there
     
 Furthermore, they also don't make sense to be convertible-to from the three-way comparison categories - because `<=>` is now _solely_ used for orderings. 
 
-Moreover, there is one category that even P0515. An equivalence must be reflexive, symmetric, and transitive. But for floating point types, while `operator==` is both symmetric and transitive, it is not reflexive. It is thus a _partial_ equality.
+Moreover, there is one category that P0515 is still missing. An equivalence must be reflexive, symmetric, and transitive. But for floating point types, while `operator==` is both symmetric and transitive, it is not reflexive. It is thus a _partial_ equality.
 
 How do you express programmatically that `float` has partial equality but `int` has total equality? Before P1185, we would do that by looking at the return type of `<=>`.  But what if I want to write a type that does _not_ have an ordering but does provide a partial equality? Would I just declare `<=>` anyway, even though using it wouldn't make sense?
 
