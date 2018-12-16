@@ -1,7 +1,11 @@
 Title: When do you actually use `<=>`?
-Document-Number: P1186R0
+Document-Number: D1186R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG, LEWG
+
+# Revision History
+
+[R0](https://wg21.link/p1186r0) of this paper was approved by both EWG and LEWG. This revision adds wording for both core and library aspects of the proposal. Under Core review, the issue of [unintentional comparison category strengthening](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening) was brought up as a reason to oppose the design. As a result, this paper proposes weaker comparison categories for synthesized `<=>`.
 
 # Motivation
 
@@ -52,7 +56,7 @@ So it seems like this should work:
         auto operator<=>(Y const&) const = default;
     };
 
-But this doesn't even compile.
+But this would lead to a deleted `<=>`, and no attempted comparisons of `Y`s would compile.
 
 ## ... Why not?
 
@@ -129,6 +133,14 @@ We already have one example where we have a language feature that doesn't quite 
 I continue to view this as an unfortunate split, but we get away with this as a language because pointers to members are fairly rare compared to functions and functions objects, so the usual function call syntax just works the vast majority of the time. Additionally, function call syntax in used in user code all the time. 
 
 By contrast with `<=>`, the common case is types _not_ supporting `<=>` and `<=>` won't be commonly used in user code. So it is both true that the gaps that `compare_3way()` is filling are much more significant than the equivalent gaps that `invoke()` is filling as well as `<=>` being less useful in user code than normal function call syntax. 
+
+# Avoiding comparison strengthening
+
+One objection to the R0 approach was that it assumed semantics based on operators. That is, the direction assumed that if a type `T` provided both `operator<` and `operator==` that it has a strong ordering. That is quite a large assumption to make. Moreover, this assumption is not actually necessary to make to solve the problems this proposal is trying to solve.
+
+This revision proposes making weaker semantic assumptions. 
+
+If a type only provides `operator==`, rather than have `a <=> b` be ill-formed (the status quo) or well-formed but yield `strong_equality` (R0's direction), this revision proposes `weak_equality` instead. Users can always opt into `strong_equality` by declaring their own `operator<=>`.
 
 # Proposal
 
@@ -309,6 +321,115 @@ The conclusion of this is that yes, there is a problem. But the problem lies wit
 Note that this problem could easily be fixed by replacing the currently existing `==` and `!=` for these types with a `<=>` returning `weak_equality`. This is still a questionable choice, but at least you would observe the correct comparison category without otherwise breaking user code. Ideally, `==` and `!=` get replaced with a named function that itself returns `weak_equality`.
 
 This leaves the question of whether or not `<=>` was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated (or more relevantly, as whether or not `<` was generated from `<=>` or from `<`). As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have `<=>` perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary `<=>` operation if and only if it exists. 
+    
+# Wording
+
+## Core Language Wording
+
+Add a new paragraph to 11.3.1.2 [over.match.oper] after paragraph 8:
+
+> If a rewritten candidate is selected by overload resolution for an operator `@`, `x @ y` is interpreted as the
+rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
+of parameters, or `(x <=> y) @` 0 otherwise, using the selected rewritten `operator<=>` candidate.
+
+<blockquote><ins>If no viable candidate is found for overload resolution for a three-way comparison operator, then
+<ul>
+<li>If the expressions <code>x == y</code> and <code>x < y</code> are each well-formed when contextually converted to <code>bool</code>, then <code>x &lt;=&gt; y</code> is interpreted as the rewritten expression <code>((x == y) ? strong_ordering::equal : ((x < y) ? strong_ordering::less : strong_ordering::greater))</code>;
+<li>Otherwise, if the expression <code>x == y</code> is well-formed when contextually converted to <code>bool</code>, then <code>x &lt;=&gt; y</code> is interpreted as the rewritten expression <code>(x == y) ? strong_equality::equal : strong_equality::nonequal</code>;
+<li>Otherwise, the expression is ill-formed.
+<ul></ins></blockquote>
+
+## Library Wording
+
+Add a new comparison function object to the synopsis in 16.11.1 [compare.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
+  
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T = void&gt; struct compare_3way;</ins>
+  <ins>template&lt;&gt; struct compare_3way&lt;void&gt;;</ins>
+  [...]
+}</code></pre></blockquote>  
+
+Add a specification for `compare_3way` to a new clause after 16.11.3 [cmp.common] named [cmp.3way]:
+
+> <ins>The specializations of <code>compare_3way</code> for any pointer type yield a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by the built-in operator <code>&lt;=&gt;</code>. For template specialization <code>compare_3way&lt;void&gt;</code>, if the call operator calls a built-in operator comparing pointers, the call operator yields a strict total order that is consistent among those specializations and is also consistent with the partial order imposed by that built-in operator.</ins>
+
+<blockquote><ins><pre><code>template&lt;class T = void&gt; struct compare_3way {
+  constexpr auto operator()(const T& x, const T& y) const;
+};</code></pre>
+
+<p><code>constexpr auto operator()(const T& x, const T& y) const;</code>
+
+<p><i>Returns</i>: <code>x &lt;=&gt; y</code>.
+
+<p><pre><code>template&lt;&gt; struct compare_3way&lt;void&gt; {
+  template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));
+
+  using is_transparent = unspecified;
+};</code></pre>
+
+<pre><code>template&lt;class T, class U&gt; constexpr auto operator()(T&& t, U&& u) const
+    -&gt; decltype(std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u));</code></pre>
+
+<p><i>Returns</i>: <code>std​::​forward&lt;T&gt;(t) &lt;=&gt; std​::​forward&lt;U&gt;(u)</code>.
+</ins></blockquote>
+
+Remove `std::compare_3way()` from synopsis in 23.4 [algorithm.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // [alg.3way], three-way comparison algorithms
+  <del>template&lt;class T, class U&gt;</del>
+  <del>  constexpr auto compare_3way(const T& a, const U& b);</del>
+  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
+  template&lt;class InputIterator1, class InputIterator2&gt;
+    constexpr auto
+      lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);
+  [...]
+}</code></pre></blockquote>
+
+Remove the specification of `std::compare_3way()` of 23.7.11 \[alg.3way\]:
+
+<blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
+
+<p><i>Effects</i>: Compares two values and produces a result of the strongest applicable comparison category type:
+<ul>
+<li> Returns a <=> b if that expression is well-formed.
+<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_­equality​::​equal when a == b is true, and otherwise returns strong_­equality​::​nonequal.
+<li>Otherwise, the function is defined as deleted.
+</ul></del></blockquote>
+    
+Change the specification of `std::lexicographical_compare_3way` in 23.7.11 \[alg.3way\] paragraph 4:
+
+<blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
+  constexpr auto
+    lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
+                                 InputIterator2 b2, InputIterator2 e2);</code></pre>
+
+<i>Effects</i>: Equivalent to:
+<pre><code>return lexicographical_compare_3way(b1, e1, b2, e2, <ins>compare_3way());</ins>
+                                    <del>[](const auto& t, const auto& u) {</del>
+                                    <del>  return compare_3way(t, u);</del>
+                                    <del>});</del></code></pre>
+</blockquote>
+                                    
     
 [class.spaceship]: http://eel.is/c++draft/class.spaceship "[class.spaceship]"
 [alg.3way]: http://eel.is/c++draft/alg.3way "[alg.3way]"

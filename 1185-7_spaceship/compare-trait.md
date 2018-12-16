@@ -1,7 +1,11 @@
 Title: A type trait for `std::compare_3way()`'s type
-Document-Number: P1187R0
+Document-Number: D1187R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
-Audience: LEWG
+Audience: LWG
+
+# Revision History
+
+R0 was approved by LEWG in San Diego. Given the approval of [P1186R0](https://wg21.link/p1186r0), the wording provided in this paper takes the approach that `compare_3way_type_t` is the result type of `<=>` rather than the result type of `compare_3way()`.
 
 # Motivation
 
@@ -119,47 +123,30 @@ Proposed
 
 ## Wording
 
-Add the new trait and its use into the `<algorithm>` synopsis in 23.4 [algorithm.sym]:
+In light of the adoption of [P1186](https://wg21.link/p1186r0) by EWG in San Diego in 2018, we simply need a trait based on the type of `<=>`.
 
-<blockquote><pre class="codehilite"><code class="language-cpp">#include &lt;initializer_list>
+Add the new trait and its use into the `<compare>` synopsis in 16.11.1 [compare.syn]:
 
-namespace std {
-  // ...
+<blockquote><pre><code>namespace std {
+  [...]
   
-  // [alg.3way], three-way comparison algorithms
-  </code><code><ins>template&lt;class T, class U = T> struct compare_3way_type;
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
   
-  template&lt;class T, class U = T>
-    using compare_3way_type_t = typename compare_3way_type&lt;T, U>::type;</ins></code><code class="language-cpp">
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_3way_type;</ins>
   
-  template&lt;class T, class U>
-    constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);
-    
-  // ...
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</ins>
+  [...]
 }</code></pre></blockquote>
 
-Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
-
->  The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
-
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, the member typedef `type` shall be either defined or not present as follows. Let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`.
->
- - If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall equal `decltype(t <=> u)`.
- - Otherwise, if the expressions `t == u` and `t < u` are each well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_ordering`.
- - Otherwise, if the expression `t == u` is well-formed and convertible to `bool`, the member *typedef-name* `type` shall equal `strong_equality`.
- - Otherwise, there shall be no member `type`.
- 
- > A program shall not specialize `compare_3way_type`. 
- 
-Change the return type of `compare_3way` in 23.7.11 \[alg.3way\]. Its specification is largely repeated from the above, but the repetition is necessary:
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T, class U> constexpr </code><code><del>auto</del> <ins>compare_3way_type_t&lt;T, U></ins></code><code class="language-cpp"> compare_3way(const T& a, const U& b);</code></pre></blockquote>
-
-## Interaction with [P1186](https://wg21.link/p1186r0)
-
-P1186 proposed to obviate `std::compare_3way()` in favor of having `<=>` itself perform all of this logic. That paper getting adopted does not change the need for having a type trait like this, though it would make the specification much simpler as the library wording could simply defer to the core wording. 
-
-Add a new specification for `compare_3way_type` at the beginning of 23.7.11 \[alg.3way\]:
+Add a new specification for `compare_3way_type` in a new clause after 16.11.3 \[cmp.common\] named \[cmp.3way\]:
 
 > The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
 
