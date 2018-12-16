@@ -68,81 +68,111 @@ How do you express programmatically that `float` has partial equality but `int` 
 
 Or do I just stick with the comment and hope the type is used correctly? It'd be nice to have something more direct.
 
-# Proposal
+## Would this actually be useful
 
-This proposal has two parts: sanitizing the equality comparison categories and allowing users to express equality comparison categories.
+We do not currently have a programmatic way of differentiating partial and total equality. Would we actually want one and where we would we use such a thing? The motivation would have to come from wanting a particular algorithm to fail to compile rather than be undefined behavior at runtime. 
 
-## Sanitizing Equality Comparison Categories
-
-There is a missing equality comparison category: `std::partial_equality`. This paper proposes adding it. Following in the footsteps of [P1307R0](https://wg21.link/p1307r0), this paper proposes _removing_ `std::weak_equality`. 
-
-Additionally, while still is a strong motivation for having the three three-way comparison categories be convertible (i.e. `strong_ordering` is convertible to `weak_ordering` is convertible to `partial_ordering`), there does not seem as much reason for there to be conversions from the three-way categories to the equality categories - since those two operations are now strictly separate. This paper proposes to remove those conversions from everywhere appropriate: from the types themselves, from `common_comparison_category`, and from the specification for defaulting `operator<=>`. However, `strong_equality` should be convertible to `partial_equality`, and we would need a new `common_equality_category` type trait.
-
-Further, there does not seem to be a strong motivation for having the existing `strong_equality` or the proposed `partial_equality` actually having all the functionality they currently have. All the comparisons to `0` made sense in the context of being the return type for `<=>` - but that's not how they would be used anymore. It seems that the right way to specify those types should now be:
+The first example to consider is `find()`. Let's take a simplified form of the algorithm where the value we're searching for has to match the range's value type.
 
     :::cpp
-    struct partial_equality { };
-    struct strong_equality : partial_equality { };
+    template <Range R>
+        requires TotalEquality<range_value_t<R>>
+    iterator_t<R> find1(R&, range_value_t<R> const&);
     
-As to how we would actually _use_ these types...
+    template <Range R>
+        requires EqualityComparable<range_value_t<R>>
+    iterator_t<R> find2(R&, range_value_t<R> const& value)
+        [[ expects: value == value ]];
+        
+With `find1()`, searching a value in a range of `float`s would just fail to compile. with `find2()`, it would compile - but if you tried to search for `NaN`, that would be a precondition failure. If no handler is installed, then the result would just be that `find2()` returns the `end()` of the range, regardless of its contents. To me, `find2()` seems strictly more useful - even in the case of `NaN`, while it's a logical failure, it's probably not going to cause harm?
 
-## Expressing Equality Comparison Categories
-
-We still need to a way to specify that a type's equality is either a total equality or a partial equality. This comparison still _needs_ to be `bool`. As precedent, Rust provides the traits [`PartialEq`](https://doc.rust-lang.org/std/cmp/trait.PartialEq.html) and [`Eq`](https://doc.rust-lang.org/beta/std/cmp/trait.Eq.html) - where the former requires you to define a boolean function, and the latter does not have any extra associated functions and is solely annotation. 
-
-One way to do this might be to just use a type trait mechanism, where you can opt-in by specializing a type trait:
+However, consider a different example - a simplified form of hashtable:
 
     :::cpp
-    struct C {
-        bool operator==(C const&) const;
-    };
-    template <> struct std::equality_type<C> { using type = std::partial_equality; };
+    template <TotalEquality Key, typename Value, typename Hash = std::hash<Key>>
+    struct hashtable1;
     
-where composite types could propagate their equality types as appropriate:
+    template <EqualityComparable Key, typename Value, typename Hash = std::hash<Key>>
+    struct hashtable2;  
+
+Here, we really do want to ensure that the key type of our hashtable has a total equality. The downside of an irreflexive comparison for hashtable seems much greater than the downside of the `find()` because you can just keep inserting `NaN`s forever.
+
+As point of precedence, we can look to Rust, which has had `PartialEq` and `Eq` as traits from the start. Rust's [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) requires that the key type implements `Eq` - you cannot create a `HashMap` of floating point in Rust. But `Rust`'s equivalent of [`find()`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.find) takes a predicate (there is no `find()` that takes a value that I'm aware of), so we can't look for an example there.
+
+## Would this even be adoptable?
+
+It's possible that the conclusion from the previous section is: yeah, we don't actually need equality comparison categories.
+
+But suppose we decide that such a thing would provide value. How would we even adopt it? There are, at this point, so many types in so many code bases that provide `operator==`. What would we say about those types' equality comparison? Would we assume it's a total equality (an assumption that most code and most programmers probably make)? Would we assume it's a partial equality (a safer assumption, since any types which have salient floating point members that could be `NaN` would not have a total equality)? Not making any assumption seems pretty much equivalent to assuming partial equality 
+
+If we were to write a new hashtable today, and we really want to ensure that the key type has total equality - it seems to me that the only way to do that would be enforce that the type opt-in to that behavior. The easiest and most familiar way of doing this would be a type trait. 
 
     :::cpp
-    namespace std {
-      template <EqualityComparable T>
-      struct equality_type<optional<T>>
-        : equality_type<T>
-      { };
-    }
-
-This works, and will be pretty familiar to C++ programmers. It's the same way you opt-in to hashing and structured bindings at the moment. 
+    template <typename T> struct equality_category;
     
-A more aggressive solution would be to take the need of annotation, and the need for equality to return `bool`, and let the user provide an annotated return type:
-
+    // assume partial
+    template <EqualityComparable T> struct equality_category<T> { using type = partial_equality; };
+    
+    // all the fundamentals
+    template <> struct equality_category<int> { using type = strong_equalty; };
+    template <> struct equality_category<float> { using type = partial_equality; };
+    // ...
+    
+which would be easy, if tedious, to propagate
+    
     :::cpp
-    struct C {
-        std::partial_equality bool operator==(C const&) const;
-    };
-    
-And simply provide a magic type trait to pick out the equality category of `C`. The point of the above would be to satisfy that `decltype(c1 == c2)` is still `bool`, and have the function still return `true` or `false`, but provide a first class type trait such that `std::equality_type_t<C>` is `std::partial_equality`. This would allow composite types to propagate the equality of their members too:
+    template <EqualityComparable T>
+    struct equality_category<optional<T>> : equality_category<T> { };
+    template <EqualityComparable T, EqualityComparable U>
+    struct equality_category<pair<T,U>> : common_equality_category<T,U> { };
+    // ...
+
+Would this be useful?
+
+## What about `std::strong_equal()`?
+
+This brings me to the two equality comparison algorithms in [cmp.alg]: `std::strong_equal()` and `std::weak_equal()`. Currently, `std::strong_equal(a, b)` is defined as:
+
+- Returns `a <=> b` if that expression is well-formed and convertible to `strong_equality`.
+- Otherwise, if the expression `a <=> b` is well-formed, then the function is defined as deleted.
+- Otherwise, if the expression `a == b` is well-formed and convertible to `bool`, then
+    - if `a == b` is `true`, returns `strong_equality::equal`;
+    - otherwise, returns `strong_equality::nonequal`.
+- Otherwise, the function is defined as deleted.
+
+After P1185, the first two bullets here don't make sense. We wouldn't want `strong_equal` to go through `operator<=>`. We would want it to only go through `==`. But then, how would we ensure that we do the right thing? As mentioned earlier, we could just _check_ that `operator<=>` returns something convertible to `strong_equality` but just call `a == b` anyway. Or we could use this type trait:
 
     :::cpp
     template <typename T>
-    equality_type_t<T> bool operator==(optional<T> const& lhs, optional<T> const& rhs) {
-        if (lhs && rhs) {
-            return *lhs == *rhs;
-        } else {
-            return lhs.has_value() == rhs.has_value();
-        }
+      concept HasWeakEquivalence =
+        EqualityComparable<T> &&
+        ConvertibleTo<equality_category_t<T>, weak_equivalence>;
+    
+    template <typename T>
+      concept HasTotalEquality =
+        HasWeakEquivalence<T> &&
+        Same<equality_category_t<T>, strong_equality>;
+     
+    template <EqualityComparable T>
+    constexpr partial_equality partial_equal(const T& a, const T& b) {
+      return a == b ? partial_equality::equal
+                    : partial_equality::nonequal;
+    }
+     
+    template <HasWeakEquivalence T>
+    constexpr weak_equivalence weak_equivalent(const T& a, const T& b) {
+      return a == b ? weak_equivalence::equivalent
+                    : weak_equivalence::nonequivalent;
+    }
+        
+    template <HasTotalEquality T>
+    constexpr strong_equality strong_equal(const T& a, const T& b) {
+      return a == b ? strong_equality::equal
+                    : strong_equality::nonequal;
     }
 
-This proposal is effectively providing an observable type annotation on `operator==` (and `operator!=`, though there is less point to writing both functions after P1185).
+Is this... better? It does provide a way to use the type trait to lift the result of existing `operator==` into the type system, if we want to actually make use of these comparison categories.
 
-## What about existing types?
-
-One of the problems with migrating to a scheme with first-class comparison semantics expressed in the type system 20 years after the language was initially standardized is that there are many, many, many types in many, many, many codebases that currently define `operator==` without any kind of annotation. 
-
-Regardless of whether we pick a library or language solution, what should `std::equality_type_t<T>` say for a type that does not have a type annotation? This is fundamentally the same problem that [P1186R0](https://wg21.link/p1186r0) ran into. It could be:
-
-- `std::strong_equality`. Just assume that `==` is a total equality. Most code, and most programmers, basically already make this assumption. 
-- `std::partial_equality`. The safer assumption, requiring users to opt-in to total equality (rather than opt-out of it). 
-- `void`. Simply do not make any assumption at all on the language level, leave it up to the individual libraries to make a decision. 
-
-I do not know what the right answer is here.
-
-Either way, the answer is clear for the fundamental types. The floating point types have partial equality and all the other types have total equality. 
-
+But it may prove difficult to actually provide user-defined types with the correct equality category, since we're trying to add this decades after `operator==` was introduced. 
+    
 [stepanov.fogp]: http://stepanovpapers.com/DeSt98.pdf "Fundamentals of Generic Programming||James C. Dehnert and Alexander Stepanov||1998"

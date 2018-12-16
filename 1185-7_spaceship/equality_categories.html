@@ -610,11 +610,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <div class="toc">
 <ol>
 <li><a href="#history">History</a></li>
-<li><a href="#motivation">Motivation</a></li>
-<li><a href="#proposal">Proposal</a><ol>
-<li><a href="#sanitizing-equality-comparison-categories">Sanitizing Equality Comparison Categories</a></li>
-<li><a href="#expressing-equality-comparison-categories">Expressing Equality Comparison Categories</a></li>
-<li><a href="#what-about-existing-types">What about existing types?</a></li>
+<li><a href="#motivation">Motivation</a><ol>
+<li><a href="#would-this-actually-be-useful">Would this actually be useful</a></li>
+<li><a href="#would-this-even-be-adoptable">Would this even be adoptable?</a></li>
+<li><a href="#what-about-stdstrong_equal">What about std::strong_equal()?</a></li>
 </ol>
 </li>
 <li><a href="#references">References</a></li>
@@ -659,8 +658,8 @@ void foo(B x, B y) {
 
 
 <p>Furthermore, they also don't make sense to be convertible-to from the three-way comparison categories - because <code class="language-cpp">&lt;=&gt;</code> is now <em>solely</em> used for orderings. </p>
-<p>But this is pretty unfortunate because there is some value that it would be important to convey. Moreover, there is one category that even P0515 was missing. An equivalence must be reflexive, symmetric, and transitive. But for floating point types, while <code class="language-cpp">operator==</code> is both symmetric and transitive, it is not reflexive. It is a <em>partial</em> equality. That comparison category is just missing.</p>
-<p>How do you express programmatically that <code class="language-cpp">float</code> has partial equality but <code class="language-cpp">int</code> has total equality? Before P1185, we would do that by looking at the return type of <code class="language-cpp">&lt;=&gt;</code>. But what if I want to write a type that does <em>not</em> have an ordering but does provide a partial equality? Would I just declare <code class="language-cpp">&lt;=&gt;</code> anyway, even though using it wouldn't make sense?</p>
+<p>Moreover, there is one category that even P0515. An equivalence must be reflexive, symmetric, and transitive. But for floating point types, while <code class="language-cpp">operator==</code> is both symmetric and transitive, it is not reflexive. It is thus a <em>partial</em> equality.</p>
+<p>How do you express programmatically that <code class="language-cpp">float</code> has partial equality but <code class="language-cpp">int</code> has total equality? Before P1185, we would do that by looking at the return type of <code class="language-cpp">&lt;=&gt;</code>.  But what if I want to write a type that does <em>not</em> have an ordering but does provide a partial equality? Would I just declare <code class="language-cpp">&lt;=&gt;</code> anyway, even though using it wouldn't make sense?</p>
 <pre class="codehilite"><code class="language-cpp">struct C {
     // intended to be a partial equality
     bool operator==(C const&amp;) const;
@@ -671,63 +670,97 @@ void foo(B x, B y) {
 
 
 <p>Or do I just stick with the comment and hope the type is used correctly? It'd be nice to have something more direct.</p>
-<h2 id="proposal">3. Proposal<a class="self-link" href="#proposal"></a></h2>
-<p>This proposal has two parts: sanitizing the equality comparison categories and allowing users to express equality comparison categories.</p>
-<h3 id="sanitizing-equality-comparison-categories">3.1. Sanitizing Equality Comparison Categories<a class="self-link" href="#sanitizing-equality-comparison-categories"></a></h3>
-<p>There is a missing equality comparison category: <code class="language-cpp">std::partial_equality</code>. This paper proposes adding it. Following in the footsteps of <a href="https://wg21.link/p1307r0" title="weak_equality considered harmful">P1307R0</a>, this paper proposes <em>removing</em> <code class="language-cpp">std::weak_equality</code>. </p>
-<p>Additionally, while still is a strong motivation for having the three three-way comparison categories be convertible (i.e. <code class="language-cpp">strong_ordering</code> is convertible to <code class="language-cpp">weak_ordering</code> is convertible to <code class="language-cpp">partial_ordering</code>), there does not seem as much reason for there to be conversions from the three-way categories to the equality categories - since those two operations are now strictly separate. This paper proposes to remove those conversions from everywhere appropriate: from the types themselves, from <code class="language-cpp">common_comparison_category</code>, and from the specification for defaulting <code class="language-cpp">operator&lt;=&gt;</code>. However, <code class="language-cpp">strong_equality</code> should be convertible to <code class="language-cpp">partial_equality</code>, and we would need a new <code class="language-cpp">common_equality_category</code> type trait.</p>
-<p>Further, there does not seem to be a strong motivation for having the existing <code class="language-cpp">strong_equality</code> or the proposed <code class="language-cpp">partial_equality</code> actually having all the functionality they currently have. All the comparisons to <code class="language-cpp">0</code> made sense in the context of being the return type for <code class="language-cpp">&lt;=&gt;</code> - but that's not how they would be used anymore. It seems that the right way to specify those types should now be:</p>
-<pre class="codehilite"><code class="language-cpp">struct partial_equality { };
-struct strong_equality : partial_equality { };</code></pre>
+<h3 id="would-this-actually-be-useful">2.1. Would this actually be useful<a class="self-link" href="#would-this-actually-be-useful"></a></h3>
+<p>We do not currently have a programmatic way of differentiating partial and total equality. Would we actually want one and where we would we use such a thing? The motivation would have to come from wanting a particular algorithm to fail to compile rather than be undefined behavior at runtime. </p>
+<p>The first example to consider is <code class="language-cpp">find()</code>. Let's take a simplified form of the algorithm where the value we're searching for has to match the range's value type.</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;Range R&gt;
+    requires TotalEquality&lt;range_value_t&lt;R&gt;&gt;
+iterator_t&lt;R&gt; find1(R&amp;, range_value_t&lt;R&gt; const&amp;);
+
+template &lt;Range R&gt;
+    requires EqualityComparable&lt;range_value_t&lt;R&gt;&gt;
+iterator_t&lt;R&gt; find2(R&amp;, range_value_t&lt;R&gt; const&amp; value)
+    [[ expects: value == value ]];</code></pre>
 
 
-<p>As to how we would actually <em>use</em> these types...</p>
-<h3 id="expressing-equality-comparison-categories">3.2. Expressing Equality Comparison Categories<a class="self-link" href="#expressing-equality-comparison-categories"></a></h3>
-<p>We still need to a way to specify that a type's equality is either a total equality or a partial equality. This comparison still <em>needs</em> to be <code class="language-cpp">bool</code>. As precedent, Rust provides the traits <a href="https://doc.rust-lang.org/std/cmp/trait.PartialEq.html"><code class="language-cpp">PartialEq</code></a> and <a href="https://doc.rust-lang.org/beta/std/cmp/trait.Eq.html"><code class="language-cpp">Eq</code></a> - where the former requires you to define a boolean function, and the latter does not have any extra associated functions and is solely annotation. </p>
-<p>One way to do this might be to just use a type trait mechanism, where you can opt-in by specializing a type trait:</p>
-<pre class="codehilite"><code class="language-cpp">struct C {
-    bool operator==(C const&amp;) const;
-};
-template &lt;&gt; struct std::equality_type&lt;C&gt; { using type = std::partial_equality; };</code></pre>
+<p>With <code class="language-cpp">find1()</code>, searching a value in a range of <code class="language-cpp">float</code>s would just fail to compile. with <code class="language-cpp">find2()</code>, it would compile - but if you tried to search for <code class="language-cpp">NaN</code>, that would be a precondition failure. If no handler is installed, then the result would just be that <code class="language-cpp">find2()</code> returns the <code class="language-cpp">end()</code> of the range, regardless of its contents. To me, <code class="language-cpp">find2()</code> seems strictly more useful - even in the case of <code class="language-cpp">NaN</code>, while it's a logical failure, it's probably not going to cause harm?</p>
+<p>However, consider a different example - a simplified form of hashtable:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;TotalEquality Key, typename Value, typename Hash = std::hash&lt;Key&gt;&gt;
+struct hashtable1;
+
+template &lt;EqualityComparable Key, typename Value, typename Hash = std::hash&lt;Key&gt;&gt;
+struct hashtable2;</code></pre>
 
 
-<p>where composite types could propagate their equality types as appropriate:</p>
-<pre class="codehilite"><code class="language-cpp">namespace std {
-  template &lt;EqualityComparable T&gt;
-  struct equality_type&lt;optional&lt;T&gt;&gt;
-    : equality_type&lt;T&gt;
-  { };
-}</code></pre>
+<p>Here, we really do want to ensure that the key type of our hashtable has a total equality. The downside of an irreflexive comparison for hashtable seems much greater than the downside of the <code class="language-cpp">find()</code> because you can just keep inserting <code class="language-cpp">NaN</code>s forever.</p>
+<p>As point of precedence, we can look to Rust, which has had <code class="language-cpp">PartialEq</code> and <code class="language-cpp">Eq</code> as traits from the start. Rust's <a href="https://doc.rust-lang.org/std/collections/struct.HashMap.html"><code class="language-cpp">HashMap</code></a> requires that the key type implements <code class="language-cpp">Eq</code> - you cannot create a <code class="language-cpp">HashMap</code> of floating point in Rust. But <code class="language-cpp">Rust</code>'s equivalent of <a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.find"><code class="language-cpp">find()</code></a> takes a predicate (there is no <code class="language-cpp">find()</code> that takes a value that I'm aware of), so we can't look for an example there.</p>
+<h3 id="would-this-even-be-adoptable">2.2. Would this even be adoptable?<a class="self-link" href="#would-this-even-be-adoptable"></a></h3>
+<p>It's possible that the conclusion from the previous section is: yeah, we don't actually need equality comparison categories.</p>
+<p>But suppose we decide that such a thing would provide value. How would we even adopt it? There are, at this point, so many types in so many code bases that provide <code class="language-cpp">operator==</code>. What would we say about those types' equality comparison? Would we assume it's a total equality (an assumption that most code and most programmers probably make)? Would we assume it's a partial equality (a safer assumption, since any types which have salient floating point members that could be <code class="language-cpp">NaN</code> would not have a total equality)? Not making any assumption seems pretty much equivalent to assuming partial equality </p>
+<p>If we were to write a new hashtable today, and we really want to ensure that the key type has total equality - it seems to me that the only way to do that would be enforce that the type opt-in to that behavior. The easiest and most familiar way of doing this would be a type trait. </p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt; struct equality_category;
+
+// assume partial
+template &lt;EqualityComparable T&gt; struct equality_category&lt;T&gt; { using type = partial_equality; };
+
+// all the fundamentals
+template &lt;&gt; struct equality_category&lt;int&gt; { using type = strong_equalty; };
+template &lt;&gt; struct equality_category&lt;float&gt; { using type = partial_equality; };
+// ...</code></pre>
 
 
-<p>It's a bit heavy-handed, but it works, and is familiar.   </p>
-<p>A more aggressive solution would be to take the need of annotation, and the need for equality to return <code class="language-cpp">bool</code>, and let the user provide an annotated return type:</p>
-<pre class="codehilite"><code class="language-cpp">struct C {
-    std::partial_equality bool operator==(C const&amp;) const;
-};</code></pre>
+<p>which would be easy, if tedious, to propagate</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;EqualityComparable T&gt;
+struct equality_category&lt;optional&lt;T&gt;&gt; : equality_category&lt;T&gt; { };
+template &lt;EqualityComparable T, EqualityComparable U&gt;
+struct equality_category&lt;pair&lt;T,U&gt;&gt; : common_equality_category&lt;T,U&gt; { };
+// ...</code></pre>
 
 
-<p>And simply provide a magic type trait to pick out the equality category of <code class="language-cpp">C</code>. The point of the above would be to satisfy that <code class="language-cpp">decltype(c1 == c2)</code> is still <code class="language-cpp">bool</code>, and have the function still return <code class="language-cpp">true</code> or <code class="language-cpp">false</code>, but provide a first class type trait such that <code class="language-cpp">std::equality_type_t&lt;C&gt;</code> is <code class="language-cpp">std::partial_equality</code>. This would allow composite types to propagate the equality of their members too:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
-equality_type_t&lt;T&gt; bool operator==(optional&lt;T&gt; const&amp; lhs, optional&lt;T&gt; const&amp; rhs) {
-    if (lhs &amp;&amp; rhs) {
-        return *lhs == *rhs;
-    } else {
-        return lhs.has_value() == rhs.has_value();
-    }
-}</code></pre>
-
-
-<p>This proposal is effectively providing an observable type annotation on <code class="language-cpp">operator==</code> (and <code class="language-cpp">operator!=</code>, though there is less point to writing both functions after P1185).</p>
-<h3 id="what-about-existing-types">3.3. What about existing types?<a class="self-link" href="#what-about-existing-types"></a></h3>
-<p>One of the problems with migrating to a scheme with first-class comparison semantics expressed in the type system 20 years after the language was initially standardized is that there are many, many, many types in many, many, many codebases that currently define <code class="language-cpp">operator==</code> without any kind of annotation. </p>
-<p>Regardless of whether we pick a library or language solution, what should <code class="language-cpp">std::equality_type_t&lt;T&gt;</code> say for a type that does not have a type annotation? This is fundamentally the same problem that <a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">P1186R0</a> ran into. It could be:</p>
+<p>Would this be useful?</p>
+<h3 id="what-about-stdstrong_equal">2.3. What about <code class="language-cpp">std::strong_equal()</code>?<a class="self-link" href="#what-about-stdstrong_equal"></a></h3>
+<p>This brings me to the two equality comparison algorithms in [cmp.alg]: <code class="language-cpp">std::strong_equal()</code> and <code class="language-cpp">std::weak_equal()</code>. Currently, <code class="language-cpp">std::strong_equal(a, b)</code> is defined as:</p>
 <ul>
-<li><code class="language-cpp">std::strong_equality</code>. Just assume that <code class="language-cpp">==</code> is a total equality. Most code, and most programmers, basically already make this assumption. </li>
-<li><code class="language-cpp">std::partial_equality</code>. The safer assumption, requiring users to opt-in to total equality (rather than opt-out of it). </li>
-<li><code class="language-cpp">void</code>. Simply do not make any assumption at all on the language level, leave it up to the individual libraries to make a decision. </li>
+<li>Returns <code class="language-cpp">a &lt;=&gt; b</code> if that expression is well-formed and convertible to <code class="language-cpp">strong_equality</code>.</li>
+<li>Otherwise, if the expression <code class="language-cpp">a &lt;=&gt; b</code> is well-formed, then the function is defined as deleted.</li>
+<li>Otherwise, if the expression <code class="language-cpp">a == b</code> is well-formed and convertible to <code class="language-cpp">bool</code>, then<ul>
+<li>if <code class="language-cpp">a == b</code> is <code class="language-cpp">true</code>, returns <code class="language-cpp">strong_equality::equal</code>;</li>
+<li>otherwise, returns <code class="language-cpp">strong_equality::nonequal</code>.</li>
 </ul>
-<p>I do not know what the right answer is here.</p>
-<p>Either way, the answer is clear for the fundamental types. The floating point types have partial equality and all the other types have total equality. </p>
-<h2 id="references">4. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0100r2.html">[P0100R2]</a><span style="margin-left: 5px;">"Comparison in C++" by Lawrence Crowl, 2016-11-27</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1185r0.html">[P1185R0]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1307r0.pdf">[P1307R0]</a><span style="margin-left: 5px;">"weak_equality considered harmful" by Tony Van Eerd, 2018-10-08</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li></ul>
+</li>
+<li>Otherwise, the function is defined as deleted.</li>
+</ul>
+<p>After P1185, the first two bullets here don't make sense. We wouldn't want <code class="language-cpp">strong_equal</code> to go through <code class="language-cpp">operator&lt;=&gt;</code>. We would want it to only go through <code class="language-cpp">==</code>. But then, how would we ensure that we do the right thing? As mentioned earlier, we could just <em>check</em> that <code class="language-cpp">operator&lt;=&gt;</code> returns something convertible to <code class="language-cpp">strong_equality</code> but just call <code class="language-cpp">a == b</code> anyway. Or we could use this type trait:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+  concept HasWeakEquivalence =
+    EqualityComparable&lt;T&gt; &amp;&amp;
+    ConvertibleTo&lt;equality_category_t&lt;T&gt;, weak_equivalence&gt;;
+
+template &lt;typename T&gt;
+  concept HasTotalEquality =
+    HasWeakEquivalence&lt;T&gt; &amp;&amp;
+    Same&lt;equality_category_t&lt;T&gt;, strong_equality&gt;;
+
+template &lt;EqualityComparable T&gt;
+constexpr partial_equality partial_equal(const T&amp; a, const T&amp; b) {
+  return a == b ? partial_equality::equal
+                : partial_equality::nonequal;
+}
+
+template &lt;HasWeakEquivalence T&gt;
+constexpr weak_equivalence weak_equivalent(const T&amp; a, const T&amp; b) {
+  return a == b ? weak_equivalence::equivalent
+                : weak_equivalence::nonequivalent;
+}
+
+template &lt;HasTotalEquality T&gt;
+constexpr strong_equality strong_equal(const T&amp; a, const T&amp; b) {
+  return a == b ? strong_equality::equal
+                : strong_equality::nonequal;
+}</code></pre>
+
+
+<p>Is this... better? It does provide a way to use the type trait to lift the result of existing <code class="language-cpp">operator==</code> into the type system, if we want to actually make use of these comparison categories.</p>
+<p>But it may prove difficult to actually provide user-defined types with the correct equality category, since we're trying to add this decades after <code class="language-cpp">operator==</code> was introduced. </p>
+<h2 id="references">3. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0100r2.html">[P0100R2]</a><span style="margin-left: 5px;">"Comparison in C++" by Lawrence Crowl, 2016-11-27</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1185r0.html">[P1185R0]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li></ul>
 </html>
