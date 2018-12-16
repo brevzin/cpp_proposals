@@ -1,7 +1,11 @@
 Title: When do you actually use `<=>`?
-Document-Number: P1186R0
+Document-Number: D1186R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG, LEWG
+
+# Revision History
+
+[R0](https://wg21.link/p1186r0) of this paper was approved by both EWG and LEWG. This revision adds wording for both core and library aspects of the proposal. Under Core review, the issue of [unintentional comparison category strengthening](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening) was brought up as a reason to oppose the design. As a result, this paper proposes weaker comparison categories for synthesized `<=>`.
 
 # Motivation
 
@@ -52,7 +56,7 @@ So it seems like this should work:
         auto operator<=>(Y const&) const = default;
     };
 
-But this doesn't even compile.
+But this would lead to a deleted `<=>`, and no attempted comparisons of `Y`s would compile.
 
 ## ... Why not?
 
@@ -129,6 +133,14 @@ We already have one example where we have a language feature that doesn't quite 
 I continue to view this as an unfortunate split, but we get away with this as a language because pointers to members are fairly rare compared to functions and functions objects, so the usual function call syntax just works the vast majority of the time. Additionally, function call syntax in used in user code all the time. 
 
 By contrast with `<=>`, the common case is types _not_ supporting `<=>` and `<=>` won't be commonly used in user code. So it is both true that the gaps that `compare_3way()` is filling are much more significant than the equivalent gaps that `invoke()` is filling as well as `<=>` being less useful in user code than normal function call syntax. 
+
+# Avoiding comparison strengthening
+
+One objection to the R0 approach was that it assumed semantics based on operators. That is, the direction assumed that if a type `T` provided both `operator<` and `operator==` that it has a strong ordering. That is quite a large assumption to make. Moreover, this assumption is not actually necessary to make to solve the problems this proposal is trying to solve.
+
+This revision proposes making weaker semantic assumptions. 
+
+If a type only provides `operator==`, rather than have `a <=> b` be ill-formed (the status quo) or well-formed but yield `strong_equality` (R0's direction), this revision proposes `weak_equality` instead. Users can always opt into `strong_equality` by declaring their own `operator<=>`.
 
 # Proposal
 

@@ -600,8 +600,8 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 </head>
 <body>
 <address align=right>
-Document Number: P1186R0 <br />
-Date: 2018-11-09 <br />
+Document Number: D1186R1 <br />
+Date: 2018-11-10 <br />
 Audience: EWG, LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -609,6 +609,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <h2>Contents</h2>
 <div class="toc">
 <ol>
+<li><a href="#revision-history">Revision History</a></li>
 <li><a href="#motivation">Motivation</a><ol>
 <li><a href="#doesnt-quite-work-in-generic-code">Doesn't quite work in generic code</a></li>
 <li><a href="#doesnt-quite-work-in-non-generic-code">Doesn't quite work in non-generic code</a></li>
@@ -635,9 +636,11 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </ol>
 </div>
 
-<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
+<h2 id="revision-history">1. Revision History<a class="self-link" href="#revision-history"></a></h2>
+<p><a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">R0</a> of this paper was approved by both EWG and LEWG. This revision adds wording for both core and library aspects of the proposal. Under Core review, the issue of <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening">unintentional comparison category strengthening</a> was brought up as a reason to oppose the design. As a result, this paper proposes weaker comparison categories for synthesized <code class="language-cpp">&lt;=&gt;</code>.</p>
+<h2 id="motivation">2. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p><a href="https://wg21.link/p0515r3" title="Consistent comparison">P0515</a> introduced <code class="language-cpp">operator&lt;=&gt;</code> as a way of generating all six comparison operators from a single function. But the spaceship operator has some usability issues that still need to be addressed.</p>
-<h3 id="doesnt-quite-work-in-generic-code">1.1. Doesn't quite work in generic code<a class="self-link" href="#doesnt-quite-work-in-generic-code"></a></h3>
+<h3 id="doesnt-quite-work-in-generic-code">2.1. Doesn't quite work in generic code<a class="self-link" href="#doesnt-quite-work-in-generic-code"></a></h3>
 <p>Following from first principles, it would appear that the way you would implement <code class="language-cpp">&lt;=&gt;</code> for a type like <code class="language-cpp">optional&lt;T&gt;</code> would look like (writing as a non-member function for clarity):</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
 auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;T&gt; const&amp; rhs)
@@ -653,7 +656,7 @@ auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;T&gt; const
 
 <p>This is a clean and elegant way of implementing this functionality.</p>
 <p>But it is wrong.</p>
-<h3 id="doesnt-quite-work-in-non-generic-code">1.2. Doesn't quite work in non-generic code<a class="self-link" href="#doesnt-quite-work-in-non-generic-code"></a></h3>
+<h3 id="doesnt-quite-work-in-non-generic-code">2.2. Doesn't quite work in non-generic code<a class="self-link" href="#doesnt-quite-work-in-non-generic-code"></a></h3>
 <p>One of the big selling features of <code class="language-cpp">&lt;=&gt;</code> was the ability to simply default it for types that just want to do normal member-by-member lexicographical comparison. </p>
 <p>So it seems like this should work:</p>
 <pre class="codehilite"><code class="language-cpp">// some perfectly functional C++17 type that implements a total order
@@ -675,8 +678,8 @@ struct Y {
 };</code></pre>
 
 
-<p>But this doesn't even compile.</p>
-<h3 id="why-not">1.3. ... Why not?<a class="self-link" href="#why-not"></a></h3>
+<p>But this would lead to a deleted <code class="language-cpp">&lt;=&gt;</code>, and no attempted comparisons of <code class="language-cpp">Y</code>s would compile.</p>
+<h3 id="why-not">2.3. ... Why not?<a class="self-link" href="#why-not"></a></h3>
 <p>The problem here is, not all types implement <code class="language-cpp">&lt;=&gt;</code>. Indeed, at this moment, only the fundamental types do. So writing any sort of code that relies on the existence of <code class="language-cpp">&lt;=&gt;</code> is highly limited in its functionality. </p>
 <p>The provided implementation of <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">optional</code> relies on the existence of <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">T</code>. As a result, while it works great for <code class="language-cpp">optional&lt;int&gt;</code>, it would not be a viable candidate for <code class="language-cpp">optional&lt;Ordered&gt;</code>. Likewise, in order to default the implementation of <code class="language-cpp">&lt;=&gt;</code> for <code class="language-cpp">Y</code>, we need each to perform <code>x<sub>i</sub> <span class="token operator">&lt;=&gt;</span> y<sub>i</sub></code> for each member (see <a href="http://eel.is/c++draft/class.spaceship" title="[class.spaceship]">[class.spaceship]</a>), but as above, <code class="language-cpp">Ordered</code> does not implement <code class="language-cpp">&lt;=&gt;</code>, so this is ill-formed.</p>
 <p>What we have to do instead is to use a library function which was also introduced in P0515 but adopted by way of <a href="https://wg21.link/p0768r1" title="Library Support for the Spaceship (Comparison) Operator">P0768R1</a>: <a href="http://eel.is/c++draft/alg.3way" title="[alg.3way]"><code class="language-cpp">std::compare_3way()</code></a>. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:</p>
@@ -721,7 +724,7 @@ struct Y {
 <p>Now, there are places in the above code where I <em>could</em> have used <code class="language-cpp">&lt;=&gt;</code>. I know for a fact that it works for <code class="language-cpp">bool</code>, <code class="language-cpp">int</code>, and <code class="language-cpp">char</code> - so the highlighted lines could have used <code class="language-cpp">&lt;=&gt;</code> instead of <code class="language-cpp">compare_3way</code>. But that seems to add so much more cognitive load on the programmer - you have to keep track of what happens to use <code class="language-cpp">&lt;=&gt;</code> and what doesn't. Just writing <code class="language-cpp">compare_3way</code> will call <code class="language-cpp">&lt;=&gt;</code> for you anyway, so why not just always use it?</p>
 <p>This is a nuisance for the <code class="language-cpp">optional</code> implementation, but is arguably worse than that for types like <code class="language-cpp">Y</code> above - which merely want to opt-in to default semantics. Not only do I have to manually list the implementation, but note that I also have to manually specify the return type! I cannot rely on <code class="language-cpp">auto</code> to just determine the correct comparison category for me!</p>
 <p>Which of course begs the question...</p>
-<h3 id="when-do-you-actually-write">1.4. When do you actually write <code class="language-cpp">&lt;=&gt;</code>?<a class="self-link" href="#when-do-you-actually-write"></a></h3>
+<h3 id="when-do-you-actually-write">2.4. When do you actually write <code class="language-cpp">&lt;=&gt;</code>?<a class="self-link" href="#when-do-you-actually-write"></a></h3>
 <p>P0515 states:</p>
 <blockquote>
 <p><code class="language-cpp">&lt;=&gt;</code> is for type implementers: User code (including generic code) outside the implementation of an <code class="language-cpp">operator&lt;=&gt;</code> should almost never invoke an <code class="language-cpp">&lt;=&gt;</code> directly (as already discovered as a good practice in other languages); for example, code that wants to test <code class="language-cpp">a&lt;b</code> should just write that, not <code class="language-cpp">a&lt;=&gt;b &lt; 0</code>.</p>
@@ -733,11 +736,11 @@ struct Y {
 <li>The implementation of <code class="language-cpp">std::compare_3way()</code>.</li>
 </ol>
 <p>That seems a waste of a perfectly good token that we have specially reserved for this occasion. <code class="language-cpp">&lt;=&gt;</code> just seems like a much better spelling than <code class="language-cpp">compare_3way</code>, especially given its ability to be used as an infix operator.</p>
-<h3 id="reminiscences-of-invoke">1.5. Reminiscences of <code class="language-cpp">invoke()</code><a class="self-link" href="#reminiscences-of-invoke"></a></h3>
+<h3 id="reminiscences-of-invoke">2.5. Reminiscences of <code class="language-cpp">invoke()</code><a class="self-link" href="#reminiscences-of-invoke"></a></h3>
 <p>We already have one example where we have a language feature that doesn't quite do everything we need it to do, so we have a library feature that fills in the gaps and thus needs to be used unconditionally: function calls and <code class="language-cpp">std::invoke()</code>. In generic code today, anything constrained with <code class="language-cpp">std::result_of</code> (before C++17), <code class="language-cpp">std::invoke_result</code> or <code class="language-cpp">std::is_invokable</code> (C++17 or later), or <code class="language-cpp">Invocable</code> or <code class="language-cpp">RegularInvocable</code> (C++20 after <a href="https://wg21.link/p0898r3" title="Standard Library Concepts">P0898</a> needs to use <code class="language-cpp">std::invoke()</code> to instead of normal function call syntax. Otherwise, types that meet the constraint but aren't usable with normal function call syntax (i.e. pointers to member functions and pointers to member data) will trigger hard errors. </p>
 <p>I continue to view this as an unfortunate split, but we get away with this as a language because pointers to members are fairly rare compared to functions and functions objects, so the usual function call syntax just works the vast majority of the time. Additionally, function call syntax in used in user code all the time. </p>
 <p>By contrast with <code class="language-cpp">&lt;=&gt;</code>, the common case is types <em>not</em> supporting <code class="language-cpp">&lt;=&gt;</code> and <code class="language-cpp">&lt;=&gt;</code> won't be commonly used in user code. So it is both true that the gaps that <code class="language-cpp">compare_3way()</code> is filling are much more significant than the equivalent gaps that <code class="language-cpp">invoke()</code> is filling as well as <code class="language-cpp">&lt;=&gt;</code> being less useful in user code than normal function call syntax. </p>
-<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
+<h2 id="proposal">3. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>This paper proposes to move the entirety of the logic of <code class="language-cpp">compare_3way()</code> into the specification of <code class="language-cpp">operator&lt;=&gt;()</code>. In other words, ignoring parameter inversion, <code class="language-cpp">a &lt;=&gt; b</code> shall mean:</p>
 <ol>
 <li>Lookup <code class="language-cpp">a.operator&lt;=&gt;(b)</code> and <code class="language-cpp">operator&lt;=&gt;(a, b)</code> as usual for binary operators. If a viable candidate is found, we are done.</li>
@@ -747,7 +750,7 @@ struct Y {
 </ol>
 <p>This paper additionally proposes to turn <code class="language-cpp">compare_3way</code> into a function object class that simply invokes <code class="language-cpp">&lt;=&gt;</code> on its two arguments, along the lines of <code class="language-cpp">less</code>.</p>
 <p>With this change, we would actually be able to use <code class="language-cpp">&lt;=&gt;</code> in all the places where we want to use <code class="language-cpp">&lt;=&gt;</code> today but cannot. We would also be able to default the implementation of <code class="language-cpp">&lt;=&gt;</code> instead of having to manually implement what should be the defaulted implementation.</p>
-<h3 id="examples">2.1. Examples<a class="self-link" href="#examples"></a></h3>
+<h3 id="examples">3.1. Examples<a class="self-link" href="#examples"></a></h3>
 <table style="width:100%">
 <tr>
 <th style="width:50%">
@@ -813,9 +816,9 @@ auto operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs,
 </tr>    
 </table>
 
-<h2 id="counter-arguments">3. Counter-arguments<a class="self-link" href="#counter-arguments"></a></h2>
+<h2 id="counter-arguments">4. Counter-arguments<a class="self-link" href="#counter-arguments"></a></h2>
 <p>There are two counter-arguments I'm aware of to this proposal. What follows is an accounting of those arguments and my responses to them. </p>
-<h3 id="the-initial-premise-is-false-optionalt-shouldnt-always-have">3.1. The initial premise is false: <code class="language-cpp">optional&lt;T&gt;</code> shouldn't always have <code class="language-cpp">&lt;=&gt;</code><a class="self-link" href="#the-initial-premise-is-false-optionalt-shouldnt-always-have"></a></h3>
+<h3 id="the-initial-premise-is-false-optionalt-shouldnt-always-have">4.1. The initial premise is false: <code class="language-cpp">optional&lt;T&gt;</code> shouldn't always have <code class="language-cpp">&lt;=&gt;</code><a class="self-link" href="#the-initial-premise-is-false-optionalt-shouldnt-always-have"></a></h3>
 <blockquote>
 <p><code class="language-cpp">optional&lt;T&gt;</code> only has <code class="language-cpp">&lt;</code> if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;</code>, so <code class="language-cpp">optional&lt;T&gt;</code> should only have <code class="language-cpp">&lt;=&gt;</code> if <code class="language-cpp">T</code> has <code class="language-cpp">&lt;=&gt;</code>. In other words, the initial provided implementation is the correct implementation and the suggested one using <code class="language-cpp">compare_3way()</code> is incorrect.</p>
 </blockquote>
@@ -868,7 +871,7 @@ p &lt;=&gt; p;  // calls pair::operator&lt;=&gt;</code></pre>
 <p><code class="language-cpp">WithSpaceship</code> has an efficient <code class="language-cpp">&lt;=&gt;</code>, but <code class="language-cpp">pair</code>'s <code class="language-cpp">operator&lt;</code> can't use it! Which means that <code class="language-cpp">p &lt; p</code> has to call <code class="language-cpp">&lt;</code> three times, which in turn calls <code class="language-cpp">WithSpaceship::operator&lt;=&gt;</code> three times. But <code class="language-cpp">p &lt;=&gt; p</code> only has to call <code class="language-cpp">&lt;=&gt;</code> twice.</p>
 <p>This argument could be extended out to <code class="language-cpp">vector&lt;T&gt;</code>'s <code class="language-cpp">operator&lt;</code> which now potentially does up to <code class="language-cpp">2N-1</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;</code> instead of up to <code class="language-cpp">N</code> calls to <code class="language-cpp">T</code>'s <code class="language-cpp">&lt;=&gt;</code>. That could be a serious pessimization - one that would encourage people to actually write <code class="language-cpp">&lt;=&gt;</code> in code! After all, if <code class="language-cpp">(a &lt;=&gt; b) &lt; 0</code> could potentially be faster than <code class="language-cpp">a &lt; b</code>, why would I write the latter? That would be a serious design error. </p>
 <p>In short, only conditionally providing <code class="language-cpp">&lt;=&gt;</code> for compound types not only defeats the goal of writing less code, but also defeats the goal of writing more performant code. I think the only conclusion is that compound types need to provide <code class="language-cpp">&lt;=&gt;</code> whenever their underlying types are comparable at all and be an unconditional substitute for the other relational operators.</p>
-<h3 id="unintentional-comparison-category-strengthening">3.2. Unintentional comparison category strengthening<a class="self-link" href="#unintentional-comparison-category-strengthening"></a></h3>
+<h3 id="unintentional-comparison-category-strengthening">4.2. Unintentional comparison category strengthening<a class="self-link" href="#unintentional-comparison-category-strengthening"></a></h3>
 <blockquote>
 <p>When a class author implements <code class="language-cpp">&lt;=&gt;</code> for their type, they have to decide what comparison category to use as the return type. Other code could use that choice to make important decisions. But if we had <code class="language-cpp">&lt;=&gt;</code> fall-back to <code class="language-cpp">compare_3way()</code>, we effectively are guessing what the intended comparison category was. <code class="language-cpp">decltype(x &lt;=&gt; y)</code> might be a deliberate choice of the class author - or it might be compiler inference, and we can't tell. </p>
 <p>Moreover, we might get this wrong in a very confusing way that inadvertently strengthens the comparison category. For example, the following code is well-formed:</p>
@@ -887,8 +890,8 @@ p &lt;=&gt; p;  // calls pair::operator&lt;=&gt;</code></pre>
 <p>The conclusion of this is that yes, there is a problem. But the problem lies with <code class="language-cpp">error_code</code> and <code class="language-cpp">error_condition</code> for violating expectations with the decision to improperly use <code class="language-cpp">==</code> when it doesn't mean equality and substitutability. Having <code class="language-cpp">&lt;=&gt;</code> fall back to guessing at the comparison category and yielding <code class="language-cpp">strong_ordering</code> or <code class="language-cpp">strong_equality</code> works for types that follow good design guidance in their choice of using operators. </p>
 <p>Note that this problem could easily be fixed by replacing the currently existing <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> for these types with a <code class="language-cpp">&lt;=&gt;</code> returning <code class="language-cpp">weak_equality</code>. This is still a questionable choice, but at least you would observe the correct comparison category without otherwise breaking user code. Ideally, <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> get replaced with a named function that itself returns <code class="language-cpp">weak_equality</code>.</p>
 <p>This leaves the question of whether or not <code class="language-cpp">&lt;=&gt;</code> was explicitly provided or inferred. In practice, I think this is about as relevant as whether or not the copy constructor was explicit or compiler generated (or more relevantly, as whether or not <code class="language-cpp">&lt;</code> was generated from <code class="language-cpp">&lt;=&gt;</code> or from <code class="language-cpp">&lt;</code>). As long as it has sane semantics. However, if people feel strongly about wanting this particular piece of information, if we're already adding language magic to have <code class="language-cpp">&lt;=&gt;</code> perform multiple possible operations, it is surely possible to add language magic to directly retrieve the type of the actual binary <code class="language-cpp">&lt;=&gt;</code> operation if and only if it exists. </p>
-<h2 id="wording">4. Wording<a class="self-link" href="#wording"></a></h2>
-<h3 id="core-language-wording">4.1. Core Language Wording<a class="self-link" href="#core-language-wording"></a></h3>
+<h2 id="wording">5. Wording<a class="self-link" href="#wording"></a></h2>
+<h3 id="core-language-wording">5.1. Core Language Wording<a class="self-link" href="#core-language-wording"></a></h3>
 <p>Add a new paragraph to 11.3.1.2 [over.match.oper] after paragraph 8:</p>
 <blockquote>
 <p>If a rewritten candidate is selected by overload resolution for an operator <code class="language-cpp">@</code>, <code class="language-cpp">x @ y</code> is interpreted as the
@@ -902,7 +905,7 @@ of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @</code> 0 otherwis
 <li>Otherwise, the expression is ill-formed.
 <ul></ins></blockquote>
 
-<h3 id="library-wording">4.2. Library Wording<a class="self-link" href="#library-wording"></a></h3>
+<h3 id="library-wording">5.2. Library Wording<a class="self-link" href="#library-wording"></a></h3>
 <p>Add a new comparison function object to the synopsis in 16.11.1 [compare.syn]:</p>
 <blockquote><pre><code>namespace std {
   [...]
@@ -988,5 +991,5 @@ of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @</code> 0 otherwis
                                     <del>});</del></code></pre>
 </blockquote>
 
-<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0768r1.pdf">[P0768R1]</a><span style="margin-left: 5px;">"Library Support for the Spaceship (Comparison) Operator" by Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0898r3.pdf">[P0898R3]</a><span style="margin-left: 5px;">"Standard Library Concepts" by Casey Carter, Eric Niebler, 2018-06-08</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="http://eel.is/c++draft/class.spaceship">[class.spaceship]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://foonathan.net/blog/2018/09/07/three-way-comparison.html">[muller.compare]</a><span style="margin-left: 5px;">"foonathan::blog() - Mathematics behind Mathematics behind Comparison #4: Three-Way Comparison" by Jonathan Müller, 2018-09-07</span></li><li><a href="http://eel.is/c++draft/syserr.compare">[syserr.compare]</a><span style="margin-left: 5px;">Current Working Draft</span></li></ul>
+<h2 id="references">6. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0768r1.pdf">[P0768R1]</a><span style="margin-left: 5px;">"Library Support for the Spaceship (Comparison) Operator" by Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0898r3.pdf">[P0898R3]</a><span style="margin-left: 5px;">"Standard Library Concepts" by Casey Carter, Eric Niebler, 2018-06-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://eel.is/c++draft/alg.3way">[alg.3way]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="http://eel.is/c++draft/class.spaceship">[class.spaceship]</a><span style="margin-left: 5px;">Current Working Draft</span></li><li><a href="https://foonathan.net/blog/2018/09/07/three-way-comparison.html">[muller.compare]</a><span style="margin-left: 5px;">"foonathan::blog() - Mathematics behind Mathematics behind Comparison #4: Three-Way Comparison" by Jonathan Müller, 2018-09-07</span></li><li><a href="http://eel.is/c++draft/syserr.compare">[syserr.compare]</a><span style="margin-left: 5px;">Current Working Draft</span></li></ul>
 </html>

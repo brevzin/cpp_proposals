@@ -1,7 +1,11 @@
 Title: A type trait for `std::compare_3way()`'s type
 Document-Number: D1187R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
-Audience: LEWG
+Audience: LWG
+
+# Revision History
+
+R0 was approved by LEWG in San Diego. Given the approval of [P1186R0](https://wg21.link/p1186r0), the wording provided in this paper takes the approach that `compare_3way_type_t` is the result type of `<=>` rather than the result type of `compare_3way()`.
 
 # Motivation
 
@@ -119,7 +123,7 @@ Proposed
 
 ## Wording
 
-In light of the adoption of [P1186](https://wg21.link/p1186) by EWG in San Diego in 2018, we simply need a trait based on the type of `<=>`.
+In light of the adoption of [P1186](https://wg21.link/p1186r0) by EWG in San Diego in 2018, we simply need a trait based on the type of `<=>`.
 
 Add the new trait and its use into the `<compare>` synopsis in 16.11.1 [compare.syn]:
 

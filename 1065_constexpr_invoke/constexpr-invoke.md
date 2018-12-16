@@ -1,5 +1,5 @@
 Title: constexpr <code><i>INVOKE</i></code>
-Document-Number: P1065R0
+Document-Number: D1065R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG, LWG
 
@@ -137,10 +137,9 @@ Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
   // ...    
 }</code></pre></blockquote>  
 
-Add `constexpr` to the requirements of <i>forwarding call wrapper</i> in 19.4.3 [func.require]
+Add `constexpr` to the requirements of <i>forwarding call wrapper</i> in 19.14.3 [func.require]
 
-> Every call wrapper ([func.def]) shall be <i>Cpp17MoveConstructible</i>. A <i>forwarding call wrapper</i> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step shall ensure that rvalue arguments are delivered as rvalue references and lvalue arguments are delivered as lvalue references. <ins>The defaulted move and copy constructor, respectively, of a forwarding call wrapper shall be a constexpr function if and only if
-all required element-wise initializations for copy and move, respectively, would satisfy the requirements for a constexpr function. The call operator of a forwarding call wrapper shall be a constexpr function if and only if the underlying call operation would satisfy the requirements of a constexpr function.</ins> A <i>simple call wrapper</i> is a forwarding call wrapper that is <i>Cpp17CopyConstructible</i> and <i>Cpp17CopyAssignable</i> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions. [ <i>Note</i>: In a typical implementation forwarding call wrappers have an overloaded function call operator of the form
+> Every call wrapper ([func.def]) shall be <i>Cpp17MoveConstructible</i>. A <i>forwarding call wrapper</i> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step shall ensure that rvalue arguments are delivered as rvalue references and lvalue arguments are delivered as lvalue references. <ins>The invocation of a forwarding call wrapper is a core constant expression when the invocation of the underlying target object ([func.def]) is a core constant expression.</ins> A <i>simple call wrapper</i> is a forwarding call wrapper that is <i>Cpp17CopyConstructible</i> and <i>Cpp17CopyAssignable</i> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions. [ <i>Note</i>: In a typical implementation forwarding call wrappers have an overloaded function call operator of the form
 <pre class="codehilite"><code class="language-cpp">template&lt;class... UnBoundArgs>
   </code><code><ins>constexpr</ins></code><code class="language-cpp"> R operator()(UnBoundArgs&&... unbound_args) </code><code><i>cv-qual</i>;</code></pre>
 <i>— end note </i>]
@@ -266,17 +265,28 @@ template&lt;class... Args>
 <span style="margin-left:2em;" /><i>6 Effects</i>: Equivalent to: <pre class="codehilite" style="margin-left:3em"><code class="language-cpp">return !</code><code><i>INVOKE</i></code><code class="language-cpp">(std::move(fd), std::forward&lt;Args>(args)...); // see 19.14.3</code></pre>
 </blockquote>
 
-Add `constexpr` to `std::bind()` in 19.14.12.3 [func.bind.bind]
+Add `constexpr` to `std::bind()` and add remarks in 19.14.12.3 [func.bind.bind]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F, class... BoundArgs>
   </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
-[...]
+
+<i>Remarks</i>: The return type shall satisfy the <i>Cpp17MoveConstructible</i> requirements. If all of <code>FD</code> and <code>TD<sub>i</sub></code> satisfy the <i>Cpp17CopyConstructible</i> requirements, then the return type shall satisfy the <i>Cpp17CopyConstructible</i> requirements. [ Note: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <i>Cpp17MoveConstructible</i>. — end note ] <ins>The copy and move constructors of the return type have the same apparent semantics as those of the corresponding implicitly-defined copy and move constructors of all of <code>FD</code> and <code>TD<sub>i</sub></code></ins>.
+  
+<p>[...]
 <pre class="codehilite"><code class="language-cpp">template&lt;class R, class F, class... BoundArgs>
-  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);</code></pre></blockquote>
+  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
+
+<i>Remarks</i>: The return type shall satisfy the <i>Cpp17MoveConstructible</i> requirements. If all of <code>FD</code> and <code>TD<sub>i</sub></code> satisfy the <i>Cpp17CopyConstructible</i> requirements, then the return type shall satisfy the <i>Cpp17CopyConstructible</i> requirements. [ Note: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <i>Cpp17MoveConstructible</i>. — end note ] <ins>The copy and move constructors of the return type have the same apparent semantics as those of the corresponding implicitly-defined copy and move constructors of all of <code>FD</code> and <code>TD<sub>i</sub></code></ins>.
+  
+</blockquote>
   
 Add `constexpr` to `std::mem_fn()` in 19.14.13 [func.memfn]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class R, class T> </code><code><ins>constexpr</ins> <i>unspecified</i> </code><code class="language-cpp">mem_fn(R T::* pm) noexcept;</code></pre></blockquote>
+
+And add a remark for it:
+
+> <ins>*Remarks*: The copy and move constructors of the return type are `constexpr`.</ins>
 
 # Acknowledgements
 

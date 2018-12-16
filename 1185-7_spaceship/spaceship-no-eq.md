@@ -1,11 +1,15 @@
 Title: `<=> != ==`
-Document-Number: D1185R1
+Document-Number: P1185R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
-Audience: EWG
+Audience: CWG, EWG
+
+# Revision History
+
+R0 of this paper was approved in its entirety by Evolution in San Diego. This new revision contains brand new wording after core review. There were two [design questions](#core-design-questions) brought up by Core during this review, both based on the meaning of implicitly generated `==`, which are discussed in this revision.
 
 # Motivation
 
-[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!][Stone.Order] for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief run-down.
+[P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!](https://wg21.link/p1190r0) for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief run-down.
 
 Consider a type like:
 
@@ -606,15 +610,110 @@ This means there may not be a way to differentiate between `std::strong_equality
 
 And I'm not sure this makes any sense. 
 
+# Core Design Questions
+
+The rule that this paper proposes, that EWG approved, was that if a class has an explicitly defaulted `<=>` operator function then that class will also get an implicitly generated, public, defaulted `==` operator function. This leads to two questions:
+
+1. What happens if the explicitly defaulted `<=>` operator function is private or protected? This question was brought to Evolution and the decision was that the implicitly generated `==` operator should have the same access as the defaulted `<=>` operator.
+
+2. What happens if the explicitly defaulted `<=>` operator is defined as deleted? There are three cases to consider here (one of would become deprecated by the adoption of [P1186R0](https://wg21.link/p1186r0)):
+
+        :::cpp hl_lines="21"
+        struct A { };                                  // zero comparisons declared
+        struct B {
+            bool operator==(B const&) const;           // has ==, but
+            auto operator<=>(B const&) const = delete; // <=> is explicitly deleted
+        };
+        struct C {
+            bool operator==(C const&) const;           // only ==
+        };
+        
+        template <typename T>
+        struct wrapper {
+            T t;
+            auto operator<=>(wrapper const&) const = default;
+        };
+        
+        template <typename T>
+        bool operator==(T const&, T const&); // global, unconstrained candidate
+        
+        template <typename T>
+        bool check(wrapper<T> const& x) {
+            return x == x; // (*)
+        }
+
+The question is, what do `check<A>`, `check<B>`, and `check<C>` do?
+
+There are several choices that we could make here. A defaulted `<=>` that is defined as deleted...
+
+1. ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.
+2. ... should **not** generate a defaulted `==`.
+3. ... should generated an explicitly deleted `==`.
+
+Option 3 seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:
+
+<table>
+<tr>
+<th />
+<th>
+    :::cpp
+    check<A>
+</th>
+<th>
+    :::cpp
+    check<B>
+</th>
+<th>
+    :::cpp
+    check<C>
+</th>
+</tr>
+<tr>
+<th>
+Generate `==`
+</td>
+<td>
+The generated `==` would be defined as deleted because `A` has no `==`.
+
+As a result, `check<A>` is ill-formed.
+</td>
+<td>
+The generated `==` would be defined as defaulted, because `B` does have an `==` despite the deleted `<=>`.
+
+`check<B>` is well-formed and goes through `B::operator==`.
+</td>
+<td>
+The generated `==` would be defined as defaulted, because `C` has an `==`.
+
+`check<C>` is well-formed and goes through `C::operator==`.
+
+This case would be deprecated by P1186 because as a result of that paper, `wrapper<C>` would no longer have a deleted `<=>` because `C` would have a valid `operator<=>`.
+</td>
+</tr>
+<tr>
+<th>
+Do Not Generate `==`
+</td>
+<td colspan="3">
+There is no generated `==`, so in all cases, the global candidate is invoked.
+</td>
+</tr>
+</table>
+
+
+In other words, there is a case (i.e. `A`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `B` and `C`) where option 1 ends up with a valid and defaulted `==` instead of nothing. 
+
+This question still needs resolution in Kona. Core did not express a preference between the two options. This paper expresses a preference for option 1 because it seems more consistent with the intent of having defaulted `<=>`. It seems likely that the user intent in writing `wrapper<T>` was to just copy the comparison semantics from `T`. If we adopt option 2, `wrapper<T>` would simply have to additionally explicitly default its `operator==` which would defeat the purpose of implicitly generating defaulted `operator==`.
+        
 # Wording
 
 Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
-> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, a `==` operator function is declared implicitly. The implicitly-declared `==` operator for a class `X` is an inline public member, will have the form</ins>  
+> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member of the form</ins>  
 
 > &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
 
-> <ins>and is defined as defaulted in the definition of `X`.
+> <ins>and is defined as defaulted in the definition of `X`. The operator is a `constexpr` function if its definition would satisfy the requirements for a `constexpr` function. <i>[ Note: </i> the `==` operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i>
 
 Replace 10.10.1 [class.compare.default] paragraph 2:
 
@@ -622,7 +721,7 @@ Replace 10.10.1 [class.compare.default] paragraph 2:
 
 with:
 
-> <ins>An `==` operator for a class type `C` is a _structural equality operator_ if it is defined as defaulted in the definition of `C`, all `==` operators it invokes are structural equality operators, and none of `C`'s non-static data members have floating point type. A type `T` has _strong structural equality_ if it is not a floating point type and, for a glvalue `x` of type `const T`, `x == x` is a valid expression of type `bool` and either does not invoke an `==` operator or invokes a structural equality operator.
+> <ins>An `==` operator for a class type `C` is a _structural equality operator_ if it is defined as defaulted in the definition of `C`, all `==` operators it invokes are structural equality operators, and none of `C`'s non-static data members have floating point type. A type `T` has _strong structural equality_ if it is not a floating point type and, for a glvalue `x` of type `const T`, `x == x` is well-formed when contextually converted to `bool` and either does not invoke an `==` operator or invokes a structural equality operator.
 
 Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:
 
@@ -697,7 +796,7 @@ Change 11.3.1.2 [over.match.oper] paragraph 3.4:
 Change 11.3.1.2 [over.match.oper] paragraph 8:
 
 >  If a rewritten candidate is selected by overload resolution for <del>an</del> <ins>a relational or three-way comparison</ins> operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
-of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. <ins>If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate. If a rewritten candidate is selected by overload resolution for a `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.</ins>
+of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. <ins>If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.</ins>
 
 Change 12.1 [temp.param]/4 to refer to `==` instead of `<=>`:
 
@@ -720,7 +819,6 @@ Change 12.5 [temp.type] to refer to `==` instead of `<=>`:
 
 This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me. Thanks to Jens Maurer for extensive wording help.
     
-[Stone.Order]: https://github.com/davidstone/isocpp/blob/b2db8e00dfec04a7742c67a5ea6e9575c9aba03d/operator-spaceship/I-did-not-order-this.md "I did not order this! Why is it on my bill?||David Stone||2018-08-06"
 [rust.oper]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators "Comparison Operators - The Rust Reference"
 [swift.eq]: https://developer.apple.com/documentation/swift/equatable "Equatable - Swift Standard Library"
 [swift.comp]: https://developer.apple.com/documentation/swift/comparable "Comparable - Swift Standard Library"
