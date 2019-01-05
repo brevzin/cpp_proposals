@@ -612,20 +612,15 @@ And I'm not sure this makes any sense.
 
 # Core Design Questions
 
-The rule that this paper proposes, that EWG approved, was that if a class has an explicitly defaulted `<=>` operator function then that class will also get an implicitly generated, public, defaulted `==` operator function. This leads to two questions:
+The [rule](#change-defaulted-to-also-generate-a-defaulted) that this paper proposes, that EWG approved, was that if a class has an explicitly defaulted `<=>` operator function then that class will also get an implicitly generated, public, defaulted `==` operator function. This lead to two questions:
 
-1. What happens if the explicitly defaulted `<=>` operator function is private or protected? This question was brought to Evolution and the decision was that the implicitly generated `==` operator should have the same access as the defaulted `<=>` operator.
+1. What happens if the explicitly defaulted `<=>` operator function is `private` or `protected`?
+2. What happens if the explicitly defaulted `<=>` operator is defined as deleted? That is:
 
-2. What happens if the explicitly defaulted `<=>` operator is defined as deleted? There are three cases to consider here (one of would become deprecated by the adoption of [P1186R0](https://wg21.link/p1186r0)):
-
-        :::cpp hl_lines="21"
-        struct A { };                                  // zero comparisons declared
-        struct B {
-            bool operator==(B const&) const;           // has ==, but
-            auto operator<=>(B const&) const = delete; // <=> is explicitly deleted
-        };
-        struct C {
-            bool operator==(C const&) const;           // only ==
+        :::cpp
+        struct Nothing { };
+        struct OnlyEq {
+            bool operator==(OnlyEq const&) const;
         };
         
         template <typename T>
@@ -633,77 +628,38 @@ The rule that this paper proposes, that EWG approved, was that if a class has an
             T t;
             auto operator<=>(wrapper const&) const = default;
         };
+
+What kind of `operator==` should `wrapper<Nothing>` and `wrapper<OnlyEq>` have, in any?
+
+I think those questions have a clear, best answer: defaulting `<=>` should unconditionally behave as if we also defaulted `==`. But while considering this question, a different example came up. Consider the following:
+
+    :::cpp hl_lines="4"
+    template <typename T>
+    struct wrapper {
+        T t;
+        auto operator<=>(wrapper const&) const = default;
+    };
+    
+    template <typename T>
+    bool operator==(wrapper<T> const&, wrapper<T> const&);
         
-        template <typename T>
-        bool operator==(T const&, T const&); // global, unconstrained candidate
-        
-        template <typename T>
-        bool check(wrapper<T> const& x) {
-            return x == x; // (*)
-        }
+Imagine `wrapper<T>` does not have `<=>` yet (that is, the highlighted line does not exist). It's perfectly reasonable to have types which have non-member `operator==`. This might be some type we've had in our code base for some time. But then C++20 rolls out and we want to adopt `<=>`, so we add the highlighted line because we just want the default.
 
-The question is, what do `check<A>`, `check<B>`, and `check<C>` do?
+When we do that, we would _also_ get a defaulted `operator==` defined within `wrapper` (because there was no previously declared `operator==` within the class definition)... and now all the existing calls to the non-member `operator==` suddenly call the compiler-synthesized, defaulted `operator==` (it is a better candidate because it is a non-template). If it does the same thing as the non-member, that's... probably fine, but what if it doesn't? That's a silent change. The class author would have to know to move the non-member `operator==` within the class body, that would be the only way to opt out of this behavior. 
 
-There are several choices that we could make here. A defaulted `<=>` that is defined as deleted...
+If `wrapper` were _not_ a template, the result would be different:
 
-1. ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.
-2. ... should **not** generate a defaulted `==`.
-3. ... should generated an explicitly deleted `==`.
+    :::cpp hl_lines="3"
+    struct wrapped_int {
+        int i;
+        auto operator<=>(wrapped_int const&) const = default;
+    };
+    
+    bool operator==(wrapped_int const&, wrapped_int const&);
+    
+Now the addition of the highlighted line would make all existing calls to `==` ambiguous. That's arguably better than silently switching from one function to calling another [invisible] one. But it's still less than great.
 
-Option 3 seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:
-
-<table>
-<tr>
-<th />
-<th>
-    :::cpp
-    check<A>
-</th>
-<th>
-    :::cpp
-    check<B>
-</th>
-<th>
-    :::cpp
-    check<C>
-</th>
-</tr>
-<tr>
-<th>
-Generate `==`
-</td>
-<td>
-The generated `==` would be defined as deleted because `A` has no `==`.
-
-As a result, `check<A>` is ill-formed.
-</td>
-<td>
-The generated `==` would be defined as defaulted, because `B` does have an `==` despite the deleted `<=>`.
-
-`check<B>` is well-formed and goes through `B::operator==`.
-</td>
-<td>
-The generated `==` would be defined as defaulted, because `C` has an `==`.
-
-`check<C>` is well-formed and goes through `C::operator==`.
-
-This case would be deprecated by P1186 because as a result of that paper, `wrapper<C>` would no longer have a deleted `<=>` because `C` would have a valid `operator<=>`.
-</td>
-</tr>
-<tr>
-<th>
-Do Not Generate `==`
-</td>
-<td colspan="3">
-There is no generated `==`, so in all cases, the global candidate is invoked.
-</td>
-</tr>
-</table>
-
-
-In other words, there is a case (i.e. `A`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `B` and `C`) where option 1 ends up with a valid and defaulted `==` instead of nothing. 
-
-This question still needs resolution in Kona. Core did not express a preference between the two options. This paper expresses a preference for option 1 because it seems more consistent with the intent of having defaulted `<=>`. It seems likely that the user intent in writing `wrapper<T>` was to just copy the comparison semantics from `T`. If we adopt option 2, `wrapper<T>` would simply have to additionally explicitly default its `operator==` which would defeat the purpose of implicitly generating defaulted `operator==`.
+I think as a result, despite this part being approved in San Diego (11-5-5-1-3), we should revert just this portion of the proposal.
         
 # Wording
 
@@ -713,14 +669,6 @@ Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:
 > 
 > - a non-static <ins>const</ins> member of `C` having one parameter of type `const C&`, or
 > - a friend of `C` having two parameters of type `const C&`.
-
-Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
-
-> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member of the form</ins>  
-
-> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
-
-> <ins>and is defined as defaulted in the definition of `X`. The operator is a `constexpr` function if its definition would satisfy the requirements for a `constexpr` function. <i>[ Note: </i> the `==` operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i>
 
 Replace 10.10.1 [class.compare.default] paragraph 2:
 
