@@ -629,7 +629,7 @@ The [rule](#change-defaulted-to-also-generate-a-defaulted) that this paper propo
             auto operator<=>(wrapper const&) const = default;
         };
 
-What kind of `operator==` should `wrapper<Nothing>` and `wrapper<OnlyEq>` have, in any?
+What kind of `operator==` should `wrapper<Nothing>` and `wrapper<OnlyEq>` have, if any?
 
 I think those questions have a clear, best answer: defaulting `<=>` should unconditionally behave as if we also defaulted `==`. But while considering this question, a different example came up. Consider the following:
 
