@@ -707,6 +707,13 @@ This question still needs resolution in Kona. Core did not express a preference 
         
 # Wording
 
+Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:
+
+> A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq]) for some class `C` shall be a non-template function declared in the member-specification of `C` that is
+> 
+> - a non-static <ins>const</ins> member of `C` having one parameter of type `const C&`, or
+> - a friend of `C` having two parameters of type `const C&`.
+
 Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
 > <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member of the form</ins>  
