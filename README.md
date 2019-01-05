@@ -8,11 +8,11 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Approved by (L)EWG
 
-- [d0848r1 - Conditionally Trivial Special Member Functions](0848_special_members/d0848r1.html), with Casey Carter. Approved in San Diego with new design, pending wording.
-- [p1065r0 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r0.html).
-- [p1185r1 - `<=> != ==`](1185-7_spaceship/p1185r1.html).
-- [p1186r0 - When do you actually use `<=>`?](1185-7_spaceship/p1186r0.html).
-- [p1187r0 - A type trait for `std::compare_3way()`'s type](1185-7_spaceship/p1187r0.html).
+- [d0848r1 - Conditionally Trivial Special Member Functions](0848_special_members/d0848r1.html), with Casey Carter. Approved in San Diego with new design, needs wording.
+- [p1065r0 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r0.html). Needs wording around `constexpr std::bind()`.
+- [p1185r1 - `<=> != ==`](1185-7_spaceship/p1185r1.html). Approved in San Diego, needs to come back to EWG to review defaulting `<=>` questions.
+- [p1186r0 - When do you actually use `<=>`?](1185-7_spaceship/p1186r0.html). Approved in San Diego, needs to come back to EWG with design changes after Core review.
+- [p1187r0 - A type trait for `std::compare_3way()`'s type](1185-7_spaceship/p1187r0.html). Approved in San Diego.
 
 ### Rejected
 
@@ -24,6 +24,6 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Pending
 
-- [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. 
+- [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. R1 was discussed in San Diego. 
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
