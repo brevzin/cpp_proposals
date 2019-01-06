@@ -616,16 +616,16 @@ The rule that this paper proposes, that EWG approved, was that if a class has an
 
 1. What happens if the explicitly defaulted `<=>` operator function is private or protected? This question was brought to Evolution and the decision was that the implicitly generated `==` operator should have the same access as the defaulted `<=>` operator.
 
-2. What happens if the explicitly defaulted `<=>` operator is defined as deleted? There are three cases to consider here (one of would become deprecated by the adoption of [P1186R0](https://wg21.link/p1186r0)):
+2. What happens if the explicitly defaulted `<=>` operator is defined as deleted? There are three cases to consider here:
 
         :::cpp hl_lines="21"
-        struct A { };                                  // zero comparisons declared
-        struct B {
-            bool operator==(B const&) const;           // has ==, but
-            auto operator<=>(B const&) const = delete; // <=> is explicitly deleted
+        struct Nothing { };
+        struct OnlyEq {
+            bool operator==(OnlyEq const&) const;
         };
-        struct C {
-            bool operator==(C const&) const;           // only ==
+        struct Weird {
+            bool operator==(Weird const&) const;
+            auto operator<=>(Weird const&) const = delete;
         };
         
         template <typename T>
@@ -642,30 +642,30 @@ The rule that this paper proposes, that EWG approved, was that if a class has an
             return x == x; // (*)
         }
 
-The question is, what do `check<A>`, `check<B>`, and `check<C>` do?
+The question is, what do `check<Nothing>`, `check<OnlyEq>`, and `check<Weird>` do?
 
 There are several choices that we could make here. A defaulted `<=>` that is defined as deleted...
 
-1. ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.
-2. ... should **not** generate a defaulted `==`.
-3. ... should generated an explicitly deleted `==`.
+a) ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.  
+b) ... should **not** generate a defaulted `==`.  
+c) ... should generated an explicitly deleted `==`.
 
-Option 3 seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:
+Option (c) seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:
 
 <table>
 <tr>
 <th />
 <th>
     :::cpp
-    check<A>
+    check<Nothing>
 </th>
 <th>
     :::cpp
-    check<B>
+    check<OnlyEq>
 </th>
 <th>
     :::cpp
-    check<C>
+    check<Weird>
 </th>
 </tr>
 <tr>
@@ -673,21 +673,19 @@ Option 3 seems pointlessly user-hostile without much upside, so it will not be c
 Generate `==`
 </td>
 <td>
-The generated `==` would be defined as deleted because `A` has no `==`.
+The generated `==` would be defined as deleted because `Nothing` has no `==`.
 
-As a result, `check<A>` is ill-formed.
+As a result, `check<Nothing>` is ill-formed.
 </td>
 <td>
-The generated `==` would be defined as defaulted, because `B` does have an `==` despite the deleted `<=>`.
+The generated `==` would be defined as defaulted, because `OnlyEq` has an `==`.
 
-`check<B>` is well-formed and goes through `B::operator==`.
+`check<OnlyEq>` is well-formed and goes through `OnlyEq::operator==`.
 </td>
 <td>
-The generated `==` would be defined as defaulted, because `C` has an `==`.
+The generated `==` would be defined as defaulted, because `Weird` does have an `==` despite the deleted `<=>`.
 
-`check<C>` is well-formed and goes through `C::operator==`.
-
-This case would be deprecated by P1186 because as a result of that paper, `wrapper<C>` would no longer have a deleted `<=>` because `C` would have a valid `operator<=>`.
+`check<Weird>` is well-formed and goes through `Weird::operator==`.
 </td>
 </tr>
 <tr>
@@ -701,9 +699,21 @@ There is no generated `==`, so in all cases, the global candidate is invoked.
 </table>
 
 
-In other words, there is a case (i.e. `A`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `B` and `C`) where option 1 ends up with a valid and defaulted `==` instead of nothing. 
+In other words, there is a case (i.e. `Nothing`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `OnlyEq` and `Weird`) where option 1 ends up with a valid and defaulted `==` instead of nothing. 
 
-This question still needs resolution in Kona. Core did not express a preference between the two options. This paper expresses a preference for option 1 because it seems more consistent with the intent of having defaulted `<=>`. It seems likely that the user intent in writing `wrapper<T>` was to just copy the comparison semantics from `T`. If we adopt option 2, `wrapper<T>` would simply have to additionally explicitly default its `operator==` which would defeat the purpose of implicitly generating defaulted `operator==`.
+The question is: what is the intent of the class author of `wrapper`? Arguably, the intent in this case is clear: just give me all the defaults. If we do not actually end up getting all the defaults (that is, `wrapper<OnlyEq>` is not equality comparable), then the class author would have to write this regardless:
+
+    :::cpp hl_lines="4"
+    template <typename T>
+    struct wrapper {
+        T t;
+        bool operator==(wrapper const&) const = default;
+        auto operator<=>(wrapper const&) const = default;
+    };    
+    
+Just to ensure that we really do _get the defaults_. And at that point, we've basically obviated the feature. 
+
+The intent of the proposal that defaulting `<=>` gets you defaulted `==` is very much that defaulting `<=>` really means also having declared defaulted `==`. Option B does not get us there, and Option C definitely does not get us anywhere. I believe Option A is the clear choice here. 
         
 # Wording
 
