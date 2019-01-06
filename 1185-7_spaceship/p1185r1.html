@@ -1266,7 +1266,11 @@ struct wrapper {
 </blockquote>
 <p>with:</p>
 <blockquote>
-<p><ins>An <code class="language-cpp">==</code> operator for a class type <code class="language-cpp">C</code> is a <em>structural equality operator</em> if it is defined as defaulted in the definition of <code class="language-cpp">C</code>, all <code class="language-cpp">==</code> operators it invokes are structural equality operators, and none of <code class="language-cpp">C</code>'s non-static data members have floating point type. A type <code class="language-cpp">T</code> has <em>strong structural equality</em> if it is not a floating point type and, for a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const T</code>, <code class="language-cpp">x == x</code> is well-formed when contextually converted to <code class="language-cpp">bool</code> and either does not invoke an <code class="language-cpp">==</code> operator or invokes a structural equality operator.</p>
+<p><ins>A type <code class="language-cpp">C</code> has <em>strong structural equality</em> if, given a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const C</code>, either:</ins></p>
+<ul>
+<li><ins><code class="language-cpp">C</code> is a non-class type and <code class="language-cpp">x &lt;=&gt; x</code> is a valid expression of type <code class="language-cpp">std::strong_ordering</code> or <code class="language-cpp">std::strong_equality</code>, or</ins></li>
+<li><ins><code class="language-cpp">C</code> is a class type with an <code class="language-cpp">==</code> operator defined as defaulted in the definition of <code class="language-cpp">C</code>, <code class="language-cpp">x == x</code> is well-formed when contextually converted to <code class="language-cpp">bool</code>, and all of <code class="language-cpp">C</code>'s base class subobjects and non-static data members have strong structural equality.</ins> </li>
+</ul>
 </blockquote>
 <p>Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:</p>
 <blockquote>

@@ -738,7 +738,10 @@ Replace 10.10.1 [class.compare.default] paragraph 2:
 
 with:
 
-> <ins>An `==` operator for a class type `C` is a _structural equality operator_ if it is defined as defaulted in the definition of `C`, all `==` operators it invokes are structural equality operators, and none of `C`'s non-static data members have floating point type. A type `T` has _strong structural equality_ if it is not a floating point type and, for a glvalue `x` of type `const T`, `x == x` is well-formed when contextually converted to `bool` and either does not invoke an `==` operator or invokes a structural equality operator.
+> <ins>A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:</ins>
+> 
+- <ins>`C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or</ins>
+- <ins>`C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is well-formed when contextually converted to `bool`, and all of `C`'s base class subobjects and non-static data members have strong structural equality.</ins> 
 
 Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:
 
