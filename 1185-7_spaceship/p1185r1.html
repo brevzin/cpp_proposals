@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: P1185R1 <br />
-Date: 2019-01-05 <br />
+Date: 2019-01-03 <br />
 Audience: CWG, EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -1154,48 +1154,90 @@ constexpr auto operator==(optional&lt;T&gt; const&amp; lhs,
 
 <p>And I'm not sure this makes any sense. </p>
 <h2 id="core-design-questions">5. Core Design Questions<a class="self-link" href="#core-design-questions"></a></h2>
-<p>The <a href="#change-defaulted-to-also-generate-a-defaulted">rule</a> that this paper proposes, that EWG approved, was that if a class has an explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator function then that class will also get an implicitly generated, public, defaulted <code class="language-cpp">==</code> operator function. This lead to two questions:</p>
+<p>The rule that this paper proposes, that EWG approved, was that if a class has an explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator function then that class will also get an implicitly generated, public, defaulted <code class="language-cpp">==</code> operator function. This leads to two questions:</p>
 <ol>
-<li>What happens if the explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator function is <code class="language-cpp">private</code> or <code class="language-cpp">protected</code>?</li>
-<li>What happens if the explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator is defined as deleted? That is:<pre class="codehilite"><code class="language-cpp">struct Nothing { };
-struct OnlyEq {
-    bool operator==(OnlyEq const&amp;) const;
+<li>
+<p>What happens if the explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator function is private or protected? This question was brought to Evolution and the decision was that the implicitly generated <code class="language-cpp">==</code> operator should have the same access as the defaulted <code class="language-cpp">&lt;=&gt;</code> operator.</p>
+</li>
+<li>
+<p>What happens if the explicitly defaulted <code class="language-cpp">&lt;=&gt;</code> operator is defined as deleted? There are three cases to consider here (one of would become deprecated by the adoption of <a href="https://wg21.link/p1186r0" title="When do you actually use &lt;=&gt;?">P1186R0</a>):</p>
+<pre class="codehilite" data-line="21"><code class="language-cpp">struct A { };                                  // zero comparisons declared
+struct B {
+    bool operator==(B const&amp;) const;           // has ==, but
+    auto operator&lt;=&gt;(B const&amp;) const = delete; // &lt;=&gt; is explicitly deleted
+};
+struct C {
+    bool operator==(C const&amp;) const;           // only ==
 };
 
 template &lt;typename T&gt;
 struct wrapper {
     T t;
     auto operator&lt;=&gt;(wrapper const&amp;) const = default;
-};</code></pre>
+};
+
+template &lt;typename T&gt;
+bool operator==(T const&amp;, T const&amp;); // global, unconstrained candidate
+
+template &lt;typename T&gt;
+bool check(wrapper&lt;T&gt; const&amp; x) {
+    return x == x; // (*)
+}</code></pre>
 
 
 </li>
 </ol>
-<p>What kind of <code class="language-cpp">operator==</code> should <code class="language-cpp">wrapper&lt;Nothing&gt;</code> and <code class="language-cpp">wrapper&lt;OnlyEq&gt;</code> have, in any?</p>
-<p>I think those questions have a clear, best answer: defaulting <code class="language-cpp">&lt;=&gt;</code> should unconditionally behave as if we also defaulted <code class="language-cpp">==</code>. But while considering this question, a different example came up. Consider the following:</p>
-<pre class="codehilite" data-line="4"><code class="language-cpp">template &lt;typename T&gt;
-struct wrapper {
-    T t;
-    auto operator&lt;=&gt;(wrapper const&amp;) const = default;
-};
+<p>The question is, what do <code class="language-cpp">check&lt;A&gt;</code>, <code class="language-cpp">check&lt;B&gt;</code>, and <code class="language-cpp">check&lt;C&gt;</code> do?</p>
+<p>There are several choices that we could make here. A defaulted <code class="language-cpp">&lt;=&gt;</code> that is defined as deleted...</p>
+<ol>
+<li>... should still implicitly generate a defaulted <code class="language-cpp">==</code>. That defaulted <code class="language-cpp">==</code> could be defined as defaulted or deleted for its own rules.</li>
+<li>... should <strong>not</strong> generate a defaulted <code class="language-cpp">==</code>.</li>
+<li>... should generated an explicitly deleted <code class="language-cpp">==</code>.</li>
+</ol>
+<p>Option 3 seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:</p>
+<table>
+<tr>
+<th />
+<th>
+<pre style="background:transparent;border:0px"><code class="language-cpp">check&lt;A&gt;</code></pre>
+</th>
+<th>
+<pre style="background:transparent;border:0px"><code class="language-cpp">check&lt;B&gt;</code></pre>
+</th>
+<th>
+<pre style="background:transparent;border:0px"><code class="language-cpp">check&lt;C&gt;</code></pre>
+</th>
+</tr>
+<tr>
+<th>
+<p>Generate <code class="language-cpp">==</code></p>
+</td>
+<td>
+<p>The generated <code class="language-cpp">==</code> would be defined as deleted because <code class="language-cpp">A</code> has no <code class="language-cpp">==</code>.</p>
+<p>As a result, <code class="language-cpp">check&lt;A&gt;</code> is ill-formed.</p>
+</td>
+<td>
+<p>The generated <code class="language-cpp">==</code> would be defined as defaulted, because <code class="language-cpp">B</code> does have an <code class="language-cpp">==</code> despite the deleted <code class="language-cpp">&lt;=&gt;</code>.</p>
+<p><code class="language-cpp">check&lt;B&gt;</code> is well-formed and goes through <code class="language-cpp">B::operator==</code>.</p>
+</td>
+<td>
+<p>The generated <code class="language-cpp">==</code> would be defined as defaulted, because <code class="language-cpp">C</code> has an <code class="language-cpp">==</code>.</p>
+<p><code class="language-cpp">check&lt;C&gt;</code> is well-formed and goes through <code class="language-cpp">C::operator==</code>.</p>
+<p>This case would be deprecated by P1186 because as a result of that paper, <code class="language-cpp">wrapper&lt;C&gt;</code> would no longer have a deleted <code class="language-cpp">&lt;=&gt;</code> because <code class="language-cpp">C</code> would have a valid <code class="language-cpp">operator&lt;=&gt;</code>.</p>
+</td>
+</tr>
+<tr>
+<th>
+<p>Do Not Generate <code class="language-cpp">==</code></p>
+</td>
+<td colspan="3">
+<p>There is no generated <code class="language-cpp">==</code>, so in all cases, the global candidate is invoked.</p>
+</td>
+</tr>
+</table>
 
-template &lt;typename T&gt;
-bool operator==(wrapper&lt;T&gt; const&amp;, wrapper&lt;T&gt; const&amp;);</code></pre>
-
-
-<p>Imagine <code class="language-cpp">wrapper&lt;T&gt;</code> does not have <code class="language-cpp">&lt;=&gt;</code> yet (that is, the highlighted line does not exist). It's perfectly reasonable to have types which have non-member <code class="language-cpp">operator==</code>. This might be some type we've had in our code base for some time. But then C++20 rolls out and we want to adopt <code class="language-cpp">&lt;=&gt;</code>, so we add the highlighted line because we just want the default.</p>
-<p>When we do that, we would <em>also</em> get a defaulted <code class="language-cpp">operator==</code> defined within <code class="language-cpp">wrapper</code> (because there was no previously declared <code class="language-cpp">operator==</code> within the class definition)... and now all the existing calls to the non-member <code class="language-cpp">operator==</code> suddenly call the compiler-synthesized, defaulted <code class="language-cpp">operator==</code> (it is a better candidate because it is a non-template). If it does the same thing as the non-member, that's... probably fine, but what if it doesn't? That's a silent change. The class author would have to know to move the non-member <code class="language-cpp">operator==</code> within the class body, that would be the only way to opt out of this behavior. </p>
-<p>If <code class="language-cpp">wrapper</code> were <em>not</em> a template, the result would be different:</p>
-<pre class="codehilite" data-line="3"><code class="language-cpp">struct wrapped_int {
-    int i;
-    auto operator&lt;=&gt;(wrapped_int const&amp;) const = default;
-};
-
-bool operator==(wrapped_int const&amp;, wrapped_int const&amp;);</code></pre>
-
-
-<p>Now the addition of the highlighted line would make all existing calls to <code class="language-cpp">==</code> ambiguous. That's arguably better than silently switching from one function to calling another [invisible] one. But it's still less than great.</p>
-<p>I think as a result, despite this part being approved in San Diego (11-5-5-1-3), we should revert just this portion of the proposal.</p>
+<p>In other words, there is a case (i.e. <code class="language-cpp">A</code>) where option 1 ends up with a deleted <code class="language-cpp">==</code> instead of nothing and two cases (i.e. <code class="language-cpp">B</code> and <code class="language-cpp">C</code>) where option 1 ends up with a valid and defaulted <code class="language-cpp">==</code> instead of nothing. </p>
+<p>This question still needs resolution in Kona. Core did not express a preference between the two options. This paper expresses a preference for option 1 because it seems more consistent with the intent of having defaulted <code class="language-cpp">&lt;=&gt;</code>. It seems likely that the user intent in writing <code class="language-cpp">wrapper&lt;T&gt;</code> was to just copy the comparison semantics from <code class="language-cpp">T</code>. If we adopt option 2, <code class="language-cpp">wrapper&lt;T&gt;</code> would simply have to additionally explicitly default its <code class="language-cpp">operator==</code> which would defeat the purpose of implicitly generating defaulted <code class="language-cpp">operator==</code>.</p>
 <h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:</p>
 <blockquote>
@@ -1204,6 +1246,12 @@ bool operator==(wrapped_int const&amp;, wrapped_int const&amp;);</code></pre>
 <li>a non-static <ins>const</ins> member of <code class="language-cpp">C</code> having one parameter of type <code class="language-cpp">const C&amp;</code>, or</li>
 <li>a friend of <code class="language-cpp">C</code> having two parameters of type <code class="language-cpp">const C&amp;</code>.</li>
 </ul>
+</blockquote>
+<p>Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:</p>
+<blockquote>
+<p><ins>If the class definition does not explicitly declare an <code class="language-cpp">==</code> operator function, but declares a defaulted three-way comparison operator function, an <code class="language-cpp">==</code> operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared <code class="language-cpp">==</code> operator for a class <code class="language-cpp">X</code> is an inline member of the form</ins>  </p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&amp;) const</code></ins>  </p>
+<p><ins>and is defined as defaulted in the definition of <code class="language-cpp">X</code>. The operator is a <code class="language-cpp">constexpr</code> function if its definition would satisfy the requirements for a <code class="language-cpp">constexpr</code> function. <i>[ Note: </i> the <code class="language-cpp">==</code> operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i></p>
 </blockquote>
 <p>Replace 10.10.1 [class.compare.default] paragraph 2:</p>
 <blockquote>
@@ -1304,5 +1352,5 @@ of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> otherwis
 </blockquote>
 <h2 id="acknowledgements">7. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me. Thanks to Jens Maurer for extensive wording help.</p>
-<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html">[haskell.eq]</a><span style="margin-left: 5px;">Data.Eq - Haskell documentation</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html">[haskell.ord]</a><span style="margin-left: 5px;">Data.Ord - Haskell documentation</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">[kotlin.any]</a><span style="margin-left: 5px;">Any - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html">[kotlin.comp]</a><span style="margin-left: 5px;">Comparable - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/docs/reference/operator-overloading.html#equals">[kotlin.oper]</a><span style="margin-left: 5px;">Operator overloading - Kotlin Programming Language</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053">[rust.eq]</a><span style="margin-left: 5px;">Implementation of Eq for Slice</span></li><li><a href="https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators">[rust.oper]</a><span style="margin-left: 5px;">Comparison Operators - The Rust Reference</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136">[rust.ord]</a><span style="margin-left: 5px;">Implementation of Ord for Slice</span></li><li><a href="https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean">[scala.any]</a><span style="margin-left: 5px;">Scala Standard Library - Any</span></li><li><a href="https://www.scala-lang.org/api/current/scala/math/Ordered.html">[scala.ord]</a><span style="margin-left: 5px;">Scala Standard Library - Ordered</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li><li><a href="https://developer.apple.com/documentation/swift/comparable">[swift.comp]</a><span style="margin-left: 5px;">Comparable - Swift Standard Library</span></li><li><a href="https://developer.apple.com/documentation/swift/equatable">[swift.eq]</a><span style="margin-left: 5px;">Equatable - Swift Standard Library</span></li></ul>
+<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Eq.html">[haskell.eq]</a><span style="margin-left: 5px;">Data.Eq - Haskell documentation</span></li><li><a href="http://hackage.haskell.org/package/base-4.11.1.0/docs/Data-Ord.html">[haskell.ord]</a><span style="margin-left: 5px;">Data.Ord - Haskell documentation</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">[kotlin.any]</a><span style="margin-left: 5px;">Any - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-comparable/index.html">[kotlin.comp]</a><span style="margin-left: 5px;">Comparable - Kotlin Programming Language</span></li><li><a href="https://kotlinlang.org/docs/reference/operator-overloading.html#equals">[kotlin.oper]</a><span style="margin-left: 5px;">Operator overloading - Kotlin Programming Language</span></li><li><a href="https://medium.com/@barryrevzin/implementing-the-spaceship-operator-for-optional-4de89fc6d5ec">[revzin.impl]</a><span style="margin-left: 5px;">"Implementing the spaceship operator for optional" by Barry Revzin, 2017-11-16</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html?search=#4037-4053">[rust.eq]</a><span style="margin-left: 5px;">Implementation of Eq for Slice</span></li><li><a href="https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators">[rust.oper]</a><span style="margin-left: 5px;">Comparison Operators - The Rust Reference</span></li><li><a href="https://doc.rust-lang.org/src/core/slice/mod.rs.html#4116-4136">[rust.ord]</a><span style="margin-left: 5px;">Implementation of Ord for Slice</span></li><li><a href="https://www.scala-lang.org/api/current/scala/Any.html#==(x$1:Any):Boolean">[scala.any]</a><span style="margin-left: 5px;">Scala Standard Library - Any</span></li><li><a href="https://www.scala-lang.org/api/current/scala/math/Ordered.html">[scala.ord]</a><span style="margin-left: 5px;">Scala Standard Library - Ordered</span></li><li><a href="http://stepanovpapers.com/DeSt98.pdf">[stepanov.fogp]</a><span style="margin-left: 5px;">"Fundamentals of Generic Programming" by James C. Dehnert and Alexander Stepanov, 1998</span></li><li><a href="https://developer.apple.com/documentation/swift/comparable">[swift.comp]</a><span style="margin-left: 5px;">Comparable - Swift Standard Library</span></li><li><a href="https://developer.apple.com/documentation/swift/equatable">[swift.eq]</a><span style="margin-left: 5px;">Equatable - Swift Standard Library</span></li></ul>
 </html>
