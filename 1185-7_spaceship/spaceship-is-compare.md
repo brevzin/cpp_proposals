@@ -98,7 +98,7 @@ In short, conditionally adopting `<=>` has a good user story, once you know how 
 
 If we want to adopt `<=>` unconditionally, which is something we have to do for normal class types like `Aggr` and something we might want to do for containers like `vector`, we need to provide scaffolding as a stop-gap workaround. We need some way of invoking `<=>` where possible, but falling back to a synthesized three-way comparison from the two-way comparison oeprators. 
 
-That only scaffolding we have today is in the form of a standard library algorithm named [`std::compare_3way()`][alg.3way]. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:
+That only scaffolding we have today is in the form of a standard library algorithm named `std::compare_3way()`. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:
 
     :::cpp
     template<class T, class U>

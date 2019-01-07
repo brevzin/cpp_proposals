@@ -709,7 +709,7 @@ compare_3way_type_t&lt;T&gt; operator&lt;=&gt;(vector&lt;T&gt; const&amp;, vecto
 <p>In short, conditionally adopting <code class="language-cpp">&lt;=&gt;</code> has a good user story, once you know how to do it. This is very doable.</p>
 <h3 id="unconditional-spaceship">2.2. Unconditional spaceship<a class="self-link" href="#unconditional-spaceship"></a></h3>
 <p>If we want to adopt <code class="language-cpp">&lt;=&gt;</code> unconditionally, which is something we have to do for normal class types like <code class="language-cpp">Aggr</code> and something we might want to do for containers like <code class="language-cpp">vector</code>, we need to provide scaffolding as a stop-gap workaround. We need some way of invoking <code class="language-cpp">&lt;=&gt;</code> where possible, but falling back to a synthesized three-way comparison from the two-way comparison oeprators. </p>
-<p>That only scaffolding we have today is in the form of a standard library algorithm named [<code class="language-cpp">std::compare_3way()</code>][alg.3way]. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:</p>
+<p>That only scaffolding we have today is in the form of a standard library algorithm named <code class="language-cpp">std::compare_3way()</code>. What this function does is add more fall-back implementations, in a way best illustrated by this skeleton:</p>
 <pre class="codehilite"><code class="language-cpp">template&lt;class T, class U&gt;
 auto compare_3way(const T&amp; a, const U&amp; b) {
     if constexpr (/* can invoke a &lt;=&gt; b */)
