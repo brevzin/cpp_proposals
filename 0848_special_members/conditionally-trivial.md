@@ -96,7 +96,7 @@ result object.
 
 Change 7.5.5.1 [expr.prim.lambda.closure], paragraph 12:
 
-> The closure type associated with a lambda-expression has no default constructor <ins>candidate</ins> if the lambda-expression has a lambda-capture and a defaulted default constructor <ins>candidate</ins> otherwise. It has a defaulted copy constructor <ins>candidate</ins> and a defaulted move constructor <ins>candidate</ins> (10.3.4.2). It has a deleted copy assignment operator <ins>candidate</ins> if the lambda-expression has a lambda-capture and defaulted copy and move assignment <del>operators</del> <ins>operator candidates</ins> otherwise (10.3.5). [Note: These special
+> The closure type associated with a lambda-expression has no default constructor <ins>candidates</ins> if the lambda-expression has a lambda-capture and a defaulted default constructor <ins>candidate</ins> otherwise. It has a defaulted copy constructor <ins>candidate</ins> and a defaulted move constructor <ins>candidate</ins> (10.3.4.2). It has a deleted copy assignment operator <ins>candidate</ins> if the lambda-expression has a lambda-capture and defaulted copy and move assignment <del>operators</del> <ins>operator candidates</ins> otherwise (10.3.5). [Note: These special
 member <del>functions</del> <ins>function candidates</ins> are implicitly defined as usual, and might therefore be defined as deleted. —end note]
 
 Replace another redundant and incomplete definition of trivially copyable in 7.6.1.2, [class.copy] paragraph 12:
@@ -158,7 +158,7 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 8:
 — X does not have a user-declared copy assignment operator <ins>candidate</ins>,  
 — X does not have a user-declared move assignment operator <ins>candidate</ins>, and  
 — X does not have a user-declared destructor <ins>candidate</ins>.
-> [Note: <ins>An implicitly declared move constructor candidate is a move constructor.</ins> When the move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. —end note]
+> [Note: <ins>An implicitly declared move constructor candidate is a move constructor.</ins> When <del>the</del> <ins>a</ins> move constructor <ins>candidate</ins> is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. —end note]
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 9:
 
