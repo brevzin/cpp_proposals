@@ -515,9 +515,11 @@ Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
 > <ins>The type of the expression <code><i>3WAY</i>(x<sub>i</sub>, x<sub>i</sub>)</code> is denoted by <code>R<sub>i</sub></code>. If the expression is invalid, <code>R<sub>i</sub></code> is `void`.</ins>
 
-Add a sentence to 10.10.2 [class.spaceship], paragraph 2:
+Change 10.10.2 [class.spaceship], paragraph 2:
 
-> If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ] If the return type is deduced as `void`, the operator function is defined as deleted. <ins>If the declared return type of a defaulted three-way comparison operator function is not `auto` and any <code>R<sub>i</sub></code> is not convertible to the provided return type, the operator function is defined as deleted.</ins>
+> If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. <del>[ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
+
+> <ins>If the declared return type of a defaulted three-way comparison operator function is not `auto` and any <code>R<sub>i</sub></code> is not convertible to the provided return type, the operator function is defined as deleted.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 3, to use `3WAY` instead of `<=>`
 
