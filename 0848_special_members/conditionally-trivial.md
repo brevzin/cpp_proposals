@@ -87,22 +87,10 @@ In other words, introducing this notion of a copy constructor candidate and the 
 
 Relative to N4791.
 
-Replace redundant definition of trivially copyable in 6.6.6, [class.temporary], paragraph 3:
-
-> When an object of class type X is passed to or returned from a function, if <del>each copy constructor, move
-constructor, and destructor of X is either trivial or deleted, and X has at least one non-deleted copy or move
-constructor</del> <ins>X is trivally copyable ([class.prop])</ins>, implementations are permitted to create a temporary object to hold the function parameter or
-result object.
-
 Change 7.5.5.1 [expr.prim.lambda.closure], paragraph 12:
 
 > The closure type associated with a lambda-expression has no default constructor <ins>candidates</ins> if the lambda-expression has a lambda-capture and a defaulted default constructor <ins>candidate</ins> otherwise. It has a defaulted copy constructor <ins>candidate</ins> and a defaulted move constructor <ins>candidate</ins> (10.3.4.2). It has a deleted copy assignment operator <ins>candidate</ins> if the lambda-expression has a lambda-capture and defaulted copy and move assignment <del>operators</del> <ins>operator candidates</ins> otherwise (10.3.5). [Note: These special
 member <del>functions</del> <ins>function candidates</ins> are implicitly defined as usual, and might therefore be defined as deleted. —end note]
-
-Replace another redundant and incomplete definition of trivially copyable in 7.6.1.2, [class.copy] paragraph 12:
-
-> Passing a potentially-evaluated argument of class type (Clause 10) <del>having a non-trivial copy constructor, a
-non-trivial move constructor, or a non-trivial destructor</del> <ins>that is not trivially copyable ([class.prop]) </ins>, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.
 
 ## Special members, in general
 
