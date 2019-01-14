@@ -618,6 +618,6 @@ Change the specification of `std::lexicographical_compare_3way` in 23.7.11 \[alg
                                     
 # Acknowledgments
     
-Thanks to Agustín Bergé, Richard Smith, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
+Thanks to Agustín Bergé, Richard Smith, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
     
 [revzin.sometimes]: https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/ "Conditionally implementing spaceship||Barry Revzin||2018-12-21"

@@ -2,7 +2,7 @@ Title: Conditionally Trivial Special Member Functions
 Document-Number: D0848R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Casey Carter, casey at carter dot net
-Audience: EWG
+Audience: CWG
 
 # Introduction and Revision History
 
