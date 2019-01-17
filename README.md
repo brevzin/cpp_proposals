@@ -24,6 +24,6 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Pending
 
-- [p0847r1 - Deducing this](0847_deducing_this/p0847r1.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. R1 was discussed in San Diego. 
+- [d0847r2 - Deducing this](0847_deducing_this/d0847r2.html), with Simon Brand, Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. R1 was discussed in San Diego. 
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.

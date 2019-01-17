@@ -1230,7 +1230,7 @@ Possible extra rowspan handling
   <meta content="Bikeshed version dff342f4b23fb230b71436fb31b55f5f169715bd" name="generator">
   <link href="http://wg21.link/P0847" rel="canonical">
   <link href="https://isocpp.org/favicon.ico" rel="icon">
-  <meta content="54f86417cb12b46b8819012794ddd19b22488120" name="document-revision">
+  <meta content="76f83d2fc77d7e37a33350ec96a3e3445b5d8bc3" name="document-revision">
 <style>
 .ins, ins, ins *, span.ins, span.ins * {
   background-color: rgb(200, 250, 200);
@@ -1469,7 +1469,7 @@ pre .property::before, pre .property::after {
      <dd>
       <dd class="editor p-author h-card vcard"><span class="p-name fn">Barry Revzin</span> (<span class="p-org org">barry dot revzin at gmail dot com</span>)
      <dt>Audience:
-     <dd>EWG
+     <dd>EWG, SG7
      <dt>Project:
      <dd>ISO/IEC JTC1/SC22/WG21 14882: Programming Language — C++
     </dl>
@@ -1904,7 +1904,21 @@ pre .property::before, pre .property::after {
     <c- b>int</c-> <c- nf>g</c-><c- p>(</c-><c- k>this</c-> <c- n>Y</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>int</c-><c- p>,</c-> <c- b>int</c-><c- p>);</c->
 <c- p>};</c->
 </pre>
-   <p>While the type of <code class="highlight"><c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>f</c-></code> is <code class="highlight"><c- b>int</c-><c- p>(</c-><c- n>Y</c-><c- o>::*</c-><c- p>)(</c-><c- b>int</c-><c- p>,</c-> <c- b>int</c-><c- p>)</c-> <c- k>const</c-><c- o>&amp;</c-></code>, the type of <code class="highlight"><c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>g</c-></code> is <code class="highlight"><c- b>int</c-><c- p>(</c-><c- o>*</c-><c- p>)(</c-><c- n>Y</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>int</c-><c- p>,</c-> <c- b>int</c-><c- p>)</c-></code>.</p>
+   <p>While the type of <code class="highlight"><c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>f</c-></code> is <code class="highlight"><c- b>int</c-><c- p>(</c-><c- n>Y</c-><c- o>::*</c-><c- p>)(</c-><c- b>int</c-><c- p>,</c-> <c- b>int</c-><c- p>)</c-> <c- k>const</c-><c- o>&amp;</c-></code>, the type of <code class="highlight"><c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>g</c-></code> is <code class="highlight"><c- b>int</c-><c- p>(</c-><c- o>*</c-><c- p>)(</c-><c- n>Y</c-> <c- k>const</c-><c- o>&amp;</c-><c- p>,</c-> <c- b>int</c-><c- p>,</c-> <c- b>int</c-><c- p>)</c-></code>. As these are <em>just</em> function pointers, the usage of these two member functions differs once we drop them to pointers:</p>
+<pre class="language-cpp highlight"><c- n>Y</c-> <c- n>y</c-><c- p>;</c->
+<c- n>y</c-><c- p>.</c-><c- n>f</c-><c- p>(</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c-> <c- c1>// ok as usual</c->
+<c- n>y</c-><c- p>.</c-><c- n>g</c-><c- p>(</c-><c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>);</c-> <c- c1>// ok, this paper</c->
+
+<c- k>auto</c-> <c- n>pf</c-> <c- o>=</c-> <c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>f</c-><c- p>;</c->
+<c- n>pf</c-><c- p>(</c-><c- n>y</c-><c- p>,</c-> <c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c->              <c- c1>// error: pointers to member functions are not callable</c->
+<c- p>(</c-><c- n>y</c-><c- p>.</c-><c- o>*</c-><c- n>pf</c-><c- p>)(</c-><c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c->            <c- c1>// okay, same as above</c->
+<c- n>std</c-><c- o>::</c-><c- n>invoke</c-><c- p>(</c-><c- n>pf</c-><c- p>,</c-> <c- n>y</c-><c- p>,</c-> <c- mi>1</c-><c- p>,</c-> <c- mi>2</c-><c- p>);</c-> <c- c1>// ok</c->
+
+<c- k>auto</c-> <c- n>pg</c-> <c- o>=</c-> <c- o>&amp;</c-><c- n>Y</c-><c- o>::</c-><c- n>g</c-><c- p>;</c->
+<c- n>pg</c-><c- p>(</c-><c- n>y</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>);</c->              <c- c1>// okay, same as above</c->
+<c- p>(</c-><c- n>y</c-><c- p>.</c-><c- o>*</c-><c- n>pg</c-><c- p>)(</c-><c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>);</c->            <c- c1>// error: pg is not a pointer to member function</c->
+<c- n>std</c-><c- o>::</c-><c- n>invoke</c-><c- p>(</c-><c- n>pg</c-><c- p>,</c-> <c- n>y</c-><c- p>,</c-> <c- mi>3</c-><c- p>,</c-> <c- mi>4</c-><c- p>);</c-> <c- c1>// ok</c->
+</pre>
    <p>The rules are the same when deduction kicks in:</p>
 <pre class="language-cpp highlight"><c- k>struct</c-> <c- n>B</c-> <c- p>{</c->
     <c- k>template</c-> <c- o>&lt;</c-><c- k>typename</c-> <c- n>Self</c-><c- o>></c->

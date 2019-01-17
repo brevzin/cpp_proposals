@@ -10,7 +10,7 @@ Editor: Simon Brand, simon dot brand at microsoft dot com
 Editor: Ben Deane, ben at elbeno dot com
 Editor: Barry Revzin, barry dot revzin at gmail dot com
 Group: wg21
-Audience: EWG
+Audience: EWG, SG7
 Markup Shorthands: markdown yes
 Default Highlight: C++
 Abstract: We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
@@ -492,7 +492,23 @@ struct Y {
 };
 ```
 
-While the type of `&Y::f` is `int(Y::*)(int, int) const&`, the type of `&Y::g` is `int(*)(Y const&, int, int)`. 
+While the type of `&Y::f` is `int(Y::*)(int, int) const&`, the type of `&Y::g` is `int(*)(Y const&, int, int)`. As these are *just* function pointers, the usage of these two member functions differs once we drop them to pointers:
+
+```cpp
+Y y;
+y.f(1, 2); // ok as usual
+y.g(3, 4); // ok, this paper
+
+auto pf = &Y::f;
+pf(y, 1, 2);              // error: pointers to member functions are not callable
+(y.*pf)(1, 2);            // okay, same as above
+std::invoke(pf, y, 1, 2); // ok
+
+auto pg = &Y::g;
+pg(y, 3, 4);              // okay, same as above
+(y.*pg)(3, 4);            // error: pg is not a pointer to member function
+std::invoke(pg, y, 3, 4); // ok
+```
 
 The rules are the same when deduction kicks in:
 
