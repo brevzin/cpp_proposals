@@ -713,10 +713,6 @@ struct optional {
 <li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins></li>
 </ul>
 </blockquote>
-<p>Change 10.3.4.1 [class.default.ctor], paragraph 2:</p>
-<blockquote>
-<p>A defaulted <ins>prospective</ins> default constructor for class <code class="language-cpp">X</code> is defined as deleted if:</p>
-</blockquote>
 <h3 id="copy-and-move-constructor">3.2. Copy and move constructor<a class="self-link" href="#copy-and-move-constructor"></a></h3>
 <p>Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:</p>
 <blockquote>
@@ -771,15 +767,6 @@ parameter is of type <code class="language-cpp">const M&amp;</code> or <code cla
 <pre class="codehilite"><code class="language-cpp">X::X(X&amp;&amp;)</code></pre>
 
 
-</blockquote>
-<p>Change 10.3.4.2 [class.copy.ctor], paragraph 10:</p>
-<blockquote>
-<p>An implicitly-declared <ins>prospective</ins> copy/move constructor is an inline public member of its class. A defaulted <ins>prospective</ins> copy/move constructor for a class <code class="language-cpp">X</code> is defined as deleted (9.4.3) if X has:</p>
-<ul>
-<li>[...]</li>
-<li>for <del>the</del> <ins>a prospective</ins> copy constructor, a non-static data member of rvalue reference type.  </li>
-</ul>
-<p>A defaulted <ins>prospective</ins> move constructor that is defined as deleted is ignored by overload resolution (11.3, 11.4).</p>
 </blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 11:</p>
 <blockquote>
@@ -890,17 +877,6 @@ that has the same parameter type and whose constraints (if any) are satisfied.</
 <blockquote>
 <p>The implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type <code class="language-cpp">X&amp;</code>; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.</p>
 </blockquote>
-<p>Change 10.3.5 [class.copy.assign], paragraph 7:</p>
-<blockquote>
-<p>A defaulted <ins>prospective</ins> copy/move assignment operator for class X is defined as deleted if X has:</p>
-<ul>
-<li>a variant member with a non-trivial corresponding assignment operator and X is a union-like class, or  </li>
-<li>a non-static data member of const non-class type (or array thereof), or  </li>
-<li>a non-static data member of reference type, or  </li>
-<li>a direct non-static data member of class type M (or array thereof) or a direct base class M that cannot be copied/moved because overload resolution ([over.match]), as applied to find M's corresponding assignment operator, results in an ambiguity or a function that is deleted or inaccessible from the defaulted assignment operator.</li>
-</ul>
-<p>A defaulted <ins>prospective</ins> move assignment operator that is defined as deleted is ignored by overload resolution ([over.match], [over.over]).</p>
-</blockquote>
 <p>Change 10.3.5 [class.copy.assign], paragraph 8:</p>
 <blockquote>
 <p>Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.</p>
@@ -957,10 +933,6 @@ that has the same parameter type and whose constraints (if any) are satisfied.</
 <pre class="codehilite"><code class="language-cpp">~X();</code></pre>
 
 
-</blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 5:</p>
-<blockquote>
-<p>A defaulted <ins>prospective</ins> destructor for a class X is defined as deleted if: [...]</p>
 </blockquote>
 <p>Change 10.3.6 [class.dtor], paragraph 6:</p>
 <blockquote>

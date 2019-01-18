@@ -109,10 +109,6 @@ Change 10.3.4.1 [class.default.ctor], paragraph 1:
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins>
 
-Change 10.3.4.1 [class.default.ctor], paragraph 2:
-
-> A defaulted <ins>prospective</ins> default constructor for class `X` is defined as deleted if:
-
 ## Copy and move constructor
 
 Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:
@@ -172,15 +168,6 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 9:
     :::cpp
     X::X(X&&)
     
-Change 10.3.4.2 [class.copy.ctor], paragraph 10:
-    
-> An implicitly-declared <ins>prospective</ins> copy/move constructor is an inline public member of its class. A defaulted <ins>prospective</ins> copy/move constructor for a class `X` is defined as deleted (9.4.3) if X has:
-> 
-> - [...]
-> - for <del>the</del> <ins>a prospective</ins> copy constructor, a non-static data member of rvalue reference type.  
-> 
-> A defaulted <ins>prospective</ins> move constructor that is defined as deleted is ignored by overload resolution (11.3, 11.4).
-
 Change 10.3.4.2 [class.copy.ctor], paragraph 11:
 
 > A <ins>prospective</ins> copy/move constructor for class X is _trivial_ if it is not user-provided and if:
@@ -291,16 +278,6 @@ Change 10.3.5 [class.copy.assign], paragraph 5:
 Change 10.3.5 [class.copy.assign], paragraph 6:
 > The implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.
 
-Change 10.3.5 [class.copy.assign], paragraph 7:
-> A defaulted <ins>prospective</ins> copy/move assignment operator for class X is defined as deleted if X has:
-> 
-> - a variant member with a non-trivial corresponding assignment operator and X is a union-like class, or  
-> - a non-static data member of const non-class type (or array thereof), or  
-> - a non-static data member of reference type, or  
-> - a direct non-static data member of class type M (or array thereof) or a direct base class M that cannot be copied/moved because overload resolution ([over.match]), as applied to find M's corresponding assignment operator, results in an ambiguity or a function that is deleted or inaccessible from the defaulted assignment operator.
-> 
-> A defaulted <ins>prospective</ins> move assignment operator that is defined as deleted is ignored by overload resolution ([over.match], [over.over]).
-
 Change 10.3.5 [class.copy.assign], paragraph 8:
 > Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.
 
@@ -352,10 +329,6 @@ Change 10.3.6 [class.dtor], paragraph 4:
 > 
     :::cpp
     ~X();
-
-Change 10.3.6 [class.dtor], paragraph 5:
-
-> A defaulted <ins>prospective</ins> destructor for a class X is defined as deleted if: [...]
 
 Change 10.3.6 [class.dtor], paragraph 6:
 
