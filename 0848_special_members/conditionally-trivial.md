@@ -381,11 +381,6 @@ Change 10.3.6 [class.dtor], paragraph 10:
 
 > A <ins>prospective</ins> destructor can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
 
-Add a note to 10.3.6 [class.dtor], paragraph 12:
-
-> A program is ill-formed if a destructor that is potentially invoked is deleted or not accessible from
-the context of the invocation. <ins>[ *Note*: this can occur if a class has multiple prospective destructors and there is no most constrained destructor candidate, so there is no destructor *-end note* ]</ins>
-
 Change 10.3.6 [class.dtor], paragraph 13:
 
 > At the point of definition of a virtual <ins>prospective</ins> destructor (including an implicit definition (10.3.6)), the non-array deallocation function is determined as if for the expression `delete this` appearing in a non-virtual destructor of the destructor’s class (see 7.6.2.5). If the lookup fails or if the deallocation function has a deleted
