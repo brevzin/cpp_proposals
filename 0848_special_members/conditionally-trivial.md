@@ -87,6 +87,13 @@ In other words, introducing this notion of a copy constructor candidate and the 
 
 Relative to N4791. Due to potential confusion with overload resolution, we are using the term "prospective" rather than the term "candidate" throughout.
 
+Change 9.4.2 [dcl.fct.def.default], paragraph 1:
+
+> A function definition whose _function-body_ is of the form `= default ;` is called an _explicitly-defaulted definition_. A function that is explicitly defaulted shall
+> 
+> - be a <ins>prospective</ins> special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  
+> - not have default arguments.
+
 ## Default constructor
 
 Change 10.3.4.1 [class.default.ctor], paragraph 1:
@@ -106,7 +113,7 @@ Change 10.3.4.1 [class.default.ctor], paragraph 2:
 
 Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:
 
-> A non-template constructor for class `X` is a <ins>prospective</ins> copy constructor if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). 
+> A non-template constructor for class `X` is a _<ins>prospective</ins> copy constructor_ if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). 
 
 > <ins>A prospective copy constructor is a _copy constructor_ if</ins>
 > 
@@ -117,7 +124,7 @@ Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ct
 
 Introduce the concept of prospective move constructor in 10.3.4.2 [class.copy.ctor], paragraph 2:
 
-> A non-template constructor for class X is a <ins>prospective</ins> move constructor if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
+> A non-template constructor for class X is a _<ins>prospective</ins> move constructor_ if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
 parameters have default arguments (9.2.3.6).
 
 > <ins>A prospective move constructor is a _move constructor_ if</ins>
@@ -152,7 +159,7 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 8:
 — X does not have a user-declared <ins>prospective</ins> copy assignment operator,  
 — X does not have a user-declared <ins>prospective</ins> move assignment operator, and  
 — X does not have a user-declared <ins>prospective</ins> destructor.
-> [*Note:* <ins>An implicitly declared propsective move constructor is a move constructor.</ins> When <del>the</del> <ins>a</ins> <ins>prospective</ins> move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. *—end note*]
+> [*Note:* <ins>An implicitly declared prospective move constructor is a move constructor.</ins> When <del>the</del> <ins>a</ins> <ins>prospective</ins> move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. *—end note*]
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 9:
 
@@ -209,7 +216,7 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 15:
 
 Change 10.3.5 [class.copy.assign], paragraph 1:
 
-> A user-declared <ins>prospective</ins> copy assignment operator `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`.
+> A user-declared _<ins>prospective</ins> copy assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`.
 
 > <ins>A prospective copy assignment operator is a _copy assignment operator_ if</ins>
 > 
@@ -240,7 +247,7 @@ type has a copy assignment operator whose parameter is of type `const M&`, `cons
     
 Change 10.3.5 [class.copy.assign], paragraph 3:
 
-> A user-declared <ins>prospective</ins> move assignment operator `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`.
+> A user-declared _<ins>prospective</ins> move assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`.
 
 > <ins>A prospective move assignment operator is a _move assignment operator_ if</ins>
 > 
@@ -337,10 +344,15 @@ Change 10.3.6 [class.dtor], paragraph 1:
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints (if any) are satisfied.</ins> 
+>
+> <ins>A class shall have a destructor.</ins>
 
 Change 10.3.6 [class.dtor], paragraph 4:
 
-> If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.
+> If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class. <ins>An implicitly-declared prospective destructor for a class X will have the form
+> 
+    :::cpp
+    ~X();
 
 Change 10.3.6 [class.dtor], paragraph 5:
 
