@@ -8,7 +8,7 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Approved by (L)EWG
 
-- [d0848r1 - Conditionally Trivial Special Member Functions](0848_special_members/d0848r1.html), with Casey Carter. Approved in San Diego with new design, needs wording.
+- [p0848r1 - Conditionally Trivial Special Member Functions](0848_special_members/p0848r1.html), with Casey Carter. Approved in San Diego with new design, needs wording.
 - [p1065r0 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r0.html). Needs wording around `constexpr std::bind()`.
 - [p1185r1 - `<=> != ==`](1185-7_spaceship/p1185r1.html). Approved in San Diego, needs to come back to EWG to review defaulting `<=>` questions.
 - [d1186r1 - When do you actually use `<=>`?](1185-7_spaceship/d1186r1.html). Approved in San Diego, needs to come back to EWG with design changes after Core review.
