@@ -791,30 +791,25 @@ parameter is of type <code class="language-cpp">const M&amp;</code> or <code cla
 </ul>
 <p>otherwise the <ins>prospective</ins> copy/move constructor is <em>non-trivial</em>.</p>
 </blockquote>
-<p>Change 10.3.4.2 [class.copy.ctor], paragraph 12:</p>
-<blockquote>
-<p>A <ins>prospective</ins> copy/move constructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2), when it is needed for constant evaluation (7.7), or when it is explicitly defaulted after its first
-declaration.</p>
-</blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 13:</p>
 <blockquote>
-<p>Before <del>the</del> <ins>a</ins> defaulted <ins>prospective</ins> copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.</p>
+<p>Before <del>the</del> <ins>a</ins> defaulted copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.</p>
 </blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 14:</p>
 <blockquote>
-<p><del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
 the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let <code class="language-cpp">x</code> be either the parameter of <del>the</del> <ins>a prospective copy</ins> constructor or, for <del>the</del> <ins>a prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:</p>
+bases and members in a user-defined constructor (see 10.9.2). Let <code class="language-cpp">x</code> be either the parameter of <del>the</del> <ins>a copy</ins> constructor or, for <del>the</del> <ins>a</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:</p>
 <ul>
 <li>if the member is an array, each element is direct-initialized with the corresponding subobject of <code class="language-cpp">x</code>;  </li>
 <li>if a member <code class="language-cpp">m</code> has rvalue reference type <code class="language-cpp">T&amp;&amp;</code>, it is direct-initialized with <code class="language-cpp">static_cast&lt;T&amp;&amp;&gt;(x.m)</code>;  </li>
 <li>otherwise, the base or member is direct-initialized with the corresponding base or member of <code class="language-cpp">x</code>.  </li>
 </ul>
-<p>Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).</p>
+<p>Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined copy/move constructor (see 10.9.2).</p>
 </blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 15: </p>
 <blockquote>
-<p><del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.</p>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a union X copies the object representation (6.7) of X.</p>
 </blockquote>
 <h3 id="copy-and-move-assignment">3.3. Copy and move assignment<a class="self-link" href="#copy-and-move-assignment"></a></h3>
 <p>Change 10.3.5 [class.copy.assign], paragraph 1:</p>
@@ -922,7 +917,7 @@ that has the same parameter type and whose constraints (if any) are satisfied.</
 </blockquote>
 <p>Change 10.3.5 [class.copy.assign], paragraph 10:</p>
 <blockquote>
-<p>A <ins>prospective</ins> copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if</p>
+<p>A copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if</p>
 <ul>
 <li>X is a literal type, and</li>
 <li>the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and</li>
@@ -931,19 +926,19 @@ that has the same parameter type and whose constraints (if any) are satisfied.</
 </blockquote>
 <p>Change 10.3.5 [class.copy.assign], paragraph 11:</p>
 <blockquote>
-<p>Before the defaulted <ins>prospective</ins> copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [<em>Note: An implicitly-declared <ins>prospective</ins> copy/move assignment operator has an implied exception specification ([except.spec]). —</em>end note*]</p>
+<p>Before <del>the</del> <ins>a</ins> defaulted copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [<em>Note: An implicitly-declared copy/move assignment operator has an implied exception specification ([except.spec]). —</em>end note*]</p>
 </blockquote>
 <p>Change 10.3.5 [class.copy.assign], paragraph 12: </p>
 <blockquote>
-<p>The implicitly-defined <ins>prospective</ins> copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:</p>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:</p>
 <ul>
 <li>[...]  </li>
 </ul>
-<p>It is unspecified whether subobjects representing virtual base classes are assigned more than once by the implicitly-defined <ins>prospective</ins> copy/move assignment operator.</p>
+<p>It is unspecified whether subobjects representing virtual base classes are assigned more than once by <del>the</del> <ins>an</ins> implicitly-defined copy/move assignment operator.</p>
 </blockquote>
 <p>Change 10.3.5 [class.copy.assign], paragraph 13:</p>
 <blockquote>
-<p>The implicitly-defined <ins>prospective</ins> copy assignment operator for a union X copies the object representation ([basic.types]) of X.</p>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy assignment operator for a union X copies the object representation ([basic.types]) of X.</p>
 </blockquote>
 <h3 id="destructor">3.4. Destructor<a class="self-link" href="#destructor"></a></h3>
 <p>Change 10.3.6 [class.dtor], paragraph 1:</p>
@@ -978,22 +973,9 @@ class has a trivial destructor.</li>
 </ul>
 <p>Otherwise, the <ins>prospective</ins> destructor is non-trivial.</p>
 </blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 7:</p>
-<blockquote>
-<p>A <ins>prospective</ins> destructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2) or when it is explicitly defaulted after its first declaration.</p>
-</blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 8:</p>
-<blockquote>
-<p>Before the defaulted <ins>prospective</ins> destructor for a class is implicitly defined, all the non-user-provided destructors for its base classes and its non-static data members shall have been implicitly defined.</p>
-</blockquote>
 <p>Change 10.3.6 [class.dtor], paragraph 10:</p>
 <blockquote>
 <p>A <ins>prospective</ins> destructor can be declared <code class="language-cpp">virtual</code> (10.6.2) or pure <code class="language-cpp">virtual</code> (10.6.3); if <ins>the destructor of a class is <code class="language-cpp">virtual</code> and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
-</blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 13:</p>
-<blockquote>
-<p>At the point of definition of a virtual <ins>prospective</ins> destructor (including an implicit definition (10.3.6)), the non-array deallocation function is determined as if for the expression <code class="language-cpp">delete this</code> appearing in a non-virtual destructor of the destructor’s class (see 7.6.2.5). If the lookup fails or if the deallocation function has a deleted
-definition (9.4), the program is ill-formed.</p>
 </blockquote>
 <h2 id="acknowledgments">4. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer for the wording wizardry. </p>

@@ -191,30 +191,25 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 11:
 > 
 > otherwise the <ins>prospective</ins> copy/move constructor is _non-trivial_.
 
-Change 10.3.4.2 [class.copy.ctor], paragraph 12:
-
-> A <ins>prospective</ins> copy/move constructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2), when it is needed for constant evaluation (7.7), or when it is explicitly defaulted after its first
-declaration.
-
 Change 10.3.4.2 [class.copy.ctor], paragraph 13:
 
-> Before <del>the</del> <ins>a</ins> defaulted <ins>prospective</ins> copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.
+> Before <del>the</del> <ins>a</ins> defaulted copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 14:
 
-> <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+> <del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
 the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of <del>the</del> <ins>a prospective copy</ins> constructor or, for <del>the</del> <ins>a prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
+bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of <del>the</del> <ins>a copy</ins> constructor or, for <del>the</del> <ins>a</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
 > 
 > - if the member is an array, each element is direct-initialized with the corresponding subobject of `x`;  
 > - if a member `m` has rvalue reference type `T&&`, it is direct-initialized with `static_cast<T&&>(x.m)`;  
 > - otherwise, the base or member is direct-initialized with the corresponding base or member of `x`.  
 > 
-> Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).
+> Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined copy/move constructor (see 10.9.2).
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 15: 
 
-> <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.
+> <del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a union X copies the object representation (6.7) of X.
 
 ## Copy and move assignment
 
@@ -319,24 +314,24 @@ Change 10.3.5 [class.copy.assign], paragraph 9:
 > otherwise the <ins>prospective</ins> copy/move assignment operator is non-trivial.
 
 Change 10.3.5 [class.copy.assign], paragraph 10:
-> A <ins>prospective</ins> copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if
+> A copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if
 > 
 > - X is a literal type, and
 > - the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and
 > - for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.
 
 Change 10.3.5 [class.copy.assign], paragraph 11:
-> Before the defaulted <ins>prospective</ins> copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [*Note: An implicitly-declared <ins>prospective</ins> copy/move assignment operator has an implied exception specification ([except.spec]). —*end note*]
+> Before <del>the</del> <ins>a</ins> defaulted copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [*Note: An implicitly-declared copy/move assignment operator has an implied exception specification ([except.spec]). —*end note*]
 
 Change 10.3.5 [class.copy.assign], paragraph 12: 
-> The implicitly-defined <ins>prospective</ins> copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:
+> <del>The</del> <ins>An</ins> implicitly-defined copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:
 > 
 > - [...]  
 > 
-> It is unspecified whether subobjects representing virtual base classes are assigned more than once by the implicitly-defined <ins>prospective</ins> copy/move assignment operator.
+> It is unspecified whether subobjects representing virtual base classes are assigned more than once by <del>the</del> <ins>an</ins> implicitly-defined copy/move assignment operator.
 
 Change 10.3.5 [class.copy.assign], paragraph 13:
-> The implicitly-defined <ins>prospective</ins> copy assignment operator for a union X copies the object representation ([basic.types]) of X.
+> <del>The</del> <ins>An</ins> implicitly-defined copy assignment operator for a union X copies the object representation ([basic.types]) of X.
 
 ## Destructor
 
@@ -373,22 +368,9 @@ class has a trivial destructor.
 > 
 > Otherwise, the <ins>prospective</ins> destructor is non-trivial.
 
-Change 10.3.6 [class.dtor], paragraph 7:
-
-> A <ins>prospective</ins> destructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2) or when it is explicitly defaulted after its first declaration.
-
-Change 10.3.6 [class.dtor], paragraph 8:
-
-> Before the defaulted <ins>prospective</ins> destructor for a class is implicitly defined, all the non-user-provided destructors for its base classes and its non-static data members shall have been implicitly defined.
-
 Change 10.3.6 [class.dtor], paragraph 10:
 
 > A <ins>prospective</ins> destructor can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
-
-Change 10.3.6 [class.dtor], paragraph 13:
-
-> At the point of definition of a virtual <ins>prospective</ins> destructor (including an implicit definition (10.3.6)), the non-array deallocation function is determined as if for the expression `delete this` appearing in a non-virtual destructor of the destructor’s class (see 7.6.2.5). If the lookup fails or if the deallocation function has a deleted
-definition (9.4), the program is ill-formed.
 
 # Acknowledgments
 
