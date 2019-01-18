@@ -105,7 +105,7 @@ Change 10.3.4.1 [class.default.ctor], paragraph 1:
 > A _<ins>prospective</ins> default constructor_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class `X`, a non-explicit<ins> inline public</ins> constructor <del>having no parameters</del> is implicitly declared as defaulted (9.4). <del>An implicitly-declared default constructor is an inline public member of its class.</del> <ins>Such a constructor will have the form:</ins>
 > 
     :::cpp
-    X();
+    X()
 
 > <ins>A prospective default constructor is a _default constructor_ if</ins>
 > 
@@ -314,7 +314,7 @@ Change 10.3.6 [class.dtor], paragraph 4:
 > <ins>An implicitly-declared prospective destructor for a class X will have the form
 > 
     :::cpp
-    ~X();
+    ~X()
 
 Change 10.3.6 [class.dtor], paragraph 10:
 
