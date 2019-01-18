@@ -699,6 +699,10 @@ struct optional {
 <li>not have default arguments.</li>
 </ul>
 </blockquote>
+<p>Insert into 9.4.2 [dcl.fct.def.default], paragraph 5:</p>
+<blockquote>
+<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function that is not a special member function shall be defined as deleted.</ins> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
+</blockquote>
 <h3 id="default-constructor">3.1. Default constructor<a class="self-link" href="#default-constructor"></a></h3>
 <p>Change 10.3.4.1 [class.default.ctor], paragraph 1:</p>
 <blockquote>
@@ -773,7 +777,7 @@ parameter is of type <code class="language-cpp">const M&amp;</code> or <code cla
 <p>An implicitly-declared <ins>prospective</ins> copy/move constructor is an inline public member of its class. A defaulted <ins>prospective</ins> copy/move constructor for a class <code class="language-cpp">X</code> is defined as deleted (9.4.3) if X has:</p>
 <ul>
 <li>[...]</li>
-<li>for the <ins>prospective</ins> copy constructor, a non-static data member of rvalue reference type.  </li>
+<li>for <del>the</del> <ins>a prospective</ins> copy constructor, a non-static data member of rvalue reference type.  </li>
 </ul>
 <p>A defaulted <ins>prospective</ins> move constructor that is defined as deleted is ignored by overload resolution (11.3, 11.4).</p>
 </blockquote>
@@ -798,19 +802,19 @@ declaration.</p>
 </blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 14:</p>
 <blockquote>
-<p>The implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+<p><del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
 the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let <code class="language-cpp">x</code> be either the parameter of the <ins>prospective copy</ins> constructor or, for the <ins>prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:</p>
+bases and members in a user-defined constructor (see 10.9.2). Let <code class="language-cpp">x</code> be either the parameter of <del>the</del> <ins>a prospective copy</ins> constructor or, for <del>the</del> <ins>a prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:</p>
 <ul>
 <li>if the member is an array, each element is direct-initialized with the corresponding subobject of <code class="language-cpp">x</code>;  </li>
 <li>if a member <code class="language-cpp">m</code> has rvalue reference type <code class="language-cpp">T&amp;&amp;</code>, it is direct-initialized with <code class="language-cpp">static_cast&lt;T&amp;&amp;&gt;(x.m)</code>;  </li>
 <li>otherwise, the base or member is direct-initialized with the corresponding base or member of <code class="language-cpp">x</code>.  </li>
 </ul>
-<p>Virtual base class subobjects shall be initialized only once by the implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).</p>
+<p>Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).</p>
 </blockquote>
 <p>Change 10.3.4.2 [class.copy.ctor], paragraph 15: </p>
 <blockquote>
-<p>The implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.</p>
+<p><del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.</p>
 </blockquote>
 <h3 id="copy-and-move-assignment">3.3. Copy and move assignment<a class="self-link" href="#copy-and-move-assignment"></a></h3>
 <p>Change 10.3.5 [class.copy.assign], paragraph 1:</p>

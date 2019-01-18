@@ -94,6 +94,10 @@ Change 9.4.2 [dcl.fct.def.default], paragraph 1:
 > - be a <ins>prospective</ins> special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  
 > - not have default arguments.
 
+Insert into 9.4.2 [dcl.fct.def.default], paragraph 5:
+
+> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function that is not a special member function shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
+
 ## Default constructor
 
 Change 10.3.4.1 [class.default.ctor], paragraph 1:
@@ -173,7 +177,7 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 10:
 > An implicitly-declared <ins>prospective</ins> copy/move constructor is an inline public member of its class. A defaulted <ins>prospective</ins> copy/move constructor for a class `X` is defined as deleted (9.4.3) if X has:
 > 
 > - [...]
-> - for the <ins>prospective</ins> copy constructor, a non-static data member of rvalue reference type.  
+> - for <del>the</del> <ins>a prospective</ins> copy constructor, a non-static data member of rvalue reference type.  
 > 
 > A defaulted <ins>prospective</ins> move constructor that is defined as deleted is ignored by overload resolution (11.3, 11.4).
 
@@ -198,19 +202,19 @@ Change 10.3.4.2 [class.copy.ctor], paragraph 13:
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 14:
 
-> The implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+> <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
 the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of the <ins>prospective copy</ins> constructor or, for the <ins>prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
+bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of <del>the</del> <ins>a prospective copy</ins> constructor or, for <del>the</del> <ins>a prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
 > 
 > - if the member is an array, each element is direct-initialized with the corresponding subobject of `x`;  
 > - if a member `m` has rvalue reference type `T&&`, it is direct-initialized with `static_cast<T&&>(x.m)`;  
 > - otherwise, the base or member is direct-initialized with the corresponding base or member of `x`.  
 > 
-> Virtual base class subobjects shall be initialized only once by the implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).
+> Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 15: 
 
-> The implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.
+> <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.
 
 ## Copy and move assignment
 
