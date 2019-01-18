@@ -85,129 +85,143 @@ In other words, introducing this notion of a copy constructor candidate and the 
 
 # Wording
 
-Relative to N4791.
-
-Change 7.5.5.1 [expr.prim.lambda.closure], paragraph 12:
-
-> The closure type associated with a lambda-expression has no default constructor <ins>candidates</ins> if the lambda-expression has a lambda-capture and a defaulted default constructor <ins>candidate</ins> otherwise. It has a defaulted copy constructor <ins>candidate</ins> and a defaulted move constructor <ins>candidate</ins> (10.3.4.2). It has a deleted copy assignment operator <ins>candidate</ins> if the lambda-expression has a lambda-capture and defaulted copy and move assignment <del>operators</del> <ins>operator candidates</ins> otherwise (10.3.5). [Note: These special
-member <del>functions</del> <ins>function candidates</ins> are implicitly defined as usual, and might therefore be defined as deleted. —end note]
-
-## Special members, in general
-
-Introduce the concept of candidates in 10.3.3 [special]:
-
-> <del>The default</del> <ins>Default</ins> constructor <ins>candidates</ins> (10.3.4.1), copy constructor <ins>candidates</ins>, move constructor <ins>candidates</ins> (10.3.4.2), copy assignment operator <ins>candidates</ins>,
-move assignment operator <ins>candidates</ins> (10.3.5), and destructor <ins>candidates</ins>(10.3.6) are <i>special member <del>functions</del> <ins>function candidates</ins></i>. *[Note*: The implementation will implicitly declare these member <del>functions</del> <ins>function candidates</ins> for some class types when the program does not explicitly declare them. The implementation will implicitly define them if they are odr-used (6.2) or needed for constant evaluation (7.7). —*end note*] An implicitly-declared special member function <ins>candidate</ins> is declared at the closing `}` of the *class-specifier*. Programs shall not define implicitly-declared special member <del>functions</del> <ins>function candidates</ins>.
-
-> <ins>The most constrained ([temp.constr]) special member function candidate amongst those candidates whose constraints are satisfied, for each kind of special member, is a <i>special member function</i>. If there is no most constrained candidate (e.g. if there is no candidate whose constraints are satisfied, or there are multiple candidates but no one is more constrained than the others), then there is no special member function of that kind. [ *Note*: Special member function candidates are only implicitly-declared when there are no other candidates, so all implicitly-declared special member function candidates are special member functions *-end note*] </ins>
+Relative to N4791. Due to potential confusion with overload resolution, we are using the term "prospective" rather than the term "candidate" throughout.
 
 ## Default constructor
 
 Change 10.3.4.1 [class.default.ctor], paragraph 1:
 
-> A _default constructor <ins>candidate</ins>_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor <ins>candidate</ins> for class `X`, a non-explicit constructor having no parameters is implicitly declared as defaulted (9.4). An implicitly-declared default constructor <ins>candidate</ins> is an inline public member of its class. <ins>The most constrained ([temp.constr]) default constructor candidate is the _default constructor_. </ins>
+> A _<ins>prospective</ins> default constructor_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class `X`, a non-explicit constructor having no parameters is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> default constructor is an inline public member of its class. 
+
+> <ins>A prospective default constructor is a _default constructor_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints are satisfied (if any).</ins>
 
 Change 10.3.4.1 [class.default.ctor], paragraph 2:
 
-> A defaulted default constructor <ins>candidate</ins> for class `X` is defined as deleted if:
+> A defaulted <ins>prospective</ins> default constructor for class `X` is defined as deleted if:
 
 ## Copy and move constructor
 
-Introduce the concept of copy constructor candidate in 10.3.4.2 [class.copy.ctor], paragraph 1:
+Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:
 
-> A non-template constructor for class `X` is a copy constructor <ins>candidate</ins> if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). <ins>For each of those four types, the most constrained copy constructor candidate ([temp.constr]) with that type as its first parameter is a _copy constructor_. [ *Note*: a class can have multiple copy constructors, provided they have different signatures *-end note*] </ins>
+> A non-template constructor for class `X` is a <ins>prospective</ins> copy constructor if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). 
 
-Introduce the concept of move constructor candidate in 10.3.4.2 [class.copy.ctor], paragraph 2:
+> <ins>A prospective copy constructor is a _copy constructor_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints are satisfied (if any).</ins>
+> 
+> <ins> [ *Note*: a class can have multiple copy constructors, provided they have different signatures *-end note*] </ins>
 
-> A non-template constructor for class X is a move constructor <ins>candidate</ins> if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
-parameters have default arguments (9.2.3.6). <ins>For each of those four types, the most constrained move constructor candidate ([temp.constr]) with that type as its first parameter is a _move constructor_.</ins>
+Introduce the concept of prospective move constructor in 10.3.4.2 [class.copy.ctor], paragraph 2:
+
+> A non-template constructor for class X is a <ins>prospective</ins> move constructor if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
+parameters have default arguments (9.2.3.6).
+
+> <ins>A prospective move constructor is a _move constructor_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move constructor
+that has the same first parameter type and whose constraints are satisfied (if any).</ins>
+> 
+> <ins> [ *Note*: a class can have multiple move constructors, provided they have different signatures *-end note*] </ins>
 
 Reduce the cases where we implicitly generate special members in 10.3.4.2 [class.copy.ctor], paragraph 6:
 
-> If the class definition does not explicitly declare a copy constructor <ins>candidate</ins>, a non-explicit one is declared implicitly. If the class definition declares a move constructor <ins>candidate</ins> or move assignment operator <ins>candidate</ins>, the implicitly declared copy constructor <ins>candidate</ins> is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared copy assignment operator <ins>candidate</ins> or a user-declared destructor <ins>candidate</ins> (D.5). <ins>[ Note: An implicitly declared copy constructor candidate is a copy constructor. -end note ]</ins>
+> If the class definition does not explicitly declare a <ins>prospective</ins> copy constructor, a non-explicit one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy constructor is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy assignment operator or a user-declared <ins>prospective</ins> destructor (D.5). <ins>[ *Note:* An implicitly declared prospective copy constructor is a copy constructor. *-end note* ]</ins>
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 7:
 
-> The implicitly-declared copy constructor <ins>candidate</ins> for a class `X` will have the form
+> The implicitly-declared <ins>prospective</ins> copy constructor for a class `X` will have the form
 > 
     :::cpp
     X::X(const X&)
 > if each potentially constructed subobject of a class type M (or array thereof) has a copy constructor whose first
-parameter is of type `const M&` or `const volatile M&`. Otherwise, the implicitly-declared copy constructor <ins>candidate</ins> will have the form
+parameter is of type `const M&` or `const volatile M&`. Otherwise, the implicitly-declared <ins>prospective</ins> copy constructor will have the form
 > 
     :::cpp
     X::X(X&)
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 8:
 
-> If the definition of a class `X` does not explicitly declare a move constructor <ins>candidate</ins>, a non-explicit one will be implicitly declared as defaulted if and only if  
+> If the definition of a class `X` does not explicitly declare a <ins>prospective</ins> move constructor, a non-explicit one will be implicitly declared as defaulted if and only if  
 > 
-— X does not have a user-declared copy constructor <ins>candidate</ins>,  
-— X does not have a user-declared copy assignment operator <ins>candidate</ins>,  
-— X does not have a user-declared move assignment operator <ins>candidate</ins>, and  
-— X does not have a user-declared destructor <ins>candidate</ins>.
-> [Note: <ins>An implicitly declared move constructor candidate is a move constructor.</ins> When <del>the</del> <ins>a</ins> move constructor <ins>candidate</ins> is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. —end note]
+— X does not have a user-declared <ins>prospective</ins> copy constructor,  
+— X does not have a user-declared <ins>prospective</ins> copy assignment operator,  
+— X does not have a user-declared <ins>prospective</ins> move assignment operator, and  
+— X does not have a user-declared <ins>prospective</ins> destructor.
+> [*Note:* <ins>An implicitly declared propsective move constructor is a move constructor.</ins> When <del>the</del> <ins>a</ins> <ins>prospective</ins> move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. *—end note*]
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 9:
 
-> The implicitly-declared move constructor <ins>candidate</ins> for class `X` will have the form
+> The implicitly-declared <ins>prospective</ins> move constructor for class `X` will have the form
 > 
     :::cpp
     X::X(X&&)
     
 Change 10.3.4.2 [class.copy.ctor], paragraph 10:
     
-> An implicitly-declared copy/move constructor <ins>candidate</ins> is an inline public member of its class. A defaulted copy/move constructor <ins>candidate</ins> for a class `X` is defined as deleted (9.4.3) if X has:
+> An implicitly-declared <ins>prospective</ins> copy/move constructor is an inline public member of its class. A defaulted <ins>prospective</ins> copy/move constructor for a class `X` is defined as deleted (9.4.3) if X has:
 > 
 > - [...]
-> - for the copy constructor <ins>candidate</ins>, a non-static data member of rvalue reference type.  
+> - for the <ins>prospective</ins> copy constructor, a non-static data member of rvalue reference type.  
 > 
-> A defaulted move constructor <ins>candidate</ins> that is defined as deleted is ignored by overload resolution (11.3, 11.4).
+> A defaulted <ins>prospective</ins> move constructor that is defined as deleted is ignored by overload resolution (11.3, 11.4).
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 11:
 
-> A copy/move constructor <ins>candidate</ins> for class X is _trivial_ if it is not user-provided and if:
+> A <ins>prospective</ins> copy/move constructor for class X is _trivial_ if it is not user-provided and if:
 > 
 > - [...]  
 > - [...]  
 > - [...]  
 > 
-> otherwise the copy/move constructor <ins>candidate</ins> is _non-trivial_.
+> otherwise the <ins>prospective</ins> copy/move constructor is _non-trivial_.
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 12:
 
-> A copy/move constructor <ins>candidate</ins> that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2), when it is needed for constant evaluation (7.7), or when it is explicitly defaulted after its first
+> A <ins>prospective</ins> copy/move constructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2), when it is needed for constant evaluation (7.7), or when it is explicitly defaulted after its first
 declaration.
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 13:
 
-> Before <del>the</del> <ins>a</ins> defaulted copy/move constructor <ins>candidate</ins> for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.
+> Before <del>the</del> <ins>a</ins> defaulted <ins>prospective</ins> copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 14:
 
-> The implicitly-defined copy/move constructor <ins>candidate</ins> for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+> The implicitly-defined <ins>prospective</ins> copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
 the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of the <ins>copy</ins> constructor <ins>candidate</ins> or, for the move constructor <ins>candidate</ins>, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
+bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of the <ins>prospective copy</ins> constructor or, for the <ins>prospective</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
 > 
 > - if the member is an array, each element is direct-initialized with the corresponding subobject of `x`;  
 > - if a member `m` has rvalue reference type `T&&`, it is direct-initialized with `static_cast<T&&>(x.m)`;  
 > - otherwise, the base or member is direct-initialized with the corresponding base or member of `x`.  
 > 
-> Virtual base class subobjects shall be initialized only once by the implicitly-defined copy/move constructor <ins>candidate</ins> (see 10.9.2).
+> Virtual base class subobjects shall be initialized only once by the implicitly-defined <ins>prospective</ins> copy/move constructor (see 10.9.2).
 
 Change 10.3.4.2 [class.copy.ctor], paragraph 15: 
 
-> The implicitly-defined copy/move constructor <ins>candidate</ins> for a union X copies the object representation (6.7) of X.
+> The implicitly-defined <ins>prospective</ins> copy/move constructor for a union X copies the object representation (6.7) of X.
 
 ## Copy and move assignment
 
 Change 10.3.5 [class.copy.assign], paragraph 1:
 
-> A user-declared copy assignment operator <ins>candidate</ins> `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`. <ins> For each of those five types, the most constrained copy assignment operator candidate ([temp.constr]) with that type as its parameter is a <i>copy assignment operator</i>.</ins> [Note: An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. —end note] [Note: More than one form of copy assignment operator <ins>candidate</ins> may be declared for a class. —end note] [Note: If a class `X` only has a copy assignment operator <ins>candidate</ins> with a parameter of type `X&`, an expression of type `const X` cannot be assigned to an object of type `X`.
+> A user-declared <ins>prospective</ins> copy assignment operator `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`.
+
+> <ins>A prospective copy assignment operator is a _copy assignment operator_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy assignment operator
+that has the same parameter type and whose constraints are satisfied (if any).</ins> 
+
+[*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note]* [*Note:* More than one form of <ins>prospective</ins> copy assignment operator may be declared for a class. *—end note*] [*Note:* If a class `X` only has a <ins>prospective</ins> copy assignment operator with a parameter of type `X&`, an expression of type `const X` cannot be assigned to an object of type `X`. [*Example:*
 
 Change 10.3.5 [class.copy.assign], paragraph 2:
 
-> If the class definition does not explicitly declare a copy assignment operator <ins>candidate</ins>, one is declared implicitly. If the class definition declares a move constructor <ins>candidate</ins> or move assignment operator <ins>candidate</ins>, the implicitly declared copy assignment operator <ins>candidate</ins> is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared copy constructor <ins>candidate</ins> or a user-declared destructor <ins>candidate</ins> (D.5). The implicitly-declared copy assignment operator <ins>candidate</ins> for a class `X` will have the form
+> If the class definition does not explicitly declare a <ins>prospective</ins> copy assignment operator, one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy assignment operator is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy constructor or a user-declared <ins>prospective</ins> destructor (D.5). The implicitly-declared <ins>prospective</ins> copy assignment operator for a class `X` will have the form
 > 
     :::cpp
     X& X::operator=(const X&)
@@ -219,23 +233,31 @@ Change 10.3.5 [class.copy.assign], paragraph 2:
 type has a copy assignment operator whose parameter is of type `const M&`, `const volatile M&`, or
 `M`. 
 > 
-> Otherwise, the implicitly-declared copy assignment operator <ins>candidate</ins> will have the form
+> Otherwise, the implicitly-declared <ins>prospective</ins> copy assignment operator will have the form
 > 
     :::cpp
     X& X::operator=(X&)
     
 Change 10.3.5 [class.copy.assign], paragraph 3:
 
-> A user-declared move assignment operator <ins>candidate</ins> `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`. <ins>For each of those four types, the most constrained move assignment operator candidate ([temp.constr]) with that type as its parameter is a move assignment operator.</ins> [Note: An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. —end note] [Note: More than one form of move assignment operator <ins>candidate</ins> may be declared for a class. —end note]
+> A user-declared <ins>prospective</ins> move assignment operator `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`.
+
+> <ins>A prospective move assignment operator is a _move assignment operator_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move assignment operator
+that has the same parameter type and whose constraints are satisfied (if any).</ins> 
+
+> [*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note*] [*Note:* More than one form of <ins>prospective</ins> move assignment operator may be declared for a class. *—end note*]
 
 Change 10.3.5 [class.copy.assign], paragraph 4:
 
-> If the definition of a class X does not explicitly declare a move assignment operator <ins>candidate</ins>, one will be implicitly declared as defaulted if and only if
+> If the definition of a class X does not explicitly declare a <ins>prospective</ins> move assignment operator, one will be implicitly declared as defaulted if and only if
 > 
-> - X does not have a user-declared copy constructor <ins>candidate</ins>,  
-> - X does not have a user-declared move constructor <ins>candidate</ins>,  
-> - X does not have a user-declared copy assignment operator <ins>candidate</ins>, and  
-> - X does not have a user-declared destructor <ins>candidate</ins>.
+> - X does not have a user-declared <ins>prospective</ins> copy constructor,  
+> - X does not have a user-declared <ins>prospective</ins> move constructor,  
+> - X does not have a user-declared <ins>prospective</ins> copy assignment operator, and  
+> - X does not have a user-declared <ins>prospective</ins> destructor.
 > 
 > [*Example*: The class definition
 > 
@@ -244,7 +266,7 @@ Change 10.3.5 [class.copy.assign], paragraph 4:
       int a;
       S& operator=(const S&) = default;
     };
-> will not have a default move assignment operator <ins>candidate</ins> implicitly declared because <del>the</del> <ins>a</ins> copy assignment operator <ins>candidate</ins> has been user-declared. <del>The</del> <ins>A</ins> move assignment operator <ins>candidate</ins> may be explicitly defaulted.
+> will not have a default <ins>prospective</ins> move assignment operator implicitly declared because <del>the</del> <ins>a</ins> <ins>prospective</ins> copy assignment operator has been user-declared. <del>The</del> <ins>A</ins> <ins>prospective</ins> move assignment operator may be explicitly defaulted.
 > 
     :::cpp
     struct S {
@@ -255,100 +277,108 @@ Change 10.3.5 [class.copy.assign], paragraph 4:
 > —*end example*]
 
 Change 10.3.5 [class.copy.assign], paragraph 5: 
-> The implicitly-declared move assignment operator <ins>candidate</ins> for a class X will have the form
+> The implicitly-declared <ins>prospective</ins> move assignment operator for a class X will have the form
 > 
     :::cpp
     X& X::operator=(X&&);
 
 Change 10.3.5 [class.copy.assign], paragraph 6:
-> The implicitly-declared copy/move assignment operator <ins>candidate</ins> for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared copy/move assignment operator <ins>candidate</ins> is an inline public member of its class.
+> The implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.
 
 Change 10.3.5 [class.copy.assign], paragraph 7:
-> A defaulted copy/move assignment operator <ins>candidate</ins> for class X is defined as deleted if X has:
+> A defaulted <ins>prospective</ins> copy/move assignment operator for class X is defined as deleted if X has:
 > 
 > - a variant member with a non-trivial corresponding assignment operator and X is a union-like class, or  
 > - a non-static data member of const non-class type (or array thereof), or  
 > - a non-static data member of reference type, or  
 > - a direct non-static data member of class type M (or array thereof) or a direct base class M that cannot be copied/moved because overload resolution ([over.match]), as applied to find M's corresponding assignment operator, results in an ambiguity or a function that is deleted or inaccessible from the defaulted assignment operator.
 > 
-> A defaulted move assignment operator <ins>candidate</ins> that is defined as deleted is ignored by overload resolution ([over.match], [over.over]).
+> A defaulted <ins>prospective</ins> move assignment operator that is defined as deleted is ignored by overload resolution ([over.match], [over.over]).
 
 Change 10.3.5 [class.copy.assign], paragraph 8:
-> Because a copy/move assignment operator <ins>candidate</ins> is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding assignment operator <ins>candidate</ins> of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a copy/move assignment operator <ins>candidate</ins> for the derived class is not considered an explicit declaration of such an operator <ins>candidate</ins> and does not suppress the implicit declaration of the derived class operator <ins>candidate</ins>; the operator introduced by the using-declaration is hidden by the implicitly-declared operator <ins>candidate</ins> in the derived class.
+> Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.
 
 Change 10.3.5 [class.copy.assign], paragraph 9:
-> A copy/move assignment operator <ins>candidate</ins> for class X is trivial if it is not user-provided and if:
+> A <ins>prospective</ins> copy/move assignment operator for class X is trivial if it is not user-provided and if:
 > 
 > - class X has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and  
 > - the assignment operator selected to copy/move each direct base class subobject is trivial, and  
 > - for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is trivial;  
 > 
-> otherwise the copy/move assignment operator <ins>candidate</ins> is non-trivial.
+> otherwise the <ins>prospective</ins> copy/move assignment operator is non-trivial.
 
 Change 10.3.5 [class.copy.assign], paragraph 10:
-> A copy/move assignment operator <ins>candidate</ins> for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined copy/move assignment operator <ins>candidate</ins> is constexpr if
+> A <ins>prospective</ins> copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if
 > 
 > - X is a literal type, and
 > - the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and
 > - for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.
 
 Change 10.3.5 [class.copy.assign], paragraph 11:
-> Before the defaulted copy/move assignment operator <ins>candidate</ins> for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [*Note: An implicitly-declared copy/move assignment operator <ins>candidate</ins> has an implied exception specification ([except.spec]). —*end note*]
+> Before the defaulted <ins>prospective</ins> copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [*Note: An implicitly-declared <ins>prospective</ins> copy/move assignment operator has an implied exception specification ([except.spec]). —*end note*]
 
 Change 10.3.5 [class.copy.assign], paragraph 12: 
-> The implicitly-defined copy/move assignment operator <ins>candidate</ins> for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:
+> The implicitly-defined <ins>prospective</ins> copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:
 > 
 > - [...]  
 > 
-> It is unspecified whether subobjects representing virtual base classes are assigned more than once by the implicitly-defined copy/move assignment operator <ins>candidate</ins>.
+> It is unspecified whether subobjects representing virtual base classes are assigned more than once by the implicitly-defined <ins>prospective</ins> copy/move assignment operator.
 
 Change 10.3.5 [class.copy.assign], paragraph 13:
-> The implicitly-defined copy assignment operator <ins>candidate</ins> for a union X copies the object representation ([basic.types]) of X.
+> The implicitly-defined <ins>prospective</ins> copy assignment operator for a union X copies the object representation ([basic.types]) of X.
 
 ## Destructor
 
 Change 10.3.6 [class.dtor], paragraph 1:
 
-> In a declaration of a destructor <ins>candidate</ins>, the declarator is a function declarator (9.2.3.5) of the form [...] A destructor <ins>candidate</ins> shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a destructor <ins>candidate</ins> declaration (if any) shall be `friend`, `inline`, or `virtual`. <ins>The most constrained ([temp.constr]) destructor candidate of a class is the destructor.</ins>
+> In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a <ins>prospective</ins> destructor declaration (if any) shall be `friend`, `inline`, or `virtual`.
+
+> <ins>A prospective destructor is a _destructor_ if</ins>
+> 
+> - <ins>all of its constraints (if any) are satisfied, and</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints are satisfied (if any).</ins> 
 
 Change 10.3.6 [class.dtor], paragraph 4:
 
-> If a class has no user-declared destructor <ins>candidate</ins>, a destructor <ins>candidate</ins> is implicitly declared as defaulted (9.4). An implicitly-declared destructor <ins>candidate</ins> is an inline public member of its class.
+> If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.
 
 Change 10.3.6 [class.dtor], paragraph 5:
 
-> A defaulted destructor <ins>candidate</ins> for a class X is defined as deleted if: [...]
+> A defaulted <ins>prospective</ins> destructor for a class X is defined as deleted if: [...]
 
 Change 10.3.6 [class.dtor], paragraph 6:
 
-> A destructor <ins>candidate</ins> is trivial if it is not user-provided and if:  
+> A <ins>prospective</ins> destructor is trivial if it is not user-provided and if:  
 > 
-> - the destructor <ins>candidate</ins> is not virtual,  
+> - the <ins>prospective</ins> destructor is not virtual,  
 > - all of the direct base classes of its class have trivial destructors, and
 > - for all of the non-static data members of its class that are of class type (or array thereof), each such
 class has a trivial destructor.
 > 
-> Otherwise, the destructor <ins>candidate</ins> is non-trivial.
+> Otherwise, the <ins>prospective</ins> destructor is non-trivial.
 
 Change 10.3.6 [class.dtor], paragraph 7:
 
-> A destructor <ins>candidate</ins> that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2) or when it is explicitly defaulted after its first declaration.
+> A <ins>prospective</ins> destructor that is defaulted and not defined as deleted is implicitly defined when it is odr-used (6.2) or when it is explicitly defaulted after its first declaration.
 
 Change 10.3.6 [class.dtor], paragraph 8:
 
-> Before the defaulted destructor <ins>candidate</ins> for a class is implicitly defined, all the non-user-provided destructors for its base classes and its non-static data members shall have been implicitly defined.
+> Before the defaulted <ins>prospective</ins> destructor for a class is implicitly defined, all the non-user-provided destructors for its base classes and its non-static data members shall have been implicitly defined.
 
 Change 10.3.6 [class.dtor], paragraph 10:
 
-> A destructor <ins>candidate</ins> can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
+> A <ins>prospective</ins> destructor can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
 
 Add a note to 10.3.6 [class.dtor], paragraph 12:
 
 > A program is ill-formed if a destructor that is potentially invoked is deleted or not accessible from
-the context of the invocation. <ins>[ *Note*: this can occur if a class has multiple destructor candidates and there is no most constrained destructor candidate, so there is no destructor *-end note* ]</ins>
+the context of the invocation. <ins>[ *Note*: this can occur if a class has multiple prospective destructors and there is no most constrained destructor candidate, so there is no destructor *-end note* ]</ins>
 
 Change 10.3.6 [class.dtor], paragraph 13:
 
-> At the point of definition of a virtual destructor <ins>candidate</ins> (including an implicit definition (10.3.6)), the non-array deallocation function is determined as if for the expression `delete this` appearing in a non-virtual destructor of the destructor’s class (see 7.6.2.5). If the lookup fails or if the deallocation function has a deleted
+> At the point of definition of a virtual <ins>prospective</ins> destructor (including an implicit definition (10.3.6)), the non-array deallocation function is determined as if for the expression `delete this` appearing in a non-virtual destructor of the destructor’s class (see 7.6.2.5). If the lookup fails or if the deallocation function has a deleted
 definition (9.4), the program is ill-formed.
 
+# Acknowledgments
+
+Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer for the wording wizardry. 
