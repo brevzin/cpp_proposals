@@ -276,7 +276,7 @@ Change 10.3.5 [class.copy.assign], paragraph 5:
     X& X::operator=(X&&);
 
 Change 10.3.5 [class.copy.assign], paragraph 6:
-> The implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.
+> <del>The</del> <ins>An</ins> implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.
 
 Change 10.3.5 [class.copy.assign], paragraph 8:
 > Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.
@@ -325,7 +325,9 @@ Change 10.3.6 [class.dtor], paragraph 1:
 
 Change 10.3.6 [class.dtor], paragraph 4:
 
-> If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class. <ins>An implicitly-declared prospective destructor for a class X will have the form
+> If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.
+
+> <ins>An implicitly-declared prospective destructor for a class X will have the form
 > 
     :::cpp
     ~X();
