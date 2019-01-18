@@ -96,7 +96,7 @@ Change 10.3.4.1 [class.default.ctor], paragraph 1:
 > <ins>A prospective default constructor is a _default constructor_ if</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints are satisfied (if any).</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins>
 
 Change 10.3.4.1 [class.default.ctor], paragraph 2:
 
@@ -111,7 +111,7 @@ Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ct
 > <ins>A prospective copy constructor is a _copy constructor_ if</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints are satisfied (if any).</ins>
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints (if any) are satisfied.</ins>
 > 
 > <ins> [ *Note*: a class can have multiple copy constructors, provided they have different signatures *-end note*] </ins>
 
@@ -124,7 +124,7 @@ parameters have default arguments (9.2.3.6).
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move constructor
-that has the same first parameter type and whose constraints are satisfied (if any).</ins>
+that has the same first parameter type and whose constraints (if any) are satisfied.</ins>
 > 
 > <ins> [ *Note*: a class can have multiple move constructors, provided they have different signatures *-end note*] </ins>
 
@@ -215,7 +215,7 @@ Change 10.3.5 [class.copy.assign], paragraph 1:
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy assignment operator
-that has the same parameter type and whose constraints are satisfied (if any).</ins> 
+that has the same parameter type and whose constraints (if any) are satisfied.</ins> 
 
 [*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note]* [*Note:* More than one form of <ins>prospective</ins> copy assignment operator may be declared for a class. *—end note*] [*Note:* If a class `X` only has a <ins>prospective</ins> copy assignment operator with a parameter of type `X&`, an expression of type `const X` cannot be assigned to an object of type `X`. [*Example:*
 
@@ -246,7 +246,7 @@ Change 10.3.5 [class.copy.assign], paragraph 3:
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move assignment operator
-that has the same parameter type and whose constraints are satisfied (if any).</ins> 
+that has the same parameter type and whose constraints (if any) are satisfied.</ins> 
 
 > [*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note*] [*Note:* More than one form of <ins>prospective</ins> move assignment operator may be declared for a class. *—end note*]
 
@@ -336,7 +336,7 @@ Change 10.3.6 [class.dtor], paragraph 1:
 > <ins>A prospective destructor is a _destructor_ if</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints are satisfied (if any).</ins> 
+> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints (if any) are satisfied.</ins> 
 
 Change 10.3.6 [class.dtor], paragraph 4:
 
