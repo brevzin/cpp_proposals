@@ -244,38 +244,12 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 
 - We will _only_ synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is `auto`.
 - The presence of `<=>` is _always_ preferred to any kind of synthetic fallback. 
-- synthesizing a `strong_ordering` requires both `==` and `<`, but you can synthesize a `weak_ordering` or a `partial_ordering` from just `<`.
+- Synthesizing a `strong_ordering` requires both `==` and `<`.
+- Synthesizing a `weak_ordering` or a `partial_ordering` can use either `==` and `<` or just `<`.
+- Synthesizing a `partial_ordering` from both `==` and `<` will do up to three comparisons and be correct, synthesizing form just `<` will only do up to two comparisons and yield `partial_ordering::equivalent` if `<` yields `false` in both directions. 
+- Synthesizing a `strong_equality` or a `weak_equality` requires only `==`.
 
-We then change the meaning of defaulted `operator<=>` to be defined in terms of <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>.
-
-The proposed definition of <code><i>3WAY</i>(a, b)</code> is as follows:
-
-- If `a <=> b` is a valid expression, `a <=> b`.
-- Otherwise, if the declared return type of the defaulted `operator<=>` is `strong_ordering`, then:
-    - If `a == b` is `true`, then `strong_ordering::equal`
-    - Otherwise, if `a < b` is `true`, then `strong_ordering::less`
-    - Otherwise, `strong_ordering::greater`.
-- Otherwise, if the declared return type of defaulted `operator<=>` is `weak_ordering`, then:
-    - If `a == b` is well-formed and convertible to `bool`, then:
-        - If `a == b` is `true`, then `weak_ordering::equivalent`
-        - Otherwise, if `a < b` is `true`, then `weak_ordering::less`
-        - Otherwise, `weak_ordering::greater`
-    - Otherwise:
-        - If `a < b` is `true`, then `weak_ordering::less`
-        - Otherwise, if `b < a` is `true`, then `weak_ordering::greater`
-        - Otherwise, `weak_ordering::equivalent`
-- Otherwise, if the declared return type of defaulted `operator<=>` is `partial_ordering`, then:
-    - If `a == b` is well-formed and convertible to `bool`, then:
-        - If `a == b` is `true`, then `partial_ordering::equivalent`
-        - Otherwise, if `a < b` is `true`, then `partial_ordering::less`
-        - Otherwise, if `b < a` is `true`, then `partial_ordering::greater`
-        - Otherwise, `partial_ordering::unordered`
-    - Otherwise:
-        - If `a < b` is `true`, then `partial_ordering::less`
-        - Otherwise, if `b < a` is `true`, then `partial_ordering::greater`
-        - Otherwise, `partial_ordering::equivalent`
-
-If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.
+We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.
 
 ## Explanatory Examples
 
@@ -591,7 +565,7 @@ Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 
 > Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. <del>The type of the expression <code>x<sub>i</sub></code> <=> <code>x<sub>i</sub></code> is denoted by <code>R<sub>i</sub></code></del>. It is unspecified whether virtual base class subobjects are compared more than once.
 
-Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
+<a name="3way-def"></a>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
 > <ins>If the declared return type of a defaulted three-way comparison operator function is `auto`, define <code><i>3WAY</i>(a, b)</code> as `a <=> b`. Otherwise, define <code><i>3WAY</i>(a, b)</code> as follows:</ins>
 > 

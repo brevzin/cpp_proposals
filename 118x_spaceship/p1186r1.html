@@ -830,51 +830,12 @@ compare_3way_type_t&lt;T&gt; operator&lt;=&gt;(vector&lt;T&gt; const&amp;, vecto
 <ul>
 <li>We will <em>only</em> synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is <code class="language-cpp">auto</code>.</li>
 <li>The presence of <code class="language-cpp">&lt;=&gt;</code> is <em>always</em> preferred to any kind of synthetic fallback. </li>
-<li>synthesizing a <code class="language-cpp">strong_ordering</code> requires both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>, but you can synthesize a <code class="language-cpp">weak_ordering</code> or a <code class="language-cpp">partial_ordering</code> from just <code class="language-cpp">&lt;</code>.</li>
+<li>Synthesizing a <code class="language-cpp">strong_ordering</code> requires both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>.</li>
+<li>Synthesizing a <code class="language-cpp">weak_ordering</code> or a <code class="language-cpp">partial_ordering</code> can use either <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> or just <code class="language-cpp">&lt;</code>.</li>
+<li>Synthesizing a <code class="language-cpp">partial_ordering</code> from both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> will do up to three comparisons and be correct, synthesizing form just <code class="language-cpp">&lt;</code> will only do up to two comparisons and yield <code class="language-cpp">partial_ordering::equivalent</code> if <code class="language-cpp">&lt;</code> yields <code class="language-cpp">false</code> in both directions. </li>
+<li>Synthesizing a <code class="language-cpp">strong_equality</code> or a <code class="language-cpp">weak_equality</code> requires only <code class="language-cpp">==</code>.</li>
 </ul>
-<p>We then change the meaning of defaulted <code class="language-cpp">operator&lt;=&gt;</code> to be defined in terms of <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>.</p>
-<p>The proposed definition of <code><i>3WAY</i>(a, b)</code> is as follows:</p>
-<ul>
-<li>If <code class="language-cpp">a &lt;=&gt; b</code> is a valid expression, <code class="language-cpp">a &lt;=&gt; b</code>.</li>
-<li>Otherwise, if the declared return type of the defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">strong_ordering</code>, then:<ul>
-<li>If <code class="language-cpp">a == b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">strong_ordering::equal</code></li>
-<li>Otherwise, if <code class="language-cpp">a &lt; b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">strong_ordering::less</code></li>
-<li>Otherwise, <code class="language-cpp">strong_ordering::greater</code>.</li>
-</ul>
-</li>
-<li>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">weak_ordering</code>, then:<ul>
-<li>If <code class="language-cpp">a == b</code> is well-formed and convertible to <code class="language-cpp">bool</code>, then:<ul>
-<li>If <code class="language-cpp">a == b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">weak_ordering::equivalent</code></li>
-<li>Otherwise, if <code class="language-cpp">a &lt; b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">weak_ordering::less</code></li>
-<li>Otherwise, <code class="language-cpp">weak_ordering::greater</code></li>
-</ul>
-</li>
-<li>Otherwise:<ul>
-<li>If <code class="language-cpp">a &lt; b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">weak_ordering::less</code></li>
-<li>Otherwise, if <code class="language-cpp">b &lt; a</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">weak_ordering::greater</code></li>
-<li>Otherwise, <code class="language-cpp">weak_ordering::equivalent</code></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">partial_ordering</code>, then:<ul>
-<li>If <code class="language-cpp">a == b</code> is well-formed and convertible to <code class="language-cpp">bool</code>, then:<ul>
-<li>If <code class="language-cpp">a == b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">partial_ordering::equivalent</code></li>
-<li>Otherwise, if <code class="language-cpp">a &lt; b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">partial_ordering::less</code></li>
-<li>Otherwise, if <code class="language-cpp">b &lt; a</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">partial_ordering::greater</code></li>
-<li>Otherwise, <code class="language-cpp">partial_ordering::unordered</code></li>
-</ul>
-</li>
-<li>Otherwise:<ul>
-<li>If <code class="language-cpp">a &lt; b</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">partial_ordering::less</code></li>
-<li>Otherwise, if <code class="language-cpp">b &lt; a</code> is <code class="language-cpp">true</code>, then <code class="language-cpp">partial_ordering::greater</code></li>
-<li>Otherwise, <code class="language-cpp">partial_ordering::equivalent</code></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<p>If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.</p>
+<p>We then change the meaning of defaulted <code class="language-cpp">operator&lt;=&gt;</code> to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see <a href="#3way-def">wording</a>) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.</p>
 <h3 id="explanatory-examples">3.1. Explanatory Examples<a class="self-link" href="#explanatory-examples"></a></h3>
 <p>This might make more sense with examples.</p>
 <table style="width:100%">
@@ -1158,7 +1119,7 @@ constexpr auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt;
 <blockquote>
 <p>Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. <del>The type of the expression <code>x<sub>i</sub></code> &lt;=&gt; <code>x<sub>i</sub></code> is denoted by <code>R<sub>i</sub></code></del>. It is unspecified whether virtual base class subobjects are compared more than once.</p>
 </blockquote>
-<p>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:</p>
+<p><a name="3way-def"></a>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:</p>
 <blockquote>
 <p><ins>If the declared return type of a defaulted three-way comparison operator function is <code class="language-cpp">auto</code>, define <code><i>3WAY</i>(a, b)</code> as <code class="language-cpp">a &lt;=&gt; b</code>. Otherwise, define <code><i>3WAY</i>(a, b)</code> as follows:</ins></p>
 <ul>
