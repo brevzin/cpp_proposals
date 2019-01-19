@@ -169,7 +169,7 @@ The simplest version of a spaceship comparison function object would be to take 
     namespace std {
       struct compare_3way {
         template<class T, class U>
-          requires ThreeWayComparableWith<T, U> // §2.1
+          requires ThreeWayComparableWith<T, U> // §2.2
                   || BUILTIN_PTR_3WAY(T, U)     // see [range.cmp] for inspiration
         constexpr auto operator()(T&& t, U&& u) const;
 
