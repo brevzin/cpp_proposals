@@ -1,5 +1,5 @@
 Title: A type trait for `std::compare_3way()`'s type
-Document-Number: D1187R1
+Document-Number: P1187R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LWG
 
