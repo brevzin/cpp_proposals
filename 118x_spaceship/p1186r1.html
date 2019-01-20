@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: P1186R1 <br />
-Date: 2019-01-19 <br />
+Date: 2019-01-20 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -731,14 +731,15 @@ auto operator&lt;=&gt;(Aggr const&amp;) const = default;</code></pre>
 };</code></pre>
 
 
-<p>Using <code class="language-cpp">float</code> just makes for a short example, but the salient point here is that <code class="language-cpp">Q</code>'s ordering is partial, not total. The significant of partial order is that these are all false:</p>
+<p>Using <code class="language-cpp">float</code> just makes for a short example, but the salient point here is that <code class="language-cpp">Q</code>'s ordering is partial, not total. The significance of partial orders is that these can all be <code class="language-cpp">false</code>:</p>
 <pre class="codehilite"><code class="language-cpp">Q{1.0f} == Q{NAN}; // false
 Q{1.0f} &lt; Q{NAN};  // false
 Q{1.0f} &gt; Q{NAN};  // false</code></pre>
 
 
-<p>However, the proposed synthesis rules in P1186R0 would have led (with no code changes) to the following:</p>
-<pre class="codehilite"><code class="language-cpp">Q{1.0f} &lt;=&gt; Q{NAN} &gt; 0; // true</code></pre>
+<p>However, the proposed synthesis rules in P1186R0 would have led (with no source code changes!) to the following:</p>
+<pre class="codehilite"><code class="language-cpp">Q{1.0f} &gt; Q{NAN};       // false
+Q{1.0f} &lt;=&gt; Q{NAN} &gt; 0; // true</code></pre>
 
 
 <p>This is because the proposed rules assumed a total order, wherein <code class="language-cpp">!(a == b) &amp;&amp; !(a &lt; b)</code> imply <code class="language-cpp">a &gt; b</code>.</p>

@@ -123,16 +123,17 @@ Consider the following legacy type:
         bool operator>(Q rhs) const { return f > rhs.f; }
     };
 
-Using `float` just makes for a short example, but the salient point here is that `Q`'s ordering is partial, not total. The significant of partial order is that these are all false:
+Using `float` just makes for a short example, but the salient point here is that `Q`'s ordering is partial, not total. The significance of partial orders is that these can all be `false`:
 
     :::cpp
     Q{1.0f} == Q{NAN}; // false
     Q{1.0f} < Q{NAN};  // false
     Q{1.0f} > Q{NAN};  // false
     
-However, the proposed synthesis rules in P1186R0 would have led (with no code changes) to the following:
+However, the proposed synthesis rules in P1186R0 would have led (with no source code changes!) to the following:
 
     :::cpp
+    Q{1.0f} > Q{NAN};       // false
     Q{1.0f} <=> Q{NAN} > 0; // true
 
 This is because the proposed rules assumed a total order, wherein `!(a == b) && !(a < b)` imply `a > b`.
