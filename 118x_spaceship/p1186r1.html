@@ -622,6 +622,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#differences-from-status-quo-and-p1186r0">Differences from Status Quo and P1186R0</a></li>
 <li><a href="#building-complexity">Building complexity</a></li>
 <li><a href="#what-about-compare_3way">What about compare_3way()?</a></li>
+<li><a href="#what-about-xxx_equality">What about XXX_equality?</a></li>
 </ol>
 </li>
 <li><a href="#wording">Wording</a></li>
@@ -832,9 +833,8 @@ compare_3way_type_t&lt;T&gt; operator&lt;=&gt;(vector&lt;T&gt; const&amp;, vecto
 <li>We will <em>only</em> synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is <code class="language-cpp">auto</code>.</li>
 <li>The presence of <code class="language-cpp">&lt;=&gt;</code> is <em>always</em> preferred to any kind of synthetic fallback. </li>
 <li>Synthesizing a <code class="language-cpp">strong_ordering</code> requires both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>.</li>
-<li>Synthesizing a <code class="language-cpp">weak_ordering</code> or a <code class="language-cpp">partial_ordering</code> can use either <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> or just <code class="language-cpp">&lt;</code>.</li>
-<li>Synthesizing a <code class="language-cpp">partial_ordering</code> from both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> will do up to three comparisons and be correct, synthesizing form just <code class="language-cpp">&lt;</code> will only do up to two comparisons and yield <code class="language-cpp">partial_ordering::equivalent</code> if <code class="language-cpp">&lt;</code> yields <code class="language-cpp">false</code> in both directions. </li>
-<li>Synthesizing a <code class="language-cpp">strong_equality</code> or a <code class="language-cpp">weak_equality</code> requires only <code class="language-cpp">==</code>.</li>
+<li>Synthesizing a <code class="language-cpp">weak_ordering</code> can use either <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> or just <code class="language-cpp">&lt;</code>.</li>
+<li>Synthesizing a <code class="language-cpp">partial_ordering</code> requires both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.</li>
 </ul>
 <p>We then change the meaning of defaulted <code class="language-cpp">operator&lt;=&gt;</code> to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see <a href="#3way-def">wording</a>) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.</p>
 <h3 id="explanatory-examples">3.1. Explanatory Examples<a class="self-link" href="#explanatory-examples"></a></h3>
@@ -1115,6 +1115,21 @@ constexpr auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt;
 
 
 <p>For further discussion, see <a href="https://wg21.link/p1188r0" title="Library utilities for &lt;=&gt;">P1188R0</a>. This paper focuses just on the language change for <code class="language-cpp">operator&lt;=&gt;</code>.</p>
+<h3 id="what-about-xxx_equality">3.5. What about <code class="language-cpp">XXX_equality</code>?<a class="self-link" href="#what-about-xxx_equality"></a></h3>
+<p>This paper does not propose synthesizing either <code class="language-cpp">strong_equality</code> and <code class="language-cpp">weak_equality</code> orderings. After P1185, equality and ordering are strictly separate operations - and it is odd to provide an <code class="language-cpp">operator&lt;=&gt;</code> which returns <code class="language-cpp">XXX_equality</code>, since such an operator would <em>only</em> be directly invocable by way of <code class="language-cpp">&lt;=&gt;</code>.</p>
+<p>In other words, this code:</p>
+<pre class="codehilite"><code class="language-cpp">struct C {
+    bool operator==(C const&amp;) const;
+};
+
+struct X {
+    C c;
+    strong_equality operator&lt;=&gt;(X const&amp;) const = default;
+};</code></pre>
+
+
+<p>Would still result in a deleted <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">X</code>.</p>
+<p>However, it <em>is</em> possible to soundly synthesize both <code class="language-cpp">strong_equality</code> and <code class="language-cpp">weak_equality</code> from <code class="language-cpp">operator==</code>. This can be added as a few extra bullets in the definition of <code class="language-cpp">3WAY()</code>, if desired. </p>
 <h2 id="wording">4. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:</p>
 <blockquote>
@@ -1131,13 +1146,7 @@ constexpr auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt;
 <li><ins>Otherwise, <code class="language-cpp">(a &lt; b) ? weak_ordering::less : ((b &lt; a) ? weak_ordering::greater : weak_ordering::equivalent)</code>;</ins></li>
 </ul>
 </li>
-<li><ins>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">partial_ordering</code>, then:</ins><ul>
-<li><ins>If <code class="language-cpp">a == b</code> is well-formed and convertible to <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</ins></li>
-<li><ins>Otherwise, <code class="language-cpp">(a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::equivalent)</code>;</ins></li>
-</ul>
-</li>
-<li><ins>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">strong_equality</code>, then <code class="language-cpp">(a == b) ? strong_equality::equal : strong_equality::nonequal</code>;</ins></li>
-<li><ins>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">weak_equality</code>, then <code class="language-cpp">(a == b) ? weak_equality::equivalent : weak_equality;:nonequivalent</code>;</ins></li>
+<li><ins>Otherwise, if the declared return type of defaulted <code class="language-cpp">operator&lt;=&gt;</code> is <code class="language-cpp">partial_ordering</code>, then <code class="language-cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</li>
 <li><ins>Otherwise, <code><i>3WAY</i>(a, b)</code> is invalid.</ins></li>
 </ul>
 <p><ins>The type of the expression <code><i>3WAY</i>(x<sub>i</sub>, x<sub>i</sub>)</code> is denoted by <code>R<sub>i</sub></code>. If the expression is invalid, <code>R<sub>i</sub></code> is <code class="language-cpp">void</code>.</ins></p>
@@ -1152,6 +1161,6 @@ constexpr auto operator&lt;=&gt;(vector&lt;T&gt; const&amp; lhs, vector&lt;T&gt;
 <p>The return value <code class="language-cpp">V</code> of type <code class="language-cpp">R</code> of the defaulted three-way comparison operator function with parameters <code class="language-cpp">x</code> and <code class="language-cpp">y</code> of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects for <code class="language-cpp">x</code> and <code class="language-cpp">y</code> until the first index <code class="language-cpp">i</code> where <del>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></del> <ins><code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code></ins> yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to <code class="language-cpp">bool</code>, yields <code class="language-cpp">true</code>; <code class="language-cpp">V</code> is <code>v<sub>i</sub></code> converted to <code class="language-cpp">R</code>. If no such index exists, <code class="language-cpp">V</code> is <code class="language-cpp">std::strong_ordering::equal</code> converted to <code class="language-cpp">R</code>. </p>
 </blockquote>
 <h2 id="acknowledgments">5. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
-<p>Thanks to Agustín Bergé, Richard Smith, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.</p>
+<p>Thanks to Gašper Ažman, Agustín Bergé, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.</p>
 <h2 id="references">6. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1185r0.html">[P1185R0]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-19</span></li><li><a href="https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/">[revzin.sometimes]</a><span style="margin-left: 5px;">"Conditionally implementing spaceship" by Barry Revzin, 2018-12-21</span></li></ul>
 </html>

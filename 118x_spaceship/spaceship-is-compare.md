@@ -246,9 +246,8 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 - We will _only_ synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is `auto`.
 - The presence of `<=>` is _always_ preferred to any kind of synthetic fallback. 
 - Synthesizing a `strong_ordering` requires both `==` and `<`.
-- Synthesizing a `weak_ordering` or a `partial_ordering` can use either `==` and `<` or just `<`.
-- Synthesizing a `partial_ordering` from both `==` and `<` will do up to three comparisons and be correct, synthesizing form just `<` will only do up to two comparisons and yield `partial_ordering::equivalent` if `<` yields `false` in both directions. 
-- Synthesizing a `strong_equality` or a `weak_equality` requires only `==`.
+- Synthesizing a `weak_ordering` can use either `==` and `<` or just `<`.
+- Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
 
 We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.
 
@@ -560,6 +559,26 @@ Notably absent from this paper has been a real discussion over the fate of `std:
 
 For further discussion, see [P1188R0](https://wg21.link/p1188r0). This paper focuses just on the language change for `operator<=>`.
     
+## What about `XXX_equality`?
+
+This paper does not propose synthesizing either `strong_equality` and `weak_equality` orderings. After P1185, equality and ordering are strictly separate operations - and it is odd to provide an `operator<=>` which returns `XXX_equality`, since such an operator would _only_ be directly invocable by way of `<=>`.
+
+In other words, this code:
+
+    :::cpp
+    struct C {
+        bool operator==(C const&) const;
+    };
+    
+    struct X {
+        C c;
+        strong_equality operator<=>(X const&) const = default;
+    };
+    
+Would still result in a deleted `operator<=>` for `X`.
+
+However, it _is_ possible to soundly synthesize both `strong_equality` and `weak_equality` from `operator==`. This can be added as a few extra bullets in the definition of `3WAY()`, if desired. 
+    
 # Wording
 
 Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
@@ -575,11 +594,7 @@ Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 - <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `weak_ordering`, then:</ins>
     - <ins>If `a == b` is well-formed and convertible to `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
     - <ins>Otherwise, `(a < b) ? weak_ordering::less : ((b < a) ? weak_ordering::greater : weak_ordering::equivalent)`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `partial_ordering`, then:</ins>
-    - <ins>If `a == b` is well-formed and convertible to `bool`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
-    - <ins>Otherwise, `(a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::equivalent)`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality;:nonequivalent`;</ins>
+- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
 - <ins>Otherwise, <code><i>3WAY</i>(a, b)</code> is invalid.</ins>
 
 > <ins>The type of the expression <code><i>3WAY</i>(x<sub>i</sub>, x<sub>i</sub>)</code> is denoted by <code>R<sub>i</sub></code>. If the expression is invalid, <code>R<sub>i</sub></code> is `void`.</ins>
@@ -596,6 +611,6 @@ Change 10.10.2 [class.spaceship], paragraph 3, to use `3WAY` instead of `<=>`
                                     
 # Acknowledgments
     
-Thanks to Agustín Bergé, Richard Smith, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
+Thanks to Gašper Ažman, Agustín Bergé, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
     
 [revzin.sometimes]: https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/ "Conditionally implementing spaceship||Barry Revzin||2018-12-21"
