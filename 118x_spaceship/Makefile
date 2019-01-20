@@ -1,3 +1,5 @@
+all : p1185r1.html p1186r1.html p1188r0.html
+
 p1188r0.html : spaceship-lib.md
 	python ../md/better_md.py -i $< -o $@ --references
 

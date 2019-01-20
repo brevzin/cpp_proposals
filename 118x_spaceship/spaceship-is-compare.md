@@ -241,7 +241,7 @@ This paper proposes a new direction for a stop-gap adoption measure for `operato
 
 Currently, the pairwise comparison of the subobjects is always <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. Always `operator<=>`.
 
-This paper proposes defining a new magic specification-only function <code><i>3WAY</i>(a, b)</code>, which only has meaning in the context of defining what a defaulted `operator<=>` does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:
+This paper proposes defining a new magic specification-only function <code><i>3WAY</i>&lt;R&gt;(a, b)</code>, which only has meaning in the context of defining what a defaulted `operator<=>` does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:
 
 - We will _only_ synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is `auto`.
 - The presence of `<=>` is _always_ preferred to any kind of synthetic fallback. 
@@ -250,7 +250,7 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 - Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
 - Synthesizing either `strong_equality` or `weak_equality` requires `==`.
 
-We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is ill-formed, the function is defined as deleted.
+We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>&lt;R&gt;(a, b)</code> uses an expression without checking for it and that expression is ill-formed, the function is defined as deleted.
 
 ## Soundness of Synthesis
 
@@ -572,28 +572,9 @@ For further discussion, see [P1188R0](https://wg21.link/p1188r0). This paper foc
     
 ## What about `XXX_equality`?
 
-This paper proposes synthesizing `strong_equality` and `weak_equality` orderings, simply for consistency. However, after P1185, equality and ordering are strictly separate operations - and it is very odd to provide an `operator<=>` which returns `XXX_equality`, since such an operator would _only_ be directly invocable by way of `<=>`.
+This paper proposes synthesizing `strong_equality` and `weak_equality` orderings, simply for consistency. As long as we have language types for which `<=>` yields a comparison category of type `XXX_equality`, all the rules we build on top of `<=>` should respect that and be consistent. 
 
-In other words, consider:
-
-    :::cpp
-    struct C {
-        strong_equality operator<=>(C const&) const;
-    };
-    
-    C{} == C{}        // ill-formed, no ==, <=> isn't a candidate
-    C{} <=> C{} == 0; // okay
-    
-However, it is worth questioning whether this is actually worthwhile to continue to support or at this point isn't just actively confusing.
-
-An alternative approach would be:
-
-- Not have any language types provide a `XXX_equality` for `<=>` directly. This would imply:
-    - Strike \[expr.spaceship\]/7, which defines a `strong_equality` for function pointer types, pointer-to-member types, and `std::nullptr_t`
-    - Strike the corresponding built-in candidate in \[over.built\]/19
-- Not provide language support synthesizing either of the two `XXX_equality` categories
-
-It's unclear whether such language support actually provides value. 
+However, [P1185R1](https://wg21.link/p1185r1) proposes removing those cases. If that aspect of that paper gets approved, then the corresponding bullets in the definition of `3WAY<R>` should also be removed.
     
 # Wording
 

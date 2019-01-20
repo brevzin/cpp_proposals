@@ -173,7 +173,7 @@ With help from Casey Carter, the implementation I'm proposing is (again using `C
         
 This definition follows the practice of `EqualityComparable` and `StrictTotallyOrdered` in that we're not just checking syntactic correctness - we're doing a bit more than that: we're also requiring that `<=>` actually produces one of the comparison categories. 
 
-The defaulted `Cat` parameter allows users to refine their constraints. `ThreeWayComparable<T>` just requires that `T` provide some meaningful `<=>`, whereas `ThreeWayComparable<T, std::partial_ordering>` requires that `T` provide an ordering. 
+The defaulted `Cat` parameter allows users to refine their constraints. `ThreeWayComparable<T>` just requires that `T` provide some meaningful `<=>`, whereas `ThreeWayComparable<T, std::partial_ordering>` requires that `T` provide an ordering. If EWG adopts the part of [P1185R1](https://wg21.link/p1185r1) that leads to removing built-in `<=>` functions which return `strong_equality`, the default template argument for the `Cat` parameter should be `partial_ordering` instead of `weak_equality`, since at that point we can say that `partial_ordering` is the weakest meaningful ordering category.
 
 Note that `ThreeWayComparable<T, std::strong_ordering>` does _not_ subsume `ThreeWayComparable<T, std::weak_ordering>` despite being logically stricter. 
 

@@ -829,7 +829,7 @@ compare_3way_type_t&lt;T&gt; operator&lt;=&gt;(vector&lt;T&gt; const&amp;, vecto
 <h2 id="proposal">3. Proposal<a class="self-link" href="#proposal"></a></h2>
 <p>This paper proposes a new direction for a stop-gap adoption measure for <code class="language-cpp">operator&lt;=&gt;</code>: we will synthesize an <code class="language-cpp">operator&lt;=&gt;</code> for a type, but <em>only under very specific conditions</em>, and only when the user provides the comparison category that the comparison needs to use. All we need is a very narrow ability to help with <code class="language-cpp">&lt;=&gt;</code> adoption. This is that narrow ability.</p>
 <p>Currently, the pairwise comparison of the subobjects is always <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. Always <code class="language-cpp">operator&lt;=&gt;</code>.</p>
-<p>This paper proposes defining a new magic specification-only function <code><i>3WAY</i>(a, b)</code>, which only has meaning in the context of defining what a defaulted <code class="language-cpp">operator&lt;=&gt;</code> does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:</p>
+<p>This paper proposes defining a new magic specification-only function <code><i>3WAY</i>&lt;R&gt;(a, b)</code>, which only has meaning in the context of defining what a defaulted <code class="language-cpp">operator&lt;=&gt;</code> does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:</p>
 <ul>
 <li>We will <em>only</em> synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is <code class="language-cpp">auto</code>.</li>
 <li>The presence of <code class="language-cpp">&lt;=&gt;</code> is <em>always</em> preferred to any kind of synthetic fallback. </li>
@@ -838,7 +838,7 @@ compare_3way_type_t&lt;T&gt; operator&lt;=&gt;(vector&lt;T&gt; const&amp;, vecto
 <li>Synthesizing a <code class="language-cpp">partial_ordering</code> requires both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code> and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.</li>
 <li>Synthesizing either <code class="language-cpp">strong_equality</code> or <code class="language-cpp">weak_equality</code> requires <code class="language-cpp">==</code>.</li>
 </ul>
-<p>We then change the meaning of defaulted <code class="language-cpp">operator&lt;=&gt;</code> to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see <a href="#3way-def">wording</a>) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is ill-formed, the function is defined as deleted.</p>
+<p>We then change the meaning of defaulted <code class="language-cpp">operator&lt;=&gt;</code> to be defined in terms of this magic <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>, y<sub>i</sub>)</code> function (see <a href="#3way-def">wording</a>) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>&lt;R&gt;(a, b)</code> uses an expression without checking for it and that expression is ill-formed, the function is defined as deleted.</p>
 <h3 id="soundness-of-synthesis">3.1. Soundness of Synthesis<a class="self-link" href="#soundness-of-synthesis"></a></h3>
 <p>It would be sound to synthesize <code class="language-cpp">strong_ordering</code> from just performing <code class="language-cpp">&lt;</code> both ways, but equality is the salient difference between <code class="language-cpp">weak_ordering</code> and <code class="language-cpp">strong_ordering</code> and it doesn't seem right to synthesize a <code class="language-cpp">strong_ordering</code> from a type that doesn't even provide an <code class="language-cpp">==</code>.</p>
 <p>There is no other sound way to synthesize <code class="language-cpp">partial_ordering</code> from <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>. If we just do <code class="language-cpp">&lt;</code> both ways, we'd have to decide between <code class="language-cpp">equivalent</code> and <code class="language-cpp">unordered</code> in the case where <code class="language-cpp">!(a &lt; b) &amp;&amp; !(b &lt; a)</code> - the former gets the unordered cases wrong and the latter means our order isn't reflexive..</p>
@@ -1125,27 +1125,8 @@ partial_ordering partial_order(T const&amp; a, T const&amp; b) {
 
 <p>For further discussion, see <a href="https://wg21.link/p1188r0" title="Library utilities for &lt;=&gt;">P1188R0</a>. This paper focuses just on the language change for <code class="language-cpp">operator&lt;=&gt;</code>.</p>
 <h3 id="what-about-xxx_equality">3.6. What about <code class="language-cpp">XXX_equality</code>?<a class="self-link" href="#what-about-xxx_equality"></a></h3>
-<p>This paper proposes synthesizing <code class="language-cpp">strong_equality</code> and <code class="language-cpp">weak_equality</code> orderings, simply for consistency. However, after P1185, equality and ordering are strictly separate operations - and it is very odd to provide an <code class="language-cpp">operator&lt;=&gt;</code> which returns <code class="language-cpp">XXX_equality</code>, since such an operator would <em>only</em> be directly invocable by way of <code class="language-cpp">&lt;=&gt;</code>.</p>
-<p>In other words, consider:</p>
-<pre class="codehilite"><code class="language-cpp">struct C {
-    strong_equality operator&lt;=&gt;(C const&amp;) const;
-};
-
-C{} == C{}        // ill-formed, no ==, &lt;=&gt; isn't a candidate
-C{} &lt;=&gt; C{} == 0; // okay</code></pre>
-
-
-<p>However, it is worth questioning whether this is actually worthwhile to continue to support or at this point isn't just actively confusing.</p>
-<p>An alternative approach would be:</p>
-<ul>
-<li>Not have any language types provide a <code class="language-cpp">XXX_equality</code> for <code class="language-cpp">&lt;=&gt;</code> directly. This would imply:<ul>
-<li>Strike [expr.spaceship]/7, which defines a <code class="language-cpp">strong_equality</code> for function pointer types, pointer-to-member types, and <code class="language-cpp">std::nullptr_t</code></li>
-<li>Strike the corresponding built-in candidate in [over.built]/19</li>
-</ul>
-</li>
-<li>Not provide language support synthesizing either of the two <code class="language-cpp">XXX_equality</code> categories</li>
-</ul>
-<p>It's unclear whether such language support actually provides value. </p>
+<p>This paper proposes synthesizing <code class="language-cpp">strong_equality</code> and <code class="language-cpp">weak_equality</code> orderings, simply for consistency. As long as we have language types for which <code class="language-cpp">&lt;=&gt;</code> yields a comparison category of type <code class="language-cpp">XXX_equality</code>, all the rules we build on top of <code class="language-cpp">&lt;=&gt;</code> should respect that and be consistent. </p>
+<p>However, <a href="https://wg21.link/p1185r1" title="&lt;=&gt; != ==">P1185R1</a> proposes removing those cases. If that aspect of that paper gets approved, then the corresponding bullets in the definition of <code class="language-cpp">3WAY&lt;R&gt;</code> should also be removed.</p>
 <h2 id="wording">4. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:</p>
 <blockquote>
@@ -1180,5 +1161,5 @@ C{} &lt;=&gt; C{} == 0; // okay</code></pre>
 </blockquote>
 <h2 id="acknowledgments">5. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thanks to Gašper Ažman, Agustín Bergé, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.</p>
-<h2 id="references">6. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1185r0.html">[P1185R0]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-20</span></li><li><a href="https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/">[revzin.sometimes]</a><span style="margin-left: 5px;">"Conditionally implementing spaceship" by Barry Revzin, 2018-12-21</span></li></ul>
+<h2 id="references">6. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1185r0.html">[P1185R0]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-20</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-20</span></li><li><a href="https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/">[revzin.sometimes]</a><span style="margin-left: 5px;">"Conditionally implementing spaceship" by Barry Revzin, 2018-12-21</span></li></ul>
 </html>
