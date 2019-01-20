@@ -519,7 +519,7 @@ There are currently some core languages types whose builtin spaceship operator y
 
 As a result of this paper, this no longer really makes any sense. `<=>`  is strictly an ordering operator - `a == b` will never implicitly invoke `a <=> b`, so there's no real value to defining a `<=>` strictly for equality for these types. Not only does not it not make sense to have these operators, but having them adds further complexity to what the library has to do - it would have to reason about and support the case of `XXX_equality` comparisons, otherwise the library would be at risk of not even supporting the language. And that added complexity doesn't add value either.
 
-This paper proposes removing the `strong_equality` builtin for function pointer and pointer-to-member types. For, `std::nullptr_t` is a type which only has a single value. As such, it would be reasonable to provide a `<=>` for it that returns `strong_ordering::equal`. 
+This paper proposes removing the `strong_equality` builtin for function pointer and pointer-to-member types. For `std::nullptr_t`, this is a type which only has a single value. As such, it would be reasonable to provide a `<=>` for it that returns `strong_ordering::equal`. 
 
 # Important implications
 
