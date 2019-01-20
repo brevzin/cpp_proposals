@@ -248,8 +248,15 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 - Synthesizing a `strong_ordering` requires both `==` and `<`.
 - Synthesizing a `weak_ordering` can use either `==` and `<` or just `<`.
 - Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
+- Synthesizing either `strong_equality` or `weak_equality` is [not supported](#what-about-xxx_equality).
 
 We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.
+
+## Soundness of Synthesis
+
+It would be sound to synthesize `strong_ordering` from just performing `<` both ways, but equality is the salient difference between `weak_ordering` and `strong_ordering` and it doesn't seem right to synthesize a `strong_ordering` from a type that doesn't even provide an `==`.
+
+There is no other sound way to synthesize `partial_ordering` from `==` and `<`. If we just do `<` both ways, we'd have to decide between `equivalent` and `unordered` in the case where `!(a < b) && !(b < a)` - the former gets the unordered cases wrong and the latter means our order isn't reflexive..
 
 ## Explanatory Examples
 
@@ -481,7 +488,7 @@ We do that with just a simple helper trait (which this paper is also not proposi
     
 `pair<T,U>` is a simple type, we just want the default comparisons. Being able to default spaceship is precisely what we want. This proposal gets us there, with minimal acrobatics. Note that as a result of P1185R0, this would also give us a defaulted `==`, and hence we get all six comparison functions in one go.
 
-Building on this idea, we can create a wrapper type which defaults `<=>` using these language rules for a single type:
+Building on this idea, we can create a wrapper type which defaults `<=>` using these language rules for a single type, and wrap that into more complex function objects:
 
     :::cpp
     // a type that defaults a 3-way comparison for T for the given category
@@ -491,9 +498,6 @@ Building on this idea, we can create a wrapper type which defaults `<=>` using t
         fallback_to<T,Cat> operator<=>(cmp_with_fallback const&) const = default;
     };
     
-with which we can implement both `std::weak_order()` and `std::partial_order()` from [cmp.alg] as specified:
-
-    :::cpp
     // Check if that wrapper type has a non-deleted <=>, whether because T
     // has one or because T provides the necessary operators for one to be
     // synthesized per this proposal
@@ -501,28 +505,7 @@ with which we can implement both `std::weak_order()` and `std::partial_order()` 
     concept FallbackThreeWayComparable =
         ThreeWayComparable<cmp_with_fallback<T, Cat>>;
 
-    // The above would still allow the case where cmp_with_fallback<T, strong_ordering>
-    // ThreeWayComparable but only with a partial_ordering, so this is a stricter requirement
-    template <typename T, typename Cat>
-    concept StrictFallbackThreeWayComparable =
-        FallbackThreeWayComparable<T, Cat>
-        && ConvertibleTo<compare_3way_type_t<cmp_with_fallback<T, Cat>>, Cat>;
-        
-    template <StrictFallbackThreeWayComparable<weak_ordering> T>
-    weak_ordering weak_order(T const& a, T const& b) {
-        using C = cmp_with_fallback<T, weak_ordering>;
-        return C{a} <=> C{b};
-    }
-    
-    template <StrictFallbackThreeWayComparable<partial_ordering> T>
-    partial_ordering partial_order(T const& a, T const& b) {
-        using C = cmp_with_fallback<T, partial_ordering>;
-        return C{a} <=> C{b};
-    }    
-    
-That's pretty concise. We can also wrap these bodies into function objects that provide a three-way comparison for a given category:
-    
-    :::cpp
+    // Function objects to do a three-way comparison with the specified fallback
     template <typename Cat>
     struct compare_3way_fallback_t {
         template <FallbackThreeWayComparable<Cat> T>
@@ -549,6 +532,34 @@ And now implementing `<=>` for `vector<T>` unconditionally is straightforward:
             rhs.begin(), rhs.end(),
             compare_3way_fallback<weak_ordering>);
     }
+
+As currently specified, `std::weak_order()` and `std::partial_order()` from [cmp.alg] basically follow the language rules proposed here. We can implement those with a slightly different approach to the above - no fallback necessary here because we need to enforce a particular category:
+
+    :::cpp
+    template <typename T, typename Cat>
+    struct compare_as {
+        T const& t;
+        Cat operator<=>(compare_as const&) const = default;
+    };
+
+    // Check if the compare_as wrapper has non-deleted <=>, whether because T
+    // provides the desired comparison category or because we can synthesize one
+    template <typename T, typename Cat>
+    concept SyntheticThreeWayComparable = ThreeWayComparable<compare_as<T, Cat>, Cat>;
+
+    template <SyntheticThreeWayComparable<weak_ordering> T>
+    weak_ordering weak_order(T const& a, T const& b) {
+        using C = compare_as<T, weak_ordering>;
+        return C{a} <=> C{b};
+    }
+
+    template <SyntheticThreeWayComparable<partial_ordering> T>
+    partial_ordering partial_order(T const& a, T const& b) {
+        using C = compare_as<T, partial_ordering>;
+        return C{a} <=> C{b};
+    }
+
+None of the above is being proposed, it's just a demonstration that this language feature is sufficient to build up fairly complex tools in a short amount of code.
 
 ## What about `compare_3way()`?
 
