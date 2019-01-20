@@ -235,8 +235,6 @@ This is inconsistent with `std::less`, since it's not a template of any kind and
       }
     }
     
-Just in case, the wording provided in this paper is for the longer version.
-
 # Wording
 
 Add the new trait, concept, and function object into the `<compare>` synopsis in 16.11.1 [compare.syn]:
@@ -312,7 +310,7 @@ Add a new specification for `compare_3way_type` in a new clause after 16.11.3 \[
 
 > The behavior of a program that adds specializations for the `compare_3way_type` template defined in this subclause is undefined.
 
-> For the `compare_3way_type` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`. If the expression `t <=> u` is well formed, the member *typedef-name* type shall equal `decltype(t <=> u)`. Otherwise, there shall be no member `type`.
+> For the `compare_3way_type` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`. If the expression `t <=> u` is well formed, the member *typedef-name* `type` shall equal `decltype(t <=> u)`. Otherwise, there shall be no member `type`.
 
 Add a specification for `compare_3way` to a new clause after 16.11.3 [cmp.common] named [cmp.3way]:
 
@@ -422,6 +420,62 @@ Change the specification of `std::lexicographical_compare_3way` in 23.7.11 \[alg
                                     <del>  return compare_3way(t, u);</del>
                                     <del>});</del></code></pre>
 </blockquote>
+
+## Alternate Wording for `std::compare_3way`
+
+If LEWG decides on just the single, non-template `std::compare_3way` function object, the wording can be as follows.
+
+In 16.11.1 [compare.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
+  
+  <ins>// [cmp.threewaycomparable], concept ThreeWayComparable
+  <ins>template&lt;class T, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparable = <i>see below</i>;</ins>
+  <ins>template&lt;class T, class U, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
+  
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_3way_type;</ins>
+  
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</ins>
+  
+  <ins>struct compare_3way;</ins>
+  [...]
+}</code></pre></blockquote>
+
+In the new subclause for `std::compare_3way`:
+
+> In this subclause, `BUILTIN_PTR_3WAY(T, U)` for types `T` and `U` is a boolean constant expression. `BUILTIN_PTR_3WAY(T, U)` is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
+
+> There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operator `<=>`.
+
+> 
+    :::cpp
+    struct compare_3way {
+      template<class T, class U>
+        requires ThreeWayComparableWith<T,U> || BUILTIN_PTR_3WAY(T, U)
+      constexpr auto operator()(T&& t, U&&u) const;
+>      
+      using is_transparent = unspecified;
+    };
+
+> *Expects*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` shall be equality-preserving ([concepts.equality]).
+
+> *Effects*: 
+> 
+> - If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`: returns `strong_ordering::less` if (the converted value of) `t` precedes `u` in the implementation-defined strict total order over pointers of type `P`, `strong_ordering::greater` if `u` precedes `t`, and otherwise `strong_ordering::equal`.
+> - Otherwise, equivalent to: `return std::forward<T>(t) <=> std::forward<U>(u);`
 
 # Acknowledgments
 

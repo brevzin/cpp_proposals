@@ -616,7 +616,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#replace-stdcompare_3way">Replace std::compare_3way()</a></li>
 </ol>
 </li>
-<li><a href="#wording">Wording</a></li>
+<li><a href="#wording">Wording</a><ol>
+<li><a href="#alternate-wording-for-stdcompare_3way">Alternate Wording for std::compare_3way</a></li>
+</ol>
+</li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
 <li><a href="#references">References</a></li>
 </ol>
@@ -818,7 +821,6 @@ template &lt;typename T, typename U,
 }</code></pre>
 
 
-<p>Just in case, the wording provided in this paper is for the longer version.</p>
 <h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Add the new trait, concept, and function object into the <code class="language-cpp">&lt;compare&gt;</code> synopsis in 16.11.1 [compare.syn]:</p>
 <blockquote><pre><code>namespace std {
@@ -891,7 +893,7 @@ template &lt;typename T, typename U,
 <p>Add a new specification for <code class="language-cpp">compare_3way_type</code> in a new clause after 16.11.3 [cmp.common] named [cmp.3way]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_3way_type</code> template defined in this subclause is undefined.</p>
-<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> type shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
+<p>For the <code class="language-cpp">compare_3way_type</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
 </blockquote>
 <p>Add a specification for <code class="language-cpp">compare_3way</code> to a new clause after 16.11.3 [cmp.common] named [cmp.3way]:</p>
 <blockquote>
@@ -989,6 +991,56 @@ struct ranges::compare_3way {
                                     <del>});</del></code></pre>
 </blockquote>
 
+<h3 id="alternate-wording-for-stdcompare_3way">3.1. Alternate Wording for <code class="language-cpp">std::compare_3way</code><a class="self-link" href="#alternate-wording-for-stdcompare_3way"></a></h3>
+<p>If LEWG decides on just the single, non-template <code class="language-cpp">std::compare_3way</code> function object, the wording can be as follows.</p>
+<p>In 16.11.1 [compare.syn]:</p>
+<blockquote><pre><code>namespace std {
+  [...]
+
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
+
+  <ins>// [cmp.threewaycomparable], concept ThreeWayComparable
+  <ins>template&lt;class T, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparable = <i>see below</i>;</ins>
+  <ins>template&lt;class T, class U, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
+
+  <ins>// [cmp.3way], compare_3way</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_3way_type;</ins>
+
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</ins>
+
+  <ins>struct compare_3way;</ins>
+  [...]
+}</code></pre></blockquote>
+
+<p>In the new subclause for <code class="language-cpp">std::compare_3way</code>:</p>
+<blockquote>
+<p>In this subclause, <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> for types <code class="language-cpp">T</code> and <code class="language-cpp">U</code> is a boolean constant expression. <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> is <code class="language-cpp">true</code> if and only if <code class="language-cpp">&lt;=&gt;</code> in the expression <code class="language-cpp">declval&lt;T&gt;() &lt;=&gt; declval&lt;U&gt;()</code> resolves to a built-in operator comparing pointers.</p>
+<p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operator <code class="language-cpp">&lt;=&gt;</code>.</p>
+<pre class="codehilite"><code class="language-cpp">struct compare_3way {
+  template&lt;class T, class U&gt;
+    requires ThreeWayComparableWith&lt;T,U&gt; || BUILTIN_PTR_3WAY(T, U)
+  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp;u) const;
+
+  using is_transparent = unspecified;
+};</code></pre>
+
+
+<p><em>Expects</em>: If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>, the conversion sequences from both <code class="language-cpp">T</code> and <code class="language-cpp">U</code> to <code class="language-cpp">P</code> shall be equality-preserving ([concepts.equality]).</p>
+<p><em>Effects</em>: </p>
+<ul>
+<li>If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>: returns <code class="language-cpp">strong_ordering::less</code> if (the converted value of) <code class="language-cpp">t</code> precedes <code class="language-cpp">u</code> in the implementation-defined strict total order over pointers of type <code class="language-cpp">P</code>, <code class="language-cpp">strong_ordering::greater</code> if <code class="language-cpp">u</code> precedes <code class="language-cpp">t</code>, and otherwise <code class="language-cpp">strong_ordering::equal</code>.</li>
+<li>Otherwise, equivalent to: <code class="language-cpp">return std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u);</code></li>
+</ul>
+</blockquote>
 <h2 id="acknowledgments">4. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thank you to Agustín Bergé, Casey Carter and Tim Song for many extensive conversations around these issues. </p>
 <h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html">[P1186R0]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1187r0.html">[P1187R0]</a><span style="margin-left: 5px;">"A type trait for std::compare_3way()'s type" by Barry Revzin, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1252r0.pdf">[P1252R0]</a><span style="margin-left: 5px;">"Ranges Design Cleanup" by Casey Carter, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1380r0.html">[P1380R0]</a><span style="margin-left: 5px;">"Ambiguity and Insecurities with Three-Way Comparison" by Lawrence Crowl, 2018-11-26</span></li></ul>
