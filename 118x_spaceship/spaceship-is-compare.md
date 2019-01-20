@@ -599,33 +599,31 @@ It's unclear whether such language support actually provides value.
 
 Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 
-> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. <del>The type of the expression <code>x<sub>i</sub></code> <=> <code>x<sub>i</sub></code> is denoted by <code>R<sub>i</sub></code></del>. It is unspecified whether virtual base class subobjects are compared more than once.
+> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub></code> <=> <code>x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is invalid, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
 
 <a name="3way-def"></a>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
-> <ins>If the declared return type of a defaulted three-way comparison operator function is `auto`, define <code><i>3WAY</i>(a, b)</code> as `a <=> b`. Otherwise, define <code><i>3WAY</i>(a, b)</code> as follows:</ins>
+> <ins>Define <code><i>3WAY</i>&lt;R&gt;(a, b)</code> as follows:</ins>
 > 
 - <ins>If `a <=> b` is well-formed, `a <=> b`;</ins>
-- <ins>Otherwise, if the declared return type of the defaulted `operator<=>` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `weak_ordering`, then:</ins>
+- <ins>Otherwise, if `R` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
+- <ins>Otherwise, if `R` is `weak_ordering`, then:</ins>
     - <ins>If `a == b` is well-formed and convertible to `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
     - <ins>Otherwise, `(a < b) ? weak_ordering::less : ((b < a) ? weak_ordering::greater : weak_ordering::equivalent)`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
-- <ins>Otherwise, if the declared return type of defaulted `operator<=>` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
-- <ins>Otherwise, <code><i>3WAY</i>(a, b)</code> is invalid.</ins>
-
-> <ins>The type of the expression <code><i>3WAY</i>(x<sub>i</sub>, x<sub>i</sub>)</code> is denoted by <code>R<sub>i</sub></code>. If the expression is invalid, <code>R<sub>i</sub></code> is `void`.</ins>
+- <ins>Otherwise, if `R` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
+- <ins>Otherwise, if `R` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
+- <ins>Otherwise, if `R` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
+- <ins>Otherwise, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is invalid.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 2 (note that we do _not_ want to make the noted case ill-formed, we just want to delete the operator):
 
-> If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. <del>[ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
+> If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <ins><code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.</ins> <del><code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
 
-> <ins>If the declared return type of a defaulted three-way comparison operator function is not `auto` and any <code>R<sub>i</sub></code> is not convertible to the provided return type, the operator function is defined as deleted.</ins>
+> <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>,x<sub>i</sub>)</code> is either invalid or not convertible to `R`, the operator function is defined as deleted.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 3, to use `3WAY` instead of `<=>`
 
-> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where <del>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></del> <ins><code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code></ins> yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to `bool`, yields `true`; `V` is <code>v<sub>i</sub></code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`. 
+> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where <del>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></del> <ins><code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>, y<sub>i</sub>)</code></ins> yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to `bool`, yields `true`; `V` is <code>v<sub>i</sub></code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`. 
                                     
 # Acknowledgments
     
