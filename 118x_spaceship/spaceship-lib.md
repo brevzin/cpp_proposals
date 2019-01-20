@@ -68,6 +68,32 @@ That's a type trait. A type trait that's currently missing from the standard lib
     
 Such that `compare_3way_type<T, U>` has a member `type` that is `decltype(declval<CREF<T>>() <=> declval<CREF<U>>())` is that is a valid expression, and no member `type` otherwise (where `CREF<T>` is `remove_reference_t<T> const&`).
 
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+Today
+</th>
+<th style="width:50%">
+Proposed
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp
+    template <typename T, typename U>
+    constexpr auto
+    operator<=>(optional<T> const& lhs, optional<U> const& rhs)
+        -> decltype(*lhs <=> *rhs);
+</td>
+<td>
+    :::cpp
+    template <typename T, typename U>
+    constexpr compare_3way_type_t<T, U>
+    operator<=>(optional<T> const& lhs, optional<U> const& rhs);
+</td>
+</tr>
+</table>
+
 ## Add a pair of concepts: `ThreeWayComparable` and `ThreeWayComparableWith`
 
 One important piece of functionality that libraries will need to implement is to _conditionally_ provide `<=>` on class templates based on whether certain types provide `<=>`. For example. `vector<T>` should expose an `operator<=>` if and only if `T` has an `operator<=>`.

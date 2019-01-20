@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: P1188R0 <br />
-Date: 2019-01-19 <br />
+Date: 2019-01-20 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -674,6 +674,30 @@ using compare_3way_type_t = typename compare_3way_type&lt;T, U&gt;::type;</code>
 
 
 <p>Such that <code class="language-cpp">compare_3way_type&lt;T, U&gt;</code> has a member <code class="language-cpp">type</code> that is <code class="language-cpp">decltype(declval&lt;CREF&lt;T&gt;&gt;() &lt;=&gt; declval&lt;CREF&lt;U&gt;&gt;())</code> is that is a valid expression, and no member <code class="language-cpp">type</code> otherwise (where <code class="language-cpp">CREF&lt;T&gt;</code> is <code class="language-cpp">remove_reference_t&lt;T&gt; const&amp;</code>).</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+<p>Today</p>
+</th>
+<th style="width:50%">
+<p>Proposed</p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+constexpr auto
+operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;U&gt; const&amp; rhs)
+    -&gt; decltype(*lhs &lt;=&gt; *rhs);</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T, typename U&gt;
+constexpr compare_3way_type_t&lt;T, U&gt;
+operator&lt;=&gt;(optional&lt;T&gt; const&amp; lhs, optional&lt;U&gt; const&amp; rhs);</code></pre>
+</td>
+</tr>
+</table>
+
 <h3 id="add-a-pair-of-concepts-threewaycomparable-and-threewaycomparablewith">2.2. Add a pair of concepts: <code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code><a class="self-link" href="#add-a-pair-of-concepts-threewaycomparable-and-threewaycomparablewith"></a></h3>
 <p>One important piece of functionality that libraries will need to implement is to <em>conditionally</em> provide <code class="language-cpp">&lt;=&gt;</code> on class templates based on whether certain types provide <code class="language-cpp">&lt;=&gt;</code>. For example. <code class="language-cpp">vector&lt;T&gt;</code> should expose an <code class="language-cpp">operator&lt;=&gt;</code> if and only if <code class="language-cpp">T</code> has an <code class="language-cpp">operator&lt;=&gt;</code>.</p>
 <p>Coming up with the correct way to implement this is non-trivial - I've gone through several incorrect implementations of it between the time when I started writing P1186R0 and now. The key problem to be solved is to ensure that <code class="language-cpp">&lt;</code> invokes <code class="language-cpp">&lt;=&gt;</code> if at all possible. That is:</p>
