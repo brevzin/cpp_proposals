@@ -215,7 +215,7 @@ The above is solely about the case where we want to adopt `<=>` _conditionally_.
 To be perfectly clear, the current rule for defaulting `operator<=>` for a class `C` is roughly as follows:
 
 - For two objects `x` and `y` of type `const C`, we compare their corresponding subobjects <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> until the first _i_ where given <code>auto v<sub>i</sub> = x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>, <code>v<sub>i</sub> != 0</code>. If such an _i_ exists, we return <code>v<sub>i</sub></code>. Else, we return `strong_ordering::equal`.
-- If the return type of defaulted `operator<=>` is `auto`, we determine the return type by taking the common comparison category of all of the <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code> expressions. If the return type is provided, we ensure that it is valid. If any of the pairwise comparisons is invalid, or are not compatible with the provided return type, the defaulted `operator<=>` is defined as deleted.
+- If the return type of defaulted `operator<=>` is `auto`, we determine the return type by taking the common comparison category of all of the <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code> expressions. If the return type is provided, we ensure that it is valid. If any of the pairwise comparisons is ill-formed, or are not compatible with the provided return type, the defaulted `operator<=>` is defined as deleted.
 
 In other words, for the `Aggr` example, the declaration `strong_ordering operator<=>(Aggr const&) const = default;` expands into something like
 
@@ -233,7 +233,7 @@ In other words, for the `Aggr` example, the declaration `strong_ordering operato
         }
     };
 
-Or it would, if the highlighted line were valid. `Legacy` has no `<=>`, so that pairwise comparison is invalid, so the operator function would be defined as deleted. 
+Or it would, if the highlighted line were valid. `Legacy` has no `<=>`, so that pairwise comparison is ill-formed, so the operator function would be defined as deleted. 
 
 # Proposal
 
@@ -250,7 +250,7 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 - Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
 - Synthesizing either `strong_equality` or `weak_equality` requires `==`.
 
-We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is invalid, the function is defined as deleted.
+We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>(a, b)</code> uses an expression without checking for it, and that expression is ill-formed, the function is defined as deleted.
 
 ## Soundness of Synthesis
 
@@ -289,7 +289,7 @@ Meaning
         char c;
         Legacy q;
         
-        // x.q <=> y.q is invalid and we have no return type
+        // x.q <=> y.q is ill-formed and we have no return type
         // to guide our synthesis. Hence, deleted
         auto operator<=>(Aggr const&) const = delete;
     };
@@ -599,13 +599,14 @@ It's unclear whether such language support actually provides value.
 
 Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 
-> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub></code> <=> <code>x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is invalid, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
+> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is ill-formed, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
 
 <a name="3way-def"></a>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
 > <ins>Define <code><i>3WAY</i>&lt;R&gt;(a, b)</code> as follows:</ins>
 > 
-- <ins>If `a <=> b` is well-formed, `a <=> b`;</ins>
+- <ins>If `a <=> b` is well-formed and convertible to `R`, `a <=> b`;</ins>
+- <ins>Otherwise, if `a <=> b` is well-formed, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is ill-formed;</ins>
 - <ins>Otherwise, if `R` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
 - <ins>Otherwise, if `R` is `weak_ordering`, then:</ins>
     - <ins>If `a == b` is well-formed and convertible to `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
@@ -613,13 +614,13 @@ Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 - <ins>Otherwise, if `R` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
 - <ins>Otherwise, if `R` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
 - <ins>Otherwise, if `R` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
-- <ins>Otherwise, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is invalid.</ins>
+- <ins>Otherwise, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is ill-formed.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 2 (note that we do _not_ want to make the noted case ill-formed, we just want to delete the operator):
 
 > If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <ins><code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.</ins> <del><code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
 
-> <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>,x<sub>i</sub>)</code> is either invalid or not convertible to `R`, the operator function is defined as deleted.</ins>
+> <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>,x<sub>i</sub>)</code> is ill-formed, the operator function is defined as deleted.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 3, to use `3WAY` instead of `<=>`
 
