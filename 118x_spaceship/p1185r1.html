@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: P1185R1 <br />
-Date: 2019-01-20 <br />
+Date: 2019-01-22 <br />
 Audience: CWG, EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -624,7 +624,6 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#change-the-meaning-of-defaulted-equality-operators">Change the meaning of defaulted equality operators</a></li>
 <li><a href="#change-how-we-define-strong-structural-equality">Change how we define strong structural equality</a></li>
 <li><a href="#change-defaulted-to-also-generate-a-defaulted">Change defaulted &lt;=&gt; to also generate a defaulted ==</a></li>
-<li><a href="#remove-strong_equality">Remove strong_equality</a></li>
 </ol>
 </li>
 <li><a href="#important-implications">Important implications</a><ol>
@@ -641,7 +640,6 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 
 <h2 id="revision-history">1. Revision History<a class="self-link" href="#revision-history"></a></h2>
 <p>R0 of this paper was approved in its entirety by Evolution in San Diego. This new revision contains brand new wording after core review. There were two <a href="#core-design-questions">design questions</a> brought up by Core during this review, both based on the meaning of implicitly generated <code class="language-cpp">==</code>, which are discussed in this revision.</p>
-<p>This revision also includes <a href="#remove-strong_equality">a new proposal</a> to remove built-in <code class="language-cpp">operator&lt;=&gt;</code>s which return <code class="language-cpp">strong_equality</code>.</p>
 <h2 id="motivation">2. Motivation<a class="self-link" href="#motivation"></a></h2>
 <p><a href="https://wg21.link/p0515r3" title="Consistent comparison">P0515</a> introduced <code class="language-cpp">operator&lt;=&gt;</code> as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's <a href="https://wg21.link/p1190r0" title="I did not order this! Why is it on my bill?">I did not order this!</a> for a very clear, very thorough description of the problem: it does not seem to be possible to implement <code class="language-cpp">&lt;=&gt;</code> optimally for "wrapper" types. What follows is a super brief run-down.</p>
 <p>Consider a type like:</p>
@@ -1068,15 +1066,6 @@ struct B {
 <p>As an optional extension, this paper proposes that a defaulted <code class="language-cpp">&lt;=&gt;</code> operator also generate a defaulted <code class="language-cpp">==</code>. We can do this regardless of whether the return type of the defaulted <code class="language-cpp">&lt;=&gt;</code> is provided or not, since even <code class="language-cpp">weak_equality</code> implies <code class="language-cpp">==</code>.</p>
 <p>This change, combined with the core proposal, means that one single defaulted operator is sufficient for full comparison. The difference is that, with this proposal, we still get optimal equality.</p>
 <p>This change may also obviate the need for the previous optional extension of changing the definition of strong structural extension. But even still, the changes are worth considering separately. </p>
-<h3 id="remove-strong_equality">3.5. Remove <code class="language-cpp">strong_equality</code><a class="self-link" href="#remove-strong_equality"></a></h3>
-<p>There are currently some core languages types whose builtin spaceship operator yields <code class="language-cpp">strong_equality</code>:</p>
-<ul>
-<li>function pointer types</li>
-<li>pointer-to-member types</li>
-<li><code class="language-cpp">std::nullptr_t</code></li>
-</ul>
-<p>As a result of this paper, this no longer really makes any sense. <code class="language-cpp">&lt;=&gt;</code>  is strictly an ordering operator - <code class="language-cpp">a == b</code> will never implicitly invoke <code class="language-cpp">a &lt;=&gt; b</code>, so there's no real value to defining a <code class="language-cpp">&lt;=&gt;</code> strictly for equality for these types. Not only does not it not make sense to have these operators, but having them adds further complexity to what the library has to do - it would have to reason about and support the case of <code class="language-cpp">XXX_equality</code> comparisons, otherwise the library would be at risk of not even supporting the language. And that added complexity doesn't add value either.</p>
-<p>This paper proposes removing the <code class="language-cpp">strong_equality</code> builtin for function pointer and pointer-to-member types. For <code class="language-cpp">std::nullptr_t</code>, this is a type which only has a single value. As such, it would be reasonable to provide a <code class="language-cpp">&lt;=&gt;</code> for it that returns <code class="language-cpp">strong_ordering::equal</code>. </p>
 <h2 id="important-implications">4. Important implications<a class="self-link" href="#important-implications"></a></h2>
 <p>This proposal means that for complex types (like containers), we have to write two functions instead of just <code class="language-cpp">&lt;=&gt;</code>. But we really have to do that anyway if we want performance. Even though the two <code class="language-cpp">vector</code> functions are very similar, and for <code class="language-cpp">optional</code> they are even more similar (see below), this seems like a very necessary change.</p>
 <p>For compound types (like aggregates), depending on the preference of the previous choices, we either have to default to functions instead or still just default <code class="language-cpp">&lt;=&gt;</code>... but we get optimal performance. </p>
@@ -1257,11 +1246,6 @@ struct wrapper {
 <p>Just to ensure that we really do <em>get the defaults</em>. And at that point, we've basically obviated the feature. </p>
 <p>The intent of the proposal that defaulting <code class="language-cpp">&lt;=&gt;</code> gets you defaulted <code class="language-cpp">==</code> is very much that defaulting <code class="language-cpp">&lt;=&gt;</code> really means also having declared defaulted <code class="language-cpp">==</code>. Option B does not get us there, and Option C definitely does not get us anywhere. I believe Option A is the clear choice here. </p>
 <h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
-<p>Replace 7.6.8 [expr.spaceship] paragraph 7 with a version that only applies to <code class="language-cpp">nullptr_t</code>:</p>
-<blockquote>
-<p><del>If the composite pointer type is a function pointer type, a pointer-to-member type, or <code class="language-cpp">std::nullptr_t</code>, the result is of type <code class="language-cpp">std::strong_equality</code>; the result is <code class="language-cpp">std::strong_equality::equal</code> if the (possibly converted) operands compare equal ([expr.eq]) and <code class="language-cpp">std::strong_equality::nonequal</code> if they compare unequal, otherwise the result of the operator is unspecified.</del> </p>
-<p><ins>If the composite pointer type is <code class="language-cpp">std::nullptr_t</code>, the result is of type <code class="language-cpp">std::strong_ordering</code> and the result is <code class="language-cpp">std::strong_ordering::equal</code>.</ins></p>
-</blockquote>
 <p>Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:</p>
 <blockquote>
 <p>A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq]) for some class <code class="language-cpp">C</code> shall be a non-template function declared in the member-specification of <code class="language-cpp">C</code> that is</p>
@@ -1360,15 +1344,6 @@ return type bool.</p>
 <blockquote>
 <p>If a rewritten candidate is selected by overload resolution for <del>an</del> <ins>a relational or three-way comparison</ins> operator <code class="language-cpp">@</code>, <code class="language-cpp">x @ y</code> is interpreted as the rewritten expression: <code class="language-cpp">0 @ (y &lt;=&gt; x)</code> if the selected candidate is a synthesized candidate with reversed order
 of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> otherwise, using the selected rewritten <code class="language-cpp">operator&lt;=&gt;</code> candidate. <ins>If a rewritten candidate is selected by overload resolution for a <code class="language-cpp">!=</code> operator, <code class="language-cpp">x != y</code> is interpreted as <code class="language-cpp">(y == x) ? false : true</code> if the selected candidate is a synthesized candidate with reversed order of parameters, or <code class="language-cpp">(x == y) ? false : true</code> otherwise, using the selected rewritten <code class="language-cpp">operator==</code> candidate. If a rewritten candidate is selected by overload resolution for an <code class="language-cpp">==</code> operator, <code class="language-cpp">x == y</code> is interpreted as <code class="language-cpp">(y == x) ? true : false</code> using the selected rewritten <code class="language-cpp">operator==</code> candidate.</ins></p>
-</blockquote>
-<p>Change 11.6 [over.built] paragraph 19:</p>
-<blockquote>
-<p>For every <code class="language-cpp">T</code>, where <code class="language-cpp">T</code> is a pointer-to-member type or <code class="language-cpp">std::nullptr_t</code>, there exist candidate operator functions of the form</p>
-<p><pre><code>bool                 operator==(T, T);
-bool                 operator!=(T, T);
-<del>std::strong_equality operator&lt;=&gt;(T, T);</code></del></pre></p>
-<p><ins>There also exists a candidate operator function of the form</ins></p>
-<p><pre><ins><code>std::strong_ordering operator&lt;=&gt;(std::nullptr_t, std::nullptr_t);</code></ins></pre></p>
 </blockquote>
 <p>Change 12.1 [temp.param]/4 to refer to <code class="language-cpp">==</code> instead of <code class="language-cpp">&lt;=&gt;</code>:</p>
 <blockquote>

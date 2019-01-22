@@ -7,8 +7,6 @@ Audience: CWG, EWG
 
 R0 of this paper was approved in its entirety by Evolution in San Diego. This new revision contains brand new wording after core review. There were two [design questions](#core-design-questions) brought up by Core during this review, both based on the meaning of implicitly generated `==`, which are discussed in this revision.
 
-This revision also includes [a new proposal](#remove-strong_equality) to remove built-in `operator<=>`s which return `strong_equality`.
-
 # Motivation
 
 [P0515](https://wg21.link/p0515r3) introduced `operator<=>` as a way of generating all six comparison operators from a single function, as well as the ability to default this so as to avoid writing any code at all. See David Stone's [I did not order this!](https://wg21.link/p1190r0) for a very clear, very thorough description of the problem: it does not seem to be possible to implement `<=>` optimally for "wrapper" types. What follows is a super brief run-down.
@@ -509,18 +507,6 @@ This change, combined with the core proposal, means that one single defaulted op
 
 This change may also obviate the need for the previous optional extension of changing the definition of strong structural extension. But even still, the changes are worth considering separately. 
 
-## Remove `strong_equality`
-
-There are currently some core languages types whose builtin spaceship operator yields `strong_equality`:
-
-- function pointer types
-- pointer-to-member types
-- `std::nullptr_t`
-
-As a result of this paper, this no longer really makes any sense. `<=>`  is strictly an ordering operator - `a == b` will never implicitly invoke `a <=> b`, so there's no real value to defining a `<=>` strictly for equality for these types. Not only does not it not make sense to have these operators, but having them adds further complexity to what the library has to do - it would have to reason about and support the case of `XXX_equality` comparisons, otherwise the library would be at risk of not even supporting the language. And that added complexity doesn't add value either.
-
-This paper proposes removing the `strong_equality` builtin for function pointer and pointer-to-member types. For `std::nullptr_t`, this is a type which only has a single value. As such, it would be reasonable to provide a `<=>` for it that returns `strong_ordering::equal`. 
-
 # Important implications
 
 This proposal means that for complex types (like containers), we have to write two functions instead of just `<=>`. But we really have to do that anyway if we want performance. Even though the two `vector` functions are very similar, and for `optional` they are even more similar (see below), this seems like a very necessary change.
@@ -731,12 +717,6 @@ The intent of the proposal that defaulting `<=>` gets you defaulted `==` is very
         
 # Wording
 
-Replace 7.6.8 [expr.spaceship] paragraph 7 with a version that only applies to `nullptr_t`:
-
-> <del>If the composite pointer type is a function pointer type, a pointer-to-member type, or `std::nullptr_t`, the result is of type `std::strong_equality`; the result is `std::strong_equality::equal` if the (possibly converted) operands compare equal ([expr.eq]) and `std::strong_equality::nonequal` if they compare unequal, otherwise the result of the operator is unspecified.</del> 
-
-> <ins>If the composite pointer type is `std::nullptr_t`, the result is of type `std::strong_ordering` and the result is `std::strong_ordering::equal`.</ins>
-
 Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:
 
 > A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq]) for some class `C` shall be a non-template function declared in the member-specification of `C` that is
@@ -837,18 +817,6 @@ Change 11.3.1.2 [over.match.oper] paragraph 8:
 
 >  If a rewritten candidate is selected by overload resolution for <del>an</del> <ins>a relational or three-way comparison</ins> operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
 of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. <ins>If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.</ins>
-
-Change 11.6 [over.built] paragraph 19:
-
-> For every `T`, where `T` is a pointer-to-member type or `std::nullptr_t`, there exist candidate operator functions of the form
-> 
-> <pre><code>bool                 operator==(T, T);
-> bool                 operator!=(T, T);
-> <del>std::strong_equality operator<=>(T, T);</code></del></pre>
->
-> <ins>There also exists a candidate operator function of the form</ins>
-> 
-> <pre><ins><code>std::strong_ordering operator<=>(std::nullptr_t, std::nullptr_t);</code></ins></pre>
 
 Change 12.1 [temp.param]/4 to refer to `==` instead of `<=>`:
 

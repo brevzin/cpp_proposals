@@ -572,9 +572,7 @@ For further discussion, see [P1188R0](https://wg21.link/p1188r0). This paper foc
     
 ## What about `XXX_equality`?
 
-This paper proposes synthesizing `strong_equality` and `weak_equality` orderings, simply for consistency. As long as we have language types for which `<=>` yields a comparison category of type `XXX_equality`, all the rules we build on top of `<=>` should respect that and be consistent. 
-
-However, [P1185R1](https://wg21.link/p1185r1) proposes removing those cases. If that aspect of that paper gets approved, then the corresponding bullets in the definition of `3WAY<R>` should also be removed.
+This paper proposes synthesizing `strong_equality` and `weak_equality` orderings, simply for consistency, even if such return types from `operator<=>` are somewhat questionable. As long as we have language types for which `<=>` yields a comparison category of type `XXX_equality`, all the rules we build on top of `<=>` should respect that and be consistent. 
     
 # Wording
 
