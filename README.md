@@ -2,9 +2,9 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 
 ### Accepted to Working Draft
 
-- [p0704r0 - Fixing const-qualified pointers to members](0704_const_qual_pmfs/p0704r0.html). Added to [working draft](http://eel.is/c++draft/expr.mptr.oper#6.sentence-2), with [revised wording](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0704r1.html).
-- [p0780r2 - Allow pack expansion in lambda init-capture](0780_lambda_pack_capture/p0780r2.html). Added to [working draft](http://eel.is/c++draft/expr.prim.lambda#capture-17) for C++20. There still needs to be a core wording issue as a pack of references is currently specified as `...&id` instead of `&...id`.
-- [p0892r2 - `explicit(bool)`](0892_explicit_bool/p0892r2.html), with STL. Added to [working draft](http://eel.is/c++draft/dcl.fct.spec) for C++20. 
+- [p0704r1 - Fixing const-qualified pointers to members](0704_const_qual_pmfs/p0704r1.html).
+- [p0780r2 - Allow pack expansion in lambda init-capture](0780_lambda_pack_capture/p0780r2.html). There is a core issue (CWG 2378) as a pack of references is currently specified as `...&id` instead of `&...id`.
+- [p0892r2 - `explicit(bool)`](0892_explicit_bool/p0892r2.html), with STL. 
 
 ### Approved by (L)EWG
 
