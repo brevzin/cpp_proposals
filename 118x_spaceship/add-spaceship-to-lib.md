@@ -427,6 +427,15 @@ But with `operator<=>` we can actually take a third approach: member functions. 
     42 == X{57};
     X{42} != 57;
 
-Everyone understands member functions, so maybe we should just use member functions?
+Everyone understands member functions, so maybe we should just use member functions? The question is really more about what kinds of double-conversions we want to allow. In this particular example:
+
+    :::cpp
+    X a{42}, b{57};
+    a < b;                     // ok
+    std::ref(a) < std::ref(b); // ill-formed
+    
+If we made `operator<=>` a hidden friend, the comparison through `std::reference_wrapper<X>` would compile.
+
+Today, `std::reference_wrapper<std::string>` is not comparable. Adding a new `operator<=>` as a hidden friend would make it comparable. Making the `operator<=>` a member function would make it not comparable - which is the status quo. Perhaps it's better to leave things as they are, and add comparisons to `std::reference_wrapper<T>` if we really care about this case?
     
 [gotw.29]: http://www.gotw.ca/gotw/029.htm "GotW #29: Strings||Herb Sutter||1998-01-03"

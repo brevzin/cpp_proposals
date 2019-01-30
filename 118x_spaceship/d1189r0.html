@@ -987,6 +987,13 @@ X{42} &lt; 57;
 X{42} != 57;</code></pre>
 
 
-<p>Everyone understands member functions, so maybe we should just use member functions?</p>
+<p>Everyone understands member functions, so maybe we should just use member functions? The question is really more about what kinds of double-conversions we want to allow. In this particular example:</p>
+<pre class="codehilite"><code class="language-cpp">X a{42}, b{57};
+a &lt; b;                     // ok
+std::ref(a) &lt; std::ref(b); // ill-formed</code></pre>
+
+
+<p>If we made <code class="language-cpp">operator&lt;=&gt;</code> a hidden friend, the comparison through <code class="language-cpp">std::reference_wrapper&lt;X&gt;</code> would compile.</p>
+<p>Today, <code class="language-cpp">std::reference_wrapper&lt;std::string&gt;</code> is not comparable. Adding a new <code class="language-cpp">operator&lt;=&gt;</code> as a hidden friend would make it comparable. Making the <code class="language-cpp">operator&lt;=&gt;</code> a member function would make it not comparable - which is the status quo. Perhaps it's better to leave things as they are, and add comparisons to <code class="language-cpp">std::reference_wrapper&lt;T&gt;</code> if we really care about this case?</p>
 <h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
 </html>
