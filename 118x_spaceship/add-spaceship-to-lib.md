@@ -364,9 +364,22 @@ Actually, yes. Consider how we would implement `operator<` for the type `New` to
     bool operator<(New const& lhs, New const& rhs) {
         return std::tie(lhs.q, lhs.name) < std::tie(rhs.q, rhs.name);
     }
+
+which does:
+
+    :::cpp
+    bool operator<(New const& lhs, New const& rhs) {
+        if (lhs.q < rhs.q) return true;
+        if (rhs.q < lhs.q) return false;
+        return lhs.name < rhs.name;
+    }
     
-What if the `q`'s were equivalent? We end up walking through every element once (the underlying check for `lhs.q < rhs.q`) and then we end up walking through every element a second time (the underlying check for `rhs.q < lhs.q`). In the synthesized `<=>` above, this is also true - we also will have to compare every pair of `Legacy`'s twice. But, we do both comparisons together - and only have to walk through memory once. That is strictly better. 
-    
+What if the `q`'s were equivalent? We end up walking through every element twice (in `lhs.q < rhs.q`) and then we end up walking through every element two more times (in `rhs.q < lhs.q`) - just repeating all the same comparisons we already did. In the worst case, we invoke _four_ `<`s for each pair of `Legacy` objects. 
+
+But if `vector<Legacy>` had `<=>` even if `Legacy` did not, an invocation of `<` would only have to compare each pair of `Legacy` objects twice - because once we walk through them once, we already know we're done and can consider the two `vector`'s `weak_ordering::equivalent`.
+
+In other words, such a change would let us do _half_ the work, and we would achieve this performance boost by writing _less_ code than we have to today.
+
 The one edge-case here is for `pair`. If we were comparing two `pair<Legacy, Legacy>`s against each other with `<`, in the status quo that takes at most three invocations of `Legacy`'s `operator<` but in the synthesized implementation it could technically require four. But since that last one only differentiates between the `greater` and `equivalent` cases, and neither of those are `less`, it seems like a straightforward optimization for a compiler to make to simply remove that last comparison. At which point, we're equivalent to status quo.
 
 It's important to reassure here that the semantics of this comparison are exactly the same for all types which provide a `<` (but not a `<=>`) which implements a total order. We're basically doing the exact same operations that `vector` (and `pair` and ...) would already be doing. There's really not much benefit to keeping around the existing relational operators - we can retire them.

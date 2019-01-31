@@ -942,7 +942,17 @@ struct New {
 }</code></pre>
 
 
-<p>What if the <code class="language-cpp">q</code>'s were equivalent? We end up walking through every element once (the underlying check for <code class="language-cpp">lhs.q &lt; rhs.q</code>) and then we end up walking through every element a second time (the underlying check for <code class="language-cpp">rhs.q &lt; lhs.q</code>). In the synthesized <code class="language-cpp">&lt;=&gt;</code> above, this is also true - we also will have to compare every pair of <code class="language-cpp">Legacy</code>'s twice. But, we do both comparisons together - and only have to walk through memory once. That is strictly better. </p>
+<p>which does:</p>
+<pre class="codehilite"><code class="language-cpp">bool operator&lt;(New const&amp; lhs, New const&amp; rhs) {
+    if (lhs.q &lt; rhs.q) return true;
+    if (rhs.q &lt; lhs.q) return false;
+    return lhs.name &lt; rhs.name;
+}</code></pre>
+
+
+<p>What if the <code class="language-cpp">q</code>'s were equivalent? We end up walking through every element twice (in <code class="language-cpp">lhs.q &lt; rhs.q</code>) and then we end up walking through every element two more times (in <code class="language-cpp">rhs.q &lt; lhs.q</code>) - just repeating all the same comparisons we already did. In the worst case, we invoke <em>four</em> <code class="language-cpp">&lt;</code>s for each pair of <code class="language-cpp">Legacy</code> objects. </p>
+<p>But if <code class="language-cpp">vector&lt;Legacy&gt;</code> had <code class="language-cpp">&lt;=&gt;</code> even if <code class="language-cpp">Legacy</code> did not, an invocation of <code class="language-cpp">&lt;</code> would only have to compare each pair of <code class="language-cpp">Legacy</code> objects twice - because once we walk through them once, we already know we're done and can consider the two <code class="language-cpp">vector</code>'s <code class="language-cpp">weak_ordering::equivalent</code>.</p>
+<p>In other words, such a change would let us do <em>half</em> the work, and we would achieve this performance boost by writing <em>less</em> code than we have to today.</p>
 <p>The one edge-case here is for <code class="language-cpp">pair</code>. If we were comparing two <code class="language-cpp">pair&lt;Legacy, Legacy&gt;</code>s against each other with <code class="language-cpp">&lt;</code>, in the status quo that takes at most three invocations of <code class="language-cpp">Legacy</code>'s <code class="language-cpp">operator&lt;</code> but in the synthesized implementation it could technically require four. But since that last one only differentiates between the <code class="language-cpp">greater</code> and <code class="language-cpp">equivalent</code> cases, and neither of those are <code class="language-cpp">less</code>, it seems like a straightforward optimization for a compiler to make to simply remove that last comparison. At which point, we're equivalent to status quo.</p>
 <p>It's important to reassure here that the semantics of this comparison are exactly the same for all types which provide a <code class="language-cpp">&lt;</code> (but not a <code class="language-cpp">&lt;=&gt;</code>) which implements a total order. We're basically doing the exact same operations that <code class="language-cpp">vector</code> (and <code class="language-cpp">pair</code> and ...) would already be doing. There's really not much benefit to keeping around the existing relational operators - we can retire them.</p>
 <h3 id="proposal_1">4.1. Proposal<a class="self-link" href="#proposal_1"></a></h3>
