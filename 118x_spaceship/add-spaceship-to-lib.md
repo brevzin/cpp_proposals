@@ -374,7 +374,7 @@ which does:
         return lhs.name < rhs.name;
     }
     
-What if the `q`'s were equivalent? We end up walking through every element twice (in `lhs.q < rhs.q`) and then we end up walking through every element two more times (in `rhs.q < lhs.q`) - just repeating all the same comparisons we already did. In the worst case, we invoke _four_ `<`s for each pair of `Legacy` objects. 
+What if the `q`'s were equivalent? We end up comparing every pair of elements twice (in `lhs.q < rhs.q`) and then we end up comparing every pair of elements two more times (in `rhs.q < lhs.q`) - just repeating all the same comparisons we already did. In the worst case, we invoke _four_ `<`s for each pair of `Legacy` objects. 
 
 But if `vector<Legacy>` had `<=>` even if `Legacy` did not, an invocation of `<` would only have to compare each pair of `Legacy` objects twice - because once we walk through them once, we already know we're done and can consider the two `vector`'s `weak_ordering::equivalent`.
 
