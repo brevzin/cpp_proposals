@@ -54,6 +54,77 @@ Even though `std::string` already has a three-way comparison function (by way of
 
 And these problems stack, as the standard library types are inevitably used together. A `std::optional<std::vector<std::string>>` should provide an `operator<=>` with a comparison category of `strong_ordering`, which should be efficient, and it should really be there for C++20.
 
+## Non-member, hidden friend, or member?
+
+This paper proposes adding a whole lot of `operator<=>`s into the standard library. There are three ways we could do this:
+
+- non-member functions
+- hidden friends
+- member functions
+
+Most (if not all?) of these operators are non-member functions today. This has the downside of polluting scope and increasing then number of candidates for each of the comparisons that overload resolution has to look through. It has the additional downside of allowing surprising conversions in certain cases simply because of ADL (e.g. [LWG3065](https://wg21.link/lwg3065)).
+
+This leads many people to rightly suggest to make operators hidden friends instead, which maintains the advantage of non-member functions by allowing conversions in both arguments but reduces the number of candidates for unrelated types and doesn't have surprise conversions in both arguments. However, it does introduce some new possibilities for conversions that did not exist with the non-member function approach. Consider (on [godbolt](https://godbolt.org/z/s7wxPE)):
+
+    :::cpp
+    template <typename T>
+    struct C {
+    #ifdef FRIEND
+        friend bool operator<(C, C);
+    #endif
+    };
+    
+    #ifndef FRIEND
+    template <typename T>
+    bool operator<(C<T>, C<T>);
+    #endif
+    
+    void ex(C<int> a, C<int> b) {
+        a < b;                     // #1
+        std::ref(a) < b;           // #2
+        a < std::ref(b);           // #3
+        std::ref(a) < std::ref(b); // #4
+    }
+
+With the non-member operator template (i.e. without `FRIEND` defined), only `#1` is a valid expression. But with the hidden friend, _all four_ are valid. These kind of additional conversions may be surprising - and it is certainly possible that they could lead to ambiguities. 
+    
+But with `operator<=>` we can actually take a third approach: member functions. Because `<=>` considers reversed candidates as well, a member function is sufficient:
+
+    :::cpp
+    struct X {
+        X(int);
+        bool operator==(X const&) const;
+        strong_ordering operator<=>(X const&) const;
+    };
+    
+    // all of these are ok
+    X{42} < X{57};
+    X{42} < 57;
+    42 < X{57};
+    42 == X{57};
+    X{42} != 57;
+
+Using a member function does not pollute the global scope and does not add to the work that overload resolution has to do needlessly. It does have unique behavior where conversions are concerned though. If we return to the earlier example with `C<T>`:
+
+    :::cpp
+    template <typename T>
+    struct C {
+        std::strong_ordering operator<=>(C);
+    };
+    
+    void ex(C<int> a, C<int> b) {
+        a < b;                     // #1
+        std::ref(a) < b;           // #2
+        a < std::ref(b);           // #3
+        std::ref(a) < std::ref(b); // #4
+    }
+
+With this implementation, `#1` compiles straightforwardly. But `#2` and `#3` are _also_ valid. `#3` evaluates as `a.operator<=>(std::ref(b)) < 0` while `#2` evaluates as `0 < b.operator<=>(std::ref(a))`.
+
+It seems very unlikely that examples like `#2` or `#3` could change meaning by moving `C<T>`'s operators from non-member relational operator function templates to be a member non-template spaceship. In order for the code to have previously compiled, it would have either needed to call some global template or it would call some non-member operator function through `std::ref` (not in this specific case, as `std::reference_wrapper` does not have any comparison functions, but it is intended to be just a familiar placeholder).  In the former case, the global template would continue to be selected due to its being a better match (since our `<=>` forces a conversion) and in the latter case, the existing operators would continue to be selected due to overload resolution favoring non-rewritten candidates to rewritten ones. 
+
+As a result, due to the clear benefits and unlikely harm, I think member `operator<=>` is the way to go.
+
 # Most `operator!=()` is obsolete
 
 [P1185R1](https://wg21.link/p1185r1) will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which `a != b` is defined to mean `!(a == b)`, we no longer need to define `operator!=`. The language will simply do the right thing for us.
@@ -114,9 +185,9 @@ And replace the four relational operators with an `operator<=>` whose return typ
     template <typename CharT, typename Traits, typename Alloc>
     class basic_string {
         // ...
-        friend traits_category_t<Traits> operator<=>(basic_string const& lhs, basic_string const& rhs)
+        traits_category_t<Traits> operator<=>(basic_string const& rhs) const
         {
-            return lhs.compare(rhs) <=> 0;
+            return compare(rhs) <=> 0;
         }
         // ...
     };
@@ -143,7 +214,7 @@ And then use that if it is present:
     template <typename CharT, typename Traits, typename Alloc>
     class basic_string {
         // ...
-        friend auto operator<=>(basic_string const& lhs, basic_string const& rhs)
+        auto operator<=>(basic_string const& rhs) const
         {
             auto impl = [](CharT const* lhs, CharT const* rhs, size_t sz) {
                 if constexpr (requires { Traits::compare_3way(lhs, rhs, sz); }) {
@@ -154,8 +225,8 @@ And then use that if it is present:
                 }
             };
         
-            auto cmp = impl(lhs.data(), rhs.data(), min(lhs.size(), rhs.size()));
-            return cmp != 0 ? cmp : lhs.size() <=> rhs.size();
+            auto cmp = impl(data(), rhs.data(), min(size(), rhs.size()));
+            return cmp != 0 ? cmp : size() <=> rhs.size();
         }
         // ...
     };
@@ -165,7 +236,7 @@ This is somewhat more involved than the previous alternative, but not by much. S
 
 ## Proposal
 
-I weakly favor the member type alias approach. Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `basic_string`, `basic_string_view`, and `sub_match` and replace them with `operator<=>`s which invoke `x.compare(y) <=> 0` cast to the appropriate comparison category (with argument adjustments as appropriate). This `operator<=>` should be a hidden friend.
+I weakly favor the member type alias approach. Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `basic_string`, `basic_string_view`, and `sub_match` and replace them with `operator<=>`s which invoke `x.compare(y) <=> 0` cast to the appropriate comparison category (with argument adjustments as appropriate). This `operator<=>` should be a member function. 
 
 # Adding `<=>` to `std::vector`
 
@@ -239,7 +310,7 @@ We can use the above type to implement `operator<=>` for `vector` as follows:
     template <typename T>
     class vector {
         // ...
-        friend auto operator<=>(vector const& rhs) const {
+        auto operator<=>(vector const& rhs) const {
             return std::lexicographical_compare_3way(
                 begin(), end(),
                 rhs.begin(), rhs.end(),
@@ -257,7 +328,7 @@ Or for `pair` as follows, relying on `compare_3way_type_t` also from P1188R0:
     template <typename T, typename U>
     class pair {
         // ...
-        friend common_comparison_category<
+        common_comparison_category<
             compare_3way_type_t<weak_wrapper<T>>,
             compare_3way_type_t<weak_wrapper<U>>,
         > operator<=>(pair const& rhs) const {
@@ -302,7 +373,7 @@ It's important to reassure here that the semantics of this comparison are exactl
 
 ## Proposal
 
-Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `array`, `deque`, `forward_list`, `list`, `map`, `move_iterator`, `multimap`, `multiset`, `pair`, `set`, `tuple`, `unordered_map`, `unordered_multimap`, `unordered_multiset`, `unordered_set`, and `vector` (including `vector<bool>`). For each of them, add a `operator<=>` with the same comparison semantics as today which compares each type `T` as if by the exposition-only `weak_wrapper<T>` above. This `operator<=>` should be a hidden friend.
+Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `array`, `deque`, `forward_list`, `list`, `map`, `move_iterator`, `multimap`, `multiset`, `pair`, `set`, `tuple`, `unordered_map`, `unordered_multimap`, `unordered_multiset`, `unordered_set`, and `vector` (including `vector<bool>`). For each of them, add a `operator<=>` with the same comparison semantics as today which compares each type `T` as if by the exposition-only `weak_wrapper<T>` above. These `operator<=>`s should be member functions.
     
 # Adding `<=>` to `std::optional`
 
@@ -356,14 +427,13 @@ However, it's still really important to add `<=>` to these types for the same re
     template <typename T>
     class optional {
         // ...
-        template <typename T1, typename T2>
-            requires ThreeWayComparableWith<T1, T2>
-        friend compare_3way_type_t<T1,T2> operator<=>(optional<T1> const& lhs, optional<T2> const& rhs)
+        template <ThreeWayComparableWith<T> U>
+        compare_3way_type_t<T,U> operator<=>(optional<U> const& rhs) const;
         {
-            if (lhs.has_value() && rhs.has_value()) {
-                return *lhs <=> *rhs;
+            if (has_value() && rhs.has_value()) {
+                return **this <=> *rhs;
             } else {
-                return lhs.has_value() <=> rhs.has_value();
+                return has_value() <=> rhs.has_value();
             }
         }
         // ...
@@ -373,7 +443,7 @@ Making the spaceship operator more constrained that the other relational operato
 
 ## Proposal
 
-Add a new `operator<=>` for each kind of comparison for `optional`, `variant`, `queue`, `stack`, and `reverse_iterator` such that `operator<=>` is constrained on the relevant template parameters satisfying `ThreeWayComparableWith` (or just `ThreeWayComparable`), ensuring that `operator<=>` is the best viable candidate for all relational comparisons in code. This `operator<=>` should be a hidden friend.
+Add a new `operator<=>` for each kind of comparison for `optional`, `variant`, `queue`, `stack`, and `reverse_iterator` such that `operator<=>` is constrained on the relevant template parameters satisfying `ThreeWayComparableWith` (or just `ThreeWayComparable`), ensuring that `operator<=>` is the best viable candidate for all relational comparisons in code. This `operator<=>` should be a member function.
 
 Do not remove any of the preexisting comparison operators for these types, including even `operator!=()`.
 
@@ -384,58 +454,35 @@ For `std::unique_ptr` and `std::shared_ptr`, the comparison of `<` does not use 
 Either way, P1188R0 proposes a three-way comparison object named `std::compare_3way` that satisfies the requirement that the ordering is a strict weak order, using the same wording that we have for `std::less` today. We can use this object to implement the comparisons doing something like:
 
     :::cpp
-    template <typename T1, typename D1, typename T2, typename D2>
-    auto operator<=>(unique_ptr<T1,D1> const& p1, unique_ptr<T2,D2> const& p2)
-    {
-        using CT = common_type_t<typename unique_ptr<T1,D1>::pointer, typename unique_ptr<T2,D2>::pointer>;
-        return compare_3way<CT>()(p1.get(), p2.get());
-    }
+    template <typename T, typename D>
+    class unique_ptr {
+        // ...
+        template <typename T2, typename D2>
+        auto operator<=>(unique_ptr<T2,D2> const& rhs) const
+        {
+            using CT = common_type_t<pointer, typename unique_ptr<T2,D2>::pointer>;
+            return compare_3way<CT>()(get(), rhs.get());
+        }
+        // ...
+    };
     
-    template <typename T, typename U>
-    auto operator<=>(shared_ptr<T> const& a, shared_ptr<U> const& b)
-    {
-        return compare_3way()(a.get(), b.get());
-    }
+    template <typename T>
+    class shared_ptr {
+        // ...
+        template <typename U>
+        auto operator<=>(shared_ptr<U> const& rhs) const
+        {
+            return compare_3way()(get(), rhs.get());
+        }
+        // ...
+    };
    
 ## Proposal
 
-Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `unique_ptr` and `shared_ptr` and replace them with `operator<=>`s which go through the proposed `compare_3way` function object in the same way that the preexisting comparisons do today. These `operator<=>`s should be hidden friends.
+Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `unique_ptr` and `shared_ptr` and replace them with `operator<=>`s which go through the proposed `compare_3way` function object in the same way that the preexisting comparisons do today. These `operator<=>`s should be member functions.
 
-# Non-member, hidden friend, or member?
+# Acknowledgements
 
-Through this paper, I've been suggesting that the added `operator<=>`s should be hidden friends. There are actually three options here:
-
-- non-member functions
-- hidden friends
-- member functions
-
-Most (if not all?) of these operators are non-member functions today. This has the downside of polluting scope and increasing then number of candidates for each of the comparisons that overload resolution has to look through. It has the additional downside of allowing surprising conversions in certain cases simply because of ADL (see the `path` example). This leads many people to rightly suggest to make operators hidden friends instead, which maintains the advantage of non-member functions by allowing conversions in both arguments but reduces the number of candidates for unrelated types and doesn't have surprise conversions in both arguments.
-
-But with `operator<=>` we can actually take a third approach: member functions. Because `<=>` considers reversed candidates as well, a member function is sufficient:
-
-    :::cpp
-    struct X {
-        X(int);
-        bool operator==(X const&) const;
-        strong_ordering operator<=>(X const&) const;
-    };
-    
-    // all of these are ok
-    X{42} < X{57};
-    X{42} < 57;
-    42 < X{57};
-    42 == X{57};
-    X{42} != 57;
-
-Everyone understands member functions, so maybe we should just use member functions? The question is really more about what kinds of double-conversions we want to allow. In this particular example:
-
-    :::cpp
-    X a{42}, b{57};
-    a < b;                     // ok
-    std::ref(a) < std::ref(b); // ill-formed
-    
-If we made `operator<=>` a hidden friend, the comparison through `std::reference_wrapper<X>` would compile.
-
-Today, `std::reference_wrapper<std::string>` is not comparable. Adding a new `operator<=>` as a hidden friend would make it comparable. Making the `operator<=>` a member function would make it not comparable - which is the status quo. Perhaps it's better to leave things as they are, and add comparisons to `std::reference_wrapper<T>` if we really care about this case?
+Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. 
     
 [gotw.29]: http://www.gotw.ca/gotw/029.htm "GotW #29: Strings||Herb Sutter||1998-01-03"

@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1189R0 <br />
-Date: 2019-01-30 <br />
+Date: 2019-01-31 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -611,6 +611,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <ol>
 <li><a href="#introduction">Introduction</a><ol>
 <li><a href="#motivation">Motivation</a></li>
+<li><a href="#non-member-hidden-friend-or-member">Non-member, hidden friend, or member?</a></li>
 </ol>
 </li>
 <li><a href="#most-operator-is-obsolete">Most operator!=() is obsolete</a></li>
@@ -632,7 +633,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#proposal_3">Proposal</a></li>
 </ol>
 </li>
-<li><a href="#non-member-hidden-friend-or-member">Non-member, hidden friend, or member?</a></li>
+<li><a href="#acknowledgements">Acknowledgements</a></li>
 <li><a href="#references">References</a></li>
 </ol>
 </div>
@@ -677,6 +678,68 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 
 <p>Even though <code class="language-cpp">std::string</code> already has a three-way comparison function (by way of <code class="language-cpp">compare()</code>), the invocation of <code class="language-cpp">&lt;</code> above won't use it - it'll instead invoke <code class="language-cpp">&lt;</code> up to twice on each string. That's twice as much work as needs to be done to answer this question. If we adopt <code class="language-cpp">&lt;=&gt;</code> for all of thse library types as we should, then the above comparison would go through <code class="language-cpp">std::vector</code>'s <code class="language-cpp">&lt;=&gt;</code> which would go through <code class="language-cpp">std::string</code>'s <code class="language-cpp">&lt;=&gt;</code> which ensures that we only compare each <code class="language-cpp">string</code> at most one time. We're not just talking about making comparisons for user-defined types easier to write and more performant, we're also talking about making already existing comparisons of standard library types more performant.</p>
 <p>And these problems stack, as the standard library types are inevitably used together. A <code class="language-cpp">std::optional&lt;std::vector&lt;std::string&gt;&gt;</code> should provide an <code class="language-cpp">operator&lt;=&gt;</code> with a comparison category of <code class="language-cpp">strong_ordering</code>, which should be efficient, and it should really be there for C++20.</p>
+<h3 id="non-member-hidden-friend-or-member">1.2. Non-member, hidden friend, or member?<a class="self-link" href="#non-member-hidden-friend-or-member"></a></h3>
+<p>This paper proposes adding a whole lot of <code class="language-cpp">operator&lt;=&gt;</code>s into the standard library. There are three ways we could do this:</p>
+<ul>
+<li>non-member functions</li>
+<li>hidden friends</li>
+<li>member functions</li>
+</ul>
+<p>Most (if not all?) of these operators are non-member functions today. This has the downside of polluting scope and increasing then number of candidates for each of the comparisons that overload resolution has to look through. It has the additional downside of allowing surprising conversions in certain cases simply because of ADL (e.g. <a href="https://wg21.link/lwg3065" title="LWG 2989 missed that all path's other operators should be hidden friends as well">LWG3065</a>).</p>
+<p>This leads many people to rightly suggest to make operators hidden friends instead, which maintains the advantage of non-member functions by allowing conversions in both arguments but reduces the number of candidates for unrelated types and doesn't have surprise conversions in both arguments. However, it does introduce some new possibilities for conversions that did not exist with the non-member function approach. Consider (on <a href="https://godbolt.org/z/s7wxPE">godbolt</a>):</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+struct C {
+#ifdef FRIEND
+    friend bool operator&lt;(C, C);
+#endif
+};
+
+#ifndef FRIEND
+template &lt;typename T&gt;
+bool operator&lt;(C&lt;T&gt;, C&lt;T&gt;);
+#endif
+
+void ex(C&lt;int&gt; a, C&lt;int&gt; b) {
+    a &lt; b;                     // #1
+    std::ref(a) &lt; b;           // #2
+    a &lt; std::ref(b);           // #3
+    std::ref(a) &lt; std::ref(b); // #4
+}</code></pre>
+
+
+<p>With the non-member operator template (i.e. without <code class="language-cpp">FRIEND</code> defined), only <code class="language-cpp">#1</code> is a valid expression. But with the hidden friend, <em>all four</em> are valid. These kind of additional conversions may be surprising - and it is certainly possible that they could lead to ambiguities. </p>
+<p>But with <code class="language-cpp">operator&lt;=&gt;</code> we can actually take a third approach: member functions. Because <code class="language-cpp">&lt;=&gt;</code> considers reversed candidates as well, a member function is sufficient:</p>
+<pre class="codehilite"><code class="language-cpp">struct X {
+    X(int);
+    bool operator==(X const&amp;) const;
+    strong_ordering operator&lt;=&gt;(X const&amp;) const;
+};
+
+// all of these are ok
+X{42} &lt; X{57};
+X{42} &lt; 57;
+42 &lt; X{57};
+42 == X{57};
+X{42} != 57;</code></pre>
+
+
+<p>Using a member function does not pollute the global scope and does not add to the work that overload resolution has to do needlessly. It does have unique behavior where conversions are concerned though. If we return to the earlier example with <code class="language-cpp">C&lt;T&gt;</code>:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+struct C {
+    std::strong_ordering operator&lt;=&gt;(C);
+};
+
+void ex(C&lt;int&gt; a, C&lt;int&gt; b) {
+    a &lt; b;                     // #1
+    std::ref(a) &lt; b;           // #2
+    a &lt; std::ref(b);           // #3
+    std::ref(a) &lt; std::ref(b); // #4
+}</code></pre>
+
+
+<p>With this implementation, <code class="language-cpp">#1</code> compiles straightforwardly. But <code class="language-cpp">#2</code> and <code class="language-cpp">#3</code> are <em>also</em> valid. <code class="language-cpp">#3</code> evaluates as <code class="language-cpp">a.operator&lt;=&gt;(std::ref(b)) &lt; 0</code> while <code class="language-cpp">#2</code> evaluates as <code class="language-cpp">0 &lt; b.operator&lt;=&gt;(std::ref(a))</code>.</p>
+<p>It seems very unlikely that examples like <code class="language-cpp">#2</code> or <code class="language-cpp">#3</code> could change meaning by moving <code class="language-cpp">C&lt;T&gt;</code>'s operators from non-member relational operator function templates to be a member non-template spaceship. In order for the code to have previously compiled, it would have either needed to call some global template or it would call some non-member operator function through <code class="language-cpp">std::ref</code> (not in this specific case, as <code class="language-cpp">std::reference_wrapper</code> does not have any comparison functions, but it is intended to be just a familiar placeholder).  In the former case, the global template would continue to be selected due to its being a better match (since our <code class="language-cpp">&lt;=&gt;</code> forces a conversion) and in the latter case, the existing operators would continue to be selected due to overload resolution favoring non-rewritten candidates to rewritten ones. </p>
+<p>As a result, due to the clear benefits and unlikely harm, I think member <code class="language-cpp">operator&lt;=&gt;</code> is the way to go.</p>
 <h2 id="most-operator-is-obsolete">2. Most <code class="language-cpp">operator!=()</code> is obsolete<a class="self-link" href="#most-operator-is-obsolete"></a></h2>
 <p><a href="https://wg21.link/p1185r1" title="&lt;=&gt; != ==">P1185R1</a> will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which <code class="language-cpp">a != b</code> is defined to mean <code class="language-cpp">!(a == b)</code>, we no longer need to define <code class="language-cpp">operator!=</code>. The language will simply do the right thing for us.</p>
 <p>Just about every <code class="language-cpp">operator!=()</code> in the library does this. Indeed, we have blanket wording in [operators] which lets us avoid having to write the boilerplate every time. The only exceptions to this are:</p>
@@ -725,9 +788,9 @@ using traits_category_t = typename traits_category&lt;T&gt;::type;
 template &lt;typename CharT, typename Traits, typename Alloc&gt;
 class basic_string {
     // ...
-    friend traits_category_t&lt;Traits&gt; operator&lt;=&gt;(basic_string const&amp; lhs, basic_string const&amp; rhs)
+    traits_category_t&lt;Traits&gt; operator&lt;=&gt;(basic_string const&amp; rhs) const
     {
-        return lhs.compare(rhs) &lt;=&gt; 0;
+        return compare(rhs) &lt;=&gt; 0;
     }
     // ...
 };</code></pre>
@@ -749,7 +812,7 @@ class basic_string {
 <pre class="codehilite"><code class="language-cpp">template &lt;typename CharT, typename Traits, typename Alloc&gt;
 class basic_string {
     // ...
-    friend auto operator&lt;=&gt;(basic_string const&amp; lhs, basic_string const&amp; rhs)
+    auto operator&lt;=&gt;(basic_string const&amp; rhs) const
     {
         auto impl = [](CharT const* lhs, CharT const* rhs, size_t sz) {
             if constexpr (requires { Traits::compare_3way(lhs, rhs, sz); }) {
@@ -760,8 +823,8 @@ class basic_string {
             }
         };
 
-        auto cmp = impl(lhs.data(), rhs.data(), min(lhs.size(), rhs.size()));
-        return cmp != 0 ? cmp : lhs.size() &lt;=&gt; rhs.size();
+        auto cmp = impl(data(), rhs.data(), min(size(), rhs.size()));
+        return cmp != 0 ? cmp : size() &lt;=&gt; rhs.size();
     }
     // ...
 };</code></pre>
@@ -769,7 +832,7 @@ class basic_string {
 
 <p>This is somewhat more involved than the previous alternative, but not by much. Since we'd still need to provide a version of <code class="language-cpp">compare</code> that returns an <code class="language-cpp">int</code>, this may not actually be worth it - since while it's very easy to convert an <code class="language-cpp">int</code> to a comparison category (simply <code class="language-cpp">&lt;=&gt;</code> it against <code class="language-cpp">0</code>), there's no actual easy way of going the other way without branching. </p>
 <h3 id="proposal">3.3. Proposal<a class="self-link" href="#proposal"></a></h3>
-<p>I weakly favor the member type alias approach. Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">basic_string</code>, <code class="language-cpp">basic_string_view</code>, and <code class="language-cpp">sub_match</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which invoke <code class="language-cpp">x.compare(y) &lt;=&gt; 0</code> cast to the appropriate comparison category (with argument adjustments as appropriate). This <code class="language-cpp">operator&lt;=&gt;</code> should be a hidden friend.</p>
+<p>I weakly favor the member type alias approach. Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">basic_string</code>, <code class="language-cpp">basic_string_view</code>, and <code class="language-cpp">sub_match</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which invoke <code class="language-cpp">x.compare(y) &lt;=&gt; 0</code> cast to the appropriate comparison category (with argument adjustments as appropriate). This <code class="language-cpp">operator&lt;=&gt;</code> should be a member function. </p>
 <h2 id="adding-to-stdvector">4. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::vector</code><a class="self-link" href="#adding-to-stdvector"></a></h2>
 <p>The vast majority of types in the standard library follow the general pattern that all the relational operators are implemented in terms of <code class="language-cpp">&lt;</code>:</p>
 <table>
@@ -828,7 +891,7 @@ struct weak_wrapper {
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
 class vector {
     // ...
-    friend auto operator&lt;=&gt;(vector const&amp; rhs) const {
+    auto operator&lt;=&gt;(vector const&amp; rhs) const {
         return std::lexicographical_compare_3way(
             begin(), end(),
             rhs.begin(), rhs.end(),
@@ -845,7 +908,7 @@ class vector {
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
 class pair {
     // ...
-    friend common_comparison_category&lt;
+    common_comparison_category&lt;
         compare_3way_type_t&lt;weak_wrapper&lt;T&gt;&gt;,
         compare_3way_type_t&lt;weak_wrapper&lt;U&gt;&gt;,
     &gt; operator&lt;=&gt;(pair const&amp; rhs) const {
@@ -883,7 +946,7 @@ struct New {
 <p>The one edge-case here is for <code class="language-cpp">pair</code>. If we were comparing two <code class="language-cpp">pair&lt;Legacy, Legacy&gt;</code>s against each other with <code class="language-cpp">&lt;</code>, in the status quo that takes at most three invocations of <code class="language-cpp">Legacy</code>'s <code class="language-cpp">operator&lt;</code> but in the synthesized implementation it could technically require four. But since that last one only differentiates between the <code class="language-cpp">greater</code> and <code class="language-cpp">equivalent</code> cases, and neither of those are <code class="language-cpp">less</code>, it seems like a straightforward optimization for a compiler to make to simply remove that last comparison. At which point, we're equivalent to status quo.</p>
 <p>It's important to reassure here that the semantics of this comparison are exactly the same for all types which provide a <code class="language-cpp">&lt;</code> (but not a <code class="language-cpp">&lt;=&gt;</code>) which implements a total order. We're basically doing the exact same operations that <code class="language-cpp">vector</code> (and <code class="language-cpp">pair</code> and ...) would already be doing. There's really not much benefit to keeping around the existing relational operators - we can retire them.</p>
 <h3 id="proposal_1">4.1. Proposal<a class="self-link" href="#proposal_1"></a></h3>
-<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">array</code>, <code class="language-cpp">deque</code>, <code class="language-cpp">forward_list</code>, <code class="language-cpp">list</code>, <code class="language-cpp">map</code>, <code class="language-cpp">move_iterator</code>, <code class="language-cpp">multimap</code>, <code class="language-cpp">multiset</code>, <code class="language-cpp">pair</code>, <code class="language-cpp">set</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">unordered_map</code>, <code class="language-cpp">unordered_multimap</code>, <code class="language-cpp">unordered_multiset</code>, <code class="language-cpp">unordered_set</code>, and <code class="language-cpp">vector</code> (including <code class="language-cpp">vector&lt;bool&gt;</code>). For each of them, add a <code class="language-cpp">operator&lt;=&gt;</code> with the same comparison semantics as today which compares each type <code class="language-cpp">T</code> as if by the exposition-only <code class="language-cpp">weak_wrapper&lt;T&gt;</code> above. This <code class="language-cpp">operator&lt;=&gt;</code> should be a hidden friend.</p>
+<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">array</code>, <code class="language-cpp">deque</code>, <code class="language-cpp">forward_list</code>, <code class="language-cpp">list</code>, <code class="language-cpp">map</code>, <code class="language-cpp">move_iterator</code>, <code class="language-cpp">multimap</code>, <code class="language-cpp">multiset</code>, <code class="language-cpp">pair</code>, <code class="language-cpp">set</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">unordered_map</code>, <code class="language-cpp">unordered_multimap</code>, <code class="language-cpp">unordered_multiset</code>, <code class="language-cpp">unordered_set</code>, and <code class="language-cpp">vector</code> (including <code class="language-cpp">vector&lt;bool&gt;</code>). For each of them, add a <code class="language-cpp">operator&lt;=&gt;</code> with the same comparison semantics as today which compares each type <code class="language-cpp">T</code> as if by the exposition-only <code class="language-cpp">weak_wrapper&lt;T&gt;</code> above. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
 <h2 id="adding-to-stdoptional">5. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::optional</code><a class="self-link" href="#adding-to-stdoptional"></a></h2>
 <p>This group is composed of templates which forward <em>all</em> of their operations to underlying types. No operator is written in terms of any other operator. Even <code class="language-cpp">!=</code> is not defined in terms of <code class="language-cpp">==</code>. This group includes <code class="language-cpp">std::optional</code>, <code class="language-cpp">std::variant</code>, <code class="language-cpp">std::queue</code>, <code class="language-cpp">std::stack</code>, and <code class="language-cpp">std::reverse_iterator</code>.</p>
 <p>Unlike types like <code class="language-cpp">pair</code> and <code class="language-cpp">vector</code> and <code class="language-cpp">tuple</code> which implement all the relational operators in terms of <code class="language-cpp">&lt;</code> (in a way that assumes a total order), the types in this group do not assume any semantics at all - and hence provide the correct answer for types that have partial orders:</p>
@@ -927,14 +990,13 @@ optional&lt;Q&gt;{1.f} &gt; optional&lt;Q&gt;{NAN};  // false</code></pre>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
 class optional {
     // ...
-    template &lt;typename T1, typename T2&gt;
-        requires ThreeWayComparableWith&lt;T1, T2&gt;
-    friend compare_3way_type_t&lt;T1,T2&gt; operator&lt;=&gt;(optional&lt;T1&gt; const&amp; lhs, optional&lt;T2&gt; const&amp; rhs)
+    template &lt;ThreeWayComparableWith&lt;T&gt; U&gt;
+    compare_3way_type_t&lt;T,U&gt; operator&lt;=&gt;(optional&lt;U&gt; const&amp; rhs) const;
     {
-        if (lhs.has_value() &amp;&amp; rhs.has_value()) {
-            return *lhs &lt;=&gt; *rhs;
+        if (has_value() &amp;&amp; rhs.has_value()) {
+            return **this &lt;=&gt; *rhs;
         } else {
-            return lhs.has_value() &lt;=&gt; rhs.has_value();
+            return has_value() &lt;=&gt; rhs.has_value();
         }
     }
     // ...
@@ -943,57 +1005,38 @@ class optional {
 
 <p>Making the spaceship operator more constrained that the other relational operators ensures that it gets precedence over them during normal comparisons. </p>
 <h3 id="proposal_2">5.1. Proposal<a class="self-link" href="#proposal_2"></a></h3>
-<p>Add a new <code class="language-cpp">operator&lt;=&gt;</code> for each kind of comparison for <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">queue</code>, <code class="language-cpp">stack</code>, and <code class="language-cpp">reverse_iterator</code> such that <code class="language-cpp">operator&lt;=&gt;</code> is constrained on the relevant template parameters satisfying <code class="language-cpp">ThreeWayComparableWith</code> (or just <code class="language-cpp">ThreeWayComparable</code>), ensuring that <code class="language-cpp">operator&lt;=&gt;</code> is the best viable candidate for all relational comparisons in code. This <code class="language-cpp">operator&lt;=&gt;</code> should be a hidden friend.</p>
+<p>Add a new <code class="language-cpp">operator&lt;=&gt;</code> for each kind of comparison for <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">queue</code>, <code class="language-cpp">stack</code>, and <code class="language-cpp">reverse_iterator</code> such that <code class="language-cpp">operator&lt;=&gt;</code> is constrained on the relevant template parameters satisfying <code class="language-cpp">ThreeWayComparableWith</code> (or just <code class="language-cpp">ThreeWayComparable</code>), ensuring that <code class="language-cpp">operator&lt;=&gt;</code> is the best viable candidate for all relational comparisons in code. This <code class="language-cpp">operator&lt;=&gt;</code> should be a member function.</p>
 <p>Do not remove any of the preexisting comparison operators for these types, including even <code class="language-cpp">operator!=()</code>.</p>
 <h2 id="adding-to-stdunique_ptr">6. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::unique_ptr</code><a class="self-link" href="#adding-to-stdunique_ptr"></a></h2>
 <p>For <code class="language-cpp">std::unique_ptr</code> and <code class="language-cpp">std::shared_ptr</code>, the comparison of <code class="language-cpp">&lt;</code> does not use raw <code class="language-cpp">operator&lt;</code> but rather goes through <code class="language-cpp">std::less</code>. However, they do this in a slightly different way: Comparing a <code class="language-cpp">unique_ptr&lt;T1,D1&gt;</code> to a <code class="language-cpp">unique_ptr&lt;T2,D2&gt;</code> goes through <code class="language-cpp">less&lt;common_type_t&lt;unique_ptr&lt;T1,D1&gt;::pointer, unique_ptr&lt;T2,D2&gt;::pointer&gt;&gt;</code> whereas comparing a <code class="language-cpp">shared_ptr&lt;T1&gt;</code> to a <code class="language-cpp">shared_ptr&lt;T2&gt;</code> goes through <code class="language-cpp">less&lt;&gt;</code>. </p>
 <p>Either way, P1188R0 proposes a three-way comparison object named <code class="language-cpp">std::compare_3way</code> that satisfies the requirement that the ordering is a strict weak order, using the same wording that we have for <code class="language-cpp">std::less</code> today. We can use this object to implement the comparisons doing something like:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T1, typename D1, typename T2, typename D2&gt;
-auto operator&lt;=&gt;(unique_ptr&lt;T1,D1&gt; const&amp; p1, unique_ptr&lt;T2,D2&gt; const&amp; p2)
-{
-    using CT = common_type_t&lt;typename unique_ptr&lt;T1,D1&gt;::pointer, typename unique_ptr&lt;T2,D2&gt;::pointer&gt;;
-    return compare_3way&lt;CT&gt;()(p1.get(), p2.get());
-}
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename D&gt;
+class unique_ptr {
+    // ...
+    template &lt;typename T2, typename D2&gt;
+    auto operator&lt;=&gt;(unique_ptr&lt;T2,D2&gt; const&amp; rhs) const
+    {
+        using CT = common_type_t&lt;pointer, typename unique_ptr&lt;T2,D2&gt;::pointer&gt;;
+        return compare_3way&lt;CT&gt;()(get(), rhs.get());
+    }
+    // ...
+};
 
-template &lt;typename T, typename U&gt;
-auto operator&lt;=&gt;(shared_ptr&lt;T&gt; const&amp; a, shared_ptr&lt;U&gt; const&amp; b)
-{
-    return compare_3way()(a.get(), b.get());
-}</code></pre>
+template &lt;typename T&gt;
+class shared_ptr {
+    // ...
+    template &lt;typename U&gt;
+    auto operator&lt;=&gt;(shared_ptr&lt;U&gt; const&amp; rhs) const
+    {
+        return compare_3way()(get(), rhs.get());
+    }
+    // ...
+};</code></pre>
 
 
 <h3 id="proposal_3">6.1. Proposal<a class="self-link" href="#proposal_3"></a></h3>
-<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">unique_ptr</code> and <code class="language-cpp">shared_ptr</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which go through the proposed <code class="language-cpp">compare_3way</code> function object in the same way that the preexisting comparisons do today. These <code class="language-cpp">operator&lt;=&gt;</code>s should be hidden friends.</p>
-<h2 id="non-member-hidden-friend-or-member">7. Non-member, hidden friend, or member?<a class="self-link" href="#non-member-hidden-friend-or-member"></a></h2>
-<p>Through this paper, I've been suggesting that the added <code class="language-cpp">operator&lt;=&gt;</code>s should be hidden friends. There are actually three options here:</p>
-<ul>
-<li>non-member functions</li>
-<li>hidden friends</li>
-<li>member functions</li>
-</ul>
-<p>Most (if not all?) of these operators are non-member functions today. This has the downside of polluting scope and increasing then number of candidates for each of the comparisons that overload resolution has to look through. It has the additional downside of allowing surprising conversions in certain cases simply because of ADL (see the <code class="language-cpp">path</code> example). This leads many people to rightly suggest to make operators hidden friends instead, which maintains the advantage of non-member functions by allowing conversions in both arguments but reduces the number of candidates for unrelated types and doesn't have surprise conversions in both arguments.</p>
-<p>But with <code class="language-cpp">operator&lt;=&gt;</code> we can actually take a third approach: member functions. Because <code class="language-cpp">&lt;=&gt;</code> considers reversed candidates as well, a member function is sufficient:</p>
-<pre class="codehilite"><code class="language-cpp">struct X {
-    X(int);
-    bool operator==(X const&amp;) const;
-    strong_ordering operator&lt;=&gt;(X const&amp;) const;
-};
-
-// all of these are ok
-X{42} &lt; X{57};
-X{42} &lt; 57;
-42 &lt; X{57};
-42 == X{57};
-X{42} != 57;</code></pre>
-
-
-<p>Everyone understands member functions, so maybe we should just use member functions? The question is really more about what kinds of double-conversions we want to allow. In this particular example:</p>
-<pre class="codehilite"><code class="language-cpp">X a{42}, b{57};
-a &lt; b;                     // ok
-std::ref(a) &lt; std::ref(b); // ill-formed</code></pre>
-
-
-<p>If we made <code class="language-cpp">operator&lt;=&gt;</code> a hidden friend, the comparison through <code class="language-cpp">std::reference_wrapper&lt;X&gt;</code> would compile.</p>
-<p>Today, <code class="language-cpp">std::reference_wrapper&lt;std::string&gt;</code> is not comparable. Adding a new <code class="language-cpp">operator&lt;=&gt;</code> as a hidden friend would make it comparable. Making the <code class="language-cpp">operator&lt;=&gt;</code> a member function would make it not comparable - which is the status quo. Perhaps it's better to leave things as they are, and add comparisons to <code class="language-cpp">std::reference_wrapper&lt;T&gt;</code> if we really care about this case?</p>
-<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
+<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">unique_ptr</code> and <code class="language-cpp">shared_ptr</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which go through the proposed <code class="language-cpp">compare_3way</code> function object in the same way that the preexisting comparisons do today. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
+<h2 id="acknowledgements">7. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
+<p>Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. </p>
+<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/LWG/issue3065">[LWG3065]</a><span style="margin-left: 5px;">"LWG 2989 missed that all path's other operators should be hidden friends as well" by Billy O'Neal III, 2018-11-13</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
 </html>
