@@ -186,7 +186,7 @@ Today, this goes through the global `operator<` template (`#2`). The `operator<`
 
 This seems like a fairly contrived scenario. Though like all fairly contrived scenarios, it assuredly exists in some C++ code base somewhere. The most conservative approach would be to stay put and keep the proposed `operator<=>`s as non-member operator templates. But there are very clear benefits of making them member functions, so I think member `operator<=>` is still the way to go.
 
-# Most `operator!=()` is obsolete
+# Most `operator!=()`s are obsolete
 
 [P1185R1](https://wg21.link/p1185r1) will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which `a != b` is defined to mean `!(a == b)`, we no longer need to define `operator!=`. The language will simply do the right thing for us.
 
@@ -199,7 +199,7 @@ The other ~250 declarations of `operator!=()` can just be removed entirely. The 
 
 # Adding `<=>` to `std::basic_string`
 
-This group is composed of templates which implement their comparisons via `Traits::compare()`: `std::basic_string`, `std::basic_string_view`, and, `std::sub_match`. Because `Traits::compare()` is already a three-way comparison, this seems like a trivial case. Just write this and ship it right?
+This group is composed of templates which implement their comparisons via `Traits::compare()`: `std::basic_string`, `std::basic_string_view`, and `std::sub_match`. Because `Traits::compare()` is already a three-way comparison, this seems like a trivial case. Just write this and ship it right?
 
     :::cpp
     template <typename CharT, typename Traits, typename Alloc>
@@ -293,7 +293,7 @@ And then use that if it is present:
     };
 
 
-This is somewhat more involved than the previous alternative, but not by much. Since we'd still need to provide a version of `compare` that returns an `int`, this may not actually be worth it - since while it's very easy to convert an `int` to a comparison category (simply `<=>` it against `0`), there's no actual easy way of going the other way without branching. 
+This is somewhat more involved than the previous alternative, but not by much. Since we'd still need to provide a version of `compare` that returns an `int`, this may not actually be worth it - since while it's very easy to convert an `int` to a comparison category (simply `<=>` it against `0`), there's no actual easy way of going the other way without branching. But it _does_ offer a way to make a `basic_string` with a partial ordering, if that is desired.  
 
 ## Proposal
 
