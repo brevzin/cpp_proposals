@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1189R0 <br />
-Date: 2019-01-31 <br />
+Date: 2019-02-01 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -737,9 +737,67 @@ void ex(C&lt;int&gt; a, C&lt;int&gt; b) {
 }</code></pre>
 
 
-<p>With this implementation, <code class="language-cpp">#1</code> compiles straightforwardly. But <code class="language-cpp">#2</code> and <code class="language-cpp">#3</code> are <em>also</em> valid. <code class="language-cpp">#3</code> evaluates as <code class="language-cpp">a.operator&lt;=&gt;(std::ref(b)) &lt; 0</code> while <code class="language-cpp">#2</code> evaluates as <code class="language-cpp">0 &lt; b.operator&lt;=&gt;(std::ref(a))</code>.</p>
-<p>It seems very unlikely that examples like <code class="language-cpp">#2</code> or <code class="language-cpp">#3</code> could change meaning by moving <code class="language-cpp">C&lt;T&gt;</code>'s operators from non-member relational operator function templates to be a member non-template spaceship. In order for the code to have previously compiled, it would have either needed to call some global template or it would call some non-member operator function through <code class="language-cpp">std::ref</code> (not in this specific case, as <code class="language-cpp">std::reference_wrapper</code> does not have any comparison functions, but it is intended to be just a familiar placeholder).  In the former case, the global template would continue to be selected due to its being a better match (since our <code class="language-cpp">&lt;=&gt;</code> forces a conversion) and in the latter case, the existing operators would continue to be selected due to overload resolution favoring non-rewritten candidates to rewritten ones. </p>
-<p>As a result, due to the clear benefits and unlikely harm, I think member <code class="language-cpp">operator&lt;=&gt;</code> is the way to go.</p>
+<p>With this implementation, <code class="language-cpp">#1</code> compiles straightforwardly. But <code class="language-cpp">#2</code> and <code class="language-cpp">#3</code> are <em>also</em> valid. <code class="language-cpp">#3</code> evaluates as <code class="language-cpp">a.operator&lt;=&gt;(std::ref(b)) &lt; 0</code> while <code class="language-cpp">#2</code> evaluates as <code class="language-cpp">0 &lt; b.operator&lt;=&gt;(std::ref(a))</code>. Only <code class="language-cpp">#4</code> is ill-formed in this case. Recall that in the non-member case, only <code class="language-cpp">#1</code> was valid and in the hidden friend case, all four were. </p>
+<p>There, however, does exist a situation where moving from non-member comparison operator templates to a member spaceship function can change behavior. It's not completely free. This example courtesy of Tim Song:</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+<p>Non-member <code class="language-cpp">&lt;</code> template</p>
+</th>
+<th style="width:50%">
+<p>Member <code class="language-cpp">&lt;=&gt;</code></p>
+</th>
+</tr>
+<tr>
+<td>
+<pre style="background:transparent;border:0px" data-line="4,5,6,7,10,11,12,13"><code class="language-cpp">template &lt;typename CharT, typename Traits, typename Alloc&gt;
+struct basic_string { /* ... */ };
+
+// #1
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator&lt;(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;,
+               basic_string&lt;CharT, Traits, Alloc&gt; const&amp;);
+
+struct B { };
+// #2
+template&lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator&lt;(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;,
+               B const&amp;);
+
+struct C {
+    operator string() const;
+    operator B() const;
+};
+
+&quot;&quot;s &lt; C();</code></pre>
+</td>
+<td>
+<pre style="background:transparent;border:0px" data-line="3,4,10,11,12,13"><code class="language-cpp">template &lt;typename CharT, typename Traits, typename Alloc&gt;
+struct basic_string {
+    // #3
+    auto operator&lt;=&gt;(basic_string const&amp;) const;
+};
+
+
+
+struct B { };
+// #2
+template&lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator&lt;(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;,
+               B const&amp;);
+
+struct C {
+    operator string() const;
+    operator B() const;
+};
+
+&quot;&quot;s &lt; C();</code></pre>
+</td>
+</tr>
+</table>
+
+<p>Today, this goes through the global <code class="language-cpp">operator&lt;</code> template (<code class="language-cpp">#2</code>). The <code class="language-cpp">operator&lt;</code> taking two <code class="language-cpp">basic_string</code>s (<code class="language-cpp">#1</code>) is not a candidate because <code class="language-cpp">C</code> is not a <code class="language-cpp">basic_string</code>. However, if we change <code class="language-cpp">basic_string</code> to instead have a member spaceship operator... then this spaceship (<code class="language-cpp">#3</code>) suddenly not only becomes a candidate (since <code class="language-cpp">C</code> is convertible to <code class="language-cpp">string</code>) but actually becomes the best viable candidate because the tie-breaker preferring a non-template to a template is higher than the tie-breaker preferring a non-rewritten candidate to a rewritten one. The same thing would happen in the case of a hidden (non-template) friend.</p>
+<p>This seems like a fairly contrived scenario. Though like all fairly contrived scenarios, it assuredly exists in some C++ code base somewhere. The most conservative approach would be to stay put and keep the proposed <code class="language-cpp">operator&lt;=&gt;</code>s as non-member operator templates. But there are very clear benefits of making them member functions, so I think member <code class="language-cpp">operator&lt;=&gt;</code> is still the way to go.</p>
 <h2 id="most-operator-is-obsolete">2. Most <code class="language-cpp">operator!=()</code> is obsolete<a class="self-link" href="#most-operator-is-obsolete"></a></h2>
 <p><a href="https://wg21.link/p1185r1" title="&lt;=&gt; != ==">P1185R1</a> will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which <code class="language-cpp">a != b</code> is defined to mean <code class="language-cpp">!(a == b)</code>, we no longer need to define <code class="language-cpp">operator!=</code>. The language will simply do the right thing for us.</p>
 <p>Just about every <code class="language-cpp">operator!=()</code> in the library does this. Indeed, we have blanket wording in [operators] which lets us avoid having to write the boilerplate every time. The only exceptions to this are:</p>
@@ -762,7 +820,7 @@ auto operator&lt;=&gt;(basic_string&lt;CharT, Traits, Alloc&gt; const&amp; lhs,
 <p>We could simply bless all the standard-mandated specializations of <code class="language-cpp">std::char_traits</code> and say that those are <code class="language-cpp">strong_ordering</code>, and any other trait is a <code class="language-cpp">weak_ordering</code>. But that seems overly restrictive on users who might want to provide a custom traits which provides an ordering which is either strong or partial. </p>
 <p>Instead, I propose one of two choices: add a member type alias to the traits expressing the comparison category, or add a new static member function performing a three-way comparison and yielding a comparison category.</p>
 <h3 id="add-a-type-alias">3.1. Add a type alias<a class="self-link" href="#add-a-type-alias"></a></h3>
-<p>This is the least intrusive option. Simply add a member alias to the standard-manded specializations of <code class="language-cpp">char_traits</code>:</p>
+<p>This is the least intrusive option. Simply add a member alias to the standard-mandated specializations of <code class="language-cpp">char_traits</code>:</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;&gt; struct char_traits&lt;char&gt; {
     using comparison_category = strong_ordering;
 };</code></pre>
@@ -1047,6 +1105,6 @@ class shared_ptr {
 <h3 id="proposal_3">6.1. Proposal<a class="self-link" href="#proposal_3"></a></h3>
 <p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">unique_ptr</code> and <code class="language-cpp">shared_ptr</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which go through the proposed <code class="language-cpp">compare_3way</code> function object in the same way that the preexisting comparisons do today. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
 <h2 id="acknowledgements">7. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
-<p>Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. </p>
+<p>Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Tim Song, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. </p>
 <h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/LWG/issue3065">[LWG3065]</a><span style="margin-left: 5px;">"LWG 2989 missed that all path's other operators should be hidden friends as well" by Billy O'Neal III, 2018-11-13</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
 </html>

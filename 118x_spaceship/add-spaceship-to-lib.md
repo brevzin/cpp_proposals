@@ -119,11 +119,72 @@ Using a member function does not pollute the global scope and does not add to th
         std::ref(a) < std::ref(b); // #4
     }
 
-With this implementation, `#1` compiles straightforwardly. But `#2` and `#3` are _also_ valid. `#3` evaluates as `a.operator<=>(std::ref(b)) < 0` while `#2` evaluates as `0 < b.operator<=>(std::ref(a))`.
+With this implementation, `#1` compiles straightforwardly. But `#2` and `#3` are _also_ valid. `#3` evaluates as `a.operator<=>(std::ref(b)) < 0` while `#2` evaluates as `0 < b.operator<=>(std::ref(a))`. Only `#4` is ill-formed in this case. Recall that in the non-member case, only `#1` was valid and in the hidden friend case, all four were. 
 
-It seems very unlikely that examples like `#2` or `#3` could change meaning by moving `C<T>`'s operators from non-member relational operator function templates to be a member non-template spaceship. In order for the code to have previously compiled, it would have either needed to call some global template or it would call some non-member operator function through `std::ref` (not in this specific case, as `std::reference_wrapper` does not have any comparison functions, but it is intended to be just a familiar placeholder).  In the former case, the global template would continue to be selected due to its being a better match (since our `<=>` forces a conversion) and in the latter case, the existing operators would continue to be selected due to overload resolution favoring non-rewritten candidates to rewritten ones. 
+There, however, does exist a situation where moving from non-member comparison operator templates to a member spaceship function can change behavior. It's not completely free. This example courtesy of Tim Song:
 
-As a result, due to the clear benefits and unlikely harm, I think member `operator<=>` is the way to go.
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+Non-member `<` template
+</th>
+<th style="width:50%">
+Member `<=>`
+</th>
+</tr>
+<tr>
+<td>
+    :::cpp hl_lines="4,5,6,7,10,11,12,13"
+    template <typename CharT, typename Traits, typename Alloc>
+    struct basic_string { /* ... */ };
+    
+    // #1
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator<(basic_string<CharT, Traits, Alloc> const&,
+                   basic_string<CharT, Traits, Alloc> const&);
+    
+    struct B { };
+    // #2
+    template<typename CharT, typename Traits, typename Alloc>
+    bool operator<(basic_string<CharT, Traits, Alloc> const&,
+                   B const&);
+
+    struct C {
+        operator string() const;
+        operator B() const;
+    };
+    
+    ""s < C();
+</td>
+<td>
+    :::cpp hl_lines="3,4,10,11,12,13"
+    template <typename CharT, typename Traits, typename Alloc>
+    struct basic_string {
+        // #3
+        auto operator<=>(basic_string const&) const;
+    };
+    
+    
+    
+    struct B { };
+    // #2
+    template<typename CharT, typename Traits, typename Alloc>
+    bool operator<(basic_string<CharT, Traits, Alloc> const&,
+                   B const&);
+
+    struct C {
+        operator string() const;
+        operator B() const;
+    };
+    
+    ""s < C();
+</td>
+</tr>
+</table>
+    
+Today, this goes through the global `operator<` template (`#2`). The `operator<` taking two `basic_string`s (`#1`) is not a candidate because `C` is not a `basic_string`. However, if we change `basic_string` to instead have a member spaceship operator... then this spaceship (`#3`) suddenly not only becomes a candidate (since `C` is convertible to `string`) but actually becomes the best viable candidate because the tie-breaker preferring a non-template to a template is higher than the tie-breaker preferring a non-rewritten candidate to a rewritten one. The same thing would happen in the case of a hidden (non-template) friend.
+
+This seems like a fairly contrived scenario. Though like all fairly contrived scenarios, it assuredly exists in some C++ code base somewhere. The most conservative approach would be to stay put and keep the proposed `operator<=>`s as non-member operator templates. But there are very clear benefits of making them member functions, so I think member `operator<=>` is still the way to go.
 
 # Most `operator!=()` is obsolete
 
@@ -156,7 +217,7 @@ Instead, I propose one of two choices: add a member type alias to the traits exp
 
 ## Add a type alias
 
-This is the least intrusive option. Simply add a member alias to the standard-manded specializations of `char_traits`:
+This is the least intrusive option. Simply add a member alias to the standard-mandated specializations of `char_traits`:
 
     :::cpp
     template <> struct char_traits<char> {
@@ -496,6 +557,6 @@ Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `unique_ptr`
 
 # Acknowledgements
 
-Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. 
+Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Tim Song, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. 
     
 [gotw.29]: http://www.gotw.ca/gotw/029.htm "GotW #29: Strings||Herb Sutter||1998-01-03"
