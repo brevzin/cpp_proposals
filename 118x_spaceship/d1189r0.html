@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1189R0 <br />
-Date: 2019-02-01 <br />
+Date: 2019-02-02 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -614,7 +614,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#non-member-hidden-friend-or-member">Non-member, hidden friend, or member?</a></li>
 </ol>
 </li>
-<li><a href="#most-operators-are-obsolete">Most operator!=()s are obsolete</a></li>
+<li><a href="#most-operators-are-obsolete">Most operator!=()s are obsolete</a><ol>
+<li><a href="#reversed-operators-too">Reversed operator==s too</a></li>
+</ol>
+</li>
 <li><a href="#adding-to-stdbasic_string">Adding &lt;=&gt; to std::basic_string</a><ol>
 <li><a href="#add-a-type-alias">Add a type alias</a></li>
 <li><a href="#add-a-static-member-function">Add a static member function</a></li>
@@ -806,6 +809,63 @@ struct C {
 <li><code class="language-cpp">std::valarray</code>, for which <code class="language-cpp">==</code> doesn't really mean equality anyway</li>
 </ul>
 <p>The other ~250 declarations of <code class="language-cpp">operator!=()</code> can just be removed entirely. The semantics for all callers will remain the same. </p>
+<h3 id="reversed-operators-too">2.1. Reversed <code class="language-cpp">operator==</code>s too<a class="self-link" href="#reversed-operators-too"></a></h3>
+<p>Some library types provided mixed-type equality operators. For example, the class template <code class="language-cpp">std::basic_string</code> provides the following equality and inequality operators today:</p>
+<pre class="codehilite"><code class="language-cpp">// #1
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator==(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;, basic_string&lt;CharT, Traits, Alloc&gt; const&amp;);
+
+// #2
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator!=(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;, basic_string&lt;CharT, Traits, Alloc&gt; const&amp;);
+
+// #3
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator==(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;, CharT const*);
+
+// #4
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator==(CharT const*, basic_string&lt;CharT, Traits, Alloc&gt; const&amp;);
+
+// #5
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator!=(basic_string&lt;CharT, Traits, Alloc&gt; const&amp;, CharT const*);
+
+// #6
+template &lt;typename CharT, typename Traits, typename Alloc&gt;
+bool operator!=(CharT const*, basic_string&lt;CharT, Traits, Alloc&gt; const&amp;);</code></pre>
+
+
+<p>The previous section suggests removing the inequality operators (<code class="language-cpp">#2</code>, <code class="language-cpp">#5</code>, and <code class="language-cpp">#6</code>) and just relying on their equality counterparts to be used as rewritten candidates. But P1185R1, in addition to allowing inequality to be able to be rewritten as equality, also allows equality to be reversed. That is, a source expression <code class="language-cpp">a == b</code> can find <code class="language-cpp">b == a</code> as a candidate.</p>
+<p>This means that <code class="language-cpp">#4</code> in the above isn't necessary either, since we can rely on <code class="language-cpp">"hello" == "hello"s</code> to invoke <code class="language-cpp">#3</code>. We really only need <code class="language-cpp">#1</code> and <code class="language-cpp">#3</code> in the above declarations. In other words, in order to be able to provide full equality and inequality between a <code class="language-cpp">basic_string</code> and its corresponding <code class="language-cpp">CharT const*</code>, we just need to write a single operator (<code class="language-cpp">#3</code>) instead of today's four. </p>
+<p>This paper proposes removing all of these duplciated <code class="language-cpp">operator==</code> declarations as well. The full list is:</p>
+<ul>
+<li><code class="language-cpp">error_code</code> / <code class="language-cpp">error_condition</code></li>
+<li><code class="language-cpp">optional&lt;T&gt;</code> / <code class="language-cpp">nullopt</code></li>
+<li><code class="language-cpp">optional&lt;T&gt;</code> / <code class="language-cpp">U</code></li>
+<li><code class="language-cpp">unique_ptr&lt;T,D&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
+<li><code class="language-cpp">shared_ptr&lt;T&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
+<li><code class="language-cpp">function&lt;R(Args...)&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
+<li><code class="language-cpp">move_iterator</code> / <code class="language-cpp">move_sentinel&lt;S&gt;</code></li>
+<li><code class="language-cpp">counted_iterator</code> / <code class="language-cpp">default_sentinel_t</code></li>
+<li><code class="language-cpp">unreachable_sentinel_t</code> / <code class="language-cpp">I</code></li>
+<li><code class="language-cpp">istream_iterator</code> / <code class="language-cpp">default_sentinel_t</code></li>
+<li><code class="language-cpp">istreambuf_iterator</code> / <code class="language-cpp">default_sentinel_t</code></li>
+<li><code class="language-cpp">filter_view::iterator</code> / <code class="language-cpp">filter_view::sentinel</code></li>
+<li><code class="language-cpp">transform_view::iterator</code> / <code class="language-cpp">transform_view::sentinel</code></li>
+<li><code class="language-cpp">iota_view::iterator</code> / <code class="language-cpp">iota_view::sentinel</code></li>
+<li><code class="language-cpp">take_view::iterator</code> / <code class="language-cpp">take_view::sentinel</code></li>
+<li><code class="language-cpp">join_view::iterator</code> / <code class="language-cpp">join_view::sentinel</code></li>
+<li><code class="language-cpp">split_view::outer_iterator</code> / <code class="language-cpp">default_sentinel_t</code></li>
+<li><code class="language-cpp">split_view::inner_iterator</code> / <code class="language-cpp">default_sentinel_t</code></li>
+<li><code class="language-cpp">complex&lt;T&gt;</code> / <code class="language-cpp">T</code></li>
+<li><code class="language-cpp">valarray&lt;T&gt;</code> / <code class="language-cpp">valarray&lt;T&gt;::value_type</code></li>
+<li><code class="language-cpp">leap</code> / <code class="language-cpp">sys_time&lt;D&gt;</code></li>
+<li><code class="language-cpp">sub_match</code> / <code class="language-cpp">basic_string</code></li>
+<li><code class="language-cpp">sub_match</code> / <code class="language-cpp">value_type const*</code></li>
+<li><code class="language-cpp">sub_match</code> / <code class="language-cpp">value_type const&amp;</code></li>
+</ul>
+<p>Note that even though this paper is not removing <code class="language-cpp">optional&lt;T&gt;</code>'s or <code class="language-cpp">valarray&lt;T&gt;</code>s <code class="language-cpp">operator!=</code>s as a whole, it can still remove the reversed <code class="language-cpp">operator==</code>s and the corresponding reversed <code class="language-cpp">operator!=</code>s.</p>
 <h2 id="adding-to-stdbasic_string">3. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::basic_string</code><a class="self-link" href="#adding-to-stdbasic_string"></a></h2>
 <p>This group is composed of templates which implement their comparisons via <code class="language-cpp">Traits::compare()</code>: <code class="language-cpp">std::basic_string</code>, <code class="language-cpp">std::basic_string_view</code>, and <code class="language-cpp">std::sub_match</code>. Because <code class="language-cpp">Traits::compare()</code> is already a three-way comparison, this seems like a trivial case. Just write this and ship it right?</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename CharT, typename Traits, typename Alloc&gt;

@@ -197,6 +197,68 @@ Just about every `operator!=()` in the library does this. Indeed, we have blanke
 
 The other ~250 declarations of `operator!=()` can just be removed entirely. The semantics for all callers will remain the same. 
 
+## Reversed `operator==`s too
+
+Some library types provided mixed-type equality operators. For example, the class template `std::basic_string` provides the following equality and inequality operators today:
+
+    :::cpp
+    // #1
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator==(basic_string<CharT, Traits, Alloc> const&, basic_string<CharT, Traits, Alloc> const&);
+    
+    // #2
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator!=(basic_string<CharT, Traits, Alloc> const&, basic_string<CharT, Traits, Alloc> const&);
+    
+    // #3
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator==(basic_string<CharT, Traits, Alloc> const&, CharT const*);
+    
+    // #4
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator==(CharT const*, basic_string<CharT, Traits, Alloc> const&);
+    
+    // #5
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator!=(basic_string<CharT, Traits, Alloc> const&, CharT const*);
+    
+    // #6
+    template <typename CharT, typename Traits, typename Alloc>
+    bool operator!=(CharT const*, basic_string<CharT, Traits, Alloc> const&);
+    
+The previous section suggests removing the inequality operators (`#2`, `#5`, and `#6`) and just relying on their equality counterparts to be used as rewritten candidates. But P1185R1, in addition to allowing inequality to be able to be rewritten as equality, also allows equality to be reversed. That is, a source expression `a == b` can find `b == a` as a candidate.
+
+This means that `#4` in the above isn't necessary either, since we can rely on `"hello" == "hello"s` to invoke `#3`. We really only need `#1` and `#3` in the above declarations. In other words, in order to be able to provide full equality and inequality between a `basic_string` and its corresponding `CharT const*`, we just need to write a single operator (`#3`) instead of today's four. 
+
+This paper proposes removing all of these duplciated `operator==` declarations as well. The full list is:
+
+- `error_code` / `error_condition`
+- `optional<T>` / `nullopt`
+- `optional<T>` / `U`
+- `unique_ptr<T,D>` / `nullptr_t`
+- `shared_ptr<T>` / `nullptr_t`
+- `function<R(Args...)>` / `nullptr_t`
+- `move_iterator` / `move_sentinel<S>`
+- `counted_iterator` / `default_sentinel_t`
+- `unreachable_sentinel_t` / `I`
+- `istream_iterator` / `default_sentinel_t`
+- `istreambuf_iterator` / `default_sentinel_t`
+- `filter_view::iterator` / `filter_view::sentinel`
+- `transform_view::iterator` / `transform_view::sentinel`
+- `iota_view::iterator` / `iota_view::sentinel`
+- `take_view::iterator` / `take_view::sentinel`
+- `join_view::iterator` / `join_view::sentinel`
+- `split_view::outer_iterator` / `default_sentinel_t`
+- `split_view::inner_iterator` / `default_sentinel_t`
+- `complex<T>` / `T`
+- `valarray<T>` / `valarray<T>::value_type`
+- `leap` / `sys_time<D>`
+- `sub_match` / `basic_string`
+- `sub_match` / `value_type const*`
+- `sub_match` / `value_type const&`
+
+Note that even though this paper is not removing `optional<T>`'s or `valarray<T>`s `operator!=`s as a whole, it can still remove the reversed `operator==`s and the corresponding reversed `operator!=`s.
+
 # Adding `<=>` to `std::basic_string`
 
 This group is composed of templates which implement their comparisons via `Traits::compare()`: `std::basic_string`, `std::basic_string_view`, and `std::sub_match`. Because `Traits::compare()` is already a three-way comparison, this seems like a trivial case. Just write this and ship it right?
