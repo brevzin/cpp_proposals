@@ -230,11 +230,10 @@ The previous section suggests removing the inequality operators (`#2`, `#5`, and
 
 This means that `#4` in the above isn't necessary either, since we can rely on `"hello" == "hello"s` to invoke `#3`. We really only need `#1` and `#3` in the above declarations. In other words, in order to be able to provide full equality and inequality between a `basic_string` and its corresponding `CharT const*`, we just need to write a single operator (`#3`) instead of today's four. 
 
-This paper proposes removing all of these duplciated `operator==` declarations as well. The full list is:
+This paper proposes removing all of these duplicated `operator==` declarations as well. The full list is:
 
 - `error_code` / `error_condition`
 - `optional<T>` / `nullopt`
-- `optional<T>` / `U`
 - `unique_ptr<T,D>` / `nullptr_t`
 - `shared_ptr<T>` / `nullptr_t`
 - `function<R(Args...)>` / `nullptr_t`
@@ -363,159 +362,165 @@ I weakly favor the member type alias approach. Remove `operator<`, `operator>`, 
 
 # Adding `<=>` to `std::vector`
 
-The vast majority of types in the standard library follow the general pattern that all the relational operators are implemented in terms of `<`:
+There are many types in the standard library that are, fundamentally, sequences of objects. Those sequences can be heterogeneous or homogeneous, fixed-length or variable-length, but they're all still sequences. The way we order these sequences, the way we write the comparison operators for them today, is lexicographically. Basically, this general algorithm:
 
-<table>
+    :::cpp
+    bool operator<(Sequence const& x, Sequence const& y) {
+        size_t const N = min(x.size(), y.size());
+        if (x[0] < y[0]) return true;
+        if (y[0] < x[0]) return false;
+        
+        if (x[1] < y[1]) return true;
+        if (y[1] < x[1]) return false;
+        
+        // ...
+        
+        if (x[N-1] < y[N-1]) return true;
+        if (y[N-1] < x[N-1]) return false;
+        
+        return x.size() < y.size();
+    }
+
+For variable-sized sequences, this means we perform up to `2N` invocations of an underlying `operator<`. For fixed-size sequences, we can optimize out the last two comparisons here so we only do up to `2N-1` such invocations. 
+
+There are two important things to point about comparing sequences.
+
+- Every underlying type must be totally ordered. We are assuming that once `x[i] < y[i]` and `y[i] < x[i]` are both `false` that these elements are equivalent. For partial orders, this will give nonsense answers - which is why the standard library today simply states that comparing sequences with unordered elements are undefined behavior (e.g. `vector<float>` with any `NAN`).
+- We are basically _already_ doing three-way comparisons here. It's not enough to know the result of `operator<` - we need to know the full three-way ordering between every pair of elements. 
+
+Since we are doing what looks a lot like a three-way comparison anyway, we can write a direct translation of the above algorithm to `operator<=>` as follows:
+
+<table style="width:100%">
 <tr>
-<th>
-Source
+<th style="width:50%">
+`operator<()`
 </th>
-<th>
-Implemented as
+<th style="width:50%">
+`operator<=>()`
 </th>
 </tr>
 <tr>
-<td>
+<td style="width:50%">
     :::cpp
-    x > y
+    bool operator<(Sequence const& x, Sequence const& y) {
+        size_t const N = min(x.size(), y.size());
+        if (x[0] < y[0]) return true;
+        if (y[0] < x[0]) return false;
+        
+        if (x[1] < y[1]) return true;
+        if (y[1] < x[1]) return false;
+        
+        // ...
+        
+        if (x[N-1] < y[N-1]) return true;
+        if (y[N-1] < x[N-1]) return false;
+        
+        return x.size() < y.size();
+    }
 </td>
-<td>
+<td style="width:50%">
     :::cpp
-    y < x
-</td>
-</tr>
-<tr>
-<td>
-    :::cpp
-    x <= y
-</td>
-<td>
-    :::cpp
-    !(y < x)
-</td>
-</tr>
-<tr>
-<td>
-    :::cpp
-    x >= y
-</td>
-<td>
-    :::cpp
-    !(x < y)
+    template <typename T>
+    weak_ordering __cmp(T const& a, T const& b) {
+        if (a < b) return weak_ordering::less;
+        if (b < a) return weak_ordering::greater;
+        return weak_ordering::equivalent;
+    }
+    
+    weak_ordering operator<=>(Sequence const& x, Sequence const& y) {
+        size_t const N = min(x.size(), y.size());
+        if (auto c = __cmp(x[0], y[0]); c != 0) return c;
+        if (auto c = __cmp(x[1], y[1]); c != 0) return c;
+        // ...        
+        if (auto c = __cmp(x[N-1], y[N-1]); c != 0) return c;        
+
+        return x.size() <=> y.size();
+    }
 </td>
 </tr>
 </table>
 
-There is blanket wording to this effect in \[operators\]. Types that fit this category include just about all the familiar containers (e.g. `vector`, `map`, `deque`, `array`, etc.) and utility types (e.g. `pair`, `tuple`). The implication of this kind of rewrite is that the underlying types _must_ implement a total order with `<`. Otherwise, these comparisons will simply provide the wrong answer. We can make use of that to hugely simplify the implementations of all the comparisons in a way that preserves today's semantics (i.e. still being correct for total orders) but also allow them to become correct in the future with types that will provide a `<=>` that returns `partial_ordering` (e.g. floating point types).
+The implementation at right has the same semantics as the implementation at the left, it gives the same answer in all cases... because really we're performing exactly the same operations in the same order. Just slightly restructured. But once we restructure this way, we can do a lot better by simply using `<=>` where possible:
 
-I will first describe _how_ to implement `operator<=>` for such types, and then I will describe _why_ we want to do it this way. It will be easier to explain the why having the how to point to.
-
-Because these templates all rely on their underlying types having an `operator<` today, we can continue to rely on that to synthesize an `operator<=>`:
-
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+`operator<()`
+</th>
+<th style="width:50%">
+`operator<=>()`
+</th>
+</tr>
+<tr>
+<td style="width:50%">
     :::cpp
-    template <typename T>
-    struct weak_wrapper {
-        T const& t;
+    bool operator<(Sequence const& x, Sequence const& y) {
+        size_t const N = min(x.size(), y.size());
+        if (x[0] < y[0]) return true;
+        if (y[0] < x[0]) return false;
         
-        auto operator<=>(weak_wrapper const&) const requires ThreeWayComparable<T> = default;
-        weak_ordering operator<=>(weak_wrapper const& rhs) const {
-            if (t < rhs.t) return weak_ordering::less;
-            if (rhs.t < t) return weak_ordering::greater;
-            return weak_ordering::equivalent;
-        }
-    };
-    
-`ThreeWayComparable` is proposed in [P1188R0](https:://wg21.link/p1188r0). It's important that this type fallback to `weak_ordering` - all we know is that `<` exists. We cannot even check if `==` exists because such types might have a non-SFINAE-friendly equality operator. And even if we could, its presence does not mean that the equality is strong equality.
-
-We can use the above type to implement `operator<=>` for `vector` as follows:
-
+        if (x[1] < y[1]) return true;
+        if (y[1] < x[1]) return false;
+        
+        // ...
+        
+        if (x[N-1] < y[N-1]) return true;
+        if (y[N-1] < x[N-1]) return false;
+        
+        return x.size() < y.size();
+    }
+</td>
+<td style="width:50%">
     :::cpp
+    template <ThreeWayComparable T>
+    auto __cmp(T const& a, T const& b) {
+        return a <=> b;
+    }
+    
     template <typename T>
-    class vector {
-        // ...
-        auto operator<=>(vector const& rhs) const {
-            return std::lexicographical_compare_3way(
-                begin(), end(),
-                rhs.begin(), rhs.end(),
-                [](T const& a, T const& b){
-                    using C = weak_wrapper<T>;
-                    return C{a} <=> C{b};
-                });
-        }
-        // ...
-    };
-
-Or for `pair` as follows, relying on `compare_3way_type_t` also from P1188R0:
-
-    :::cpp
-    template <typename T, typename U>
-    class pair {
-        // ...
-        common_comparison_category<
-            compare_3way_type_t<weak_wrapper<T>>,
-            compare_3way_type_t<weak_wrapper<U>>,
-        > operator<=>(pair const& rhs) const {
-            if (auto cmp = weak_wrapper<T>{first} <=> weak_wrapper<T>{rhs.first}; cmp != 0) return cmp;
-            return weak_wrapper<U>{second} <=> weak_wrapper<U>{rhs.second};
-        }
-        // ...
-    };
+    weak_ordering __cmp(T const& a, T const& b) {
+        if (a < b) return weak_ordering::less;
+        if (b < a) return weak_ordering::greater;
+        return weak_ordering::equivalent;
+    }
     
-Both cases are straightforward.
+    ???? operator<=>(Sequence const& x, Sequence const& y) {
+        size_t const N = min(x.size(), y.size());
+        if (auto c = __cmp(x[0], y[0]); c != 0) return c;
+        if (auto c = __cmp(x[1], y[1]); c != 0) return c;
+        // ...        
+        if (auto c = __cmp(x[N-1], y[N-1]); c != 0) return c;        
 
-Now, the important question is why provide `<=>` for these types unconditionally? Why remove the existing relational operators, even in the case that the underlying types do not provide `<=>`? This comes back to the very initial motivation: ease of implementation and performance. By providing `<=>`, we can make it easier to adopt `<=>` elsewhere:
+        return x.size() <=> y.size();
+    }
+</td>
+</tr>
+</table>
+
+`ThreeWayComparable` is a concept proposed in [P1188R0](https://wg21.link/p1188r0).
+
+Now, I will claim that the implementation at right is superior to the implementation at left, even in the cases where the underlying objects don't provide `<=>`. Consider a normal type that might exist in any given code-base today:
 
     :::cpp
-    // some old type, can't update
     struct Legacy {
         bool operator<(Legacy const&) const;
     };
     
-    // new type, just want the default comparisons
-    struct New {
-        std::vector<Legacy> q;
-        std::string name;
-        
-        auto operator<=>(New const&) const = default;
-    };
-    
-But is that really efficient?
+Let's build from this. If I compare two `pair<Legacy, int>`s - either using the preexisting `operator<` (the left implementation) or the suggested `operator<=>` (the right implementation), I'm going to do the same operations either way: at most two invocations of `Legacy::operator<`. Unsurprising. But what if I compare two `vector<pair<Legacy, int>>`s? As I mentioned earlier, we perform up to `2N` invocations of the `operator<` for each object... which means in this case we're performing up to `4N` invocations of `Legacy::operator<` if we stick with today's `operator<` implementation. This is because we have to compare each `pair` in both directions. But if we use the `operator<=>` rewrite for both `pair` and `vector`, we only have to perform up to `2N` invocations of `Legacy::operator<`! This is because we're no longer throwing away work. 
 
-Actually, yes. Consider how we would implement `operator<` for the type `New` today. We'd probably write something like:
+Of course, if the underlying objects _do_ provide `<=>`, this can be even better. Comparing two `vector<pair<string, int>>` will transition from up to `4N` invocations of `basic_string::operator<` to up to `N` invocations of `basic_string::operator<=>`.  That's... a lot.
 
-    :::cpp
-    bool operator<(New const& lhs, New const& rhs) {
-        return std::tie(lhs.q, lhs.name) < std::tie(rhs.q, rhs.name);
-    }
-
-which does:
-
-    :::cpp
-    bool operator<(New const& lhs, New const& rhs) {
-        if (lhs.q < rhs.q) return true;
-        if (rhs.q < lhs.q) return false;
-        return lhs.name < rhs.name;
-    }
-    
-What if the `q`'s were equivalent? We end up comparing every pair of elements twice (in `lhs.q < rhs.q`) and then we end up comparing every pair of elements two more times (in `rhs.q < lhs.q`) - just repeating all the same comparisons we already did. In the worst case, we invoke _four_ `<`s for each pair of `Legacy` objects. 
-
-But if `vector<Legacy>` had `<=>` even if `Legacy` did not, an invocation of `<` would only have to compare each pair of `Legacy` objects twice - because once we walk through them once, we already know we're done and can consider the two `vector`'s `weak_ordering::equivalent`.
-
-In other words, such a change would let us do _half_ the work, and we would achieve this performance boost by writing _less_ code than we have to today.
-
-The one edge-case here is for `pair`. If we were comparing two `pair<Legacy, Legacy>`s against each other with `<`, in the status quo that takes at most three invocations of `Legacy`'s `operator<` but in the synthesized implementation it could technically require four. But since that last one only differentiates between the `greater` and `equivalent` cases, and neither of those are `less`, it seems like a straightforward optimization for a compiler to make to simply remove that last comparison. At which point, we're equivalent to status quo.
-
-It's important to reassure here that the semantics of this comparison are exactly the same for all types which provide a `<` (but not a `<=>`) which implements a total order. We're basically doing the exact same operations that `vector` (and `pair` and ...) would already be doing. There's really not much benefit to keeping around the existing relational operators - we can retire them.
+In addition to the free performance win (fewer potential comparisons) and free complexity win (fewer functions to write and providing an `operator<=>` makes it easier for users that use templates as members to write their own `operator<=>`s), there's also a nice semantics win that we get from such a transition. I mentioned earlier how these sequence types do not work for partially ordered subtypes. But for types which provide an `operator<=>` which returns `std::partial_ordering` - we can easily do the right thing and provide sound comparisons that are themselves partially ordered. Less undefined behavior, which typically would manifest as just wrong or nonsense answers. 
 
 ## Proposal
 
-Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `array`, `deque`, `forward_list`, `list`, `map`, `move_iterator`, `multimap`, `multiset`, `pair`, `set`, `tuple`, `unordered_map`, `unordered_multimap`, `unordered_multiset`, `unordered_set`, and `vector` (including `vector<bool>`). For each of them, add a `operator<=>` with the same comparison semantics as today which compares each type `T` as if by the exposition-only `weak_wrapper<T>` above. These `operator<=>`s should be member functions.
+Remove `operator<`, `operator>`, `operator<=`, and `operator>=` for `array`, `deque`, `forward_list`, `list`, `map`, `move_iterator`, `multimap`, `multiset`, `pair`, `set`, `tuple`, `unordered_map`, `unordered_multimap`, `unordered_multiset`, `unordered_set`, and `vector` (including `vector<bool>`). For each of them, add a `operator<=>` with the same comparison semantics as today which compares each type `T` as if by the exposition-only `__cmp` function template above. These `operator<=>`s should be member functions.
     
 # Adding `<=>` to `std::optional`
 
 This group is composed of templates which forward _all_ of their operations to underlying types. No operator is written in terms of any other operator. Even `!=` is not defined in terms of `==`. This group includes `std::optional`, `std::variant`, `std::queue`, `std::stack`, and `std::reverse_iterator`.
 
-Unlike types like `pair` and `vector` and `tuple` which implement all the relational operators in terms of `<` (in a way that assumes a total order), the types in this group do not assume any semantics at all - and hence provide the correct answer for types that have partial orders:
+Unlike the types in the previous section - which were all sequences of some kind that assume a total order - the types in this group do not assume any semantics at all. An important consequence is that they provide the correct answer for types that have partial orders:
 
     :::cpp
     struct Q {
@@ -542,12 +547,12 @@ Unlike types like `pair` and `vector` and `tuple` which implement all the relati
     
 This design for `optional` and `variant` is a result of [P0307R2](https://wg21.link/p0307r2). I do not know why `queue` and `stack` even have comparisons, or why `reverse_iterator` behaves this way.
 
-But the important thing is that we cannot change the semantics of `optional` - the previous solution of synthesizing a `weak_ordering` from applying `operator<` in both direction is not okay here. That would change the answer for some comparisons, and this paper will not change semantics. 
+But the important thing is that we cannot change the semantics of `optional` - the previous solution of synthesizing a `weak_ordering` from applying `operator<` in both direction is not okay here. That would change the answer for some comparisons, and this paper will not change semantics.
 
 It turns out we cannot synthesize a `partial_ordering` either. The only sound way to do such a synthesis would be:
 
     :::cpp
-    partial_ordering __synthetic(Q const& a, Q const& b)
+    partial_ordering __cmp_partial(Q const& a, Q const& b)
     {
         if (a == b) return partial_ordering::equivalent;
         if (a < b)  return partial_ordering::less;
@@ -582,6 +587,16 @@ Making the spaceship operator more constrained that the other relational operato
 Add a new `operator<=>` for each kind of comparison for `optional`, `variant`, `queue`, `stack`, and `reverse_iterator` such that `operator<=>` is constrained on the relevant template parameters satisfying `ThreeWayComparableWith` (or just `ThreeWayComparable`), ensuring that `operator<=>` is the best viable candidate for all relational comparisons in code. This `operator<=>` should be a member function.
 
 Do not remove any of the preexisting comparison operators for these types, including even `operator!=()`.
+
+The exception is the comparisons between `optional<T>` and `nullopt`. Those do not actually depend on the semantics of `T` in any way - so in this particular case, we can remove the relational operators and all the reversed candidates and replace them with member `operator<=>`. Instead of the 12 operator functions we have today, we only need two - both of whose implementations are trivial:
+
+    :::cpp
+    template <typename T>
+    class optional {
+    public:
+        bool operator==(nullopt_t) const { return !has_value(); }
+        strong_ordering operator<=>(nullopt_t) const { return has_value() <=> false; }
+    };
 
 # Adding `<=>` to `std::unique_ptr`
 

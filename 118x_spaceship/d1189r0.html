@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1189R0 <br />
-Date: 2019-02-02 <br />
+Date: 2019-02-09 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -838,11 +838,10 @@ bool operator!=(CharT const*, basic_string&lt;CharT, Traits, Alloc&gt; const&amp
 
 <p>The previous section suggests removing the inequality operators (<code class="language-cpp">#2</code>, <code class="language-cpp">#5</code>, and <code class="language-cpp">#6</code>) and just relying on their equality counterparts to be used as rewritten candidates. But P1185R1, in addition to allowing inequality to be able to be rewritten as equality, also allows equality to be reversed. That is, a source expression <code class="language-cpp">a == b</code> can find <code class="language-cpp">b == a</code> as a candidate.</p>
 <p>This means that <code class="language-cpp">#4</code> in the above isn't necessary either, since we can rely on <code class="language-cpp">"hello" == "hello"s</code> to invoke <code class="language-cpp">#3</code>. We really only need <code class="language-cpp">#1</code> and <code class="language-cpp">#3</code> in the above declarations. In other words, in order to be able to provide full equality and inequality between a <code class="language-cpp">basic_string</code> and its corresponding <code class="language-cpp">CharT const*</code>, we just need to write a single operator (<code class="language-cpp">#3</code>) instead of today's four. </p>
-<p>This paper proposes removing all of these duplciated <code class="language-cpp">operator==</code> declarations as well. The full list is:</p>
+<p>This paper proposes removing all of these duplicated <code class="language-cpp">operator==</code> declarations as well. The full list is:</p>
 <ul>
 <li><code class="language-cpp">error_code</code> / <code class="language-cpp">error_condition</code></li>
 <li><code class="language-cpp">optional&lt;T&gt;</code> / <code class="language-cpp">nullopt</code></li>
-<li><code class="language-cpp">optional&lt;T&gt;</code> / <code class="language-cpp">U</code></li>
 <li><code class="language-cpp">unique_ptr&lt;T,D&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
 <li><code class="language-cpp">shared_ptr&lt;T&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
 <li><code class="language-cpp">function&lt;R(Args...)&gt;</code> / <code class="language-cpp">nullptr_t</code></li>
@@ -952,132 +951,148 @@ class basic_string {
 <h3 id="proposal">3.3. Proposal<a class="self-link" href="#proposal"></a></h3>
 <p>I weakly favor the member type alias approach. Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">basic_string</code>, <code class="language-cpp">basic_string_view</code>, and <code class="language-cpp">sub_match</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which invoke <code class="language-cpp">x.compare(y) &lt;=&gt; 0</code> cast to the appropriate comparison category (with argument adjustments as appropriate). This <code class="language-cpp">operator&lt;=&gt;</code> should be a member function. </p>
 <h2 id="adding-to-stdvector">4. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::vector</code><a class="self-link" href="#adding-to-stdvector"></a></h2>
-<p>The vast majority of types in the standard library follow the general pattern that all the relational operators are implemented in terms of <code class="language-cpp">&lt;</code>:</p>
-<table>
+<p>There are many types in the standard library that are, fundamentally, sequences of objects. Those sequences can be heterogeneous or homogeneous, fixed-length or variable-length, but they're all still sequences. The way we order these sequences, the way we write the comparison operators for them today, is lexicographically. Basically, this general algorithm:</p>
+<pre class="codehilite"><code class="language-cpp">bool operator&lt;(Sequence const&amp; x, Sequence const&amp; y) {
+    size_t const N = min(x.size(), y.size());
+    if (x[0] &lt; y[0]) return true;
+    if (y[0] &lt; x[0]) return false;
+
+    if (x[1] &lt; y[1]) return true;
+    if (y[1] &lt; x[1]) return false;
+
+    // ...
+
+    if (x[N-1] &lt; y[N-1]) return true;
+    if (y[N-1] &lt; x[N-1]) return false;
+
+    return x.size() &lt; y.size();
+}</code></pre>
+
+
+<p>For variable-sized sequences, this means we perform up to <code class="language-cpp">2N</code> invocations of an underlying <code class="language-cpp">operator&lt;</code>. For fixed-size sequences, we can optimize out the last two comparisons here so we only do up to <code class="language-cpp">2N-1</code> such invocations. </p>
+<p>There are two important things to point about comparing sequences.</p>
+<ul>
+<li>Every underlying type must be totally ordered. We are assuming that once <code class="language-cpp">x[i] &lt; y[i]</code> and <code class="language-cpp">y[i] &lt; x[i]</code> are both <code class="language-cpp">false</code> that these elements are equivalent. For partial orders, this will give nonsense answers - which is why the standard library today simply states that comparing sequences with unordered elements are undefined behavior (e.g. <code class="language-cpp">vector&lt;float&gt;</code> with any <code class="language-cpp">NAN</code>).</li>
+<li>We are basically <em>already</em> doing three-way comparisons here. It's not enough to know the result of <code class="language-cpp">operator&lt;</code> - we need to know the full three-way ordering between every pair of elements. </li>
+</ul>
+<p>Since we are doing what looks a lot like a three-way comparison anyway, we can write a direct translation of the above algorithm to <code class="language-cpp">operator&lt;=&gt;</code> as follows:</p>
+<table style="width:100%">
 <tr>
-<th>
-<p>Source</p>
+<th style="width:50%">
+<p><code class="language-cpp">operator&lt;()</code></p>
 </th>
-<th>
-<p>Implemented as</p>
+<th style="width:50%">
+<p><code class="language-cpp">operator&lt;=&gt;()</code></p>
 </th>
 </tr>
 <tr>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">x &gt; y</code></pre>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">bool operator&lt;(Sequence const&amp; x, Sequence const&amp; y) {
+    size_t const N = min(x.size(), y.size());
+    if (x[0] &lt; y[0]) return true;
+    if (y[0] &lt; x[0]) return false;
+
+    if (x[1] &lt; y[1]) return true;
+    if (y[1] &lt; x[1]) return false;
+
+    // ...
+
+    if (x[N-1] &lt; y[N-1]) return true;
+    if (y[N-1] &lt; x[N-1]) return false;
+
+    return x.size() &lt; y.size();
+}</code></pre>
 </td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">y &lt; x</code></pre>
-</td>
-</tr>
-<tr>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">x &lt;= y</code></pre>
-</td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">!(y &lt; x)</code></pre>
-</td>
-</tr>
-<tr>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">x &gt;= y</code></pre>
-</td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-cpp">!(x &lt; y)</code></pre>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;typename T&gt;
+weak_ordering __cmp(T const&amp; a, T const&amp; b) {
+    if (a &lt; b) return weak_ordering::less;
+    if (b &lt; a) return weak_ordering::greater;
+    return weak_ordering::equivalent;
+}
+
+weak_ordering operator&lt;=&gt;(Sequence const&amp; x, Sequence const&amp; y) {
+    size_t const N = min(x.size(), y.size());
+    if (auto c = __cmp(x[0], y[0]); c != 0) return c;
+    if (auto c = __cmp(x[1], y[1]); c != 0) return c;
+    // ...        
+    if (auto c = __cmp(x[N-1], y[N-1]); c != 0) return c;
+
+    return x.size() &lt;=&gt; y.size();
+}</code></pre>
 </td>
 </tr>
 </table>
 
-<p>There is blanket wording to this effect in [operators]. Types that fit this category include just about all the familiar containers (e.g. <code class="language-cpp">vector</code>, <code class="language-cpp">map</code>, <code class="language-cpp">deque</code>, <code class="language-cpp">array</code>, etc.) and utility types (e.g. <code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>). The implication of this kind of rewrite is that the underlying types <em>must</em> implement a total order with <code class="language-cpp">&lt;</code>. Otherwise, these comparisons will simply provide the wrong answer. We can make use of that to hugely simplify the implementations of all the comparisons in a way that preserves today's semantics (i.e. still being correct for total orders) but also allow them to become correct in the future with types that will provide a <code class="language-cpp">&lt;=&gt;</code> that returns <code class="language-cpp">partial_ordering</code> (e.g. floating point types).</p>
-<p>I will first describe <em>how</em> to implement <code class="language-cpp">operator&lt;=&gt;</code> for such types, and then I will describe <em>why</em> we want to do it this way. It will be easier to explain the why having the how to point to.</p>
-<p>Because these templates all rely on their underlying types having an <code class="language-cpp">operator&lt;</code> today, we can continue to rely on that to synthesize an <code class="language-cpp">operator&lt;=&gt;</code>:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
-struct weak_wrapper {
-    T const&amp; t;
+<p>The implementation at right has the same semantics as the implementation at the left, it gives the same answer in all cases... because really we're performing exactly the same operations in the same order. Just slightly restructured. But once we restructure this way, we can do a lot better by simply using <code class="language-cpp">&lt;=&gt;</code> where possible:</p>
+<table style="width:100%">
+<tr>
+<th style="width:50%">
+<p><code class="language-cpp">operator&lt;()</code></p>
+</th>
+<th style="width:50%">
+<p><code class="language-cpp">operator&lt;=&gt;()</code></p>
+</th>
+</tr>
+<tr>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">bool operator&lt;(Sequence const&amp; x, Sequence const&amp; y) {
+    size_t const N = min(x.size(), y.size());
+    if (x[0] &lt; y[0]) return true;
+    if (y[0] &lt; x[0]) return false;
 
-    auto operator&lt;=&gt;(weak_wrapper const&amp;) const requires ThreeWayComparable&lt;T&gt; = default;
-    weak_ordering operator&lt;=&gt;(weak_wrapper const&amp; rhs) const {
-        if (t &lt; rhs.t) return weak_ordering::less;
-        if (rhs.t &lt; t) return weak_ordering::greater;
-        return weak_ordering::equivalent;
-    }
-};</code></pre>
+    if (x[1] &lt; y[1]) return true;
+    if (y[1] &lt; x[1]) return false;
 
-
-<p><code class="language-cpp">ThreeWayComparable</code> is proposed in <a href="https:://wg21.link/p1188r0" title="Library utilities for &lt;=&gt;">P1188R0</a>. It's important that this type fallback to <code class="language-cpp">weak_ordering</code> - all we know is that <code class="language-cpp">&lt;</code> exists. We cannot even check if <code class="language-cpp">==</code> exists because such types might have a non-SFINAE-friendly equality operator. And even if we could, its presence does not mean that the equality is strong equality.</p>
-<p>We can use the above type to implement <code class="language-cpp">operator&lt;=&gt;</code> for <code class="language-cpp">vector</code> as follows:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
-class vector {
     // ...
-    auto operator&lt;=&gt;(vector const&amp; rhs) const {
-        return std::lexicographical_compare_3way(
-            begin(), end(),
-            rhs.begin(), rhs.end(),
-            [](T const&amp; a, T const&amp; b){
-                using C = weak_wrapper&lt;T&gt;;
-                return C{a} &lt;=&gt; C{b};
-            });
-    }
-    // ...
-};</code></pre>
 
+    if (x[N-1] &lt; y[N-1]) return true;
+    if (y[N-1] &lt; x[N-1]) return false;
 
-<p>Or for <code class="language-cpp">pair</code> as follows, relying on <code class="language-cpp">compare_3way_type_t</code> also from P1188R0:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U&gt;
-class pair {
-    // ...
-    common_comparison_category&lt;
-        compare_3way_type_t&lt;weak_wrapper&lt;T&gt;&gt;,
-        compare_3way_type_t&lt;weak_wrapper&lt;U&gt;&gt;,
-    &gt; operator&lt;=&gt;(pair const&amp; rhs) const {
-        if (auto cmp = weak_wrapper&lt;T&gt;{first} &lt;=&gt; weak_wrapper&lt;T&gt;{rhs.first}; cmp != 0) return cmp;
-        return weak_wrapper&lt;U&gt;{second} &lt;=&gt; weak_wrapper&lt;U&gt;{rhs.second};
-    }
-    // ...
-};</code></pre>
+    return x.size() &lt; y.size();
+}</code></pre>
+</td>
+<td style="width:50%">
+<pre style="background:transparent;border:0px"><code class="language-cpp">template &lt;ThreeWayComparable T&gt;
+auto __cmp(T const&amp; a, T const&amp; b) {
+    return a &lt;=&gt; b;
+}
 
+template &lt;typename T&gt;
+weak_ordering __cmp(T const&amp; a, T const&amp; b) {
+    if (a &lt; b) return weak_ordering::less;
+    if (b &lt; a) return weak_ordering::greater;
+    return weak_ordering::equivalent;
+}
 
-<p>Both cases are straightforward.</p>
-<p>Now, the important question is why provide <code class="language-cpp">&lt;=&gt;</code> for these types unconditionally? Why remove the existing relational operators, even in the case that the underlying types do not provide <code class="language-cpp">&lt;=&gt;</code>? This comes back to the very initial motivation: ease of implementation and performance. By providing <code class="language-cpp">&lt;=&gt;</code>, we can make it easier to adopt <code class="language-cpp">&lt;=&gt;</code> elsewhere:</p>
-<pre class="codehilite"><code class="language-cpp">// some old type, can't update
-struct Legacy {
+???? operator&lt;=&gt;(Sequence const&amp; x, Sequence const&amp; y) {
+    size_t const N = min(x.size(), y.size());
+    if (auto c = __cmp(x[0], y[0]); c != 0) return c;
+    if (auto c = __cmp(x[1], y[1]); c != 0) return c;
+    // ...        
+    if (auto c = __cmp(x[N-1], y[N-1]); c != 0) return c;
+
+    return x.size() &lt;=&gt; y.size();
+}</code></pre>
+</td>
+</tr>
+</table>
+
+<p><code class="language-cpp">ThreeWayComparable</code> is a concept proposed in <a href="https://wg21.link/p1188r0" title="Library utilities for &lt;=&gt;">P1188R0</a>.</p>
+<p>Now, I will claim that the implementation at right is superior to the implementation at left, even in the cases where the underlying objects don't provide <code class="language-cpp">&lt;=&gt;</code>. Consider a normal type that might exist in any given code-base today:</p>
+<pre class="codehilite"><code class="language-cpp">struct Legacy {
     bool operator&lt;(Legacy const&amp;) const;
-};
-
-// new type, just want the default comparisons
-struct New {
-    std::vector&lt;Legacy&gt; q;
-    std::string name;
-
-    auto operator&lt;=&gt;(New const&amp;) const = default;
 };</code></pre>
 
 
-<p>But is that really efficient?</p>
-<p>Actually, yes. Consider how we would implement <code class="language-cpp">operator&lt;</code> for the type <code class="language-cpp">New</code> today. We'd probably write something like:</p>
-<pre class="codehilite"><code class="language-cpp">bool operator&lt;(New const&amp; lhs, New const&amp; rhs) {
-    return std::tie(lhs.q, lhs.name) &lt; std::tie(rhs.q, rhs.name);
-}</code></pre>
-
-
-<p>which does:</p>
-<pre class="codehilite"><code class="language-cpp">bool operator&lt;(New const&amp; lhs, New const&amp; rhs) {
-    if (lhs.q &lt; rhs.q) return true;
-    if (rhs.q &lt; lhs.q) return false;
-    return lhs.name &lt; rhs.name;
-}</code></pre>
-
-
-<p>What if the <code class="language-cpp">q</code>'s were equivalent? We end up comparing every pair of elements twice (in <code class="language-cpp">lhs.q &lt; rhs.q</code>) and then we end up comparing every pair of elements two more times (in <code class="language-cpp">rhs.q &lt; lhs.q</code>) - just repeating all the same comparisons we already did. In the worst case, we invoke <em>four</em> <code class="language-cpp">&lt;</code>s for each pair of <code class="language-cpp">Legacy</code> objects. </p>
-<p>But if <code class="language-cpp">vector&lt;Legacy&gt;</code> had <code class="language-cpp">&lt;=&gt;</code> even if <code class="language-cpp">Legacy</code> did not, an invocation of <code class="language-cpp">&lt;</code> would only have to compare each pair of <code class="language-cpp">Legacy</code> objects twice - because once we walk through them once, we already know we're done and can consider the two <code class="language-cpp">vector</code>'s <code class="language-cpp">weak_ordering::equivalent</code>.</p>
-<p>In other words, such a change would let us do <em>half</em> the work, and we would achieve this performance boost by writing <em>less</em> code than we have to today.</p>
-<p>The one edge-case here is for <code class="language-cpp">pair</code>. If we were comparing two <code class="language-cpp">pair&lt;Legacy, Legacy&gt;</code>s against each other with <code class="language-cpp">&lt;</code>, in the status quo that takes at most three invocations of <code class="language-cpp">Legacy</code>'s <code class="language-cpp">operator&lt;</code> but in the synthesized implementation it could technically require four. But since that last one only differentiates between the <code class="language-cpp">greater</code> and <code class="language-cpp">equivalent</code> cases, and neither of those are <code class="language-cpp">less</code>, it seems like a straightforward optimization for a compiler to make to simply remove that last comparison. At which point, we're equivalent to status quo.</p>
-<p>It's important to reassure here that the semantics of this comparison are exactly the same for all types which provide a <code class="language-cpp">&lt;</code> (but not a <code class="language-cpp">&lt;=&gt;</code>) which implements a total order. We're basically doing the exact same operations that <code class="language-cpp">vector</code> (and <code class="language-cpp">pair</code> and ...) would already be doing. There's really not much benefit to keeping around the existing relational operators - we can retire them.</p>
+<p>Let's build from this. If I compare two <code class="language-cpp">pair&lt;Legacy, int&gt;</code>s - either using the preexisting <code class="language-cpp">operator&lt;</code> (the left implementation) or the suggested <code class="language-cpp">operator&lt;=&gt;</code> (the right implementation), I'm going to do the same operations either way: at most two invocations of <code class="language-cpp">Legacy::operator&lt;</code>. Unsurprising. But what if I compare two <code class="language-cpp">vector&lt;pair&lt;Legacy, int&gt;&gt;</code>s? As I mentioned earlier, we perform up to <code class="language-cpp">2N</code> invocations of the <code class="language-cpp">operator&lt;</code> for each object... which means in this case we're performing up to <code class="language-cpp">4N</code> invocations of <code class="language-cpp">Legacy::operator&lt;</code> if we stick with today's <code class="language-cpp">operator&lt;</code> implementation. This is because we have to compare each <code class="language-cpp">pair</code> in both directions. But if we use the <code class="language-cpp">operator&lt;=&gt;</code> rewrite for both <code class="language-cpp">pair</code> and <code class="language-cpp">vector</code>, we only have to perform up to <code class="language-cpp">2N</code> invocations of <code class="language-cpp">Legacy::operator&lt;</code>! This is because we're no longer throwing away work. </p>
+<p>Of course, if the underlying objects <em>do</em> provide <code class="language-cpp">&lt;=&gt;</code>, this can be even better. Comparing two <code class="language-cpp">vector&lt;pair&lt;string, int&gt;&gt;</code> will transition from up to <code class="language-cpp">4N</code> invocations of <code class="language-cpp">basic_string::operator&lt;</code> to up to <code class="language-cpp">N</code> invocations of <code class="language-cpp">basic_string::operator&lt;=&gt;</code>.  That's... a lot.</p>
+<p>In addition to the free performance win (fewer potential comparisons) and free complexity win (fewer functions to write and providing an <code class="language-cpp">operator&lt;=&gt;</code> makes it easier for users that use templates as members to write their own <code class="language-cpp">operator&lt;=&gt;</code>s), there's also a nice semantics win that we get from such a transition. I mentioned earlier how these sequence types do not work for partially ordered subtypes. But for types which provide an <code class="language-cpp">operator&lt;=&gt;</code> which returns <code class="language-cpp">std::partial_ordering</code> - we can easily do the right thing and provide sound comparisons that are themselves partially ordered. Less undefined behavior, which typically would manifest as just wrong or nonsense answers. </p>
 <h3 id="proposal_1">4.1. Proposal<a class="self-link" href="#proposal_1"></a></h3>
-<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">array</code>, <code class="language-cpp">deque</code>, <code class="language-cpp">forward_list</code>, <code class="language-cpp">list</code>, <code class="language-cpp">map</code>, <code class="language-cpp">move_iterator</code>, <code class="language-cpp">multimap</code>, <code class="language-cpp">multiset</code>, <code class="language-cpp">pair</code>, <code class="language-cpp">set</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">unordered_map</code>, <code class="language-cpp">unordered_multimap</code>, <code class="language-cpp">unordered_multiset</code>, <code class="language-cpp">unordered_set</code>, and <code class="language-cpp">vector</code> (including <code class="language-cpp">vector&lt;bool&gt;</code>). For each of them, add a <code class="language-cpp">operator&lt;=&gt;</code> with the same comparison semantics as today which compares each type <code class="language-cpp">T</code> as if by the exposition-only <code class="language-cpp">weak_wrapper&lt;T&gt;</code> above. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
+<p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">array</code>, <code class="language-cpp">deque</code>, <code class="language-cpp">forward_list</code>, <code class="language-cpp">list</code>, <code class="language-cpp">map</code>, <code class="language-cpp">move_iterator</code>, <code class="language-cpp">multimap</code>, <code class="language-cpp">multiset</code>, <code class="language-cpp">pair</code>, <code class="language-cpp">set</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">unordered_map</code>, <code class="language-cpp">unordered_multimap</code>, <code class="language-cpp">unordered_multiset</code>, <code class="language-cpp">unordered_set</code>, and <code class="language-cpp">vector</code> (including <code class="language-cpp">vector&lt;bool&gt;</code>). For each of them, add a <code class="language-cpp">operator&lt;=&gt;</code> with the same comparison semantics as today which compares each type <code class="language-cpp">T</code> as if by the exposition-only <code class="language-cpp">__cmp</code> function template above. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
 <h2 id="adding-to-stdoptional">5. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::optional</code><a class="self-link" href="#adding-to-stdoptional"></a></h2>
 <p>This group is composed of templates which forward <em>all</em> of their operations to underlying types. No operator is written in terms of any other operator. Even <code class="language-cpp">!=</code> is not defined in terms of <code class="language-cpp">==</code>. This group includes <code class="language-cpp">std::optional</code>, <code class="language-cpp">std::variant</code>, <code class="language-cpp">std::queue</code>, <code class="language-cpp">std::stack</code>, and <code class="language-cpp">std::reverse_iterator</code>.</p>
-<p>Unlike types like <code class="language-cpp">pair</code> and <code class="language-cpp">vector</code> and <code class="language-cpp">tuple</code> which implement all the relational operators in terms of <code class="language-cpp">&lt;</code> (in a way that assumes a total order), the types in this group do not assume any semantics at all - and hence provide the correct answer for types that have partial orders:</p>
+<p>Unlike the types in the previous section - which were all sequences of some kind that assume a total order - the types in this group do not assume any semantics at all. An important consequence is that they provide the correct answer for types that have partial orders:</p>
 <pre class="codehilite"><code class="language-cpp">struct Q {
     float f;
     bool operator==(Q const&amp; rhs) const { return f == rhs.f; }
@@ -1102,9 +1117,9 @@ optional&lt;Q&gt;{1.f} &gt; optional&lt;Q&gt;{NAN};  // false</code></pre>
 
 
 <p>This design for <code class="language-cpp">optional</code> and <code class="language-cpp">variant</code> is a result of <a href="https://wg21.link/p0307r2" title="Making Optional Greater Equal Again">P0307R2</a>. I do not know why <code class="language-cpp">queue</code> and <code class="language-cpp">stack</code> even have comparisons, or why <code class="language-cpp">reverse_iterator</code> behaves this way.</p>
-<p>But the important thing is that we cannot change the semantics of <code class="language-cpp">optional</code> - the previous solution of synthesizing a <code class="language-cpp">weak_ordering</code> from applying <code class="language-cpp">operator&lt;</code> in both direction is not okay here. That would change the answer for some comparisons, and this paper will not change semantics. </p>
+<p>But the important thing is that we cannot change the semantics of <code class="language-cpp">optional</code> - the previous solution of synthesizing a <code class="language-cpp">weak_ordering</code> from applying <code class="language-cpp">operator&lt;</code> in both direction is not okay here. That would change the answer for some comparisons, and this paper will not change semantics.</p>
 <p>It turns out we cannot synthesize a <code class="language-cpp">partial_ordering</code> either. The only sound way to do such a synthesis would be:</p>
-<pre class="codehilite"><code class="language-cpp">partial_ordering __synthetic(Q const&amp; a, Q const&amp; b)
+<pre class="codehilite"><code class="language-cpp">partial_ordering __cmp_partial(Q const&amp; a, Q const&amp; b)
 {
     if (a == b) return partial_ordering::equivalent;
     if (a &lt; b)  return partial_ordering::less;
@@ -1135,6 +1150,15 @@ class optional {
 <h3 id="proposal_2">5.1. Proposal<a class="self-link" href="#proposal_2"></a></h3>
 <p>Add a new <code class="language-cpp">operator&lt;=&gt;</code> for each kind of comparison for <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">queue</code>, <code class="language-cpp">stack</code>, and <code class="language-cpp">reverse_iterator</code> such that <code class="language-cpp">operator&lt;=&gt;</code> is constrained on the relevant template parameters satisfying <code class="language-cpp">ThreeWayComparableWith</code> (or just <code class="language-cpp">ThreeWayComparable</code>), ensuring that <code class="language-cpp">operator&lt;=&gt;</code> is the best viable candidate for all relational comparisons in code. This <code class="language-cpp">operator&lt;=&gt;</code> should be a member function.</p>
 <p>Do not remove any of the preexisting comparison operators for these types, including even <code class="language-cpp">operator!=()</code>.</p>
+<p>The exception is the comparisons between <code class="language-cpp">optional&lt;T&gt;</code> and <code class="language-cpp">nullopt</code>. Those do not actually depend on the semantics of <code class="language-cpp">T</code> in any way - so in this particular case, we can remove the relational operators and all the reversed candidates and replace them with member <code class="language-cpp">operator&lt;=&gt;</code>. Instead of the 12 operator functions we have today, we only need two - both of whose implementations are trivial:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+class optional {
+public:
+    bool operator==(nullopt_t) const { return !has_value(); }
+    strong_ordering operator&lt;=&gt;(nullopt_t) const { return has_value() &lt;=&gt; false; }
+};</code></pre>
+
+
 <h2 id="adding-to-stdunique_ptr">6. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::unique_ptr</code><a class="self-link" href="#adding-to-stdunique_ptr"></a></h2>
 <p>For <code class="language-cpp">std::unique_ptr</code> and <code class="language-cpp">std::shared_ptr</code>, the comparison of <code class="language-cpp">&lt;</code> does not use raw <code class="language-cpp">operator&lt;</code> but rather goes through <code class="language-cpp">std::less</code>. However, they do this in a slightly different way: Comparing a <code class="language-cpp">unique_ptr&lt;T1,D1&gt;</code> to a <code class="language-cpp">unique_ptr&lt;T2,D2&gt;</code> goes through <code class="language-cpp">less&lt;common_type_t&lt;unique_ptr&lt;T1,D1&gt;::pointer, unique_ptr&lt;T2,D2&gt;::pointer&gt;&gt;</code> whereas comparing a <code class="language-cpp">shared_ptr&lt;T1&gt;</code> to a <code class="language-cpp">shared_ptr&lt;T2&gt;</code> goes through <code class="language-cpp">less&lt;&gt;</code>. </p>
 <p>Either way, P1188R0 proposes a three-way comparison object named <code class="language-cpp">std::compare_3way</code> that satisfies the requirement that the ordering is a strict weak order, using the same wording that we have for <code class="language-cpp">std::less</code> today. We can use this object to implement the comparisons doing something like:</p>
