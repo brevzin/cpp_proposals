@@ -27,6 +27,7 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
 - [p1188r0 - Library utilities for `<=>`](118x_spaceship/p1188r0.html). This paper is coalescing the library components of what used to be p1186r0 and p1187r0.
+- [d1189r0 - Adding `<=>` to library](118x_spaceship/d1189r0.html).
 
 ### Other 
 - [p1187r0 - A type trait for `std::compare_3way()`'s type](118x_spaceship/p1187r0.html). Approved in San Diego, but is coming back as p1188r0. 
