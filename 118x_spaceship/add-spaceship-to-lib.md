@@ -186,10 +186,13 @@ Today, this goes through the global `operator<` template (`#2`). The `operator<`
 
 This seems like a fairly contrived scenario. Though like all fairly contrived scenarios, it assuredly exists in some C++ code base somewhere. The most conservative approach would be to stay put and keep the proposed `operator<=>`s as non-member operator templates. But there are very clear benefits of making them member functions, so I think member `operator<=>` is still the way to go.
 
-# Most `operator!=()`s are obsolete
+# Dealing with `operator==()` and `operator!=()`
 
-[P1185R1](https://wg21.link/p1185r1) will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which `a != b` is defined to mean `!(a == b)`, we no longer need to define `operator!=`. The language will simply do the right thing for us.
+Before getting to how to handle `operator<=>()` for all of these situations, let's first talk about the equality operators. There are several changes to how these operators behave as a result of [P1185R1](https://wg21.link/p1185r1) (R0 was approved by EWG in San Diego, R1 will likely be moved in Kona - there is still an open design question, but it is about a part of that proposal which is irrelevant to this paper). 
 
+## Most `operator!=()`s are obsolete
+
+The first part of P1185R1 changes the candidate set for inequality operators to include equality operators. In other words, for types in which `a != b` is defined to mean `!(a == b)`, we no longer need to define `operator!=`. The language will simply do the right thing for us.
 Just about every `operator!=()` in the library does this. Indeed, we have blanket wording in [operators] which lets us avoid having to write the boilerplate every time. The only exceptions to this are:
 
 - the types in the group represented by `std::optional`, which will be discussed [later](#adding-to-stdoptional)
@@ -257,6 +260,18 @@ This paper proposes removing all of these duplicated `operator==` declarations a
 - `sub_match` / `value_type const&`
 
 Note that even though this paper is not removing `optional<T>`'s or `valarray<T>`s `operator!=`s as a whole, it can still remove the reversed `operator==`s and the corresponding reversed `operator!=`s.
+
+## Defaulting `operator==()`
+
+Another important aspect of P1185 is that it redefines "strong structural equality" to be based on a defaulted `operator==()` rather than a defaulted `operator<=>()`, which is the requirement for a type being usable as a non-type template parameter - a new C++20 language feature introduced by way of [P0732R2](https://wg21.link/p0732r2)
+
+There are many library types which currently define their `operator==()` as member-wise equality. Respecifying all of these `operator==()`s as being `default`ed instead will not change any semantics or ABI, but will simply directly allow these types to be usable as non-type template parameters. So this paper proposes to do that for:
+
+- `pair`
+- `tuple`
+- `array`
+
+... and any library type that meets this member-wise equality condition that is missing from the above list.
 
 # Adding `<=>` to `std::basic_string`
 

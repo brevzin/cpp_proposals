@@ -1,0 +1,929 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Conditionally Trivial Special Member Functions</title>
+<style type="text/css">html {
+	position: relative;
+	max-width: 1024px;
+	height: 100%;
+}
+body {
+	font-family: Helvetica, arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: white;
+	padding: 30px;
+}
+body>*:first-child {
+	margin-top: 0 !important;
+}
+body>*:last-child {
+	margin-bottom: 0 !important;
+}
+a {
+	color: #4183C4;
+}
+a.absent {
+	color: #cc0000;
+}
+a.anchor {
+	display: block;
+	padding-left: 30px;
+	margin-left: -30px;
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 20px 0 10px;
+	padding: 0;
+	font-weight: bold;
+	-webkit-font-smoothing: antialiased;
+	cursor: text;
+	position: relative;
+}
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+	text-decoration: none;
+}
+h1 tt, h1 code {
+	font-size: inherit;
+}
+h2 tt, h2 code {
+	font-size: inherit;
+}
+h3 tt, h3 code {
+	font-size: inherit;
+}
+h4 tt, h4 code {
+	font-size: inherit;
+}
+h5 tt, h5 code {
+	font-size: inherit;
+}
+h6 tt, h6 code {
+	font-size: inherit;
+}
+h1 {
+	font-size: 28px;
+	color: black;
+}
+h2 {
+	font-size: 24px;
+	border-bottom: 1px solid #cccccc;
+	color: black;
+}
+h3 {
+	font-size: 18px;
+}
+h4 {
+	font-size: 16px;
+}
+h5 {
+	font-size: 14px;
+}
+h6 {
+	color: #777777;
+	font-size: 14px;
+}
+p, blockquote, ol, dl, li, table, pre {
+	margin: 15px 0;
+}
+hr {
+	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+	border: 0 none;
+	color: #cccccc;
+	height: 4px;
+	padding: 0;
+}
+body>h2:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h1:first-child+h2 {
+	margin-top: 0;
+	padding-top: 0;
+}
+body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
+	margin-top: 0;
+	padding-top: 0;
+}
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+	margin-top: 0;
+	padding-top: 0;
+}
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+	margin-top: 0;
+}
+li p.first {
+	display: inline-block;
+}
+li {
+	margin: 0;
+}
+ol {
+	padding-left: 30px;
+    margin: 5px;
+    counter-reset: item;
+    margin-left: -1px;
+    margin-bottom: -1px;
+    margin-top: -1px;
+}
+ol > li {
+    counter-increment: item;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li {
+    display: block;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ol ol > li:before {
+    content: counters(item, ".") ". ";
+    margin-left: -30px;
+    margin-bottom: -1px;
+    margin-top: -1px;    
+}
+ul :first-child, ol :first-child {
+	margin-top: 0;
+}
+ul ul { 
+    margin-left: -15px;
+}
+dl {
+	padding: 0;
+}
+dl dt {
+	font-size: 14px;
+	font-weight: bold;
+	font-style: italic;
+	padding: 0;
+	margin: 15px 0 5px;
+}
+dl dt:first-child {
+	padding: 0;
+}
+dl dt> :first-child {
+	margin-top: 0;
+}
+dl dt> :last-child {
+	margin-bottom: 0;
+}
+dl dd {
+	margin: 0 0 15px;
+	padding: 0 15px;
+}
+dl dd> :first-child {
+	margin-top: 0;
+}
+dl dd> :last-child {
+	margin-bottom: 0;
+}
+blockquote {
+	border-left: 4px solid #dddddd;
+	padding: 0 15px;
+	color: #777777;
+}
+blockquote> :first-child {
+	margin-top: 0;
+}
+blockquote> :last-child {
+	margin-bottom: 0;
+}
+table {
+	padding: 0;
+	border-collapse: collapse;
+}
+table tr {
+	border-top: 1px solid #cccccc;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
+table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+table tr th {
+	font-weight: bold;
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr td {
+	border: 1px solid #cccccc;
+	margin: 0;
+	padding: 6px 13px;
+}
+table tr th :first-child, table tr td :first-child {
+	margin-top: 0;
+}
+table tr th :last-child, table tr td :last-child {
+	margin-bottom: 0;
+}
+td {
+	vertical-align: top;
+}
+img {
+	max-width: 100%;
+}
+span.frame {
+	display: block;
+	overflow: hidden;
+}
+span.frame>span {
+	border: 1px solid #dddddd;
+	display: block;
+	float: left;
+	overflow: hidden;
+	margin: 13px 0 0;
+	padding: 7px;
+	width: auto;
+}
+span.frame span img {
+	display: block;
+	float: left;
+}
+span.frame span span {
+	clear: both;
+	color: #333333;
+	display: block;
+	padding: 5px 0 0;
+}
+span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-center>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: center;
+}
+span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+span.align-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px 0 0;
+	text-align: right;
+}
+span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+span.float-left {
+	display: block;
+	margin-right: 13px;
+	overflow: hidden;
+	float: left;
+}
+span.float-left span {
+	margin: 13px 0 0;
+}
+span.float-right {
+	display: block;
+	margin-left: 13px;
+	overflow: hidden;
+	float: right;
+}
+span.float-right>span {
+	display: block;
+	overflow: hidden;
+	margin: 13px auto 0;
+	text-align: right;
+}
+code, tt {
+	margin: 0 2px;
+	padding: 0 5px;
+	white-space: nowrap;
+	border: 1px solid #eaeaea;
+	background-color: #f8f8f8;
+	border-radius: 3px;
+}
+pre code {
+	margin: 0;
+	padding: 0;
+	white-space: pre;
+	border: none;
+	background: transparent;
+}
+.highlight pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+}
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 6px 10px;
+	border-radius: 3px;
+}
+pre code, pre tt {
+	background-color: transparent;
+	border: none;
+}
+sup {
+	font-size: 0.83em;
+	vertical-align: super;
+	line-height: 0;
+}
+kbd {
+	display: inline-block;
+	padding: 3px 5px;
+	font-size: 11px;
+	line-height: 10px;
+	color: #555;
+	vertical-align: middle;
+	background-color: #fcfcfc;
+	border: solid 1px #ccc;
+	border-bottom-color: #bbb;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #bbb
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+ins {
+	color: #00A000
+}
+del {
+	color: #A00000
+}
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+    font-size: 83%;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+a.self-link::before {
+    content: "§";
+}</style>
+<style type="text/css">/* PrismJS 1.15.0
+https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
+/**
+ * prism.js default theme for JavaScript, CSS and HTML
+ * Based on dabblet (http://dabblet.com)
+ * @author Lea Verou
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: black;
+	background: none;
+	text-shadow: 0 1px white;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+@media print {
+	code[class*="language-"],
+	pre[class*="language-"] {
+		text-shadow: none;
+	}
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #f8f8f8;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: slategray;
+}
+
+.token.punctuation {
+	color: #999;
+}
+
+.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+	color: #9a6e3a;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #07a;
+}
+
+.token.function,
+.token.class-name {
+	color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #e90;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+
+pre[data-line] {
+	position: relative;
+	padding: 1em 0 1em 3em;
+}
+
+.line-highlight {
+	position: absolute;
+	left: 0;
+	right: 0;
+	padding: inherit 0;
+	margin-top: 1em; /* Same as .prism’s padding-top */
+
+	background: hsla(24, 20%, 50%,.08);
+	background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
+
+	pointer-events: none;
+
+	line-height: inherit;
+	white-space: pre;
+}
+
+	.line-highlight:before,
+	.line-highlight[data-end]:after {
+		content: attr(data-start);
+		position: absolute;
+		top: .4em;
+		left: .6em;
+		min-width: 1em;
+		padding: 0 .5em;
+		background-color: hsla(24, 20%, 50%,.4);
+		color: hsl(24, 20%, 95%);
+		font: bold 65%/1.5 sans-serif;
+		text-align: center;
+		vertical-align: .3em;
+		border-radius: 999px;
+		text-shadow: none;
+		box-shadow: 0 1px white;
+	}
+
+	.line-highlight[data-end]:after {
+		content: attr(data-end);
+		top: auto;
+		bottom: .4em;
+	}
+
+.line-numbers .line-highlight:before,
+.line-numbers .line-highlight:after {
+	content: none;
+}
+
+</style>
+<script type="text/javascript">/* PrismJS 1.15.0
+https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp+nasm+rust&plugins=line-highlight */
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-([\w-]+)\b/i,t=0,n=_self.Prism={manual:_self.Prism&&_self.Prism.manual,disableWorkerMessageHandler:_self.Prism&&_self.Prism.disableWorkerMessageHandler,util:{encode:function(e){return e instanceof r?new r(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e,t){var r=n.util.type(e);switch(t=t||{},r){case"Object":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a={};t[n.util.objId(e)]=a;for(var l in e)e.hasOwnProperty(l)&&(a[l]=n.util.clone(e[l],t));return a;case"Array":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a=[];return t[n.util.objId(e)]=a,e.forEach(function(e,r){a[r]=n.util.clone(e,t)}),a}return e}},languages:{extend:function(e,t){var r=n.util.clone(n.languages[e]);for(var a in t)r[a]=t[a];return r},insertBefore:function(e,t,r,a){a=a||n.languages;var l=a[e];if(2==arguments.length){r=arguments[1];for(var i in r)r.hasOwnProperty(i)&&(l[i]=r[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in r)r.hasOwnProperty(i)&&(o[i]=r[i]);o[s]=l[s]}var u=a[e];return a[e]=o,n.languages.DFS(n.languages,function(t,n){n===u&&t!=e&&(this[t]=o)}),o},DFS:function(e,t,r,a){a=a||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],r||l),"Object"!==n.util.type(e[l])||a[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||a[n.util.objId(e[l])]||(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,a)):(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,a)))}},plugins:{},highlightAll:function(e,t){n.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,r){var a={callback:r,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var l,i=a.elements||e.querySelectorAll(a.selector),o=0;l=i[o++];)n.highlightElement(l,t===!0,a.callback)},highlightElement:function(t,r,a){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1].toLowerCase(),i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,t.parentNode&&(o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l));var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(n.hooks.run("before-sanity-check",u),!u.code||!u.grammar)return u.code&&(n.hooks.run("before-highlight",u),u.element.textContent=u.code,n.hooks.run("after-highlight",u)),n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),r&&_self.Worker){var g=new Worker(n.filename);g.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},g.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,a){var l={code:e,grammar:t,language:a};return n.hooks.run("before-tokenize",l),l.tokens=n.tokenize(l.code,l.grammar),n.hooks.run("after-tokenize",l),r.stringify(n.util.encode(l.tokens),l.language)},matchGrammar:function(e,t,r,a,l,i,o){var s=n.Token;for(var u in r)if(r.hasOwnProperty(u)&&r[u]){if(u==o)return;var g=r[u];g="Array"===n.util.type(g)?g:[g];for(var c=0;c<g.length;++c){var h=g[c],f=h.inside,d=!!h.lookbehind,m=!!h.greedy,p=0,y=h.alias;if(m&&!h.pattern.global){var v=h.pattern.toString().match(/[imuy]*$/)[0];h.pattern=RegExp(h.pattern.source,v+"g")}h=h.pattern||h;for(var b=a,k=l;b<t.length;k+=t[b].length,++b){var w=t[b];if(t.length>e.length)return;if(!(w instanceof s)){if(m&&b!=t.length-1){h.lastIndex=k;var _=h.exec(e);if(!_)break;for(var j=_.index+(d?_[1].length:0),P=_.index+_[0].length,A=b,x=k,O=t.length;O>A&&(P>x||!t[A].type&&!t[A-1].greedy);++A)x+=t[A].length,j>=x&&(++b,k=x);if(t[b]instanceof s)continue;I=A-b,w=e.slice(k,x),_.index-=k}else{h.lastIndex=0;var _=h.exec(w),I=1}if(_){d&&(p=_[1]?_[1].length:0);var j=_.index+p,_=_[0].slice(p),P=j+_.length,N=w.slice(0,j),S=w.slice(P),C=[b,I];N&&(++b,k+=N.length,C.push(N));var E=new s(u,f?n.tokenize(_,f):_,y,_,m);if(C.push(E),S&&C.push(S),Array.prototype.splice.apply(t,C),1!=I&&n.matchGrammar(e,t,r,b,k,!0,u),i)break}else if(i)break}}}}},tokenize:function(e,t){var r=[e],a=t.rest;if(a){for(var l in a)t[l]=a[l];delete t.rest}return n.matchGrammar(e,r,t,0,0,!1),r},hooks:{all:{},add:function(e,t){var r=n.hooks.all;r[e]=r[e]||[],r[e].push(t)},run:function(e,t){var r=n.hooks.all[e];if(r&&r.length)for(var a,l=0;a=r[l++];)a(t)}}},r=n.Token=function(e,t,n,r,a){this.type=e,this.content=t,this.alias=n,this.length=0|(r||"").length,this.greedy=!!a};if(r.stringify=function(e,t,a){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return r.stringify(n,t,e)}).join("");var l={type:e.type,content:r.stringify(e.content,t,a),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:a};if(e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o=Object.keys(l.attributes).map(function(e){return e+'="'+(l.attributes[e]||"").replace(/"/g,"&quot;")+'"'}).join(" ");return"<"+l.tag+' class="'+l.classes.join(" ")+'"'+(o?" "+o:"")+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(n.disableWorkerMessageHandler||_self.addEventListener("message",function(e){var t=JSON.parse(e.data),r=t.language,a=t.code,l=t.immediateClose;_self.postMessage(n.highlight(a,n.languages[r],r)),l&&_self.close()},!1),_self.Prism):_self.Prism;var a=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return a&&(n.filename=a.src,n.manual||a.hasAttribute("data-manual")||("loading"!==document.readyState?window.requestAnimationFrame?window.requestAnimationFrame(n.highlightAll):window.setTimeout(n.highlightAll,16):document.addEventListener("DOMContentLoaded",n.highlightAll))),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+Prism.languages.markup={comment:/<!--[\s\S]*?-->/,prolog:/<\?[\s\S]+?\?>/,doctype:/<!DOCTYPE[\s\S]+?>/i,cdata:/<!\[CDATA\[[\s\S]*?]]>/i,tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s+[^\s>\/=]+(?:=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+))?)*\s*\/?>/i,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/i,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"attr-value":{pattern:/=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+)/i,inside:{punctuation:[/^=/,{pattern:/(^|[^\\])["']/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:/&#?[\da-z]{1,8};/i},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.hooks.add("wrap",function(a){"entity"===a.type&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Prism.languages.xml=Prism.languages.markup,Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup;
+Prism.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:/@[\w-]+?.*?(?:;|(?=\s*\{))/i,inside:{rule:/@[\w-]+/}},url:/url\((?:(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1|.*?)\)/i,selector:/[^{}\s][^{};]*?(?=\s*\{)/,string:{pattern:/("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},property:/[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,important:/\B!important\b/i,"function":/[-a-z0-9]+(?=\()/i,punctuation:/[(){};:]/},Prism.languages.css.atrule.inside.rest=Prism.languages.css,Prism.languages.markup&&(Prism.languages.insertBefore("markup","tag",{style:{pattern:/(<style[\s\S]*?>)[\s\S]*?(?=<\/style>)/i,lookbehind:!0,inside:Prism.languages.css,alias:"language-css",greedy:!0}}),Prism.languages.insertBefore("inside","attr-value",{"style-attr":{pattern:/\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,inside:{"attr-name":{pattern:/^\s*style/i,inside:Prism.languages.markup.tag.inside},punctuation:/^\s*=\s*['"]|['"]\s*$/,"attr-value":{pattern:/.+/i,inside:Prism.languages.css}},alias:"language-css"}},Prism.languages.markup.tag));
+Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(?:true|false)\b/,"function":/\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
+Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(?:_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?/,number:/(?:\b0x[\da-f]+|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?)[ful]*/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+(?:[^\r\n\\]|\\(?:\r\n|[\s\S]))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(?:<.+?>|("|')(?:\\?.)+?\2)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(?:define|defined|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(?:__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|SEEK_CUR|SEEK_END|SEEK_SET|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
+Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|concept|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(?:true|false)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)\w+/i,lookbehind:!0}}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
+Prism.languages.nasm={comment:/;.*$/m,string:/(["'`])(?:\\.|(?!\1)[^\\\r\n])*\1/,label:{pattern:/(^\s*)[A-Za-z._?$][\w.?$@~#]*:/m,lookbehind:!0,alias:"function"},keyword:[/\[?BITS (?:16|32|64)\]?/,{pattern:/(^\s*)section\s*[a-zA-Z.]+:?/im,lookbehind:!0},/(?:extern|global)[^;\r\n]*/i,/(?:CPU|FLOAT|DEFAULT).*$/m],register:{pattern:/\b(?:st\d|[xyz]mm\d\d?|[cdt]r\d|r\d\d?[bwd]?|[er]?[abcd]x|[abcd][hl]|[er]?(?:bp|sp|si|di)|[cdefgs]s)\b/i,alias:"variable"},number:/(?:\b|(?=\$))(?:0[hx][\da-f]*\.?[\da-f]+(?:p[+-]?\d+)?|\d[\da-f]+[hx]|\$\d[\da-f]*|0[oq][0-7]+|[0-7]+[oq]|0[by][01]+|[01]+[by]|0[dt]\d+|\d*\.?\d+(?:\.?e[+-]?\d+)?[dt]?)\b/i,operator:/[\[\]*+\-\/%<>=&|$!]/};
+Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:[{pattern:/b?r(#*)"(?:\\.|(?!"\1)[^\\\r\n])*"\1/,greedy:!0},{pattern:/b?"(?:\\.|[^\\\r\n"])*"/,greedy:!0}],"char":{pattern:/b?'(?:\\(?:x[0-7][\da-fA-F]|u{(?:[\da-fA-F]_*){1,6}|.)|[^\\\r\n\t'])'/,alias:"string"},"lifetime-annotation":{pattern:/'[^\s>']+/,alias:"symbol"},keyword:/\b(?:abstract|alignof|as|be|box|break|const|continue|crate|do|else|enum|extern|false|final|fn|for|if|impl|in|let|loop|match|mod|move|mut|offsetof|once|override|priv|pub|pure|ref|return|sizeof|static|self|struct|super|true|trait|type|typeof|unsafe|unsized|use|virtual|where|while|yield)\b/,attribute:{pattern:/#!?\[.+?\]/,greedy:!0,alias:"attr-name"},"function":[/\w+(?=\s*\()/,/\w+!(?=\s*\(|\[)/],"macro-rules":{pattern:/\w+!/,alias:"function"},number:/\b(?:0x[\dA-Fa-f](?:_?[\dA-Fa-f])*|0o[0-7](?:_?[0-7])*|0b[01](?:_?[01])*|(\d(?:_?\d)*)?\.?\d(?:_?\d)*(?:[Ee][+-]?\d+)?)(?:_?(?:[iu](?:8|16|32|64)?|f32|f64))?\b/,"closure-params":{pattern:/\|[^|]*\|(?=\s*[{-])/,inside:{punctuation:/[|:,]/,operator:/[&*]/}},punctuation:/[{}[\];(),:]|\.+|->/,operator:/[-+*\/%!^]=?|=[=>]?|@|&[&=]?|\|[|=]?|<<?=?|>>?=?/};
+!function(){function e(e,t){return Array.prototype.slice.call((t||document).querySelectorAll(e))}function t(e,t){return t=" "+t+" ",(" "+e.className+" ").replace(/[\n\t]/g," ").indexOf(t)>-1}function n(e,n,i){n="string"==typeof n?n:e.getAttribute("data-line");for(var o,l=n.replace(/\s+/g,"").split(","),a=+e.getAttribute("data-line-offset")||0,s=r()?parseInt:parseFloat,d=s(getComputedStyle(e).lineHeight),u=t(e,"line-numbers"),c=0;o=l[c++];){var p=o.split("-"),m=+p[0],f=+p[1]||m,h=e.querySelector('.line-highlight[data-range="'+o+'"]')||document.createElement("div");if(h.setAttribute("aria-hidden","true"),h.setAttribute("data-range",o),h.className=(i||"")+" line-highlight",u&&Prism.plugins.lineNumbers){var g=Prism.plugins.lineNumbers.getLine(e,m),y=Prism.plugins.lineNumbers.getLine(e,f);g&&(h.style.top=g.offsetTop+"px"),y&&(h.style.height=y.offsetTop-g.offsetTop+y.offsetHeight+"px")}else h.setAttribute("data-start",m),f>m&&h.setAttribute("data-end",f),h.style.top=(m-a-1)*d+"px",h.textContent=new Array(f-m+2).join(" \n");u?e.appendChild(h):(e.querySelector("code")||e).appendChild(h)}}function i(){var t=location.hash.slice(1);e(".temporary.line-highlight").forEach(function(e){e.parentNode.removeChild(e)});var i=(t.match(/\.([\d,-]+)$/)||[,""])[1];if(i&&!document.getElementById(t)){var r=t.slice(0,t.lastIndexOf(".")),o=document.getElementById(r);o&&(o.hasAttribute("data-line")||o.setAttribute("data-line",""),n(o,i,"temporary "),document.querySelector(".temporary.line-highlight").scrollIntoView())}}if("undefined"!=typeof self&&self.Prism&&self.document&&document.querySelector){var r=function(){var e;return function(){if("undefined"==typeof e){var t=document.createElement("div");t.style.fontSize="13px",t.style.lineHeight="1.5",t.style.padding=0,t.style.border=0,t.innerHTML="&nbsp;<br />&nbsp;",document.body.appendChild(t),e=38===t.offsetHeight,document.body.removeChild(t)}return e}}(),o=0;Prism.hooks.add("before-sanity-check",function(t){var n=t.element.parentNode,i=n&&n.getAttribute("data-line");if(n&&i&&/pre/i.test(n.nodeName)){var r=0;e(".line-highlight",n).forEach(function(e){r+=e.textContent.length,e.parentNode.removeChild(e)}),r&&/^( \n)+$/.test(t.code.slice(-r))&&(t.code=t.code.slice(0,-r))}}),Prism.hooks.add("complete",function l(e){var r=e.element.parentNode,a=r&&r.getAttribute("data-line");if(r&&a&&/pre/i.test(r.nodeName)){clearTimeout(o);var s=Prism.plugins.lineNumbers,d=e.plugins&&e.plugins.lineNumbers;t(r,"line-numbers")&&s&&!d?Prism.hooks.add("line-numbers",l):(n(r,a),o=setTimeout(i,1))}}),window.addEventListener("hashchange",i),window.addEventListener("resize",function(){var e=document.querySelectorAll("pre[data-line]");Array.prototype.forEach.call(e,function(e){n(e)})})}}();
+</script>
+
+</head>
+<body>
+<address align=right>
+Document Number: D0848R2 <br />
+Date: 2019-02-23 <br />
+Audience: CWG <br />
+Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Casey Carter, casey at carter dot net <br />
+</address>
+<hr /><h1 align=center><p>Conditionally Trivial Special Member Functions</p></h1>
+<h2>Contents</h2>
+<div class="toc">
+<ol>
+<li><a href="#introduction-and-revision-history">Introduction and Revision History</a></li>
+<li><a href="#proposal">Proposal</a><ol>
+<li><a href="#special-member-function-candidates">Special member function candidates</a></li>
+<li><a href="#standard-impact">Standard Impact</a></li>
+</ol>
+</li>
+<li><a href="#wording">Wording</a><ol>
+<li><a href="#default-constructor">Default constructor</a></li>
+<li><a href="#copy-and-move-constructor">Copy and move constructor</a></li>
+<li><a href="#copy-and-move-assignment">Copy and move assignment</a></li>
+<li><a href="#destructor">Destructor</a></li>
+</ol>
+</li>
+<li><a href="#acknowledgments">Acknowledgments</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</div>
+
+<h2 id="introduction-and-revision-history">1. Introduction and Revision History<a class="self-link" href="#introduction-and-revision-history"></a></h2>
+<p>For a complete motivation for this proposal, see <a href="https://wg21.link/p0848" title="Conditionally Trivial Special Member Functions">P0848R0</a>. In brief, it is important for certain class template instantiations to propagate the triviality from their template parameters - that is, we want <code class="language-cpp">wrapper&lt;T&gt;</code> to be trivially copyable if and only if <code class="language-cpp">T</code> is copyable. In C++17, this is possible, yet is extremely verbose. The introduction of Concepts provides a path to make this propagation substantially easier to write, but the current definition of trivially copyable doesn't quite suffice for what we want.</p>
+<p>Consider:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+concept C = /* ... */;
+
+template &lt;typename T&gt;
+struct X {
+    // #1
+    X(X const&amp;) requires C&lt;T&gt; = default;
+
+    // #2
+    X(X const&amp; ) { /* ... */ }
+};</code></pre>
+
+
+<p>According to the current working draft, both <code class="language-cpp">#1</code> and <code class="language-cpp">#2</code> are copy constructors. The current definition for trivially copyable requires that <em>each</em> copy constructor be either deleted or trivial. That is, we always consider both copy constructors, regardless of <code class="language-cpp">T</code> and <code class="language-cpp">C&lt;T&gt;</code>, and hence no instantation of <code class="language-cpp">X</code> is ever trivially copyable. </p>
+<p>R0 of this paper, as presented in San Diego in November 2018, proposed to change the rules for trivially copyable such that we only consider the <em>best viable candidate</em> amongst the copy constructors given a synthesized overload resolution. That is, depending on <code class="language-cpp">C&lt;T&gt;</code>, we either consider only <code class="language-cpp">#2</code> (because <code class="language-cpp">#1</code> wouldn't be viable) or only <code class="language-cpp">#1</code> (because it would be more constrained than <code class="language-cpp">#2</code> and hence a better match). However, EWG considered this to be confusing as trivially copyable is a property of a type and adding overload resolution simply adds more questions about context (e.g. do we consider accessibility?). EWG requested a new mechanism to solve this problem.</p>
+<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
+<p>The following arguments and definitions are focused specifically on the copy constructor, but also apply similarly to the default constructor, the move constructor, the copy and move assignment operators, and the destructor.</p>
+<h3 id="special-member-function-candidates">2.1. Special member function candidates<a class="self-link" href="#special-member-function-candidates"></a></h3>
+<p>In the current working draft, the definition of copy constructor is, from [class.copy.ctor]:</p>
+<blockquote>
+<p>A non-template constructor for class <code class="language-cpp">X</code> is a copy constructor if its first parameter is of type <code class="language-cpp">X&amp;</code>, <code class="language-cpp">const X&amp;</code>,
+<code class="language-cpp">volatile X&amp;</code> or <code class="language-cpp">const volatile X&amp;</code>, and either there are no other parameters or else all other parameters
+have default arguments (9.2.3.6).</p>
+</blockquote>
+<p>By this definition, both <code class="language-cpp">#1</code> and <code class="language-cpp">#2</code> in the previous example are copy constructors - regardless of <code class="language-cpp">C&lt;T&gt;</code>. Instead, we could say that both of these functions are simply <em>candidates</em> to be copy constructors. For a given <em>cv</em>-qualification, a class can have multiple copy constructor candidates - but only have one copy constructor: the most constrained candidate of the candidates whose constraints are satisfied. If there is no most constrained candidate (that is, either there is no candidate or there is an ambiguity), then there is no copy constructor.</p>
+<p>With this approach, <code class="language-cpp">#1</code> and <code class="language-cpp">#2</code> are both copy constructor candidates for the signature <code class="language-cpp">X(X const&amp;)</code>. For a given instantiation, if <code class="language-cpp">C&lt;T&gt;</code> is not satisfied, there is only one candidate whose constraints are met and hence <code class="language-cpp">#2</code> is <em>the</em> copy constructor. If <code class="language-cpp">C&lt;T&gt;</code> is satisfied, then <code class="language-cpp">#1</code> is the most constrained candidate and hence it is <em>the</em> copy constructor. </p>
+<p>Using the example from R0:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T&gt;
+struct optional {
+    // #1
+    optional(optional const&amp;)
+        requires TriviallyCopyConstructible&lt;T&gt; &amp;&amp; CopyConstructible&lt;T&gt;
+        = default;
+
+    // #2
+    optional(optional const&amp; rhs)
+            requires CopyConstructible&lt;T&gt;
+       : engaged(rhs.engaged)
+    {
+        if (engaged) {
+            new (value) T(rhs.value);
+        }
+    }
+};</code></pre>
+
+
+<p>We have two copy constructor candidates: <code class="language-cpp">#1</code> and <code class="language-cpp">#2</code>. For <code class="language-cpp">T=unique_ptr&lt;int&gt;</code>, neither candidate has its constraints satisfied, so there is no copy constructor. For <code class="language-cpp">T=std::string</code>, only <code class="language-cpp">#2</code> has its constraints satisfied, so it is the copy constructor. For <code class="language-cpp">T=int</code>, both candidates have their constraints satisfied and <code class="language-cpp">#1</code> is more constrained than <code class="language-cpp">#2</code>, so <code class="language-cpp">#1</code> is the copy constructor.</p>
+<p>With the introduction of the notion of copy constructor candidates, and reducing the meaning of "copy constructor" to be the most constrained candidate, no change is necessary to the definition of trivially copyable; requiring that each copy constructor be trivial or deleted becomes the correct definition - and meets the requirements of making it easy to propagate triviality.</p>
+<h3 id="standard-impact">2.2. Standard Impact<a class="self-link" href="#standard-impact"></a></h3>
+<p>One important question is: now that we have two terms, copy constructor candidate and copy constructor, what do we have to change throughout the standard? In the latest working draft, <a href="https://wg21.link/n4778" title="Working Draft, Standard for Programming Language C++">N4778</a>, there are 79 uses of the term <em>copy constructor</em>. 27 of those are in the core language (several of which are in notes or example), and 52 in the library.</p>
+<p>Whenever the library uses "copy constructor," it really means this new refined definition of <em>the</em> copy constructor. Indeed, it's even more specific than that as the library only cares about the most constrained copy constructor candidate which takes an lvalue reference to <code class="language-cpp">const</code>. Hence, no library wording needs to change all.</p>
+<p>Of the 27 core language uses:</p>
+<ul>
+<li>2 are seemingly unnecessary: [class.temporary]/3 and [expr.call]/12 contain a complete redefinition of what it means for a type to be trivially copyable.</li>
+<li>2 refer to the new, proposed notion of copy constructor as the most constrained candidate</li>
+<li>12 refer to what this paper proposes to call a copy constructor candidate, mostly in [class.copy.ctor] but also when describing the copyability of lambdas.</li>
+<li>11 are non-normative, appearing in comments in examples or notes</li>
+</ul>
+<p>In other words, introducing this notion of a copy constructor candidate and the copy constructor would primarily require simply changing [class.copy.ctor], which in the working draft describes the rules for what a copy constructor is and when it would be generated. Just about everything outside of that section would not only not need to change, but arguably be silently improved - we typically only care about the most constrained copy constructor candidate and now the wording would actually say that.</p>
+<h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
+<p>Relative to N4791. Due to potential confusion with overload resolution, we are using the term "prospective" rather than the term "candidate" throughout.</p>
+<p>Change 9.4.2 [dcl.fct.def.default], paragraph 1:</p>
+<blockquote>
+<p>A function definition whose <em>function-body</em> is of the form <code class="language-cpp">= default ;</code> is called an <em>explicitly-defaulted definition</em>. A function that is explicitly defaulted shall</p>
+<ul>
+<li>be a <ins>prospective</ins> special member function <ins>([10.3.3])</ins> or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  </li>
+<li>not have default arguments.</li>
+</ul>
+</blockquote>
+<p>Insert into 9.4.2 [dcl.fct.def.default], paragraph 5:</p>
+<blockquote>
+<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function ([10.3.3]) that is not a special member function shall be defined as deleted.</ins> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
+</blockquote>
+<p>Insert into 10.3.3 [special], paragraph 1:</p>
+<blockquote>
+<p>The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and destructor ([class.dtor]) are special member functions. <ins>The prospective default constructors ([class.default.ctor]), prospective copy constructors, prospective move constructors ([class.copy.ctor]), prospective copy assignment operators, prospective move assignment operators ([class.copy.assign]), and prospective destructors ([class.dtor]) are <i>prospective special member functions</i>. </ins></p>
+</blockquote>
+<h3 id="default-constructor">3.1. Default constructor<a class="self-link" href="#default-constructor"></a></h3>
+<p>Change 10.3.4.1 [class.default.ctor], paragraph 1:</p>
+<blockquote>
+<p>A <em><ins>prospective</ins> default constructor</em> for a class <code class="language-cpp">X</code> is a constructor of class <code class="language-cpp">X</code> for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class <code class="language-cpp">X</code>, a non-explicit constructor having no parameters is implicitly declared as defaulted (9.4). An implicitly-declared default constructor is an inline public member of its class.   </p>
+<p><ins>A <em>default constructor</em> is a prospective default constructor such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins></li>
+</ul>
+</blockquote>
+<h3 id="copy-and-move-constructor">3.2. Copy and move constructor<a class="self-link" href="#copy-and-move-constructor"></a></h3>
+<p>Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:</p>
+<blockquote>
+<p>A non-template constructor for class <code class="language-cpp">X</code> is a <em><ins>prospective</ins> copy constructor</em> if its first parameter is of type <code class="language-cpp">X&amp;</code>, <code class="language-cpp">const X&amp;</code>, <code class="language-cpp">volatile X&amp;</code> or <code class="language-cpp">const volatile X&amp;</code>, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). </p>
+<p><ins>A <em>copy constructor</em> is a prospective copy constructor such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints (if any) are satisfied.</ins></li>
+</ul>
+<p><ins> [ <em>Note</em>: A class can have multiple copy constructors, provided they have different signatures <em>-end note</em>] </ins></p>
+</blockquote>
+<p>Introduce the concept of prospective move constructor in 10.3.4.2 [class.copy.ctor], paragraph 2:</p>
+<blockquote>
+<p>A non-template constructor for class X is a <em><ins>prospective</ins> move constructor</em> if its first parameter is of type <code class="language-cpp">X&amp;&amp;</code>, <code class="language-cpp">const X&amp;&amp;</code>, <code class="language-cpp">volatile X&amp;&amp;</code>, or <code class="language-cpp">const volatile X&amp;&amp;</code>, and either there are no other parameters or else all other
+parameters have default arguments (9.2.3.6).</p>
+<p><ins>A <em>move constructor</em> is a prospective move constructor such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective move constructor
+that has the same first parameter type and whose constraints (if any) are satisfied.</ins></li>
+</ul>
+<p><ins> [ <em>Note</em>: A class can have multiple move constructors, provided they have different signatures <em>-end note</em>] </ins></p>
+</blockquote>
+<p>Reduce the cases where we implicitly generate special members in 10.3.4.2 [class.copy.ctor], paragraph 6:</p>
+<blockquote>
+<p>If the class definition does not explicitly declare a <ins>prospective</ins> copy constructor, a non-explicit one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy constructor is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy assignment operator or a user-declared <ins>prospective</ins> destructor (D.5). <ins>[ <em>Note:</em> An implicitly-declared prospective copy constructor is a copy constructor. <em>-end note</em> ]</ins></p>
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 7:</p>
+<blockquote>
+<p>The implicitly-declared <ins>prospective</ins> copy constructor for a class <code class="language-cpp">X</code> will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X::X(const X&amp;)</code></pre>
+
+
+<p>if each potentially constructed subobject of a class type M (or array thereof) has a copy constructor whose first
+parameter is of type <code class="language-cpp">const M&amp;</code> or <code class="language-cpp">const volatile M&amp;</code>. Otherwise, the implicitly-declared <ins>prospective</ins> copy constructor will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X::X(X&amp;)</code></pre>
+
+
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 8:</p>
+<blockquote>
+<p>If the definition of a class <code class="language-cpp">X</code> does not explicitly declare a <ins>prospective</ins> move constructor, a non-explicit one will be implicitly declared as defaulted if and only if  </p>
+<p>— X does not have a user-declared <ins>prospective</ins> copy constructor,<br />
+— X does not have a user-declared <ins>prospective</ins> copy assignment operator,<br />
+— X does not have a user-declared <ins>prospective</ins> move assignment operator, and<br />
+— X does not have a user-declared <ins>prospective</ins> destructor.
+[<em>Note:</em> <ins>An implicitly-declared prospective move constructor is a move constructor.</ins> When <del>the</del> <ins>a</ins> <ins>prospective</ins> move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. <em>—end note</em>]</p>
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 9:</p>
+<blockquote>
+<p>The implicitly-declared <ins>prospective</ins> move constructor for class <code class="language-cpp">X</code> will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X::X(X&amp;&amp;)</code></pre>
+
+
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 13:</p>
+<blockquote>
+<p>Before <del>the</del> <ins>a</ins> defaulted copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.</p>
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 14:</p>
+<blockquote>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
+the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
+bases and members in a user-defined constructor (see 10.9.2). Let <code class="language-cpp">x</code> be either the parameter of <del>the</del> <ins>a copy</ins> constructor or, for <del>the</del> <ins>a</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:</p>
+<ul>
+<li>if the member is an array, each element is direct-initialized with the corresponding subobject of <code class="language-cpp">x</code>;  </li>
+<li>if a member <code class="language-cpp">m</code> has rvalue reference type <code class="language-cpp">T&amp;&amp;</code>, it is direct-initialized with <code class="language-cpp">static_cast&lt;T&amp;&amp;&gt;(x.m)</code>;  </li>
+<li>otherwise, the base or member is direct-initialized with the corresponding base or member of <code class="language-cpp">x</code>.  </li>
+</ul>
+<p>Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined copy/move constructor (see 10.9.2).</p>
+</blockquote>
+<p>Change 10.3.4.2 [class.copy.ctor], paragraph 15: </p>
+<blockquote>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a union X copies the object representation (6.7) of X.</p>
+</blockquote>
+<h3 id="copy-and-move-assignment">3.3. Copy and move assignment<a class="self-link" href="#copy-and-move-assignment"></a></h3>
+<p>Change 10.3.5 [class.copy.assign], paragraph 1:</p>
+<blockquote>
+<p>A user-declared <em><ins>prospective</ins> copy assignment operator</em> <code class="language-cpp">X::operator=</code> is a non-static non-template member function of class <code class="language-cpp">X</code> with exactly one parameter of type <code class="language-cpp">X</code>, <code class="language-cpp">X&amp;</code>, <code class="language-cpp">const X&amp;</code>, <code class="language-cpp">volatile X&amp;</code>, or <code class="language-cpp">const volatile X&amp;</code>.</p>
+<p><ins>A <em>copy assignment operator</em> is a prospective copy assignment operator such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy assignment operator
+that has the same parameter type and whose constraints (if any) are satisfied.</ins> </li>
+</ul>
+</blockquote>
+<p>[<em>Note:</em> An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. <em>—end note]</em> [<em>Note:</em> More than one form of copy assignment operator may be declared for a class. <em>—end note</em>] [<em>Note:</em> If a class <code class="language-cpp">X</code> only has a copy assignment operator with a parameter of type <code class="language-cpp">X&amp;</code>, an expression of type <code class="language-cpp">const X</code> cannot be assigned to an object of type <code class="language-cpp">X</code>. [<em>Example:</em></p>
+<p>Change 10.3.5 [class.copy.assign], paragraph 2:</p>
+<blockquote>
+<p>If the class definition does not explicitly declare a <ins>prospective</ins> copy assignment operator, one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy assignment operator is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy constructor or a user-declared <ins>prospective</ins> destructor (D.5). The implicitly-declared <ins>prospective</ins> copy assignment operator for a class <code class="language-cpp">X</code> will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X&amp; X::operator=(const X&amp;)</code></pre>
+
+
+<p>if</p>
+<ul>
+<li>each direct base class <code class="language-cpp">B</code> of <code class="language-cpp">X</code> has a copy assignment operator whose parameter is of type <code class="language-cpp">const B&amp;</code>,
+<code class="language-cpp">const volatile B&amp;</code>, or <code class="language-cpp">B</code>, and  </li>
+<li>for all the non-static data members of <code class="language-cpp">X</code> that are of a class type <code class="language-cpp">M</code> (or array thereof), each such class
+type has a copy assignment operator whose parameter is of type <code class="language-cpp">const M&amp;</code>, <code class="language-cpp">const volatile M&amp;</code>, or
+<code class="language-cpp">M</code>. </li>
+</ul>
+<p>Otherwise, the implicitly-declared <ins>prospective</ins> copy assignment operator will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X&amp; X::operator=(X&amp;)</code></pre>
+
+
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 3:</p>
+<blockquote>
+<p>A user-declared <em><ins>prospective</ins> move assignment operator</em> <code class="language-cpp">X::operator=</code> is a non-static non-template member function of class <code class="language-cpp">X</code> with exactly one parameter of type <code class="language-cpp">X&amp;&amp;</code>, <code class="language-cpp">const X&amp;&amp;</code>, <code class="language-cpp">volatile X&amp;&amp;</code>, or <code class="language-cpp">const volatile X&amp;&amp;</code>.</p>
+<p><ins>A <em>move assignment operator</em> is a prospective move assignment operator such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective move assignment operator
+that has the same parameter type and whose constraints (if any) are satisfied.</ins> </li>
+</ul>
+<p>[<em>Note:</em> An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. <em>—end note</em>] [<em>Note:</em> More than one form of move assignment operator may be declared for a class. <em>—end note</em>]</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 4:</p>
+<blockquote>
+<p>If the definition of a class X does not explicitly declare a <ins>prospective</ins> move assignment operator, one will be implicitly declared as defaulted if and only if</p>
+<ul>
+<li>X does not have a user-declared <ins>prospective</ins> copy constructor,  </li>
+<li>X does not have a user-declared <ins>prospective</ins> move constructor,  </li>
+<li>X does not have a user-declared <ins>prospective</ins> copy assignment operator, and  </li>
+<li>X does not have a user-declared <ins>prospective</ins> destructor.</li>
+</ul>
+<p>[<em>Example</em>: The class definition</p>
+<pre class="codehilite"><code class="language-cpp">struct S {
+  int a;
+  S&amp; operator=(const S&amp;) = default;
+};</code></pre>
+
+
+<p>will not have a default move assignment operator implicitly declared because <del>the</del> <ins>a</ins> <ins>prospective</ins> copy assignment operator has been user-declared. <del>The</del> <ins>A</ins> <ins>prospective</ins> move assignment operator may be explicitly defaulted.</p>
+<pre class="codehilite"><code class="language-cpp">struct S {
+  int a;
+  S&amp; operator=(const S&amp;) = default;
+  S&amp; operator=(S&amp;&amp;) = default;
+};</code></pre>
+
+
+<p>—<em>end example</em>]</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 5: </p>
+<blockquote>
+<p>The implicitly-declared <ins>prospective</ins> move assignment operator for a class X will have the form</p>
+<pre class="codehilite"><code class="language-cpp">X&amp; X::operator=(X&amp;&amp;);</code></pre>
+
+
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 6:</p>
+<blockquote>
+<p><del>The</del> <ins>An</ins> implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type <code class="language-cpp">X&amp;</code>; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 8:</p>
+<blockquote>
+<p>Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 10:</p>
+<blockquote>
+<p>A copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if</p>
+<ul>
+<li>X is a literal type, and</li>
+<li>the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and</li>
+<li>for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.</li>
+</ul>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 11:</p>
+<blockquote>
+<p>Before <del>the</del> <ins>a</ins> defaulted copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [<em>Note: An implicitly-declared copy/move assignment operator has an implied exception specification ([except.spec]). —</em>end note*]</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 12: </p>
+<blockquote>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:</p>
+<ul>
+<li>[...]  </li>
+</ul>
+<p>It is unspecified whether subobjects representing virtual base classes are assigned more than once by <del>the</del> <ins>an</ins> implicitly-defined copy/move assignment operator.</p>
+</blockquote>
+<p>Change 10.3.5 [class.copy.assign], paragraph 13:</p>
+<blockquote>
+<p><del>The</del> <ins>An</ins> implicitly-defined copy assignment operator for a union X copies the object representation ([basic.types]) of X.</p>
+</blockquote>
+<h3 id="destructor">3.4. Destructor<a class="self-link" href="#destructor"></a></h3>
+<p>Change 10.3.6 [class.dtor], paragraph 1:</p>
+<blockquote>
+<p>In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each <em>decl-specifier</em> of the <em>decl-specifier-seq</em> of a <ins>prospective</ins> destructor declaration (if any) shall be <code class="language-cpp">friend</code>, <code class="language-cpp">inline</code>, or <code class="language-cpp">virtual</code>.</p>
+<p><ins>A <em>destructor</em> is a prospective destructor such that</ins></p>
+<ul>
+<li><ins>all of its constraints (if any) are satisfied, and</ins></li>
+<li><ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints (if any) are satisfied.</ins> </li>
+</ul>
+<p><ins>A class shall have a destructor.</ins></p>
+</blockquote>
+<p>Change 10.3.6 [class.dtor], paragraph 4:</p>
+<blockquote>
+<p>If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.</p>
+<p><ins>An implicitly-declared prospective destructor for a class X will have the form</p>
+<pre class="codehilite"><code class="language-cpp">~X()</code></pre>
+
+
+</blockquote>
+<p>Change 10.3.6 [class.dtor], paragraph 10:</p>
+<blockquote>
+<p>A <ins>prospective</ins> destructor can be declared <code class="language-cpp">virtual</code> (10.6.2) or pure <code class="language-cpp">virtual</code> (10.6.3); if <ins>the destructor of a class is <code class="language-cpp">virtual</code> and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
+</blockquote>
+<h2 id="acknowledgments">4. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
+<p>Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer for the wording wizardry. </p>
+<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4778.pdf">[N4778]</a><span style="margin-left: 5px;">"Working Draft, Standard for Programming Language C++" by Richard Smith, 2018-10-08</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0848r1.html">[P0848]</a><span style="margin-left: 5px;">"Conditionally Trivial Special Member Functions" by Barry Revzin, Casey Carter, 2019-01-18</span></li></ul>
+</html>

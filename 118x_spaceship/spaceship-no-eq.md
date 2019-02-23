@@ -1,9 +1,11 @@
 Title: `<=> != ==`
-Document-Number: P1185R1
+Document-Number: P1185R2
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: CWG, EWG
 
 # Revision History
+
+R1 of this paper was presented to Evolution in Kona, who preferred that defaulted `operator<=>` unconditionally declares defaulted `operator==`. This has been noted in the questions section. 
 
 R0 of this paper was approved in its entirety by Evolution in San Diego. This new revision contains brand new wording after core review. There were two [design questions](#core-design-questions) brought up by Core during this review, both based on the meaning of implicitly generated `==`, which are discussed in this revision.
 
@@ -714,6 +716,10 @@ The question is: what is the intent of the class author of `wrapper`? Arguably, 
 Just to ensure that we really do _get the defaults_. And at that point, we've basically obviated the feature. 
 
 The intent of the proposal that defaulting `<=>` gets you defaulted `==` is very much that defaulting `<=>` really means also having declared defaulted `==`. Option B does not get us there, and Option C definitely does not get us anywhere. I believe Option A is the clear choice here. 
+
+## Answers to Core Questions
+
+Evolution preferred that declaring `operator<=>` unconditionally declare defaulted `operator==`. Whether or not `operator<=>` is defined as deleted is orthogonal. This was option (a) above. 
         
 # Wording
 
@@ -726,11 +732,15 @@ Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:
 
 Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
-> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member of the form</ins>  
+> <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member and is defined as defaulted in the definition of `X`. If the three-way comparison operator function is declared as a non-static const member, the implicitly-declared `==` operator function is a member of the form</ins>
 
 > &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
 
-> <ins>and is defined as defaulted in the definition of `X`. The operator is a `constexpr` function if its definition would satisfy the requirements for a `constexpr` function. <i>[ Note: </i> the `==` operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i>
+> <ins>Otherwise, the implicitly-declared `==` operator function is of the form</ins>
+
+> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>friend bool operator==(const X&, const X&)</code></ins>  
+
+> <ins>The operator is a `constexpr` function if its definition would satisfy the requirements for a `constexpr` function. <i>[ Note: </i> the `==` operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i>
 
 Replace 10.10.1 [class.compare.default] paragraph 2:
 
@@ -741,7 +751,7 @@ with:
 > <ins>A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:</ins>
 > 
 - <ins>`C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or</ins>
-- <ins>`C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is well-formed when contextually converted to `bool`, and all of `C`'s base class subobjects and non-static data members have strong structural equality.</ins> 
+- <ins>`C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is well-formed when contextually converted to `bool`, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.</ins> 
 
 Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:
 
@@ -818,17 +828,17 @@ Change 11.3.1.2 [over.match.oper] paragraph 8:
 >  If a rewritten candidate is selected by overload resolution for <del>an</del> <ins>a relational or three-way comparison</ins> operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order
 of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. <ins>If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.</ins>
 
-Change 12.1 [temp.param]/4 to refer to `==` instead of `<=>`:
+Change 12.1 [temp.param]/4:
 
-> a type that is literal, has strong structural equality ([class.compare.default]), has no mutable or volatile subobjects, and in which if there is a defaulted member <del><code>operator&lt;=&gt;</code></del> <ins><code>operator==</code></ins>, then it is declared public,
+> a type that is literal<del>,</del><ins> and</ins> has strong structural equality ([class.compare.default])<del>, has no mutable or volatile subobjects, and in which if there is a defaulted member <code>operator&lt;=&gt;</code>, then it is declared public,</del>
 
 Change the example in 12.1 [temp.param]/p6 to default `==` instead of `<=>`.
 
-<blockquote><pre><code>struct A { friend auto <del>operator&lt;=&gt;</del> <ins>operator==</ins>(const A&, const A&) = default; };</code></pre></blockquote>
+<blockquote><pre><code>struct A { friend <del>auto operator&lt;=&gt;</del> <ins>bool operator==</ins>(const A&, const A&) = default; };</code></pre></blockquote>
 
 Change the example in 12.3.2 [temp.arg.nontype]/p4 to default `==` instead of `<=>` (and additionally fix its arity):
 
-<blockquote><pre><code>auto <del>operator&lt;=&gt;(A, A)</del> <ins>operator==(const A&) const</ins> = default;</code></pre></blockquote>
+<blockquote><pre><code><del>auto operator&lt;=&gt;(A, A)</del> <ins>bool operator==(const A&) const</ins> = default;</code></pre></blockquote>
 
 Change 12.5 [temp.type] to refer to `==` instead of `<=>`:
 

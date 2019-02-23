@@ -1,5 +1,5 @@
 Title: Conditionally Trivial Special Member Functions
-Document-Number: P0848R1
+Document-Number: D0848R2
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Casey Carter, casey at carter dot net
 Audience: CWG
@@ -91,23 +91,24 @@ Change 9.4.2 [dcl.fct.def.default], paragraph 1:
 
 > A function definition whose _function-body_ is of the form `= default ;` is called an _explicitly-defaulted definition_. A function that is explicitly defaulted shall
 > 
-> - be a <ins>prospective</ins> special member function or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  
+> - be a <ins>prospective</ins> special member function <ins>([10.3.3])</ins> or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  
 > - not have default arguments.
 
 Insert into 9.4.2 [dcl.fct.def.default], paragraph 5:
 
-> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function that is not a special member function shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
+> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function ([10.3.3]) that is not a special member function shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
+
+Insert into 10.3.3 [special], paragraph 1:
+
+> The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and destructor ([class.dtor]) are special member functions. <ins>The prospective default constructors ([class.default.ctor]), prospective copy constructors, prospective move constructors ([class.copy.ctor]), prospective copy assignment operators, prospective move assignment operators ([class.copy.assign]), and prospective destructors ([class.dtor]) are <i>prospective special member functions</i>. </ins>
 
 ## Default constructor
 
 Change 10.3.4.1 [class.default.ctor], paragraph 1:
 
-> A _<ins>prospective</ins> default constructor_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class `X`, a non-explicit<ins> inline public</ins> constructor <del>having no parameters</del> is implicitly declared as defaulted (9.4). <del>An implicitly-declared default constructor is an inline public member of its class.</del> <ins>Such a constructor will have the form:</ins>
-> 
-    :::cpp
-    X()
+> A _<ins>prospective</ins> default constructor_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class `X`, a non-explicit constructor having no parameters is implicitly declared as defaulted (9.4). An implicitly-declared default constructor is an inline public member of its class.   
 
-> <ins>A prospective default constructor is a _default constructor_ if</ins>
+> <ins>A _default constructor_ is a prospective default constructor such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins>
@@ -118,7 +119,7 @@ Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ct
 
 > A non-template constructor for class `X` is a _<ins>prospective</ins> copy constructor_ if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). 
 
-> <ins>A prospective copy constructor is a _copy constructor_ if</ins>
+> <ins>A _copy constructor_ is a prospective copy constructor such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints (if any) are satisfied.</ins>
@@ -130,7 +131,7 @@ Introduce the concept of prospective move constructor in 10.3.4.2 [class.copy.ct
 > A non-template constructor for class X is a _<ins>prospective</ins> move constructor_ if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
 parameters have default arguments (9.2.3.6).
 
-> <ins>A prospective move constructor is a _move constructor_ if</ins>
+> <ins>A _move constructor_ is a prospective move constructor such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move constructor
@@ -197,7 +198,7 @@ Change 10.3.5 [class.copy.assign], paragraph 1:
 
 > A user-declared _<ins>prospective</ins> copy assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`.
 
-> <ins>A prospective copy assignment operator is a _copy assignment operator_ if</ins>
+> <ins>A _copy assignment operator_ is a prospective copy assignment operator such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy assignment operator
@@ -228,7 +229,7 @@ Change 10.3.5 [class.copy.assign], paragraph 3:
 
 > A user-declared _<ins>prospective</ins> move assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`.
 
-> <ins>A prospective move assignment operator is a _move assignment operator_ if</ins>
+> <ins>A _move assignment operator_ is a prospective move assignment operator such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move assignment operator
@@ -300,7 +301,7 @@ Change 10.3.6 [class.dtor], paragraph 1:
 
 > In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a <ins>prospective</ins> destructor declaration (if any) shall be `friend`, `inline`, or `virtual`.
 
-> <ins>A prospective destructor is a _destructor_ if</ins>
+> <ins>A _destructor_ is a prospective destructor such that</ins>
 > 
 > - <ins>all of its constraints (if any) are satisfied, and</ins>
 > - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints (if any) are satisfied.</ins> 

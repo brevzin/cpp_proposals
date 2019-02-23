@@ -1,9 +1,11 @@
 Title: When do you actually use `<=>`?
-Document-Number: P1186R1
+Document-Number: D1186R2
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG
 
 # Revision History
+
+[R1](https://wg21.link/p1186r1) of this paper was presented in EWG in Kona. It was approved with a modification that synthesis of `weak_ordering` is only done by using both `==` and `<`. The previous versions of this proposal would try to fall-back to invoking `<` twice. 
 
 [R0](https://wg21.link/p1186r0) of this paper was approved by both EWG and LEWG. Under Core review, the issue of [unintentional comparison category strengthening](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening) was brought up as a reason to strongly oppose the design. As a result, this revision proposes a different way to solve the issues presented in R0.
 
@@ -395,6 +397,7 @@ Meaning
     };
     
     struct Q {
+        bool operator==(Q const&) const;
         bool operator<(Q const&) const;
     };
     
@@ -412,6 +415,7 @@ Meaning
     };
     
     struct Q {
+        bool operator==(Q const&) const;
         bool operator<(Q const&) const;
     };
     
@@ -423,10 +427,10 @@ Meaning
         {
             if (auto cmp = w <=> rhs.w; cmp != 0) return cmp;
             
-            // synthesizing weak_ordering from JUST <
-            if (q < rhs.q) return weak_ordering::less;
-            if (rhs.q < q) return weak_ordering::greater;
-            return weak_ordering::equivalent;
+            // synthesizing weak_ordering from == and <
+            if (q == rhs.q) return weak_ordering::equivalent;
+            if (q < rhs.q)  return weak_ordering::less;
+            return weak_ordering::greater;
         }
     };
 </td>
@@ -587,9 +591,7 @@ Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 - <ins>If `a <=> b` is well-formed and convertible to `R`, `a <=> b`;</ins>
 - <ins>Otherwise, if `a <=> b` is well-formed, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is ill-formed;</ins>
 - <ins>Otherwise, if `R` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
-- <ins>Otherwise, if `R` is `weak_ordering`, then:</ins>
-    - <ins>If `a == b` is well-formed and convertible to `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
-    - <ins>Otherwise, `(a < b) ? weak_ordering::less : ((b < a) ? weak_ordering::greater : weak_ordering::equivalent)`;</ins>
+- <ins>Otherwise, if `R` is `weak_ordering`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
 - <ins>Otherwise, if `R` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
 - <ins>Otherwise, if `R` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
 - <ins>Otherwise, if `R` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>

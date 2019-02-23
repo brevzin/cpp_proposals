@@ -601,7 +601,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1189R0 <br />
-Date: 2019-02-09 <br />
+Date: 2019-02-22 <br />
 Audience: LEWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -614,8 +614,10 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#non-member-hidden-friend-or-member">Non-member, hidden friend, or member?</a></li>
 </ol>
 </li>
-<li><a href="#most-operators-are-obsolete">Most operator!=()s are obsolete</a><ol>
+<li><a href="#dealing-with-operator-and-operator">Dealing with operator==() and operator!=()</a><ol>
+<li><a href="#most-operators-are-obsolete">Most operator!=()s are obsolete</a></li>
 <li><a href="#reversed-operators-too">Reversed operator==s too</a></li>
+<li><a href="#defaulting-operator">Defaulting operator==()</a></li>
 </ol>
 </li>
 <li><a href="#adding-to-stdbasic_string">Adding &lt;=&gt; to std::basic_string</a><ol>
@@ -801,15 +803,17 @@ struct C {
 
 <p>Today, this goes through the global <code class="language-cpp">operator&lt;</code> template (<code class="language-cpp">#2</code>). The <code class="language-cpp">operator&lt;</code> taking two <code class="language-cpp">basic_string</code>s (<code class="language-cpp">#1</code>) is not a candidate because <code class="language-cpp">C</code> is not a <code class="language-cpp">basic_string</code>. However, if we change <code class="language-cpp">basic_string</code> to instead have a member spaceship operator... then this spaceship (<code class="language-cpp">#3</code>) suddenly not only becomes a candidate (since <code class="language-cpp">C</code> is convertible to <code class="language-cpp">string</code>) but actually becomes the best viable candidate because the tie-breaker preferring a non-template to a template is higher than the tie-breaker preferring a non-rewritten candidate to a rewritten one. The same thing would happen in the case of a hidden (non-template) friend.</p>
 <p>This seems like a fairly contrived scenario. Though like all fairly contrived scenarios, it assuredly exists in some C++ code base somewhere. The most conservative approach would be to stay put and keep the proposed <code class="language-cpp">operator&lt;=&gt;</code>s as non-member operator templates. But there are very clear benefits of making them member functions, so I think member <code class="language-cpp">operator&lt;=&gt;</code> is still the way to go.</p>
-<h2 id="most-operators-are-obsolete">2. Most <code class="language-cpp">operator!=()</code>s are obsolete<a class="self-link" href="#most-operators-are-obsolete"></a></h2>
-<p><a href="https://wg21.link/p1185r1" title="&lt;=&gt; != ==">P1185R1</a> will likely be moved in Kona. R0 was approved by EWG in San Diego. There is still an open design question, but it is about a part of that proposal which is irrelevant to this paper. Importantly, the first part of that paper changes the candidate set for inequality operators to include equality operators. In other words, for types in which <code class="language-cpp">a != b</code> is defined to mean <code class="language-cpp">!(a == b)</code>, we no longer need to define <code class="language-cpp">operator!=</code>. The language will simply do the right thing for us.</p>
-<p>Just about every <code class="language-cpp">operator!=()</code> in the library does this. Indeed, we have blanket wording in [operators] which lets us avoid having to write the boilerplate every time. The only exceptions to this are:</p>
+<h2 id="dealing-with-operator-and-operator">2. Dealing with <code class="language-cpp">operator==()</code> and <code class="language-cpp">operator!=()</code><a class="self-link" href="#dealing-with-operator-and-operator"></a></h2>
+<p>Before getting to how to handle <code class="language-cpp">operator&lt;=&gt;()</code> for all of these situations, let's first talk about the equality operators. There are several changes to how these operators behave as a result of <a href="https://wg21.link/p1185r1" title="&lt;=&gt; != ==">P1185R1</a> (R0 was approved by EWG in San Diego, R1 will likely be moved in Kona - there is still an open design question, but it is about a part of that proposal which is irrelevant to this paper). </p>
+<h3 id="most-operators-are-obsolete">2.1. Most <code class="language-cpp">operator!=()</code>s are obsolete<a class="self-link" href="#most-operators-are-obsolete"></a></h3>
+<p>The first part of P1185R1 changes the candidate set for inequality operators to include equality operators. In other words, for types in which <code class="language-cpp">a != b</code> is defined to mean <code class="language-cpp">!(a == b)</code>, we no longer need to define <code class="language-cpp">operator!=</code>. The language will simply do the right thing for us.
+Just about every <code class="language-cpp">operator!=()</code> in the library does this. Indeed, we have blanket wording in [operators] which lets us avoid having to write the boilerplate every time. The only exceptions to this are:</p>
 <ul>
 <li>the types in the group represented by <code class="language-cpp">std::optional</code>, which will be discussed <a href="#adding-to-stdoptional">later</a></li>
 <li><code class="language-cpp">std::valarray</code>, for which <code class="language-cpp">==</code> doesn't really mean equality anyway</li>
 </ul>
 <p>The other ~250 declarations of <code class="language-cpp">operator!=()</code> can just be removed entirely. The semantics for all callers will remain the same. </p>
-<h3 id="reversed-operators-too">2.1. Reversed <code class="language-cpp">operator==</code>s too<a class="self-link" href="#reversed-operators-too"></a></h3>
+<h3 id="reversed-operators-too">2.2. Reversed <code class="language-cpp">operator==</code>s too<a class="self-link" href="#reversed-operators-too"></a></h3>
 <p>Some library types provided mixed-type equality operators. For example, the class template <code class="language-cpp">std::basic_string</code> provides the following equality and inequality operators today:</p>
 <pre class="codehilite"><code class="language-cpp">// #1
 template &lt;typename CharT, typename Traits, typename Alloc&gt;
@@ -865,6 +869,15 @@ bool operator!=(CharT const*, basic_string&lt;CharT, Traits, Alloc&gt; const&amp
 <li><code class="language-cpp">sub_match</code> / <code class="language-cpp">value_type const&amp;</code></li>
 </ul>
 <p>Note that even though this paper is not removing <code class="language-cpp">optional&lt;T&gt;</code>'s or <code class="language-cpp">valarray&lt;T&gt;</code>s <code class="language-cpp">operator!=</code>s as a whole, it can still remove the reversed <code class="language-cpp">operator==</code>s and the corresponding reversed <code class="language-cpp">operator!=</code>s.</p>
+<h3 id="defaulting-operator">2.3. Defaulting <code class="language-cpp">operator==()</code><a class="self-link" href="#defaulting-operator"></a></h3>
+<p>Another important aspect of P1185 is that it redefines "strong structural equality" to be based on a defaulted <code class="language-cpp">operator==()</code> rather than a defaulted <code class="language-cpp">operator&lt;=&gt;()</code>, which is the requirement for a type being usable as a non-type template parameter - a new C++20 language feature introduced by way of <a href="https://wg21.link/p0732r2" title="Class Types in Non-Type Template Parameters">P0732R2</a></p>
+<p>There are many library types which currently define their <code class="language-cpp">operator==()</code> as member-wise equality. Respecifying all of these <code class="language-cpp">operator==()</code>s as being <code class="language-cpp">default</code>ed instead will not change any semantics or ABI, but will simply directly allow these types to be usable as non-type template parameters. So this paper proposes to do that for:</p>
+<ul>
+<li><code class="language-cpp">pair</code></li>
+<li><code class="language-cpp">tuple</code></li>
+<li><code class="language-cpp">array</code></li>
+</ul>
+<p>... and any library type that meets this member-wise equality condition that is missing from the above list.</p>
 <h2 id="adding-to-stdbasic_string">3. Adding <code class="language-cpp">&lt;=&gt;</code> to <code class="language-cpp">std::basic_string</code><a class="self-link" href="#adding-to-stdbasic_string"></a></h2>
 <p>This group is composed of templates which implement their comparisons via <code class="language-cpp">Traits::compare()</code>: <code class="language-cpp">std::basic_string</code>, <code class="language-cpp">std::basic_string_view</code>, and <code class="language-cpp">std::sub_match</code>. Because <code class="language-cpp">Traits::compare()</code> is already a three-way comparison, this seems like a trivial case. Just write this and ship it right?</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename CharT, typename Traits, typename Alloc&gt;
@@ -1190,5 +1203,5 @@ class shared_ptr {
 <p>Remove <code class="language-cpp">operator&lt;</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, and <code class="language-cpp">operator&gt;=</code> for <code class="language-cpp">unique_ptr</code> and <code class="language-cpp">shared_ptr</code> and replace them with <code class="language-cpp">operator&lt;=&gt;</code>s which go through the proposed <code class="language-cpp">compare_3way</code> function object in the same way that the preexisting comparisons do today. These <code class="language-cpp">operator&lt;=&gt;</code>s should be member functions.</p>
 <h2 id="acknowledgements">7. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
 <p>Thanks to David Stone for all the rest of the library work. Thanks to Agustín Bergé, Tim Song, Herb Sutter, and Jonathan Wakely for discussing issues around these cases. </p>
-<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/LWG/issue3065">[LWG3065]</a><span style="margin-left: 5px;">"LWG 2989 missed that all path's other operators should be hidden friends as well" by Billy O'Neal III, 2018-11-13</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
+<h2 id="references">8. References<a class="self-link" href="#references"></a></h2><ul><li><a href="https://cplusplus.github.io/LWG/issue3065">[LWG3065]</a><span style="margin-left: 5px;">"LWG 2989 missed that all path's other operators should be hidden friends as well" by Billy O'Neal III, 2018-11-13</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0307r2.pdf">[P0307R2]</a><span style="margin-left: 5px;">"Making Optional Greater Equal Again" by Tony Van Eerd, 2016-03-15</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.gotw.ca/gotw/029.htm">[gotw.29]</a><span style="margin-left: 5px;">"GotW #29: Strings" by Herb Sutter, 1998-01-03</span></li></ul>
 </html>
