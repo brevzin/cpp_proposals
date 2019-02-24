@@ -622,6 +622,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#clause-17-concepts-library">Clause 17: Concepts Library</a></li>
 <li><a href="#clause-18-diagnostics-library">Clause 18: Diagnostics Library</a></li>
 <li><a href="#clause-19-general-utilities-library">Clause 19: General utilities library</a></li>
+<li><a href="#clause-24-algorithms-library">Clause 24: Algorithms library</a></li>
 </ol>
 </li>
 <li><a href="#references">References</a></li>
@@ -643,11 +644,21 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <p>LEWG's unanimous preference was that <code class="language-cpp">operator&lt;=&gt;</code>s be declared as hidden friends.</p>
 <h2 id="wording">2. Wording<a class="self-link" href="#wording"></a></h2>
 <h3 id="clause-15-library-introduction">2.1. Clause 15: Library Introduction<a class="self-link" href="#clause-15-library-introduction"></a></h3>
-<p>Strike [operators].</p>
+<p>Remove 15.4.2.3 [operators].</p>
 <h3 id="clause-16-language-support-library">2.2. Clause 16: Language support library<a class="self-link" href="#clause-16-language-support-library"></a></h3>
-<p>Changed types:</p>
+<p>Added:</p>
 <ul>
-<li><code class="language-cpp">std::type_info</code></li>
+<li><code class="language-cpp">compare_three_way_result</code></li>
+<li><code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code></li>
+<li><code class="language-cpp">compare_three_way</code></li>
+</ul>
+<p>Changed operators for:</p>
+<ul>
+<li><code class="language-cpp">type_info</code></li>
+</ul>
+<p>Removed:</p>
+<ul>
+<li><code class="language-cpp">compare_3way()</code></li>
 </ul>
 <p>In 16.7.2 [type.info], remove <code class="language-cpp">operator!=</code>:</p>
 <blockquote><pre><code>namespace std {
@@ -672,10 +683,112 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <pre><code><del>bool operator!=(const type_info&amp; rhs) const noexcept;</del></code></pre>
 <del><em>Returns</em>: <code class="language-cpp">!(*this == rhs)</code>.</del></p>
 </blockquote>
+<p>Add into 16.11.1 [compare.syn]:</p>
+<blockquote><pre><code>namespace std {
+  [...]
+
+  // [cmp.common], common comparison category type  
+  template&lt;class... Ts&gt;
+  struct common_comparison_category {
+    using type = see below;
+  };
+  template&lt;class... Ts&gt;
+    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
+
+  <ins>// [cmp.threewaycomparable], concept ThreeWayComparable</ins>
+  <ins>template&lt;class T, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparable = <i>see below</i>;</ins>
+  <ins>template&lt;class T, class U, class Cat = weak_equality&gt;</ins>
+    <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
+
+  <ins>// [cmp.???], compare_three_way_result</ins>
+  <ins>template&lt;class T, class U = T&gt; struct compare_three_way_result;</ins>
+
+  <ins>template&lt;class T, class U = T&gt;</ins>
+  <ins>  using compare_three_way_result_t = typename compare_three_way_result&lt;T, U&gt;::type;</ins>
+
+  <ins>// [cmp.???], compare_three_way</ins>
+  <ins>struct compare_three_way;</ins>
+  [...]
+}</code></pre></blockquote>
+
+<p>Add a new clause [cmp.threewaycomparable]. We don't need to add any new semantic constraints. The requirement that the <code class="language-cpp">&lt;=&gt;</code>s used have to be equality-preserving is picked up through [concepts.equality] already.</p>
+<blockquote>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename Cat&gt;
+  concept compares-as = // exposition only
+    Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;
+
+template &lt;typename T, typename Cat=std::weak_equality&gt;
+  concept ThreeWayComparable =
+    requires(const remove_reference_t&lt;T&gt;&amp; a,
+             const remove_reference_t&lt;T&gt;&amp; b) {
+      { a &lt;=&gt; b } -&gt; compares-as&lt;Cat&gt;;
+    };
+
+template &lt;typename T, typename U,
+          typename Cat=std::weak_equality&gt;
+  concept ThreeWayComparableWith = 
+    ThreeWayComparable&lt;T, Cat&gt; &amp;&amp;
+    ThreeWayComparable&lt;U, Cat&gt; &amp;&amp;
+    CommonReference&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt; &amp;&amp;
+    ThreeWayComparable&lt;
+      common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;,
+      Cat&gt; &amp;&amp;
+    requires(const remove_reference_t&lt;T&gt;&amp; t,
+             const remove_reference_t&lt;U&gt;&amp; u) {
+      { t &lt;=&gt; u } -&gt; compares-as&lt;Cat&gt;;
+      { u &lt;=&gt; t } -&gt; compares-as&lt;Cat&gt;;
+    };</code></pre>
+
+
+</blockquote>
+<p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named [cmp.???]:</p>
+<blockquote>
+<p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_three_way_result</code> template defined in this subclause is undefined.</p>
+<p>For the <code class="language-cpp">compare_three_way_result</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> shall equal <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there shall be no member <code class="language-cpp">type</code>.</p>
+</blockquote>
+<p>Add a new specification for <code class="language-cpp">compare_three_way</code> in a new clause named [cmp.???]:</p>
+<blockquote>
+<p>In this subclause, <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> for types <code class="language-cpp">T</code> and <code class="language-cpp">U</code> is a boolean constant expression. <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> is <code class="language-cpp">true</code> if and only if <code class="language-cpp">&lt;=&gt;</code> in the expression <code class="language-cpp">declval&lt;T&gt;() &lt;=&gt; declval&lt;U&gt;()</code> resolves to a built-in operator comparing pointers.</p>
+<p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operator <code class="language-cpp">&lt;=&gt;</code>.</p>
+<pre class="codehilite"><code class="language-cpp">struct compare_three_way {
+  template&lt;class T, class U&gt;
+    requires ThreeWayComparableWith&lt;T,U&gt; || BUILTIN_PTR_3WAY(T, U)
+  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp;u) const;
+
+  using is_transparent = unspecified;
+};</code></pre>
+
+
+<p><em>Expects</em>: If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>, the conversion sequences from both <code class="language-cpp">T</code> and <code class="language-cpp">U</code> to <code class="language-cpp">P</code> shall be equality-preserving ([concepts.equality]).</p>
+<p><em>Effects</em>: </p>
+<ul>
+<li>If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>: returns <code class="language-cpp">strong_ordering::less</code> if (the converted value of) <code class="language-cpp">t</code> precedes <code class="language-cpp">u</code> in the implementation-defined strict total order over pointers of type <code class="language-cpp">P</code>, <code class="language-cpp">strong_ordering::greater</code> if <code class="language-cpp">u</code> precedes <code class="language-cpp">t</code>, and otherwise <code class="language-cpp">strong_ordering::equal</code>.</li>
+<li>Otherwise, equivalent to: <code class="language-cpp">return std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u);</code></li>
+</ul>
+</blockquote>
+<p>Add a new specification-only shouty caps algorithm and type trait. Note that this is subtly different from the <a href="https://wg21.link/p1186r1" title="When do you actually use &lt;=&gt;?">P1186R1</a> algorithm <code class="language-cpp">3WAY&lt;weak_ordering&gt;</code> since that one synthesizes a <code class="language-cpp">weak_ordering</code> from both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>, whereas this one (for backwards compatibility with C++17) only uses <code class="language-cpp">&lt;</code>.</p>
+<blockquote>
+<p>Given type <code class="language-cpp">T</code> and two lvalues of type <code class="language-cpp">T</code>, define <code class="language-cpp">SYNTH_3WAY(a, b)</code> as follows:</p>
+<ul>
+<li><code class="language-cpp">a &lt;=&gt; b</code> when <code class="language-cpp">T</code> models <code class="language-cpp">ThreeWayComparable</code>;</li>
+<li>Otherwise, equivalent to:<pre class="codehilite"><code class="language-cpp">if (a &lt; b) return weak_ordering::less;
+if (b &lt; a) return weak_ordering::greater;
+return weak_ordering::equivalent;</code></pre>
+
+
+</li>
+</ul>
+<p>Define <code class="language-cpp">SYNTH_3WAY_TYPE&lt;T&gt;</code> as follows:</p>
+<ul>
+<li><code class="language-cpp">compare_three_way_result_t&lt;T&gt;</code> when <code class="language-cpp">T</code> models <code class="language-cpp">ThreeWayComparable</code>;</li>
+<li>Otherwise, <code class="language-cpp">weak_ordering</code></li>
+</ul>
+</blockquote>
 <h3 id="clause-17-concepts-library">2.3. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
 <p>Nothing.</p>
 <h3 id="clause-18-diagnostics-library">2.4. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
-<p>Changed types:</p>
+<p>Changed operators for:</p>
 <ul>
 <li><code class="language-cpp">error_category</code></li>
 <li><code class="language-cpp">error_code</code></li>
@@ -758,5 +871,221 @@ return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote>
 return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
 </blockquote>
 <h3 id="clause-19-general-utilities-library">2.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
+<p>Changed operators for:</p>
+<ul>
+<li><code class="language-cpp">pair</code></li>
+</ul>
+<p>Change 19.2.1 [utility.syn]</p>
+<blockquote><pre><code>#include <initializer_list> // see 16.10.1
+
+namespace std {
+  [...]
+  // 19.4, class template pair
+  template&lt;class T1, class T2&gt;
+  struct pair;
+
+  <del>// 19.4.3, pair specialized algorithms</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator==(const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator!=(const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator&lt; (const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator&gt; (const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator&lt;=(const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>constexpr bool operator&gt;=(const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 19.4.2 [pairs.pair]:</p>
+<blockquote><pre><code>namespace std {
+template&lt;class T1, class T2&gt;
+struct pair {
+  [...]
+  constexpr void swap(pair& p) noexcept(<i>see below</i>);
+
+  <ins>friend constexpr bool operator==(const pair&, const pair&) = default;</ins>
+  <ins>friend constexpr auto operator<=>(const pair&, const pair&)</ins>
+  <ins>  -> common_comparison_category_t&lt;SYNTH_3WAY_TYPE&lt;T1&gt;, SYNTH_3WAY_TYPE&lt;T2&gt;&gt;;</ins>
+};</code></pre>
+</blockquote>
+
+<blockquote>
+<p>[...]
+<pre><code>constexpr void swap(pair&amp; p) noexcept(<i>see below</i>);</code></pre>
+<em>Requires</em>: <code class="language-cpp">first</code> shall be swappable with (15.5.3.2) <code class="language-cpp">p.first</code> and <code class="language-cpp">second</code> shall be swappable with <code class="language-cpp">p.second</code>.<br />
+<em>Effects</em>: Swaps <code class="language-cpp">first</code> with <code class="language-cpp">p.first</code> and <code class="language-cpp">second</code> with <code class="language-cpp">p.second</code>.<br />
+<em>Remarks</em>: The expression inside noexcept is equivalent to:
+<code class="language-cpp">is_nothrow_swappable_v&lt;first_type&gt; &amp;&amp; is_nothrow_swappable_v&lt;second_type&gt;</code>
+<pre><code><ins>constexpr auto operator&lt;=&gt;(const pair&amp; lhs, const pair&amp; rhs)</ins>
+<ins>  -&gt; common_comparison_category_t&lt;SYNTH_3WAY_TYPE&lt;T1&gt;, SYNTH_3WAY_TYPE&lt;T2&gt;&gt;;</ins></code></pre>
+<ins><em>Effects</em>: Equivalent to:</ins>
+<blockquote class="ins"><pre><code>if (auto c = SYNTH_3WAY(lhs.first, rhs.first); c != 0) return c;
+return SYNTH_3WAY(lhs.second, rhs.second);</code></pre></blockquote></p>
+</blockquote>
+<p>Change 19.4.3 [pairs.spec].</p>
+<blockquote>
+<p><pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator==(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">x.first == y.first &amp;&amp; x.second == y.second</code>.</del>
+<pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator!=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(x == y)</code>.</del>
+<pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator&lt;(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">x.first &lt; y.first || (!(y.first &lt; x.first) &amp;&amp; x.second &lt; y.second)</code>.</del>
+<pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator&gt;(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">y &lt; x</code></del>.
+<pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator&lt;=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(y &lt; x)</code>.</del>
+<pre><code><del>template&lt;class T1, class T2&gt;
+constexpr bool operator&gt;=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(x &lt; y)</code>.</del>
+<pre><code>template&lt;class T1, class T2&gt;
+constexpr void swap(pair&lt;T1, T2&gt;&amp; x, pair&lt;T1, T2&gt;&amp; y) noexcept(noexcept(x.swap(y)));</code></pre>
+[...]</p>
+</blockquote>
+<p>Change 19.5.2 [tuple.syn]:</p>
+<blockquote><pre><code>namespace std {
+  // 19.5.3, class template tuple
+  template&lt;class... Types&gt;
+    class tuple;
+
+  [...]  
+
+  template&lt;class T, class... Types&gt;
+    constexpr const T&& get(const tuple&lt;Types...&gt;&& t) noexcept;
+
+  <del>// 19.5.3.8, relational operators</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator!=(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator&gt;(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator&lt;=(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator&gt;=(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
+
+  // 19.5.3.9, allocator-related traits
+  template&lt;class... Types, class Alloc&gt;
+    struct uses_allocator&lt;tuple&lt;Types...&gt;, Alloc&gt;;  
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 19.5.3 [tuple.tuple]:</p>
+<blockquote><pre><code>namespace std {
+template<class... Types>
+class tuple {
+public:
+  [...]
+
+  // 19.5.3.3, tuple swap
+  constexpr void swap(tuple&) noexcept(see below );
+
+  <ins>// 19.5.3.8, tuple relational operators</ins>
+  <ins>friend constexpr bool operator==(const tuple&, const tuple&);</ins>
+  <ins>friend constexpr auto operator<=>(const tuple&, const tuple&)</ins>
+  <ins>  -> common_comparison_category_t&lt;SYNTH_3WAY_TYPE&lt;Types&gt;...&gt;;</ins>
+};</code></pre></blockquote>
+
+<p>Change 19.5.3.8 [tuple.rel]:</p>
+<blockquote>
+<p><pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
+  <del>constexpr bool operator==(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
+<pre><code><ins>constexpr bool operator==(const tuple&amp; t, const tuple&amp; u);</ins></code></pre>
+<em>Requires</em>: For all <code class="language-cpp">i</code>, where <code class="language-cpp">0 &lt;= i</code> and <code class="language-cpp">i &lt; sizeof...(TTypes)</code>, <code class="language-cpp">get&lt;i&gt;(t) == get&lt;i&gt;(u)</code> is a valid expression returning a type that is convertible to <code class="language-cpp">bool</code>. <code class="language-cpp">sizeof...(TTypes) == sizeof...(UTypes)</code>.<br />
+<em>Returns</em>: <code class="language-cpp">true</code> if <code class="language-cpp">get&lt;i&gt;(t) == get&lt;i&gt;(u)</code> for all <code class="language-cpp">i</code>, otherwise <code class="language-cpp">false</code>. For any two zero-length tuples <code class="language-cpp">e</code> and <code class="language-cpp">f</code>, <code class="language-cpp">e == f</code> returns <code class="language-cpp">true</code>.<br />
+<em>Effects</em>: The elementary comparisons are performed in order from the zeroth index upwards. No comparisons or element accesses are performed after the first equality comparison that evaluates to <code class="language-cpp">false</code>.
+<pre><code><del>template&lt;class... TTypes, class... UTypes&gt;<del>
+<del>  constexpr bool operator!=(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(t == u)</code>.</del>
+<pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
+<del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
+<pre><code><ins>constexpr auto operator&lt;=&gt;(const tuple&amp; t, const tuple&amp; u)</ins>
+<ins> -&gt; common_comparison_category_t&t;SYNTH_3WAY_TYPE&lt;Types&gt;...&gt;;</ins></code></pre>
+<em>Requires</em>: For all <code class="language-cpp">i</code>, where <code class="language-cpp">0 &lt;= i</code> and <code class="language-cpp">i &lt; sizeof...(TTypes)</code>, <del>both <code class="language-cpp">get&lt;i&gt;(t) &lt; get&lt;i&gt;(u)</code> and <code class="language-cpp">get&lt;i&gt;(u) &lt; get&lt;i&gt;(t)</code> are valid expressions returning types that are convertible to <code class="language-cpp">bool</code></del> <ins><code class="language-cpp">SYNTH_3WAY(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a valid expression. <code class="language-cpp">sizeof...(TTypes) == sizeof...(UTypes)</code></ins>.<br />
+<em>Returns</em>: The result of a lexicographical comparison between t and u. The result is defined as:
+(bool)(get&lt;0&gt;(t) &lt; get&lt;0&gt;(u)) || (!(bool)(get&lt;0&gt;(u) &lt; get&lt;0&gt;(t)) &amp;&amp; ttail &lt; utail), where
+rtail for some tuple r is a tuple containing all but the first element of r. For any two zero-length tuples
+e and f, e &lt; f returns false.
+template<class... TTypes, class... UTypes>
+constexpr bool operator&gt;(const tuple<TTypes...>&amp; t, const tuple<UTypes...>&amp; u);
+7 Returns: u &lt; t.
+template<class... TTypes, class... UTypes>
+constexpr bool operator&lt;=(const tuple<TTypes...>&amp; t, const tuple<UTypes...>&amp; u);
+8 Returns: !(u &lt; t).
+template<class... TTypes, class... UTypes>
+constexpr bool operator&gt;=(const tuple<TTypes...>&amp; t, const tuple<UTypes...>&amp; u);
+9 Returns: !(t &lt; u).
+<em>[Note:</em> The above definitions for comparison functions do not require <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as <code class="language-cpp">t</code> and <code class="language-cpp">u</code> are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the
+comparison. <em>—end note]</em></p>
+</blockquote>
+<h3 id="clause-24-algorithms-library">2.6. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
+<p>Change 24.4 [algorithm.syn]:</p>
+<blockquote><pre><code>namespace std {
+  [...]
+  // [alg.3way], three-way comparison algorithms
+  <del>template&lt;class T, class U&gt;</del>
+  <del>  constexpr auto compare_3way(const T& a, const U& b);</del>
+  template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+    constexpr auto
+      <del>lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,</del>
+      <ins>lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,</ins>
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -&gt; common_comparison_category_t&lt;decltype(comp(*b1, *b2)), strong_ordering&gt;;
+  template&lt;class InputIterator1, class InputIterator2&gt;
+    constexpr auto
+      <del>lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,</del>
+      <ins>lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,</ins>
+                                   InputIterator2 b2, InputIterator2 e2);
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 24.7.11 [alg.3way]:</p>
+<blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
+
+<p><i>Effects</i>: Compares two values and produces a result of the strongest applicable comparison category type:
+<ul>
+<li> Returns a <=> b if that expression is well-formed.
+<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
+<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_­equality​::​equal when a == b is true, and otherwise returns strong_­equality​::​nonequal.
+<li>Otherwise, the function is defined as deleted.
+</ul></del></blockquote>
+
+<p>Change 24.7.11 [alg.3way] paragraph 2:</p>
+<blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
+  constexpr auto
+    <del>lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,</del>
+    <ins>lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,</ins>
+                                 InputIterator2 b2, InputIterator2 e2,
+                                 Cmp comp);</code></pre></blockquote>
+
+<p>Change 24.7.11 [alg.3way] paragraph 4:</p>
+<blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
+  constexpr auto
+    <del>lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,</del>
+    <ins>lexicographical_compare_three_way(InputIterator1 b1, InputIterator1 e1,</ins>
+                                 InputIterator2 b2, InputIterator2 e2);</code></pre>
+
+<i>Effects</i>: Equivalent to:
+<pre><code><del>return lexicographical_compare_3way(b1, e1, b2, e2,</del>
+                                    <del>[](const auto& t, const auto& u) {</del>
+                                    <del>  return compare_3way(t, u);</del>
+                                    <del>});</del>
+<ins>return lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());</ins></code></pre>             
+</blockquote>
+
 <h2 id="references">3. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0891r2.html">[P0891R2]</a><span style="margin-left: 5px;">"Make strong_order a Customization Point!" by Gašper Ažman, Jeff Snyder, 2019-01-20</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1154r1.html">[P1154R1]</a><span style="margin-left: 5px;">"Type traits for structural comparison" by Arthur O'Dwyer, Jeff Snyder, 2019-01-19</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1189r0.html">[P1189R0]</a><span style="margin-left: 5px;">"Add &lt;=&gt; to Library" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1191r0.html">[P1191R0]</a><span style="margin-left: 5px;">"Adding operator&lt;=&gt; to types that are not currently comparable" by David Stone, 2018-08-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1380r1.html">[P1380R1]</a><span style="margin-left: 5px;">"Ambiguity and Insecurities with Three-Way Comparison" by Lawrence Crowl, 2019-01-20</span></li></ul>
 </html>
