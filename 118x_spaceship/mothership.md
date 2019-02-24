@@ -32,14 +32,23 @@ Added:
 - `compare_three_way_result`
 - `ThreeWayComparable` and `ThreeWayComparableWith`
 - `compare_three_way`
+- `compare_XXX_order_fallback`
 
 Changed operators for:
 
 - `type_info`
 
+Respecified:
+
+- `strong_order()`
+- `weak_order()`
+- `partial_order()`
+
 Removed:
 
 - `compare_3way()`
+- `strong_equal()`
+- `weak_equal()`
 
 In 16.7.2 [type.info], remove `operator!=`:
 
@@ -66,7 +75,20 @@ In 16.7.2 [type.info], remove `operator!=`:
 Add into 16.11.1 [compare.syn]:
 
 <blockquote><pre><code>namespace std {
-  [...]
+  // [cmp.categories], comparison category types
+  class weak_equality;
+  class strong_equality;
+  class partial_ordering;
+  class weak_ordering;
+  class strong_ordering;
+
+  // named comparison functions
+  constexpr bool is_eq  (weak_equality cmp) noexcept    { return cmp == 0; }
+  constexpr bool is_neq (weak_equality cmp) noexcept    { return cmp != 0; }
+  constexpr bool is_lt  (partial_ordering cmp) noexcept { return cmp < 0; }
+  constexpr bool is_lteq(partial_ordering cmp) noexcept { return cmp <= 0; }
+  constexpr bool is_gt  (partial_ordering cmp) noexcept { return cmp > 0; }
+  constexpr bool is_gteq(partial_ordering cmp) noexcept { return cmp >= 0; }
   
   // [cmp.common], common comparison category type  
   template&lt;class... Ts&gt;
@@ -90,7 +112,21 @@ Add into 16.11.1 [compare.syn]:
   
   <ins>// [cmp.???], compare_three_way</ins>
   <ins>struct compare_three_way;</ins>
-  [...]
+  
+  // [cmp.alg], comparison algorithms
+  <del>template&lt;class T&gt; constexpr strong_ordering strong_order(const T& a, const T& b);</del>
+  <del>template&lt;class T&gt; constexpr weak_ordering weak_order(const T& a, const T& b);</del>
+  <del>template&lt;class T&gt; constexpr partial_ordering partial_order(const T& a, const T& b);</del>
+  <del>template&lt;class T&gt; constexpr strong_equality strong_equal(const T& a, const T& b);</del>
+  <del>template&lt;class T&gt; constexpr weak_equality weak_equal(const T& a, const T& b);</del>
+  <ins>inline namespace <i>unspecified</i> {</ins>
+    <ins>inline constexpr <i>unspecified</i> strong_order = <i>unspecified</i>;</ins>
+    <ins>inline constexpr <i>unspecified</i> weak_order = <i>unspecified</i>;</ins>
+    <ins>inline constexpr <i>unspecified</i> partial_order = <i>unspecified</i>;</ins>
+    <ins>inline constexpr <i>unspecified</i> compare_strong_order_fallback = <i>unspecified</i>;</ins>
+    <ins>inline constexpr <i>unspecified</i> compare_weak_order_fallback = <i>unspecified</i>;</ins>
+    <ins>inline constexpr <i>unspecified</i> compare_partial_order_fallback = <i>unspecified</i>;</ins>
+  <ins>}</ins>
 }</code></pre></blockquote>
 
 Add a new clause \[cmp.threewaycomparable\]. We don't need to add any new semantic constraints. The requirement that the `<=>`s used have to be equality-preserving is picked up through [concepts.equality] already.
@@ -169,6 +205,117 @@ Add a new specification-only shouty caps algorithm and type trait. Note that thi
 > - `compare_three_way_result_t<T>` when `T` models `ThreeWayComparable`;
 > - Otherwise, `weak_ordering`
         
+Replace the entirety of 16.11.4 [cmp.alg]
+
+> <pre><code><del>template&lt;class T&gt; constexpr strong_ordering strong_order(const T& a, const T& b);</del></code></pre>
+> <del>*Effects*: Compares two values and produces a result of type `strong_ordering`:</del>  
+> 
+> - <del>If numeric_­limits<T>::is_­iec559 is true, returns a result of type strong_ordering that is consistent with the totalOrder operation as specified in ISO/IEC/IEEE 60559.</del>
+> - <del>Otherwise, returns a <=> b if that expression is well-formed and convertible to strong_ordering.</del>
+> - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
+> - <del>Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, then</del>
+>       - <del>if a == b is true, returns strong_ordering::equal;</del>
+>       - <del>otherwise, if a < b is true, returns strong_ordering::less;</del>
+>       - <del>otherwise, returns strong_ordering::greater.</del>
+> - <del>Otherwise, the function is defined as deleted.</del>
+
+> <pre><code><del>template&lt;class T&gt; constexpr weak_ordering weak_order(const T& a, const T& b);</del></code></pre>
+> <del>*Effects*: Compares two values and produces a result of type weak_ordering:</del>
+>
+> - <del>Returns a <=> b if that expression is well-formed and convertible to weak_ordering.</del>
+> - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
+> - <del>Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, then</del>
+>       - <del>if a == b is true, returns weak_ordering::equivalent;</del>
+>       - <del>otherwise, if a < b is true, returns weak_ordering::less;</del>
+>       - <del>otherwise, returns weak_ordering::greater.</del>
+> - <del>Otherwise, the function is defined as deleted.</del>
+>
+> <pre><code><del>template&lt;class T&gt; constexpr partial_ordering partial_order(const T& a, const T& b);</del></code></pre>
+> <del>*Effects*: Compares two values and produces a result of type partial_ordering:</del>
+> 
+> - <del>Returns a <=> b if that expression is well-formed and convertible to partial_ordering.</del>
+> - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
+> - <del>Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, then</del>
+>       - <del>if a == b is true, returns partial_ordering::equivalent;</del>
+>       - <del>otherwise, if a < b is true, returns partial_ordering::less;</del>
+>       - <del>otherwise, returns partial_ordering::greater.</del>
+> - <del>Otherwise, the function is defined as deleted.</del>
+
+> <pre><code><del>template&lt;class T&gt; constexpr strong_equality strong_equal(const T& a, const T& b);</del></code></pre>
+> <del>*Effects*: Compares two values and produces a result of type strong_equality:</del>
+> 
+> - <del>Returns a <=> b if that expression is well-formed and convertible to strong_equality.</del>
+> - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
+> - <del>Otherwise, if the expression a == b is well-formed and convertible to bool, then</del>
+>       - <del>if a == b is true, returns strong_equality::equal;</del>
+>       - <del>otherwise, returns strong_equality::nonequal.</del>
+> - <del>Otherwise, the function is defined as deleted.</del>
+
+> <pre><code><del>template&lt;class T&gt; constexpr weak_equality weak_equal(const T& a, const T& b);</del></code></pre>
+> <del>*Effects*: Compares two values and produces a result of type weak_equality:</del>
+> 
+> - <del>Returns a <=> b if that expression is well-formed and convertible to weak_equality.</del>
+> - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
+> - <del>Otherwise, if the expression a == b is well-formed and convertible to bool, then</del>
+>       - <del>if a == b is true, returns weak_equality::equivalent;</del>
+>       - <del>otherwise, returns weak_equality::nonequivalent.</del>
+> - <del>Otherwise, the function is defined as deleted.</del>
+
+> <ins>The name `std::strong_order` denotes a customization point object. The expression `std::strong_order(E, F)` for some subexpressions `E` and `F` with decayed type `T` is expression-equivalent to:
+> 
+> - <ins>`strong_order(E, F)` if it is a valid expression and its type `C` is a comparison category with overload resolution performed in a context that does not include a declaration of `std::strong_order`.</ins>
+> - <ins>Otherwise, if `T` is a floating point type, returns a result of type `strong_ordering` that is a strong order and that is consistent with `T`'s comparison operators. If `numeric_limits<T>::is_iec559` is also `true`, returns a result of type `strong_ordering` that is consistent with the `totalOrder` operation as specified in ISO/IEC/IEEE 60559.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression and its type `C` is convertible to `strong_ordering`.</ins>
+> - <ins>Otherwise, `std::strong_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::strong_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
+> 
+> <ins>[*Note*: Whenever `std::strong_order(E, F)` is a valid expression, its type is convertible to `strong_ordering`. --*end note*]</ins>
+
+> <ins>The name `std::weak_order` denotes a customization point object. The expression `std::weak_order(E, F)` for some subexpressions `E` and `F` with decayed type `T` is expression-equivalent to:</ins>
+> 
+> - <ins>`weak_order(E, F)` if it is a valid expression and its type `C` is a comparison category with overload resolution performed in a context that does not include a declaration of `std::weak_order`.</ins>
+> - <ins>Otherwise, if `T` is a floating point type,returns a result of type `weak_ordering` that is a weak order and that is consistent with both `T`'s comparison operators and `strong_order`. If `numeric_limits<T>::is_iec559` is also `true`, returns a result of type `weak_ordering` that has the following equivalence classes, ordered from lesser to greater:</ins>
+>       - <ins>Together, all negative NaN values</ins>
+>       - <ins>Negative infinity</ins>
+>       - <ins>Each normal negative value</ins>
+>       - <ins>Each subnormal negative value</ins>
+>       - <ins>Together, both zero values</ins>
+>       - <ins>Each subnormal positive value</ins>
+>       - <ins>Each normal positive value</ins>
+>       - <ins>Positive infinity</ins>
+>       - <ins>Together, all positive NaN values</ins>
+> - <ins>Otherwise, `std::strong_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression and its type `C` is convertible to `weak_ordering`.</ins>
+> - <ins>Otherwise, `std::weak_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::weak_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
+> 
+> <ins>[*Note*: Whenever `std::weak_order(E, F)` is a valid expression, its type is convertible to `weak_ordering`. --*end note*]</ins>
+
+> <ins>The name `std::partial_order` denotes a customization point object. The expression `std::partial_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> 
+> - <ins>`partial_order(E, F)` if it is a valid expression and its type `C` is a comparison category with overload resolution performed in a context that does not include a declaration of `std::partial_order`.</ins>
+> - <ins>Otherwise, `std::weak_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression and its type `C` is convertible to `partial_ordering`.</ins>
+> - <ins>Otherwise, `std::partial_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::partial_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
+> 
+> <ins>[*Note*: Whenever `std::partial_order(E, F)` is a valid expression, its type is convertible to `partial_ordering`. --*end note*]</ins>
+
+> <ins>The name `std::compare_strong_order_fallback` denotes a customization point object. The expression `std::compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> 
+> - <ins>`std::strong_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `3WAY<strong_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>
+> - <ins>Otherwise, `std::compare_strong_order_fallback(E, F)` is ill-formed.</ins>
+
+> <ins>The name `std::compare_weak_order_fallback` denotes a customization point object. The expression `std::compare_weak_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> 
+> - <ins>`std::weak_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `3WAY<weak_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>
+> - <ins>Otherwise, `std::compare_weak_order_fallback(E, F)` is ill-formed.</ins>
+
+> <ins>The name `std::compare_partial_order_fallback` denotes a customization point object. The expression `std::compare_partial_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> 
+> - <ins>`std::partial_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `3WAY<partial_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>
+> - <ins>Otherwise, `std::compare_partial_order_fallback(E, F)` is ill-formed.</ins>
+
 ## Clause 17: Concepts Library
 
 Nothing.
@@ -405,21 +552,24 @@ Change 19.5.3.8 [tuple.rel]:
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
 <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
 > <pre><code><ins>constexpr auto operator&lt;=&gt;(const tuple& t, const tuple& u)</ins>
-> <ins> -> common_comparison_category_t&t;SYNTH_3WAY_TYPE&lt;Types&gt;...&gt;;</ins></code></pre>
+> <ins> -> common_comparison_category_t&lt;SYNTH_3WAY_TYPE&lt;Types&gt;...&gt;;</ins></code></pre>
 > *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`, <del>both `get<i>(t) < get<i>(u)` and `get<i>(u) < get<i>(t)` are valid expressions returning types that are convertible to `bool`</del> <ins>`SYNTH_3WAY(get<i>(t), get<i>(u))`</ins> is a valid expression. `sizeof...(TTypes) == sizeof...(UTypes)`</ins>.  
-> *Returns*: The result of a lexicographical comparison between t and u. The result is defined as:
-(bool)(get<0>(t) < get<0>(u)) || (!(bool)(get<0>(u) < get<0>(t)) && ttail < utail), where
-rtail for some tuple r is a tuple containing all but the first element of r. For any two zero-length tuples
-e and f, e < f returns false.
-template<class... TTypes, class... UTypes>
-constexpr bool operator>(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
-7 Returns: u < t.
-template<class... TTypes, class... UTypes>
-constexpr bool operator<=(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
-8 Returns: !(u < t).
-template<class... TTypes, class... UTypes>
-constexpr bool operator>=(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
-9 Returns: !(t < u).
+> <del>*Returns*: The result of a lexicographical comparison between `t` and `u`. The result is defined as:
+`(bool)(get<0>(t) < get<0>(u)) || (!(bool)(get<0>(u) < get<0>(t)) && ttail < utail)`, where
+<code>r<sub>tail</sub></code> for some tuple `r` is a tuple containing all but the first element of `r`. For any two zero-length tuples `e` and `f`, `e < f` returns `false`.</del>  
+> <ins>*Effects*: Performs a lexicographical comparison between `t` and `u`. Let `R` be the `common_comparison_category_t<SYNTH_3WAY_TYPE<Types>...>`. Equivalent to:</ins>
+> <blockquote class="ins"><pre><code>if (auto c = static_cast&lt;R&gt;(SYNTH_3WAY(get<0>(t), get<0>(u))); c != 0) return c;
+return static_cast&lt;R&gt;(t<sub>tail</sub> <=> u<sub>tail</sub>);</code></pre></blockquote>
+> <ins>For any two zero-length tuples `e` and `f`, `e <=> f` returns `strong_ordering::equal`.</ins>
+> <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
+constexpr bool operator>(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
+> <del>*Returns*: `u < t`</del>.
+> <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
+constexpr bool operator<=(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
+> <del>*Returns*: `!(u < t)`</del>
+> <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
+constexpr bool operator>=(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
+> <del>*Returns*: `!(t < u)`</del>  
 > *[Note:* The above definitions for comparison functions do not require <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as `t` and `u` are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the
 comparison. *—end note]*
 
