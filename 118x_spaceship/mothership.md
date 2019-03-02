@@ -261,58 +261,64 @@ Replace the entirety of 16.11.4 [cmp.alg]
 >       - <del>otherwise, returns weak_equality::nonequivalent.</del>
 > - <del>Otherwise, the function is defined as deleted.</del>
 
-> <ins>The name `std::strong_order` denotes a customization point object. The expression `std::strong_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following, converted to `strong_ordering`:
+> <ins>A _comparison customization point object_ is a customization point object ([customization.point.object]) that converts its return value to a specific comparison category, known as its _associated comparison category_.</ins>
+
+> <ins>The function call operator template of a comparison customization point object type `T` with associated comparison category `C` is equivalent to:</ins>
+
+> <blockquote class="ins"><pre><code>template &lt;typename U&gt;
+C operator()(const U&, const U&) const;</code></pre></blockquote>
+    
+> <ins>with additional requirements specified in that customization point object's definition. [ *Note*: This means that attempting to invoke a comparison customization point object with expressions having different decayed type will fail. *-end note*] </ins>
+
+> <ins>The name `std::strong_order` denotes a comparison customization point object with associated comparison category `strong_ordering`. The expression `std::strong_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following:
 > 
-> - <ins>If `E` and `F` have the same decayed type `T`, then:</ins>
->     - <ins>`strong_order(E, F)` if it is a valid expression, convertible to `strong_ordering`, with overload resolution performed in a context that does not include a declaration of `std::strong_order`.</ins>
->     - <ins>Otherwise, if `T` is a floating point type, then:</ins>
->         - <ins>If `numeric_limits<T>::is_iec559` is `true`, yields a value of type `strong_ordering` that is consistent with both the ordering observed by `T`'s comparison operators and the `totalOrder` operation as specified in ISO/IEC/IEEE 60599.</ins>
->         - <ins>Otherwise, yields a value of type `strong_ordering` that is a strong order and is consistent with ordering observed by `T`'s comparison operators.</ins>
->     - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `strong_ordering`.</ins>
+> - <ins>`strong_order(E, F)` if it is a valid expression, convertible to `strong_ordering`, with overload resolution performed in a context that does not include a declaration of `std::strong_order`.</ins>
+> - <ins>Otherwise, if `T` is a floating point type, then:</ins>
+>       - <ins>If `numeric_limits<T>::is_iec559` is `true`, yields a value of type `strong_ordering` that is consistent with both the ordering observed by `T`'s comparison operators and the `totalOrder` operation as specified in ISO/IEC/IEEE 60599.</ins>
+>       - <ins>Otherwise, yields a value of type `strong_ordering` that is a strong order and is consistent with ordering observed by `T`'s comparison operators.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `strong_ordering`.</ins>
 > - <ins>Otherwise, `std::strong_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::strong_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
 
-> <ins>The name `std::weak_order` denotes a customization point object. The expression `std::weak_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following, converted to `weak_ordering`:</ins>
+> <ins>The name `std::weak_order` denotes a comparison customization point object with associated comparison category `weak_ordering`. The expression `std::weak_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following:</ins>
 > 
-> - <ins>If `E` and `F` have the same decayed type `T`, then:</ins>
->       - <ins>`weak_order(E, F)` if it is a valid expression, convertible to `weak_ordering`, with overload resolution performed in a context that does not include a declaration of `std::weak_order`.</ins>
->       - <ins>Otherwise, if `T` is a floating point type, then:</ins>
->           - <ins>If `numeric_limits<T>::is_iec559` is `true`, yields a value of type `weak_ordering` that is consistent with both the ordering observed by `T`'s comparison operators and `strong_order`, which has the following equivalence classes, ordered from lesser to greater:</ins>
->               - <ins>Together, all negative NaN values</ins>
->               - <ins>Negative infinity</ins>
->               - <ins>Each normal negative value</ins>
->               - <ins>Each subnormal negative value</ins>
->               - <ins>Together, both zero values</ins>
->               - <ins>Each subnormal positive value</ins>
->               - <ins>Each normal positive value</ins>
->               - <ins>Positive infinity</ins>
->               - <ins>Together, all positive NaN values</ins>
->           - <ins>Otherwise, yields a value of type `weak_ordering` that is a weak order and is consistent with both the ordering observed by `T`'s comparison operators and `strong_order`.
->       - <ins>Otherwise, `std::strong_order(E, F)` if it is a valid expression.</ins>
->       - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `weak_ordering`.</ins>
+> - <ins>`weak_order(E, F)` if it is a valid expression, convertible to `weak_ordering`, with overload resolution performed in a context that does not include a declaration of `std::weak_order`.</ins>
+> - <ins>Otherwise, if `T` is a floating point type, then:</ins>
+>       - <ins>If `numeric_limits<T>::is_iec559` is `true`, yields a value of type `weak_ordering` that is consistent with both the ordering observed by `T`'s comparison operators and `strong_order`, which has the following equivalence classes, ordered from lesser to greater:</ins>
+>           - <ins>Together, all negative NaN values</ins>
+>           - <ins>Negative infinity</ins>
+>           - <ins>Each normal negative value</ins>
+>           - <ins>Each subnormal negative value</ins>
+>           - <ins>Together, both zero values</ins>
+>           - <ins>Each subnormal positive value</ins>
+>           - <ins>Each normal positive value</ins>
+>           - <ins>Positive infinity</ins>
+>           - <ins>Together, all positive NaN values</ins>
+>       - <ins>Otherwise, yields a value of type `weak_ordering` that is a weak order and is consistent with both the ordering observed by `T`'s comparison operators and `strong_order`.
+> - <ins>Otherwise, `std::strong_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `weak_ordering`.</ins>
 > - <ins>Otherwise, `std::weak_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::weak_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
 
-> <ins>The name `std::partial_order` denotes a customization point object. The expression `std::partial_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following, converted to `partial_ordering`:</ins>
+> <ins>The name `std::partial_order` denotes a comparison customization point object with associated comparison category `partial_ordering`. The expression `std::partial_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent to the following:</ins>
 > 
-> - <ins>If `E` and `F` have the same decayed type, then:</ins>
->       - <ins>`partial_order(E, F)` if it is a valid expression, convertible to `partial_ordering`, with overload resolution performed in a context that does not include a declaration of `std::partial_order`.</ins>
->       - <ins>Otherwise, `std::weak_order(E, F)` if it is a valid expression.</ins>
->       - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `partial_ordering`.</ins>
+> - <ins>`partial_order(E, F)` if it is a valid expression, convertible to `partial_ordering`, with overload resolution performed in a context that does not include a declaration of `std::partial_order`.</ins>
+> - <ins>Otherwise, `std::weak_order(E, F)` if it is a valid expression.</ins>
+> - <ins>Otherwise, `E <=> F` if it is a valid expression convertible to `partial_ordering`.</ins>
 > - <ins>Otherwise, `std::partial_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::partial_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]</ins>
 > 
 
-> <ins>The name `std::compare_strong_order_fallback` denotes a customization point object. The expression `std::compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> <ins>The name `std::compare_strong_order_fallback` denotes a comparison customization point object with associated comparison category `strong_ordering`. The expression `std::compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
 > 
 > - <ins>`std::strong_order(E, F)` if it is a valid expression.</ins>
 > - <ins>Otherwise, `3WAY<strong_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>
 > - <ins>Otherwise, `std::compare_strong_order_fallback(E, F)` is ill-formed.</ins>
 
-> <ins>The name `std::compare_weak_order_fallback` denotes a customization point object. The expression `std::compare_weak_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> <ins>The name `std::compare_weak_order_fallback` denotes a comparison customization point object with associated comparison category `weak_ordering`. The expression `std::compare_weak_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
 > 
 > - <ins>`std::weak_order(E, F)` if it is a valid expression.</ins>
 > - <ins>Otherwise, `3WAY<weak_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>
 > - <ins>Otherwise, `std::compare_weak_order_fallback(E, F)` is ill-formed.</ins>
 
-> <ins>The name `std::compare_partial_order_fallback` denotes a customization point object. The expression `std::compare_partial_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
+> <ins>The name `std::compare_partial_order_fallback` denotes a customization point object with associated comparison category `partial_ordering`. The expression `std::compare_partial_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent to:</ins>
 > 
 > - <ins>`std::partial_order(E, F)` if it is a valid expression.</ins>
 > - <ins>Otherwise, `3WAY<partial_ordering>(E, F)` ([class.spaceship]) if it is a valid expression.</ins>

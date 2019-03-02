@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: DxxxxR0 <br />
-Date: 2019-02-26 <br />
+Date: 2019-03-02 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -887,9 +887,13 @@ return weak_ordering::equivalent;</code></pre>
 </li>
 <li><del>Otherwise, the function is defined as deleted.</del></li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::strong_order</code> denotes a customization point object. The expression <code class="language-cpp">std::strong_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following, converted to <code class="language-cpp">strong_ordering</code>:</p>
+<p><ins>A <em>comparison customization point object</em> is a customization point object ([customization.point.object]) that converts its return value to a specific comparison category, known as its <em>associated comparison category</em>.</ins></p>
+<p><ins>The function call operator template of a comparison customization point object type <code class="language-cpp">T</code> with associated comparison category <code class="language-cpp">C</code> is equivalent to:</ins></p>
+<p><blockquote class="ins"><pre><code>template &lt;typename U&gt;
+C operator()(const U&amp;, const U&amp;) const;</code></pre></blockquote></p>
+<p><ins>with additional requirements specified in that customization point object's definition. [ <em>Note</em>: This means that attempting to invoke a comparison customization point object with expressions having different decayed type will fail. <em>-end note</em>] </ins></p>
+<p><ins>The name <code class="language-cpp">std::strong_order</code> denotes a comparison customization point object with associated comparison category <code class="language-cpp">strong_ordering</code>. The expression <code class="language-cpp">std::strong_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</p>
 <ul>
-<li><ins>If <code class="language-cpp">E</code> and <code class="language-cpp">F</code> have the same decayed type <code class="language-cpp">T</code>, then:</ins><ul>
 <li><ins><code class="language-cpp">strong_order(E, F)</code> if it is a valid expression, convertible to <code class="language-cpp">strong_ordering</code>, with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::strong_order</code>.</ins></li>
 <li><ins>Otherwise, if <code class="language-cpp">T</code> is a floating point type, then:</ins><ul>
 <li><ins>If <code class="language-cpp">numeric_limits&lt;T&gt;::is_iec559</code> is <code class="language-cpp">true</code>, yields a value of type <code class="language-cpp">strong_ordering</code> that is consistent with both the ordering observed by <code class="language-cpp">T</code>'s comparison operators and the <code class="language-cpp">totalOrder</code> operation as specified in ISO/IEC/IEEE 60599.</ins></li>
@@ -897,13 +901,10 @@ return weak_ordering::equivalent;</code></pre>
 </ul>
 </li>
 <li><ins>Otherwise, <code class="language-cpp">E &lt;=&gt; F</code> if it is a valid expression convertible to <code class="language-cpp">strong_ordering</code>.</ins></li>
-</ul>
-</li>
 <li><ins>Otherwise, <code class="language-cpp">std::strong_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">std::strong_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::weak_order</code> denotes a customization point object. The expression <code class="language-cpp">std::weak_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following, converted to <code class="language-cpp">weak_ordering</code>:</ins></p>
+<p><ins>The name <code class="language-cpp">std::weak_order</code> denotes a comparison customization point object with associated comparison category <code class="language-cpp">weak_ordering</code>. The expression <code class="language-cpp">std::weak_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</ins></p>
 <ul>
-<li><ins>If <code class="language-cpp">E</code> and <code class="language-cpp">F</code> have the same decayed type <code class="language-cpp">T</code>, then:</ins><ul>
 <li><ins><code class="language-cpp">weak_order(E, F)</code> if it is a valid expression, convertible to <code class="language-cpp">weak_ordering</code>, with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::weak_order</code>.</ins></li>
 <li><ins>Otherwise, if <code class="language-cpp">T</code> is a floating point type, then:</ins><ul>
 <li><ins>If <code class="language-cpp">numeric_limits&lt;T&gt;::is_iec559</code> is <code class="language-cpp">true</code>, yields a value of type <code class="language-cpp">weak_ordering</code> that is consistent with both the ordering observed by <code class="language-cpp">T</code>'s comparison operators and <code class="language-cpp">strong_order</code>, which has the following equivalence classes, ordered from lesser to greater:</ins><ul>
@@ -923,34 +924,29 @@ return weak_ordering::equivalent;</code></pre>
 </li>
 <li><ins>Otherwise, <code class="language-cpp">std::strong_order(E, F)</code> if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">E &lt;=&gt; F</code> if it is a valid expression convertible to <code class="language-cpp">weak_ordering</code>.</ins></li>
-</ul>
-</li>
 <li><ins>Otherwise, <code class="language-cpp">std::weak_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">std::weak_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::partial_order</code> denotes a customization point object. The expression <code class="language-cpp">std::partial_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following, converted to <code class="language-cpp">partial_ordering</code>:</ins></p>
+<p><ins>The name <code class="language-cpp">std::partial_order</code> denotes a comparison customization point object with associated comparison category <code class="language-cpp">partial_ordering</code>. The expression <code class="language-cpp">std::partial_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</ins></p>
 <ul>
-<li><ins>If <code class="language-cpp">E</code> and <code class="language-cpp">F</code> have the same decayed type, then:</ins><ul>
 <li><ins><code class="language-cpp">partial_order(E, F)</code> if it is a valid expression, convertible to <code class="language-cpp">partial_ordering</code>, with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::partial_order</code>.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">std::weak_order(E, F)</code> if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">E &lt;=&gt; F</code> if it is a valid expression convertible to <code class="language-cpp">partial_ordering</code>.</ins></li>
-</ul>
-</li>
 <li><ins>Otherwise, <code class="language-cpp">std::partial_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">std::partial_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins>
 </li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::compare_strong_order_fallback</code> denotes a customization point object. The expression <code class="language-cpp">std::compare_strong_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">std::compare_strong_order_fallback</code> denotes a comparison customization point object with associated comparison category <code class="language-cpp">strong_ordering</code>. The expression <code class="language-cpp">std::compare_strong_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
 <ul>
 <li><ins><code class="language-cpp">std::strong_order(E, F)</code> if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">3WAY&lt;strong_ordering&gt;(E, F)</code> ([class.spaceship]) if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">std::compare_strong_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::compare_weak_order_fallback</code> denotes a customization point object. The expression <code class="language-cpp">std::compare_weak_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">std::compare_weak_order_fallback</code> denotes a comparison customization point object with associated comparison category <code class="language-cpp">weak_ordering</code>. The expression <code class="language-cpp">std::compare_weak_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
 <ul>
 <li><ins><code class="language-cpp">std::weak_order(E, F)</code> if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">3WAY&lt;weak_ordering&gt;(E, F)</code> ([class.spaceship]) if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">std::compare_weak_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">std::compare_partial_order_fallback</code> denotes a customization point object. The expression <code class="language-cpp">std::compare_partial_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">std::compare_partial_order_fallback</code> denotes a customization point object with associated comparison category <code class="language-cpp">partial_ordering</code>. The expression <code class="language-cpp">std::compare_partial_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
 <ul>
 <li><ins><code class="language-cpp">std::partial_order(E, F)</code> if it is a valid expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">3WAY&lt;partial_ordering&gt;(E, F)</code> ([class.spaceship]) if it is a valid expression.</ins></li>
