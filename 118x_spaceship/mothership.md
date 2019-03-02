@@ -27,28 +27,13 @@ Remove 15.4.2.3 [operators].
 
 ## Clause 16: Language support library
 
-Added:
+Added: `compare_three_way_result`, concepts `ThreeWayComparable` and `ThreeWayComparableWith`, `compare_three_way` and `compare_XXX_order_fallback`
 
-- `compare_three_way_result`
-- `ThreeWayComparable` and `ThreeWayComparableWith`
-- `compare_three_way`
-- `compare_XXX_order_fallback`
+Changed operators for: `type_info`
 
-Changed operators for:
+Respecified: `strong_order()`, `weak_order()`, and `partial_order()`
 
-- `type_info`
-
-Respecified:
-
-- `strong_order()`
-- `weak_order()`
-- `partial_order()`
-
-Removed:
-
-- `compare_3way()`
-- `strong_equal()`
-- `weak_equal()`
+Removed: `compare_3way()`, `strong_equal()`, and `weak_equal()`
 
 In 16.7.2 [type.info], remove `operator!=`:
 
@@ -401,7 +386,7 @@ Change 18.5.5 [syserr.compare]
 > <del>*Returns*:
 > ```lhs.category() < rhs.category() ||
 (lhs.category() == rhs.category() && lhs.value() < rhs.value())```</del>
-> <code><pre><del>bool operator<(const error_condition& lhs, const error_condition& rhs) noexcept;</del></pre></code>
+> <code><pre><del>bool operator<(const error_condition& lhs, const error_condition& rhs) noexcept;</del></code></pre>
 > <del>*Returns*:
 > ```lhs.category() < rhs.category() ||
 (lhs.category() == rhs.category() && lhs.value() < rhs.value())```</del>
@@ -418,7 +403,7 @@ return lhs.value() <=> rhs.value();</code></pre></blockquote>
 
 Changed operators for:
 
-- `pair`, `tuple`, `optional`
+- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`
 
 Change 19.2.1 [utility.syn]
 
@@ -541,18 +526,20 @@ public:
   constexpr void swap(tuple&) noexcept(see below );
   
   <ins>// 19.5.3.8, tuple relational operators</ins>
-  <ins>template&lt;class... TTypes, class... UTypes&gt;</ins>
-  <ins>  friend constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&)</ins>  
-  <ins>template&lt;class... TTypes, class... UTypes&gt;</ins>
-  <ins>  friend constexpr auto operator<=>(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&)</ins>
-  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;TTypes, UTypes&gt;...&gt;;</ins>
+  <ins>template&lt;class... UTypes&gt;</ins>
+  <ins>  friend constexpr bool operator==(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>  
+  <ins>template&lt;class... UTypes&gt;</ins>
+  <ins>  friend constexpr auto operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
+  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;Types, UTypes&gt;...&gt;;</ins>
 };</code></pre></blockquote>
 
 Change 19.5.3.8 [tuple.rel]:
 
-> <pre><code>template&lt;class... TTypes, class... UTypes&gt;
-  constexpr bool operator==(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</code></pre>
-> *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`, `get<i>(t) == get<i>(u)` is a valid expression returning a type that is convertible to `bool`. `sizeof...(TTypes) == sizeof...(UTypes)`.  
+> <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
+  constexpr bool operator==(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
+> <pre><code><ins>template&lt;class... UTypes&gt;</ins>
+<ins>  constexpr bool operator==(const tuple&, const tuple&lt;UTypes...&gt;&)</ins></code></pre>
+> *Requires*: For all `i`, where `0 <= i` and <code>i &lt; sizeof...(<del>TTypes</del> <ins>Types</ins>)</code>, `get<i>(t) == get<i>(u)` is a valid expression returning a type that is convertible to `bool`. <code>sizeof...(<del>TTypes</del> <ins>Types</ins>) == sizeof...(UTypes)</code>.  
 > *Returns*: `true` if `get<i>(t) == get<i>(u)` for all `i`, otherwise `false`. For any two zero-length tuples `e` and `f`, `e == f` returns `true`.  
 > *Effects*: The elementary comparisons are performed in order from the zeroth index upwards. No comparisons or element accesses are performed after the first equality comparison that evaluates to `false`.
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;<del>
@@ -560,10 +547,10 @@ Change 19.5.3.8 [tuple.rel]:
 > <del>*Returns*: `!(t == u)`.</del>
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
 <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
-> <pre><code><ins>template&lt;class... TTypes, class... UTypes&gt;</ins>
-<ins>  constexpr auto operator<=>(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&)</ins>
-<ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;TTypes, UTypes&gt;...&gt;;</ins></code></pre>
-> *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`, <del>both `get<i>(t) < get<i>(u)` and `get<i>(u) < get<i>(t)` are valid expressions returning types that are convertible to `bool`</del> <ins><code><i>synth-3way</i>(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a valid expression. `sizeof...(TTypes) == sizeof...(UTypes)`</ins>.  
+> <pre><code><ins>template&lt;class... UTypes&gt;</ins>
+<ins>  constexpr auto operator<=>(const tuple& t, const tuple&lt;UTypes...&gt;& u)</ins>
+<ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;Types, UTypes&gt;...&gt;;</ins></code></pre>
+> *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(Types)`, <del>both `get<i>(t) < get<i>(u)` and `get<i>(u) < get<i>(t)` are valid expressions returning types that are convertible to `bool`</del> <ins><code><i>synth-3way</i>(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a valid expression. <code>sizeof...(<del>TTypes</del> <ins>Types</ins>) == sizeof...(UTypes)</code>.  
 > <del>*Returns*: The result of a lexicographical comparison between `t` and `u`. The result is defined as:
 `(bool)(get<0>(t) < get<0>(u)) || (!(bool)(get<0>(u) < get<0>(t)) && ttail < utail)`, where
 <code>r<sub>tail</sub></code> for some tuple `r` is a tuple containing all but the first element of `r`. For any two zero-length tuples `e` and `f`, `e < f` returns `false`.</del>  
@@ -647,18 +634,18 @@ Change 19.6.3 [optional.optional]:
     void reset() noexcept;
 
     <ins>// [optional.relops], relational operators</ins>
-    <ins>template&lt;class U1, ThreeWayComparableWith&lt;U1&gt; U2&gt;</ins>
-    <ins>  friend constexpr compare_three_way_result_t&lt;U1,U2&gt;</ins>
-    <ins>    operator&lt;=&gt;(const optional&lt;U1&gt;&, const optional&lt;U2&gt;&);</ins>
+    <ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
+    <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
+    <ins>    operator&lt;=&gt;(const optional&, const optional&lt;U&gt;&);</ins>
 
     <ins>// [optional.nullops]</ins>
     <ins>friend constexpr bool operator==(const optional&, nullopt_t);</ins>
     <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional&, nullopt_t);</ins>
     
     <ins>// [optional.comp_with_t], comparison with T</ins>
-    <ins>template&lt;class U1, ThreeWayComparableWith&lt;U1&gt; U2&gt;</ins>
-    <ins>  friend constexpr compare_three_way_result_t&lt;U1,U2&gt;</ins>
-    <ins>    operator&lt;=&gt;(const optional&lt;U1&gt;&, const U2&);</ins>
+    <ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
+    <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
+    <ins>    operator&lt;=&gt;(const optional&, const U&);</ins>
     
   private:
     T *val;         // exposition only
@@ -672,37 +659,38 @@ Change 19.6.6 [optional.relops]:
 > *Requires*: The expression `*x >= *y` shall be well-formed and its result shall be convertible to `bool`.  
 > *Returns*: If `!y`, `true`; otherwise, if `!x`, `false`; otherwise `*x >= *y`.  
 > *Remarks*: Specializations of this function template for which `*x >= *y` is a core constant expression shall be `constexpr` functions.  
-> <pre><code><ins>template&lt;class U1, ThreeWayComparableWith&lt;U1&gt; U2&gt;</ins>
-<ins>  constexpr compare_three_way_result_t&lt;U1,U2&gt;</ins>
-<ins>    operator&lt;=&gt;(const optional&lt;U1&gt;& x, const optional&lt;U2&gt;& y);</ins></code></pre>
+> <pre><code><ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
+<ins>  constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
+<ins>    operator&lt;=&gt;(const optional& x, const optional&lt;U&gt;& y);</ins></code></pre>
 > <ins>*Returns*: If `x && y`, `*x <=> *y`; otherwise `bool(x) <=> bool(y)`.</ins>  
 > <ins>*Remarks*: Specializations of this function template for which `*x <=> *y` is a core constant expression shall be `constexpr` functions.</ins>
 
 Change 19.6.7 [optional.nullops]:
 
-> <pre><code>template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;& x, nullopt_t) noexcept;
-<del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del>
+<del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del>
+<ins>constexpr bool operator==(const optional& x, nullopt_t) noexcept;</ins></code></pre>
 > *Returns*: `!x`.
 > <pre><code><del>template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;& x, nullopt_t) noexcept;
 template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `bool(x)`.</del>
 > <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
 > <del>*Returns*: `false`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `bool(x)`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
 > <del>*Returns*: `bool(x)`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `false`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
 > <del>*Returns*: `!x`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `true`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
 > <del>*Returns*: `true`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></pre></code>
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `!x`.</del>
-> <pre><code><ins>template&lt;class T&gt; constexpr strong_ordering operator&lt;=&gt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</ins></pre></code>
+> <pre><code><ins>constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) noexcept;</ins></code></pre>
 > <ins>*Returns*: `bool(x) <=> false`.</ins>
 
 Change 19.6.8 [optional.comp_with_t]:
@@ -726,9 +714,9 @@ Change 19.6.8 [optional.comp_with_t]:
 > <pre><code>template&lt;class T, class U&gt; constexpr bool operator&gt;=(const T& v, const optional&lt;U&gt;& x);</code></pre>
 > *Requires*: The expression `v >= *x` shall be well-formed and its result shall be convertible to `bool`.  
 > *Effects*: Equivalent to: `return bool(x) ? v >= *x : true;`
-> <pre><code><ins>template&lt;class U1, ThreeWayComparableWith&lt;U1&gt; U2&gt;</ins>
-<ins>  constexpr compare_three_way_result_t&lt;U1,U2&gt;</ins>
-<ins>    operator&lt;=&gt;(const optional&lt;U1&gt;& x, const U2& v);</ins></code></pre>
+> <pre><code><ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
+<ins>  constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
+<ins>    operator&lt;=&gt;(const optional& x, const U& v);</ins></code></pre>
 > <ins>*Effects*: Equivalent to: `return bool(x) ? *x <=> v : strong_ordering::less;`</ins>
 
 Change 19.7.2 [variant.syn]:
@@ -810,6 +798,279 @@ Change 19.9.2.2 [bitset.members]:
 > *Returns*: `true` if the value of each bit in `*this` equals the value of the corresponding bit in `rhs`.
 > <del><pre><code>bool operator!=(const bitset&lt;N&gt;& rhs) const noexcept;</code></pre></del>
 > <del>*Returns*: `true` if `!(*this == rhs)`.</del></blockquote>
+
+Change 19.10.2 [memory.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // [default.allocator], the default allocator
+  template&lt;class T&gt; class allocator;
+  template&lt;class T, class U&gt;
+    bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;
+  <del>template&lt;class T, class U&gt;</del>
+    <del>bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</del>
+  [...]
+  template&lt;class T, class D&gt; 
+    void swap(unique_ptr&lt;T, D&gt;& x, unique_ptr&lt;T, D&gt;& y) noexcept;
+
+<del>  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator==(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
+  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator!=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
+  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator&lt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
+  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator&gt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
+  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator&lt;=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
+  template&lt;class T1, class D1, class T2, class D2&gt;
+    bool operator&gt;=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del>
+
+<del>  template&lt;class T, class D&gt;
+    bool operator==(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
+  template&lt;class T, class D&gt;
+    bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;& y) noexcept;
+  template&lt;class T, class D&gt;
+    bool operator!=(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
+  template&lt;class T, class D&gt;
+    bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;& y) noexcept;
+  template&lt;class T, class D&gt;
+    bool operator&lt;(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+  template&lt;class T, class D&gt;
+    bool operator&lt;(nullptr_t, const unique_ptr&lt;T, D&gt;& y);
+  template&lt;class T, class D&gt;
+    bool operator&gt;(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+  template&lt;class T, class D&gt;
+    bool operator&gt;(nullptr_t, const unique_ptr&lt;T, D&gt;& y);
+  template&lt;class T, class D&gt;
+    bool operator&lt;=(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+  template&lt;class T, class D&gt;
+    bool operator&lt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& y);
+  template&lt;class T, class D&gt;
+    bool operator&gt;=(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+  template&lt;class T, class D&gt;
+    bool operator&gt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& y);</del>
+
+  template&lt;class E, class T, class Y, class D&gt;
+    basic_ostream&lt;E, T&gt;& operator&lt;&lt;(basic_ostream&lt;E, T&gt;& os, const unique_ptr&lt;Y, D&gt;& p);  
+  [...]
+  // [util.smartptr.shared.cmp], shared_­ptr comparisons
+<del>  template&lt;class T, class U&gt;
+    bool operator==(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+  template&lt;class T, class U&gt;
+    bool operator!=(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+  template&lt;class T, class U&gt;
+    bool operator&lt;(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+  template&lt;class T, class U&gt;
+    bool operator&gt;(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+  template&lt;class T, class U&gt;
+    bool operator&lt;=(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+  template&lt;class T, class U&gt;
+    bool operator&gt;=(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;
+
+  template&lt;class T&gt;
+    bool operator==(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator==(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;
+  template&lt;class T&gt;
+    bool operator!=(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator!=(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;
+  template&lt;class T&gt;
+    bool operator&lt;(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator&lt;(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;
+  template&lt;class T&gt;
+    bool operator&gt;(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator&gt;(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;
+  template&lt;class T&gt;
+    bool operator&lt;=(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator&lt;=(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;
+  template&lt;class T&gt;
+    bool operator&gt;=(const shared_ptr&lt;T&gt;& x, nullptr_t) noexcept;
+  template&lt;class T&gt;
+    bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;</del>
+
+  // [util.smartptr.shared.spec], shared_­ptr specialized algorithms
+  template&lt;class T&gt;
+    void swap(shared_ptr&lt;T&gt;& a, shared_ptr&lt;T&gt;& b) noexcept;
+  [...]    
+}</code></pre></blockquote>
+
+Change 19.10.10.2 [allocator.globals]:
+
+> <pre><code>template&lt;class T, class U&gt;
+  bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</code></pre>
+> *Returns*: `true`.
+> <del><pre><code>template&lt;class T, class U&gt;
+  bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</code></pre></del>
+> <del>*Returns*: `false`.</del>
+
+Change 19.11.1.2 [unique.ptr.single]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class D = default_delete&lt;T&gt;&gt; class unique_ptr {
+  public:
+    using pointer      = see below;
+    using element_type = T;
+    using deleter_type = D;
+    [...]
+    // disable copy from lvalue
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
+    
+    <ins>// [unique.ptr.special] Specialized algorithms</ins>
+    <ins>template&lt;class T2, class D2&gt;</ins>
+      <ins>friend bool operator==(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y);</ins>
+    <ins>template&lt;class T2, class D2&gt;</ins>
+      <ins>friend strong_ordering operator&lt;=&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y);</ins>  
+
+    <ins>friend bool operator==(const unique_ptr& x, nullptr_t) noexcept;</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const unique_ptr& x, nullptr_t);</ins>
+  };
+}</code></pre></blockquote>
+
+Change 19.11.1.5 [unique.ptr.special]:
+
+> <pre><code>template&lt;class T, class D&gt; void swap(unique_ptr&lt;T, D&gt;& x, unique_ptr&lt;T, D&gt;& y) noexcept;</code></pre>
+> *Remarks*: This function shall not participate in overload resolution unless `is_swappable_v<D>` is `true`.
+> *Effects*: Calls `x.swap(y)`.
+> <pre><code>template&lt;<del>class T1, class D1</del>, class T2, class D2&gt;
+  bool operator==(const unique_ptr<del>&lt;T1, D1&gt;</del>& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
+> *Returns*: `x.get() == y.get()`.
+> <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
+  bool operator!=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
+> <del>*Returns*: `x.get() != y.get()`.</del>
+> <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
+  bool operator&lt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
+> <del>*Requires*: Let CT denote `common_type_t<typename unique_ptr<T1, D1>::pointer, typename unique_ptr<T2, D2>::pointer>` Then the specialization `less<CT>` shall be a function object type that induces a strict weak ordering on the pointer values.</del>  
+> <del>*Returns*: `less<CT>()(x.get(), y.get())`.</del>  
+> <del>*Remarks*: If `unique_ptr<T1, D1>::pointer` is not implicitly convertible to `CT` or `unique_ptr<T2, D2>::pointer` is not implicitly convertible to `CT`, the program is ill-formed.</del>
+> <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
+  bool operator&gt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
+> <del>*Returns*: `y < x`.</del>
+> <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
+  bool operator&lt;=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
+> <del>*Returns*: `!(y < x)`.</del>
+> <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
+  bool operator&gt;=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
+> <del>*Returns*: `!(x < y)`.</del>
+> <pre><code><ins>template&lt;class T2, class D2&gt;</ins>
+<ins>strong_ordering operator&lt;=&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y);</ins></code></pre>
+> <ins>*Requires*: Let `CT` denote `common_type_t<typename unique_ptr<T, D>::pointer, typename unique_ptr<T2, D2>::pointer>`. Then `BUILTIN_PTR_3WAY(CT, CT)` ([cmp.???]) is `true`.</ins>  
+> <ins>*Returns*: `compare_three_way()(static_cast<CT>(x.get()), static_cast<CT>(y.get()))`.</ins>  
+> <ins>*Remarks*: If `unique_ptr<T, D>::pointer` is not implicitly convertible to `CT` or `unique_ptr<T2, D2>::pointer` is not implicitly convertible to `CT`, the program is ill-formed.</ins>
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator==(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
+template&lt;class T, class D&gt;
+  bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;& x) noexcept;</del></code></pre>
+> <pre><code><ins>bool operator==(const unique_ptr& x, nullptr_t) noexcept;</ins></code></pre>
+> *Returns*: `!x`.
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator!=(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
+template&lt;class T, class D&gt;
+  bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;& x) noexcept;</del></code></pre>
+> <del>*Returns*: `(bool)x`.</del>
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator&lt;(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+template&lt;class T, class D&gt;
+  bool operator&lt;(nullptr_t, const unique_ptr&lt;T, D&gt;& x);</del></code></pre>
+> <del>*Requires*: The specialization `less<unique_ptr<T, D>::pointer>` shall be a function object type that induces a strict weak ordering on the pointer values.</del>  
+> <del>*Returns*: The first function template returns `less<unique_ptr<T, D>::pointer>()(x.get(), nullptr)` The second function template returns `less<unique_ptr<T, D>::pointer>()(nullptr, x.get())`</del>
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator&gt;(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+template&lt;class T, class D&gt;
+  bool operator&gt;(nullptr_t, const unique_ptr&lt;T, D&gt;& x);</del></code></pre>
+> <del>*Returns*: The first function template returns `nullptr < x`. The second function template returns `x < nullptr`.</del>
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator&lt;=(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+template&lt;class T, class D&gt;
+  bool operator&lt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& x);</del></code></pre>
+> <del>*Returns*: The first function template returns `!(nullptr < x)`. The second function template returns `!(x < nullptr)`.</del>
+> <pre><code><del>template&lt;class T, class D&gt;
+  bool operator&gt;=(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
+template&lt;class T, class D&gt;
+  bool operator&gt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& x);</del></code></pre>
+> <del>*Returns*: The first function template returns `!(x < nullptr)`. The second function template returns `!(nullptr < x)`.</del>
+> <pre><code><ins>strong_ordering operator&lt;=&gt;(const unique_ptr& x, nullptr_t);</ins></code></pre>
+> <ins>*Requires*: `BUILTIN_PTR_3WAY(pointer, pointer)` shall be `true`.</ins>  
+> <ins>*Returns*: `compare_three_way()(x.get(), nullptr)`.</ins> 
+
+Change 19.11.3, [util.smartptr.shared]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T&gt; class shared_ptr {
+    [...]
+    // [util.smartptr.shared.obs], observers
+    element_type* get() const noexcept;
+    T& operator*() const noexcept;
+    T* operator-&gt;() const noexcept;
+    element_type& operator[](ptrdiff_t i) const;
+    long use_count() const noexcept;
+    explicit operator bool() const noexcept;
+    template&lt;class U&gt;
+      bool owner_before(const shared_ptr&lt;U&gt;& b) const noexcept;
+    template&lt;class U&gt;
+      bool owner_before(const weak_ptr&lt;U&gt;& b) const noexcept;
+      
+    <ins>// [util.smartptr.shared.cmp], shared_ptr comparisons</ins>
+    <ins>template&lt;class U&gt;</ins>
+      <ins>friend bool operator==(const shared_ptr& a, const shared_ptr&lt;U&gt;& b) noexcept;</ins>
+    <ins>template&lt;class Ugt;</ins>
+      <ins>friend strong_ordering operator&lt;=&gt;(const shared_ptr& a, const shared_ptr&lt;U&gt;& b) noexcept;</ins>
+      
+    <ins>friend bool operator==(const shared_ptr&, nullptr_t) noexcept;</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const shared_ptr&, nullptr_t) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 19.11.3.7 [util.smartptr.shared.cmp]:
+
+> <pre><code>template&lt;<del>class T, </del>class U&gt;
+  bool operator==(const shared_ptr<del>&lt;T&gt;</del>& a, const shared_ptr&lt;U&gt;& b) noexcept;</code></pre>
+> *Returns*: `a.get() == b.get()`.
+> <pre><code><del>template&lt;class T, class U&gt;
+  bool operator&lt;(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;</del></code></pre>
+> <del>*Returns*: `less<>()(a.get(), b.get())`.</del>  
+> <pre><code><ins>template&lt;class U&gt;</ins>
+<ins>  strong_ordering operator&lt;=&gt;(const shared_ptr& a, const shared_ptr&lt;U&gt; b) noexcept;</ins></code></pre>
+> <ins>*Returns*: `compare_three_way()(a.get(), b.get())`.</ins>  
+> [*Note*: Defining a comparison function allows `shared_ptr` objects to be used as keys in associative containers. —*end note*]
+> <pre><code><del>template&lt;class T&gt;</del>
+  bool operator==(const shared_ptr<del>&lt;T&gt;</del>& a, nullptr_t) noexcept;
+<del>template&lt;class T&gt;</del>
+<del>  bool operator==(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> *Returns*: `!a`.
+> <pre><code><del>template&lt;class T&gt;
+  bool operator!=(const shared_ptr&lt;T&gt;& a, nullptr_t) noexcept;
+template&lt;class T&gt;
+  bool operator!=(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> <del>*Returns*: `(bool)a`.</del>
+> <pre><code><del>template&lt;class T&gt;
+  bool operator&lt;(const shared_ptr&lt;T&gt;& a, nullptr_t) noexcept;
+template&lt;class T&gt;
+  bool operator&lt;(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> <del>*Returns*: The first function template returns `less<typename shared_ptr<T>::element_type*>()(a.get(), nullptr)`
+The second function template returns `less<typename shared_ptr<T>::element_type*>()(nullptr, a.get())`.</del>
+> <pre><code><ins>strong_ordering operator&lt;=&gt;(const shared_ptr& a, nullptr_t) noexcept;</ins></code></pre>
+> <ins>*Returns*: `compare_three_way()(a.get(), nullptr)`.</ins>
+> <pre><code><del>template&lt;class T&gt;
+  bool operator&gt;(const shared_ptr&lt;T&gt;& a, nullptr_t) noexcept;
+template&lt;class T&gt;
+  bool operator&gt;(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> <del>*Returns*: The first function template returns `nullptr < a`. The second function template returns `a < nullptr`.</del>
+> <pre><code><del>template&lt;class T&gt;
+  bool operator&lt;=(const shared_ptr&lt;T&gt;& a, nullptr_t) noexcept;
+template&lt;class T&gt;
+  bool operator&lt;=(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> <del>*Returns*: The first function template returns `!(nullptr < a)`. The second function template returns `!(a < nullptr)`.</del>
+> <pre><code><del>template&lt;class T&gt;
+  bool operator&gt;=(const shared_ptr&lt;T&gt;& a, nullptr_t) noexcept;
+template&lt;class T&gt;
+  bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
+> <del>*Returns*: The first function template returns `!(a < nullptr)`. The second function template returns `!(nullptr < a)`.
 
 ## Clause 24: Algorithms library
 
