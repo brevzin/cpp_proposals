@@ -405,7 +405,7 @@ return lhs.value() <=> rhs.value();</code></pre></blockquote>
 
 Changed operators for:
 
-- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`
+- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`, `function`, `type_index`
 
 Change 19.2.1 [utility.syn]
 
@@ -1145,6 +1145,108 @@ Change 19.13.5 [scoped.adaptor.operators]:
 <del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
 <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del></code></pre>
 > <del>*Returns*: `!(a == b)`.</del>
+
+Change 19.14.1 [functional.syn]
+
+<blockquote><pre><code>namespace std {
+  [...]
+  template&lt;class R, class... ArgTypes&gt;
+    bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator!=(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;</del>
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
+
+  // [func.search], searchers
+  [...]
+}</code></pre></blockquote>  
+
+Change 19.14.16.2 [func.wrap.func]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class&gt; class function; // not defined
+  [...]
+  // [func.wrap.func.nullptr], Null pointer comparisons
+  template&lt;class R, class... ArgTypes&gt;
+    bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;
+
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
+
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator!=(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;</del>
+
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
+  [...]
+}</code></pre></blockquote>  
+
+Change 19.14.16.2.6 [func.wrap.func.nullptr]:
+
+> <pre><code>template&lt;class R, class... ArgTypes&gt;
+  bool operator==(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;
+<del>template&lt;class R, class... ArgTypes&gt;</del>
+<del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;& f) noexcept;</del></code></pre>
+> *Returns*: `!f`.
+
+> <pre><code><del>template&lt;class R, class... ArgTypes&gt;</del>
+<del>  bool operator!=(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;</del>
+<del>template&lt;class R, class... ArgTypes&gt;</del>
+<del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;& f) noexcept;</del></code></pre>
+> <del>*Returns*: `(bool)f`.</del>
+
+Change 19.17.2 [type.index.overview]. Note that the relational operators on `type_index` are based on `type_info::before` (effectively `<`). `type_info` _could_ provide a three-way ordering function, but does not. Since an important motivation for the existence of `type_index` is to be used as a key in an associative container, we do not want to pessimize `<` - but do want to provide `<=>`.
+
+<blockquote><pre><code>namespace std {
+  class type_index {
+  public:
+    type_index(const type_info& rhs) noexcept;
+    bool operator==(const type_index& rhs) const noexcept;
+    <del>bool operator!=(const type_index& rhs) const noexcept;</del>
+    bool operator&lt; (const type_index& rhs) const noexcept;
+    bool operator&gt; (const type_index& rhs) const noexcept;
+    bool operator&lt;= (const type_index& rhs) const noexcept;
+    bool operator&gt;= (const type_index& rhs) const noexcept;
+    <ins>strong_ordering operator&lt;=&gt;(const type_index& rhs) const noexcept;</ins>
+    size_t hash_code() const noexcept;
+    const char* name() const noexcept;
+
+  private:
+    const type_info* target;    // exposition only
+    // Note that the use of a pointer here, rather than a reference,
+    // means that the default copy/move constructor and assignment
+    // operators will be provided and work as expected.
+  };
+}</code></pre></blockquote>
+
+Change 19.17.3 [type.index.members]:
+
+> <pre><code>type_index(const type_info& rhs) noexcept;</code></pre>
+> *Effects*: Constructs a `type_index` object, the equivalent of `target = &rhs`.
+> <pre><code>bool operator==(const type_index& rhs) const noexcept;</code></pre>
+> *Returns*: `*target == *rhs.target`.
+> <pre><code><del>bool operator!=(const type_index& rhs) const noexcept;</del></code></pre>
+> <del>*Returns*: `*target != *rhs.target`.</del>
+> <pre><code>bool operator&lt;(const type_index& rhs) const noexcept;</code></pre>
+> *Returns*: `target->before(*rhs.target)`.
+> <pre><code>bool operator&gt;(const type_index& rhs) const noexcept;</code></pre>
+> *Returns*: `rhs.target->before(*target)`.
+> <pre><code>bool operator&lt;=(const type_index& rhs) const noexcept;</code></pre>
+> *Returns*: `!rhs.target->before(*target)`.
+> <pre><code>bool operator&gt;=(const type_index& rhs) const noexcept;</code></pre>
+> *Returns*: `!target->before(*rhs.target)`.
+> <pre><code><ins>strong_ordering operator&lt;=&gt;(const type_index& rhs) const noexcept;</ins></code></pre>
+> <ins>*Effects*: Equivalent to</ins>
+> <blockquote class="ins"><pre><code>if (\*target == \*rhs.target) return strong_ordering::equal;
+if (target->before(\*rhs.target)) return strong_ordering::less;
+return strong_ordering::greater;</code></pre></blockquote>
+> <pre><code>size_t hash_code() const noexcept;</code></pre>
+> *Returns*: `target->hash_code()`.
+> [...]
+
+## Clause 20: Strings library
 
 ## Clause 24: Algorithms library
 
