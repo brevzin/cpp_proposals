@@ -786,21 +786,22 @@ template &lt;typename T, typename U,
 </blockquote>
 <p>Add a new specification-only <code class="language-cpp">kebab-case</code> algorithm and type trait. Note that this is subtly different from the <a href="https://wg21.link/p1186r1" title="When do you actually use &lt;=&gt;?">P1186R1</a> algorithm <code class="language-cpp">3WAY&lt;weak_ordering&gt;</code> since that one synthesizes a <code class="language-cpp">weak_ordering</code> from both <code class="language-cpp">==</code> and <code class="language-cpp">&lt;</code>, whereas this one (for backwards compatibility with C++17) only uses <code class="language-cpp">&lt;</code>.</p>
 <blockquote>
-<p>Given type <code class="language-cpp">T</code> and two lvalues of type <code class="language-cpp">T</code>, define <code><i>synth-3way</i>(a, b)</code> as follows:</p>
+<p>Given types <code class="language-cpp">T</code> and <code class="language-cpp">U</code> and lvalues of those types <code class="language-cpp">t</code> and <code class="language-cpp">u</code>, define <code><i>synth-3way</i>(t, u)</code> as follows:</p>
 <ul>
-<li><code class="language-cpp">a &lt;=&gt; b</code> when <code class="language-cpp">T</code> models <code class="language-cpp">ThreeWayComparable</code>;</li>
-<li>Otherwise, equivalent to:<pre class="codehilite"><code class="language-cpp">if (a &lt; b) return weak_ordering::less;
-if (b &lt; a) return weak_ordering::greater;
+<li><code class="language-cpp">t &lt;=&gt; u</code> when <code class="language-cpp">U</code> models <code class="language-cpp">ThreeWayComparableWith&lt;T&gt;</code>;</li>
+<li>Otherwise, equivalent to:<pre class="codehilite"><code class="language-cpp">if (t &lt; u) return weak_ordering::less;
+if (u &lt; t) return weak_ordering::greater;
 return weak_ordering::equivalent;</code></pre>
 
 
 </li>
 </ul>
-<p>Define <code><i>synth-3way-type</i>&lt;T&gt;</code> as follows:</p>
+<p>Define <code><i>synth-3way-type</i>&lt;T,U&gt;</code> as follows:</p>
 <ul>
-<li><code class="language-cpp">compare_three_way_result_t&lt;T&gt;</code> when <code class="language-cpp">T</code> models <code class="language-cpp">ThreeWayComparable</code>;</li>
+<li><code class="language-cpp">compare_three_way_result_t&lt;T,U&gt;</code> when <code class="language-cpp">U</code> models <code class="language-cpp">ThreeWayComparableWith&lt;T&gt;</code>;</li>
 <li>Otherwise, <code class="language-cpp">weak_ordering</code></li>
 </ul>
+<p>Define <code><i>synth-3way-type</i>&lt;T&gt;</code> as <code><i>synth-3way-type</i>&lt;T,T&gt;</code>.</p>
 </blockquote>
 <p>Replace the entirety of 16.11.4 [cmp.alg]</p>
 <blockquote>

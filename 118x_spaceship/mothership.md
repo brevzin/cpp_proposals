@@ -175,20 +175,22 @@ Add a new specification for `compare_three_way` in a new clause named [cmp.???]:
 
 Add a new specification-only `kebab-case` algorithm and type trait. Note that this is subtly different from the [P1186R1](https://wg21.link/p1186r1) algorithm `3WAY<weak_ordering>` since that one synthesizes a `weak_ordering` from both `==` and `<`, whereas this one (for backwards compatibility with C++17) only uses `<`.
 
-> Given type `T` and two lvalues of type `T`, define <code><i>synth-3way</i>(a, b)</code> as follows:
+> Given types `T` and `U` and lvalues of those types `t` and `u`, define <code><i>synth-3way</i>(t, u)</code> as follows:
 > 
-> - `a <=> b` when `T` models `ThreeWayComparable`;
+> - `t <=> u` when `U` models `ThreeWayComparableWith<T>`;
 > - Otherwise, equivalent to:
 > 
         :::cpp
-        if (a < b) return weak_ordering::less;
-        if (b < a) return weak_ordering::greater;
+        if (t < u) return weak_ordering::less;
+        if (u < t) return weak_ordering::greater;
         return weak_ordering::equivalent;
 > 
-> Define <code><i>synth-3way-type</i>&lt;T&gt;</code> as follows:
+> Define <code><i>synth-3way-type</i>&lt;T,U&gt;</code> as follows:
 > 
-> - `compare_three_way_result_t<T>` when `T` models `ThreeWayComparable`;
+> - `compare_three_way_result_t<T,U>` when `U` models `ThreeWayComparableWith<T>`;
 > - Otherwise, `weak_ordering`
+>
+> Define <code><i>synth-3way-type</i>&lt;T&gt;</code> as <code><i>synth-3way-type</i>&lt;T,T&gt;</code>.
         
 Replace the entirety of 16.11.4 [cmp.alg]
 
