@@ -1023,7 +1023,7 @@ return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
 <h3 id="clause-19-general-utilities-library">2.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
 <p>Changed operators for:</p>
 <ul>
-<li><code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code></li>
+<li><code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code></li>
 </ul>
 <p>Change 19.2.1 [utility.syn]</p>
 <blockquote><pre><code>#include <initializer_list> // see 16.10.1
@@ -1680,6 +1680,76 @@ template&lt;class T&gt;
 template&lt;class T&gt;
   bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</del></code></pre>
 <del><em>Returns</em>: The first function template returns <code class="language-cpp">!(a &lt; nullptr)</code>. The second function template returns <code class="language-cpp">!(nullptr &lt; a)</code>.</p>
+</blockquote>
+<p>Change 19.12.1 [mem.res.syn]:</p>
+<blockquote><pre><code>namespace std::pmr {
+  // [mem.res.class], class memory_­resource
+  class memory_resource;
+
+  bool operator==(const memory_resource& a, const memory_resource& b) noexcept;
+  <del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del>
+
+  // [mem.poly.allocator.class], class template polymorphic_­allocator
+  template&lt;class Tp&gt; class polymorphic_allocator;
+
+  template&lt;class T1, class T2&gt;
+    bool operator==(const polymorphic_allocator&lt;T1&gt;& a,
+                    const polymorphic_allocator&lt;T2&gt;& b) noexcept;
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;& a,</del>
+  <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del>
+
+  // [mem.res.global], global memory resources
+  memory_resource* new_delete_resource() noexcept;
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 19.12.2.3 [mem.res.eq]:</p>
+<blockquote>
+<p><pre><code>bool operator==(const memory_resource&amp; a, const memory_resource&amp; b) noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">&amp;a == &amp;b || a.is_equal(b)</code>.
+<pre><code><del>bool operator!=(const memory_resource&amp; a, const memory_resource&amp; b) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(a == b)</code>.</del></p>
+</blockquote>
+<p>Change 19.12.3.3 [mem.poly.allocator.eq]:</p>
+<blockquote>
+<p><pre><code>template&lt;class T1, class T2&gt;
+  bool operator==(const polymorphic_allocator&lt;T1&gt;&amp; a,
+                  const polymorphic_allocator&lt;T2&gt;&amp; b) noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">*a.resource() == *b.resource()</code>.
+<pre><code><del>template&lt;class T1, class T2&gt;</del>
+<del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;&amp; a,</del>
+<del>                  const polymorphic_allocator&lt;T2&gt;&amp; b) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(a == b)</code>.</del></p>
+</blockquote>
+<p>Change 19.13.1 [allocator.adaptor.syn]:</p>
+<blockquote><pre><code>namespace std {
+  // class template scoped allocator adaptor
+  template&lt;class OuterAlloc, class... InnerAlloc&gt;
+    class scoped_allocator_adaptor;
+
+  // [scoped.adaptor.operators], scoped allocator operators
+  template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
+    bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,
+                    const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;
+  <del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
+  <del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
+  <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del>
+}</code></pre></blockquote>
+
+<p>Change 19.13.5 [scoped.adaptor.operators]:</p>
+<blockquote>
+<p><pre><code>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
+  bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;&amp; a,
+                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;&amp; b) noexcept;</code></pre>
+<em>Returns</em>: If <code class="language-cpp">sizeof...(InnerAllocs)</code> is zero,<br />
+<code class="language-cpp">a.outer_allocator() == b.outer_allocator()</code><br />
+otherwise<br />
+<code class="language-cpp">a.outer_allocator() == b.outer_allocator() &amp;&amp; a.inner_allocator() == b.inner_allocator()</code>
+<pre><code><del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
+<del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;&amp; a,</del>
+<del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;&amp; b) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(a == b)</code>.</del></p>
 </blockquote>
 <h3 id="clause-24-algorithms-library">2.6. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>

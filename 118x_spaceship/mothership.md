@@ -405,7 +405,7 @@ return lhs.value() <=> rhs.value();</code></pre></blockquote>
 
 Changed operators for:
 
-- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`
+- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`
 
 Change 19.2.1 [utility.syn]
 
@@ -1073,6 +1073,78 @@ template&lt;class T&gt;
 template&lt;class T&gt;
   bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;& a) noexcept;</del></code></pre>
 > <del>*Returns*: The first function template returns `!(a < nullptr)`. The second function template returns `!(nullptr < a)`.
+
+Change 19.12.1 [mem.res.syn]:
+
+<blockquote><pre><code>namespace std::pmr {
+  // [mem.res.class], class memory_­resource
+  class memory_resource;
+
+  bool operator==(const memory_resource& a, const memory_resource& b) noexcept;
+  <del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del>
+
+  // [mem.poly.allocator.class], class template polymorphic_­allocator
+  template&lt;class Tp&gt; class polymorphic_allocator;
+
+  template&lt;class T1, class T2&gt;
+    bool operator==(const polymorphic_allocator&lt;T1&gt;& a,
+                    const polymorphic_allocator&lt;T2&gt;& b) noexcept;
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;& a,</del>
+  <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del>
+
+  // [mem.res.global], global memory resources
+  memory_resource* new_delete_resource() noexcept;
+  [...]
+}</code></pre></blockquote>
+
+Change 19.12.2.3 [mem.res.eq]:
+
+> <pre><code>bool operator==(const memory_resource& a, const memory_resource& b) noexcept;</code></pre>
+> *Returns*: `&a == &b || a.is_equal(b)`.
+> <pre><code><del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del></code></pre>
+> <del>*Returns*: `!(a == b)`.</del>
+
+Change 19.12.3.3 [mem.poly.allocator.eq]:
+
+> <pre><code>template&lt;class T1, class T2&gt;
+  bool operator==(const polymorphic_allocator&lt;T1&gt;& a,
+                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</code></pre>
+> *Returns*: `*a.resource() == *b.resource()`.
+> <pre><code><del>template&lt;class T1, class T2&gt;</del>
+<del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;& a,</del>
+<del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del></code></pre>
+> <del>*Returns*: `!(a == b)`.</del>
+
+Change 19.13.1 [allocator.adaptor.syn]:
+
+<blockquote><pre><code>namespace std {
+  // class template scoped allocator adaptor
+  template&lt;class OuterAlloc, class... InnerAlloc&gt;
+    class scoped_allocator_adaptor;
+
+  // [scoped.adaptor.operators], scoped allocator operators
+  template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
+    bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,
+                    const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;
+  <del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
+  <del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
+  <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del>
+}</code></pre></blockquote>
+
+Change 19.13.5 [scoped.adaptor.operators]:
+
+> <pre><code>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
+  bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,
+                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</code></pre>
+> *Returns*: If `sizeof...(InnerAllocs)` is zero,  
+> `a.outer_allocator() == b.outer_allocator()`  
+> otherwise  
+> `a.outer_allocator() == b.outer_allocator() && a.inner_allocator() == b.inner_allocator()`
+> <pre><code><del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
+<del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
+<del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del></code></pre>
+> <del>*Returns*: `!(a == b)`.</del>
 
 ## Clause 24: Algorithms library
 
