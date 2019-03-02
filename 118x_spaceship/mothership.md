@@ -509,8 +509,8 @@ Change 19.5.2 [tuple.syn]:
     constexpr const T&& get(const tuple&lt;Types...&gt;&& t) noexcept;
     
   <del>// 19.5.3.8, relational operators</del>
-  template&lt;class... TTypes, class... UTypes&gt;
-    constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);
+  <del>template&lt;class... TTypes, class... UTypes&gt;</del>
+    <del>constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
   <del>template&lt;class... TTypes, class... UTypes&gt;</del>
     <del>constexpr bool operator!=(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
   <del>template&lt;class... TTypes, class... UTypes&gt;</del>
@@ -541,6 +541,8 @@ public:
   constexpr void swap(tuple&) noexcept(see below );
   
   <ins>// 19.5.3.8, tuple relational operators</ins>
+  <ins>template&lt;class... TTypes, class... UTypes&gt;</ins>
+  <ins>  friend constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&)</ins>  
   <ins>template&lt;class... TTypes, class... UTypes&gt;</ins>
   <ins>  friend constexpr auto operator<=>(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&)</ins>
   <ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;TTypes, UTypes&gt;...&gt;;</ins>
@@ -736,13 +738,14 @@ Change 19.7.2 [variant.syn]:
   // [variant.monostate], class monostate
   struct monostate;
 
-  <del>// [variant.monostate.relops], monostate relational operators</del>
-  <del>constexpr bool operator==(monostate, monostate) noexcept;</del>
+  // [variant.monostate.relops], monostate relational operators
+  constexpr bool operator==(monostate, monostate) noexcept;
   <del>constexpr bool operator!=(monostate, monostate) noexcept;</del>
   <del>constexpr bool operator<(monostate, monostate) noexcept;</del>
   <del>constexpr bool operator>(monostate, monostate) noexcept;</del>
   <del>constexpr bool operator<=(monostate, monostate) noexcept;</del>
   <del>constexpr bool operator>=(monostate, monostate) noexcept;</del>
+  <ins>constexpr strong_ordering operator<=>(monostate, monostate) noexcept;</ins>
   
   // [variant.specalg], specialized algorithms
   template&lt;class... Types&gt;
@@ -762,18 +765,30 @@ Change 19.7.3 [variant.variant]:
     void swap(variant&) noexcept(see below);
 
     <ins>// [variant.relops], relational operators</ins>
-    <ins>friend constexpr common_comparison_category_t&lt;Types...&gt;</ins>
+    <ins>friend constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</ins>
     <ins>  operator&lt;=&gt;(const variant&, const variant&)</ins>
-    <ins>    requires ((ThreeWayComparable&lt;Types&gt; && ...));</ins>
+    <ins>    requires (ThreeWayComparable&lt;Types&gt; && ...);</ins>
   };
 }</code></pre></blockquote>
 
-Insert at the end of 19.7.6 [variant.relops]
+Insert at the end of 19.7.6 [variant.relops]:
 
-> <pre><code><ins>constexpr common_comparison_category_t&lt;Types...&gt;</ins>
+> <pre><code><ins>constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</ins>
 <ins>  operator&lt;=&gt;(const variant& v, const variant& w)</ins>
 <ins>    requires (ThreeWayComparable&lt;Types&gt; && ...);</ins></code></pre>
-> <ins>*Returns*: Returns: If `w.valueless_by_exception()`, `strong_ordering::greater`; otherwise if `v.valueless_by_exception()`, `strong_ordering::less`; otherwise, if v.index() < w.index(), true; otherwise if v.index() > w.index(), false; otherwise get<i>(v) < get<i>(w) with i being v.index().</ins>
+> <ins>*Returns*: Let `c` be `(v.index() + 1) <=> (w.index() + 1)`. If `c != 0`, `c`. Otherwise, `get<i> <=> get<i>(w)` with `i` being `v.index()`.</ins>
+
+Change 19.7.9 [variant.monostate.relops]:
+
+<blockquote><pre><code>constexpr bool operator==(monostate, monostate) noexcept { return true; }
+<del>constexpr bool operator!=(monostate, monostate) noexcept { return false; }</del>
+<del>constexpr bool operator<(monostate, monostate) noexcept { return false; }</del>
+<del>constexpr bool operator>(monostate, monostate) noexcept { return false; }</del>
+<del>constexpr bool operator<=(monostate, monostate) noexcept { return true; }</del>
+<del>constexpr bool operator>=(monostate, monostate) noexcept { return true; }</del>
+<ins>constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return strong_ordering::equal; }</ins></code></pre>
+
+[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</blockquote>
 
 ## Clause 24: Algorithms library
 
