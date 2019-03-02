@@ -1406,6 +1406,26 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
 
 [<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</blockquote>
 
+<p>Change 19.9.2 [template.bitset]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;size_t N&gt; class bitset {
+  public:
+    [...]
+    constexpr size_t size() const noexcept;
+    bool operator==(const bitset&lt;N&gt;& rhs) const noexcept;
+    <del>bool operator!=(const bitset&lt;N&gt;& rhs) const noexcept;</del>
+    bool test(size_t pos) const;
+    [...]
+  };
+}</code></pre></blockquote>
+
+<p>Change 19.9.2.2 [bitset.members]:</p>
+<blockquote>
+<p><pre><code>bool operator==(const bitset&lt;N&gt;&amp; rhs) const noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">true</code> if the value of each bit in <code class="language-cpp">*this</code> equals the value of the corresponding bit in <code class="language-cpp">rhs</code>.
+<del><pre><code>bool operator!=(const bitset&lt;N&gt;&amp; rhs) const noexcept;</code></pre></del>
+<del><em>Returns</em>: <code class="language-cpp">true</code> if <code class="language-cpp">!(*this == rhs)</code>.</del></blockquote></p>
+</blockquote>
 <h3 id="clause-24-algorithms-library">2.6. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>
 <blockquote><pre><code>namespace std {

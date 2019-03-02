@@ -790,6 +790,27 @@ Change 19.7.9 [variant.monostate.relops]:
 
 [<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</blockquote>
 
+Change 19.9.2 [template.bitset]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;size_t N&gt; class bitset {
+  public:
+    [...]
+    constexpr size_t size() const noexcept;
+    bool operator==(const bitset&lt;N&gt;& rhs) const noexcept;
+    <del>bool operator!=(const bitset&lt;N&gt;& rhs) const noexcept;</del>
+    bool test(size_t pos) const;
+    [...]
+  };
+}</code></pre></blockquote>
+
+Change 19.9.2.2 [bitset.members]:
+
+> <pre><code>bool operator==(const bitset&lt;N&gt;& rhs) const noexcept;</code></pre>
+> *Returns*: `true` if the value of each bit in `*this` equals the value of the corresponding bit in `rhs`.
+> <del><pre><code>bool operator!=(const bitset&lt;N&gt;& rhs) const noexcept;</code></pre></del>
+> <del>*Returns*: `true` if `!(*this == rhs)`.</del></blockquote>
+
 ## Clause 24: Algorithms library
 
 Change 24.4 [algorithm.syn]:
