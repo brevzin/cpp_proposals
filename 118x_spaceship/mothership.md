@@ -33,8 +33,13 @@ Change 15.4.2.1/2 [expos.only.func]:
 
 and append:
 
-<blockquote><pre><code>template&lt;class T, class U&gt;
-constexpr auto <i>synth-3way</i>(const T& t, const U& u) {
+<blockquote><pre><code class="language-cpp">template&lt;class T, class U&gt;
+constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp">(const T& t, const U& u)
+  requires requires {
+    { t < u } -> bool;
+    { u < t } -> bool;
+  }
+{
   if constexpr (ThreeWayComparableWith&lt;T, U&gt;) {
     return t <=> u;
   } else {
@@ -45,7 +50,7 @@ constexpr auto <i>synth-3way</i>(const T& t, const U& u) {
 }
 
 template&lt;class T, class U=T&gt;
-using <i>synth-3way-type</i> = decltype(<i>synth-3way</i>(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
+using </code><code><i>synth-3way-type</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
 
 Remove 15.4.2.3 [operators], which begins:
 
