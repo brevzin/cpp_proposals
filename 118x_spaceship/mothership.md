@@ -640,7 +640,6 @@ Change 19.6.3 [optional.optional]:
     <ins>    operator&lt;=&gt;(const optional&, const optional&lt;U&gt;&)</ins>
     <ins>    { <i>see below</i> }</ins>
 
-    <ins>// [optional.nullops]</ins>
     <ins>friend constexpr bool operator==(const optional& x, nullopt_t) { return !x; }</ins>
     <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) { return bool(x) &lt;=&gt; false; }</ins>
     
@@ -668,7 +667,7 @@ Change 19.6.6 [optional.relops]:
 > <ins>*Returns*: If `x && y`, `*x <=> *y`; otherwise `bool(x) <=> bool(y)`.</ins>  
 > <ins>*Remarks*: Specializations of this function template for which `*x <=> *y` is a core constant expression shall be `constexpr` functions. This function is to be found via argument-dependent lookup only.</ins>
  
-Change 19.6.7 [optional.nullops]:
+Remove 19.6.7 [optional.nullops] (it is now fully expressed by the two hidden friends defined in the header):
 
 > <pre><code><del>template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del>
 <del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
@@ -676,22 +675,7 @@ Change 19.6.7 [optional.nullops]:
 > <pre><code><del>template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;& x, nullopt_t) noexcept;
 template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
 > <del>*Returns*: `bool(x)`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
-> <del>*Returns*: `false`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
-> <del>*Returns*: `bool(x)`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
-> <del>*Returns*: `bool(x)`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
-> <del>*Returns*: `false`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
-> <del>*Returns*: `!x`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
-> <del>*Returns*: `true`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del></code></pre>
-> <del>*Returns*: `true`.</del>
-> <pre><code><del>template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
-> <del>*Returns*: `!x`.</del>
+> [...]
 
 Change 19.6.8 [optional.comp_with_t]:
   
