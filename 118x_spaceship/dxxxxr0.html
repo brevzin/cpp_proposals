@@ -618,6 +618,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
 <li><a href="#wording">Wording</a><ol>
+<li><a href="#todos">TODOs</a></li>
 <li><a href="#clause-15-library-introduction">Clause 15: Library Introduction</a></li>
 <li><a href="#clause-16-language-support-library">Clause 16: Language support library</a></li>
 <li><a href="#clause-17-concepts-library">Clause 17: Concepts Library</a></li>
@@ -647,7 +648,16 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <h2 id="acknowledgments">2. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thank you to Casey Carter for the tremendous wording review.</p>
 <h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
-<h3 id="clause-15-library-introduction">3.1. Clause 15: Library Introduction<a class="self-link" href="#clause-15-library-introduction"></a></h3>
+<h3 id="todos">3.1. TODOs<a class="self-link" href="#todos"></a></h3>
+<ul>
+<li>
+<p>Further semantic requirements for the <code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code> concepts. From Casey: Do we want to assume e.g. that ThreeWayComparable<T, strong_equality> implies substitutability as hinted at in [cmp.strongeq]/1? The comparison category types have various such implied semantic requirements, despite the use of the weasel word "typically," which I suspect we should mandate for models of the concept. We probably also want to require that the domain of &lt;=&gt; is symmetric (a &lt;=&gt; b must be valid when b &lt;=&gt; a is valid for values a and b of type T) and perhaps that other relational/equality operations (if any) are consistent with the result of &lt;=&gt;. (TLDR: we need to require that &lt;=&gt; means what we think it means.) For ThreeWayComparableWith, we need domain requirements (I think t &lt;=&gt; u and u &lt;=&gt; t must have the same domain, and u &lt;=&gt; u and t &lt;=&gt; t must be well-defined when t &lt;=&gt; u is) and consistency requirements (t1 &lt;=&gt; t2 equals C(t1) &lt;=&gt; C(t2), u1 &lt;=&gt; u2 equals C(u1) &lt;=&gt; C(u2), t &lt;=&gt; u equals C(t) &lt;=&gt; C(u), u &lt;=&gt; t equals C(u) &lt;=&gt; C(t) where C is the common reference type).</p>
+</li>
+<li>
+<p>Implement the CPOs</p>
+</li>
+</ul>
+<h3 id="clause-15-library-introduction">3.2. Clause 15: Library Introduction<a class="self-link" href="#clause-15-library-introduction"></a></h3>
 <p>Change 15.4.2.1/2 [expos.only.func]:</p>
 <blockquote>
 <p>The following <del>function is</del> <ins>are</ins> defined for exposition only to aid in the specification of the library:</p>
@@ -676,7 +686,7 @@ using </code><code><i>synth-3way-type</i></code><code class="language-cpp"> = de
 <blockquote>
 <p>In this library, whenever a declaration is provided for an <code class="language-cpp">operator!=</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, or <code class="language-cpp">operator&gt;=</code> for a type <code class="language-cpp">T</code>, its requirements and semantics are as follows, unless explicitly specified otherwise.</p>
 </blockquote>
-<h3 id="clause-16-language-support-library">3.2. Clause 16: Language support library<a class="self-link" href="#clause-16-language-support-library"></a></h3>
+<h3 id="clause-16-language-support-library">3.3. Clause 16: Language support library<a class="self-link" href="#clause-16-language-support-library"></a></h3>
 <p>Added: <code class="language-cpp">compare_three_way_result</code>, concepts <code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code>, <code class="language-cpp">compare_three_way</code> and <code class="language-cpp">compare_XXX_order_fallback</code></p>
 <p>Changed operators for: <code class="language-cpp">type_info</code></p>
 <p>Respecified: <code class="language-cpp">strong_order()</code>, <code class="language-cpp">weak_order()</code>, and <code class="language-cpp">partial_order()</code></p>
@@ -940,9 +950,9 @@ template &lt;typename T, typename U,
 <li><ins>Otherwise, <code class="language-cpp">compare_partial_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
 </blockquote>
-<h3 id="clause-17-concepts-library">3.3. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
+<h3 id="clause-17-concepts-library">3.4. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
 <p>Nothing.</p>
-<h3 id="clause-18-diagnostics-library">3.4. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
+<h3 id="clause-18-diagnostics-library">3.5. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
 <p>Changed operators for:</p>
 <ul>
 <li><code class="language-cpp">error_category</code></li>
@@ -1025,7 +1035,7 @@ return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
 return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
 </blockquote>
-<h3 id="clause-19-general-utilities-library">3.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
+<h3 id="clause-19-general-utilities-library">3.6. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
 <p>Changed operators for:</p>
 <ul>
 <li><code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code>, <code class="language-cpp">function</code>, <code class="language-cpp">type_index</code></li>
@@ -1182,10 +1192,10 @@ public:
 <del><em>Returns</em>: The result of a lexicographical comparison between <code class="language-cpp">t</code> and <code class="language-cpp">u</code>. The result is defined as:
 <code class="language-cpp">(bool)(get&lt;0&gt;(t) &lt; get&lt;0&gt;(u)) || (!(bool)(get&lt;0&gt;(u) &lt; get&lt;0&gt;(t)) &amp;&amp; ttail &lt; utail)</code>, where
 <code>r<sub>tail</sub></code> for some tuple <code class="language-cpp">r</code> is a tuple containing all but the first element of <code class="language-cpp">r</code>. For any two zero-length tuples <code class="language-cpp">e</code> and <code class="language-cpp">f</code>, <code class="language-cpp">e &lt; f</code> returns <code class="language-cpp">false</code>.</del><br />
-<ins><em>Effects</em>: Performs a lexicographical comparison between <code class="language-cpp">t</code> and <code class="language-cpp">u</code>. Equivalent to:</ins>
+<ins><em>Effects</em>: Performs a lexicographical comparison between <code class="language-cpp">t</code> and <code class="language-cpp">u</code>. For any two zero-length tuples <code class="language-cpp">t</code> and <code class="language-cpp">u</code>, <code class="language-cpp">t &lt;=&gt; u</code> returns <code class="language-cpp">strong_ordering::equal</code>. Otherwise, equivalent to:</ins>
 <blockquote class="ins"><pre><code>auto c = <i>synth-3way</i>(get&lt;0&gt;(t), get&lt;0&gt;(u));
 return (c != 0) ? c : (t<sub>tail</sub> &lt;=&gt; u<sub>tail</sub>);</code></pre></blockquote>
-<ins>where <code>r<sub>tail</sub></code> for some tuple <code class="language-cpp">r</code> is a tuple containing all but the first element of <code class="language-cpp">r</code>. For any two zero-length tuples <code class="language-cpp">e</code> and <code class="language-cpp">f</code>, <code class="language-cpp">e &lt;=&gt; f</code> returns <code class="language-cpp">strong_ordering::equal</code>.</ins><br />
+<ins>where <code>r<sub>tail</sub></code> for some tuple <code class="language-cpp">r</code> is a tuple containing all but the first element of <code class="language-cpp">r</code>.</ins><br />
 <ins><em>Remarks</em>:  This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
 constexpr bool operator&gt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
@@ -1739,7 +1749,7 @@ return strong_ordering::greater;</code></pre></blockquote>
 <em>Returns</em>: <code class="language-cpp">target-&gt;hash_code()</code>.
 [...]</p>
 </blockquote>
-<h3 id="clause-20-strings-library">3.6. Clause 20: Strings library<a class="self-link" href="#clause-20-strings-library"></a></h3>
+<h3 id="clause-20-strings-library">3.7. Clause 20: Strings library<a class="self-link" href="#clause-20-strings-library"></a></h3>
 <p>Changing the operators for <code class="language-cpp">basic_string</code> and <code class="language-cpp">basic_string_view</code> and adding extra type alises to the <code class="language-cpp">char_traits</code> specializations provided by the standard.</p>
 <p>Change 20.2.3.1 [char.traits.specializations.char]:</p>
 <blockquote><pre><code>namespace std {
@@ -1997,7 +2007,7 @@ Let <code class="language-cpp">R</code> denote the type <code class="language-cp
 <em>Returns:</em> <code class="language-cpp">static_cast&lt;R&gt;(lhs.compare(rhs) &lt;=&gt; 0)</code>.<br />
 <em>Remarks</em>: This function is to be found via argument-dependent lookup only.</p>
 </blockquote>
-<h3 id="clause-24-algorithms-library">3.7. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
+<h3 id="clause-24-algorithms-library">3.8. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>
 <blockquote><pre><code>namespace std {
   [...]

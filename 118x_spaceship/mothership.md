@@ -25,6 +25,12 @@ Thank you to Casey Carter for the tremendous wording review.
 
 # Wording
 
+## TODOs
+
+- Further semantic requirements for the `ThreeWayComparable` and `ThreeWayComparableWith` concepts. From Casey: Do we want to assume e.g. that ThreeWayComparable<T, strong_equality> implies substitutability as hinted at in [cmp.strongeq]/1? The comparison category types have various such implied semantic requirements, despite the use of the weasel word "typically," which I suspect we should mandate for models of the concept. We probably also want to require that the domain of <=> is symmetric (a <=> b must be valid when b <=> a is valid for values a and b of type T) and perhaps that other relational/equality operations (if any) are consistent with the result of <=>. (TLDR: we need to require that <=> means what we think it means.) For ThreeWayComparableWith, we need domain requirements (I think t <=> u and u <=> t must have the same domain, and u <=> u and t <=> t must be well-defined when t <=> u is) and consistency requirements (t1 <=> t2 equals C(t1) <=> C(t2), u1 <=> u2 equals C(u1) <=> C(u2), t <=> u equals C(t) <=> C(u), u <=> t equals C(u) <=> C(t) where C is the common reference type).
+
+- Implement the CPOs
+
 ## Clause 15: Library Introduction
 
 Change 15.4.2.1/2 [expos.only.func]:
@@ -566,10 +572,10 @@ Change 19.5.3.8 [tuple.rel]:
 > <del>*Returns*: The result of a lexicographical comparison between `t` and `u`. The result is defined as:
 `(bool)(get<0>(t) < get<0>(u)) || (!(bool)(get<0>(u) < get<0>(t)) && ttail < utail)`, where
 <code>r<sub>tail</sub></code> for some tuple `r` is a tuple containing all but the first element of `r`. For any two zero-length tuples `e` and `f`, `e < f` returns `false`.</del>  
-> <ins>*Effects*: Performs a lexicographical comparison between `t` and `u`. Equivalent to:</ins>
+> <ins>*Effects*: Performs a lexicographical comparison between `t` and `u`. For any two zero-length tuples `t` and `u`, `t <=> u` returns `strong_ordering::equal`. Otherwise, equivalent to:</ins>
 > <blockquote class="ins"><pre><code>auto c = <i>synth-3way</i>(get<0>(t), get<0>(u));
 return (c != 0) ? c : (t<sub>tail</sub> <=> u<sub>tail</sub>);</code></pre></blockquote>
-> <ins>where <code>r<sub>tail</sub></code> for some tuple `r` is a tuple containing all but the first element of `r`. For any two zero-length tuples `e` and `f`, `e <=> f` returns `strong_ordering::equal`.</ins>  
+> <ins>where <code>r<sub>tail</sub></code> for some tuple `r` is a tuple containing all but the first element of `r`.</ins>  
 > <ins>*Remarks*:  This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
 constexpr bool operator>(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
