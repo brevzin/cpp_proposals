@@ -64,7 +64,7 @@ Remove 15.4.2.3 [operators], which begins:
 
 > In this library, whenever a declaration is provided for an `operator!=`, `operator>`, `operator<=`, or `operator>=` for a type `T`, its requirements and semantics are as follows, unless explicitly specified otherwise.
 
-Add a clause to 15.5.5 [conforming], probably after 15.5.5.4 [global.functions]. Not strictly related to `<=>` as a whole, but it's a requirement that's currently missing and needs to be added somewhere.
+Add a clause to 15.5.5 [conforming], probably after 15.5.5.4 [global.functions]. Not strictly related to `<=>` as a whole, but it's a requirement that's currently missing and needs to be added somewhere. See also P1601.
 
 > **15.5.5.x Hidden friend functions [conforming.hidden.friend]**
 >
