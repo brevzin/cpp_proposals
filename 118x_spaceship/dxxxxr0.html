@@ -693,7 +693,7 @@ constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp">(
 }
 
 template&lt;class T, class U=T&gt;
-using </code><code><i>synth-3way-type</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
+using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
 
 <p>Remove 15.4.2.3 [operators], which begins:</p>
 <blockquote>
@@ -1093,7 +1093,7 @@ struct pair {
 
   <ins>friend constexpr bool operator==(const pair&, const pair&) = default;</ins>
   <ins>friend constexpr auto operator<=>(const pair&, const pair&)</ins>
-  <ins>  -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;T1&gt;, <i>synth-3way-type</i>&lt;T2&gt;&gt;</ins>
+  <ins>  -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
   <ins>{ <i>see below</i> }</ins>
 };</code></pre>
 </blockquote>
@@ -1106,7 +1106,7 @@ struct pair {
 <em>Remarks</em>: The expression inside noexcept is equivalent to:
 <code class="language-cpp">is_nothrow_swappable_v&lt;first_type&gt; &amp;&amp; is_nothrow_swappable_v&lt;second_type&gt;</code>
 <pre><code><ins>friend constexpr auto operator&lt;=&gt;(const pair&amp; lhs, const pair&amp; rhs)</ins>
-<ins>  -&gt; common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;T1&gt;, <i>synth-3way-type</i>&lt;T2&gt;&gt;;</ins></code></pre>
+<ins>  -&gt; common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;;</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = <i>synth-3way</i>(lhs.first, rhs.first); c != 0) return c;
 return <i>synth-3way</i>(lhs.second, rhs.second);</code></pre></blockquote>
@@ -1184,7 +1184,7 @@ public:
   <ins>  { <i>see below</i> }</ins>
   <ins>template&lt;class... UTypes&gt;</ins>
   <ins>  friend constexpr auto operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
-  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;Types, UTypes&gt;...&gt;</ins>
+  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
   <ins>  { <i>see below</i> }</ins>
 };</code></pre></blockquote>
 
@@ -1205,7 +1205,7 @@ public:
 <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
 <pre><code><ins>template&lt;class... UTypes&gt;</ins>
 <ins>  friend constexpr auto operator&lt;=&gt;(const tuple&amp; t, const tuple&lt;UTypes...&gt;&amp; u)</ins>
-<ins>    -&gt; common_comparison_category_t&lt;<i>synth-3way-type</i>&lt;Types, UTypes&gt;...&gt;;</ins></code></pre>
+<ins>    -&gt; common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;;</ins></code></pre>
 <em>Requires</em>: For all <code class="language-cpp">i</code>, where <code class="language-cpp">0 &lt;= i</code> and <code class="language-cpp">i &lt; sizeof...(Types)</code>, <del>both <code class="language-cpp">get&lt;i&gt;(t) &lt; get&lt;i&gt;(u)</code> and <code class="language-cpp">get&lt;i&gt;(u) &lt; get&lt;i&gt;(t)</code> are well-formed expressions returning types that are convertible to <code class="language-cpp">bool</code></del> <ins><code><i>synth-3way</i>(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a well-formed expression. <code>sizeof...(<del>TTypes</del> <ins>Types</ins>) == sizeof...(UTypes)</code>.<br />
 <del><em>Returns</em>: The result of a lexicographical comparison between <code class="language-cpp">t</code> and <code class="language-cpp">u</code>. The result is defined as:
 <code class="language-cpp">(bool)(get&lt;0&gt;(t) &lt; get&lt;0&gt;(u)) || (!(bool)(get&lt;0&gt;(u) &lt; get&lt;0&gt;(t)) &amp;&amp; ttail &lt; utail)</code>, where
@@ -2182,7 +2182,7 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
 <tr><td><pre><code><del>a &gt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>b &lt; a</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &lt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &gt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &gt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &lt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
-<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-type</i>&lt;T&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
+<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-result</i>&lt;T&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
   a.begin(), a.end(),
   b.begin(), b.end(),
   [](const T& x, const T& y){
