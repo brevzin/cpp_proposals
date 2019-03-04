@@ -64,6 +64,12 @@ Remove 15.4.2.3 [operators], which begins:
 
 > In this library, whenever a declaration is provided for an `operator!=`, `operator>`, `operator<=`, or `operator>=` for a type `T`, its requirements and semantics are as follows, unless explicitly specified otherwise.
 
+Add a clause to 15.5.5 [conforming], probably after 15.5.5.4 [global.functions]. Not strictly related to `<=>` as a whole, but it's a requirement that's currently missing and needs to be added somewhere.
+
+> **15.5.5.x Hidden friend functions [conforming.hidden.friend]**
+>
+> An implementation shall not provide any additional out-of-class declarations or redeclarations for any non-member function specified as a non-member `friend` and defined within the body of a class. [ *Note*: The intent is that such functions are to be found via argument-dependent lookup only. *-end note* ]
+
 ## Clause 16: Language support library
 
 Added: `compare_three_way_result`, concepts `ThreeWayComparable` and `ThreeWayComparableWith`, `compare_three_way` and `compare_XXX_order_fallback`
