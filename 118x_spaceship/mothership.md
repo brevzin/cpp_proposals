@@ -31,6 +31,8 @@ Thank you to Casey Carter for the tremendous wording review.
 
 - Implement the CPOs
 
+- Should `compare_three_way` be in [range.cmp]/2 so that we ensure we only have one implementation-defined total order?
+
 ## Clause 15: Library Introduction
 
 Change 15.4.2.1/2 [expos.only.func]:
