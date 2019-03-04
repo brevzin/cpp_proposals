@@ -625,7 +625,17 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#clause-18-diagnostics-library">Clause 18: Diagnostics Library</a></li>
 <li><a href="#clause-19-general-utilities-library">Clause 19: General utilities library</a></li>
 <li><a href="#clause-20-strings-library">Clause 20: Strings library</a></li>
+<li><a href="#clause-21-containers-library">Clause 21: Containers library</a></li>
+<li><a href="#clause-22-iterators-library">Clause 22: Iterators library</a></li>
+<li><a href="#clause-23-ranges-library">Clause 23: Ranges library</a></li>
 <li><a href="#clause-24-algorithms-library">Clause 24: Algorithms library</a></li>
+<li><a href="#clause-25-numeric-library">Clause 25: Numeric library</a></li>
+<li><a href="#clause-26-time-library">Clause 26: Time library</a></li>
+<li><a href="#clause-27-localization-library">Clause 27: Localization library</a></li>
+<li><a href="#clause-28-inputoutput-library">Clause 28: Input/output library</a></li>
+<li><a href="#clause-29-regular-expressions-library">Clause 29: Regular expressions library</a></li>
+<li><a href="#clause-30-atomic-operations-library">Clause 30: Atomic operations library</a></li>
+<li><a href="#clause-31-thread-support-library">Clause 31: Thread support library</a></li>
 </ol>
 </li>
 <li><a href="#references">References</a></li>
@@ -2015,7 +2025,183 @@ Let <code class="language-cpp">R</code> denote the type <code class="language-cp
 <em>Returns:</em> <code class="language-cpp">static_cast&lt;R&gt;(lhs.compare(rhs) &lt;=&gt; 0)</code>.<br />
 <em>Remarks</em>: This function is to be found via argument-dependent lookup only.</p>
 </blockquote>
-<h3 id="clause-24-algorithms-library">3.8. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
+<h3 id="clause-21-containers-library">3.8. Clause 21: Containers library<a class="self-link" href="#clause-21-containers-library"></a></h3>
+<p>Change 21.3.2 [array.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [array], class template array
+  template&lt;class T, size_t N&gt; struct array;
+
+<del>  template&lt;class T, size_t N&gt;
+    constexpr bool operator==(const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);
+  template&lt;class T, size_t N&gt;
+    constexpr bool operator!=(const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);
+  template&lt;class T, size_t N&gt;
+    constexpr bool operator&lt; (const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);
+  template&lt;class T, size_t N&gt;
+    constexpr bool operator&gt; (const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);
+  template&lt;class T, size_t N&gt;
+    constexpr bool operator&lt;=(const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);
+  template&lt;class T, size_t N&gt;
+    constexpr bool operator&gt;=(const array&lt;T, N&gt;& x, const array&lt;T, N&gt;& y);</del>
+  template&lt;class T, size_t N&gt;
+    constexpr void swap(array&lt;T, N&gt;& x, array&lt;T, N&gt;& y) noexcept(noexcept(x.swap(y)));
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.3 [deque.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [deque], class template deque
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class deque;
+
+<del>  template&lt;class T, class Allocator&gt;
+    bool operator==(const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator!=(const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt; (const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt; (const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt;=(const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt;=(const deque&lt;T, Allocator&gt;& x, const deque&lt;T, Allocator&gt;& y);</del>
+
+  template&lt;class T, class Allocator&gt;
+    void swap(deque&lt;T, Allocator&gt;& x, deque&lt;T, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.4 [forward_list.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [forwardlist], class template forward­list
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class forward_list;
+
+<del>  template&lt;class T, class Allocator&gt;
+    bool operator==(const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator!=(const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt; (const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt; (const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt;=(const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt;=(const forward_list&lt;T, Allocator&gt;& x, const forward_list&lt;T, Allocator&gt;& y);</del>
+
+  template&lt;class T, class Allocator&gt;
+    void swap(forward_list&lt;T, Allocator&gt;& x, forward_list&lt;T, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.5 [list.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [list], class template list
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class list;
+
+<del>  template&lt;class T, class Allocator&gt;
+    bool operator==(const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator!=(const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt; (const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt; (const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt;=(const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt;=(const list&lt;T, Allocator&gt;& x, const list&lt;T, Allocator&gt;& y);</del>
+
+  template&lt;class T, class Allocator&gt;
+    void swap(list&lt;T, Allocator&gt;& x, list&lt;T, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.6 [vector.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [vector], class template vector
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;
+
+<del>  template&lt;class T, class Allocator&gt;
+    bool operator==(const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator!=(const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt; (const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt; (const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&lt;=(const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);
+  template&lt;class T, class Allocator&gt;
+    bool operator&gt;=(const vector&lt;T, Allocator&gt;& x, const vector&lt;T, Allocator&gt;& y);</del>
+
+  template&lt;class T, class Allocator&gt;
+    void swap(vector&lt;T, Allocator&gt;& x, vector&lt;T, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Add to 21.2.1 [container.requirements.general], paragraph 7:</p>
+<blockquote>
+<p>In the expressions
+<pre><code>i == j
+i != j
+i &lt; j
+i &lt;= j
+i &gt;= j
+i &gt; j
+<ins>i &lt;=&gt; j</ins>
+i - j</code></pre>
+where <code class="language-cpp">i</code> and <code class="language-cpp">j</code> denote objects of a container's <code class="language-cpp">iterator</code> type, either or both may be replaced by an object of the container's <code class="language-cpp">const_iterator</code> type referring to the same element with no change in semantics.</p>
+</blockquote>
+<p>Change 21.2.1 [container.requirements.general], paragraph 14 - the optional container operations are now just <code class="language-cpp">&lt;=&gt;</code> instead of the four relational operators.</p>
+<blockquote>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <del><code>lexicographical_compare</code></del> <ins><code>lexicographical_compare_three_way</code></ins> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.
+
+<table>
+<tr><th>Expression</th><th>Return<br/>type</th><th>Operational<br/>semantics</th><th>Assertion/note<br />pre/post-condition</th><th>Complexity</th></tr>
+<tr><td><pre><code><del>a &lt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del></td><td><pre><code><del>lexicographical_compare(
+  a.begin(), a.end(),
+  b.begin(), b.end())</del></code></pre></td><td><del><i>Requires</i>: <code>&lt;</code> is defined for values of <code>T</code>. <code>&lt;</code> is a total ordering relationship.</del></td><td><del>linear</del></td></tr>
+<tr><td><pre><code><del>a &gt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>b &lt; a</del></code></pre></td><td></td><td><del>linear</del></td></tr>
+<tr><td><pre><code><del>a &lt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &gt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
+<tr><td><pre><code><del>a &gt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &lt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
+<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-type</i>&lt;T&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
+  a.begin(), a.end(),
+  b.begin(), b.end(),
+  [](const T& x, const T& y){
+    return <i>synth-3way</i>(x, y);
+  });</ins></code></pre></td><td><ins><i>Requires</i>: Either <code>T</code> models <code>ThreeWayComparable</code> ([cmp.concept]) or <code>&lt;</code> is defined for values of <code>T</code> and <code>&lt;</code> is a total ordering relationship.</ins></td><td><ins>linear</ins></td></tr>
+<tr><td><pre><code><ins>a &lt; b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &lt; 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
+<tr><td><pre><code><ins>a &gt; b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt; 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
+<tr><td><pre><code><ins>a &lt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &lt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
+<tr><td><pre><code><ins>a &gt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
+</table>
+
+</blockquote>
+
+<p>TBD</p>
+<h3 id="clause-22-iterators-library">3.9. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-23-ranges-library">3.10. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-24-algorithms-library">3.11. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>
 <blockquote><pre><code>namespace std {
   [...]
@@ -2071,5 +2257,19 @@ Let <code class="language-cpp">R</code> denote the type <code class="language-cp
 <ins>return lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());</ins></code></pre>             
 </blockquote>
 
+<h3 id="clause-25-numeric-library">3.12. Clause 25: Numeric library<a class="self-link" href="#clause-25-numeric-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-26-time-library">3.13. Clause 26: Time library<a class="self-link" href="#clause-26-time-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-27-localization-library">3.14. Clause 27: Localization library<a class="self-link" href="#clause-27-localization-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-28-inputoutput-library">3.15. Clause 28: Input/output library<a class="self-link" href="#clause-28-inputoutput-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-29-regular-expressions-library">3.16. Clause 29: Regular expressions library<a class="self-link" href="#clause-29-regular-expressions-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-30-atomic-operations-library">3.17. Clause 30: Atomic operations library<a class="self-link" href="#clause-30-atomic-operations-library"></a></h3>
+<p>TBD</p>
+<h3 id="clause-31-thread-support-library">3.18. Clause 31: Thread support library<a class="self-link" href="#clause-31-thread-support-library"></a></h3>
+<p>TBD</p>
 <h2 id="references">4. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0891r2.html">[P0891R2]</a><span style="margin-left: 5px;">"Make strong_order a Customization Point!" by Gašper Ažman, Jeff Snyder, 2019-01-20</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1154r1.html">[P1154R1]</a><span style="margin-left: 5px;">"Type traits for structural comparison" by Arthur O'Dwyer, Jeff Snyder, 2019-01-19</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1189r0.html">[P1189R0]</a><span style="margin-left: 5px;">"Add &lt;=&gt; to Library" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1191r0.html">[P1191R0]</a><span style="margin-left: 5px;">"Adding operator&lt;=&gt; to types that are not currently comparable" by David Stone, 2018-08-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1380r1.html">[P1380R1]</a><span style="margin-left: 5px;">"Ambiguity and Insecurities with Three-Way Comparison" by Lawrence Crowl, 2019-01-20</span></li></ul>
 </html>
