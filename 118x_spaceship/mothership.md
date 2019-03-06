@@ -15,6 +15,7 @@ In San Diego and Kona, several papers were approved by LEWG adding functionality
 - [P1188R0](https://wg21.link/p1188r0) - adding the type trait `compare_three_way_result<T>`, the concepts `ThreeWayComparable<T>` and `ThreeWayComparableWith<T,U>`, removing the algorithm `compare_3way` and replacing it with a function comparison object `compare_three_way` (i.e. the `<=>` version of `std::ranges::less`).
 - [P1189R0](https://wg21.link/p1189r0) - adding `operator<=>` to the standard library types whose behavior is dependent on a template parameter, removing those equality operators made redundant by [P1185R1](https://wg21.link/p1185r1) and defaulting `operator==` where appropriate.
 - [P1191R0](https://wg21.link/p1191r0) - adding equality to several previously incomparable standard library types.
+- [P1295R0](https://wg21.link/p1295r0) - adding equality and `common_type` for the comparison categories.
 - [P1380R1](https://wg21.link/p1380r1) - extending the floating point customization points for `strong_order` and `weak_order`.
 
 LEWG's unanimous preference was that `operator<=>`s be declared as hidden friends.
