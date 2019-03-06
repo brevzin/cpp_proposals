@@ -1688,10 +1688,10 @@ Change 21.3.9.1, paragraph 3 (`forward_list` spec)
     void sort();
     template&lt;class Compare&gt; void sort(Compare comp);
 
-    <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>    
-    
     void reverse() noexcept;
+    
+    <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
   };
 
   [...]
