@@ -159,7 +159,7 @@ Add into 16.11.1 [compare.syn]:
   <ins>}</ins>
 }</code></pre></blockquote>
 
-Add a new clause \[cmp.concept\]. We don't need to add any new semantic constraints. The requirement that the `<=>`s used have to be equality-preserving is picked up through [concepts.equality] already.
+Add a new clause \[cmp.concept\].
 
 > 
     :::cpp
@@ -167,15 +167,31 @@ Add a new clause \[cmp.concept\]. We don't need to add any new semantic constrai
       concept compares-as = // exposition only
         Same<common_comparison_category_t<T, Cat>, Cat>;
 > 
-    template <typename T, typename Cat=std::weak_equality>
+    template <typename T, typename Cat=weak_equality>
       concept ThreeWayComparable =
         requires(const remove_reference_t<T>& a,
                  const remove_reference_t<T>& b) {
           { a <=> b } -> compares-as<Cat>;
         };
+        
+> Let `a` and `b` be lvalues of type `const remove_reference_t<T>`. `ThreeWayComparable<T, Cat>` is satisfied only if:
 > 
+> - `bool(a <=> b == 0) == bool(a == b)`.
+> - `bool(a <=> b != 0) == bool(a != b)`.
+> - `((a <=> b) <=> 0)` and `(0 <=> (b <=> a))` have the same value
+> - If `Cat` is convertible to `strong_equality`, `T` models `EqualityComparable` ([concept.equalitycomparable]).
+> - If `Cat` is convertible to `partial_ordering`:
+>       - `bool(a <=> b < 0) == bool(a < b)`.
+>       - `bool(a <=> b > 0) == bool(a > b)`.
+>       - `bool(a <=> b <= 0) == bool(a <= b)`.
+>       - `bool(a <=> b >= 0) == bool(a >= b)`.
+> - If `Cat` is convertible to `strong_ordering`, `T` models `StrictTotallyOrdered` ([concept.stricttotallyordered]). 
+
+>   &nbsp;
+>   
+    :::cpp
     template <typename T, typename U,
-              typename Cat=std::weak_equality>
+              typename Cat=weak_equality>
       concept ThreeWayComparableWith = 
         ThreeWayComparable<T, Cat> &&
         ThreeWayComparable<U, Cat> &&
@@ -188,7 +204,21 @@ Add a new clause \[cmp.concept\]. We don't need to add any new semantic constrai
           { t <=> u } -> compares-as<Cat>;
           { u <=> t } -> compares-as<Cat>;
         };
-
+> Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `ThreeWayComparableWith<T, U, Cat>` is satisfied only if:
+>
+> - `t <=> u` and `u <=> t` have the same domain.
+> - `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` have the same value
+> - `bool(t <=> u == 0) == bool(t == u)`.
+> - `bool(t <=> u != 0) == bool(t != u)`.
+> - `Cat(t <=> u) == Cat(C(t) <=> C(u))`.
+> - If `Cat` is convertible to `strong_equality`, `U` models `EqualityComparableWith<T>` ([concepts.equalitycomparable]).
+> - If `Cat` is convertible to `partial_ordering`:
+>       - `bool(t <=> u < 0) == bool(t < u)`
+>       - `bool(t <=> u > 0) == bool(t > u)`
+>       - `bool(t <=> u <= 0) == bool(t <= u)`
+>       - `bool(t <=> u >= 0) == bool(t >= u)`
+> - If `Cat` is convertible to `strong_ordering`, `U` models `StrictTotallyOrderedWith<T>` ([concepts.stricttotallyordered]).
+        
 Add a new specification for `compare_three_way_result` in a new clause after 16.11.3 \[cmp.common\] named \[cmp.result\]:
 
 > The behavior of a program that adds specializations for the `compare_three_way_result` template defined in this subclause is undefined.
@@ -462,9 +492,9 @@ struct pair {
   constexpr void swap(pair& p) noexcept(<i>see below</i>);
   
   <ins>friend constexpr bool operator==(const pair&, const pair&) = default;</ins>
-  <ins>friend constexpr auto operator<=>(const pair&, const pair&)</ins>
-  <ins>  -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
-  <ins>{ <i>see below</i> }</ins>
+  <ins>friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
+  <ins>  operator<=>(const pair&, const pair&)</ins>
+  <ins>  { <i>see below</i> }</ins>
 };</code></pre>
 </blockquote>
 > [...]
@@ -473,8 +503,8 @@ struct pair {
 > *Effects*: Swaps `first` with `p.first` and `second` with `p.second`.  
 > *Remarks*: The expression inside noexcept is equivalent to:
 `is_nothrow_swappable_v<first_type> && is_nothrow_swappable_v<second_type>`
-> <pre><code><ins>friend constexpr auto operator<=>(const pair& lhs, const pair& rhs)</ins>
-<ins>  -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;;</ins></code></pre>
+> <pre><code><ins>friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
+<ins>  operator<=>(const pair& lhs, const pair& rhs);</ins></code></pre>
 > <ins>*Effects*: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = <i>synth-3way</i>(lhs.first, rhs.first); c != 0) return c;
 return <i>synth-3way</i>(lhs.second, rhs.second);</code></pre></blockquote>
@@ -1560,6 +1590,17 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
+Add to 21.2.1 [container.requirements.general], paragraph 4:
+
+> In Tables 62, 63, and 64 `X` denotes a container class containing objects of type `T`, `a` and `b` denote values of type `X`, <ins>`i` and `j` denote values of type (possibly-const) `X::iterator`,</ins> `u` denotes an identifier, `r` denotes a non-const value of type `X`, and `rv` denotes a non-const rvalue of type `X`.
+
+Add a row to Table 62 — Container requirements:
+
+<blockquote><table>
+<tr><th>Expression</th><th>Return<br/>type</th><th>Operational<br/>semantics</th><th>Assertion/note<br />pre/post-condition</th><th>Complexity</th></tr>
+<tr><td><pre><code><ins>i &lt;=&gt; j</ins></code></pre></td><td><ins><code>strong_ordering</code> if <code>X::iterator</code> meets the random access iterator requirements, otherwise <code>strong_equality</code></ins></td><td></td><td></td><td><ins>constant</ins></td></tr>
+</table></blockquote>
+
 Add to 21.2.1 [container.requirements.general], paragraph 7:
 
 > In the expressions
@@ -1597,7 +1638,102 @@ Change 21.2.1 [container.requirements.general], paragraph 14 - the optional cont
 <tr><td><pre><code><ins>a &gt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
 </table>
 
+[<i>Note</i>: The algorithm <del><code>lexicographical_compare()</code></del> <ins><code>lexicographical_compare_three_way()</code></ins> is defined in [algorithms]. —<i>end note</i>]
+
 </blockquote>
+
+Change 21.3.7.1, paragraph 4 (`array` spec):
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, size_t N&gt;
+  struct array {
+    [...]
+    
+    constexpr T *       data() noexcept;
+    constexpr const T * data() const noexcept;
+    
+    <ins>friend constexpr bool operator==(const array&, const array&) = default;</ins>
+    <ins>friend constexpr <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const array&, const array&) { <i>see above</i> }</ins>
+  };
+
+  template&lt;class T, class... U&gt;
+    array(T, U...) -&gt; array&lt;T, 1 + sizeof...(U)&gt;;
+}</code></pre></blockquote>
+
+Change 21.3.8.1, paragraph 2 (`deque` spec):
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class deque {
+  public:
+    [...]
+    void     swap(deque&)
+      noexcept(allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+    void     clear() noexcept;
+    
+    <ins>friend bool operator==(const deque&, const deque&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const deque&, const deque&) { <i>see above</i> }</ins>
+  };
+
+  [...]
+}</code></pre></blockquote>  
+
+Change 21.3.9.1, paragraph 3 (`forward_list` spec)
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class forward_list {
+  public:
+    [...]
+    void sort();
+    template&lt;class Compare&gt; void sort(Compare comp);
+
+    <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>    
+    
+    void reverse() noexcept;
+  };
+
+  [...]
+}</code></pre></blockquote>  
+
+Change 21.3.10.1, paragraph 2 (`list` spec)
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class list {
+  public:
+    [...]
+    void sort();
+    template&lt;class Compare&gt; void sort(Compare comp);
+
+    void reverse() noexcept;
+    
+    <ins>friend bool operator==(const list&, const list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const list&, const list&) { <i>see above</i> }</ins>        
+  };
+  
+  [...]  
+}</code></pre></blockquote>
+
+Change 21.3.11.1, paragraph 2 (`vector` spec)
+
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class vector {
+  public:
+    [...]
+    void     swap(vector&)
+      noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value ||
+               allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+    void     clear() noexcept;
+    
+    <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
+    
+  };
+  [...]
+}</code></pre></blockquote>  
 
 TBD
 

@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: DxxxxR0 <br />
-Date: 2019-03-04 <br />
+Date: 2019-03-06 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -788,21 +788,38 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   <ins>}</ins>
 }</code></pre></blockquote>
 
-<p>Add a new clause [cmp.concept]. We don't need to add any new semantic constraints. The requirement that the <code class="language-cpp">&lt;=&gt;</code>s used have to be equality-preserving is picked up through [concepts.equality] already.</p>
+<p>Add a new clause [cmp.concept].</p>
 <blockquote>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename Cat&gt;
   concept compares-as = // exposition only
     Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;
 
-template &lt;typename T, typename Cat=std::weak_equality&gt;
+template &lt;typename T, typename Cat=weak_equality&gt;
   concept ThreeWayComparable =
     requires(const remove_reference_t&lt;T&gt;&amp; a,
              const remove_reference_t&lt;T&gt;&amp; b) {
       { a &lt;=&gt; b } -&gt; compares-as&lt;Cat&gt;;
-    };
+    };</code></pre>
 
-template &lt;typename T, typename U,
-          typename Cat=std::weak_equality&gt;
+
+<p>Let <code class="language-cpp">a</code> and <code class="language-cpp">b</code> be lvalues of type <code class="language-cpp">const remove_reference_t&lt;T&gt;</code>. <code class="language-cpp">ThreeWayComparable&lt;T, Cat&gt;</code> is satisfied only if:</p>
+<ul>
+<li><code class="language-cpp">bool(a &lt;=&gt; b == 0) == bool(a == b)</code>.</li>
+<li><code class="language-cpp">bool(a &lt;=&gt; b != 0) == bool(a != b)</code>.</li>
+<li><code class="language-cpp">((a &lt;=&gt; b) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (b &lt;=&gt; a))</code> have the same value</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">T</code> models <code class="language-cpp">EqualityComparable</code> ([concept.equalitycomparable]).</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">partial_ordering</code>:<ul>
+<li><code class="language-cpp">bool(a &lt;=&gt; b &lt; 0) == bool(a &lt; b)</code>.</li>
+<li><code class="language-cpp">bool(a &lt;=&gt; b &gt; 0) == bool(a &gt; b)</code>.</li>
+<li><code class="language-cpp">bool(a &lt;=&gt; b &lt;= 0) == bool(a &lt;= b)</code>.</li>
+<li><code class="language-cpp">bool(a &lt;=&gt; b &gt;= 0) == bool(a &gt;= b)</code>.</li>
+</ul>
+</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> models <code class="language-cpp">StrictTotallyOrdered</code> ([concept.stricttotallyordered]). </li>
+</ul>
+<p>&nbsp;</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U,
+          typename Cat=weak_equality&gt;
   concept ThreeWayComparableWith = 
     ThreeWayComparable&lt;T, Cat&gt; &amp;&amp;
     ThreeWayComparable&lt;U, Cat&gt; &amp;&amp;
@@ -817,6 +834,23 @@ template &lt;typename T, typename U,
     };</code></pre>
 
 
+<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> is satisfied only if:</p>
+<ul>
+<li><code class="language-cpp">t &lt;=&gt; u</code> and <code class="language-cpp">u &lt;=&gt; t</code> have the same domain.</li>
+<li><code class="language-cpp">((t &lt;=&gt; u) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (u &lt;=&gt; t))</code> have the same value</li>
+<li><code class="language-cpp">bool(t &lt;=&gt; u == 0) == bool(t == u)</code>.</li>
+<li><code class="language-cpp">bool(t &lt;=&gt; u != 0) == bool(t != u)</code>.</li>
+<li><code class="language-cpp">Cat(t &lt;=&gt; u) == Cat(C(t) &lt;=&gt; C(u))</code>.</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">U</code> models <code class="language-cpp">EqualityComparableWith&lt;T&gt;</code> ([concepts.equalitycomparable]).</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">partial_ordering</code>:<ul>
+<li><code class="language-cpp">bool(t &lt;=&gt; u &lt; 0) == bool(t &lt; u)</code></li>
+<li><code class="language-cpp">bool(t &lt;=&gt; u &gt; 0) == bool(t &gt; u)</code></li>
+<li><code class="language-cpp">bool(t &lt;=&gt; u &lt;= 0) == bool(t &lt;= u)</code></li>
+<li><code class="language-cpp">bool(t &lt;=&gt; u &gt;= 0) == bool(t &gt;= u)</code></li>
+</ul>
+</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">U</code> models <code class="language-cpp">StrictTotallyOrderedWith&lt;T&gt;</code> ([concepts.stricttotallyordered]).</li>
+</ul>
 </blockquote>
 <p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named [cmp.result]:</p>
 <blockquote>
@@ -1092,9 +1126,9 @@ struct pair {
   constexpr void swap(pair& p) noexcept(<i>see below</i>);
 
   <ins>friend constexpr bool operator==(const pair&, const pair&) = default;</ins>
-  <ins>friend constexpr auto operator<=>(const pair&, const pair&)</ins>
-  <ins>  -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
-  <ins>{ <i>see below</i> }</ins>
+  <ins>friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
+  <ins>  operator<=>(const pair&, const pair&)</ins>
+  <ins>  { <i>see below</i> }</ins>
 };</code></pre>
 </blockquote>
 
@@ -1105,8 +1139,8 @@ struct pair {
 <em>Effects</em>: Swaps <code class="language-cpp">first</code> with <code class="language-cpp">p.first</code> and <code class="language-cpp">second</code> with <code class="language-cpp">p.second</code>.<br />
 <em>Remarks</em>: The expression inside noexcept is equivalent to:
 <code class="language-cpp">is_nothrow_swappable_v&lt;first_type&gt; &amp;&amp; is_nothrow_swappable_v&lt;second_type&gt;</code>
-<pre><code><ins>friend constexpr auto operator&lt;=&gt;(const pair&amp; lhs, const pair&amp; rhs)</ins>
-<ins>  -&gt; common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;;</ins></code></pre>
+<pre><code><ins>friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;T1&gt;, <i>synth-3way-result</i>&lt;T2&gt;&gt;</ins>
+<ins>  operator&lt;=&gt;(const pair&amp; lhs, const pair&amp; rhs);</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = <i>synth-3way</i>(lhs.first, rhs.first); c != 0) return c;
 return <i>synth-3way</i>(lhs.second, rhs.second);</code></pre></blockquote>
@@ -2158,6 +2192,16 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
+<p>Add to 21.2.1 [container.requirements.general], paragraph 4:</p>
+<blockquote>
+<p>In Tables 62, 63, and 64 <code class="language-cpp">X</code> denotes a container class containing objects of type <code class="language-cpp">T</code>, <code class="language-cpp">a</code> and <code class="language-cpp">b</code> denote values of type <code class="language-cpp">X</code>, <ins><code class="language-cpp">i</code> and <code class="language-cpp">j</code> denote values of type (possibly-const) <code class="language-cpp">X::iterator</code>,</ins> <code class="language-cpp">u</code> denotes an identifier, <code class="language-cpp">r</code> denotes a non-const value of type <code class="language-cpp">X</code>, and <code class="language-cpp">rv</code> denotes a non-const rvalue of type <code class="language-cpp">X</code>.</p>
+</blockquote>
+<p>Add a row to Table 62 — Container requirements:</p>
+<blockquote><table>
+<tr><th>Expression</th><th>Return<br/>type</th><th>Operational<br/>semantics</th><th>Assertion/note<br />pre/post-condition</th><th>Complexity</th></tr>
+<tr><td><pre><code><ins>i &lt;=&gt; j</ins></code></pre></td><td><ins><code>strong_ordering</code> if <code>X::iterator</code> meets the random access iterator requirements, otherwise <code>strong_equality</code></ins></td><td></td><td></td><td><ins>constant</ins></td></tr>
+</table></blockquote>
+
 <p>Add to 21.2.1 [container.requirements.general], paragraph 7:</p>
 <blockquote>
 <p>In the expressions
@@ -2194,7 +2238,97 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
 <tr><td><pre><code><ins>a &gt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
 </table>
 
+[<i>Note</i>: The algorithm <del><code>lexicographical_compare()</code></del> <ins><code>lexicographical_compare_three_way()</code></ins> is defined in [algorithms]. —<i>end note</i>]
+
 </blockquote>
+
+<p>Change 21.3.7.1, paragraph 4 (<code class="language-cpp">array</code> spec):</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, size_t N&gt;
+  struct array {
+    [...]
+
+    constexpr T *       data() noexcept;
+    constexpr const T * data() const noexcept;
+
+    <ins>friend constexpr bool operator==(const array&, const array&) = default;</ins>
+    <ins>friend constexpr <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const array&, const array&) { <i>see above</i> }</ins>
+  };
+
+  template&lt;class T, class... U&gt;
+    array(T, U...) -&gt; array&lt;T, 1 + sizeof...(U)&gt;;
+}</code></pre></blockquote>
+
+<p>Change 21.3.8.1, paragraph 2 (<code class="language-cpp">deque</code> spec):</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class deque {
+  public:
+    [...]
+    void     swap(deque&)
+      noexcept(allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+    void     clear() noexcept;
+
+    <ins>friend bool operator==(const deque&, const deque&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const deque&, const deque&) { <i>see above</i> }</ins>
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.9.1, paragraph 3 (<code class="language-cpp">forward_list</code> spec)</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class forward_list {
+  public:
+    [...]
+    void sort();
+    template&lt;class Compare&gt; void sort(Compare comp);
+
+    <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>    
+
+    void reverse() noexcept;
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.3.10.1, paragraph 2 (<code class="language-cpp">list</code> spec)</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class list {
+  public:
+    [...]
+    void sort();
+    template&lt;class Compare&gt; void sort(Compare comp);
+
+    void reverse() noexcept;
+
+    <ins>friend bool operator==(const list&, const list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const list&, const list&) { <i>see above</i> }</ins>        
+  };
+
+  [...]  
+}</code></pre></blockquote>
+
+<p>Change 21.3.11.1, paragraph 2 (<code class="language-cpp">vector</code> spec)</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
+  class vector {
+  public:
+    [...]
+    void     swap(vector&)
+      noexcept(allocator_traits&lt;Allocator&gt;::propagate_on_container_swap::value ||
+               allocator_traits&lt;Allocator&gt;::is_always_equal::value);
+    void     clear() noexcept;
+
+    <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
+
+  };
+  [...]
+}</code></pre></blockquote>
 
 <p>TBD</p>
 <h3 id="clause-22-iterators-library">3.9. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
