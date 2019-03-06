@@ -159,7 +159,7 @@ Add into 16.11.1 [compare.syn]:
   <ins>}</ins>
 }</code></pre></blockquote>
 
-Add a new clause \[cmp.concept\].
+Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
 
 > 
     :::cpp
@@ -176,15 +176,15 @@ Add a new clause \[cmp.concept\].
         
 > Let `a` and `b` be lvalues of type `const remove_reference_t<T>`. `T` and `Cat` model `ThreeWayComparable<T, Cat>` only if:
 > 
-> - `bool(a <=> b == 0) == bool(a == b)`.
-> - `bool(a <=> b != 0) == bool(a != b)`.
-> - `((a <=> b) <=> 0)` and `(0 <=> (b <=> a))` have the same value
+> - `(a <=> b == 0) == bool(a == b)`.
+> - `(a <=> b != 0) == bool(a != b)`.
+> - `((a <=> b) <=> 0)` and `(0 <=> (b <=> a))` are equal
 > - If `Cat` is convertible to `strong_equality`, `T` models `EqualityComparable` ([concept.equalitycomparable]).
 > - If `Cat` is convertible to `partial_ordering`:
->       - `bool(a <=> b < 0) == bool(a < b)`.
->       - `bool(a <=> b > 0) == bool(a > b)`.
->       - `bool(a <=> b <= 0) == bool(a <= b)`.
->       - `bool(a <=> b >= 0) == bool(a >= b)`.
+>       - `(a <=> b < 0) == bool(a < b)`.
+>       - `(a <=> b > 0) == bool(a > b)`.
+>       - `(a <=> b <= 0) == bool(a <= b)`.
+>       - `(a <=> b >= 0) == bool(a >= b)`.
 > - If `Cat` is convertible to `strong_ordering`, `T` models `StrictTotallyOrdered` ([concept.stricttotallyordered]). 
 
 >   &nbsp;
@@ -207,25 +207,25 @@ Add a new clause \[cmp.concept\].
 > Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `T`, `U`, and `Cat` model `ThreeWayComparableWith<T, U, Cat>` only if:
 >
 > - `t <=> u` and `u <=> t` have the same domain.
-> - `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` have the same value
-> - `bool(t <=> u == 0) == bool(t == u)`.
-> - `bool(t <=> u != 0) == bool(t != u)`.
+> - `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` are equal
+> - `(t <=> u == 0) == bool(t == u)`.
+> - `(t <=> u != 0) == bool(t != u)`.
 > - `Cat(t <=> u) == Cat(C(t) <=> C(u))`.
 > - If `Cat` is convertible to `strong_equality`, `T` and `U` model `EqualityComparableWith<T, U>` ([concepts.equalitycomparable]).
 > - If `Cat` is convertible to `partial_ordering`:
->       - `bool(t <=> u < 0) == bool(t < u)`
->       - `bool(t <=> u > 0) == bool(t > u)`
->       - `bool(t <=> u <= 0) == bool(t <= u)`
->       - `bool(t <=> u >= 0) == bool(t >= u)`
+>       - `(t <=> u < 0) == bool(t < u)`
+>       - `(t <=> u > 0) == bool(t > u)`
+>       - `(t <=> u <= 0) == bool(t <= u)`
+>       - `(t <=> u >= 0) == bool(t >= u)`
 > - If `Cat` is convertible to `strong_ordering`, `T` and `U` model `StrictTotallyOrderedWith<T, U>` ([concepts.stricttotallyordered]).
         
-Add a new specification for `compare_three_way_result` in a new clause after 16.11.3 \[cmp.common\] named \[cmp.result\]:
+Add a new specification for `compare_three_way_result` in a new clause after 16.11.3 \[cmp.common\] named "Comparison Result" \[cmp.result\]:
 
 > The behavior of a program that adds specializations for the `compare_three_way_result` template defined in this subclause is undefined.
 
 > For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. If the expression `t <=> u` is well-formed, the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
 
-Add a new specification for `compare_three_way` in a new clause named [cmp.object]:
+Add a new specification for `compare_three_way` in a new clause named "Comparison Object" [cmp.object]:
 
 > In this subclause, `BUILTIN_PTR_3WAY(T, U)` for types `T` and `U` is a boolean constant expression. `BUILTIN_PTR_3WAY(T, U)` is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
 

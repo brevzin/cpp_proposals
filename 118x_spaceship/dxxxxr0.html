@@ -788,7 +788,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   <ins>}</ins>
 }</code></pre></blockquote>
 
-<p>Add a new clause [cmp.concept].</p>
+<p>Add a new clause "Concept <code class="language-cpp">ThreeWayComparable</code>" [cmp.concept].</p>
 <blockquote>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename Cat&gt;
   concept compares-as = // exposition only
@@ -804,15 +804,15 @@ template &lt;typename T, typename Cat=weak_equality&gt;
 
 <p>Let <code class="language-cpp">a</code> and <code class="language-cpp">b</code> be lvalues of type <code class="language-cpp">const remove_reference_t&lt;T&gt;</code>. <code class="language-cpp">T</code> and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparable&lt;T, Cat&gt;</code> only if:</p>
 <ul>
-<li><code class="language-cpp">bool(a &lt;=&gt; b == 0) == bool(a == b)</code>.</li>
-<li><code class="language-cpp">bool(a &lt;=&gt; b != 0) == bool(a != b)</code>.</li>
-<li><code class="language-cpp">((a &lt;=&gt; b) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (b &lt;=&gt; a))</code> have the same value</li>
+<li><code class="language-cpp">(a &lt;=&gt; b == 0) == bool(a == b)</code>.</li>
+<li><code class="language-cpp">(a &lt;=&gt; b != 0) == bool(a != b)</code>.</li>
+<li><code class="language-cpp">((a &lt;=&gt; b) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (b &lt;=&gt; a))</code> are equal</li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">T</code> models <code class="language-cpp">EqualityComparable</code> ([concept.equalitycomparable]).</li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">partial_ordering</code>:<ul>
-<li><code class="language-cpp">bool(a &lt;=&gt; b &lt; 0) == bool(a &lt; b)</code>.</li>
-<li><code class="language-cpp">bool(a &lt;=&gt; b &gt; 0) == bool(a &gt; b)</code>.</li>
-<li><code class="language-cpp">bool(a &lt;=&gt; b &lt;= 0) == bool(a &lt;= b)</code>.</li>
-<li><code class="language-cpp">bool(a &lt;=&gt; b &gt;= 0) == bool(a &gt;= b)</code>.</li>
+<li><code class="language-cpp">(a &lt;=&gt; b &lt; 0) == bool(a &lt; b)</code>.</li>
+<li><code class="language-cpp">(a &lt;=&gt; b &gt; 0) == bool(a &gt; b)</code>.</li>
+<li><code class="language-cpp">(a &lt;=&gt; b &lt;= 0) == bool(a &lt;= b)</code>.</li>
+<li><code class="language-cpp">(a &lt;=&gt; b &gt;= 0) == bool(a &gt;= b)</code>.</li>
 </ul>
 </li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> models <code class="language-cpp">StrictTotallyOrdered</code> ([concept.stricttotallyordered]). </li>
@@ -837,27 +837,27 @@ template &lt;typename T, typename Cat=weak_equality&gt;
 <p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">T</code>, <code class="language-cpp">U</code>, and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> only if:</p>
 <ul>
 <li><code class="language-cpp">t &lt;=&gt; u</code> and <code class="language-cpp">u &lt;=&gt; t</code> have the same domain.</li>
-<li><code class="language-cpp">((t &lt;=&gt; u) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (u &lt;=&gt; t))</code> have the same value</li>
-<li><code class="language-cpp">bool(t &lt;=&gt; u == 0) == bool(t == u)</code>.</li>
-<li><code class="language-cpp">bool(t &lt;=&gt; u != 0) == bool(t != u)</code>.</li>
+<li><code class="language-cpp">((t &lt;=&gt; u) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (u &lt;=&gt; t))</code> are equal</li>
+<li><code class="language-cpp">(t &lt;=&gt; u == 0) == bool(t == u)</code>.</li>
+<li><code class="language-cpp">(t &lt;=&gt; u != 0) == bool(t != u)</code>.</li>
 <li><code class="language-cpp">Cat(t &lt;=&gt; u) == Cat(C(t) &lt;=&gt; C(u))</code>.</li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">T</code> and <code class="language-cpp">U</code> model <code class="language-cpp">EqualityComparableWith&lt;T, U&gt;</code> ([concepts.equalitycomparable]).</li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">partial_ordering</code>:<ul>
-<li><code class="language-cpp">bool(t &lt;=&gt; u &lt; 0) == bool(t &lt; u)</code></li>
-<li><code class="language-cpp">bool(t &lt;=&gt; u &gt; 0) == bool(t &gt; u)</code></li>
-<li><code class="language-cpp">bool(t &lt;=&gt; u &lt;= 0) == bool(t &lt;= u)</code></li>
-<li><code class="language-cpp">bool(t &lt;=&gt; u &gt;= 0) == bool(t &gt;= u)</code></li>
+<li><code class="language-cpp">(t &lt;=&gt; u &lt; 0) == bool(t &lt; u)</code></li>
+<li><code class="language-cpp">(t &lt;=&gt; u &gt; 0) == bool(t &gt; u)</code></li>
+<li><code class="language-cpp">(t &lt;=&gt; u &lt;= 0) == bool(t &lt;= u)</code></li>
+<li><code class="language-cpp">(t &lt;=&gt; u &gt;= 0) == bool(t &gt;= u)</code></li>
 </ul>
 </li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> and <code class="language-cpp">U</code> model <code class="language-cpp">StrictTotallyOrderedWith&lt;T, U&gt;</code> ([concepts.stricttotallyordered]).</li>
 </ul>
 </blockquote>
-<p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named [cmp.result]:</p>
+<p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named "Comparison Result" [cmp.result]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_three_way_result</code> template defined in this subclause is undefined.</p>
 <p>For the <code class="language-cpp">compare_three_way_result</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well-formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> denotes the type <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there is no member <code class="language-cpp">type</code>.</p>
 </blockquote>
-<p>Add a new specification for <code class="language-cpp">compare_three_way</code> in a new clause named [cmp.object]:</p>
+<p>Add a new specification for <code class="language-cpp">compare_three_way</code> in a new clause named "Comparison Object" [cmp.object]:</p>
 <blockquote>
 <p>In this subclause, <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> for types <code class="language-cpp">T</code> and <code class="language-cpp">U</code> is a boolean constant expression. <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> is <code class="language-cpp">true</code> if and only if <code class="language-cpp">&lt;=&gt;</code> in the expression <code class="language-cpp">declval&lt;T&gt;() &lt;=&gt; declval&lt;U&gt;()</code> resolves to a built-in operator comparing pointers.</p>
 <p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operator <code class="language-cpp">&lt;=&gt;</code>.</p>
