@@ -1647,7 +1647,7 @@ Change 21.2.1 [container.requirements.general], paragraph 14 - the optional cont
 <tr><td><pre><code><del>a &gt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>b &lt; a</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &lt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &gt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &gt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &lt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
-<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-result</i>&lt;T&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
+<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-result</i>&lt;X::value_type&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
   a.begin(), a.end(),
   b.begin(), b.end(),
   [](const T& x, const T& y){
@@ -1663,7 +1663,7 @@ Change 21.2.1 [container.requirements.general], paragraph 14 - the optional cont
 
 </blockquote>
 
-Change 21.3.7.1, paragraph 4 (`array` spec):
+Change 21.3.7.1, paragraph 4 [array.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, size_t N&gt;
@@ -1674,14 +1674,14 @@ Change 21.3.7.1, paragraph 4 (`array` spec):
     constexpr const T * data() const noexcept;
     
     <ins>friend constexpr bool operator==(const array&, const array&) = default;</ins>
-    <ins>friend constexpr <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const array&, const array&) { <i>see above</i> }</ins>
+    <ins>friend constexpr <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const array&, const array&) { <i>see above</i> }</ins>
   };
 
   template&lt;class T, class... U&gt;
     array(T, U...) -&gt; array&lt;T, 1 + sizeof...(U)&gt;;
 }</code></pre></blockquote>
 
-Change 21.3.8.1, paragraph 2 (`deque` spec):
+Change 21.3.8.1, paragraph 2 [deque.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -1693,13 +1693,13 @@ Change 21.3.8.1, paragraph 2 (`deque` spec):
     void     clear() noexcept;
     
     <ins>friend bool operator==(const deque&, const deque&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const deque&, const deque&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const deque&, const deque&) { <i>see above</i> }</ins>
   };
 
   [...]
 }</code></pre></blockquote>  
 
-Change 21.3.9.1, paragraph 3 (`forward_list` spec)
+Change 21.3.9.1, paragraph 3 [forwardlist.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -1712,13 +1712,13 @@ Change 21.3.9.1, paragraph 3 (`forward_list` spec)
     void reverse() noexcept;
     
     <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
   };
 
   [...]
 }</code></pre></blockquote>  
 
-Change 21.3.10.1, paragraph 2 (`list` spec)
+Change 21.3.10.1, paragraph 2 [list.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -1731,13 +1731,13 @@ Change 21.3.10.1, paragraph 2 (`list` spec)
     void reverse() noexcept;
     
     <ins>friend bool operator==(const list&, const list&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const list&, const list&) { <i>see above</i> }</ins>        
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const list&, const list&) { <i>see above</i> }</ins>        
   };
   
   [...]  
 }</code></pre></blockquote>
 
-Change 21.3.11.1, paragraph 2 (`vector` spec)
+Change 21.3.11.1, paragraph 2 [vector.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -1750,12 +1750,273 @@ Change 21.3.11.1, paragraph 2 (`vector` spec)
     void     clear() noexcept;
     
     <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
   };
   [...]
 }</code></pre></blockquote>  
 
-TBD
+Change 21.3.12 [vector.bool]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class Allocator&gt;
+  class vector&lt;bool, Allocator&gt; {
+  public:
+    [...]
+    static void swap(reference x, reference y) noexcept;
+    void flip() noexcept;       // flips all bits
+    void clear() noexcept;
+    
+    <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>
+  };
+}</code></pre></blockquote>
+
+Change 21.4.2 [associative.map.syn]:
+
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [map], class template map
+  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+    class map;
+
+<del>  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator==(const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator!=(const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&lt; (const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&gt; (const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&lt;=(const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&gt;=(const map&lt;Key, T, Compare, Allocator&gt;& x,
+                    const map&lt;Key, T, Compare, Allocator&gt;& y);</del>
+
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    void swap(map&lt;Key, T, Compare, Allocator&gt;& x,
+              map&lt;Key, T, Compare, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  template &lt;class Key, class T, class Compare, class Allocator, class Predicate&gt;
+    void erase_if(map&lt;Key, T, Compare, Allocator&gt;& c, Predicate pred);
+
+  // [multimap], class template multimap
+  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+    class multimap;
+
+<del>  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator==(const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator!=(const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&lt; (const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&gt; (const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&lt;=(const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    bool operator&gt;=(const multimap&lt;Key, T, Compare, Allocator&gt;& x,
+                    const multimap&lt;Key, T, Compare, Allocator&gt;& y);</del>
+
+  template&lt;class Key, class T, class Compare, class Allocator&gt;
+    void swap(multimap&lt;Key, T, Compare, Allocator&gt;& x,
+              multimap&lt;Key, T, Compare, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  template &lt;class Key, class T, class Compare, class Allocator, class Predicate&gt;
+    void erase_if(multimap&lt;Key, T, Compare, Allocator&gt;& c, Predicate pred);
+
+  namespace pmr {
+    template&lt;class Key, class T, class Compare = less&lt;Key&gt;&gt;
+      using map = std::map&lt;Key, T, Compare,
+                           polymorphic_allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;;
+
+    template&lt;class Key, class T, class Compare = less&lt;Key&gt;&gt;
+      using multimap = std::multimap&lt;Key, T, Compare,
+                                     polymorphic_allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;;
+  }
+}</code></pre></blockquote>
+
+Change 21.4.3 [associative.set.syn]:
+
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [set], class template set
+  template&lt;class Key, class Compare = less&lt;Key&gt;, class Allocator = allocator&lt;Key&gt;&gt;
+    class set;
+
+<del>  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator==(const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator!=(const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&lt; (const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&gt; (const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&lt;=(const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&gt;=(const set&lt;Key, Compare, Allocator&gt;& x,
+                    const set&lt;Key, Compare, Allocator&gt;& y);</del>
+
+  template&lt;class Key, class Compare, class Allocator&gt;
+    void swap(set&lt;Key, Compare, Allocator&gt;& x,
+              set&lt;Key, Compare, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  template &lt;class Key, class Compare, class Allocator, class Predicate&gt;
+    void erase_if(set&lt;Key, Compare, Allocator&gt;& c, Predicate pred);
+
+  // [multiset], class template multiset
+  template&lt;class Key, class Compare = less&lt;Key&gt;, class Allocator = allocator&lt;Key&gt;&gt;
+    class multiset;
+
+<del>  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator==(const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator!=(const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&lt; (const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&gt; (const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&lt;=(const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);
+  template&lt;class Key, class Compare, class Allocator&gt;
+    bool operator&gt;=(const multiset&lt;Key, Compare, Allocator&gt;& x,
+                    const multiset&lt;Key, Compare, Allocator&gt;& y);</del>
+
+  template&lt;class Key, class Compare, class Allocator&gt;
+    void swap(multiset&lt;Key, Compare, Allocator&gt;& x,
+              multiset&lt;Key, Compare, Allocator&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  template &lt;class Key, class Compare, class Allocator, class Predicate&gt;
+    void erase_if(multiset&lt;Key, Compare, Allocator&gt;& c, Predicate pred);
+
+  namespace pmr {
+    template&lt;class Key, class Compare = less&lt;Key&gt;&gt;
+      using set = std::set&lt;Key, Compare, polymorphic_allocator&lt;Key&gt;&gt;;
+
+    template&lt;class Key, class Compare = less&lt;Key&gt;&gt;
+      using multiset = std::multiset&lt;Key, Compare, polymorphic_allocator&lt;Key&gt;&gt;;
+  }
+}</code></pre></blockquote>
+
+Change 21.4.4.1 [map.overview]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+  class map {
+  public:
+    [...]
+    pair&lt;iterator, iterator&gt;               equal_range(const key_type& x);
+    pair&lt;const_iterator, const_iterator&gt;   equal_range(const key_type& x) const;
+    template&lt;class K&gt;
+      pair&lt;iterator, iterator&gt;             equal_range(const K& x);
+    template&lt;class K&gt;
+      pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
+      
+    <ins>friend bool operator==(const map&, const map&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const map&, const map&) { <i>see above</i> }</ins>
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+Change 21.4.5.1 [multimap.overview]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+  class multimap {
+  public:
+    [...]
+    pair&lt;iterator, iterator&gt;               equal_range(const key_type& x);
+    pair&lt;const_iterator, const_iterator&gt;   equal_range(const key_type& x) const;
+    template&lt;class K&gt;
+      pair&lt;iterator, iterator&gt;             equal_range(const K& x);
+    template&lt;class K&gt;
+      pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
+      
+    <ins>friend bool operator==(const multimap&, const multimap&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multimap&, const multimap&) { <i>see above</i> }</ins>      
+  };
+
+  [...]
+}</code></pre></blockquote>  
+
+Change 21.4.6.1 [set.overview]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class Key, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;Key&gt;&gt;
+  class set {
+  public:
+    [...]
+    pair&lt;iterator, iterator&gt;               equal_range(const key_type& x);
+    pair&lt;const_iterator, const_iterator&gt;   equal_range(const key_type& x) const;
+    template&lt;class K&gt;
+      pair&lt;iterator, iterator&gt;             equal_range(const K& x);
+    template&lt;class K&gt;
+      pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
+      
+    <ins>friend bool operator==(const set&, const set&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const set&, const set&) { <i>see above</i> }</ins>          
+  };
+
+  [...]
+}</code></pre></blockquote>  
+
+Change 21.4.7.1 [multiset.overview]:
+
+<blockquote><pre><code>namespace std {
+  template&lt;class Key, class Compare = less&lt;Key&gt;,
+           class Allocator = allocator&lt;Key&gt;&gt;
+  class multiset {
+  public:
+    [...]
+    
+    pair&lt;iterator, iterator&gt;               equal_range(const key_type& x);
+    pair&lt;const_iterator, const_iterator&gt;   equal_range(const key_type& x) const;
+    template&lt;class K&gt;
+      pair&lt;iterator, iterator&gt;             equal_range(const K& x);
+    template&lt;class K&gt;
+      pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
+      
+    <ins>friend bool operator==(const multiset&, const multiset&) { <i>see above</i> }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multiset&, const multiset&) { <i>see above</i> }</ins>      
+  };
+
+  [...]
+}</code></pre></blockquote>  
+
+TBD unordered containers, queue, and stack
 
 ## Clause 22: Iterators library
 
