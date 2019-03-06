@@ -794,7 +794,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   concept </code><code><i>compares-as</i></code><code class="language-cpp"> = // exposition only
     Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;</code></pre></p>
 <p><pre><code class="language-cpp">template&lt;class T, class U&gt;
-  concept </code><code><i>weakly-ordered-with</i></code><code class="language-cpp"> = // exposition only
+  concept </code><code><i>partially-ordered-with</i></code><code class="language-cpp"> = // exposition only
     requires(const remove_reference_t&lt;T&gt;&amp; t,
              const remove_reference_t&lt;U&gt;&amp; u) {
       { t &lt; u } -&gt; Boolean;
@@ -806,18 +806,18 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
       { u &lt;= t } -&gt; Boolean;
       { u &gt;= t } -&gt; Boolean;    <br />
     };</code></pre></p>
-<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code> respectively. <code><i>weakly-ordered-with</i>&lt;T, U&gt;</code> is satisfied only if:</p>
+<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code> respectively. <code><i>partially-ordered-with</i>&lt;T, U&gt;</code> is satisfied only if:</p>
 <ul>
 <li><code class="language-cpp">t &lt; u</code>, <code class="language-cpp">t &lt;= u</code>, <code class="language-cpp">t &gt; u</code>, <code class="language-cpp">t &gt;= u</code>, <code class="language-cpp">u &lt; t</code>, <code class="language-cpp">u &lt;= t</code>, <code class="language-cpp">u &gt; t</code>, and <code class="language-cpp">u &gt;= t</code> have the same domain.</li>
 <li><code class="language-cpp">bool(t &lt; u) == bool(u &gt; t)</code></li>
 <li><code class="language-cpp">bool(u &lt; t) == bool(t &gt; u)</code></li>
 <li><code class="language-cpp">bool(t &lt;= u) == bool(u &gt;= t)</code></li>
-<li><code class="language-cpp">bool(u &lt;= t) == bool(t &gt; = u)</code></li>
+<li><code class="language-cpp">bool(u &lt;= t) == bool(t &gt;= u)</code></li>
 </ul>
 <p><pre><code class="language-cpp">template &lt;typename T, typename Cat = partial_ordering&gt;
   concept ThreeWayComparable =
     </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, T&gt; &amp;&amp;
-    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, T&gt;) &amp;&amp;
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>partially-ordered-with</i></code><code class="language-cpp">&lt;T, T&gt;) &amp;&amp;
     requires(const remove_reference_t&lt;T&gt;&amp; a,
              const remove_reference_t&lt;T&gt;&amp; b) {
       { a &lt;=&gt; b } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
@@ -841,7 +841,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
           typename Cat = partial_ordering&gt;
   concept ThreeWayComparableWith = 
     </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, U&gt; &amp;&amp;
-    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, U&gt;) &amp;&amp;
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>partially-ordered-with</i></code><code class="language-cpp">&lt;T, U&gt;) &amp;&amp;
     ThreeWayComparable&lt;T, Cat&gt; &amp;&amp;
     ThreeWayComparable&lt;U, Cat&gt; &amp;&amp;
     CommonReference&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt; &amp;&amp;
