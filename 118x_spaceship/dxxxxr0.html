@@ -790,18 +790,38 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
 
 <p>Add a new clause "Concept <code class="language-cpp">ThreeWayComparable</code>" [cmp.concept].</p>
 <blockquote>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename Cat&gt;
-  concept compares-as = // exposition only
-    Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;
-
-template &lt;typename T, typename Cat=partial_ordering&gt;
+<p><pre><code class="language-cpp">template &lt;typename T, typename Cat&gt;
+  concept </code><code><i>compares-as</i></code><code class="language-cpp"> = // exposition only
+    Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;</code></pre></p>
+<p><pre><code class="language-cpp">template&lt;class T, class U&gt;
+  concept </code><code><i>weakly-ordered-with</i></code><code class="language-cpp"> = // exposition only
+    requires(const remove_reference_t&lt;T&gt;&amp; t,
+             const remove_reference_t&lt;U&gt;&amp; u) {
+      { t &lt; u } -&gt; Boolean;
+      { t &gt; u } -&gt; Boolean;
+      { t &lt;= u } -&gt; Boolean;
+      { t &gt;= u } -&gt; Boolean;
+      { u &lt; t } -&gt; Boolean;
+      { u &gt; t } -&gt; Boolean;
+      { u &lt;= t } -&gt; Boolean;
+      { u &gt;= t } -&gt; Boolean;    <br />
+    };</code></pre></p>
+<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code> respectively. <code><i>weakly-ordered-with</i>&lt;T, U&gt;</code> is satisfied only if:</p>
+<ul>
+<li><code class="language-cpp">t &lt; u</code>, <code class="language-cpp">t &lt;= u</code>, <code class="language-cpp">t &gt; u</code>, <code class="language-cpp">t &gt;= u</code>, <code class="language-cpp">u &lt; t</code>, <code class="language-cpp">u &lt;= t</code>, <code class="language-cpp">u &gt; t</code>, and <code class="language-cpp">u &gt;= t</code> have the same domain.</li>
+<li><code class="language-cpp">bool(t &lt; u) == bool(u &gt; t)</code></li>
+<li><code class="language-cpp">bool(u &lt; t) == bool(t &gt; u)</code></li>
+<li><code class="language-cpp">bool(t &lt;= u) == bool(u &gt;= t)</code></li>
+<li><code class="language-cpp">bool(u &lt;= t) == bool(t &gt; = u)</code></li>
+</ul>
+<p><pre><code class="language-cpp">template &lt;typename T, typename Cat = partial_ordering&gt;
   concept ThreeWayComparable =
+    </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, T&gt; &amp;&amp;
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, T&gt;) &amp;&amp;
     requires(const remove_reference_t&lt;T&gt;&amp; a,
              const remove_reference_t&lt;T&gt;&amp; b) {
-      { a &lt;=&gt; b } -&gt; compares-as&lt;Cat&gt;;
-    };</code></pre>
-
-
+      { a &lt;=&gt; b } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
+    };</code></pre></p>
 <p>Let <code class="language-cpp">a</code> and <code class="language-cpp">b</code> be lvalues of type <code class="language-cpp">const remove_reference_t&lt;T&gt;</code>. <code class="language-cpp">T</code> and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparable&lt;T, Cat&gt;</code> only if:</p>
 <ul>
 <li><code class="language-cpp">(a &lt;=&gt; b == 0) == bool(a == b)</code>.</li>
@@ -817,10 +837,11 @@ template &lt;typename T, typename Cat=partial_ordering&gt;
 </li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> models <code class="language-cpp">StrictTotallyOrdered</code> ([concept.stricttotallyordered]). </li>
 </ul>
-<p>&nbsp;</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U,
-          typename Cat=partial_ordering&gt;
+<p><pre><code class="language-cpp">template &lt;typename T, typename U,
+          typename Cat = partial_ordering&gt;
   concept ThreeWayComparableWith = 
+    </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, U&gt; &amp;&amp;
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, U&gt;) &amp;&amp;
     ThreeWayComparable&lt;T, Cat&gt; &amp;&amp;
     ThreeWayComparable&lt;U, Cat&gt; &amp;&amp;
     CommonReference&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt; &amp;&amp;
@@ -829,12 +850,10 @@ template &lt;typename T, typename Cat=partial_ordering&gt;
       Cat&gt; &amp;&amp;
     requires(const remove_reference_t&lt;T&gt;&amp; t,
              const remove_reference_t&lt;U&gt;&amp; u) {
-      { t &lt;=&gt; u } -&gt; compares-as&lt;Cat&gt;;
-      { u &lt;=&gt; t } -&gt; compares-as&lt;Cat&gt;;
+      { t &lt;=&gt; u } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
+      { u &lt;=&gt; t } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
     };</code></pre>
-
-
-<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">T</code>, <code class="language-cpp">U</code>, and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> only if:</p>
+Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">T</code>, <code class="language-cpp">U</code>, and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> only if:</p>
 <ul>
 <li><code class="language-cpp">t &lt;=&gt; u</code> and <code class="language-cpp">u &lt;=&gt; t</code> have the same domain.</li>
 <li><code class="language-cpp">((t &lt;=&gt; u) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (u &lt;=&gt; t))</code> are equal</li>

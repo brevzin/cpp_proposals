@@ -161,18 +161,40 @@ Add into 16.11.1 [compare.syn]:
 
 Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
 
-> 
-    :::cpp
-    template <typename T, typename Cat>
-      concept compares-as = // exposition only
-        Same<common_comparison_category_t<T, Cat>, Cat>;
-> 
-    template <typename T, typename Cat=partial_ordering>
-      concept ThreeWayComparable =
-        requires(const remove_reference_t<T>& a,
-                 const remove_reference_t<T>& b) {
-          { a <=> b } -> compares-as<Cat>;
-        };
+> <pre><code class="language-cpp">template &lt;typename T, typename Cat&gt;
+  concept </code><code><i>compares-as</i></code><code class="language-cpp"> = // exposition only
+    Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;</code></pre>
+
+> <pre><code class="language-cpp">template&lt;class T, class U&gt;
+  concept </code><code><i>weakly-ordered-with</i></code><code class="language-cpp"> = // exposition only
+    requires(const remove_reference_t&lt;T&gt;& t,
+             const remove_reference_t&lt;U&gt;& u) {
+      { t &lt; u } -&gt; Boolean;
+      { t &gt; u } -&gt; Boolean;
+      { t &lt;= u } -&gt; Boolean;
+      { t &gt;= u } -&gt; Boolean;
+      { u &lt; t } -&gt; Boolean;
+      { u &gt; t } -&gt; Boolean;
+      { u &lt;= t } -&gt; Boolean;
+      { u &gt;= t } -&gt; Boolean;      
+    };</code></pre>
+    
+> Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>` respectively. <code><i>weakly-ordered-with</i>&lt;T, U&gt;</code> is satisfied only if:
+>
+> - `t < u`, `t <= u`, `t > u`, `t >= u`, `u < t`, `u <= t`, `u > t`, and `u >= t` have the same domain.
+> - `bool(t < u) == bool(u > t)`
+> - `bool(u < t) == bool(t > u)`
+> - `bool(t <= u) == bool(u >= t)`
+> - `bool(u <= t) == bool(t > = u)`
+    
+> <pre><code class="language-cpp">template &lt;typename T, typename Cat = partial_ordering&gt;
+  concept ThreeWayComparable =
+    </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, T&gt; &&
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, T&gt;) &&
+    requires(const remove_reference_t&lt;T&gt;& a,
+             const remove_reference_t&lt;T&gt;& b) {
+      { a &lt;=&gt; b } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
+    };</code></pre>
         
 > Let `a` and `b` be lvalues of type `const remove_reference_t<T>`. `T` and `Cat` model `ThreeWayComparable<T, Cat>` only if:
 > 
@@ -187,23 +209,22 @@ Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
 >       - `(a <=> b >= 0) == bool(a >= b)`.
 > - If `Cat` is convertible to `strong_ordering`, `T` models `StrictTotallyOrdered` ([concept.stricttotallyordered]). 
 
->   &nbsp;
->   
-    :::cpp
-    template <typename T, typename U,
-              typename Cat=partial_ordering>
-      concept ThreeWayComparableWith = 
-        ThreeWayComparable<T, Cat> &&
-        ThreeWayComparable<U, Cat> &&
-        CommonReference<const remove_reference_t<T>&, const remove_reference_t<U>&> &&
-        ThreeWayComparable<
-          common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>,
-          Cat> &&
-        requires(const remove_reference_t<T>& t,
-                 const remove_reference_t<U>& u) {
-          { t <=> u } -> compares-as<Cat>;
-          { u <=> t } -> compares-as<Cat>;
-        };
+> <pre><code class="language-cpp">template &lt;typename T, typename U,
+          typename Cat = partial_ordering&gt;
+  concept ThreeWayComparableWith = 
+    </code><code><i>weakly-equality-comparable-with</i></code><code class="language-cpp">&lt;T, U&gt; &&
+    (!ConvertibleTo&lt;Cat, partial_ordering&gt; || </code><code><i>weakly-ordered-with</i></code><code class="language-cpp">&lt;T, U&gt;) &&
+    ThreeWayComparable&lt;T, Cat&gt; &&
+    ThreeWayComparable&lt;U, Cat&gt; &&
+    CommonReference&lt;const remove_reference_t&lt;T&gt;&, const remove_reference_t&lt;U&gt;&&gt; &&
+    ThreeWayComparable&lt;
+      common_reference_t&lt;const remove_reference_t&lt;T&gt;&, const remove_reference_t&lt;U&gt;&&gt;,
+      Cat&gt; &&
+    requires(const remove_reference_t&lt;T&gt;& t,
+             const remove_reference_t&lt;U&gt;& u) {
+      { t &lt;=&gt; u } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
+      { u &lt;=&gt; t } -&gt; </code><code><i>compares-as</i></code><code class="language-cpp">&lt;Cat&gt;;
+    };</code></pre>
 > Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `T`, `U`, and `Cat` model `ThreeWayComparableWith<T, U, Cat>` only if:
 >
 > - `t <=> u` and `u <=> t` have the same domain.
