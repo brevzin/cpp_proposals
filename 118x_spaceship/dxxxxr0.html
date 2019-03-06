@@ -758,9 +758,9 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
     using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
 
   <ins>// [cmp.concept], concept ThreeWayComparable</ins>
-  <ins>template&lt;class T, class Cat = weak_equality&gt;</ins>
+  <ins>template&lt;class T, class Cat = partial_ordering&gt;</ins>
     <ins>concept ThreeWayComparable = <i>see below</i>;</ins>
-  <ins>template&lt;class T, class U, class Cat = weak_equality&gt;</ins>
+  <ins>template&lt;class T, class U, class Cat = partial_ordering&gt;</ins>
     <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
 
   <ins>// [cmp.result], compare_three_way_result</ins>
@@ -794,7 +794,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   concept compares-as = // exposition only
     Same&lt;common_comparison_category_t&lt;T, Cat&gt;, Cat&gt;;
 
-template &lt;typename T, typename Cat=weak_equality&gt;
+template &lt;typename T, typename Cat=partial_ordering&gt;
   concept ThreeWayComparable =
     requires(const remove_reference_t&lt;T&gt;&amp; a,
              const remove_reference_t&lt;T&gt;&amp; b) {
@@ -819,7 +819,7 @@ template &lt;typename T, typename Cat=weak_equality&gt;
 </ul>
 <p>&nbsp;</p>
 <pre class="codehilite"><code class="language-cpp">template &lt;typename T, typename U,
-          typename Cat=weak_equality&gt;
+          typename Cat=partial_ordering&gt;
   concept ThreeWayComparableWith = 
     ThreeWayComparable&lt;T, Cat&gt; &amp;&amp;
     ThreeWayComparable&lt;U, Cat&gt; &amp;&amp;

@@ -129,9 +129,9 @@ Add into 16.11.1 [compare.syn]:
     using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;  
   
   <ins>// [cmp.concept], concept ThreeWayComparable</ins>
-  <ins>template&lt;class T, class Cat = weak_equality&gt;</ins>
+  <ins>template&lt;class T, class Cat = partial_ordering&gt;</ins>
     <ins>concept ThreeWayComparable = <i>see below</i>;</ins>
-  <ins>template&lt;class T, class U, class Cat = weak_equality&gt;</ins>
+  <ins>template&lt;class T, class U, class Cat = partial_ordering&gt;</ins>
     <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
   
   <ins>// [cmp.result], compare_three_way_result</ins>
@@ -167,7 +167,7 @@ Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
       concept compares-as = // exposition only
         Same<common_comparison_category_t<T, Cat>, Cat>;
 > 
-    template <typename T, typename Cat=weak_equality>
+    template <typename T, typename Cat=partial_ordering>
       concept ThreeWayComparable =
         requires(const remove_reference_t<T>& a,
                  const remove_reference_t<T>& b) {
@@ -191,7 +191,7 @@ Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
 >   
     :::cpp
     template <typename T, typename U,
-              typename Cat=weak_equality>
+              typename Cat=partial_ordering>
       concept ThreeWayComparableWith = 
         ThreeWayComparable<T, Cat> &&
         ThreeWayComparable<U, Cat> &&
