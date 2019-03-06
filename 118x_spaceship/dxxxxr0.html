@@ -802,7 +802,7 @@ template &lt;typename T, typename Cat=weak_equality&gt;
     };</code></pre>
 
 
-<p>Let <code class="language-cpp">a</code> and <code class="language-cpp">b</code> be lvalues of type <code class="language-cpp">const remove_reference_t&lt;T&gt;</code>. <code class="language-cpp">ThreeWayComparable&lt;T, Cat&gt;</code> is satisfied only if:</p>
+<p>Let <code class="language-cpp">a</code> and <code class="language-cpp">b</code> be lvalues of type <code class="language-cpp">const remove_reference_t&lt;T&gt;</code>. <code class="language-cpp">T</code> and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparable&lt;T, Cat&gt;</code> only if:</p>
 <ul>
 <li><code class="language-cpp">bool(a &lt;=&gt; b == 0) == bool(a == b)</code>.</li>
 <li><code class="language-cpp">bool(a &lt;=&gt; b != 0) == bool(a != b)</code>.</li>
@@ -834,14 +834,14 @@ template &lt;typename T, typename Cat=weak_equality&gt;
     };</code></pre>
 
 
-<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> is satisfied only if:</p>
+<p>Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> be lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. Let <code class="language-cpp">C</code> be <code class="language-cpp">common_reference_t&lt;const remove_reference_t&lt;T&gt;&amp;, const remove_reference_t&lt;U&gt;&amp;&gt;</code>. <code class="language-cpp">T</code>, <code class="language-cpp">U</code>, and <code class="language-cpp">Cat</code> model <code class="language-cpp">ThreeWayComparableWith&lt;T, U, Cat&gt;</code> only if:</p>
 <ul>
 <li><code class="language-cpp">t &lt;=&gt; u</code> and <code class="language-cpp">u &lt;=&gt; t</code> have the same domain.</li>
 <li><code class="language-cpp">((t &lt;=&gt; u) &lt;=&gt; 0)</code> and <code class="language-cpp">(0 &lt;=&gt; (u &lt;=&gt; t))</code> have the same value</li>
 <li><code class="language-cpp">bool(t &lt;=&gt; u == 0) == bool(t == u)</code>.</li>
 <li><code class="language-cpp">bool(t &lt;=&gt; u != 0) == bool(t != u)</code>.</li>
 <li><code class="language-cpp">Cat(t &lt;=&gt; u) == Cat(C(t) &lt;=&gt; C(u))</code>.</li>
-<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">U</code> models <code class="language-cpp">EqualityComparableWith&lt;T&gt;</code> ([concepts.equalitycomparable]).</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_equality</code>, <code class="language-cpp">T</code> and <code class="language-cpp">U</code> model <code class="language-cpp">EqualityComparableWith&lt;T, U&gt;</code> ([concepts.equalitycomparable]).</li>
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">partial_ordering</code>:<ul>
 <li><code class="language-cpp">bool(t &lt;=&gt; u &lt; 0) == bool(t &lt; u)</code></li>
 <li><code class="language-cpp">bool(t &lt;=&gt; u &gt; 0) == bool(t &gt; u)</code></li>
@@ -849,13 +849,13 @@ template &lt;typename T, typename Cat=weak_equality&gt;
 <li><code class="language-cpp">bool(t &lt;=&gt; u &gt;= 0) == bool(t &gt;= u)</code></li>
 </ul>
 </li>
-<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">U</code> models <code class="language-cpp">StrictTotallyOrderedWith&lt;T&gt;</code> ([concepts.stricttotallyordered]).</li>
+<li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> and <code class="language-cpp">U</code> model <code class="language-cpp">StrictTotallyOrderedWith&lt;T, U&gt;</code> ([concepts.stricttotallyordered]).</li>
 </ul>
 </blockquote>
 <p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named [cmp.result]:</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_three_way_result</code> template defined in this subclause is undefined.</p>
-<p>For the <code class="language-cpp">compare_three_way_result</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well-formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> denotes the type <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there is no member <code class="language-cpp">type</code>.</p>
+<p>For the <code class="language-cpp">compare_three_way_result</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well-formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> denotes the type <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there is no member <code class="language-cpp">type</code>.</p>
 </blockquote>
 <p>Add a new specification for <code class="language-cpp">compare_three_way</code> in a new clause named [cmp.object]:</p>
 <blockquote>
@@ -2325,7 +2325,6 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
 
     <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
     <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
-
   };
   [...]
 }</code></pre></blockquote>

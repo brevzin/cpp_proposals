@@ -174,7 +174,7 @@ Add a new clause \[cmp.concept\].
           { a <=> b } -> compares-as<Cat>;
         };
         
-> Let `a` and `b` be lvalues of type `const remove_reference_t<T>`. `ThreeWayComparable<T, Cat>` is satisfied only if:
+> Let `a` and `b` be lvalues of type `const remove_reference_t<T>`. `T` and `Cat` model `ThreeWayComparable<T, Cat>` only if:
 > 
 > - `bool(a <=> b == 0) == bool(a == b)`.
 > - `bool(a <=> b != 0) == bool(a != b)`.
@@ -204,26 +204,26 @@ Add a new clause \[cmp.concept\].
           { t <=> u } -> compares-as<Cat>;
           { u <=> t } -> compares-as<Cat>;
         };
-> Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `ThreeWayComparableWith<T, U, Cat>` is satisfied only if:
+> Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `T`, `U`, and `Cat` model `ThreeWayComparableWith<T, U, Cat>` only if:
 >
 > - `t <=> u` and `u <=> t` have the same domain.
 > - `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` have the same value
 > - `bool(t <=> u == 0) == bool(t == u)`.
 > - `bool(t <=> u != 0) == bool(t != u)`.
 > - `Cat(t <=> u) == Cat(C(t) <=> C(u))`.
-> - If `Cat` is convertible to `strong_equality`, `U` models `EqualityComparableWith<T>` ([concepts.equalitycomparable]).
+> - If `Cat` is convertible to `strong_equality`, `T` and `U` model `EqualityComparableWith<T, U>` ([concepts.equalitycomparable]).
 > - If `Cat` is convertible to `partial_ordering`:
 >       - `bool(t <=> u < 0) == bool(t < u)`
 >       - `bool(t <=> u > 0) == bool(t > u)`
 >       - `bool(t <=> u <= 0) == bool(t <= u)`
 >       - `bool(t <=> u >= 0) == bool(t >= u)`
-> - If `Cat` is convertible to `strong_ordering`, `U` models `StrictTotallyOrderedWith<T>` ([concepts.stricttotallyordered]).
+> - If `Cat` is convertible to `strong_ordering`, `T` and `U` model `StrictTotallyOrderedWith<T, U>` ([concepts.stricttotallyordered]).
         
 Add a new specification for `compare_three_way_result` in a new clause after 16.11.3 \[cmp.common\] named \[cmp.result\]:
 
 > The behavior of a program that adds specializations for the `compare_three_way_result` template defined in this subclause is undefined.
 
-> For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`. If the expression `t <=> u` is well-formed, the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
+> For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. If the expression `t <=> u` is well-formed, the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
 
 Add a new specification for `compare_three_way` in a new clause named [cmp.object]:
 
@@ -1730,7 +1730,6 @@ Change 21.3.11.1, paragraph 2 (`vector` spec)
     
     <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
     <ins>friend <i>synth-3way-result</i>&lt;T&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
-    
   };
   [...]
 }</code></pre></blockquote>  
