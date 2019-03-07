@@ -180,8 +180,7 @@ Change 16.11.2.2 [cmp.weakeq]:
     <del>friend constexpr bool operator!=(weak_equality v, <i>unspecified</i>) noexcept;</del>
     <del>friend constexpr bool operator==(<i>unspecified</i>, weak_equality v) noexcept;</del>
     <Del>friend constexpr bool operator!=(<i>unspecified</i>, weak_equality v) noexcept;</del>
-    <ins>friend constexpr bool operator==(weak_equality v, weak_equality w) noexcept</ins>
-    <ins> { return v.value == w.value; }</ins>
+    <ins>friend constexpr bool operator==(weak_equality v, weak_equality w) noexcept = default;</ins>
     friend constexpr weak_equality operator<=>(weak_equality v, <i>unspecified</i>) noexcept<del>;</del>
     <ins> { return v; }</ins>
     friend constexpr weak_equality operator<=>(<i>unspecified</i>, weak_equality v) noexcept<del>;</del>
@@ -204,6 +203,201 @@ constexpr bool operator!=(unspecified, weak_equality v) noexcept;</del></code></
 > <pre><code><del>constexpr weak_equality operator<=>(weak_equality v, unspecified) noexcept;
 constexpr weak_equality operator<=>(unspecified, weak_equality v) noexcept;</del></code></pre>
 > <del>*Returns*: `v`.</del>
+
+Change 16.11.2.3 [cmp.strongeq]:
+
+<blockquote><pre><code>namespace std {
+  class strong_equality {
+    int value;  // exposition only
+
+    // exposition-only constructor
+    constexpr explicit strong_equality(eq v) noexcept : value(int(v)) {}    // exposition only
+
+  public:
+    // valid values
+    static const strong_equality equal;
+    static const strong_equality nonequal;
+    static const strong_equality equivalent;
+    static const strong_equality nonequivalent;
+
+    // conversion
+    constexpr operator weak_equality() const noexcept;
+
+    // comparisons
+    friend constexpr bool operator==(strong_equality v, <i>unspecified</i>) noexcept<del>;</del>
+    <ins>  { return v.value == 0; }</ins>
+    <del>friend constexpr bool operator!=(strong_equality v, <i>unspecified</i>) noexcept;</del>
+    <del>friend constexpr bool operator==(<i>unspecified</i>, strong_equality v) noexcept;</del>
+    <del>friend constexpr bool operator!=(<i>unspecified</i>, strong_equality v) noexcept;</del>
+    <ins>friend constexpr bool operator==(strong_equality v, strong_equality w) noexcept = default;</ins>
+    friend constexpr strong_equality operator&lt;=&gt;(strong_equality v, <i>unspecified</i>) noexcept<del>;</del>
+    <ins>  { return v; }</ins>
+    friend constexpr strong_equality operator&lt;=&gt;(unspecified, strong_equality v) noexcept<del>;</del>
+    <ins>  { return v; }</ins>
+  };
+
+  // valid values' definitions
+  inline constexpr strong_equality strong_equality::equal(eq::equal);
+  inline constexpr strong_equality strong_equality::nonequal(eq::nonequal);
+  inline constexpr strong_equality strong_equality::equivalent(eq::equivalent);
+  inline constexpr strong_equality strong_equality::nonequivalent(eq::nonequivalent);
+}</code></pre></blockquote>
+
+Remove most of the rest of the clause:
+
+> <pre><code>constexpr operator weak_equality() const noexcept;</code></pre>
+> *Returns*: `value == 0 ? weak_equality::equivalent : weak_equality::nonequivalent`.
+> <pre><code><del>constexpr bool operator==(strong_equality v, unspecified) noexcept;
+constexpr bool operator==(unspecified, strong_equality v) noexcept;</del></code></pre>
+> <del>*Returns*: `v.value == 0`.</del>
+> <pre><code><del>constexpr bool operator!=(strong_equality v, unspecified) noexcept;
+constexpr bool operator!=(unspecified, strong_equality v) noexcept;</del></code></pre>
+> <del>*Returns*: `v.value != 0`.</del>
+> <pre><code><del>constexpr strong_equality operator&lt;=&gt;(strong_equality v, unspecified) noexcept;
+constexpr strong_equality operator&lt;=&gt;(unspecified, strong_equality v) noexcept;</del></code></pre>
+> <del>*Returns*: `v`.</del>
+
+Change 16.11.2.4 [cmp.partialord]:
+
+<blockquote><pre><code>namespace std {
+  class partial_ordering {
+    int value;          // exposition only
+    bool is_ordered;    // exposition only
+
+    [...]
+    // conversion
+    constexpr operator weak_equality() const noexcept;
+
+    // comparisons
+    friend constexpr bool operator==(partial_ordering v, <i>unspecified</i>) noexcept;
+    <del>friend constexpr bool operator!=(partial_ordering v, <i>unspecified</i>) noexcept;</del>
+    <ins>friend constexpr bool operator==(partial_ordering v, partial_ordering w) noexcept = default;</ins>
+    friend constexpr bool operator&lt; (partial_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt; (partial_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&lt;=(partial_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt;=(partial_ordering v, <i>unspecified</i>) noexcept;
+    <del>friend constexpr bool operator==(<i>unspecified</i>, partial_ordering v) noexcept;</del>
+    <del>friend constexpr bool operator!=(<i>unspecified</i>, partial_ordering v) noexcept;</del>
+    friend constexpr bool operator&lt; (<i>unspecified</i>, partial_ordering v) noexcept;
+    friend constexpr bool operator&gt; (<i>unspecified</i>, partial_ordering v) noexcept;
+    friend constexpr bool operator&lt;=(<i>unspecified</i>, partial_ordering v) noexcept;
+    friend constexpr bool operator&gt;=(<i>unspecified</i>, partial_ordering v) noexcept;
+    friend constexpr partial_ordering operator&lt;=&gt;(partial_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr partial_ordering operator&lt;=&gt;(<i>unspecified</i>, partial_ordering v) noexcept;
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+Remove just the extra `==` and `!=` operators in 16.11.2.4 [cmp.partialord]/3 and 4:
+
+> <pre><code>constexpr bool operator==(partial_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&lt; (partial_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt; (partial_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&lt;=(partial_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt;=(partial_ordering v, <i>unspecified</i>) noexcept;</code></pre>
+> *Returns*: For `operator@`, `v.is_ordered && v.value @ 0`.
+> <pre><code><del>constexpr bool operator==(<i>unspecified</i>, partial_ordering v) noexcept;</del>
+constexpr bool operator< (<i>unspecified</i>, partial_ordering v) noexcept;
+constexpr bool operator> (<i>unspecified</i>, partial_ordering v) noexcept;
+constexpr bool operator<=(<i>unspecified</i>, partial_ordering v) noexcept;
+constexpr bool operator>=(<i>unspecified</i>, partial_ordering v) noexcept;</code></pre>
+> *Returns*: For `operator@`, `v.is_ordered && 0 @ v.value`.
+> <pre><code><del>constexpr bool operator!=(partial_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator!=(<i>unspecified</i>, partial_ordering v) noexcept;</del></code></pre>
+> <del>*Returns*: For `operator@`, `!v.is_ordered || v.value != 0`.</del>
+
+Change 11.6.2.5 [cmp.weakord]:
+
+<blockquote><pre><code>namespace std {
+  class weak_ordering {
+    int value;  // exposition only
+
+    [...]
+    // comparisons
+    friend constexpr bool operator==(weak_ordering v, <i>unspecified</i>) noexcept;
+    <ins>friend constexpr bool operator==(weak_ordering v, weak_ordering w) noexcept = default;</ins>
+    <del>friend constexpr bool operator!=(weak_ordering v, <i>unspecified</i>) noexcept;</del>
+    friend constexpr bool operator&lt; (weak_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt; (weak_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&lt;=(weak_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt;=(weak_ordering v, <i>unspecified</i>) noexcept;
+    <del>friend constexpr bool operator==(<i>unspecified</i>, weak_ordering v) noexcept;</del>
+    <del>friend constexpr bool operator!=(<i>unspecified</i>, weak_ordering v) noexcept;</del>
+    friend constexpr bool operator&lt; (<i>unspecified</i>, weak_ordering v) noexcept;
+    friend constexpr bool operator&gt; (<i>unspecified</i>, weak_ordering v) noexcept;
+    friend constexpr bool operator&lt;=(<i>unspecified</i>, weak_ordering v) noexcept;
+    friend constexpr bool operator&gt;=(<i>unspecified</i>, weak_ordering v) noexcept;
+    friend constexpr weak_ordering operator&lt;=&gt;(weak_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr weak_ordering operator&lt;=&gt;(<i>unspecified</i>, weak_ordering v) noexcept;
+  };
+
+  [...]
+};</code></pre></blockquote>
+
+Remove just the extra `==` and `!=` operators from 16.11.2.5 [cmp.weakord]/4 and /5:
+
+> <pre><code>constexpr bool operator==(weak_ordering v, <i>unspecified</i>) noexcept;
+<del>constexpr bool operator!=(weak_ordering v, <i>unspecified</i>) noexcept;</del>
+constexpr bool operator&lt; (weak_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt; (weak_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&lt;=(weak_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt;=(weak_ordering v, <i>unspecified</i>) noexcept;</code></pre>
+> *Returns*: `v.value @ 0` for `operator@`.
+> <pre><code><del>constexpr bool operator==(<i>unspecified</i>, weak_ordering v) noexcept;</del>
+<del>constexpr bool operator!=(<i>unspecified</i>, weak_ordering v) noexcept;</del>
+constexpr bool operator&lt; (<i>unspecified</i>, weak_ordering v) noexcept;
+constexpr bool operator&gt; (<i>unspecified</i>, weak_ordering v) noexcept;
+constexpr bool operator&lt;=(<i>unspecified</i>, weak_ordering v) noexcept;
+constexpr bool operator&gt;=(<i>unspecified</i>, weak_ordering v) noexcept;</code></pre>
+> *Returns*: `0 @ v.value` for `operator@`.
+
+Change 16.11.2.6 [cmp.strongord]:
+
+<blockquote><pre><code>namespace std {
+  class strong_ordering {
+    int value;  // exposition only
+
+    [...]
+    
+    // comparisons
+    friend constexpr bool operator==(strong_ordering v, <i>unspecified</i>) noexcept;
+    <ins>friend constexpr bool operator==(strong_ordering v, strong_ordering w) noexcept = default;</ins>
+    <del>friend constexpr bool operator!=(strong_ordering v, <i>unspecified</i>) noexcept;</del>
+    friend constexpr bool operator&lt; (strong_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt; (strong_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&lt;=(strong_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr bool operator&gt;=(strong_ordering v, <i>unspecified</i>) noexcept;
+    <del>friend constexpr bool operator==(<i>unspecified</i>, strong_ordering v) noexcept;</del>
+    <del>friend constexpr bool operator!=(<i>unspecified</i>, strong_ordering v) noexcept;</del>
+    friend constexpr bool operator&lt; (<i>unspecified</i>, strong_ordering v) noexcept;
+    friend constexpr bool operator&gt; (<i>unspecified</i>, strong_ordering v) noexcept;
+    friend constexpr bool operator&lt;=(<i>unspecified</i>, strong_ordering v) noexcept;
+    friend constexpr bool operator&gt;=(<i>unspecified</i>, strong_ordering v) noexcept;
+    friend constexpr strong_ordering operator&lt;=&gt;(strong_ordering v, <i>unspecified</i>) noexcept;
+    friend constexpr strong_ordering operator&lt;=&gt;(<i>unspecified</i>, strong_ordering v) noexcept;
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+Remove just the extra `==` and `!=` operators from 16.11.2.6 [cmp.strongord]/6 and /7:
+
+> <pre><code>constexpr bool operator==(strong_ordering v, <i>unspecified</i>) noexcept;
+<del>constexpr bool operator!=(strong_ordering v, <i>unspecified</i>) noexcept;</del>
+constexpr bool operator&lt; (strong_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt; (strong_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&lt;=(strong_ordering v, <i>unspecified</i>) noexcept;
+constexpr bool operator&gt;=(strong_ordering v, <i>unspecified</i>) noexcept;</code></pre>
+> *Returns*: `v.value @ 0` for `operator@`.
+> <pre><code><del>constexpr bool operator==(<i>unspecified</i>, strong_ordering v) noexcept;</del>
+<del>constexpr bool operator!=(<i>unspecified</i>, strong_ordering v) noexcept;</del>
+constexpr bool operator&lt; (<i>unspecified</i>, strong_ordering v) noexcept;
+constexpr bool operator&gt; (<i>unspecified</i>, strong_ordering v) noexcept;
+constexpr bool operator&lt;=(<i>unspecified</i>, strong_ordering v) noexcept;
+constexpr bool operator&gt;=(<i>unspecified</i>, strong_ordering v) noexcept;</code></pre>
+> *Returns*: `0 @ v.value` for `operator@`.
+
 
 Add a new clause "Concept `ThreeWayComparable`" \[cmp.concept\].
 
