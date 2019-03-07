@@ -42,21 +42,21 @@ Change 15.4.2.1/2 [expos.only.func]:
 
 and append:
 
-<blockquote><pre><code class="language-cpp">template&lt;class T, class U&gt;
-constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp">(const T& t, const U& u)
-  requires requires {
-    { t < u } -> bool;
-    { u < t } -> bool;
-  }
-{
-  if constexpr (ThreeWayComparableWith&lt;T, U&gt;) {
-    return t <=> u;
-  } else {
-    if (t < u) return weak_ordering::less;
-    if (u < t) return weak_ordering::greater;
-    return weak_ordering::equivalent;
-  }
-}
+<blockquote><pre><code class="language-cpp">constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp"> =
+  []&lt;class T, class U&gt;(const T& t, const U& u)
+    requires requires {
+      { t < u } -> bool;
+      { u < t } -> bool;
+    }
+  {
+    if constexpr (ThreeWayComparableWith&lt;T, U&gt;) {
+      return t <=> u;
+    } else {
+      if (t < u) return weak_ordering::less;
+      if (u < t) return weak_ordering::greater;
+      return weak_ordering::equivalent;
+    }
+  };
 
 template&lt;class T, class U=T&gt;
 using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
@@ -605,8 +605,8 @@ public:
   <ins>  friend constexpr bool operator==(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>  
   <ins>  { <i>see below</i> }</ins>
   <ins>template&lt;class... UTypes&gt;</ins>
-  <ins>  friend constexpr auto operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
-  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+  <ins>  friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+  <ins>    operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
   <ins>  { <i>see below</i> }</ins>
 };</code></pre></blockquote>
 
@@ -626,8 +626,8 @@ Change 19.5.3.8 [tuple.rel]:
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
 <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
 > <pre><code><ins>template&lt;class... UTypes&gt;</ins>
-<ins>  friend constexpr auto operator<=>(const tuple& t, const tuple&lt;UTypes...&gt;& u)</ins>
-<ins>    -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;;</ins></code></pre>
+<ins>  friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+<ins>    operator<=>(const tuple& t, const tuple&lt;UTypes...&gt;& u);</ins></code></pre>
 > *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(Types)`, <del>both `get<i>(t) < get<i>(u)` and `get<i>(u) < get<i>(t)` are well-formed expressions returning types that are convertible to `bool`</del> <ins><code><i>synth-3way</i>(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a well-formed expression. <code>sizeof...(<del>TTypes</del> <ins>Types</ins>) == sizeof...(UTypes)</code>.  
 > <del>*Returns*: The result of a lexicographical comparison between `t` and `u`. The result is defined as:
 `(bool)(get<0>(t) < get<0>(u)) || (!(bool)(get<0>(u) < get<0>(t)) && ttail < utail)`, where

@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: DxxxxR0 <br />
-Date: 2019-03-06 <br />
+Date: 2019-03-07 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -677,21 +677,21 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <p>The following <del>function is</del> <ins>are</ins> defined for exposition only to aid in the specification of the library:</p>
 </blockquote>
 <p>and append:</p>
-<blockquote><pre><code class="language-cpp">template&lt;class T, class U&gt;
-constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp">(const T& t, const U& u)
-  requires requires {
-    { t < u } -> bool;
-    { u < t } -> bool;
-  }
-{
-  if constexpr (ThreeWayComparableWith&lt;T, U&gt;) {
-    return t <=> u;
-  } else {
-    if (t < u) return weak_ordering::less;
-    if (u < t) return weak_ordering::greater;
-    return weak_ordering::equivalent;
-  }
-}
+<blockquote><pre><code class="language-cpp">constexpr auto </code><code><i>synth-3way</i></code><code class="language-cpp"> =
+  []&lt;class T, class U&gt;(const T& t, const U& u)
+    requires requires {
+      { t < u } -> bool;
+      { u < t } -> bool;
+    }
+  {
+    if constexpr (ThreeWayComparableWith&lt;T, U&gt;) {
+      return t <=> u;
+    } else {
+      if (t < u) return weak_ordering::less;
+      if (u < t) return weak_ordering::greater;
+      return weak_ordering::equivalent;
+    }
+  };
 
 template&lt;class T, class U=T&gt;
 using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
@@ -1237,8 +1237,8 @@ public:
   <ins>  friend constexpr bool operator==(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>  
   <ins>  { <i>see below</i> }</ins>
   <ins>template&lt;class... UTypes&gt;</ins>
-  <ins>  friend constexpr auto operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
-  <ins>    -> common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+  <ins>  friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+  <ins>    operator<=>(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>
   <ins>  { <i>see below</i> }</ins>
 };</code></pre></blockquote>
 
@@ -1258,8 +1258,8 @@ public:
 <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;</del>
 <del>constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</del></code></pre>
 <pre><code><ins>template&lt;class... UTypes&gt;</ins>
-<ins>  friend constexpr auto operator&lt;=&gt;(const tuple&amp; t, const tuple&lt;UTypes...&gt;&amp; u)</ins>
-<ins>    -&gt; common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;;</ins></code></pre>
+<ins>  friend constexpr common_comparison_category_t&lt;<i>synth-3way-result</i>&lt;Types, UTypes&gt;...&gt;</ins>
+<ins>    operator&lt;=&gt;(const tuple&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</ins></code></pre>
 <em>Requires</em>: For all <code class="language-cpp">i</code>, where <code class="language-cpp">0 &lt;= i</code> and <code class="language-cpp">i &lt; sizeof...(Types)</code>, <del>both <code class="language-cpp">get&lt;i&gt;(t) &lt; get&lt;i&gt;(u)</code> and <code class="language-cpp">get&lt;i&gt;(u) &lt; get&lt;i&gt;(t)</code> are well-formed expressions returning types that are convertible to <code class="language-cpp">bool</code></del> <ins><code><i>synth-3way</i>(get&lt;i&gt;(t), get&lt;i&gt;(u))</code></ins> is a well-formed expression. <code>sizeof...(<del>TTypes</del> <ins>Types</ins>) == sizeof...(UTypes)</code>.<br />
 <del><em>Returns</em>: The result of a lexicographical comparison between <code class="language-cpp">t</code> and <code class="language-cpp">u</code>. The result is defined as:
 <code class="language-cpp">(bool)(get&lt;0&gt;(t) &lt; get&lt;0&gt;(u)) || (!(bool)(get&lt;0&gt;(u) &lt; get&lt;0&gt;(t)) &amp;&amp; ttail &lt; utail)</code>, where
