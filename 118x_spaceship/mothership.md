@@ -317,7 +317,7 @@ constexpr bool operator>=(<i>unspecified</i>, partial_ordering v) noexcept;</cod
 constexpr bool operator!=(<i>unspecified</i>, partial_ordering v) noexcept;</del></code></pre>
 > <del>*Returns*: For `operator@`, `!v.is_ordered || v.value != 0`.</del>
 
-Change 11.6.2.5 [cmp.weakord]:
+Change 16.11.2.5 [cmp.weakord]:
 
 <blockquote><pre><code>namespace std {
   class weak_ordering {
