@@ -121,6 +121,16 @@ Add into 16.11.1 [compare.syn]:
   constexpr bool is_gt  (partial_ordering cmp) noexcept { return cmp > 0; }
   constexpr bool is_gteq(partial_ordering cmp) noexcept { return cmp >= 0; }
   
+  <ins>// common_type specializations</ins>
+  <ins>template&lt;&gt; struct common_type&lt;strong_equality, partial_ordering&gt;</ins>
+  <ins>  { using type = weak_equality; };</ins>
+  <ins>template&lt;&gt; struct common_type&lt;partial_ordering, strong_equality&gt;</ins>
+  <ins>  { using type = weak_equality; };</ins>
+  <ins>template&lt;&gt; struct common_type&lt;strong_equality, weak_ordering&gt;</ins>
+  <ins>  { using type = weak_equality; };</ins>
+  <ins>template&lt;&gt; struct common_type&lt;weak_ordering, strong_equality&gt;</ins>
+  <ins>  { using type = weak_equality; };</ins>
+  
   // [cmp.common], common comparison category type  
   template&lt;class... Ts&gt;
   struct common_comparison_category {
