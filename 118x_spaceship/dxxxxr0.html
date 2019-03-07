@@ -789,6 +789,50 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   <ins>}</ins>
 }</code></pre></blockquote>
 
+<p>Change 16.11.2.2 [cmp.weakeq]:</p>
+<blockquote><pre><code>namespace std {
+  class weak_equality {
+    int value;  // exposition only
+
+    // exposition-only constructor
+    constexpr explicit weak_equality(eq v) noexcept : value(int(v)) {}  // exposition only
+
+  public:
+    // valid values
+    static const weak_equality equivalent;
+    static const weak_equality nonequivalent;
+
+    // comparisons
+    friend constexpr bool operator==(weak_equality v, <i>unspecified</i>) noexcept<del>;</del>
+    <ins> { return v.value == 0; }</ins>
+    <del>friend constexpr bool operator!=(weak_equality v, <i>unspecified</i>) noexcept;</del>
+    <del>friend constexpr bool operator==(<i>unspecified</i>, weak_equality v) noexcept;</del>
+    <Del>friend constexpr bool operator!=(<i>unspecified</i>, weak_equality v) noexcept;</del>
+    <ins>friend constexpr bool operator==(weak_equality v, weak_equality w) noexcept</ins>
+    <ins> { return v.value == w.value; }</ins>
+    friend constexpr weak_equality operator<=>(weak_equality v, <i>unspecified</i>) noexcept<del>;</del>
+    <ins> { return v; }</ins>
+    friend constexpr weak_equality operator<=>(<i>unspecified</i>, weak_equality v) noexcept<del>;</del>
+    <ins> { return v; }</ins>
+  };
+
+  // valid values' definitions
+  inline constexpr weak_equality weak_equality::equivalent(eq::equivalent);
+  inline constexpr weak_equality weak_equality::nonequivalent(eq::nonequivalent);
+}</code></pre></blockquote>
+
+<p>Remove the rest of the clause (now defined inline):</p>
+<blockquote>
+<p><pre><code><del>constexpr bool operator==(weak_equality v, unspecified) noexcept;
+constexpr bool operator==(unspecified, weak_equality v) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">v.value == 0</code>.</del>
+<pre><code><del>constexpr bool operator!=(weak_equality v, unspecified) noexcept;
+constexpr bool operator!=(unspecified, weak_equality v) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">v.value != 0</code>.</del>
+<pre><code><del>constexpr weak_equality operator&lt;=&gt;(weak_equality v, unspecified) noexcept;
+constexpr weak_equality operator&lt;=&gt;(unspecified, weak_equality v) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">v</code>.</del></p>
+</blockquote>
 <p>Add a new clause "Concept <code class="language-cpp">ThreeWayComparable</code>" [cmp.concept].</p>
 <blockquote>
 <p><pre><code class="language-cpp">template &lt;typename T, typename Cat&gt;
