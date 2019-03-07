@@ -2235,30 +2235,20 @@ i &gt; j
 i - j</code></pre>
 where <code class="language-cpp">i</code> and <code class="language-cpp">j</code> denote objects of a container's <code class="language-cpp">iterator</code> type, either or both may be replaced by an object of the container's <code class="language-cpp">const_iterator</code> type referring to the same element with no change in semantics.</p>
 </blockquote>
-<p>Change 21.2.1 [container.requirements.general], paragraph 14 - the optional container operations are now just <code class="language-cpp">&lt;=&gt;</code> instead of the four relational operators.</p>
-<blockquote>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <del><code>lexicographical_compare</code></del> <ins><code>lexicographical_compare_three_way</code></ins> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.
+<p>Remove 21.2.1 [container.requirements.general] table 64 - the optional container operations are now just <code class="language-cpp">&lt;=&gt;</code> instead of the four relational operators, and will be defined inline following the LWG guidance for <code class="language-cpp">flat_map</code>.</p>
+<blockquote><del>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <code>lexicographical_compare</code> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.</del>
 
 <table>
-<tr><th>Expression</th><th>Return<br/>type</th><th>Operational<br/>semantics</th><th>Assertion/note<br />pre/post-condition</th><th>Complexity</th></tr>
+<tr><th><del>Expression</del></th><th><del>Return<br/>type</del></th><th><del>Operational<br/>semantics</del></th><th><Del>Assertion/note<br />pre/post-condition</del></th><th><del>Complexity</del></th></tr>
 <tr><td><pre><code><del>a &lt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del></td><td><pre><code><del>lexicographical_compare(
   a.begin(), a.end(),
   b.begin(), b.end())</del></code></pre></td><td><del><i>Requires</i>: <code>&lt;</code> is defined for values of <code>T</code>. <code>&lt;</code> is a total ordering relationship.</del></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &gt; b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>b &lt; a</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &lt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &gt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
 <tr><td><pre><code><del>a &gt;= b</del></code></pre></td><td><del>convertible to <code>bool</code></del><td><pre><code><del>!(a &lt; b)</del></code></pre></td><td></td><td><del>linear</del></td></tr>
-<tr><td><pre><code><ins>a &lt;=&gt; b</ins></code></pre></td><td><pre><code><ins><i>synth-3way-result</i>&lt;X::value_type&gt;</ins></code></pre></td><td><pre><code><ins>lexicographical_compare_three_way(
-  a.begin(), a.end(),
-  b.begin(), b.end(),
-  [](const T& x, const T& y){
-    return <i>synth-3way</i>(x, y);
-  });</ins></code></pre></td><td><ins><i>Requires</i>: Either <code>T</code> models <code>ThreeWayComparable</code> ([cmp.concept]) or <code>&lt;</code> is defined for values of <code>T</code> and <code>&lt;</code> is a total ordering relationship.</ins></td><td><ins>linear</ins></td></tr>
-<tr><td><pre><code><ins>a &lt; b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &lt; 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
-<tr><td><pre><code><ins>a &gt; b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt; 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
-<tr><td><pre><code><ins>a &lt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &lt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
-<tr><td><pre><code><ins>a &gt;= b</ins></code></pre></td><td><ins>convertible to <code>bool</code></ins><td><pre><code><ins>(a &lt;=&gt; b) &gt;= 0</ins></code></pre></td><td></td><td><ins>linear</ins></td></tr>  
 </table>
 
-[<i>Note</i>: The algorithm <del><code>lexicographical_compare()</code></del> <ins><code>lexicographical_compare_three_way()</code></ins> is defined in [algorithms]. —<i>end note</i>]
+<Del>[<i>Note</i>: The algorithm <code>lexicographical_compare()</code> is defined in [algorithms]. —<i>end note</i>]</del>
 
 </blockquote>
 
@@ -2272,7 +2262,8 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
     constexpr const T * data() const noexcept;
 
     <ins>friend constexpr bool operator==(const array&, const array&) = default;</ins>
-    <ins>friend constexpr <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const array&, const array&) { <i>see above</i> }</ins>
+    <ins>friend constexpr <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const array& x, const array& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
   };
 
   template&lt;class T, class... U&gt;
@@ -2289,8 +2280,10 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
       noexcept(allocator_traits&lt;Allocator&gt;::is_always_equal::value);
     void     clear() noexcept;
 
-    <ins>friend bool operator==(const deque&, const deque&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const deque&, const deque&) { <i>see above</i> }</ins>
+    <ins>friend bool operator==(const deque& x, const deque& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const deque& x, const deque& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
   };
 
   [...]
@@ -2307,8 +2300,10 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
 
     void reverse() noexcept;
 
-    <ins>friend bool operator==(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const forward_list&, const forward_list&) { <i>see above</i> }</ins>
+    <ins>friend bool operator==(const forward_list& x, const forward_list& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const forward_list& x, const forward_list& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
   };
 
   [...]
@@ -2325,8 +2320,10 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
 
     void reverse() noexcept;
 
-    <ins>friend bool operator==(const list&, const list&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const list&, const list&) { <i>see above</i> }</ins>        
+    <ins>friend bool operator==(const list& x, const list& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const list& x, const list& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
   };
 
   [...]  
@@ -2343,8 +2340,10 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
                allocator_traits&lt;Allocator&gt;::is_always_equal::value);
     void     clear() noexcept;
 
-    <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>        
+    <ins>friend bool operator==(const vector& x, const vector& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const vector& x, const vector& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>   
   };
   [...]
 }</code></pre></blockquote>
@@ -2359,8 +2358,10 @@ where <code class="language-cpp">i</code> and <code class="language-cpp">j</code
     void flip() noexcept;       // flips all bits
     void clear() noexcept;
 
-    <ins>friend bool operator==(const vector&, const vector&) { <i>see above</i> }</ins>
-    <ins>friend strong_ordering operator&lt;=&gt;(const vector&, const vector&) { <i>see above</i> }</ins>
+    <ins>friend bool operator==(const vector& x, const vector& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const vector& x, const vector& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), compare_three_way()); }</ins>
   };
 }</code></pre></blockquote>
 
@@ -2532,8 +2533,10 @@ namespace std {
     template&lt;class K&gt;
       pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
 
-    <ins>friend bool operator==(const map&, const map&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const map&, const map&) { <i>see above</i> }</ins>
+    <ins>friend bool operator==(const map& x, const map& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const map& x, const map& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
   };
 
   [...]
@@ -2553,8 +2556,11 @@ namespace std {
     template&lt;class K&gt;
       pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
 
-    <ins>friend bool operator==(const multimap&, const multimap&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multimap&, const multimap&) { <i>see above</i> }</ins>      
+    <ins>friend bool operator==(const multimap& x, const multimap& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multimap& x, const multimap& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>
+
   };
 
   [...]
@@ -2574,8 +2580,10 @@ namespace std {
     template&lt;class K&gt;
       pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
 
-    <ins>friend bool operator==(const set&, const set&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const set&, const set&) { <i>see above</i> }</ins>          
+    <ins>friend bool operator==(const set& x, const set& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const set& x, const set& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>          
   };
 
   [...]
@@ -2596,14 +2604,372 @@ namespace std {
     template&lt;class K&gt;
       pair&lt;const_iterator, const_iterator&gt; equal_range(const K& x) const;
 
-    <ins>friend bool operator==(const multiset&, const multiset&) { <i>see above</i> }</ins>
-    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multiset&, const multiset&) { <i>see above</i> }</ins>      
+    <ins>friend bool operator==(const multiset& x, const multiset& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend <i>synth-3way-result</i>&lt;value_type&gt; operator&lt;=&gt;(const multiset& x, const multiset& y)</ins>
+    <ins>  { return lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(), <i>synth-3way</i>); }</ins>      
   };
 
   [...]
 }</code></pre></blockquote>
 
-<p>TBD unordered containers, queue, and stack</p>
+<p>Change 21.5.2 [unord.map.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [unord.map], class template unordered_­map
+  template&lt;class Key,
+           class T,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Alloc = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+    class unordered_map;
+
+  // [unord.multimap], class template unordered_­multimap
+  template&lt;class Key,
+           class T,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Alloc = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+    class unordered_multimap;
+
+<del>  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;
+    bool operator==(const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& a,
+                    const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& b);
+  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;
+    bool operator!=(const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& a,
+                    const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& b);
+
+  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;
+    bool operator==(const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;& a,
+                    const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;& b);
+  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;
+    bool operator!=(const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;& a,
+                    const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;& b);</del>
+
+  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;
+    void swap(unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& x,
+              unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.5.3 [unord.set.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  // [unord.set], class template unordered_­set
+  template&lt;class Key,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Alloc = allocator&lt;Key&gt;&gt;
+    class unordered_set;
+
+  // [unord.multiset], class template unordered_­multiset
+  template&lt;class Key,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Alloc = allocator&lt;Key&gt;&gt;
+    class unordered_multiset;
+
+<del>  template&lt;class Key, class Hash, class Pred, class Alloc&gt;
+    bool operator==(const unordered_set&lt;Key, Hash, Pred, Alloc&gt;& a,
+                    const unordered_set&lt;Key, Hash, Pred, Alloc&gt;& b);
+  template&lt;class Key, class Hash, class Pred, class Alloc&gt;
+    bool operator!=(const unordered_set&lt;Key, Hash, Pred, Alloc&gt;& a,
+                    const unordered_set&lt;Key, Hash, Pred, Alloc&gt;& b);
+
+  template&lt;class Key, class Hash, class Pred, class Alloc&gt;
+    bool operator==(const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;& a,
+                    const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;& b);
+  template&lt;class Key, class Hash, class Pred, class Alloc&gt;
+    bool operator!=(const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;& a,
+                    const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;& b);</del>
+
+  template&lt;class Key, class Hash, class Pred, class Alloc&gt;
+    void swap(unordered_set&lt;Key, Hash, Pred, Alloc&gt;& x,
+              unordered_set&lt;Key, Hash, Pred, Alloc&gt;& y)
+      noexcept(noexcept(x.swap(y)));
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.5.4.1 [unord.map.overview]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Key,
+           class T,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+  class unordered_map {
+  public:
+    [...]
+    // hash policy
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    <ins>friend bool operator==(const unordered_map& x, const unordered_map& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.5.5.1 [unord.multimap.overview]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Key,
+           class T,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
+  class unordered_multimap {
+  public:
+    [...]
+    // hash policy
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    <ins>friend bool operator==(const unordered_multimap& x, const unordered_multimap& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>    
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.5.6.1 [unord.set.overview]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Key,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Allocator = allocator&lt;Key&gt;&gt;
+  class unordered_set {
+  public:
+    [...]
+    // hash policy
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    <ins>friend bool operator==(const unordered_set& x, const unordered_set& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>        
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.5.7.1 [unord.multiset.overview]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Key,
+           class Hash = hash&lt;Key&gt;,
+           class Pred = equal_to&lt;Key&gt;,
+           class Allocator = allocator&lt;Key&gt;&gt;
+  class unordered_multiset {
+  public:
+    [...]
+    // hash policy
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    <ins>friend bool operator==(const unordered_multiset& x, const unordered_multiset& y)</ins>
+    <ins>  { return ranges::equal(x, y); }</ins>        
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 21.6.2 [queue.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  template&lt;class T, class Container = deque&lt;T&gt;&gt; class queue;
+  template&lt;class T, class Container = vector&lt;T&gt;,
+           class Compare = less&lt;typename Container::value_type&gt;&gt;
+    class priority_queue;
+
+<del>  template&lt;class T, class Container&gt;
+    bool operator==(const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator!=(const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&lt; (const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&gt; (const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&lt;=(const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&gt;=(const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);</del>
+
+  template&lt;class T, class Container&gt;
+    void swap(queue&lt;T, Container&gt;& x, queue&lt;T, Container&gt;& y) noexcept(noexcept(x.swap(y)));
+  template&lt;class T, class Container, class Compare&gt;
+    void swap(priority_queue&lt;T, Container, Compare&gt;& x,
+              priority_queue&lt;T, Container, Compare&gt;& y) noexcept(noexcept(x.swap(y)));
+}</code></pre></blockquote>
+
+<p>Change 21.6.3 [stack.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  template&lt;class T, class Container = deque&lt;T&gt;&gt; class stack;
+
+<del>  template&lt;class T, class Container&gt;
+    bool operator==(const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator!=(const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&lt; (const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&gt; (const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&lt;=(const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);
+  template&lt;class T, class Container&gt;
+    bool operator&gt;=(const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);</del>
+
+  template&lt;class T, class Container&gt;
+    void swap(stack&lt;T, Container&gt;& x, stack&lt;T, Container&gt;& y) noexcept(noexcept(x.swap(y)));
+}</code></pre></blockquote>
+
+<p>Change 21.6.4.1 [queue.defn]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Container = deque&lt;T&gt;&gt;
+  class queue {
+  public:
+    using value_type      = typename Container::value_type;
+    using reference       = typename Container::reference;
+    using const_reference = typename Container::const_reference;
+    using size_type       = typename Container::size_type;
+    using container_type  =          Container;
+
+  protected:
+    Container c;
+
+  public:
+    queue() : queue(Container()) {}
+    explicit queue(const Container&);
+    explicit queue(Container&&);
+    template&lt;class Alloc&gt; explicit queue(const Alloc&);
+    template&lt;class Alloc&gt; queue(const Container&, const Alloc&);
+    template&lt;class Alloc&gt; queue(Container&&, const Alloc&);
+    template&lt;class Alloc&gt; queue(const queue&, const Alloc&);
+    template&lt;class Alloc&gt; queue(queue&&, const Alloc&);
+
+    [[nodiscard]] bool empty() const    { return c.empty(); }
+    size_type         size()  const     { return c.size(); }
+    reference         front()           { return c.front(); }
+    const_reference   front() const     { return c.front(); }
+    reference         back()            { return c.back(); }
+    const_reference   back() const      { return c.back(); }
+    void push(const value_type& x)      { c.push_back(x); }
+    void push(value_type&& x)           { c.push_back(std::move(x)); }
+    template&lt;class... Args&gt;
+      decltype(auto) emplace(Args&&... args)
+        { return c.emplace_back(std::forward&lt;Args&gt;(args)...); }
+    void pop()                          { c.pop_front(); }
+    void swap(queue& q) noexcept(is_nothrow_swappable_v&lt;Container&gt;)
+      { using std::swap; swap(c, q.c); }
+
+    <ins>friend bool operator==(const queue& x, const queue& y)</ins>
+    <ins>  { return x.c == y.c; }</ins>
+    <ins>friend bool operator!=(const queue& x, const queue& y)</ins>
+    <ins>  { return x.c != y.c; }</ins>
+    <ins>friend bool operator&lt; (const queue& x, const queue& y)</ins>
+    <ins>  { return x.c &lt; y.c; }</ins>
+    <ins>friend bool operator&gt; (const queue& x, const queue& y)</ins>
+    <ins>  { return x.c &gt; y.c; }</ins>
+    <ins>friend bool operator&lt;=(const queue& x, const queue& y)</ins>
+    <ins>  { return x.c &lt;= y.c; }</ins>
+    <ins>friend bool operator&gt;=(const queue& x, const queue& y)</ins>
+    <ins>  { return x.c &gt;= y.c; }</ins>
+    <ins>friend auto operator&lt;=&gt;(const queue& x, const queue& y)</ins>
+    <ins>  requires ThreeWayComparable&lt;Container&gt;</ins>
+    <ins>    { return x.c &lt;=&gt; y.c; }</ins>
+  };
+  [...]
+}</code></pre></blockquote>
+
+<p>Remove 21.6.4.4 [queue.ops] (as we've now defined them all inline in the header):</p>
+<blockquote>
+<p><pre><code><del>template&lt;class T, class Container&gt;
+  bool operator==(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">x.c == y.c</code>.</del><br />
+[...]</p>
+</blockquote>
+<p>Change 21.6.6.1 [stack.defn]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class Container = deque&lt;T&gt;&gt;
+  class stack {
+  public:
+    using value_type      = typename Container::value_type;
+    using reference       = typename Container::reference;
+    using const_reference = typename Container::const_reference;
+    using size_type       = typename Container::size_type;
+    using container_type  = Container;
+
+  protected:
+    Container c;
+
+  public:
+    stack() : stack(Container()) {}
+    explicit stack(const Container&);
+    explicit stack(Container&&);
+    template&lt;class Alloc&gt; explicit stack(const Alloc&);
+    template&lt;class Alloc&gt; stack(const Container&, const Alloc&);
+    template&lt;class Alloc&gt; stack(Container&&, const Alloc&);
+    template&lt;class Alloc&gt; stack(const stack&, const Alloc&);
+    template&lt;class Alloc&gt; stack(stack&&, const Alloc&);
+
+    [[nodiscard]] bool empty() const    { return c.empty(); }
+    size_type size()  const             { return c.size(); }
+    reference         top()             { return c.back(); }
+    const_reference   top() const       { return c.back(); }
+    void push(const value_type& x)      { c.push_back(x); }
+    void push(value_type&& x)           { c.push_back(std::move(x)); }
+    template&lt;class... Args&gt;
+      decltype(auto) emplace(Args&&... args)
+        { return c.emplace_back(std::forward&lt;Args&gt;(args)...); }
+    void pop()                          { c.pop_back(); }
+    void swap(stack& s) noexcept(is_nothrow_swappable_v&lt;Container&gt;)
+      { using std::swap; swap(c, s.c); }
+
+    <ins>friend bool operator==(const stack& x, const stack& y)</ins>
+    <ins>  { return x.c == y.c; }</ins>
+    <ins>friend bool operator!=(const stack& x, const stack& y)</ins>
+    <ins>  { return x.c != y.c; }</ins>
+    <ins>friend bool operator&lt; (const stack& x, const stack& y)</ins>
+    <ins>  { return x.c &lt; y.c; }</ins>
+    <ins>friend bool operator&gt; (const stack& x, const stack& y)</ins>
+    <ins>  { return x.c &gt; y.c; }</ins>
+    <ins>friend bool operator&lt;=(const stack& x, const stack& y)</ins>
+    <ins>  { return x.c &lt;= y.c; }</ins>
+    <ins>friend bool operator&gt;=(const stack& x, const stack& y)</ins>
+    <ins>  { return x.c &gt;= y.c; }</ins>
+    <ins>friend auto operator&lt;=&gt;(const stack& x, const stack& y)</ins>
+    <ins>  requires ThreeWayComparable&lt;Container&gt;</ins>
+    <ins>    { return x.c &lt;=&gt; y.c; }</ins>      
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Remove 21.6.6.4 [stack.ops] (as we've now defined them all inline in the header):</p>
+<blockquote>
+<p><pre><code><del>template&lt;class T, class Container&gt;
+  bool operator==(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">x.c == y.c</code>.</del><br />
+[...]</p>
+</blockquote>
 <h3 id="clause-22-iterators-library">3.9. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
 <p>TBD</p>
 <h3 id="clause-23-ranges-library">3.10. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
