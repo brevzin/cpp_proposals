@@ -1,5 +1,5 @@
-Title: The Mothership Has Landed - Adding `<=>` to library
-Document-Number: DxxxxR0
+Title: The Mothership Has Landed - Adding `<=>` to the library
+Document-Number: D1614R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LWG
 

@@ -12,5 +12,5 @@ d1186r2.html : spaceship-is-compare.md
 p1189r0.html : add-spaceship-to-lib.md
 	python ../md/better_md.py -i $< -o $@ --references
 
-dxxxxr0.html : mothership.md
+d1614r0.html : mothership.md
 	python ../md/better_md.py -i $< -o $@ --references
