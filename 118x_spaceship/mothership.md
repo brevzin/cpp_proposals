@@ -1284,7 +1284,7 @@ Change 19.10.2 [memory.syn]:
 <del>  template&lt;class T1, class D1, class T2, class D2&gt;
     bool operator==(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
   template&lt;class T1, class D1, class T2, class D2&gt;
-    bool operator!=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del>
+    bool operator!=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
   template&lt;class T1, class D1, class T2, class D2&gt;
     bool operator&lt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
   template&lt;class T1, class D1, class T2, class D2&gt;
@@ -1294,14 +1294,14 @@ Change 19.10.2 [memory.syn]:
   template&lt;class T1, class D1, class T2, class D2&gt;
     bool operator&gt;=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);
 
-<del>  template&lt;class T, class D&gt;
+  template&lt;class T, class D&gt;
     bool operator==(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
   template&lt;class T, class D&gt;
     bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;& y) noexcept;
   template&lt;class T, class D&gt;
     bool operator!=(const unique_ptr&lt;T, D&gt;& x, nullptr_t) noexcept;
   template&lt;class T, class D&gt;
-    bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;& y) noexcept;</del>
+    bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;& y) noexcept;
   template&lt;class T, class D&gt;
     bool operator&lt;(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
   template&lt;class T, class D&gt;
@@ -1317,7 +1317,7 @@ Change 19.10.2 [memory.syn]:
   template&lt;class T, class D&gt;
     bool operator&gt;=(const unique_ptr&lt;T, D&gt;& x, nullptr_t);
   template&lt;class T, class D&gt;
-    bool operator&gt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& y);
+    bool operator&gt;=(nullptr_t, const unique_ptr&lt;T, D&gt;& y);</del>
 
   template&lt;class E, class T, class Y, class D&gt;
     basic_ostream&lt;E, T&gt;& operator&lt;&lt;(basic_ostream&lt;E, T&gt;& os, const unique_ptr&lt;Y, D&gt;& p);  
@@ -1414,17 +1414,59 @@ Change 19.11.1.2 [unique.ptr.single]:
     unique_ptr(const unique_ptr&) = delete;
     unique_ptr& operator=(const unique_ptr&) = delete;
     
-    <ins>template&lt;class T2, class D2&gt;</ins>
-      <ins>friend bool operator==(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { return x.get() == y.get(); }</ins>
-    <ins>template&lt;class T2, class D2&gt;</ins>
-      <ins>  requires ThreeWayComparableWith&lt;pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</ins>
-      <ins>friend auto operator&lt;=&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y)</ins>  
-      <ins>{ return compare_three_way()(x.get(), y.get()); }</ins>
+<ins>    // [unique.ptr.special] Specialized algorithms
+    template&lt;class T2, class D2&gt;
+      friend bool operator==(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { return x.get() == y.get(); }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&lt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&lt;=(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&gt;=(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+        requires ThreeWayComparableWith&lt;pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;
+      friend auto operator&lt;=&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y)
+      { return compare_three_way()(x.get(), y.get()); }
 
-    <ins>friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }</ins>
-    <ins>friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)</ins>
-    <ins>  requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;</ins>
-    <ins>  { return compare_three_way()(x.get(), nullptr); }</ins>
+    friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+      requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
+      { return compare_three_way()(x.get(), nullptr); }</ins>
+  };
+}</code></pre></blockquote>
+
+Change 19.11.1.3 [unique.ptr.runtime]:
+
+<blockquote><pre><code>namespace std {
+  template<class T, class D> class unique_ptr<T[], D> {
+  public:
+    [...]
+    // disable copy from lvalue
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;    
+  
+<ins>    // [unique.ptr.special] Specialized algorithms
+    template&lt;class T2, class D2&gt;
+      friend bool operator==(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { return x.get() == y.get(); }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&lt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&lt;=(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+      friend bool operator&gt;=(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y) { <i>see below</i> }
+    template&lt;class T2, class D2&gt;
+        requires ThreeWayComparableWith&lt;pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;
+      friend auto operator&lt;=&gt;(const unique_ptr& x, const unique_ptr&lt;T2, D2&gt;& y)
+      { return compare_three_way()(x.get(), y.get()); }
+
+    friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+      requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
+      { return compare_three_way()(x.get(), nullptr); }</ins>  
   };
 }</code></pre></blockquote>
 
@@ -1439,12 +1481,25 @@ Change 19.11.1.5 [unique.ptr.special]:
 > <pre><code><del>template&lt;class T1, class D1, class T2, class D2&gt;
   bool operator!=(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</del></code></pre>
 > <del>*Returns*: `x.get() != y.get()`.</del>
-> <pre><code>template&lt;class T1, class D1, class T2, class D2&gt;
-  bool operator&lt;(const unique_ptr&lt;T1, D1&gt;& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
-> *Requires*: Let `CT` denote `common_type_t<typename unique_ptr<T1, D1>::pointer, typename unique_ptr<T2, D2>::pointer>` Then the specialization `less<CT>` shall be a function object type that induces a strict weak ordering on the pointer values.  
+> <pre><code>template&lt;<del>class T1, class D1, </del>class T2, class D2&gt;
+  <ins>friend </ins>bool operator&lt;(const unique_ptr<del>&lt;T1, D1&gt;</del>& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
+> *Requires*: Let `CT` denote <code>common_type_t&lt;<del>typename unique_ptr&lt;T1, D1&gt;::</del>pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</code> Then the specialization `less<CT>` shall be a function object type that induces a strict weak ordering on the pointer values.  
 > *Returns*: `less<CT>()(x.get(), y.get())`.  
-> *Remarks*: If `unique_ptr<T1, D1>::pointer` is not implicitly convertible to `CT` or `unique_ptr<T2, D2>::pointer` is not implicitly convertible to `CT`, the program is ill-formed.  
-> [...]
+> <del>*Remarks*: If `unique_ptr<T1, D1>::pointer` is not implicitly convertible to `CT` or `unique_ptr<T2, D2>::pointer` is not implicitly convertible to `CT`, the program is ill-formed.</del>  
+> <ins>*Mandates*: `pointer` and `unique_ptr<T2, D2>::pointer` are implicitly convertible to `CT`.</ins>  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code>template&lt;<del>class T1, class D1, </del>class T2, class D2&gt;
+  <ins>friend </ins>bool operator&gt;(const unique_ptr<del>&lt;T1, D1&gt;</del>& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
+> *Returns*: `y < x`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code>template&lt;<del>class T1, class D1, </del>class T2, class D2&gt;
+  <ins>friend </ins>bool operator&lt;=(const unique_ptr<del>&lt;T1, D1&gt;</del>& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
+> *Returns*: `!(y < x)`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code>template&lt;<del>class T1, class D1, </del>class T2, class D2&gt;
+  <ins>friend </ins>bool operator&gt;=(const unique_ptr<del>&lt;T1, D1&gt;</del>& x, const unique_ptr&lt;T2, D2&gt;& y);</code></pre>
+> *Returns*: `!(x < y)`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
 Change 19.11.3, [util.smartptr.shared]:
 
