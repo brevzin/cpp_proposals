@@ -1683,8 +1683,8 @@ Change 19.14.1 [functional.syn]
 
 <blockquote><pre><code>namespace std {
   [...]
-  template&lt;class R, class... ArgTypes&gt;
-    bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;</del>
   <del>template&lt;class R, class... ArgTypes&gt;</del>
   <del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
   <del>template&lt;class R, class... ArgTypes&gt;</del>
@@ -1705,10 +1705,24 @@ Change 19.14.16.2 [func.wrap.func]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class&gt; class function; // not defined
-  [...]
-  // [func.wrap.func.nullptr], Null pointer comparisons
+
   template&lt;class R, class... ArgTypes&gt;
-    bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;
+  class function&lt;R(ArgTypes...)&gt; {
+  public:
+    using result_type = R;
+    [...]
+    
+    // [func.wrap.func.targ], function target access
+    const type_info& target_type() const noexcept;
+    template&lt;class T&gt;       T* target() noexcept;
+    template&lt;class T&gt; const T* target() const noexcept;
+  
+    <ins>friend bool operator==(const function& f, nullptr_t) noexcept { return !f; }</ins>
+  };    
+  [...]
+  <del>// [func.wrap.func.nullptr], Null pointer comparisons</del>
+  <del>template&lt;class R, class... ArgTypes&gt;</del>
+  <del>  bool operator==(const function&lt;R(ArgTypes...)&gt;&, nullptr_t) noexcept;</del>
 
   <del>template&lt;class R, class... ArgTypes&gt;</del>
   <del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&) noexcept;</del>
@@ -1721,14 +1735,13 @@ Change 19.14.16.2 [func.wrap.func]:
   [...]
 }</code></pre></blockquote>  
 
-Change 19.14.16.2.6 [func.wrap.func.nullptr]:
+Remove 19.14.16.2.6 [func.wrap.func.nullptr]:
 
-> <pre><code>template&lt;class R, class... ArgTypes&gt;
-  bool operator==(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;
+> <pre><code><del>template&lt;class R, class... ArgTypes&gt;</del>
+<del>  bool operator==(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;</del>
 <del>template&lt;class R, class... ArgTypes&gt;</del>
 <del>  bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;& f) noexcept;</del></code></pre>
-> *Returns*: `!f`.
-
+> <del>*Returns*: `!f`.</del>
 > <pre><code><del>template&lt;class R, class... ArgTypes&gt;</del>
 <del>  bool operator!=(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;</del>
 <del>template&lt;class R, class... ArgTypes&gt;</del>
