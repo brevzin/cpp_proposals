@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>The Mothership Has Landed - Adding <=> to the library</title>
+<title>The Mothership Has Landed  Adding <=> to the Library</title>
 <style type="text/css">html {
 	position: relative;
 	max-width: 1024px;
@@ -611,14 +611,13 @@ Date: 2019-03-10 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
-<hr /><h1 align=center><p>The Mothership Has Landed - Adding <code class="language-cpp">&lt;=&gt;</code> to the library</p></h1>
+<hr /><h1 align=center><p>The Mothership Has Landed <br /> Adding <code class="language-cpp">&lt;=&gt;</code> to the Library</p></h1>
 <h2>Contents</h2>
 <div class="toc">
 <ol>
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
 <li><a href="#wording">Wording</a><ol>
-<li><a href="#todos">TODOs</a></li>
 <li><a href="#clause-15-library-introduction">Clause 15: Library Introduction</a></li>
 <li><a href="#clause-16-language-support-library">Clause 16: Language support library</a></li>
 <li><a href="#clause-17-concepts-library">Clause 17: Concepts Library</a></li>
@@ -659,19 +658,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <h2 id="acknowledgments">2. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thank you to Casey Carter for the tremendous wording review.</p>
 <h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
-<h3 id="todos">3.1. TODOs<a class="self-link" href="#todos"></a></h3>
-<ul>
-<li>
-<p>Further semantic requirements for the <code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code> concepts. From Casey: Do we want to assume e.g. that ThreeWayComparable<T, strong_equality> implies substitutability as hinted at in [cmp.strongeq]/1? The comparison category types have various such implied semantic requirements, despite the use of the weasel word "typically," which I suspect we should mandate for models of the concept. We probably also want to require that the domain of &lt;=&gt; is symmetric (a &lt;=&gt; b must be valid when b &lt;=&gt; a is valid for values a and b of type T) and perhaps that other relational/equality operations (if any) are consistent with the result of &lt;=&gt;. (TLDR: we need to require that &lt;=&gt; means what we think it means.) For ThreeWayComparableWith, we need domain requirements (I think t &lt;=&gt; u and u &lt;=&gt; t must have the same domain, and u &lt;=&gt; u and t &lt;=&gt; t must be well-defined when t &lt;=&gt; u is) and consistency requirements (t1 &lt;=&gt; t2 equals C(t1) &lt;=&gt; C(t2), u1 &lt;=&gt; u2 equals C(u1) &lt;=&gt; C(u2), t &lt;=&gt; u equals C(t) &lt;=&gt; C(u), u &lt;=&gt; t equals C(u) &lt;=&gt; C(t) where C is the common reference type).</p>
-</li>
-<li>
-<p>Implement the CPOs</p>
-</li>
-<li>
-<p>Should <code class="language-cpp">compare_three_way</code> be in [range.cmp]/2 so that we ensure we only have one implementation-defined total order?</p>
-</li>
-</ul>
-<h3 id="clause-15-library-introduction">3.2. Clause 15: Library Introduction<a class="self-link" href="#clause-15-library-introduction"></a></h3>
+<h3 id="clause-15-library-introduction">3.1. Clause 15: Library Introduction<a class="self-link" href="#clause-15-library-introduction"></a></h3>
 <p>Change 15.4.2.1/2 [expos.only.func]:</p>
 <blockquote>
 <p>The following <del>function is</del> <ins>are</ins> defined for exposition only to aid in the specification of the library:</p>
@@ -705,7 +692,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
 <p><strong>15.5.5.x Hidden friend functions [conforming.hidden.friend]</strong></p>
 <p>An implementation shall not provide any additional out-of-class declarations or redeclarations for any non-member function specified as a non-member <code class="language-cpp">friend</code> and defined within the body of a class. [ <em>Note</em>: The intent is that such functions are to be found via argument-dependent lookup only. <em>-end note</em> ]</p>
 </blockquote>
-<h3 id="clause-16-language-support-library">3.3. Clause 16: Language support library<a class="self-link" href="#clause-16-language-support-library"></a></h3>
+<h3 id="clause-16-language-support-library">3.2. Clause 16: Language support library<a class="self-link" href="#clause-16-language-support-library"></a></h3>
 <p>Added: <code class="language-cpp">compare_three_way_result</code>, concepts <code class="language-cpp">ThreeWayComparable</code> and <code class="language-cpp">ThreeWayComparableWith</code>, <code class="language-cpp">compare_three_way</code> and <code class="language-cpp">compare_XXX_order_fallback</code></p>
 <p>Changed operators for: <code class="language-cpp">type_info</code></p>
 <p>Respecified: <code class="language-cpp">strong_order()</code>, <code class="language-cpp">weak_order()</code>, and <code class="language-cpp">partial_order()</code></p>
@@ -1127,7 +1114,7 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <pre class="codehilite"><code class="language-cpp">struct compare_three_way {
   template&lt;class T, class U&gt;
     requires ThreeWayComparableWith&lt;T,U&gt; || BUILTIN_PTR_3WAY(T, U)
-  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp;u) const;
+  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp; u) const;
 
   using is_transparent = unspecified;
 };</code></pre>
@@ -1265,9 +1252,9 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <li><ins>Otherwise, <code class="language-cpp">compare_partial_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
 </blockquote>
-<h3 id="clause-17-concepts-library">3.4. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
+<h3 id="clause-17-concepts-library">3.3. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
 <p>Nothing.</p>
-<h3 id="clause-18-diagnostics-library">3.5. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
+<h3 id="clause-18-diagnostics-library">3.4. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
 <p>Changed operators for:</p>
 <ul>
 <li><code class="language-cpp">error_category</code></li>
@@ -1350,7 +1337,7 @@ return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
 return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
 </blockquote>
-<h3 id="clause-19-general-utilities-library">3.6. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
+<h3 id="clause-19-general-utilities-library">3.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
 <p>Changed operators for:</p>
 <ul>
 <li><code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code>, <code class="language-cpp">function</code>, <code class="language-cpp">type_index</code></li>
@@ -2016,6 +2003,14 @@ otherwise<br />
 <del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp; f) noexcept;</del></code></pre>
 <del><em>Returns</em>: <code class="language-cpp">(bool)f</code>.</del></p>
 </blockquote>
+<p>Add a new row to 19.15.4.3 [meta.unary.prop], the "Type property predicates" table:</p>
+<blockquote><table>
+<tr><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
+<tr><td colspan="3"><center>...</center></td></tr>
+<tr><td><pre style="background:transparent;border:0px"><code><ins>template&lt;class T&gt;
+struct has_strong_structural_equality;</ins></code></pre></td><td><ins>The type <code>T</code> has strong structural equality ([class.compare.default])</ins>.</td><td><ins><code>T</code> shall be a complete type, <code class="language-cpp">cv void</code>, or an array of unknown bound.</ins></td></tr>
+</table></blockquote>
+
 <p>Change 19.17.2 [type.index.overview]. Note that the relational operators on <code class="language-cpp">type_index</code> are based on <code class="language-cpp">type_info::before</code> (effectively <code class="language-cpp">&lt;</code>). <code class="language-cpp">type_info</code> <em>could</em> provide a three-way ordering function, but does not. Since an important motivation for the existence of <code class="language-cpp">type_index</code> is to be used as a key in an associative container, we do not want to pessimize <code class="language-cpp">&lt;</code> - but do want to provide <code class="language-cpp">&lt;=&gt;</code>.</p>
 <blockquote><pre><code>namespace std {
   class type_index {
@@ -2064,7 +2059,7 @@ return strong_ordering::greater;</code></pre></blockquote>
 <em>Returns</em>: <code class="language-cpp">target-&gt;hash_code()</code>.
 [...]</p>
 </blockquote>
-<h3 id="clause-20-strings-library">3.7. Clause 20: Strings library<a class="self-link" href="#clause-20-strings-library"></a></h3>
+<h3 id="clause-20-strings-library">3.6. Clause 20: Strings library<a class="self-link" href="#clause-20-strings-library"></a></h3>
 <p>Changing the operators for <code class="language-cpp">basic_string</code> and <code class="language-cpp">basic_string_view</code> and adding extra type alises to the <code class="language-cpp">char_traits</code> specializations provided by the standard.</p>
 <p>Change 20.2.3.1 [char.traits.specializations.char]:</p>
 <blockquote><pre><code>namespace std {
@@ -2322,7 +2317,7 @@ Let <code class="language-cpp">R</code> denote the type <code class="language-cp
 <em>Returns:</em> <code class="language-cpp">static_cast&lt;R&gt;(lhs.compare(rhs) &lt;=&gt; 0)</code>.<br />
 <em>Remarks</em>: This function is to be found via argument-dependent lookup only.</p>
 </blockquote>
-<h3 id="clause-21-containers-library">3.8. Clause 21: Containers library<a class="self-link" href="#clause-21-containers-library"></a></h3>
+<h3 id="clause-21-containers-library">3.7. Clause 21: Containers library<a class="self-link" href="#clause-21-containers-library"></a></h3>
 <p>Change 21.3.2 [array.syn]:</p>
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -3213,11 +3208,11 @@ namespace std {
 <del><em>Returns</em>: <code class="language-cpp">x.c == y.c</code>.</del><br />
 [...]</p>
 </blockquote>
-<h3 id="clause-22-iterators-library">3.9. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
+<h3 id="clause-22-iterators-library">3.8. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-23-ranges-library">3.10. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
+<h3 id="clause-23-ranges-library">3.9. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-24-algorithms-library">3.11. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
+<h3 id="clause-24-algorithms-library">3.10. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>
 <blockquote><pre><code>namespace std {
   [...]
@@ -3273,19 +3268,19 @@ namespace std {
 <ins>return lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());</ins></code></pre>             
 </blockquote>
 
-<h3 id="clause-25-numeric-library">3.12. Clause 25: Numeric library<a class="self-link" href="#clause-25-numeric-library"></a></h3>
+<h3 id="clause-25-numeric-library">3.11. Clause 25: Numeric library<a class="self-link" href="#clause-25-numeric-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-26-time-library">3.13. Clause 26: Time library<a class="self-link" href="#clause-26-time-library"></a></h3>
+<h3 id="clause-26-time-library">3.12. Clause 26: Time library<a class="self-link" href="#clause-26-time-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-27-localization-library">3.14. Clause 27: Localization library<a class="self-link" href="#clause-27-localization-library"></a></h3>
+<h3 id="clause-27-localization-library">3.13. Clause 27: Localization library<a class="self-link" href="#clause-27-localization-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-28-inputoutput-library">3.15. Clause 28: Input/output library<a class="self-link" href="#clause-28-inputoutput-library"></a></h3>
+<h3 id="clause-28-inputoutput-library">3.14. Clause 28: Input/output library<a class="self-link" href="#clause-28-inputoutput-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-29-regular-expressions-library">3.16. Clause 29: Regular expressions library<a class="self-link" href="#clause-29-regular-expressions-library"></a></h3>
+<h3 id="clause-29-regular-expressions-library">3.15. Clause 29: Regular expressions library<a class="self-link" href="#clause-29-regular-expressions-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-30-atomic-operations-library">3.17. Clause 30: Atomic operations library<a class="self-link" href="#clause-30-atomic-operations-library"></a></h3>
+<h3 id="clause-30-atomic-operations-library">3.16. Clause 30: Atomic operations library<a class="self-link" href="#clause-30-atomic-operations-library"></a></h3>
 <p>TBD</p>
-<h3 id="clause-31-thread-support-library">3.18. Clause 31: Thread support library<a class="self-link" href="#clause-31-thread-support-library"></a></h3>
+<h3 id="clause-31-thread-support-library">3.17. Clause 31: Thread support library<a class="self-link" href="#clause-31-thread-support-library"></a></h3>
 <p>TBD</p>
 <h2 id="references">4. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0891r2.html">[P0891R2]</a><span style="margin-left: 5px;">"Make strong_order a Customization Point!" by Gašper Ažman, Jeff Snyder, 2019-01-20</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1154r1.html">[P1154R1]</a><span style="margin-left: 5px;">"Type traits for structural comparison" by Arthur O'Dwyer, Jeff Snyder, 2019-01-19</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1189r0.html">[P1189R0]</a><span style="margin-left: 5px;">"Add &lt;=&gt; to Library" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1191r0.html">[P1191R0]</a><span style="margin-left: 5px;">"Adding operator&lt;=&gt; to types that are not currently comparable" by David Stone, 2018-08-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1295r0.html">[P1295R0]</a><span style="margin-left: 5px;">"Spaceship library update" by Tomasz Kamiński, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1380r1.html">[P1380R1]</a><span style="margin-left: 5px;">"Ambiguity and Insecurities with Three-Way Comparison" by Lawrence Crowl, 2019-01-20</span></li></ul>
 </html>

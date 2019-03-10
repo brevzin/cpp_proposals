@@ -1,4 +1,4 @@
-Title: The Mothership Has Landed - Adding `<=>` to the library
+Title: The Mothership Has Landed <br /> Adding `<=>` to the Library
 Document-Number: D1614R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LWG
@@ -25,14 +25,6 @@ LEWG's unanimous preference was that `operator<=>`s be declared as hidden friend
 Thank you to Casey Carter for the tremendous wording review.
 
 # Wording
-
-## TODOs
-
-- Further semantic requirements for the `ThreeWayComparable` and `ThreeWayComparableWith` concepts. From Casey: Do we want to assume e.g. that ThreeWayComparable<T, strong_equality> implies substitutability as hinted at in [cmp.strongeq]/1? The comparison category types have various such implied semantic requirements, despite the use of the weasel word "typically," which I suspect we should mandate for models of the concept. We probably also want to require that the domain of <=> is symmetric (a <=> b must be valid when b <=> a is valid for values a and b of type T) and perhaps that other relational/equality operations (if any) are consistent with the result of <=>. (TLDR: we need to require that <=> means what we think it means.) For ThreeWayComparableWith, we need domain requirements (I think t <=> u and u <=> t must have the same domain, and u <=> u and t <=> t must be well-defined when t <=> u is) and consistency requirements (t1 <=> t2 equals C(t1) <=> C(t2), u1 <=> u2 equals C(u1) <=> C(u2), t <=> u equals C(t) <=> C(u), u <=> t equals C(u) <=> C(t) where C is the common reference type).
-
-- Implement the CPOs
-
-- Should `compare_three_way` be in [range.cmp]/2 so that we ensure we only have one implementation-defined total order?
 
 ## Clause 15: Library Introduction
 
@@ -507,7 +499,7 @@ Add a new specification for `compare_three_way` in a new clause named "Compariso
     struct compare_three_way {
       template<class T, class U>
         requires ThreeWayComparableWith<T,U> || BUILTIN_PTR_3WAY(T, U)
-      constexpr auto operator()(T&& t, U&&u) const;
+      constexpr auto operator()(T&& t, U&& u) const;
 >      
       using is_transparent = unspecified;
     };
@@ -1404,6 +1396,15 @@ Change 19.14.16.2.6 [func.wrap.func.nullptr]:
 <del>template&lt;class R, class... ArgTypes&gt;</del>
 <del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;& f) noexcept;</del></code></pre>
 > <del>*Returns*: `(bool)f`.</del>
+
+Add a new row to 19.15.4.3 [meta.unary.prop], the "Type property predicates" table:
+
+<blockquote><table>
+<tr><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
+<tr><td colspan="3"><center>...</center></td></tr>
+<tr><td><pre style="background:transparent;border:0px"><code><ins>template&lt;class T&gt;
+struct has_strong_structural_equality;</ins></code></pre></td><td><ins>The type <code>T</code> has strong structural equality ([class.compare.default])</ins>.</td><td><ins><code>T</code> shall be a complete type, <code class="language-cpp">cv void</code>, or an array of unknown bound.</ins></td></tr>
+</table></blockquote>
 
 Change 19.17.2 [type.index.overview]. Note that the relational operators on `type_index` are based on `type_info::before` (effectively `<`). `type_info` _could_ provide a three-way ordering function, but does not. Since an important motivation for the existence of `type_index` is to be used as a key in an associative container, we do not want to pessimize `<` - but do want to provide `<=>`.
 
