@@ -1548,15 +1548,15 @@ Change 19.12.1 [mem.res.syn]:
   // [mem.res.class], class memory_resource
   class memory_resource;
 
-  bool operator==(const memory_resource& a, const memory_resource& b) noexcept;
+  <del>bool operator==(const memory_resource& a, const memory_resource& b) noexcept;</del>
   <del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del>
 
   // [mem.poly.allocator.class], class template polymorphic_allocator
   template&lt;class Tp&gt; class polymorphic_allocator;
 
-  template&lt;class T1, class T2&gt;
-    bool operator==(const polymorphic_allocator&lt;T1&gt;& a,
-                    const polymorphic_allocator&lt;T2&gt;& b) noexcept;
+  <del>template&lt;class T1, class T2&gt;</del>
+  <del>  bool operator==(const polymorphic_allocator&lt;T1&gt;& a,</del>
+  <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del>
   <del>template&lt;class T1, class T2&gt;</del>
   <del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;& a,</del>
   <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del>
@@ -1566,19 +1566,65 @@ Change 19.12.1 [mem.res.syn]:
   [...]
 }</code></pre></blockquote>
 
+Change 19.12.2 [mem.res.class]:
+
+<blockquote><pre><code>namespace std::pmr {
+  class memory_resource {
+    static constexpr size_t max_align = alignof(max_align_t);   // exposition only
+
+  public:
+    memory_resource() = default;
+    memory_resource(const memory_resource&) = default;
+    virtual ~memory_resource();
+
+    memory_resource& operator=(const memory_resource&) = default;
+
+    [[nodiscard]] void* allocate(size_t bytes, size_t alignment = max_align);
+    void deallocate(void* p, size_t bytes, size_t alignment = max_align);
+
+    bool is_equal(const memory_resource& other) const noexcept;
+    
+    <ins>friend bool operator==(const memory_resource&, const memory_resource&) noexcept { <i>see below</i> }</ins>
+
+  private:
+    virtual void* do_allocate(size_t bytes, size_t alignment) = 0;
+    virtual void do_deallocate(void* p, size_t bytes, size_t alignment) = 0;
+
+    virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
+  };
+}</code></pre></blockquote>
+
 Change 19.12.2.3 [mem.res.eq]:
 
-> <pre><code>bool operator==(const memory_resource& a, const memory_resource& b) noexcept;</code></pre>
+> <pre><code><ins>friend </ins>bool operator==(const memory_resource& a, const memory_resource& b) noexcept;</code></pre>
 > *Returns*: `&a == &b || a.is_equal(b)`.
 > <pre><code><del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del></code></pre>
 > <del>*Returns*: `!(a == b)`.</del>
 
+Change 19.12.3 [mem.poly.allocator.class]:
+
+<blockquote><pre><code>namespace std::pmr {
+  template&lt;class Tp&gt; class polymorphic_allocator {
+    memory_resource* memory_rsrc;     // exposition only
+
+  public:
+    [...]
+
+    memory_resource* resource() const;
+    
+    <ins>template&lt;class T2&gt;</ins>
+    <ins>  friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator&lt;T2&gt;& b)</ins>
+    <ins>  { <i>see below</i> }</ins>
+  };
+}</code></pre></blockquote>
+
 Change 19.12.3.3 [mem.poly.allocator.eq]:
 
-> <pre><code>template&lt;class T1, class T2&gt;
-  bool operator==(const polymorphic_allocator&lt;T1&gt;& a,
+> <pre><code>template&lt;<del>class T1, </del>class T2&gt;
+  <ins>friend </ins>bool operator==(const polymorphic_allocator<del>&lt;T1&gt;</del>& a,
                   const polymorphic_allocator&lt;T2&gt;& b) noexcept;</code></pre>
-> *Returns*: `*a.resource() == *b.resource()`.
+> *Returns*: `*a.resource() == *b.resource()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code><del>template&lt;class T1, class T2&gt;</del>
 <del>  bool operator!=(const polymorphic_allocator&lt;T1&gt;& a,</del>
 <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del></code></pre>
@@ -1591,24 +1637,43 @@ Change 19.13.1 [allocator.adaptor.syn]:
   template&lt;class OuterAlloc, class... InnerAlloc&gt;
     class scoped_allocator_adaptor;
 
-  // [scoped.adaptor.operators], scoped allocator operators
-  template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
-    bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,
-                    const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;
+  <del>// [scoped.adaptor.operators], scoped allocator operators</del>
+  <del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
+  <del>  bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
+  <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del>
   <del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
   <del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
   <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del>
 }</code></pre></blockquote>
 
+<blockquote><pre><code>namespace std {
+  template&lt;class OuterAlloc, class... InnerAllocs&gt;
+  class scoped_allocator_adaptor : public OuterAlloc {
+    [...]
+    scoped_allocator_adaptor select_on_container_copy_construction() const;
+    
+<ins>    // [scoped.adaptor.operators], scoped allocator operators
+    template&lt;class Outer2&gt;
+      friend bool operator==(const scoped_allocator_adaptor& a,
+                             const scoped_allocator_adaptor&lt;Outer2, InnerAllocs...&gt;& b) noexcept
+      { <i> see below</i> }</ins>
+  };
+
+  template&lt;class OuterAlloc, class... InnerAllocs&gt;
+    scoped_allocator_adaptor(OuterAlloc, InnerAllocs...)
+      -&gt; scoped_allocator_adaptor&lt;OuterAlloc, InnerAllocs...&gt;;
+}</code></pre></blockquote>
+
 Change 19.13.5 [scoped.adaptor.operators]:
 
-> <pre><code>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;
-  bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,
+> <pre><code>template&lt;<del>class OuterA1, </del>class OuterA2, class... InnerAllocs&gt;
+  <ins>friend </ins>bool operator==(const scoped_allocator_adaptor<del>&lt;OuterA1, InnerAllocs...&gt;</del>& a,
                   const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</code></pre>
 > *Returns*: If `sizeof...(InnerAllocs)` is zero,  
 > `a.outer_allocator() == b.outer_allocator()`  
 > otherwise  
-> `a.outer_allocator() == b.outer_allocator() && a.inner_allocator() == b.inner_allocator()`
+> `a.outer_allocator() == b.outer_allocator() && a.inner_allocator() == b.inner_allocator()`  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code><del>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</del>
 <del>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;& a,</del>
 <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del></code></pre>
