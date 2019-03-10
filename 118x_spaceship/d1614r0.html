@@ -685,7 +685,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
 
 <p>Remove 15.4.2.3 [operators], which begins:</p>
 <blockquote>
-<p>In this library, whenever a declaration is provided for an <code class="language-cpp">operator!=</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, or <code class="language-cpp">operator&gt;=</code> for a type <code class="language-cpp">T</code>, its requirements and semantics are as follows, unless explicitly specified otherwise.</p>
+<p><del>In this library, whenever a declaration is provided for an <code class="language-cpp">operator!=</code>, <code class="language-cpp">operator&gt;</code>, <code class="language-cpp">operator&lt;=</code>, or <code class="language-cpp">operator&gt;=</code> for a type <code class="language-cpp">T</code>, its requirements and semantics are as follows, unless explicitly specified otherwise.</del></p>
 </blockquote>
 <p>Add a clause to 15.5.5 [conforming], probably after 15.5.5.4 [global.functions]. Not strictly related to <code class="language-cpp">&lt;=&gt;</code> as a whole, but it's a requirement that's currently missing and needs to be added somewhere. See also P1601.</p>
 <blockquote>
@@ -761,13 +761,13 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
   <ins>template&lt;class T, class U, class Cat = partial_ordering&gt;</ins>
     <ins>concept ThreeWayComparableWith = <i>see below</i>;</ins>
 
-  <ins>// [cmp.result], compare_three_way_result</ins>
+  <ins>// [cmp.result], spaceship invocation result</ins>
   <ins>template&lt;class T, class U = T&gt; struct compare_three_way_result;</ins>
 
   <ins>template&lt;class T, class U = T&gt;</ins>
   <ins>  using compare_three_way_result_t = typename compare_three_way_result&lt;T, U&gt;::type;</ins>
 
-  <ins>// [cmp.object], compare_three_way</ins>
+  <ins>// [cmp.object], spaceship object</ins>
   <ins>struct compare_three_way;</ins>
 
   // [cmp.alg], comparison algorithms
@@ -790,14 +790,7 @@ using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = 
 <blockquote><pre><code>namespace std {
   class weak_equality {
     int value;  // exposition only
-
-    // exposition-only constructor
-    constexpr explicit weak_equality(eq v) noexcept : value(int(v)) {}  // exposition only
-
-  public:
-    // valid values
-    static const weak_equality equivalent;
-    static const weak_equality nonequivalent;
+    [...]
 
     // comparisons
     friend constexpr bool operator==(weak_equality v, <i>unspecified</i>) noexcept<del>;</del>
@@ -833,19 +826,7 @@ constexpr weak_equality operator&lt;=&gt;(unspecified, weak_equality v) noexcept
 <blockquote><pre><code>namespace std {
   class strong_equality {
     int value;  // exposition only
-
-    // exposition-only constructor
-    constexpr explicit strong_equality(eq v) noexcept : value(int(v)) {}    // exposition only
-
-  public:
-    // valid values
-    static const strong_equality equal;
-    static const strong_equality nonequal;
-    static const strong_equality equivalent;
-    static const strong_equality nonequivalent;
-
-    // conversion
-    constexpr operator weak_equality() const noexcept;
+    [...]
 
     // comparisons
     friend constexpr bool operator==(strong_equality v, <i>unspecified</i>) noexcept<del>;</del>
@@ -1019,7 +1000,7 @@ constexpr bool operator&lt;=(<i>unspecified</i>, strong_ordering v) noexcept;
 constexpr bool operator&gt;=(<i>unspecified</i>, strong_ordering v) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">0 @ v.value</code> for <code class="language-cpp">operator@</code>.</p>
 </blockquote>
-<p>Add a new clause "Concept <code class="language-cpp">ThreeWayComparable</code>" [cmp.concept].</p>
+<p>Add a new subclause [cmp.concept] "concept <code class="language-cpp">ThreeWayComparable</code>":</p>
 <blockquote>
 <p><pre><code class="language-cpp">template &lt;typename T, typename Cat&gt;
   concept </code><code><i>compares-as</i></code><code class="language-cpp"> = // exposition only
@@ -1102,15 +1083,14 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <li>If <code class="language-cpp">Cat</code> is convertible to <code class="language-cpp">strong_ordering</code>, <code class="language-cpp">T</code> and <code class="language-cpp">U</code> model <code class="language-cpp">StrictTotallyOrderedWith&lt;T, U&gt;</code> ([concepts.stricttotallyordered]).</li>
 </ul>
 </blockquote>
-<p>Add a new specification for <code class="language-cpp">compare_three_way_result</code> in a new clause after 16.11.3 [cmp.common] named "Comparison Result" [cmp.result]:</p>
+<p>Add a new subclause [cmp.result] "spaceship invocation result":</p>
 <blockquote>
 <p>The behavior of a program that adds specializations for the <code class="language-cpp">compare_three_way_result</code> template defined in this subclause is undefined.</p>
 <p>For the <code class="language-cpp">compare_three_way_result</code> type trait applied to the types <code class="language-cpp">T</code> and <code class="language-cpp">U</code>, let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> denote lvalues of types <code class="language-cpp">const remove_reference_t&lt;T&gt;</code> and <code class="language-cpp">const remove_reference_t&lt;U&gt;</code>, respectively. If the expression <code class="language-cpp">t &lt;=&gt; u</code> is well-formed, the member <em>typedef-name</em> <code class="language-cpp">type</code> denotes the type <code class="language-cpp">decltype(t &lt;=&gt; u)</code>. Otherwise, there is no member <code class="language-cpp">type</code>.</p>
 </blockquote>
-<p>Add a new specification for <code class="language-cpp">compare_three_way</code> in a new clause named "Comparison Object" [cmp.object]:</p>
+<p>Add a new subclause [cmp.object] "spaceship object":</p>
 <blockquote>
 <p>In this subclause, <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> for types <code class="language-cpp">T</code> and <code class="language-cpp">U</code> is a boolean constant expression. <code class="language-cpp">BUILTIN_PTR_3WAY(T, U)</code> is <code class="language-cpp">true</code> if and only if <code class="language-cpp">&lt;=&gt;</code> in the expression <code class="language-cpp">declval&lt;T&gt;() &lt;=&gt; declval&lt;U&gt;()</code> resolves to a built-in operator comparing pointers.</p>
-<p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operator <code class="language-cpp">&lt;=&gt;</code>.</p>
 <pre class="codehilite"><code class="language-cpp">struct compare_three_way {
   template&lt;class T, class U&gt;
     requires ThreeWayComparableWith&lt;T,U&gt; || BUILTIN_PTR_3WAY(T, U)
@@ -1123,9 +1103,10 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <p><em>Expects</em>: If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>, the conversion sequences from both <code class="language-cpp">T</code> and <code class="language-cpp">U</code> to <code class="language-cpp">P</code> are equality-preserving ([concepts.equality]).</p>
 <p><em>Effects</em>: </p>
 <ul>
-<li>If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>: returns <code class="language-cpp">strong_ordering::less</code> if (the converted value of) <code class="language-cpp">t</code> precedes <code class="language-cpp">u</code> in the implementation-defined strict total order over pointers of type <code class="language-cpp">P</code>, <code class="language-cpp">strong_ordering::greater</code> if <code class="language-cpp">u</code> precedes <code class="language-cpp">t</code>, and otherwise <code class="language-cpp">strong_ordering::equal</code>.</li>
+<li>If the expression <code class="language-cpp">std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u)</code> results in a call to a built-in operator <code class="language-cpp">&lt;=&gt;</code> comparing pointers of type <code class="language-cpp">P</code>: returns <code class="language-cpp">strong_ordering::less</code> if (the converted value of) <code class="language-cpp">t</code> precedes <code class="language-cpp">u</code> in the implementation-defined strict total order ([range.cmp]) over pointers of type <code class="language-cpp">P</code>, <code class="language-cpp">strong_ordering::greater</code> if <code class="language-cpp">u</code> precedes <code class="language-cpp">t</code>, and otherwise <code class="language-cpp">strong_ordering::equal</code>.</li>
 <li>Otherwise, equivalent to: <code class="language-cpp">return std::forward&lt;T&gt;(t) &lt;=&gt; std::forward&lt;U&gt;(u);</code></li>
 </ul>
+<p>In addition to being available via inclusion of the <code class="language-cpp">&lt;compare&gt;</code> header, the class <code class="language-cpp">compare_three_way</code> is available when the header <code class="language-cpp">&lt;functional&gt;</code> is included.</p>
 </blockquote>
 <p>Replace the entirety of 16.11.4 [cmp.alg]. This wording relies on the specification-only function <code class="language-cpp">3WAY&lt;R&gt;</code> defined in <a href="https://wg21.link/p1186r1" title="When do you actually use &lt;=&gt;?">P1186R1</a>.</p>
 <blockquote>
@@ -1193,7 +1174,7 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 </li>
 <li><del>Otherwise, the function is defined as deleted.</del></li>
 </ul>
-<p><ins>The name <code class="language-cpp">strong_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">strong_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</p>
+<p><ins>The name <code class="language-cpp">strong_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">strong_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to the following:</p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">strong_order(E, F)</code> is ill-formed.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">strong_ordering(strong_order(E, F))</code> if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::strong_order</code>.</ins></li>
@@ -1201,7 +1182,7 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <li><ins>Otherwise, <code class="language-cpp">strong_ordering(E &lt;=&gt; F)</code> if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">strong_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">strong_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">weak_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">weak_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</ins></p>
+<p><ins>The name <code class="language-cpp">weak_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">weak_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to the following:</ins></p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">weak_order(E, F)</code> is ill-formed.</ins> </li>
 <li><ins>Otherwise, <code class="language-cpp">weak_ordering(weak_order(E, F))</code> if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::weak_order</code>.</ins></li>
@@ -1221,7 +1202,7 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <li><ins>Otherwise, <code class="language-cpp">weak_ordering(E &lt;=&gt; F)</code> if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">weak_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">std::weak_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">partial_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">partial_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to the following:</ins></p>
+<p><ins>The name <code class="language-cpp">partial_order</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">partial_order(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to the following:</ins></p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">partial_order(E, F)</code> is ill-formed.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">partial_ordering(partial_order(E, F))</code> if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of <code class="language-cpp">std::partial_order</code>.</ins></li>
@@ -1230,21 +1211,21 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <li><ins>Otherwise, <code class="language-cpp">partial_order(E, F)</code> is ill-formed. [<em>Note</em>: This case can result in substitution failure when <code class="language-cpp">std::partial_order(E, F)</code> appears in the immediate context of a template instantiation. —<em>end note</em>]</ins>
 </li>
 </ul>
-<p><ins>The name <code class="language-cpp">compare_strong_order_fallback</code> denotes a comparison customization point ([customization.point.object]) object. The expression <code class="language-cpp">compare_strong_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">compare_strong_order_fallback</code> denotes a comparison customization point ([customization.point.object]) object. The expression <code class="language-cpp">compare_strong_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</ins></p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">compare_strong_order_fallback(E, F)</code> is ill-formed.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">strong_order(E, F)</code> if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">3WAY&lt;strong_ordering&gt;(E, F)</code> ([class.spaceship]) if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">compare_strong_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">compare_weak_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">compare_weak_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">compare_weak_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">compare_weak_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</ins></p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">compare_weak_order_fallback(E, F)</code> is ill-formed.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">weak_order(E, F)</code> if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">3WAY&lt;weak_ordering&gt;(E, F)</code> ([class.spaceship]) if it is a well-formed expression.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">compare_weak_order_fallback(E, F)</code> is ill-formed.</ins></li>
 </ul>
-<p><ins>The name <code class="language-cpp">compare_partial_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">compare_partial_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent to:</ins></p>
+<p><ins>The name <code class="language-cpp">compare_partial_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="language-cpp">compare_partial_order_fallback(E, F)</code> for some subexpressions <code class="language-cpp">E</code> and <code class="language-cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</ins></p>
 <ul>
 <li><ins>If the decayed types of <code class="language-cpp">E</code> and <code class="language-cpp">F</code> differ, <code class="language-cpp">compare_partial_order_fallback(E, F)</code> is ill-formed.</ins></li>
 <li><ins>Otherwise, <code class="language-cpp">partial_order(E, F)</code> if it is a well-formed expression.</ins></li>
@@ -1971,6 +1952,10 @@ otherwise<br />
   [...]
 }</code></pre></blockquote>
 
+<p>Change 19.14.8 [range.cmp]/2 to add <code class="language-cpp">&lt;=&gt;</code>:</p>
+<blockquote>
+<p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operators <code class="language-cpp">&lt;</code>, <code class="language-cpp">&gt;</code>, <code class="language-cpp">&lt;=</code>, <del>and</del> <code class="language-cpp">&gt;=</code><ins>, and <code class="language-cpp">&lt;=&gt;</code></ins>.</p>
+</blockquote>
 <p>Change 19.14.16.2 [func.wrap.func]:</p>
 <blockquote><pre><code>namespace std {
   template&lt;class&gt; class function; // not defined
