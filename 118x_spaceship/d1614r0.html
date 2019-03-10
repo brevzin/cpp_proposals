@@ -1317,13 +1317,13 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 
 <p>Change 18.5.5 [syserr.compare]</p>
 <blockquote>
-<p><pre><code>bool operator==(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
+<p><pre><code><ins>friend </ins>bool operator==(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
-<pre><code>bool operator==(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
+<pre><code><ins>friend </ins>bool operator==(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())</code>
-<pre><code>bool operator==(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
+<pre><code><ins>friend </ins>bool operator==(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())</code>
-<pre><code>bool operator==(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
+<pre><code><ins>friend </ins>bool operator==(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
 <pre><code><del>bool operator!=(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</del>
 <del>bool operator!=(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</del>
@@ -1338,20 +1338,17 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <del><em>Returns</em>:
 <code class="language-cpp">lhs.category() &lt; rhs.category() ||
 (lhs.category() == rhs.category() &amp;&amp; lhs.value() &lt; rhs.value())</code></del>
-<pre><code><ins>strong_ordering operator&lt;=&gt;(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</ins></code></pre>
+<pre><code><ins>friend strong_ordering operator&lt;=&gt;(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
 return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote>
-<pre><code><ins>strong_ordering operator&lt;=&gt;(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</ins></code></pre>
+<pre><code><ins>friend strong_ordering operator&lt;=&gt;(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
 return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
 </blockquote>
 <h3 id="clause-19-general-utilities-library">3.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
-<p>Changed operators for:</p>
-<ul>
-<li><code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code>, <code class="language-cpp">function</code>, <code class="language-cpp">type_index</code></li>
-</ul>
+<p>Changed operators for: <code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code>, <code class="language-cpp">function</code>, <code class="language-cpp">type_index</code></p>
 <p>Change 19.2.1 [utility.syn]</p>
 <blockquote><pre><code>#include <initializer_list> // see 16.10.1
 

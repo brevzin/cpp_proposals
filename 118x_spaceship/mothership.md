@@ -696,13 +696,13 @@ Change 18.5.4.1 [syserr.errcondition.overview]:
 
 Change 18.5.5 [syserr.compare]
 
-> <pre><code>bool operator==(const error_code& lhs, const error_code& rhs) noexcept;</code></pre>
+> <pre><code><ins>friend </ins>bool operator==(const error_code& lhs, const error_code& rhs) noexcept;</code></pre>
 > *Returns*: `lhs.category() == rhs.category() && lhs.value() == rhs.value()`
-> <pre><code>bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;</code></pre>
+> <pre><code><ins>friend </ins>bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;</code></pre>
 > *Returns*: `lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())`
-> <pre><code>bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;</code></pre>
+> <pre><code><ins>friend </ins>bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;</code></pre>
 > *Returns*: `rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())`
-> <pre><code>bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;</code></pre>
+> <pre><code><ins>friend </ins>bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;</code></pre>
 > *Returns*: `lhs.category() == rhs.category() && lhs.value() == rhs.value()`
 > <pre><code><del>bool operator!=(const error_code& lhs, const error_code& rhs) noexcept;</del>
 <del>bool operator!=(const error_code& lhs, const error_condition& rhs) noexcept;</del>
@@ -717,20 +717,18 @@ Change 18.5.5 [syserr.compare]
 > <del>*Returns*:
 > ```lhs.category() < rhs.category() ||
 (lhs.category() == rhs.category() && lhs.value() < rhs.value())```</del>
-> <pre><code><ins>strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;</ins></code></pre>
+> <pre><code><ins>friend strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;</ins></code></pre>
 > <ins>*Effects*: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() <=> rhs.category(); c != 0) return c;
 return lhs.value() <=> rhs.value();</code></pre></blockquote>
-> <pre><code><ins>strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;</ins></code></pre>
+> <pre><code><ins>friend strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;</ins></code></pre>
 > <ins>*Effects*: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() <=> rhs.category(); c != 0) return c;
 return lhs.value() <=> rhs.value();</code></pre></blockquote>
 
 ## Clause 19: General utilities library
 
-Changed operators for:
-
-- `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`, `function`, `type_index`
+Changed operators for: `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`, `function`, `type_index`
 
 Change 19.2.1 [utility.syn]
 
