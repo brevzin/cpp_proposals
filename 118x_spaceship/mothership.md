@@ -1273,10 +1273,10 @@ Change 19.10.2 [memory.syn]:
   [...]
   // [default.allocator], the default allocator
   template&lt;class T&gt; class allocator;
-  template&lt;class T, class U&gt;
+<del>  template&lt;class T, class U&gt;
     bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;
-  <del>template&lt;class T, class U&gt;</del>
-    <del>bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</del>
+  template&lt;class T, class U&gt;
+    bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</del>
   [...]
   template&lt;class T, class D&gt; 
     void swap(unique_ptr&lt;T, D&gt;& x, unique_ptr&lt;T, D&gt;& y) noexcept;
@@ -1367,11 +1367,36 @@ Change 19.10.2 [memory.syn]:
   [...]    
 }</code></pre></blockquote>
 
-Change 19.10.10.2 [allocator.globals]:
+Change 19.10.10 [default.allocator]:
 
-> <pre><code>template&lt;class T, class U&gt;
-  bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</code></pre>
-> *Returns*: `true`.
+<blockquote><pre><code>namespace std {
+  template&lt;class T&gt; class allocator {
+   public:
+    using value_type      = T;
+    using size_type       = size_t;
+    using difference_type = ptrdiff_t;
+    using propagate_on_container_move_assignment = true_type;
+    using is_always_equal = true_type;
+
+    constexpr allocator() noexcept;
+    constexpr allocator(const allocator&) noexcept;
+    template&lt;class U&gt; constexpr allocator(const allocator&lt;U&gt;&) noexcept;
+    ~allocator();
+    allocator& operator=(const allocator&) = default;
+
+    [[nodiscard]] T* allocate(size_t n);
+    void deallocate(T* p, size_t n);
+    
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend bool operator==(const allocator&, const allocator&lt;U&gt;&) { return true; }</ins>
+  };
+}</code></pre></blockquote>
+
+Remove 19.10.10.2 [allocator.globals]:
+
+> <pre><code><del>template&lt;class T, class U&gt;
+  bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</del></code></pre>
+> <del>*Returns*: `true`.</del>
 > <del><pre><code>template&lt;class T, class U&gt;
   bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</code></pre></del>
 > <del>*Returns*: `false`.</del>
