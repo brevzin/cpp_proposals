@@ -497,7 +497,7 @@ Replace the entirety of 16.11.4 [cmp.alg]. This wording relies on the specificat
 > <pre><code><del>template&lt;class T&gt; constexpr strong_ordering strong_order(const T& a, const T& b);</del></code></pre>
 > <del>*Effects*: Compares two values and produces a result of type `strong_ordering`:</del>  
 > 
-> - <del>If numeric_­limits<T>::is_iec559 is true, returns a result of type strong_ordering that is consistent with the totalOrder operation as specified in ISO/IEC/IEEE 60559.</del>
+> - <del>If numeric_limits<T>::is_iec559 is true, returns a result of type strong_ordering that is consistent with the totalOrder operation as specified in ISO/IEC/IEEE 60559.</del>
 > - <del>Otherwise, returns a <=> b if that expression is well-formed and convertible to strong_ordering.</del>
 > - <del>Otherwise, if the expression a <=> b is well-formed, then the function is defined as deleted.</del>
 > - <del>Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, then</del>
@@ -911,7 +911,7 @@ Change 19.6.2 [optional.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
-  // [optional.bad.access], class bad_­optional_­access
+  // [optional.bad.access], class bad_optional_access
   class bad_optional_access;
 
 <del>  // [optional.relops], relational operators
@@ -1121,17 +1121,40 @@ Change 19.7.2 [variant.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
+  template&lt;class T, class... Types&gt;
+    constexpr add_pointer_t&lt;T&gt;
+      get_if(variant&lt;Types...&gt;*) noexcept;
+  template&lt;class T, class... Types&gt;
+    constexpr add_pointer_t&lt;const T&gt;
+      get_if(const variant&lt;Types...&gt;*) noexcept;
+
+  // [variant.relops], relational operators
+<del>  template&lt;class... Types&gt;
+    constexpr bool operator==(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);
+  template&lt;class... Types&gt;
+    constexpr bool operator!=(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);
+  template&lt;class... Types&gt;
+    constexpr bool operator&lt;(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);
+  template&lt;class... Types&gt;
+    constexpr bool operator&gt;(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);
+  template&lt;class... Types&gt;
+    constexpr bool operator&lt;=(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);
+  template&lt;class... Types&gt;
+    constexpr bool operator&gt;=(const variant&lt;Types...&gt;&, const variant&lt;Types...&gt;&);</del>
+
+  // [variant.visit], visitation
+  [...]  
+  
   // [variant.monostate], class monostate
   struct monostate;
 
-  // [variant.monostate.relops], monostate relational operators
+<del>  // [variant.monostate.relops], monostate relational operators
   constexpr bool operator==(monostate, monostate) noexcept;
-  <del>constexpr bool operator!=(monostate, monostate) noexcept;</del>
-  <del>constexpr bool operator<(monostate, monostate) noexcept;</del>
-  <del>constexpr bool operator>(monostate, monostate) noexcept;</del>
-  <del>constexpr bool operator<=(monostate, monostate) noexcept;</del>
-  <del>constexpr bool operator>=(monostate, monostate) noexcept;</del>
-  <ins>constexpr strong_ordering operator<=>(monostate, monostate) noexcept;</ins>
+  constexpr bool operator!=(monostate, monostate) noexcept;
+  constexpr bool operator&lt;(monostate, monostate) noexcept;
+  constexpr bool operator&gt;(monostate, monostate) noexcept;
+  constexpr bool operator&lt;=(monostate, monostate) noexcept;
+  constexpr bool operator&gt;=(monostate, monostate) noexcept;</del>
   
   // [variant.specalg], specialized algorithms
   template&lt;class... Types&gt;
@@ -1151,6 +1174,12 @@ Change 19.7.3 [variant.variant]:
     void swap(variant&) noexcept(see below);
 
     <ins>// [variant.relops], relational operators</ins>
+    <ins>friend constexpr bool operator==(const variant&, const variant&) { <i>see below</i> }</ins>
+    <ins>friend constexpr bool operator!=(const variant&, const variant&) { <i>see below</i> }</ins>
+    <ins>friend constexpr bool operator&lt;(const variant&, const variant&) { <i>see below</i> }</ins>
+    <ins>friend constexpr bool operator&gt;(const variant&, const variant&) { <i>see below</i> }</ins>
+    <ins>friend constexpr bool operator&lt;=(const variant&, const variant&) { <i>see below</i> }</ins>
+    <ins>friend constexpr bool operator&gt;=(const variant&, const variant&) { <i>see below</i> }</ins>
     <ins>friend constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</ins>
     <ins>  operator&lt;=&gt;(const variant&, const variant&)</ins>
     <ins>    requires (ThreeWayComparable&lt;Types&gt; && ...)</ins>
@@ -1158,25 +1187,64 @@ Change 19.7.3 [variant.variant]:
   };
 }</code></pre></blockquote>
 
-Insert at the end of 19.7.6 [variant.relops]:
+Change 19.7.6 [variant.relops]:
 
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator==(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) == get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.  
+> *Returns*: If `v.index() != w.index()`, `false`; otherwise if `v.valueless_by_exception()`, `true`; otherwise `get<i>(v) == get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator!=(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) != get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.
+> *Returns*: If `v.index() != w.index()`, `true`; otherwise if `v.valueless_by_exception()`, `false`; otherwise `get<i>(v) != get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator&lt;(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) < get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.  
+> *Returns*: If `w.valueless_by_exception()`, `false`; otherwise if `v.valueless_by_exception()`, `true`; otherwise, if `v.index() < w.index()`, `true`; otherwise if `v.index() > w.index()`, `false`; otherwise `get<i>(v) < get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator&gt;(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) > get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.  
+> *Returns*: If `v.valueless_by_exception()`, `false`; otherwise if `w.valueless_by_exception()`, `true`; otherwise, if `v.index() > w.index()`, `true`; otherwise if `v.index() < w.index()`, `false`; otherwise `get<i>(v) > get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator&lt;=(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) <= get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.  
+> *Returns*: If `v.valueless_by_exception()`, `true`; otherwise if `w.valueless_by_exception()`, `false`; otherwise, if `v.index() < w.index()`, `true`; otherwise if `v.index() > w.index()`, `false`; otherwise `get<i>(v) <= get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
+> <pre><code><del>template&lt;class... Types&gt;</del>
+<ins>friend </ins>constexpr bool operator&gt;=(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
+> <del>*Requires*</del><ins>*Mandates*</ins>: `get<i>(v) >= get<i>(w)` is a valid expression returning a type that is convertible to `bool`, for all `i`.  
+> *Returns*: If `w.valueless_by_exception()`, `true`; otherwise if `v.valueless_by_exception()`, `false`; otherwise, if `v.index() > w.index()`, `true`; otherwise if `v.index() < w.index()`, `false`; otherwise `get<i>(v) >= get<i>(w)` with `i` being `v.index()`.  
+> <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code><ins>constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</ins>
 <ins>  friend operator&lt;=&gt;(const variant& v, const variant& w)</ins>
 <ins>    requires (ThreeWayComparable&lt;Types&gt; && ...);</ins></code></pre>
 > <ins>*Returns*: Let `c` be `(v.index() + 1) <=> (w.index() + 1)`. If `c != 0`, `c`. Otherwise, `get<i>(v) <=> get<i>(w)` with `i` being `v.index()`.</ins>  
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
-Change 19.7.9 [variant.monostate.relops]:
+Change 19.7.8 [variant.monostate]:
 
-<blockquote><pre><code>constexpr bool operator==(monostate, monostate) noexcept { return true; }
+<blockquote><pre><code><del>struct monostate{};</del>
+<ins>struct monostate {
+  friend constexpr bool operator==(monostate, monostate) noexcept = default;
+  friend constexpr strong_ordering operator<=>(monostate, monostate) noexcept = default;
+};</ins></code></pre>
+
+<ins>[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</ins></blockquote>
+
+Remove 19.7.9 [variant.monostate.relops]:
+
+<blockquote><pre><code><del>constexpr bool operator==(monostate, monostate) noexcept { return true; }</del>
 <del>constexpr bool operator!=(monostate, monostate) noexcept { return false; }</del>
 <del>constexpr bool operator<(monostate, monostate) noexcept { return false; }</del>
 <del>constexpr bool operator>(monostate, monostate) noexcept { return false; }</del>
 <del>constexpr bool operator<=(monostate, monostate) noexcept { return true; }</del>
-<del>constexpr bool operator>=(monostate, monostate) noexcept { return true; }</del>
-<ins>constexpr strong_ordering operator<=>(monostate, monostate) noexcept { return strong_ordering::equal; }</ins></code></pre>
+<del>constexpr bool operator>=(monostate, monostate) noexcept { return true; }</del></code></pre>
 
-[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</blockquote>
+<del>[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</del></blockquote>
 
 Change 19.9.2 [template.bitset]:
 
@@ -1293,7 +1361,7 @@ Change 19.10.2 [memory.syn]:
   template&lt;class T&gt;
     bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;& y) noexcept;</del>
 
-  // [util.smartptr.shared.spec], shared_­ptr specialized algorithms
+  // [util.smartptr.shared.spec], shared_ptr specialized algorithms
   template&lt;class T&gt;
     void swap(shared_ptr&lt;T&gt;& a, shared_ptr&lt;T&gt;& b) noexcept;
   [...]    
@@ -1397,13 +1465,13 @@ Remove all of 19.11.3.7 [util.smartptr.shared.cmp]:
 Change 19.12.1 [mem.res.syn]:
 
 <blockquote><pre><code>namespace std::pmr {
-  // [mem.res.class], class memory_­resource
+  // [mem.res.class], class memory_resource
   class memory_resource;
 
   bool operator==(const memory_resource& a, const memory_resource& b) noexcept;
   <del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del>
 
-  // [mem.poly.allocator.class], class template polymorphic_­allocator
+  // [mem.poly.allocator.class], class template polymorphic_allocator
   template&lt;class Tp&gt; class polymorphic_allocator;
 
   template&lt;class T1, class T2&gt;
@@ -1908,7 +1976,7 @@ Change 21.3.4 [forward_list.syn]:
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
 namespace std {
-  // [forwardlist], class template forward­list
+  // [forwardlist], class template forwardlist
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class forward_list;
 
 <del>  template&lt;class T, class Allocator&gt;
@@ -2407,7 +2475,7 @@ Change 21.5.2 [unord.map.syn]:
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
 namespace std {
-  // [unord.map], class template unordered_­map
+  // [unord.map], class template unordered_map
   template&lt;class Key,
            class T,
            class Hash = hash&lt;Key&gt;,
@@ -2415,7 +2483,7 @@ namespace std {
            class Alloc = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;
     class unordered_map;
 
-  // [unord.multimap], class template unordered_­multimap
+  // [unord.multimap], class template unordered_multimap
   template&lt;class Key,
            class T,
            class Hash = hash&lt;Key&gt;,
@@ -2450,14 +2518,14 @@ Change 21.5.3 [unord.set.syn]:
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
 namespace std {
-  // [unord.set], class template unordered_­set
+  // [unord.set], class template unordered_set
   template&lt;class Key,
            class Hash = hash&lt;Key&gt;,
            class Pred = equal_to&lt;Key&gt;,
            class Alloc = allocator&lt;Key&gt;&gt;
     class unordered_set;
 
-  // [unord.multiset], class template unordered_­multiset
+  // [unord.multiset], class template unordered_multiset
   template&lt;class Key,
            class Hash = hash&lt;Key&gt;,
            class Pred = equal_to&lt;Key&gt;,
@@ -2808,8 +2876,8 @@ Change 24.7.11 \[alg.3way\]:
 <p><i>Effects</i>: Compares two values and produces a result of the strongest applicable comparison category type:
 <ul>
 <li> Returns a <=> b if that expression is well-formed.
-<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_­ordering​::​equal when a == b is true, otherwise returns strong_­ordering​::​less when a < b is true, and otherwise returns strong_­ordering​::​greater.
-<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_­equality​::​equal when a == b is true, and otherwise returns strong_­equality​::​nonequal.
+<li> Otherwise, if the expressions a == b and a < b are each well-formed and convertible to bool, returns strong_ordering​::​equal when a == b is true, otherwise returns strong_ordering​::​less when a < b is true, and otherwise returns strong_ordering​::​greater.
+<li> Otherwise, if the expression a == b is well-formed and convertible to bool, returns strong_equality​::​equal when a == b is true, and otherwise returns strong_equality​::​nonequal.
 <li>Otherwise, the function is defined as deleted.
 </ul></del></blockquote>
     
