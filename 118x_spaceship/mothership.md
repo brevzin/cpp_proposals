@@ -20,6 +20,39 @@ In San Diego and Kona, several papers were approved by LEWG adding functionality
 
 LEWG's unanimous preference was that `operator<=>`s be declared as hidden friends.
 
+# Known behavioral changes
+
+There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. While any change will break somebody, we're probably not terribly concerned about examples like:
+
+    :::cpp
+    using namespace std;
+    struct X { operator error_code() const; };
+    X{} == X{}; // ok in C++17, ill-formed with this change
+
+Here is an example of something that was well-formed and becomes ill-formed, reproduced from LLVM:
+
+    :::cpp hl_lines="8"
+    struct StringRef {
+        StringRef(std::string const&); // NB: non-explicit
+        operator std::string() const;  // NB: non-explicit
+    };
+    bool operator==(StringRef, StringRef);
+
+    bool f(StringRef a, std::string b) {
+        return a == b; // (*)
+    }
+
+In C++17, the marked line is well-formed. The `operator==` for `basic_string` is a non-member function template, and so would not be considered a candidate; the only viable candidate is the `operator==` taking two `StringRef`s. With the proposed changes, the `operator==` for `basic_string` becomes a non-member hidden friend, _non-template_, which makes it a candidate (converting `a` to a `string`). That candidate is ambiguous with the `operator==(StringRef, StringRef)` candidate - each requires a conversion in one argument, so the call becomes ill-formed.
+
+Here is an example of something that was ill-formed and becomes well-formed:
+
+    :::cpp hl_lines="2"
+    bool is42(std::variant<int, std::string> const& v) {
+        return v == 42; // (*)
+    }
+
+In C++17, the `operator==` for `variant` is a non-member function template and is thus not a viable candidate for the marked line. That check is ill-formed. With the proposed changes, the `operator==` for `variant` becomes a non-member hidden friend, _non-template_, which makes it a candidate (converting `42` to a `variant<int, string>`). This is arguably a fix, since both `variant<int, string> v = 42;` and `v = 42;` are already well-formed, so it is surely reasonable that `v == 42` is as well.
+
 # Acknowledgments
 
 Thank you to Casey Carter for the tremendous wording review.
