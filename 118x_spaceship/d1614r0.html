@@ -1318,13 +1318,17 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <p>Change 18.5.5 [syserr.compare]</p>
 <blockquote>
 <p><pre><code><ins>friend </ins>bool operator==(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
-<em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
+<em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><ins>friend </ins>bool operator==(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
-<em>Returns</em>: <code class="language-cpp">lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())</code>
+<em>Returns</em>: <code class="language-cpp">lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><ins>friend </ins>bool operator==(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
-<em>Returns</em>: <code class="language-cpp">rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())</code>
+<em>Returns</em>: <code class="language-cpp">rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><ins>friend </ins>bool operator==(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
-<em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
+<em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><del>bool operator!=(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</del>
 <del>bool operator!=(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</del>
 <del>bool operator!=(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</del>
@@ -1341,11 +1345,13 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <pre><code><ins>friend strong_ordering operator&lt;=&gt;(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
-return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote>
+return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><ins>friend strong_ordering operator&lt;=&gt;(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</ins></code></pre>
 <ins><em>Effects</em>: Equivalent to:</ins>
 <blockquote class="ins"><pre><code>if (auto c = lhs.category() &lt;=&gt; rhs.category(); c != 0) return c;
-return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote></p>
+return lhs.value() &lt;=&gt; rhs.value();</code></pre></blockquote><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins></p>
 </blockquote>
 <h3 id="clause-19-general-utilities-library">3.5. Clause 19: General utilities library<a class="self-link" href="#clause-19-general-utilities-library"></a></h3>
 <p>Changed operators for: <code class="language-cpp">pair</code>, <code class="language-cpp">tuple</code>, <code class="language-cpp">optional</code>, <code class="language-cpp">variant</code>, <code class="language-cpp">monostate</code>, <code class="language-cpp">bitset</code>, <code class="language-cpp">allocator</code>, <code class="language-cpp">unique_ptr</code>, <code class="language-cpp">shared_ptr</code>, <code class="language-cpp">memory_resource</code>, <code class="language-cpp">polymorphic_allocator</code>, <code class="language-cpp">scoped_allocator_adaptor</code>, <code class="language-cpp">function</code>, <code class="language-cpp">type_index</code></p>
@@ -1521,7 +1527,10 @@ comparison. <em>—end note]</em></p>
 <p>Change 19.6.2 [optional.syn]:</p>
 <blockquote><pre><code>namespace std {
   [...]
-  // [optional.relops], relational operators
+  // [optional.bad.access], class bad_­optional_­access
+  class bad_optional_access;
+
+<del>  // [optional.relops], relational operators
   template&lt;class T, class U&gt;
     constexpr bool operator==(const optional&lt;T&gt;&, const optional&lt;U&gt;&);
   template&lt;class T, class U&gt;
@@ -1535,25 +1544,37 @@ comparison. <em>—end note]</em></p>
   template&lt;class T, class U&gt;
     constexpr bool operator&gt;=(const optional&lt;T&gt;&, const optional&lt;U&gt;&);
 
-  <del>// [optional.nullops], comparison with nullopt</del>
-  <del>template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&, nullopt_t) noexcept;</del>
-  <del>template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;&) noexcept;</del>
+  // [optional.nullops], comparison with nullopt
+  template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;&) noexcept;
+  template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;&) noexcept;
+  template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;&) noexcept;
+  template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;&) noexcept;
+  template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;&) noexcept;
+  template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&, nullopt_t) noexcept;
+  template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;&) noexcept;
 
   // [optional.comp_with_t], comparison with T
   template&lt;class T, class U&gt; constexpr bool operator==(const optional&lt;T&gt;&, const U&);
   template&lt;class T, class U&gt; constexpr bool operator==(const T&, const optional&lt;U&gt;&);
   template&lt;class T, class U&gt; constexpr bool operator!=(const optional&lt;T&gt;&, const U&);
   template&lt;class T, class U&gt; constexpr bool operator!=(const T&, const optional&lt;U&gt;&);
+  template&lt;class T, class U&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&, const U&);
+  template&lt;class T, class U&gt; constexpr bool operator&lt;(const T&, const optional&lt;U&gt;&);
+  template&lt;class T, class U&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&, const U&);
+  template&lt;class T, class U&gt; constexpr bool operator&gt;(const T&, const optional&lt;U&gt;&);
+  template&lt;class T, class U&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&, const U&);
+  template&lt;class T, class U&gt; constexpr bool operator&lt;=(const T&, const optional&lt;U&gt;&);
+  template&lt;class T, class U&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&, const U&);
+  template&lt;class T, class U&gt; constexpr bool operator&gt;=(const T&, const optional&lt;U&gt;&);</del>
+
+  // [optional.specalg], specialized algorithms
+  template&lt;class T&gt;
+    void swap(optional&lt;T&gt;&, optional&lt;T&gt;&) noexcept(see below);
   [...]
 }</code></pre></blockquote>
 
@@ -1568,15 +1589,40 @@ comparison. <em>—end note]</em></p>
     void reset() noexcept;
 
     <ins>// [optional.relops], relational operators</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator==(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator!=(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator&lt;(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator&gt;(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator&lt;=(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt;</ins>
+    <ins>  friend constexpr bool operator&gt;=(const optional&, const optional&lt;U&gt;&) { <i>see below</i> }</ins>
     <ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
     <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
     <ins>    operator&lt;=&gt;(const optional&, const optional&lt;U&gt;&)</ins>
     <ins>    { <i>see below</i> }</ins>
 
+    <ins>// comparison with nullopt</ins>
     <ins>friend constexpr bool operator==(const optional& x, nullopt_t) { return !x; }</ins>
     <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) { return bool(x) &lt;=&gt; false; }</ins>
 
     <ins>// [optional.comp_with_t], comparison with T</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator==(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator==(const U&, const optional&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator!=(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator!=(const U&, const optional&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&lt;(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&lt;(const U&, const optional&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&gt;(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&gt;(const U&, const optional&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&lt;=(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&lt;=(const U&, const optional&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&gt;=(const optional&, const U&) { <i>see below</i> }</ins>
+    <ins>template&lt;class U&gt; friend constexpr bool operator&gt;=(const U&, const optional&) { <i>see below</i> }</ins>
     <ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
     <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
     <ins>    operator&lt;=&gt;(const optional&, const U&)</ins>
@@ -1589,11 +1635,30 @@ comparison. <em>—end note]</em></p>
 
 <p>Change 19.6.6 [optional.relops]:</p>
 <blockquote>
-<p>[...]
-<pre><code>template&lt;class T, class U&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
-<em>Requires</em>: The expression <code class="language-cpp">*x &gt;= *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<p><pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator==(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x == *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>. [<em>Note</em>: <code class="language-cpp">T</code> need not be <code class="language-cpp">Cpp17EqualityComparable</code>. —<em>end note</em>]<br />
+<em>Returns</em>: If <code class="language-cpp">bool(x) != bool(y)</code>, <code class="language-cpp">false</code>; otherwise if <code class="language-cpp">bool(x) == false</code>, <code class="language-cpp">true</code>; otherwise <code class="language-cpp">*x == *y</code>.<br />
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x == *y</code> is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator!=(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x != *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: If <code class="language-cpp">bool(x) != bool(y)</code>, <code class="language-cpp">true</code>; otherwise, if <code class="language-cpp">bool(x) == false</code>, <code class="language-cpp">false</code>; otherwise <code class="language-cpp">*x != *y</code>.<br />
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x != *y</code> is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: <code class="language-cpp">*x &lt; *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: If <code class="language-cpp">!y</code>, <code class="language-cpp">false</code>; otherwise, if <code class="language-cpp">!x</code>, <code class="language-cpp">true</code>; otherwise <code class="language-cpp">*x &lt; *y</code>.<br />
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x &lt; *y</code> is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &gt; *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: If <code class="language-cpp">!x</code>, <code class="language-cpp">false</code>; otherwise, if <code class="language-cpp">!y</code>, <code class="language-cpp">true</code>; otherwise <code class="language-cpp">*x &gt; *y</code>.
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x &gt; *y</code> is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;=(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &lt;= *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: If <code class="language-cpp">!x</code>, <code class="language-cpp">true</code>; otherwise, if <code class="language-cpp">!y</code>, <code class="language-cpp">false</code>; otherwise <code class="language-cpp">*x &lt;= *y</code>.<br />
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x &lt;= *y</code> is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T</del>, class U&gt; <ins>friend </ins>constexpr bool operator&gt;=(const optional<del>&lt;T&gt;</del>&amp; x, const optional&lt;U&gt;&amp; y);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &gt;= *y</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
 <em>Returns</em>: If <code class="language-cpp">!y</code>, <code class="language-cpp">true</code>; otherwise, if <code class="language-cpp">!x</code>, <code class="language-cpp">false</code>; otherwise <code class="language-cpp">*x &gt;= *y</code>.<br />
-<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x &gt;= *y</code> is a core constant expression shall be <code class="language-cpp">constexpr</code> functions.<br />
+<em>Remarks</em>: Specializations of this function template for which <code class="language-cpp">*x &gt;= *y</code> is a core constant expression shall be constexpr functions. This function is to be found via argument-dependent lookup only.<ins>
 <pre><code><ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
 <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
 <ins>    operator&lt;=&gt;(const optional&amp; x, const optional&lt;U&gt;&amp; y);</ins></code></pre>
@@ -1612,10 +1677,54 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
 </blockquote>
 <p>Change 19.6.8 [optional.comp_with_t]:</p>
 <blockquote>
-<p>[...]
-<pre><code>template&lt;class T, class U&gt; constexpr bool operator&gt;=(const T&amp; v, const optional&lt;U&gt;&amp; x);</code></pre>
-<em>Requires</em>: The expression <code class="language-cpp">v &gt;= *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
-<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v &gt;= *x : true;</code>
+<p><pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator==(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x == v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>. [<em>Note</em>: <code class="language-cpp">T</code> need not be <code class="language-cpp">Cpp17EqualityComparable</code>. —<em>end note</em>]<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x == v : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator==(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v == *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v == *x : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator!=(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x != v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x != v : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator!=(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v != *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v != *x : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &lt; v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x &lt; v : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v &lt; *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v &lt; *x : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &gt; v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x &gt; v : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v &gt; *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v &gt; *x : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;=(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &lt;= v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x &lt;= v : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;=(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v &lt;= *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v &lt;= *x : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;=(const optional<del>&lt;T&gt;</del>&amp; x, const U&amp; v);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">*x &gt;= v</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? *x &gt;= v : false;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;=(const <del>T</del><ins>U</ins>&amp; v, const optional<del>&lt;U&gt;</del>&amp; x);</code></pre>
+<del><em>Requires</em></del><ins><em>Mandates</em></ins>: The expression <code class="language-cpp">v &gt;= *x</code> shall be well-formed and its result shall be convertible to <code class="language-cpp">bool</code>.<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return bool(x) ? v &gt;= *x : true;</code><br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
 <pre><code><ins>template&lt;ThreeWayComparableWith&lt;T&gt; U&gt;</ins>
 <ins>  friend constexpr compare_three_way_result_t&lt;T,U&gt;</ins>
 <ins>    operator&lt;=&gt;(const optional&amp; x, const U&amp; v);</ins></code></pre>
