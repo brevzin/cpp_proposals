@@ -1236,28 +1236,26 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <h3 id="clause-17-concepts-library">3.3. Clause 17: Concepts Library<a class="self-link" href="#clause-17-concepts-library"></a></h3>
 <p>Nothing.</p>
 <h3 id="clause-18-diagnostics-library">3.4. Clause 18: Diagnostics Library<a class="self-link" href="#clause-18-diagnostics-library"></a></h3>
-<p>Changed operators for:</p>
-<ul>
-<li><code class="language-cpp">error_category</code></li>
-<li><code class="language-cpp">error_code</code></li>
-<li><code class="language-cpp">error_condition</code></li>
-</ul>
+<p>Changed operators for: <code class="language-cpp">error_category</code>, <code class="language-cpp">error_code</code>, and <code class="language-cpp">error_condition</code></p>
 <p>Change 18.5.1 [system_error.syn]</p>
 <blockquote><pre><code>namespace std {
   [...]
-  // 18.5.5, comparison functions
+  // [syserr.errcondition.nonmembers], non-member functions
+  error_condition make_error_condition(errc e) noexcept;
+
+<del>  // [syserr.compare], comparison functions
   bool operator==(const error_code& lhs, const error_code& rhs) noexcept;
   bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;
-  <del>bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;</del>
+  bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;
   bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;
-  <del>bool operator!=(const error_code& lhs, const error_code& rhs) noexcept;</del>
-  <del>bool operator!=(const error_code& lhs, const error_condition& rhs) noexcept;</del>
-  <del>bool operator!=(const error_condition& lhs, const error_code& rhs) noexcept;</del>
-  <del>bool operator!=(const error_condition& lhs, const error_condition& rhs) noexcept;</del>
-  <del>bool operator< (const error_code& lhs, const error_code& rhs) noexcept;</del>
-  <del>bool operator< (const error_condition& lhs, const error_condition& rhs) noexcept;</del>
-  <ins>strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;</ins>
-  <ins>strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;</ins>
+  bool operator!=(const error_code& lhs, const error_code& rhs) noexcept;
+  bool operator!=(const error_code& lhs, const error_condition& rhs) noexcept;
+  bool operator!=(const error_condition& lhs, const error_code& rhs) noexcept;
+  bool operator!=(const error_condition& lhs, const error_condition& rhs) noexcept;
+  bool operator&lt; (const error_code& lhs, const error_code& rhs) noexcept;
+  bool operator&lt; (const error_condition& lhs, const error_condition& rhs) noexcept;</del>
+
+  // [syserr.hash], hash support
   [...]
 }</code></pre></blockquote>
 
@@ -1286,14 +1284,45 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
 <ins><em>Returns</em>: <code class="language-cpp">compare_three_way()(this, &amp;rhs)</code>.</ins><br />
 <ins>[Note: <code class="language-cpp">compare_three_way</code> (cmp.object) provides a total ordering for pointers. —end note]</ins></p>
 </blockquote>
+<p>Change 18.5.3.1 [syserr.errcode.overview]:</p>
+<blockquote><pre><code>namespace std {
+  class error_code {
+    [...]
+    <ins>// [syserr.compare], comparison functions</ins>
+    <ins>friend bool operator==(const error_code&, const error_code&) { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_code&, const error_code&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_code&, const error_condition&) { <i>see below</i>; }</ins>
+  private:
+    int val_;                   // exposition only
+    const error_category* cat_; // exposition only
+  };
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 18.5.4.1 [syserr.errcondition.overview]:</p>
+<blockquote><pre><code>namespace std {
+  class error_condition {
+  public:
+    [...]
+    <ins>// [syserr.compare], comparison functions</ins>
+    <ins>friend bool operator==(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_condition&, const error_code&) { <i>see below</i>; }</ins>
+  private:
+    int val_;                   // exposition only
+    const error_category* cat_; // exposition only
+  };
+}</code></pre></blockquote>
+
 <p>Change 18.5.5 [syserr.compare]</p>
 <blockquote>
 <p><pre><code>bool operator==(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
 <pre><code>bool operator==(const error_code&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())</code>
-<pre><code><del>bool operator==(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</del></code></pre>
-<del><em>Returns</em>: <code class="language-cpp">rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())</code></del>
+<pre><code>bool operator==(const error_condition&amp; lhs, const error_code&amp; rhs) noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())</code>
 <pre><code>bool operator==(const error_condition&amp; lhs, const error_condition&amp; rhs) noexcept;</code></pre>
 <em>Returns</em>: <code class="language-cpp">lhs.category() == rhs.category() &amp;&amp; lhs.value() == rhs.value()</code>
 <pre><code><del>bool operator!=(const error_code&amp; lhs, const error_code&amp; rhs) noexcept;</del>
