@@ -1,7 +1,16 @@
 Title: Adding <=> to library
-Document-Number: D1189R0
+Document-Number: P1189R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
+
+# Revision History
+
+A draft of this paper was presented to LEWG in Kona, and it was approved with the following details:
+
+- comparison operators should be hidden friends
+- `basic_string`'s comparison category should be driven by a [type alias](#add-a-type-alias), not a [static member function](#add-a-static-member-function).
+- `tuple`'s `operator==` _cannot_ be defaulted, because subobject order is currently unspecified. Defaulted `==` compares in subobject order, but `tuple` is specified to compare in template parameter order - so this would either force an ABI break on those implementations that don't order the subobjects from to back or break the actual equality semantics. `pair` and `array` have no such problems with defaulting `operator==`.
+- `unique_ptr` cannot have its relational operators removed due to the `less` specification - it ends up fitting in the `optional` category. `shared_ptr` is fine as proposed here.
 
 # Introduction
 
