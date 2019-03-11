@@ -642,6 +642,63 @@ Replace the entirety of 16.11.4 [cmp.alg]. This wording relies on the specificat
 > - <ins>Otherwise, `3WAY<partial_ordering>(E, F)` ([class.spaceship]) if it is a well-formed expression.</ins>
 > - <ins>Otherwise, `compare_partial_order_fallback(E, F)` is ill-formed.</ins>
 
+Change 16.13.1 [coroutine.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+  // 16.13.5 noop coroutine
+  noop_coroutine_handle noop_coroutine() noexcept;
+
+<del>  // 16.13.3.6 comparison operators:
+  constexpr bool operator==(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
+  constexpr bool operator!=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
+  constexpr bool operator&lt;(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
+  constexpr bool operator&gt;(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
+  constexpr bool operator&lt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
+  constexpr bool operator&gt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del>
+
+  // 16.13.6 trivial awaitables
+  [...]
+}</code></pre></blockquote>
+
+Change 16.3.3 [coroutine.handle]:
+
+<blockquote><pre><code>namespace std {
+  template &lt;&gt;
+  struct coroutine_handle&lt;void&gt;
+  {
+    [...]
+    // 16.13.3.4 resumption
+    void operator()() const;
+    void resume() const;
+    void destroy() const;
+    
+<ins>    // comparison operators
+    friend constexpr bool operator==(coroutine_handle x, coroutine_handle y) noexcept
+    { return x.address() == y.address(); }
+    friend constexpr strong_ordering operator&lt;=&gt;(coroutine_handle x, coroutine_handle y) noexcept
+    { return compare_three_way()(x.address(), y.address()); }</ins>
+  private:
+    void* ptr; // exposition only
+  };
+  [...]
+}</code></pre></blockquote>
+
+Remove 16.3.3.6 [coroutine.handle.compare] (as it's now all defined in the header):
+
+> <pre><code><del>constexpr bool operator==(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.address() == y.address()`.</del>
+> <pre><code><del>constexpr bool operator!=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x == y)`.</del>
+> <pre><code><<del>constexpr bool operator&lt;(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `less<>()(x.address(), y.address())`.</del>
+> <pre><code><del>constexpr bool operator&gt;(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `(y < x)`.</del>
+> <pre><code><del>constexpr bool operator&lt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x > y)`.</del>
+> <pre><code><del>constexpr bool operator&gt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x < y)`.</del>
+
 ## Clause 17: Concepts Library
 
 Nothing.
