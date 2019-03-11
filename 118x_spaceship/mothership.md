@@ -3581,8 +3581,83 @@ friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);</del
 
 ## Clause 23: Ranges library
 
-TBD
-  
+Change 23.6.3.3 [range.iota.iterator]:
+
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class W, class Bound&gt;
+  struct iota_view&lt;W, Bound&gt;::iterator {
+  private:
+    W value_ = W();             // exposition only
+  public:
+    [...]
+
+    friend constexpr bool operator==(const iterator& x, const iterator& y)
+      requires EqualityComparable&lt;W&gt;;
+    <del>friend constexpr bool operator!=(const iterator& x, const iterator& y)</del>
+    <del>  requires EqualityComparable&lt;W&gt;;</del>
+
+    friend constexpr bool operator&lt;(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&gt;(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&lt;=(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&gt;=(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    <ins>friend constexpr compare_three_way_result_t&lt;W&gt; operator&lt;=&gt;(const iterator& x, const iterator& y)</ins>
+    <ins>  requires StrictTotallyOrdered&lt;W&gt; && ThreeWayComparable&lt;W&gt;</ins>
+      
+    [...]
+  };
+}</code></pre></blockquote>
+
+Change 23.6.3.3 [range.iota.iterator], paragraphs 14-20:
+
+> <pre><code>friend constexpr bool operator==(const iterator& x, const iterator& y)
+  requires EqualityComparable&lt;W&gt;;</code></pre>
+> *Effects*: Equivalent to: `return x.value_ == y.value_;`
+> <pre><code><del>friend constexpr bool operator!=(const iterator& x, const iterator& y)
+  requires EqualityComparable&lt;W&gt;;</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+> <pre><code>friend constexpr bool operator&lt;(const iterator& x, const iterator& y)
+  requires StrictTotallyOrdered&lt;W&gt;;</code></pre>
+> *Effects*: Equivalent to: `return x.value_ < y.value_;`  
+> [...]
+> <pre><code>friend constexpr bool operator&gt;=(const iterator& x, const iterator& y)
+  requires StrictTotallyOrdered&lt;W&gt;;</code></pre>
+> *Effects*: Equivalent to: `return !(x < y);`
+> <pre><code><ins>friend constexpr compare_three_way_result_t&lt;W&gt; operator&lt;=&gt;(const iterator& x, const iterator& y)
+  requires StrictTotallyOrdered&lt;W&gt; && ThreeWayComparable&lt;W&gt;;</ins></code></pre>
+> <ins>*Effects*: Equivalent to: `return x.value_ <=> y.value_;`</ins>
+
+Change 23.6.3.4 [range.iota.sentinel]:
+
+> <pre><code>namespace std::ranges {
+  template&lt;class W, class Bound&gt;
+  struct iota_view&lt;W, Bound&gt;::sentinel {
+  private:
+    Bound bound_ = Bound();     // exposition only
+  public:
+    sentinel() = default;
+    constexpr explicit sentinel(Bound bound);
+    friend constexpr bool operator==(const iterator& x, const sentinel& y);
+    <del>friend constexpr bool operator==(const sentinel& x, const iterator& y);</del>
+    <del>friend constexpr bool operator!=(const iterator& x, const sentinel& y);</del>
+    <del>friend constexpr bool operator!=(const sentinel& x, const iterator& y);</del>
+  };
+}</code></pre>
+> 
+> <pre><code>constexpr explicit sentinel(Bound bound);</code></pre>
+> *Effects*: Initializes `bound_` with `bound`.
+> <pre><code>friend constexpr bool operator==(const iterator& x, const sentinel& y);</code></pre>
+> *Effects*: Equivalent to: `return x.value_ == y.bound_;`
+> <pre><code><del>friend constexpr bool operator==(const sentinel& x, const iterator& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: return y == x;</del>
+> <pre><code><del>friend constexpr bool operator!=(const iterator& x, const sentinel& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: return !(x == y);</del>
+> <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: return !(y == x);</del>
+
 ## Clause 24: Algorithms library
 
 Change 24.4 [algorithm.syn]:

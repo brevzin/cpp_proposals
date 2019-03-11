@@ -4123,7 +4123,81 @@ friend bool operator!=(const istreambuf_iterator&amp; a, default_sentinel_t b);<
 <del><em>Returns</em>: <code class="language-cpp">!a.equal(b)</code>.</del></p>
 </blockquote>
 <h3 id="clause-23-ranges-library">4.9. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
-<p>TBD</p>
+<p>Change 23.6.3.3 [range.iota.iterator]:</p>
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class W, class Bound&gt;
+  struct iota_view&lt;W, Bound&gt;::iterator {
+  private:
+    W value_ = W();             // exposition only
+  public:
+    [...]
+
+    friend constexpr bool operator==(const iterator& x, const iterator& y)
+      requires EqualityComparable&lt;W&gt;;
+    <del>friend constexpr bool operator!=(const iterator& x, const iterator& y)</del>
+    <del>  requires EqualityComparable&lt;W&gt;;</del>
+
+    friend constexpr bool operator&lt;(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&gt;(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&lt;=(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    friend constexpr bool operator&gt;=(const iterator& x, const iterator& y)
+      requires StrictTotallyOrdered&lt;W&gt;;
+    <ins>friend constexpr compare_three_way_result_t&lt;W&gt; operator&lt;=&gt;(const iterator& x, const iterator& y)</ins>
+    <ins>  requires StrictTotallyOrdered&lt;W&gt; && ThreeWayComparable&lt;W&gt;</ins>
+
+    [...]
+  };
+}</code></pre></blockquote>
+
+<p>Change 23.6.3.3 [range.iota.iterator], paragraphs 14-20:</p>
+<blockquote>
+<p><pre><code>friend constexpr bool operator==(const iterator&amp; x, const iterator&amp; y)
+  requires EqualityComparable&lt;W&gt;;</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return x.value_ == y.value_;</code>
+<pre><code><del>friend constexpr bool operator!=(const iterator&amp; x, const iterator&amp; y)
+  requires EqualityComparable&lt;W&gt;;</del></code></pre>
+<del><em>Effects</em>: Equivalent to: <code class="language-cpp">return !(x == y);</code></del>
+<pre><code>friend constexpr bool operator&lt;(const iterator&amp; x, const iterator&amp; y)
+  requires StrictTotallyOrdered&lt;W&gt;;</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return x.value_ &lt; y.value_;</code><br />
+[...]
+<pre><code>friend constexpr bool operator&gt;=(const iterator&amp; x, const iterator&amp; y)
+  requires StrictTotallyOrdered&lt;W&gt;;</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return !(x &lt; y);</code>
+<pre><code><ins>friend constexpr compare_three_way_result_t&lt;W&gt; operator&lt;=&gt;(const iterator&amp; x, const iterator&amp; y)
+  requires StrictTotallyOrdered&lt;W&gt; &amp;&amp; ThreeWayComparable&lt;W&gt;;</ins></code></pre>
+<ins><em>Effects</em>: Equivalent to: <code class="language-cpp">return x.value_ &lt;=&gt; y.value_;</code></ins></p>
+</blockquote>
+<p>Change 23.6.3.4 [range.iota.sentinel]:</p>
+<blockquote>
+<p><pre><code>namespace std::ranges {
+  template&lt;class W, class Bound&gt;
+  struct iota_view&lt;W, Bound&gt;::sentinel {
+  private:
+    Bound bound_ = Bound();     // exposition only
+  public:
+    sentinel() = default;
+    constexpr explicit sentinel(Bound bound);
+    friend constexpr bool operator==(const iterator&amp; x, const sentinel&amp; y);
+    <del>friend constexpr bool operator==(const sentinel&amp; x, const iterator&amp; y);</del>
+    <del>friend constexpr bool operator!=(const iterator&amp; x, const sentinel&amp; y);</del>
+    <del>friend constexpr bool operator!=(const sentinel&amp; x, const iterator&amp; y);</del>
+  };
+}</code></pre></p>
+<p><pre><code>constexpr explicit sentinel(Bound bound);</code></pre>
+<em>Effects</em>: Initializes <code class="language-cpp">bound_</code> with <code class="language-cpp">bound</code>.
+<pre><code>friend constexpr bool operator==(const iterator&amp; x, const sentinel&amp; y);</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return x.value_ == y.bound_;</code>
+<pre><code><del>friend constexpr bool operator==(const sentinel&amp; x, const iterator&amp; y);</del></code></pre>
+<del><em>Effects</em>: Equivalent to: return y == x;</del>
+<pre><code><del>friend constexpr bool operator!=(const iterator&amp; x, const sentinel&amp; y);</del></code></pre>
+<del><em>Effects</em>: Equivalent to: return !(x == y);</del>
+<pre><code><del>friend constexpr bool operator!=(const sentinel&amp; x, const iterator&amp; y);</del></code></pre>
+<del><em>Effects</em>: Equivalent to: return !(y == x);</del></p>
+</blockquote>
 <h3 id="clause-24-algorithms-library">4.10. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
 <p>Change 24.4 [algorithm.syn]:</p>
 <blockquote><pre><code>namespace std {
