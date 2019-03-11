@@ -3579,7 +3579,542 @@ namespace std {
 [...]</p>
 </blockquote>
 <h3 id="clause-22-iterators-library">4.8. Clause 22: Iterators library<a class="self-link" href="#clause-22-iterators-library"></a></h3>
-<p>TBD</p>
+<p>Change 22.2 [iterator.synopsis]:</p>
+<blockquote><pre><code>#include &lt;concepts&gt;
+
+namespace std {
+  [...]
+  // [predef.iterators], predefined iterators and sentinels
+  // [reverse.iterators], reverse iterators
+  template&lt;class Iterator&gt; class reverse_iterator;
+
+<del>  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator==(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator!=(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&lt;(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&gt;(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&lt;=(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&gt;=(
+      const reverse_iterator&lt;Iterator1&gt;& x,
+      const reverse_iterator&lt;Iterator2&gt;& y);</del>
+  [...]
+
+  // [move.iterators], move iterators and sentinels
+  template&lt;class Iterator&gt; class move_iterator;
+
+<del>  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator==(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator!=(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&lt;(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&gt;(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&lt;=(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+  template&lt;class Iterator1, class Iterator2&gt;
+    constexpr bool operator&gt;=(
+      const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);</del>
+
+  [...]
+
+  // [stream.iterators], stream iterators
+  template&lt;class T, class charT = char, class traits = char_traits&lt;charT&gt;,
+           class Distance = ptrdiff_t&gt;
+  class istream_iterator;
+<del>  template&lt;class T, class charT, class traits, class Distance&gt;
+    bool operator==(const istream_iterator&lt;T,charT,traits,Distance&gt;& x,
+            const istream_iterator&lt;T,charT,traits,Distance&gt;& y);
+  template&lt;class T, class charT, class traits, class Distance&gt;
+    bool operator!=(const istream_iterator&lt;T,charT,traits,Distance&gt;& x,
+            const istream_iterator&lt;T,charT,traits,Distance&gt;& y);</del>
+
+  template&lt;class T, class charT = char, class traits = char_traits&lt;charT&gt;&gt;
+      class ostream_iterator;
+
+  template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;
+    class istreambuf_iterator;
+<del>  template&lt;class charT, class traits&gt;
+    bool operator==(const istreambuf_iterator&lt;charT,traits&gt;& a,
+            const istreambuf_iterator&lt;charT,traits&gt;& b);
+  template&lt;class charT, class traits&gt;
+    bool operator!=(const istreambuf_iterator&lt;charT,traits&gt;& a,
+            const istreambuf_iterator&lt;charT,traits&gt;& b);</del>
+
+  template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;
+    class ostreambuf_iterator;  
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 22.5.1.1 [reverse.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Iterator&gt;
+  class reverse_iterator {
+  public:
+    [...]
+    template&lt;IndirectlySwappable&lt;Iterator&gt; Iterator2&gt;
+      friend constexpr void
+        iter_swap(const reverse_iterator& x,
+                  const reverse_iterator&lt;Iterator2&gt;& y) noexcept(see below);
+
+<ins>    // [reverse.iter.cmp] Comparisons
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator==(const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator!=(const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&lt; (const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&gt; (const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&lt;=(const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&gt;=(const reverse_iterator& x,
+                                       const reverse_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;ThreeWayComparableWith&lt;Iterator&gt; Iterator2&gt;
+      friend constexpr compare_three_way_result_t&lt;Iterator, Iterator2&gt;
+        operator&lt;=&gt;(const reverse_iterator& x,
+                    const reverse_iterator&lt;Iterator2&gt;& y)
+        { see below }</ins>
+
+  protected:
+    Iterator current;
+  };
+}</code></pre></blockquote>
+
+<p>Change 22.5.1.7 [reverse.iter.cmp]:</p>
+<blockquote>
+<p><pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator==(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current == y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current == y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator!=(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current != y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current != y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator&lt;(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current &gt; y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current &gt; y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator&gt;(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current &lt; y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current &lt; y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator&lt;=(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current &gt;= y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current &gt;= y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator&gt;=(
+    const reverse_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.current &lt;= y.current</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.current &lt;= y.current</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code><ins>template&lt;ThreeWayComparableWith&lt;Iterator&gt; Iterator2&gt;
+  friend constexpr compare_three_way_result_t&lt;Iterator, Iterator2&gt; operator&lt;=&gt;(
+    const reverse_iterator&amp; x,
+    const reverse_iterator&lt;Iterator2&gt;&amp; y);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">y.current &lt;=&gt; x.current</code>.</ins><br />
+<ins><em>Remarks</em>: This function is more constrained than ([temp.constr.order]) each of the other relational operator function templates. This function is to be found via argument-dependent lookup only.</ins></p>
+</blockquote>
+<p>Change 22.5.3.1 [move.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class Iterator&gt;
+  class move_iterator {
+    [...]
+<ins>    // [move.iter.op.comp] Comparisons
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator==(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&lt;(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&gt;(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&lt;=(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;class Iterator2&gt;
+      friend constexpr bool operator&gt;=(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+      { see below }
+    template&lt;ThreeWayComparableWith&lt;Iterator&gt; Iterator2&gt;
+      friend constexpr compare_three_way_result_t&lt;Iterator, Iterator2&gt;
+        operator&lt;=&gt;(const move_iterator& x, const move_iterator&lt;Iterator2&gt;& y)
+        { see below }</ins>
+
+    template&lt;Sentinel&lt;Iterator&gt; S&gt;
+      friend constexpr bool
+        operator==(const move_iterator& x, const move_sentinel&lt;S&gt;& y);
+<del>    template&lt;Sentinel&lt;Iterator&gt; S&gt;
+      friend constexpr bool
+        operator==(const move_sentinel&lt;S&gt;& x, const move_iterator& y);
+    template&lt;Sentinel&lt;Iterator&gt; S&gt;
+      friend constexpr bool
+        operator!=(const move_iterator& x, const move_sentinel&lt;S&gt;& y);
+    template&lt;Sentinel&lt;Iterator&gt; S&gt;
+      friend constexpr bool
+        operator!=(const move_sentinel&lt;S&gt;& x, const move_iterator& y);</del>
+    template&lt;SizedSentinel&lt;Iterator&gt; S&gt;
+      friend constexpr iter_difference_t&lt;Iterator&gt;
+        operator-(const move_sentinel&lt;S&gt;& x, const move_iterator& y);
+    [...]
+  private:
+    Iterator current;   // exposition only
+  };
+}</code></pre></blockquote>
+
+<p>Change 22.5.3.7 [move.iter.op.comp]:</p>
+<blockquote>
+<p><pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+  <ins>friend </ins>constexpr bool operator==(const move_iterator<del>&lt;Iterator1&gt;</del>&amp; x,
+                            const move_iterator&lt;Iterator2&gt;&amp; y);
+template&lt;Sentinel&lt;Iterator&gt; S&gt;
+  friend constexpr bool operator==(const move_iterator&amp; x,
+                                   const move_sentinel&lt;S&gt;&amp; y);
+template&lt;Sentinel&lt;Iterator&gt; S&gt;
+  friend constexpr bool operator==(const move_sentinel&lt;S&gt;&amp; x,
+                                   const move_iterator&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.base() == y.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.base() == y.base()</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code><del>template&lt;class Iterator1, class Iterator2&gt;
+  constexpr bool operator!=(const move_iterator&lt;Iterator1&gt;&amp; x,
+                            const move_iterator&lt;Iterator2&gt;&amp; y);
+template&lt;Sentinel&lt;Iterator&gt; S&gt;
+  friend constexpr bool operator!=(const move_iterator&amp; x,
+                                   const move_sentinel&lt;S&gt;&amp; y);
+template&lt;Sentinel&lt;Iterator&gt; S&gt;
+  friend constexpr bool operator!=(const move_sentinel&lt;S&gt;&amp; x,
+                                   const move_iterator&amp; y);</del></code></pre>
+<del><em>Constraints</em>: <code class="language-cpp">x.base() == y.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.</del><br />
+<del><em>Returns</em>: <code class="language-cpp">!(x == y)</code>.</del>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+<ins>friend </ins>constexpr bool operator&lt;(const move_iterator<del>&lt;Iterator1&gt;</del>&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.base() &lt; y.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">x.base() &lt; y.base()</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+<ins>friend </ins>constexpr bool operator&gt;(const move_iterator<del>&lt;Iterator1&gt;</del>&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">y.base() &lt; x.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">y &lt; x</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+<ins>friend </ins>constexpr bool operator&lt;=(const move_iterator<del>&lt;Iterator1&gt;</del>&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">y.base() &lt; x.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">!(y &lt; x)</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
+<ins>friend </ins>constexpr bool operator&gt;=(const move_iterator<del>&lt;Iterator1&gt;</del>&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);</code></pre>
+<em>Constraints</em>: <code class="language-cpp">x.base() &lt; y.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
+<em>Returns</em>: <code class="language-cpp">!(x &lt; y)</code>.<br />
+<ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
+<pre><code><ins>template&lt;ThreeWayComparableWith&lt;Iterator&gt; Iterator2&gt;
+  friend constexpr compare_three_way_result_t&lt;Iterator, Iterator2&gt; operator&lt;=&gt;(
+    const move_iterator&amp; x,
+    const move_iterator&lt;Iterator2&gt;&amp; y);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">x.base() &lt;=&gt; y.base()</code>.</ins><br />
+<ins><em>Remarks</em>: This function is more constrained than ([temp.constr.order]) each of the other relational operator function templates. This function is to be found via argument-dependent lookup only.</ins></p>
+</blockquote>
+<p>Remove the <code class="language-cpp">operator!=</code> from 22.5.4.1 [common.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;Iterator I, Sentinel&lt;I&gt; S&gt;
+    requires (!Same&lt;I, S&gt;)
+  class common_iterator {
+  public:
+    [...]
+    template&lt;class I2, Sentinel&lt;I&gt; S2&gt;
+      requires Sentinel&lt;S, I2&gt;
+    friend bool operator==(
+      const common_iterator& x, const common_iterator&lt;I2, S2&gt;& y);
+    template&lt;class I2, Sentinel&lt;I&gt; S2&gt;
+      requires Sentinel&lt;S, I2&gt; && EqualityComparableWith&lt;I, I2&gt;
+    friend bool operator==(
+      const common_iterator& x, const common_iterator&lt;I2, S2&gt;& y);
+<del>    template&lt;class I2, Sentinel&lt;I&gt; S2&gt;
+      requires Sentinel&lt;S, I2&gt;
+    friend bool operator!=(
+      const common_iterator& x, const common_iterator&lt;I2, S2&gt;& y);</del>
+    [...]
+  private:
+    variant&lt;I, S&gt; v_;   // exposition only
+  };
+  [...]
+}</code></pre></blockquote>
+
+<p>Remove the <code class="language-cpp">operator!=</code> from 22.5.4.6 [common.iter.cmp]:</p>
+<blockquote>
+<p><pre><code><del>template&lt;class I2, Sentinel&lt;I&gt; S2&gt;
+  requires Sentinel&lt;S, I2&gt;
+friend bool operator!=(
+  const common_iterator&amp; x, const common_iterator&lt;I2, S2&gt;&amp; y);</del></code></pre>
+<del><em>Effects</em>: Equivalent to: <code class="language-cpp">return !(x == y);</code></del></p>
+</blockquote>
+<p>Change 22.5.6.1 [counted.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;Iterator I&gt;
+  class counted_iterator {
+  public:
+    using iterator_type = I;
+    [...]
+    template&lt;Common&lt;I&gt; I2&gt;
+      friend constexpr bool operator==(
+        const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);
+    friend constexpr bool operator==(
+      const counted_iterator& x, default_sentinel_t);
+    <del>friend constexpr bool operator==(</del>
+    <del>  default_sentinel_t, const counted_iterator& x);</del>
+
+    <del>template&lt;Common&lt;I&gt; I2&gt;</del>
+    <del>  friend constexpr bool operator!=(</del>
+    <del>    const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);</del>
+    <del>friend constexpr bool operator!=(</del>
+    <del>  const counted_iterator& x, default_sentinel_t y);</del>
+    <del>friend constexpr bool operator!=(</del>
+    <del>  default_sentinel_t x, const counted_iterator& y);</del>
+
+    template&lt;Common&lt;I&gt; I2&gt;
+      friend constexpr bool operator&lt;(
+        const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);
+    template&lt;Common&lt;I&gt; I2&gt;
+      friend constexpr bool operator&gt;(
+        const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);
+    template&lt;Common&lt;I&gt; I2&gt;
+      friend constexpr bool operator&lt;=(
+        const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);
+    template&lt;Common&lt;I&gt; I2&gt;
+      friend constexpr bool operator&gt;=(
+        const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);
+    <ins>template&lt;Common&lt;I&gt; I2&gt; requires ThreeWayComparableWith&lt;I, I2&gt;</ins>
+    <ins>  friend constexpr compare_three_way_result_t&lt;I, I2&gt; operator&lt;=&gt;(</ins>
+    <ins>    const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);</ins>
+
+    friend constexpr iter_rvalue_reference_t&lt;I&gt; iter_move(const counted_iterator& i)
+      noexcept(noexcept(ranges::iter_move(i.current)))
+        requires InputIterator&lt;I&gt;;
+    template&lt;IndirectlySwappable&lt;I&gt; I2&gt;
+      friend constexpr void iter_swap(const counted_iterator& x, const counted_iterator&lt;I2&gt;& y)
+        noexcept(noexcept(ranges::iter_swap(x.current, y.current)));
+
+  private:
+    I current = I();                    // exposition only
+    iter_difference_t&lt;I&gt; length = 0;    // exposition only
+  };
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 22.5.6.6 [counted.iter.cmp]:</p>
+<blockquote>
+<p><pre><code>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator==(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</code></pre>
+<em>Expects</em>: <code class="language-cpp">x</code> and <code class="language-cpp">y</code> refer to elements of the same sequence ([counted.iterator]).<br />
+<em>Effects</em>: Equivalent to: return <code class="language-cpp">x.length == y.length;</code>
+<pre><code>friend constexpr bool operator==(
+  const counted_iterator&amp; x, default_sentinel_t);
+<del>friend constexpr bool operator==(</del>
+<del>  default_sentinel_t, const counted_iterator&amp; x);</del></code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return x.length == 0;</code>
+<pre><code><del>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator!=(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);
+friend constexpr bool operator!=(
+  const counted_iterator&amp; x, default_sentinel_t y);
+friend constexpr bool operator!=(
+  default_sentinel_t x, const counted_iterator&amp; y);</del></code></pre>
+<del><em>Effects</em>: Equivalent to: <code class="language-cpp">return !(x == y);</code></del>
+<pre><code>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator&lt;(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</code></pre>
+<em>Expects</em>: <code class="language-cpp">x</code> and <code class="language-cpp">y</code> refer to elements of the same sequence ([counted.iterator]).<br />
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return y.length &lt; x.length;</code><br />
+[<em>Note</em>: The argument order in the <em>Effects</em>: element is reversed because length counts down, not up. —<em>end note</em>]
+<pre><code>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator&gt;(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return y &lt; x;</code>
+<pre><code>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator&lt;=(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return !(y &lt; x);</code>
+<pre><code>template&lt;Common&lt;I&gt; I2&gt;
+  friend constexpr bool operator&gt;=(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return !(x &lt; y);</code>
+<pre><code><ins>template&lt;Common&lt;I&gt; I2&gt; requires ThreeWayComparableWith&lt;I, I2&gt;
+  friend constexpr compare_three_way_result_t&lt;I, I2&gt; operator&lt;=&gt;(
+    const counted_iterator&amp; x, const counted_iterator&lt;I2&gt;&amp; y);</ins></code></pre>
+<ins><em>Effects</em>: Equivalent to: <code class="language-cpp">return y &lt;=&gt; x;</code></ins></p>
+</blockquote>
+<p>Change 22.5.7.1 [unreachable.sentinel]:</p>
+<blockquote><pre><code>namespace std {
+  struct unreachable_sentinel_t {
+    template&lt;WeaklyIncrementable I&gt;
+      friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept<del>;</del>
+      <ins>{ return true; }</ins>
+<del>    template&lt;WeaklyIncrementable I&gt;
+      friend constexpr bool operator==(const I&, unreachable_sentinel_t) noexcept;
+    template&lt;WeaklyIncrementable I&gt;
+      friend constexpr bool operator!=(unreachable_sentinel_t, const I&) noexcept;
+    template&lt;WeaklyIncrementable I&gt;
+      friend constexpr bool operator!=(const I&, unreachable_sentinel_t) noexcept;</del>
+  };
+}</code></pre></blockquote>
+
+<p>Remove 22.5.7.2 [unreachable.sentinel.cmp] (as it's now entirely defined in the synopsis):</p>
+<blockquote>
+<p><pre><code><del>template&lt;WeaklyIncrementable I&gt;
+  friend constexpr bool operator==(unreachable_sentinel_t, const I&amp;) noexcept;
+template&lt;WeaklyIncrementable I&gt;
+  friend constexpr bool operator==(const I&amp;, unreachable_sentinel_t) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">false</code>.</del>
+<pre><code><del>template&lt;WeaklyIncrementable I&gt;
+  friend constexpr bool operator!=(unreachable_sentinel_t, const I&amp;) noexcept;
+template&lt;WeaklyIncrementable I&gt;
+  friend constexpr bool operator!=(const I&amp;, unreachable_sentinel_t) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">true</code>.</del></p>
+</blockquote>
+<p>Change 22.6.1 [istream.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class T, class charT = char, class traits = char_traits&lt;charT&gt;,
+           class Distance = ptrdiff_t&gt;
+  class istream_iterator {
+  public:
+    using iterator_category = input_iterator_tag;
+    using value_type        = T;
+    using difference_type   = Distance;
+    using pointer           = const T*;
+    using reference         = const T&;
+    using char_type         = charT;
+    using traits_type       = traits;
+    using istream_type      = basic_istream&lt;charT,traits&gt;;
+
+    constexpr istream_iterator();
+    constexpr istream_iterator(default_sentinel_t);
+    istream_iterator(istream_type& s);
+    istream_iterator(const istream_iterator& x) = default;
+    ~istream_iterator() = default;
+    istream_iterator& operator=(const istream_iterator&) = default;
+
+    const T& operator*() const;
+    const T* operator-&gt;() const;
+    istream_iterator& operator++();
+    istream_iterator  operator++(int);
+
+    friend bool operator==(const istream_iterator& i, default_sentinel_t)<del>;</del>
+    <ins>{ return !i.in_stream; }</ins>
+    <ins>friend bool operator==(const istream_iterator& x, const istream_iterator& y)</ins>
+    <ins>{ return x.in_stream == y.in_stream; }</ins>
+    <del>friend bool operator==(default_sentinel_t, const istream_iterator& i);</del>
+    <del>friend bool operator!=(const istream_iterator& x, default_sentinel_t y);</del>
+    <del>friend bool operator!=(default_sentinel_t x, const istream_iterator& y);</del>
+
+  private:
+    basic_istream&lt;charT,traits&gt;* in_stream; // exposition only
+    T value;                                // exposition only
+  };
+}</code></pre></blockquote>
+
+<p>Remove the specifications for <code class="language-cpp">operator==</code> and <code class="language-cpp">operator!=</code> from 22.6.1.2 [istream.iterator.ops]:</p>
+<blockquote>
+<p><pre><code><del>template&lt;class T, class charT, class traits, class Distance&gt;
+  bool operator==(const istream_iterator&lt;T,charT,traits,Distance&gt;&amp; x,
+                  const istream_iterator&lt;T,charT,traits,Distance&gt;&amp; y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">x.in_stream == y.in_stream</code>.</del>
+<pre><code><del>friend bool operator==(default_sentinel_t, const istream_iterator&amp; i);
+friend bool operator==(const istream_iterator&amp; i, default_sentinel_t);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!i.in_stream</code>.</del>
+<pre><code><del>template&lt;class T, class charT, class traits, class Distance&gt;
+  bool operator!=(const istream_iterator&lt;T,charT,traits,Distance&gt;&amp; x,
+                  const istream_iterator&lt;T,charT,traits,Distance&gt;&amp; y);
+friend bool operator!=(default_sentinel_t x, const istream_iterator&amp; y);
+friend bool operator!=(const istream_iterator&amp; x, default_sentinel_t y);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(x == y)</code></del></p>
+</blockquote>
+<p>Change 22.6.3 [istreambuf.iterator]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;
+  class istreambuf_iterator {
+  public:
+    [...]
+    bool equal(const istreambuf_iterator& b) const;
+
+    <del>friend bool operator==(default_sentinel_t s, const istreambuf_iterator& i);</del>
+    friend bool operator==(const istreambuf_iterator& i, default_sentinel_t s)<del>;</del>
+    <ins>{ return i.equal(s); }</ins>
+    <del>friend bool operator!=(default_sentinel_t a, const istreambuf_iterator& b);</del>
+    <del>friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);</del>
+    <ins>friend bool operator==(const istreambuf_iterator& a, const istreambuf_iterator& b)</ins>
+    <ins>{ return a.equal(b); }</ins>
+
+  private:
+    streambuf_type* sbuf_;                // exposition only
+  };
+}</code></pre></blockquote>
+
+<p>Remove the specifications for <code class="language-cpp">operator==</code> and <code class="language-cpp">operator!=</code> from 22.6.3.3 [istreambuf.iterator.ops]:</p>
+<blockquote>
+<p><pre><code><del>template&lt;class charT, class traits&gt;
+  bool operator==(const istreambuf_iterator&lt;charT,traits&gt;&amp; a,
+                  const istreambuf_iterator&lt;charT,traits&gt;&amp; b);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">a.equal(b)</code>.</del>
+<pre><code><del>friend bool operator==(default_sentinel_t s, const istreambuf_iterator&amp; i);
+friend bool operator==(const istreambuf_iterator&amp; i, default_sentinel_t s);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">i.equal(s)</code>.</del>
+<pre><code><del>template&lt;class charT, class traits&gt;
+  bool operator!=(const istreambuf_iterator&lt;charT,traits&gt;&amp; a,
+                  const istreambuf_iterator&lt;charT,traits&gt;&amp; b);
+friend bool operator!=(default_sentinel_t a, const istreambuf_iterator&amp; b);
+friend bool operator!=(const istreambuf_iterator&amp; a, default_sentinel_t b);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!a.equal(b)</code>.</del></p>
+</blockquote>
 <h3 id="clause-23-ranges-library">4.9. Clause 23: Ranges library<a class="self-link" href="#clause-23-ranges-library"></a></h3>
 <p>TBD</p>
 <h3 id="clause-24-algorithms-library">4.10. Clause 24: Algorithms library<a class="self-link" href="#clause-24-algorithms-library"></a></h3>
