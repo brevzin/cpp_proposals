@@ -3742,7 +3742,7 @@ and
   requires EqualityComparable&lt;iterator_t&lt;V&gt;&gt;;</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Remove obsolete equality operators 23.7.4.4 [range.filter.sentinel]:
+Remove obsolete equality operators from 23.7.4.4 [range.filter.sentinel]:
 
 > <pre><code>namespace std::ranges {
   template&lt;class V, class Pred&gt;
@@ -3817,7 +3817,7 @@ Change 23.7.5.3 [range.transform.iterator], paragraphs 13-18:
   requires RandomAccessRange&lt;Base&gt;; && ThreeWayComparable&lt;iterator_t&lt;Base&gt;&gt;</ins></code></pre>
 > <ins>*Effects*: Equivalent to: `return x.current_ <=> y.current_;`</ins>
 
-Change 23.7.5.4 [range.transform.sentinel]:
+Remove obsolete equality operators from 23.7.5.4 [range.transform.sentinel]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class F&gt;
@@ -3832,7 +3832,7 @@ Change 23.7.5.4 [range.transform.sentinel]:
   };
 }</code></pre></blockquote>
 
-Change 23.7.5.4 [range.transform.sentinel], paragraphs 4-7:
+and from 23.7.5.4 [range.transform.sentinel], paragraphs 4-7:
 
 > <pre><code>friend constexpr bool operator==(const iterator&lt;Const&gt;& x, const sentinel& y);</code></pre>
 > *Effects*: Equivalent to: `return x.current_ == y.end_`;
@@ -3842,6 +3842,168 @@ Change 23.7.5.4 [range.transform.sentinel], paragraphs 4-7:
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 > <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator&lt;Const&gt;& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(y == x);`</del>
+
+Remove obsolete equality operators from 23.7.6.3 [range.take.sentinel]:
+
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class V&gt;
+  template&lt;bool Const&gt;
+  class take_view&lt;V&gt;::sentinel {
+  private:
+    using Base = conditional_t&lt;Const, const V, V&gt;;      // exposition only
+    using CI = counted_iterator&lt;iterator_t&lt;Base&gt;&gt;;      // exposition only
+    sentinel_t&lt;Base&gt; end_ = sentinel_t&lt;Base&gt;();         // exposition only
+  public:
+    [...]
+    <del>friend constexpr bool operator==(const sentinel& x, const CI& y);</del>
+    friend constexpr bool operator==(const CI& y, const sentinel& x);
+    <del>friend constexpr bool operator!=(const sentinel& x, const CI& y);</del>
+    <del>friend constexpr bool operator!=(const CI& y, const sentinel& x);</del>
+  };
+}</code></pre></blockquote>
+
+and from 23.7.6.3 [range.take.sentinel] paragraphs 4-5:
+
+> <pre><code><del>friend constexpr bool operator==(const sentinel& x, const CI& y);</del>
+friend constexpr bool operator==(const CI& y, const sentinel& x);</code></pre>
+> *Effects*: Equivalent to: `return y.count() == 0 || y.base() == x.end_;`
+> <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const CI& y);
+friend constexpr bool operator!=(const CI& y, const sentinel& x);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+
+Remove obsolete `operator!=` from 23.7.7.3 [range.join.iterator]:
+
+<blockquote><pre><code>namespace std::ranges {
+template&lt;class V&gt;
+  template&lt;bool Const&gt;
+  struct join_view&lt;V&gt;::iterator {
+    [...]
+    friend constexpr bool operator==(const iterator& x, const iterator& y)
+      requires ref_is_glvalue && EqualityComparable&lt;iterator_t&lt;Base&gt;&gt; &&
+               EqualityComparable&lt;iterator_t&lt;iter_reference_t&lt;iterator_t&lt;Base&gt;&gt;&gt;&gt;;
+
+<del>    friend constexpr bool operator!=(const iterator& x, const iterator& y)
+      requires ref_is_glvalue && EqualityComparable&lt;iterator_t&lt;Base&gt;&gt; &&
+               EqualityComparable&lt;iterator_t&lt;iter_reference_t&lt;iterator_t&lt;Base&gt;&gt;&gt;&gt;;</del>
+    [...]
+  };
+}</code></pre></blockquote>
+
+and from 23.7.7.3 [range.join.iterator] paragraph 17:
+
+> <pre><code>friend constexpr bool operator==(const iterator& x, const iterator& y)
+  requires ref_is_glvalue && EqualityComparable&lt;iterator_t&lt;Base&gt;&gt; &&
+           EqualityComparable&lt;iterator_t&lt;iter_reference_t&lt;iterator_t&lt;Base&gt;&gt;&gt;&gt;;</code></pre>
+> *Effects*: Equivalent to: `return x.outer_ == y.outer_ && x.inner_ == y.inner_;`
+> <pre><code><del>friend constexpr bool operator!=(const iterator& x, const iterator& y)
+  requires ref_is_glvalue && EqualityComparable&lt;iterator_t&lt;Base&gt;&gt; &&
+           EqualityComparable&lt;iterator_t&lt;iter_reference_t&lt;iterator_t&lt;Base&gt;&gt;&gt;&gt;;</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+
+Remove obsolete equality operators from 23.7.7.4 [range.join.sentinel]:
+
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class V&gt;
+  template&lt;bool Const&gt;
+  struct join_view&lt;V&gt;::sentinel {
+    [...]
+    friend constexpr bool operator==(const iterator&lt;Const&gt;& x, const sentinel& y);
+    <del>friend constexpr bool operator==(const sentinel& x, const iterator&lt;Const&gt;& y);</del>
+    <del>friend constexpr bool operator!=(const iterator&lt;Const&gt;& x, const sentinel& y);</del>
+    <del>friend constexpr bool operator!=(const sentinel& x, const iterator&lt;Const&gt;& y);</del>
+  };
+}</code></pre></blockquote>
+
+and from 23.7.7.4 [range.join.sentinel] paragraphs 3-6:
+
+> <pre><code>friend constexpr bool operator==(const iterator&lt;Const&gt;& x, const sentinel& y);</code></pre>
+> *Effects*: Equivalent to: `return x.outer_ == y.end_;`
+> <pre><code><del>friend constexpr bool operator==(const sentinel& x, const iterator&lt;Const&gt;& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return y == x;`</del>
+> <pre><code><del>friend constexpr bool operator!=(const iterator&lt;Const&gt;& x, const sentinel& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+> <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator&lt;Const&gt;& y);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(y == x);`</del>
+
+Remove obsolete equality operators from 23.7.8.3 [range.split.outer]:
+
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class V, class Pattern&gt;
+  template&lt;bool Const&gt;
+  struct split_view&lt;V, Pattern&gt;::outer_iterator {
+    [...]
+    friend constexpr bool operator==(const outer_iterator& x, const outer_iterator& y)
+      requires ForwardRange&lt;Base&gt;;
+    <del>friend constexpr bool operator!=(const outer_iterator& x, const outer_iterator& y)</del>
+    <del>  requires ForwardRange&lt;Base&gt;;</del>
+
+    friend constexpr bool operator==(const outer_iterator& x, default_sentinel_t);
+    <del>friend constexpr bool operator==(default_sentinel_t, const outer_iterator& x);</del>
+    <del>friend constexpr bool operator!=(const outer_iterator& x, default_sentinel_t y);</del>
+    <del>friend constexpr bool operator!=(default_sentinel_t y, const outer_iterator& x);</del>
+  };
+}</code></pre></blockquote>
+
+and from 23.7.8.3 [range.split.outer] paragraphs 7-10:
+
+> <pre><code>friend constexpr bool operator==(const outer_iterator& x, const outer_iterator& y)
+  requires ForwardRange&lt;Base&gt;;</code></pre>
+> *Effects*: Equivalent to: `return x.current_ == y.current_;`
+> <pre><code><del>friend constexpr bool operator!=(const outer_iterator& x, const outer_iterator& y)
+  requires ForwardRange&lt;Base&gt;;</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+> <pre><code>friend constexpr bool operator==(const outer_iterator& x, default_sentinel_t);
+<del>friend constexpr bool operator==(default_sentinel_t, const outer_iterator& x);</del></code></pre>
+> *Effects*: Equivalent to: `return x.current_ == ranges::end(x.parent_->base_);`
+> <pre><code><del>friend constexpr bool operator!=(const outer_iterator& x, default_sentinel_t y);
+friend constexpr bool operator!=(default_sentinel_t y, const outer_iterator& x);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+
+Remove obsolete equality operators from 23.7.8.5 [range.split.inner]:
+
+<blockquote><pre><code>namespace std::ranges {
+  template&lt;class V, class Pattern&gt;
+  template&lt;bool Const&gt;
+  struct split_view&lt;V, Pattern&gt;::inner_iterator {
+    [...]
+    friend constexpr bool operator==(const inner_iterator& x, const inner_iterator& y)
+      requires ForwardRange&lt;Base&gt;;
+    <del>friend constexpr bool operator!=(const inner_iterator& x, const inner_iterator& y)</del>
+    <del>  requires ForwardRange&lt;Base&gt;;</del>
+
+    friend constexpr bool operator==(const inner_iterator& x, default_sentinel_t);
+    <del>friend constexpr bool operator==(default_sentinel_t, const inner_iterator& x);</del>
+    <del>friend constexpr bool operator!=(const inner_iterator& x, default_sentinel_t y);</del>
+    <del>friend constexpr bool operator!=(default_sentinel_t y, const inner_iterator& x);</del>
+    [...]
+  };
+}</code></pre></blockquote>
+
+and from 23.7.8.5 [ranges.split.inner] paragraphs 4-7:
+
+> <pre><code>friend constexpr bool operator==(const inner_iterator& x, const inner_iterator& y)
+  requires ForwardRange&lt;Base&gt;;</code></pre>
+> *Effects*: Equivalent to: `return x.i_.current_ == y.i_.current_;`
+> <pre><code><del>friend constexpr bool operator!=(const inner_iterator& x, const inner_iterator& y)
+  requires ForwardRange&lt;Base&gt;;</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
+> <pre><code>friend constexpr bool operator==(const inner_iterator& x, default_sentinel_t);
+<del>friend constexpr bool operator==(default_sentinel_t, const inner_iterator& x);</del></code></pre>
+> *Effects*: Equivalent to:
+> <pre><code>auto cur = x.i_.current;
+auto end = ranges::end(x.i_.parent_-&gt;base_);
+if (cur == end) return true;
+auto [pcur, pend] = subrange{x.i_.parent_-&gt;pattern_};
+if (pcur == pend) return x.incremented_;
+do {
+  if (*cur != *pcur) return false;
+  if (++pcur == pend) return true;
+} while (++cur != end);
+return false;</code></pre>
+> 
+> <pre><code><del>friend constexpr bool operator!=(const inner_iterator& x, default_sentinel_t y);
+friend constexpr bool operator!=(default_sentinel_t y, const inner_iterator& x);</del></code></pre>
+> <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
 ## Clause 24: Algorithms library
 
