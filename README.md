@@ -14,7 +14,7 @@ Just a bunch of proposals for standardization that I've worked on. This is proba
 - [p1186r1 - When do you actually use `<=>`?](118x_spaceship/p1186r1.html). Approved in San Diego, needs to come back to EWG with design changes after Core review. The library part was moved to p1188r0.
 - [p1188r0 - Library utilities for `<=>`](118x_spaceship/p1188r0.html). This paper is coalescing the library components of what used to be p1186r0 and p1187r0.
 - [d1189r0 - Adding `<=>` to library](118x_spaceship/d1189r0.html).
-- [d1614r0 - The Mothership Has Landed](118x_spaceship/d1614r0.html). The one library wording paper for everything `<=>` related.
+- [p1614r0 - The Mothership Has Landed](118x_spaceship/p1614r0.html). The one library wording paper for everything `<=>` related.
 
 ### Rejected
 

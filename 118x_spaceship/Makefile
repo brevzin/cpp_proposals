@@ -1,4 +1,4 @@
-all : p1185r2.html d1186r2.html p1188r0.html p1189r0.html dxxxxr0.html
+all : p1185r2.html d1186r2.html p1188r0.html p1189r0.html p1614r0.html
 
 p1188r0.html : spaceship-lib.md
 	python ../md/better_md.py -i $< -o $@ --references
@@ -12,5 +12,5 @@ d1186r2.html : spaceship-is-compare.md
 p1189r0.html : add-spaceship-to-lib.md
 	python ../md/better_md.py -i $< -o $@ --references
 
-d1614r0.html : mothership.md
+p1614r0.html : mothership.md
 	python ../md/better_md.py -i $< -o $@ --references

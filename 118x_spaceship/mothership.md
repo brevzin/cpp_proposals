@@ -1,5 +1,5 @@
 Title: The Mothership Has Landed <br /> Adding `<=>` to the Library
-Document-Number: D1614R0
+Document-Number: P1614R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LWG
 
@@ -19,6 +19,8 @@ In San Diego and Kona, several papers were approved by LEWG adding functionality
 - [P1380R1](https://wg21.link/p1380r1) - extending the floating point customization points for `strong_order` and `weak_order`.
 
 LEWG's unanimous preference was that `operator<=>`s be declared as hidden friends.
+
+This initial draft is complete up through Clause 25 and includes `coroutine_handle<>`. No work has yet been done on Clauses 26-31. 
 
 # Known behavioral changes
 
@@ -701,7 +703,7 @@ Remove 16.3.3.6 [coroutine.handle.compare] (as it's now all defined in the heade
 
 ## Clause 17: Concepts Library
 
-Nothing.
+No changes.
 
 ## Clause 18: Diagnostics Library
 
@@ -4068,7 +4070,7 @@ Change 24.7.11 \[alg.3way\] paragraph 4:
 
 ## Clause 25: Numeric library
 
-TBD
+No changes.
 
 ## Clause 26: Time library
 
