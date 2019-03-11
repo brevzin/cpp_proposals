@@ -616,7 +616,11 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <div class="toc">
 <ol>
 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#known-behavioral-changes">Known behavioral changes</a></li>
+<li><a href="#known-behavioral-changes">Known behavioral changes</a><ol>
+<li><a href="#was-well-formed-now-ill-formed">Was well-formed, now ill-formed</a></li>
+<li><a href="#was-ill-formed-now-well-formed">Was ill-formed, now well-formed</a></li>
+</ol>
+</li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
 <li><a href="#wording">Wording</a><ol>
 <li><a href="#clause-15-library-introduction">Clause 15: Library Introduction</a></li>
@@ -657,13 +661,16 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </ul>
 <p>LEWG's unanimous preference was that <code class="language-cpp">operator&lt;=&gt;</code>s be declared as hidden friends.</p>
 <h2 id="known-behavioral-changes">2. Known behavioral changes<a class="self-link" href="#known-behavioral-changes"></a></h2>
-<p>There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. While any change will break somebody, we're probably not terribly concerned about examples like:</p>
+<p>There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. </p>
+<h3 id="was-well-formed-now-ill-formed">2.1. Was well-formed, now ill-formed<a class="self-link" href="#was-well-formed-now-ill-formed"></a></h3>
+<p>For the preexisting non-member, non-template comparison operators, any comparison that relies on finding the operator in <code class="language-cpp">std</code> with regular unqualified lookup will fail:</p>
 <pre class="codehilite"><code class="language-cpp">using namespace std;
 struct X { operator error_code() const; };
-X{} == X{}; // ok in C++17, ill-formed with this change</code></pre>
+X{} == X{};          // ok in C++17, ill-formed with this change
+X{} == error_code{}; // ok</code></pre>
 
 
-<p>Here is an example of something that was well-formed and becomes ill-formed, reproduced from LLVM:</p>
+<p>Here is a more subtle example, reproduced from the LLVM codebase:</p>
 <pre class="codehilite" data-line="8"><code class="language-cpp">struct StringRef {
     StringRef(std::string const&amp;); // NB: non-explicit
     operator std::string() const;  // NB: non-explicit
@@ -676,7 +683,7 @@ bool f(StringRef a, std::string b) {
 
 
 <p>In C++17, the marked line is well-formed. The <code class="language-cpp">operator==</code> for <code class="language-cpp">basic_string</code> is a non-member function template, and so would not be considered a candidate; the only viable candidate is the <code class="language-cpp">operator==</code> taking two <code class="language-cpp">StringRef</code>s. With the proposed changes, the <code class="language-cpp">operator==</code> for <code class="language-cpp">basic_string</code> becomes a non-member hidden friend, <em>non-template</em>, which makes it a candidate (converting <code class="language-cpp">a</code> to a <code class="language-cpp">string</code>). That candidate is ambiguous with the <code class="language-cpp">operator==(StringRef, StringRef)</code> candidate - each requires a conversion in one argument, so the call becomes ill-formed.</p>
-<p>Here is an example of something that was ill-formed and becomes well-formed:</p>
+<h3 id="was-ill-formed-now-well-formed">2.2. Was ill-formed, now well-formed<a class="self-link" href="#was-ill-formed-now-well-formed"></a></h3>
 <pre class="codehilite" data-line="2"><code class="language-cpp">bool is42(std::variant&lt;int, std::string&gt; const&amp; v) {
     return v == 42; // (*)
 }</code></pre>

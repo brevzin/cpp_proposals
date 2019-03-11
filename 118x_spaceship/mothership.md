@@ -22,14 +22,19 @@ LEWG's unanimous preference was that `operator<=>`s be declared as hidden friend
 
 # Known behavioral changes
 
-There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. While any change will break somebody, we're probably not terribly concerned about examples like:
+There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. 
+
+## Was well-formed, now ill-formed
+
+For the preexisting non-member, non-template comparison operators, any comparison that relies on finding the operator in `std` with regular unqualified lookup will fail:
 
     :::cpp
     using namespace std;
     struct X { operator error_code() const; };
-    X{} == X{}; // ok in C++17, ill-formed with this change
+    X{} == X{};          // ok in C++17, ill-formed with this change
+    X{} == error_code{}; // ok
 
-Here is an example of something that was well-formed and becomes ill-formed, reproduced from LLVM:
+Here is a more subtle example, reproduced from the LLVM codebase:
 
     :::cpp hl_lines="8"
     struct StringRef {
@@ -44,7 +49,7 @@ Here is an example of something that was well-formed and becomes ill-formed, rep
 
 In C++17, the marked line is well-formed. The `operator==` for `basic_string` is a non-member function template, and so would not be considered a candidate; the only viable candidate is the `operator==` taking two `StringRef`s. With the proposed changes, the `operator==` for `basic_string` becomes a non-member hidden friend, _non-template_, which makes it a candidate (converting `a` to a `string`). That candidate is ambiguous with the `operator==(StringRef, StringRef)` candidate - each requires a conversion in one argument, so the call becomes ill-formed.
 
-Here is an example of something that was ill-formed and becomes well-formed:
+## Was ill-formed, now well-formed
 
     :::cpp hl_lines="2"
     bool is42(std::variant<int, std::string> const& v) {
