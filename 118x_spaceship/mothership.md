@@ -4157,7 +4157,7 @@ and add a new subclause "Operators" after 25.7.4.3 [slice.access]:
 
 ## Clause 26: Time library
 
-Change 27.2 [time.syn]:
+Change 26.2 [time.syn]:
 
 <blockquote><pre><code>namespace std {
   namespace chrono {
@@ -4443,7 +4443,7 @@ Change 27.2 [time.syn]:
   }
 }</code></pre></blockquote>
 
-Change 27.5 [time.duration]:
+Change 26.5 [time.duration]:
 
 <blockquote><pre><code>namespace std::chrono {
   template&lt;class Rep, class Period = ratio&lt;1&gt;&gt;
@@ -4473,7 +4473,7 @@ Change 27.5 [time.duration]:
   };
 }</code></pre></blockquote>
 
-Change 27.5.6 [time.duration.comparisons]:
+Change 26.5.6 [time.duration.comparisons]:
 
 In the function descriptions that follow, `CT` represents `common_type_t<A, B>`, where `A` and `B` are the types of the two arguments to the function.
 
@@ -4506,7 +4506,7 @@ In the function descriptions that follow, `CT` represents `common_type_t<A, B>`,
                                                               const duration&lt;Rep2, Period2&gt;& rhs);</ins></code></pre>
 > <ins>*Returns*: `CT(lhs).count() <=> CT(rhs).count()`</ins>
 
-Change 27.6 [time.point]:
+Change 26.6 [time.point]:
 
 <blockquote><pre><code>namespace std::chrono {
   template&lt;class Clock, class Duration = typename Clock::duration&gt;
@@ -4531,7 +4531,7 @@ Change 27.6 [time.point]:
   };
 }</code></pre></blockquote>
 
-Change 27.6.6 [time.point.comparisons]:
+Change 26.6.6 [time.point.comparisons]:
 
 > <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
   <ins>friend </ins>constexpr bool operator==(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
@@ -4562,7 +4562,7 @@ Change 27.6.6 [time.point.comparisons]:
     operator&lt;=&gt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);</ins></code></pre>
 > <ins>*Returns*: `lhs.time_since_epoch() <=> rhs.time_since_epoch()`.</ins>
 
-Change 27.8.3.1 [time.cal.day.overview]:
+Change 26.8.3.1 [time.cal.day.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class day {
@@ -4575,7 +4575,7 @@ Change 27.8.3.1 [time.cal.day.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.3.3 [time.cal.day.nonmembers]:
+Change 26.8.3.3 [time.cal.day.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const day& x, const day& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
@@ -4584,7 +4584,7 @@ Change 27.8.3.3 [time.cal.day.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
 
-Change 27.8.4.1 [time.cal.month.overview]:
+Change 26.8.4.1 [time.cal.month.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month {
@@ -4597,7 +4597,7 @@ Change 27.8.4.1 [time.cal.month.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.4.3 [time.cal.month.nonmembers]:
+Change 26.8.4.3 [time.cal.month.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month& x, const month& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
@@ -4606,7 +4606,7 @@ Change 27.8.4.3 [time.cal.month.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
 
-Change 27.8.5.1 [time.cal.year.overview]:
+Change 26.8.5.1 [time.cal.year.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year {
@@ -4619,7 +4619,7 @@ Change 27.8.5.1 [time.cal.year.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.5.3 [time.cal.year.nonmembers]:
+Change 26.8.5.3 [time.cal.year.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year& x, const year& y) noexcept;</code></pre>
 > *Returns*: `int{x} == int{y}`.
@@ -4628,7 +4628,7 @@ Change 27.8.5.3 [time.cal.year.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `int{x} <=> int{y}`.</ins>
 
-Change 27.8.6.1 [time.cal.wd.overview]:
+Change 26.8.6.1 [time.cal.wd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday {
@@ -4640,12 +4640,12 @@ Change 27.8.6.1 [time.cal.wd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.6.3 [time.cal.wd.nonmembers]:
+Change 26.8.6.3 [time.cal.wd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday& x, const weekday& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
 
-Change 27.8.7.1 [time.cal.wdidx.overview]:
+Change 26.8.7.1 [time.cal.wdidx.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday_indexed {
@@ -4658,12 +4658,12 @@ Change 27.8.7.1 [time.cal.wdidx.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.7.3 [time.cal.wdidx.nonmembers]:
+Change 26.8.7.3 [time.cal.wdidx.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept;</code></pre>
 > *Returns*: `x.weekday() == y.weekday() && x.index() == y.index()`.
 
-Change 27.8.8.1 [time.cal.wdlast.overview]:
+Change 26.8.8.1 [time.cal.wdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday_last {
@@ -4675,12 +4675,12 @@ Change 27.8.8.1 [time.cal.wdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.8.3 [time.cal.wdlast.nonmembers]:
+Change 26.8.8.3 [time.cal.wdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.weekday() == y.weekday()`.
 
-Change 27.8.9.1 [time.cal.md.overview]:
+Change 26.8.9.1 [time.cal.md.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_day {
@@ -4694,7 +4694,7 @@ Change 27.8.9.1 [time.cal.md.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.9.3 [time.cal.md.nonmembers]:
+Change 26.8.9.3 [time.cal.md.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_day& x, const month_day& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.day() == y.day()`.
@@ -4703,7 +4703,7 @@ Change 27.8.9.3 [time.cal.md.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day& x, const month_day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.month() <=> y.month()`. If `c != 0` returns `c`. Otherwise, returns `x.day() <=> y.day()`.</ins>
 
-Change 27.8.10.1 [time.cal.mdlast.overview]:
+Change 26.8.10.1 [time.cal.mdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_day_last {
@@ -4716,7 +4716,7 @@ Change 27.8.10.1 [time.cal.mdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.10.3 [time.cal.mdlast.nonmembers]:
+Change 26.8.10.3 [time.cal.mdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month()`.
@@ -4725,7 +4725,7 @@ Change 27.8.10.3 [time.cal.mdlast.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day_last& x, const month_day_last& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `x.month() <=> y.month()`.</ins>
 
-Change 27.8.11.1 [time.cal.mwd.overview]:
+Change 26.8.11.1 [time.cal.mwd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_weekday {
@@ -4738,12 +4738,12 @@ Change 27.8.11.1 [time.cal.mwd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.11.3 [time.cal.mwd.nonmembers]:
+Change 26.8.11.3 [time.cal.mwd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
 
-Change 27.8.12.1 [time.cal.mwdlast.overview]:
+Change 26.8.12.1 [time.cal.mwdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_weekday_last {
@@ -4756,12 +4756,12 @@ Change 27.8.12.1 [time.cal.mwdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.12.3 [time.cal.mwdlast.nonmembers]:
+Change 26.8.12.3 [time.cal.mwdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
 
-Change 27.8.13.1 [time.cal.ym.overview]:
+Change 26.8.13.1 [time.cal.ym.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month {
@@ -4775,7 +4775,7 @@ Change 27.8.13.1 [time.cal.ym.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.13.3 [time.cal.ym.nonmembers]:
+Change 26.8.13.3 [time.cal.ym.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month& x, const year_month& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month()`.
@@ -4784,7 +4784,7 @@ Change 27.8.13.3 [time.cal.ym.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month() <=> y.month()`.</ins>
 
-Change 27.8.14.1 [time.cal.ymd.overview]:
+Change 26.8.14.1 [time.cal.ymd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_day {
@@ -4799,7 +4799,7 @@ Change 27.8.14.1 [time.cal.ymd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.14.3 [time.cal.ymd.nonmembers]:
+Change 26.8.14.3 [time.cal.ymd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.day() == y.day()`.
@@ -4808,7 +4808,7 @@ Change 27.8.14.3 [time.cal.ymd.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day& x, const year_month_day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Let `c2` be `x.month() <=> y.month()`. If `c2 != 0` returns `c2`. Otherwise, returns `x.day() <=> y.day()`.</ins>
 
-Change 27.8.15.1 [time.cal.ymdlast.overview]:
+Change 26.8.15.1 [time.cal.ymdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_day_last {
@@ -4822,7 +4822,7 @@ Change 27.8.15.1 [time.cal.ymdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.15.3 [time.cal.ymdlast.nonmembers]:
+Change 26.8.15.3 [time.cal.ymdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day_last& x, const year_month_day_last& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month_day_last() == y.month_day_last()`.
@@ -4831,7 +4831,7 @@ Change 27.8.15.3 [time.cal.ymdlast.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day_last& x, const year_month_day_last& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month_day_last() <=> y.month_day_last()`.</ins>
 
-Change 27.8.16.1 [time.cal.ymwd.overview]:
+Change 26.8.16.1 [time.cal.ymwd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_weekday {
@@ -4845,12 +4845,12 @@ Change 27.8.16.1 [time.cal.ymwd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.16.3 [time.cal.ymwd.nonmembers]:
+Change 26.8.16.3 [time.cal.ymwd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday& x, const year_month_weekday& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
 
-Change 27.8.17.1 [time.cal.ymwdlast.overview]:
+Change 26.8.17.1 [time.cal.ymwdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_weekday_last {
@@ -4864,12 +4864,12 @@ Change 27.8.17.1 [time.cal.ymwdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.8.17.3 [time.cal.ymwdlast.nonmembers]:
+Change 26.8.17.3 [time.cal.ymwdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday_last& x, const year_month_weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
 
-Change 27.10.5.1 [time.zone.overview]:
+Change 26.10.5.1 [time.zone.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class time_zone {
@@ -4885,7 +4885,7 @@ Change 27.10.5.1 [time.zone.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.10.5.3 [time.zone.nonmembers]:
+Change 26.10.5.3 [time.zone.nonmembers]:
 
 > <pre><code><ins>friend </ins>bool operator==(const time_zone& x, const time_zone& y) noexcept;</code></pre>
 > *Returns*: `x.name() == y.name()`.
@@ -4894,7 +4894,7 @@ Change 27.10.5.3 [time.zone.nonmembers]:
 > <pre><code><ins>strong_ordering operator<=>(const time_zone& x, const time_zone& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `x.name() <=> y.name()`.</ins>
 
-Change 27.10.7.1 [time.zone.zonedtime.overview]:
+Change 26.10.7.1 [time.zone.zonedtime.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   template<class Duration, class TimeZonePtr = const time_zone*>
@@ -4910,7 +4910,7 @@ Change 27.10.7.1 [time.zone.zonedtime.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 27.10.7.4 [time.zone.zonedtime.nonmembers]:
+Change 26.10.7.4 [time.zone.zonedtime.nonmembers]:
 
 > <pre><code>template&lt;<del>class Duration1, </del>class Duration2<del>, class TimeZonePtr</del>&gt;
   <ins>friend  </ins>bool operator==(const zoned_time<del>&lt;Duration1, TimeZonePtr&gt;</del>& x,
@@ -4921,7 +4921,7 @@ Change 27.10.7.4 [time.zone.zonedtime.nonmembers]:
                   const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</del></code></pre>
 > <del>*Returns*: `!(x == y)`.</del>
 
-Change 27.10.8.1 [time.zone.leap.overview]:
+Change 26.10.8.1 [time.zone.leap.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class leap {
@@ -4943,7 +4943,7 @@ Change 27.10.8.1 [time.zone.leap.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.10.8.3 [time.zone.leap.nonmembers]:
+Change 26.10.8.3 [time.zone.leap.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const leap& x, const leap& y) noexcept;</code></pre>
 > *Returns*: `x.date() == y.date()`.
@@ -4991,7 +4991,7 @@ Change 27.10.8.3 [time.zone.leap.nonmembers]:
   constexpr bool operator&gt;=(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
 > <del>*Returns*: `!(x < y)`.</del>
 
-Change 27.10.9.1 [time.zone.link.overview]:
+Change 26.10.9.1 [time.zone.link.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class link {
@@ -5009,7 +5009,7 @@ Change 27.10.9.1 [time.zone.link.overview]:
   };
 }</code></pre></blockquote>
 
-Change 27.10.9.3 [time.zone.link.nonmembers]:
+Change 26.10.9.3 [time.zone.link.nonmembers]:
 
 > <pre><code><ins>friend </ins>bool operator==(const link& x, const link& y) noexcept;</code></pre>
 > *Returns*: `x.name() == y.name()`.
