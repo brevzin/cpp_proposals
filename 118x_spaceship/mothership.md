@@ -1,5 +1,5 @@
 Title: The Mothership Has Landed <br /> Adding `<=>` to the Library
-Document-Number: P1614R0
+Document-Number: D1614R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LWG
 
@@ -1131,7 +1131,7 @@ Change 19.6.6 [optional.relops]:
 > *Remarks*: Specializations of this function template for which `*x < *y` is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&gt;(const optional<del>&lt;T&gt;</del>& x, const optional&lt;U&gt;& y);</code></pre>
 > <del>*Requires*</del><ins>*Mandates*</ins>: The expression `*x > *y` shall be well-formed and its result shall be convertible to `bool`.  
-> *Returns*: If `!x`, `false`; otherwise, if `!y`, `true`; otherwise `*x > *y`.
+> *Returns*: If `!x`, `false`; otherwise, if `!y`, `true`; otherwise `*x > *y`.  
 > *Remarks*: Specializations of this function template for which `*x > *y` is a core constant expression shall be constexpr functions. <ins>This function is to be found via argument-dependent lookup only.</ins>
 > <pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator&lt;=(const optional<del>&lt;T&gt;</del>& x, const optional&lt;U&gt;& y);</code></pre>
 > <del>*Requires*</del><ins>*Mandates*</ins>: The expression `*x <= *y` shall be well-formed and its result shall be convertible to `bool`.  
@@ -1902,6 +1902,32 @@ return strong_ordering::greater;</code></pre></blockquote>
 > <pre><code>size_t hash_code() const noexcept;</code></pre>
 > *Returns*: `target->hash_code()`.
 > [...]
+
+Change 19.19.1 [charconv.syn]:
+
+<blockquote><pre><code>namespace std {
+  [...]
+
+  // [charconv.to.chars], primitive numerical output conversion
+  struct to_chars_result {
+    char* ptr;
+    errc ec;
+    
+    <ins>friend bool operator==(const to_chars_result&, const to_chars_result&) = default;</ins>
+  };
+  
+  [...]
+  
+  // [charconv.from.chars], primitive numerical input conversion
+  struct from_chars_result {
+    const char* ptr;
+    errc ec;
+    
+    <ins>friend bool operator==(const from_chars_result&, const from_chars_result&) = default;</ins>
+  };
+
+  [...]
+}</code></pre></blockquote>  
 
 ## Clause 20: Strings library
 
@@ -4068,9 +4094,66 @@ Change 24.7.11 \[alg.3way\] paragraph 4:
 <ins>return lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());</ins></code></pre>             
 </blockquote>
 
-## Clause 25: Numeric library
+## Clause 25: Numerics library
 
-No changes.
+Remove obsolete equality operators from 25.4.1 [complex.syn]:
+
+<blockquote><pre><code>namespace std {
+  // [complex], class template complex
+  template&lt;class T&gt; class complex;
+
+  // [complex.special], specializations
+  template&lt;&gt; class complex&lt;float&gt;;
+  template&lt;&gt; class complex&lt;double&gt;;
+  template&lt;&gt; class complex&lt;long double&gt;;
+  
+  [...]
+  
+  template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;&, const complex&lt;T&gt;&);
+  template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;&, const T&);
+  <del>template&lt;class T&gt; constexpr bool operator==(const T&, const complex&lt;T&gt;&);</del>
+
+  <del>template&lt;class T&gt; constexpr bool operator!=(const complex&lt;T&gt;&, const complex&lt;T&gt;&);</del>
+  <del>template&lt;class T&gt; constexpr bool operator!=(const complex&lt;T&gt;&, const T&);</del>
+  <del>template&lt;class T&gt; constexpr bool operator!=(const T&, const complex&lt;T&gt;&);</del>
+
+  [...]
+}</code></pre></blockquote>
+
+and in 25.4.6 [complex.ops]:
+
+> <pre><code>template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;& lhs, const complex&lt;T&gt;& rhs);
+template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;& lhs, const T& rhs);
+<del>template&lt;class T&gt; constexpr bool operator==(const T& lhs, const complex&lt;T&gt;& rhs);</del></code></pre>
+> *Returns*: `lhs.real() == rhs.real() && lhs.imag() == rhs.imag()`.  
+> *Remarks*: The imaginary part is assumed to be `T()`, or `0.0`, for the `T` arguments.
+> <pre><code><del>template&lt;class T&gt; constexpr bool operator!=(const complex&lt;T&gt;& lhs, const complex&lt;T&gt;& rhs);
+template&lt;class T&gt; constexpr bool operator!=(const complex&lt;T&gt;& lhs, const T& rhs);
+template&lt;class T&gt; constexpr bool operator!=(const T& lhs, const complex&lt;T&gt;& rhs);</del></code></pre>
+> <del>*Returns*: `rhs.real() != lhs.real() || rhs.imag() != lhs.imag()`.</del>
+
+Add `operator==` to `std::slice` in 25.7.4.1 [class.slice.overview]:
+
+<blockquote><pre><code>namespace std {
+  class slice {
+  public:
+    slice();
+    slice(size_t, size_t, size_t);
+
+    size_t start() const;
+    size_t size() const;
+    size_t stride() const;
+    
+    <ins>friend bool operator==(const slice& x, const slice& y);</ins>
+  };
+}</code></pre></blockquote>
+
+and add a new subclause "Operators" after 25.7.4.3 [slice.access]:
+
+> <pre><code><ins>friend bool operator==(const slice& x, const slice& y);</ins></code></pre>
+> <ins>*Effects*: Equivalent to <pre><code>return x.start() == y.start() &&
+  x.size() == y.size() &&
+  x.stride() == y.stride();</code></pre></ins>
 
 ## Clause 26: Time library
 
