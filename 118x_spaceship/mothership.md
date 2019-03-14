@@ -5380,6 +5380,9 @@ Change 30.9 [re.submatch]:
       
       <ins>friend bool operator==(const sub_match& lhs, const value_type* rhs);</ins>
       <ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const value_type* rhs);</ins>
+      
+      <ins>friend bool operator==(const sub_match& lhs, const value_type& rhs);</ins>
+      <ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const value_type& rhs);</ins>      
     };
 }</code></pre></blockquote>
 
@@ -5400,6 +5403,10 @@ Replace the entirety of 30.9.2 [re.submatch.op] (all 42 non-member comparison op
 > <ins>*Returns*: `lhs.compare(rhs) == 0`.</ins>
 > <pre><code><ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const value_type&ast; rhs);</ins></code></pre>
 > <ins>*Returns*: `lhs.compare(rhs) <=> 0`.</ins>
+> <pre><code><ins>friend bool operator==(const sub_match& lhs, const value_type& rhs);</ins></code></pre>
+> <ins>*Returns*: `lhs.compare(string_type(1, rhs)) == 0`.</ins>
+> <pre><code><ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const value_type& rhs);</ins></code></pre>
+> <ins>*Returns*: `lhs.compare(string_type(1, rhs)) <=> 0`.</ins>
 > <pre><code>template&lt;class charT, class ST, class BiIter&gt;
   basic_ostream&lt;charT, ST&gt;&
     operator&lt;&lt;(basic_ostream&lt;charT, ST&gt;& os, const sub_match&lt;BiIter&gt;& m);</code></pre>
