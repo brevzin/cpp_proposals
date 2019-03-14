@@ -5514,7 +5514,27 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 <ins><em>Returns</em>: <code class="language-cpp">x.name() &lt;=&gt; y.name()</code>.</ins></p>
 </blockquote>
 <h3 id="clause-27-localization-library">4.13. Clause 27: Localization library<a class="self-link" href="#clause-27-localization-library"></a></h3>
-<p>TBD</p>
+<p>Change 27.3.1 [locale]:</p>
+<blockquote><pre><code>namespace std {
+  class locale {
+  public:
+    [...]
+    // locale operations
+    basic_string<char> name() const;
+
+    bool operator==(const locale& other) const;
+    <del>bool operator!=(const locale& other) const;</del>
+    [...]
+  };
+}</code></pre></blockquote>
+
+<p>Change 27.3.1.4 [locale.operators]:</p>
+<blockquote>
+<p><pre><code>bool operator==(const locale&amp; other) const;</code></pre>
+<em>Returns</em>: <code class="language-cpp">true</code> if both arguments are the same locale, or one is a copy of the other, or each has a name and the names are identical; <code class="language-cpp">false</code> otherwise.
+<pre><code><del>bool operator!=(const locale&amp; other) const;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(*this == other)</code>.</del></p>
+</blockquote>
 <h3 id="clause-28-inputoutput-library">4.14. Clause 28: Input/output library<a class="self-link" href="#clause-28-inputoutput-library"></a></h3>
 <p>TBD</p>
 <h3 id="clause-29-regular-expressions-library">4.15. Clause 29: Regular expressions library<a class="self-link" href="#clause-29-regular-expressions-library"></a></h3>

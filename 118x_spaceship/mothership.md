@@ -5020,7 +5020,28 @@ Change 26.10.9.3 [time.zone.link.nonmembers]:
 
 ## Clause 27: Localization library
 
-TBD
+Change 27.3.1 [locale]:
+
+<blockquote><pre><code>namespace std {
+  class locale {
+  public:
+    [...]
+    // locale operations
+    basic_string<char> name() const;
+
+    bool operator==(const locale& other) const;
+    <del>bool operator!=(const locale& other) const;</del>
+    [...]
+  };
+}</code></pre></blockquote>
+
+Change 27.3.1.4 [locale.operators]:
+
+> <pre><code>bool operator==(const locale& other) const;</code></pre>
+> *Returns*: `true` if both arguments are the same locale, or one is a copy of the other, or each has a name and the names are identical; `false` otherwise.
+> <pre><code><del>bool operator!=(const locale& other) const;</del></code></pre>
+> <del>*Returns*: `!(*this == other)`.</del>
+
 
 ## Clause 28: Input/output library
 
