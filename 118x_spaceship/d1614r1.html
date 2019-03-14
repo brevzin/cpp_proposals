@@ -5654,8 +5654,50 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 <h3 id="clause-30-regular-expressions-library">4.15. Clause 30: Regular expressions library<a class="self-link" href="#clause-30-regular-expressions-library"></a></h3>
 <p>TBD</p>
 <h3 id="clause-31-atomic-operations-library">4.16. Clause 31: Atomic operations library<a class="self-link" href="#clause-31-atomic-operations-library"></a></h3>
-<p>TBD</p>
+<p>No changes necessary.</p>
 <h3 id="clause-32-thread-support-library">4.17. Clause 32: Thread support library<a class="self-link" href="#clause-32-thread-support-library"></a></h3>
-<p>TBD</p>
+<p>Change 32.3.2.1 [thread.thread.id]:</p>
+<blockquote><pre><code>namespace std {
+  class thread::id {
+  public:
+    id() noexcept;
+
+    <ins>friend bool operator==(thread::id x, thread::id y) noexcept;</ins>
+    <ins>friend strong_ordering operator<=>(thread::id x, thread::id y) noexcept;</ins>
+  };
+
+  <del>bool operator==(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator!=(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&lt;(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&gt;(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&lt;=(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&gt;=(thread::id x, thread::id y) noexcept;</del>
+
+  template&lt;class charT, class traits&gt;
+    basic_ostream&lt;charT, traits&gt;&
+      operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;& out, thread::id id);
+
+  // hash support
+  template&lt;class T&gt; struct hash;
+  template&lt;&gt; struct hash&lt;thread::id&gt;;
+}</code></pre></blockquote>
+
+<p>and paragraphs 6-11:</p>
+<blockquote>
+<p><pre><code><ins>friend </ins>bool operator==(thread::id x, thread::id y) noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">true</code> only if <code class="language-cpp">x</code> and <code class="language-cpp">y</code> represent the same thread of execution or neither <code class="language-cpp">x</code> nor <code class="language-cpp">y</code> represents a thread of execution.
+<pre><code><del>bool operator!=(thread::id x, thread::id y) noexcept;</del></code></pre>
+<em>Returns</em>: <code class="language-cpp">!(x == y)</code>
+<pre><code><del>bool operator&lt;(thread::id x, thread::id y) noexcept;</del></code></pre>
+<del><em>Returns</em>: A value such that <code class="language-cpp">operator&lt;</code> is a total ordering as described in [alg.sorting].</del>
+<pre><code><ins>friend strong_ordering operator&lt;=&gt;(thread::id x, thread::id y) noexcept;</ins></code></pre>
+<ins><em>Returns</em>: A value such that <code class="language-cpp">operator&lt;=&gt;</code> is a total ordering.</ins>
+<pre><code><del>bool operator&gt;(thread::id x, thread::id y) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">y &lt; x</code>.</del>
+<pre><code><del>bool operator&lt;=(thread::id x, thread::id y) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(y &lt; x)</code>.</del>
+<pre><code><del>bool operator&gt;=(thread::id x, thread::id y) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(x &lt; y)</code>.</del></p>
+</blockquote>
 <h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0790r2.html">[P0790R2]</a><span style="margin-left: 5px;">"Effect of operator&lt;=&gt; on the C++ Standard Library" by David Stone, 2019-01-21</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0891r2.html">[P0891R2]</a><span style="margin-left: 5px;">"Make strong_order a Customization Point!" by Gašper Ažman, Jeff Snyder, 2019-01-20</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1154r1.html">[P1154R1]</a><span style="margin-left: 5px;">"Type traits for structural comparison" by Arthur O'Dwyer, Jeff Snyder, 2019-01-19</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r1.html">[P1185R1]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1186r1.html">[P1186R1]</a><span style="margin-left: 5px;">"When do you actually use &lt;=&gt;?" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1188r0.html">[P1188R0]</a><span style="margin-left: 5px;">"Library utilities for &lt;=&gt;" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1189r0.html">[P1189R0]</a><span style="margin-left: 5px;">"Add &lt;=&gt; to Library" by Barry Revzin, 2019-01-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1191r0.html">[P1191R0]</a><span style="margin-left: 5px;">"Adding operator&lt;=&gt; to types that are not currently comparable" by David Stone, 2018-08-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1295r0.html">[P1295R0]</a><span style="margin-left: 5px;">"Spaceship library update" by Tomasz Kamiński, 2018-10-07</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1380r1.html">[P1380R1]</a><span style="margin-left: 5px;">"Ambiguity and Insecurities with Three-Way Comparison" by Lawrence Crowl, 2019-01-20</span></li></ul>
 </html>

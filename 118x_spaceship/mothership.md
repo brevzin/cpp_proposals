@@ -5170,8 +5170,50 @@ TBD
 
 ## Clause 31: Atomic operations library
 
-TBD
+No changes necessary.
 
 ## Clause 32: Thread support library
 
-TBD
+Change 32.3.2.1 [thread.thread.id]:
+
+<blockquote><pre><code>namespace std {
+  class thread::id {
+  public:
+    id() noexcept;
+    
+    <ins>friend bool operator==(thread::id x, thread::id y) noexcept;</ins>
+    <ins>friend strong_ordering operator<=>(thread::id x, thread::id y) noexcept;</ins>
+  };
+
+  <del>bool operator==(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator!=(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&lt;(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&gt;(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&lt;=(thread::id x, thread::id y) noexcept;</del>
+  <del>bool operator&gt;=(thread::id x, thread::id y) noexcept;</del>
+
+  template&lt;class charT, class traits&gt;
+    basic_ostream&lt;charT, traits&gt;&
+      operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;& out, thread::id id);
+
+  // hash support
+  template&lt;class T&gt; struct hash;
+  template&lt;&gt; struct hash&lt;thread::id&gt;;
+}</code></pre></blockquote>
+
+and paragraphs 6-11:
+
+> <pre><code><ins>friend </ins>bool operator==(thread::id x, thread::id y) noexcept;</code></pre>
+> *Returns*: `true` only if `x` and `y` represent the same thread of execution or neither `x` nor `y` represents a thread of execution.
+> <pre><code><del>bool operator!=(thread::id x, thread::id y) noexcept;</del></code></pre>
+> *Returns*: `!(x == y)`
+> <pre><code><del>bool operator<(thread::id x, thread::id y) noexcept;</del></code></pre>
+> <del>*Returns*: A value such that `operator<` is a total ordering as described in [alg.sorting].</del>
+> <pre><code><ins>friend strong_ordering operator<=>(thread::id x, thread::id y) noexcept;</ins></code></pre>
+> <ins>*Returns*: A value such that `operator<=>` is a total ordering.</ins>
+> <pre><code><del>bool operator>(thread::id x, thread::id y) noexcept;</del></code></pre>
+> <del>*Returns*: `y < x`.</del>
+> <pre><code><del>bool operator<=(thread::id x, thread::id y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(y < x)`.</del>
+> <pre><code><del>bool operator>=(thread::id x, thread::id y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x < y)`.</del>
