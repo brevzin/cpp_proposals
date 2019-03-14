@@ -5536,7 +5536,121 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 <del><em>Returns</em>: <code class="language-cpp">!(*this == other)</code>.</del></p>
 </blockquote>
 <h3 id="clause-29-inputoutput-library">4.14. Clause 29: Input/output library<a class="self-link" href="#clause-29-inputoutput-library"></a></h3>
-<p>TBD</p>
+<p>Change 29.11.5 [fs.filesystem.syn]:</p>
+<blockquote><pre><code>namespace std::filesystem {
+  [...]
+  // [fs.class.file_status], file status
+  class file_status;
+
+  struct space_info {
+    uintmax_t capacity;
+    uintmax_t free;
+    uintmax_t available;
+
+    <ins>friend bool operator==(const space_info&, const space_info&) = default;</ins>
+  };
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 29.11.7 [fs.class.path]:</p>
+<blockquote><pre><code>namespace std::filesystem {
+  class path {
+  public:
+    [...]
+    // [fs.path.nonmember], non-member operators
+    friend bool operator==(const path& lhs, const path& rhs) noexcept;
+    <del>friend bool operator!=(const path& lhs, const path& rhs) noexcept;</del>
+    <del>friend bool operator< (const path& lhs, const path& rhs) noexcept;</del>
+    <del>friend bool operator<=(const path& lhs, const path& rhs) noexcept;</del>
+    <del>friend bool operator> (const path& lhs, const path& rhs) noexcept;</del>
+    <del>friend bool operator>=(const path& lhs, const path& rhs) noexcept;</del>
+    <ins>friend weak_ordering operator<=>(const path& lhs, const path& rhs) noexcept;</ins>
+    [...]
+  };
+}</code></pre></blockquote>
+
+<p>Change 29.11.7.7 [fs.path.nonmember], paragraphs 5-10:</p>
+<blockquote>
+<p><pre><code><del>friend bool operator!=(const path&amp; lhs, const path&amp; rhs) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(lhs == rhs)</code>.</del>
+<pre><code><del>friend bool operator&lt; (const path&amp; lhs, const path&amp; rhs) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) &lt; 0</code>.</del>
+<pre><code><del>friend bool operator&lt;=(const path&amp; lhs, const path&amp; rhs) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(rhs &lt; lhs)</code>.</del>
+<pre><code><del>friend bool operator&gt; (const path&amp; lhs, const path&amp; rhs) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">rhs &lt; lhs</code>.</del>
+<pre><code><del>friend bool operator&gt;=(const path&amp; lhs, const path&amp; rhs) noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(lhs &lt; rhs)</code>.</del>
+<pre><code><ins>friend weak_ordering operator&lt;=&gt;(const path&amp; lhs, const path&amp; rhs) noexcept;</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) &lt;=&gt; 0</code>.</ins>
+<pre><code>friend path operator/ (const path&amp; lhs, const path&amp; rhs);</code></pre>
+<em>Effects</em>: Equivalent to: <code class="language-cpp">return path(lhs) /= rhs;</code></p>
+</blockquote>
+<p>Change 29.11.10 [fs.class.file_status]:</p>
+<blockquote><pre><code>namespace std::filesystem {
+  class file_status {
+  public:
+    // [fs.file_status.cons], constructors and destructor
+    file_status() noexcept : file_status(file_type::none) {}
+    explicit file_status(file_type ft,
+                         perms prms = perms::unknown) noexcept;
+    file_status(const file_status&) noexcept = default;
+    file_status(file_status&&) noexcept = default;
+    ~file_status();
+
+    // assignments
+    file_status& operator=(const file_status&) noexcept = default;
+    file_status& operator=(file_status&&) noexcept = default;
+
+    // [fs.file_status.mods], modifiers
+    void       type(file_type ft) noexcept;
+    void       permissions(perms prms) noexcept;
+
+    // [fs.file_status.obs], observers
+    file_type  type() const noexcept;
+    perms      permissions() const noexcept;
+
+    <ins>friend bool operator==(const file_status& lhs, const file_status& rhs) noexcept</ins>
+    <ins>{ return lhs.type() == rhs.type() && lhs.permissions() == rhs.permissions(); }</ins>
+  };
+}</code></pre></blockquote>
+
+<p>Change 29.11.11 [fs.class.directory_entry]:</p>
+<blockquote><pre><code>namespace std::filesystem {
+  class directory_entry {
+  public:
+    [...]
+    bool operator==(const directory_entry& rhs) const noexcept;
+    <del>bool operator!=(const directory_entry& rhs) const noexcept;</del>
+    <del>bool operator< (const directory_entry& rhs) const noexcept;</del>
+    <del>bool operator> (const directory_entry& rhs) const noexcept;</del>
+    <del>bool operator<=(const directory_entry& rhs) const noexcept;</del>
+    <del>bool operator>=(const directory_entry& rhs) const noexcept;</del>
+    <ins>weak_ordering operator<=>(const directory_entry& rhs) const noexcept;</ins>
+
+  private:
+    filesystem::path pathobject;     // exposition only
+    friend class directory_iterator; // exposition only
+  };
+}</code></pre></blockquote>
+
+<p>Change 29.11.11.3 [fs.dir.entry.obs], paragraphs 31-36:</p>
+<blockquote>
+<p><pre><code>bool operator==(const directory_entry&amp; rhs) const noexcept;</code></pre>
+<em>Returns</em>: <code class="language-cpp">pathobject == rhs.pathobject</code>.
+<pre><code><del>bool operator!=(const directory_entry&amp; rhs) const noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">pathobject != rhs.pathobject</code>.</del>
+<pre><code><del>bool operator&lt; (const directory_entry&amp; rhs) const noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">pathobject &lt; rhs.pathobject</code>.</del>
+<pre><code><del>bool operator&gt; (const directory_entry&amp; rhs) const noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">pathobject &gt; rhs.pathobject</code>.</del>
+<pre><code><del>bool operator&lt;=(const directory_entry&amp; rhs) const noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">pathobject &lt;= rhs.pathobject</code>.</del>
+<pre><code><del>bool operator&gt;=(const directory_entry&amp; rhs) const noexcept;</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">pathobject &gt;= rhs.pathobject</code>.</del>
+<pre><code><ins>weak_ordering operator&lt;=&gt;(const directory_entry&amp; rhs) const noexcept;</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">pathobject &lt;=&gt; rhs.pathobject</code>.</ins></p>
+</blockquote>
 <h3 id="clause-30-regular-expressions-library">4.15. Clause 30: Regular expressions library<a class="self-link" href="#clause-30-regular-expressions-library"></a></h3>
 <p>TBD</p>
 <h3 id="clause-31-atomic-operations-library">4.16. Clause 31: Atomic operations library<a class="self-link" href="#clause-31-atomic-operations-library"></a></h3>
