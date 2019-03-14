@@ -660,7 +660,6 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="https://wg21.link/p1380r1" title="Ambiguity and Insecurities with Three-Way Comparison">P1380R1</a> - extending the floating point customization points for <code class="language-cpp">strong_order</code> and <code class="language-cpp">weak_order</code>.</li>
 </ul>
 <p>LEWG's unanimous preference was that <code class="language-cpp">operator&lt;=&gt;</code>s be declared as hidden friends.</p>
-<p>This initial draft is complete up through Clause 25 and includes <code class="language-cpp">coroutine_handle&lt;&gt;</code>. No work has yet been done on Clauses 26-31. </p>
 <h2 id="known-behavioral-changes">2. Known behavioral changes<a class="self-link" href="#known-behavioral-changes"></a></h2>
 <p>There are a few things that will change behavior as a result of all these papers and the chosen direction for declaring operators as hidden friends. </p>
 <h3 id="was-well-formed-now-ill-formed">2.1. Was well-formed, now ill-formed<a class="self-link" href="#was-well-formed-now-ill-formed"></a></h3>
@@ -5652,7 +5651,271 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 <ins><em>Returns</em>: <code class="language-cpp">pathobject &lt;=&gt; rhs.pathobject</code>.</ins></p>
 </blockquote>
 <h3 id="clause-30-regular-expressions-library">4.15. Clause 30: Regular expressions library<a class="self-link" href="#clause-30-regular-expressions-library"></a></h3>
-<p>TBD</p>
+<p>Change 30.4 [re.syn]:</p>
+<blockquote><pre><code>#include &lt;initializer_list&gt;
+
+namespace std {
+  [...]
+  // [re.submatch], class template sub_match
+  template&lt;class BidirectionalIterator&gt;
+    class sub_match;
+
+  using csub_match  = sub_match&lt;const char*&gt;;
+  using wcsub_match = sub_match&lt;const wchar_t*&gt;;
+  using ssub_match  = sub_match&lt;string::const_iterator&gt;;
+  using wssub_match = sub_match&lt;wstring::const_iterator&gt;;
+
+<del>  // [re.submatch.op], sub_match non-member operators
+  template&lt;class BiIter&gt;
+    bool operator==(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator!=(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;=(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;=(const sub_match&lt;BiIter&gt;& lhs, const sub_match&lt;BiIter&gt;& rhs);
+
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator==(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator!=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&lt;(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&gt;(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&lt;=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&gt;=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& lhs,
+      const sub_match&lt;BiIter&gt;& rhs);
+
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator==(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator!=(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&lt;(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&gt;(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&lt;=(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+  template&lt;class BiIter, class ST, class SA&gt;
+    bool operator&gt;=(
+      const sub_match&lt;BiIter&gt;& lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;& rhs);
+
+  template&lt;class BiIter&gt;
+    bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                   const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                   const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+
+  template&lt;class BiIter&gt;
+    bool operator==(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+  template&lt;class BiIter&gt;
+    bool operator!=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;(const sub_match&lt;BiIter&gt;& lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;(const sub_match&lt;BiIter&gt;& lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);
+
+  template&lt;class BiIter&gt;
+    bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                   const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                   const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type& lhs,
+                    const sub_match&lt;BiIter&gt;& rhs);
+
+  template&lt;class BiIter&gt;
+    bool operator==(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);
+  template&lt;class BiIter&gt;
+    bool operator!=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;(const sub_match&lt;BiIter&gt;& lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;(const sub_match&lt;BiIter&gt;& lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&lt;=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);
+  template&lt;class BiIter&gt;
+    bool operator&gt;=(const sub_match&lt;BiIter&gt;& lhs,
+                    const typename iterator_traits&lt;BiIter&gt;::value_type& rhs);</del>
+
+  template&lt;class charT, class ST, class BiIter&gt;
+    basic_ostream&lt;charT, ST&gt;&
+      operator&lt;&lt;(basic_ostream&lt;charT, ST&gt;& os, const sub_match&lt;BiIter&gt;& m);
+
+  // [re.results], class template match_results
+  template&lt;class BidirectionalIterator,
+           class Allocator = allocator&lt;sub_match&lt;BidirectionalIterator&gt;&gt;&gt;
+    class match_results;
+
+  using cmatch  = match_results&lt;const char*&gt;;
+  using wcmatch = match_results&lt;const wchar_t*&gt;;
+  using smatch  = match_results&lt;string::const_iterator&gt;;
+  using wsmatch = match_results&lt;wstring::const_iterator&gt;;
+
+<del>  // match_results comparisons
+  template&lt;class BidirectionalIterator, class Allocator&gt;
+    bool operator==(const match_results&lt;BidirectionalIterator, Allocator&gt;& m1,
+                    const match_results&lt;BidirectionalIterator, Allocator&gt;& m2);
+  template&lt;class BidirectionalIterator, class Allocator&gt;
+    bool operator!=(const match_results&lt;BidirectionalIterator, Allocator&gt;& m1,
+                    const match_results&lt;BidirectionalIterator, Allocator&gt;& m2);</del>
+
+  [...]
+}</code></pre></blockquote>
+
+<p>Change 30.9 [re.submatch]:</p>
+<blockquote><pre><code>namespace std {
+  template&lt;class BidirectionalIterator&gt;
+    class sub_match : public pair&lt;BidirectionalIterator, BidirectionalIterator&gt; {
+    public:
+      using value_type      =
+              typename iterator_traits&lt;BidirectionalIterator&gt;::value_type;
+      using difference_type =
+              typename iterator_traits&lt;BidirectionalIterator&gt;::difference_type;
+      using iterator        = BidirectionalIterator;
+      using string_type     = basic_string&lt;value_type&gt;;
+
+      bool matched;
+
+      constexpr sub_match();
+
+      difference_type length() const;
+      operator string_type() const;
+      string_type str() const;
+
+      int compare(const sub_match& s) const;
+      int compare(const string_type& s) const;
+      int compare(const value_type* s) const;
+
+      <ins>friend bool operator==(const sub_match& lhs, const sub_match& rhs);</ins>
+      <ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const sub_match& rhs);</ins>
+
+      <ins>template&lt;class ST, class SA&gt;</ins>
+      <ins>  friend bool operator==(const sub_match& lhs, const basic_string&lt;value_type, ST, SA&gt;& rhs);</ins>
+      <ins>template&lt;class ST, class SA&gt;</ins>
+      <ins>  friend compare_three_way_result_t&lt;string_type&gt;</ins>
+      <ins>    operator&lt;=&gt;(const sub_match& lhs, const basic_string&lt;value_type, ST, SA&gt;& rhs);</ins>
+
+      <ins>friend bool operator==(const sub_match& lhs, const value_type* rhs);</ins>
+      <ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match& lhs, const value_type* rhs);</ins>
+    };
+}</code></pre></blockquote>
+
+<p>Replace the entirety of 30.9.2 [re.submatch.op] (all 42 non-member comparison operators, plus an <code class="language-cpp">operator&lt;&lt;</code>) with:</p>
+<blockquote>
+<p><pre><code><ins>friend bool operator==(const sub_match&amp; lhs, const sub_match&amp; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) == 0</code>.</ins>
+<pre><code><ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match&amp; lhs, const sub_match&amp; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) &lt;=&gt; 0</code>.</ins>
+<pre><code><ins>template&lt;class ST, class SA&gt;
+  friend bool operator==(const sub_match&amp; lhs, const basic_string&lt;value_type, ST, SA&gt;&amp; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(string_type(rhs.data(), rhs.size())) == 0</code></ins>
+<pre><code><ins>template&lt;class ST, class SA&gt;
+  friend compare_three_way_result_t&lt;string_type&gt;
+    operator&lt;=&gt;(const sub_match&amp; lhs, const basic_string&lt;value_type, ST, SA&gt;&amp; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(string_type(rhs.data(), rhs.size())) &lt;=&gt; 0</code></ins>
+<pre><code><ins>friend bool operator==(const sub_match&amp; lhs, const value_type&ast; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) == 0</code>.</ins>
+<pre><code><ins>friend compare_three_way_result_t&lt;string_type&gt; operator&lt;=&gt;(const sub_match&amp; lhs, const value_type&ast; rhs);</ins></code></pre>
+<ins><em>Returns</em>: <code class="language-cpp">lhs.compare(rhs) &lt;=&gt; 0</code>.</ins>
+<pre><code>template&lt;class charT, class ST, class BiIter&gt;
+  basic_ostream&lt;charT, ST&gt;&amp;
+    operator&lt;&lt;(basic_ostream&lt;charT, ST&gt;&amp; os, const sub_match&lt;BiIter&gt;&amp; m);</code></pre>
+<em>Returns</em>: <code class="language-cpp">os &lt;&lt; m.str()</code>.</p>
+</blockquote>
+<p>Change 30.10 [re.results]:</p>
+<blockquote><pre><code>namespace std {
+  template<class BidirectionalIterator,
+           class Allocator = allocator<sub_match<BidirectionalIterator>>>
+    class match_results {
+    public:
+
+      [...]
+      // [re.results.swap], swap
+      void swap(match_results& that);
+
+      <ins>friend bool operator==(const match_results& m1, const match_results& m2);</ins>
+    };
+}</code></pre></blockquote>
+
+<p>Change 30.10.8 [re.results.nonmember]:</p>
+<blockquote>
+<p><pre><code><del>template&lt;class BidirectionalIterator, class Allocator&gt;</del>
+<ins>friend </ins>bool operator==(const match_results<del>&lt;BidirectionalIterator, Allocator&gt;</del>&amp; m1,
+                const match_results<del>&lt;BidirectionalIterator, Allocator&gt;</del>&amp; m2);</code></pre>
+<em>Returns</em>: <code class="language-cpp">true</code> if neither match result is ready [...]
+<pre><code><del>template&lt;class BidirectionalIterator, class Allocator&gt;
+bool operator!=(const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m1,
+                const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m2);</del></code></pre>
+<del><em>Returns</em>: <code class="language-cpp">!(m1 == m2)</code>.</del></p>
+</blockquote>
 <h3 id="clause-31-atomic-operations-library">4.16. Clause 31: Atomic operations library<a class="self-link" href="#clause-31-atomic-operations-library"></a></h3>
 <p>No changes necessary.</p>
 <h3 id="clause-32-thread-support-library">4.17. Clause 32: Thread support library<a class="self-link" href="#clause-32-thread-support-library"></a></h3>
