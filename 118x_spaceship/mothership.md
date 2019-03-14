@@ -66,9 +66,9 @@ Thank you to Casey Carter for the tremendous wording review.
 
 # Wording
 
-## Clause 15: Library Introduction
+## Clause 16: Library Introduction
 
-Change 15.4.2.1/2 [expos.only.func]:
+Change 16.4.2.1/2 [expos.only.func]:
 
 > The following <del>function is</del> <ins>are</ins> defined for exposition only to aid in the specification of the library:
 
@@ -93,17 +93,17 @@ and append:
 template&lt;class T, class U=T&gt;
 using </code><code><i>synth-3way-result</i></code><code class="language-cpp"> = decltype(</code><code><i>synth-3way</i></code><code class="language-cpp">(declval&lt;T&&gt;(), declval&lt;U&&gt;()));</code></pre></blockquote>
 
-Remove 15.4.2.3 [operators], which begins:
+Remove 16.4.2.3 [operators], which begins:
 
 > <del>In this library, whenever a declaration is provided for an `operator!=`, `operator>`, `operator<=`, or `operator>=` for a type `T`, its requirements and semantics are as follows, unless explicitly specified otherwise.</del>
 
-Add a clause to 15.5.5 [conforming], probably after 15.5.5.4 [global.functions]. Not strictly related to `<=>` as a whole, but it's a requirement that's currently missing and needs to be added somewhere. See also P1601.
+Add a clause to 16.5.5 [conforming], probably after 16.5.5.4 [global.functions]. Not strictly related to `<=>` as a whole, but it's a requirement that's currently missing and needs to be added somewhere. See also P1601.
 
-> **15.5.5.x Hidden friend functions [conforming.hidden.friend]**
+> **16.5.5.x Hidden friend functions [conforming.hidden.friend]**
 >
 > An implementation shall not provide any additional out-of-class declarations or redeclarations for any non-member function specified as a non-member `friend` and defined within the body of a class. [ *Note*: The intent is that such functions are to be found via argument-dependent lookup only. *-end note* ]
 
-## Clause 16: Language support library
+## Clause 17: Language support library
 
 Added: `compare_three_way_result`, concepts `ThreeWayComparable` and `ThreeWayComparableWith`, `compare_three_way` and `compare_XXX_order_fallback`
 
@@ -113,7 +113,7 @@ Respecified: `strong_order()`, `weak_order()`, and `partial_order()`
 
 Removed: `compare_3way()`, `strong_equal()`, and `weak_equal()`
 
-In 16.7.2 [type.info], remove `operator!=`:
+In 17.7.2 [type.info], remove `operator!=`:
 
 <blockquote><pre><code>namespace std {
   class type_info {
@@ -135,7 +135,7 @@ In 16.7.2 [type.info], remove `operator!=`:
 > <pre><code><del>bool operator!=(const type_info& rhs) const noexcept;</del></code></pre>
 > <del>*Returns*: `!(*this == rhs)`.</del>
 
-Add into 16.11.1 [compare.syn]:
+Add into 17.11.1 [compare.syn]:
 
 <blockquote><pre><code>namespace std {
   // [cmp.categories], comparison category types
@@ -202,7 +202,7 @@ Add into 16.11.1 [compare.syn]:
   <ins>}</ins>
 }</code></pre></blockquote>
 
-Change 16.11.2.2 [cmp.weakeq]:
+Change 17.11.2.2 [cmp.weakeq]:
 
 <blockquote><pre><code>namespace std {
   class weak_equality {
@@ -239,7 +239,7 @@ constexpr bool operator!=(unspecified, weak_equality v) noexcept;</del></code></
 constexpr weak_equality operator<=>(unspecified, weak_equality v) noexcept;</del></code></pre>
 > <del>*Returns*: `v`.</del>
 
-Change 16.11.2.3 [cmp.strongeq]:
+Change 17.11.2.3 [cmp.strongeq]:
 
 <blockquote><pre><code>namespace std {
   class strong_equality {
@@ -280,7 +280,7 @@ constexpr bool operator!=(unspecified, strong_equality v) noexcept;</del></code>
 constexpr strong_equality operator&lt;=&gt;(unspecified, strong_equality v) noexcept;</del></code></pre>
 > <del>*Returns*: `v`.</del>
 
-Change 16.11.2.4 [cmp.partialord]:
+Change 17.11.2.4 [cmp.partialord]:
 
 <blockquote><pre><code>namespace std {
   class partial_ordering {
@@ -312,7 +312,7 @@ Change 16.11.2.4 [cmp.partialord]:
   [...]
 }</code></pre></blockquote>
 
-Remove just the extra `==` and `!=` operators in 16.11.2.4 [cmp.partialord]/3 and 4:
+Remove just the extra `==` and `!=` operators in 17.11.2.4 [cmp.partialord]/3 and 4:
 
 > <pre><code>constexpr bool operator==(partial_ordering v, <i>unspecified</i>) noexcept;
 constexpr bool operator&lt; (partial_ordering v, <i>unspecified</i>) noexcept;
@@ -330,7 +330,7 @@ constexpr bool operator>=(<i>unspecified</i>, partial_ordering v) noexcept;</cod
 constexpr bool operator!=(<i>unspecified</i>, partial_ordering v) noexcept;</del></code></pre>
 > <del>*Returns*: For `operator@`, `!v.is_ordered || v.value != 0`.</del>
 
-Change 16.11.2.5 [cmp.weakord]:
+Change 17.11.2.5 [cmp.weakord]:
 
 <blockquote><pre><code>namespace std {
   class weak_ordering {
@@ -358,7 +358,7 @@ Change 16.11.2.5 [cmp.weakord]:
   [...]
 };</code></pre></blockquote>
 
-Remove just the extra `==` and `!=` operators from 16.11.2.5 [cmp.weakord]/4 and /5:
+Remove just the extra `==` and `!=` operators from 17.11.2.5 [cmp.weakord]/4 and /5:
 
 > <pre><code>constexpr bool operator==(weak_ordering v, <i>unspecified</i>) noexcept;
 <del>constexpr bool operator!=(weak_ordering v, <i>unspecified</i>) noexcept;</del>
@@ -375,7 +375,7 @@ constexpr bool operator&lt;=(<i>unspecified</i>, weak_ordering v) noexcept;
 constexpr bool operator&gt;=(<i>unspecified</i>, weak_ordering v) noexcept;</code></pre>
 > *Returns*: `0 @ v.value` for `operator@`.
 
-Change 16.11.2.6 [cmp.strongord]:
+Change 17.11.2.6 [cmp.strongord]:
 
 <blockquote><pre><code>namespace std {
   class strong_ordering {
@@ -404,7 +404,7 @@ Change 16.11.2.6 [cmp.strongord]:
   [...]
 }</code></pre></blockquote>
 
-Remove just the extra `==` and `!=` operators from 16.11.2.6 [cmp.strongord]/6 and /7:
+Remove just the extra `==` and `!=` operators from 17.11.2.6 [cmp.strongord]/6 and /7:
 
 > <pre><code>constexpr bool operator==(strong_ordering v, <i>unspecified</i>) noexcept;
 <del>constexpr bool operator!=(strong_ordering v, <i>unspecified</i>) noexcept;</del>
@@ -532,7 +532,7 @@ Add a new subclause [cmp.object] "spaceship object":
 
 > In addition to being available via inclusion of the `<compare>` header, the class `compare_three_way` is available when the header `<functional>` is included.
         
-Replace the entirety of 16.11.4 [cmp.alg]. This wording relies on the specification-only function `3WAY<R>` defined in [P1186R1](https://wg21.link/p1186r1).
+Replace the entirety of 17.11.4 [cmp.alg]. This wording relies on the specification-only function `3WAY<R>` defined in [P1186R1](https://wg21.link/p1186r1).
 
 > <pre><code><del>template&lt;class T&gt; constexpr strong_ordering strong_order(const T& a, const T& b);</del></code></pre>
 > <del>*Effects*: Compares two values and produces a result of type `strong_ordering`:</del>  
@@ -644,14 +644,14 @@ Replace the entirety of 16.11.4 [cmp.alg]. This wording relies on the specificat
 > - <ins>Otherwise, `3WAY<partial_ordering>(E, F)` ([class.spaceship]) if it is a well-formed expression.</ins>
 > - <ins>Otherwise, `compare_partial_order_fallback(E, F)` is ill-formed.</ins>
 
-Change 16.13.1 [coroutine.syn]:
+Change 17.13.1 [coroutine.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
-  // 16.13.5 noop coroutine
+  // 17.13.5 noop coroutine
   noop_coroutine_handle noop_coroutine() noexcept;
 
-<del>  // 16.13.3.6 comparison operators:
+<del>  // 17.13.3.6 comparison operators:
   constexpr bool operator==(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
   constexpr bool operator!=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
   constexpr bool operator&lt;(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
@@ -659,18 +659,18 @@ Change 16.13.1 [coroutine.syn]:
   constexpr bool operator&lt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;
   constexpr bool operator&gt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del>
 
-  // 16.13.6 trivial awaitables
+  // 17.13.6 trivial awaitables
   [...]
 }</code></pre></blockquote>
 
-Change 16.3.3 [coroutine.handle]:
+Change 17.13.3 [coroutine.handle]:
 
 <blockquote><pre><code>namespace std {
   template &lt;&gt;
   struct coroutine_handle&lt;void&gt;
   {
     [...]
-    // 16.13.3.4 resumption
+    // 17.13.3.4 resumption
     void operator()() const;
     void resume() const;
     void destroy() const;
@@ -686,7 +686,7 @@ Change 16.3.3 [coroutine.handle]:
   [...]
 }</code></pre></blockquote>
 
-Remove 16.3.3.6 [coroutine.handle.compare] (as it's now all defined in the header):
+Remove 17.13.3.6 [coroutine.handle.compare] (as it's now all defined in the header):
 
 > <pre><code><del>constexpr bool operator==(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
 > <del>*Returns*: `x.address() == y.address()`.</del>
@@ -701,15 +701,15 @@ Remove 16.3.3.6 [coroutine.handle.compare] (as it's now all defined in the heade
 > <pre><code><del>constexpr bool operator&gt;=(coroutine_handle&lt;&gt; x, coroutine_handle&lt;&gt; y) noexcept;</del></code></pre>
 > <del>*Returns*: `!(x < y)`.</del>
 
-## Clause 17: Concepts Library
+## Clause 18: Concepts Library
 
 No changes.
 
-## Clause 18: Diagnostics Library
+## Clause 19: Diagnostics Library
 
 Changed operators for: `error_category`, `error_code`, and `error_condition`
 
-Change 18.5.1 [system_error.syn]
+Change 19.5.1 [system_error.syn]
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -732,7 +732,7 @@ Change 18.5.1 [system_error.syn]
   [...]
 }</code></pre></blockquote>
 
-Change 18.5.2.1 [syserr.errcat.overview]:
+Change 19.5.2.1 [syserr.errcat.overview]:
 
 <blockquote><pre><code>namespace std {
   class error_category {
@@ -745,7 +745,7 @@ Change 18.5.2.1 [syserr.errcat.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 18.5.2.3 [syserr.errcat.nonvirtuals]:
+Change 19.5.2.3 [syserr.errcat.nonvirtuals]:
 
 > <pre><code>bool operator==(const error_category& rhs) const noexcept;</code></pre>
 > *Returns*: `this == &rhs`.
@@ -758,7 +758,7 @@ Change 18.5.2.3 [syserr.errcat.nonvirtuals]:
 > <ins>*Returns*: `compare_three_way()(this, &rhs)`.</ins>  
 > <ins>[Note: `compare_three_way` (cmp.object) provides a total ordering for pointers. —end note]</ins>
 
-Change 18.5.3.1 [syserr.errcode.overview]:
+Change 19.5.3.1 [syserr.errcode.overview]:
 
 <blockquote><pre><code>namespace std {
   class error_code {
@@ -775,7 +775,7 @@ Change 18.5.3.1 [syserr.errcode.overview]:
   [...]
 }</code></pre></blockquote>  
 
-Change 18.5.4.1 [syserr.errcondition.overview]:
+Change 19.5.4.1 [syserr.errcondition.overview]:
 
 <blockquote><pre><code>namespace std {
   class error_condition {
@@ -791,7 +791,7 @@ Change 18.5.4.1 [syserr.errcondition.overview]:
   };
 }</code></pre></blockquote>
 
-Change 18.5.5 [syserr.compare]
+Change 19.5.5 [syserr.compare]
 
 > <pre><code><ins>friend </ins>bool operator==(const error_code& lhs, const error_code& rhs) noexcept;</code></pre>
 > *Returns*: `lhs.category() == rhs.category() && lhs.value() == rhs.value()`  
@@ -829,21 +829,21 @@ return lhs.value() <=> rhs.value();</code></pre></blockquote>
 return lhs.value() <=> rhs.value();</code></pre></blockquote>  
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
-## Clause 19: General utilities library
+## Clause 20: General utilities library
 
 Changed operators for: `pair`, `tuple`, `optional`, `variant`, `monostate`, `bitset`, `allocator`, `unique_ptr`, `shared_ptr`, `memory_resource`, `polymorphic_allocator`, `scoped_allocator_adaptor`, `function`, `type_index`
 
-Change 19.2.1 [utility.syn]
+Change 20.2.1 [utility.syn]
 
 <blockquote><pre><code>#include <initializer_list> // see 16.10.1
 
 namespace std {
   [...]
-  // 19.4, class template pair
+  // 20.4, class template pair
   template&lt;class T1, class T2&gt;
   struct pair;
   
-  <del>// 19.4.3, pair specialized algorithms</del>
+  <del>// 20.4.3, pair specialized algorithms</del>
   <del>template&lt;class T1, class T2&gt;</del>
   <del>constexpr bool operator==(const pair&lt;T1, T2&gt;&, const pair&lt;T1, T2&gt;&);</del>
   <del>template&lt;class T1, class T2&gt;</del>
@@ -860,7 +860,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 19.4.2 [pairs.pair]:
+Change 20.4.2 [pairs.pair]:
 
 <blockquote><pre><code>namespace std {
 template&lt;class T1, class T2&gt;
@@ -887,7 +887,7 @@ struct pair {
 return <i>synth-3way</i>(lhs.second, rhs.second);</code></pre></blockquote>
 > <ins>*Remarks*:  This function is to be found via argument-dependent lookup only.</ins>
 
-Change 19.4.3 [pairs.spec].
+Change 20.4.3 [pairs.spec].
 
 > <pre><code><del>template&lt;class T1, class T2&gt;
 constexpr bool operator==(const pair&lt;T1, T2&gt;& x, const pair&lt;T1, T2&gt;& y);</del></code></pre>
@@ -911,10 +911,10 @@ constexpr bool operator&gt;=(const pair&lt;T1, T2&gt;& x, const pair&lt;T1, T2&g
 constexpr void swap(pair&lt;T1, T2&gt;& x, pair&lt;T1, T2&gt;& y) noexcept(noexcept(x.swap(y)));</code></pre>
 > [...]
 
-Change 19.5.2 [tuple.syn]:
+Change 20.5.2 [tuple.syn]:
 
 <blockquote><pre><code>namespace std {
-  // 19.5.3, class template tuple
+  // 20.5.3, class template tuple
   template&lt;class... Types&gt;
     class tuple;      
     
@@ -923,7 +923,7 @@ Change 19.5.2 [tuple.syn]:
   template&lt;class T, class... Types&gt;
     constexpr const T&& get(const tuple&lt;Types...&gt;&& t) noexcept;
     
-  <del>// 19.5.3.8, relational operators</del>
+  <del>// 20.5.3.8, relational operators</del>
   <del>template&lt;class... TTypes, class... UTypes&gt;</del>
     <del>constexpr bool operator==(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
   <del>template&lt;class... TTypes, class... UTypes&gt;</del>
@@ -937,14 +937,14 @@ Change 19.5.2 [tuple.syn]:
   <del>template&lt;class... TTypes, class... UTypes&gt;</del>
     <del>constexpr bool operator&gt;=(const tuple&lt;TTypes...&gt;&, const tuple&lt;UTypes...&gt;&);</del>
     
-  // 19.5.3.9, allocator-related traits
+  // 20.5.3.9, allocator-related traits
   template&lt;class... Types, class Alloc&gt;
     struct uses_allocator&lt;tuple&lt;Types...&gt;, Alloc&gt;;  
     
   [...]
 }</code></pre></blockquote>
   
-Change 19.5.3 [tuple.tuple]:
+Change 20.5.3 [tuple.tuple]:
 
 <blockquote><pre><code>namespace std {
 template<class... Types>
@@ -952,10 +952,10 @@ class tuple {
 public:
   [...]
   
-  // 19.5.3.3, tuple swap
+  // 20.5.3.3, tuple swap
   constexpr void swap(tuple&) noexcept(see below );
   
-  <ins>// 19.5.3.8, tuple relational operators</ins>
+  <ins>// 20.5.3.8, tuple relational operators</ins>
   <ins>template&lt;class... UTypes&gt;</ins>
   <ins>  friend constexpr bool operator==(const tuple&, const tuple&lt;UTypes...&gt;&)</ins>  
   <ins>  { <i>see below</i> }</ins>
@@ -965,7 +965,7 @@ public:
   <ins>  { <i>see below</i> }</ins>
 };</code></pre></blockquote>
 
-Change 19.5.3.8 [tuple.rel]:
+Change 20.5.3.8 [tuple.rel]:
 
 > <pre><code><del>template&lt;class... TTypes, class... UTypes&gt;
   constexpr bool operator==(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes...&gt;& u);</del></code></pre>
@@ -1004,7 +1004,7 @@ constexpr bool operator>=(const tuple&lt;TTypes...&gt;& t, const tuple&lt;UTypes
 > *[Note:* The above definitions for comparison functions do not require <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as `t` and `u` are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the
 comparison. *—end note]*
 
-Change 19.6.2 [optional.syn]:
+Change 20.6.2 [optional.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -1059,7 +1059,7 @@ Change 19.6.2 [optional.syn]:
   [...]
 }</code></pre></blockquote>  
 
-Change 19.6.3 [optional.optional]:
+Change 20.6.3 [optional.optional]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T&gt;
@@ -1115,7 +1115,7 @@ Change 19.6.3 [optional.optional]:
   };
 }</code></pre></blockquote>
 
-Change 19.6.6 [optional.relops]:
+Change 20.6.6 [optional.relops]:
 
 > <pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator==(const optional<del>&lt;T&gt;</del>& x, const optional&lt;U&gt;& y);</code></pre>
 > <del>*Requires*</del><ins>*Mandates*</ins>: The expression `*x == *y` shall be well-formed and its result shall be convertible to `bool`. [*Note*: `T` need not be `Cpp17EqualityComparable`. —*end note*]  
@@ -1147,7 +1147,7 @@ Change 19.6.6 [optional.relops]:
 > <ins>*Returns*: If `x && y`, `*x <=> *y`; otherwise `bool(x) <=> bool(y)`.</ins>  
 > <ins>*Remarks*: Specializations of this function template for which `*x <=> *y` is a core constant expression shall be `constexpr` functions. This function is to be found via argument-dependent lookup only.</ins>
  
-Remove 19.6.7 [optional.nullops] (it is now fully expressed by the two hidden friends defined in the header):
+Remove 20.6.7 [optional.nullops] (it is now fully expressed by the two hidden friends defined in the header):
 
 > <pre><code><del>template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;& x, nullopt_t) noexcept;</del>
 <del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;& x) noexcept;</del></code></pre>
@@ -1157,7 +1157,7 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
 > <del>*Returns*: `bool(x)`.</del>
 > [...]
 
-Change 19.6.8 [optional.comp_with_t]:
+Change 20.6.8 [optional.comp_with_t]:
 
 > <pre><code>template&lt;<del>class T, </del>class U&gt; <ins>friend </ins>constexpr bool operator==(const optional<del>&lt;T&gt;</del>& x, const U& v);</code></pre>
 > <del>*Requires*</del><ins>*Mandates*</ins>: The expression `*x == v` shall be well-formed and its result shall be convertible to `bool`. [*Note*: `T` need not be `Cpp17EqualityComparable`. —*end note*]  
@@ -1214,7 +1214,7 @@ Change 19.6.8 [optional.comp_with_t]:
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
 
-Change 19.7.2 [variant.syn]:
+Change 20.7.2 [variant.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -1259,7 +1259,7 @@ Change 19.7.2 [variant.syn]:
   [...]
 }</code></pre></blockquote>  
 
-Change 19.7.3 [variant.variant]:
+Change 20.7.3 [variant.variant]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class... Types&gt;
@@ -1284,7 +1284,7 @@ Change 19.7.3 [variant.variant]:
   };
 }</code></pre></blockquote>
 
-Change 19.7.6 [variant.relops]:
+Change 20.7.6 [variant.relops]:
 
 > <pre><code><del>template&lt;class... Types&gt;</del>
 <ins>friend </ins>constexpr bool operator==(const variant<del>&lt;Types...&gt;</del>& v, const variant<del>&lt;Types...&gt;</del>& w);</code></pre>
@@ -1322,7 +1322,7 @@ Change 19.7.6 [variant.relops]:
 > <ins>*Returns*: Let `c` be `(v.index() + 1) <=> (w.index() + 1)`. If `c != 0`, `c`. Otherwise, `get<i>(v) <=> get<i>(w)` with `i` being `v.index()`.</ins>  
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
-Change 19.7.8 [variant.monostate]:
+Change 20.7.8 [variant.monostate]:
 
 <blockquote><pre><code><del>struct monostate{};</del>
 <ins>struct monostate {
@@ -1332,7 +1332,7 @@ Change 19.7.8 [variant.monostate]:
 
 <ins>[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</ins></blockquote>
 
-Remove 19.7.9 [variant.monostate.relops]:
+Remove 20.7.9 [variant.monostate.relops]:
 
 <blockquote><pre><code><del>constexpr bool operator==(monostate, monostate) noexcept { return true; }</del>
 <del>constexpr bool operator!=(monostate, monostate) noexcept { return false; }</del>
@@ -1343,7 +1343,7 @@ Remove 19.7.9 [variant.monostate.relops]:
 
 <del>[<i>Note</i>: monostate objects have only a single state; they thus always compare equal. —<i>end note</i>]</del></blockquote>
 
-Change 19.9.2 [template.bitset]:
+Change 20.9.2 [template.bitset]:
 
 <blockquote><pre><code>namespace std {
   template&lt;size_t N&gt; class bitset {
@@ -1357,14 +1357,14 @@ Change 19.9.2 [template.bitset]:
   };
 }</code></pre></blockquote>
 
-Change 19.9.2.2 [bitset.members]:
+Change 20.9.2.2 [bitset.members]:
 
 > <pre><code>bool operator==(const bitset&lt;N&gt;& rhs) const noexcept;</code></pre>
 > *Returns*: `true` if the value of each bit in `*this` equals the value of the corresponding bit in `rhs`.
 > <del><pre><code>bool operator!=(const bitset&lt;N&gt;& rhs) const noexcept;</code></pre></del>
 > <del>*Returns*: `true` if `!(*this == rhs)`.</del></blockquote>
 
-Change 19.10.2 [memory.syn]:
+Change 20.10.2 [memory.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -1464,7 +1464,7 @@ Change 19.10.2 [memory.syn]:
   [...]    
 }</code></pre></blockquote>
 
-Change 19.10.10 [default.allocator]:
+Change 20.10.10 [default.allocator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T&gt; class allocator {
@@ -1489,7 +1489,7 @@ Change 19.10.10 [default.allocator]:
   };
 }</code></pre></blockquote>
 
-Remove 19.10.10.2 [allocator.globals]:
+Remove 20.10.10.2 [allocator.globals]:
 
 > <pre><code><del>template&lt;class T, class U&gt;
   bool operator==(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</del></code></pre>
@@ -1498,7 +1498,7 @@ Remove 19.10.10.2 [allocator.globals]:
   bool operator!=(const allocator&lt;T&gt;&, const allocator&lt;U&gt;&) noexcept;</code></pre></del>
 > <del>*Returns*: `false`.</del>
 
-Change 19.11.1.2 [unique.ptr.single]:
+Change 20.11.1.2 [unique.ptr.single]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class D = default_delete&lt;T&gt;&gt; class unique_ptr {
@@ -1534,7 +1534,7 @@ Change 19.11.1.2 [unique.ptr.single]:
   };
 }</code></pre></blockquote>
 
-Change 19.11.1.3 [unique.ptr.runtime]:
+Change 20.11.1.3 [unique.ptr.runtime]:
 
 <blockquote><pre><code>namespace std {
   template<class T, class D> class unique_ptr<T[], D> {
@@ -1567,7 +1567,7 @@ Change 19.11.1.3 [unique.ptr.runtime]:
   };
 }</code></pre></blockquote>
 
-Change 19.11.1.5 [unique.ptr.special]:
+Change 20.11.1.5 [unique.ptr.special]:
 
 > <pre><code>template&lt;class T, class D&gt; void swap(unique_ptr&lt;T, D&gt;& x, unique_ptr&lt;T, D&gt;& y) noexcept;</code></pre>
 > *Remarks*: This function shall not participate in overload resolution unless `is_swappable_v<D>` is `true`.
@@ -1598,7 +1598,7 @@ Change 19.11.1.5 [unique.ptr.special]:
 > *Returns*: `!(x < y)`.  
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
-Change 19.11.3, [util.smartptr.shared]:
+Change 20.11.3, [util.smartptr.shared]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T&gt; class shared_ptr {
@@ -1629,7 +1629,7 @@ Change 19.11.3, [util.smartptr.shared]:
   };
 }</code></pre></blockquote>
 
-Remove all of 19.11.3.7 [util.smartptr.shared.cmp]:
+Remove all of 20.11.3.7 [util.smartptr.shared.cmp]:
 
 > <pre><code><del>template&lt;class T, class U&gt;</del>
 <del>  bool operator==(const shared_ptr&lt;T&gt;& a, const shared_ptr&lt;U&gt;& b) noexcept;</del></code></pre>
@@ -1639,7 +1639,7 @@ Remove all of 19.11.3.7 [util.smartptr.shared.cmp]:
 > <del>*Returns*: `less<>()(a.get(), b.get())`.</del>  
 > [...]
 
-Change 19.12.1 [mem.res.syn]:
+Change 20.12.1 [mem.res.syn]:
 
 <blockquote><pre><code>namespace std::pmr {
   // [mem.res.class], class memory_resource
@@ -1663,7 +1663,7 @@ Change 19.12.1 [mem.res.syn]:
   [...]
 }</code></pre></blockquote>
 
-Change 19.12.2 [mem.res.class]:
+Change 20.12.2 [mem.res.class]:
 
 <blockquote><pre><code>namespace std::pmr {
   class memory_resource {
@@ -1691,14 +1691,14 @@ Change 19.12.2 [mem.res.class]:
   };
 }</code></pre></blockquote>
 
-Change 19.12.2.3 [mem.res.eq]:
+Change 20.12.2.3 [mem.res.eq]:
 
 > <pre><code><ins>friend </ins>bool operator==(const memory_resource& a, const memory_resource& b) noexcept;</code></pre>
 > *Returns*: `&a == &b || a.is_equal(b)`.
 > <pre><code><del>bool operator!=(const memory_resource& a, const memory_resource& b) noexcept;</del></code></pre>
 > <del>*Returns*: `!(a == b)`.</del>
 
-Change 19.12.3 [mem.poly.allocator.class]:
+Change 20.12.3 [mem.poly.allocator.class]:
 
 <blockquote><pre><code>namespace std::pmr {
   template&lt;class Tp&gt; class polymorphic_allocator {
@@ -1715,7 +1715,7 @@ Change 19.12.3 [mem.poly.allocator.class]:
   };
 }</code></pre></blockquote>
 
-Change 19.12.3.3 [mem.poly.allocator.eq]:
+Change 20.12.3.3 [mem.poly.allocator.eq]:
 
 > <pre><code>template&lt;<del>class T1, </del>class T2&gt;
   <ins>friend </ins>bool operator==(const polymorphic_allocator<del>&lt;T1&gt;</del>& a,
@@ -1727,7 +1727,7 @@ Change 19.12.3.3 [mem.poly.allocator.eq]:
 <del>                  const polymorphic_allocator&lt;T2&gt;& b) noexcept;</del></code></pre>
 > <del>*Returns*: `!(a == b)`.</del>
 
-Change 19.13.1 [allocator.adaptor.syn]:
+Change 20.13.1 [allocator.adaptor.syn]:
 
 <blockquote><pre><code>namespace std {
   // class template scoped allocator adaptor
@@ -1761,7 +1761,7 @@ Change 19.13.1 [allocator.adaptor.syn]:
       -&gt; scoped_allocator_adaptor&lt;OuterAlloc, InnerAllocs...&gt;;
 }</code></pre></blockquote>
 
-Change 19.13.5 [scoped.adaptor.operators]:
+Change 20.13.5 [scoped.adaptor.operators]:
 
 > <pre><code>template&lt;<del>class OuterA1, </del>class OuterA2, class... InnerAllocs&gt;
   <ins>friend </ins>bool operator==(const scoped_allocator_adaptor<del>&lt;OuterA1, InnerAllocs...&gt;</del>& a,
@@ -1776,7 +1776,7 @@ Change 19.13.5 [scoped.adaptor.operators]:
 <del>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;& b) noexcept;</del></code></pre>
 > <del>*Returns*: `!(a == b)`.</del>
 
-Change 19.14.1 [functional.syn]
+Change 20.14.1 [functional.syn]
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -1793,12 +1793,12 @@ Change 19.14.1 [functional.syn]
   [...]
 }</code></pre></blockquote>  
 
-Change 19.14.8 [range.cmp]/2 to add `<=>`:
+Change 20.14.8 [range.cmp]/2 to add `<=>`:
 
 > There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operators `<`, `>`, `<=`, <del>and</del> `>=`<ins>, and `<=>`</ins>.
 
 
-Change 19.14.16.2 [func.wrap.func]:
+Change 20.14.16.2 [func.wrap.func]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class&gt; class function; // not defined
@@ -1832,7 +1832,7 @@ Change 19.14.16.2 [func.wrap.func]:
   [...]
 }</code></pre></blockquote>  
 
-Remove 19.14.16.2.6 [func.wrap.func.nullptr]:
+Remove 20.14.16.2.6 [func.wrap.func.nullptr]:
 
 > <pre><code><del>template&lt;class R, class... ArgTypes&gt;</del>
 <del>  bool operator==(const function&lt;R(ArgTypes...)&gt;& f, nullptr_t) noexcept;</del>
@@ -1845,7 +1845,7 @@ Remove 19.14.16.2.6 [func.wrap.func.nullptr]:
 <del>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;& f) noexcept;</del></code></pre>
 > <del>*Returns*: `(bool)f`.</del>
 
-Add a new row to 19.15.4.3 [meta.unary.prop], the "Type property predicates" table:
+Add a new row to 20.15.4.3 [meta.unary.prop], the "Type property predicates" table:
 
 <blockquote><table>
 <tr><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
@@ -1854,7 +1854,7 @@ Add a new row to 19.15.4.3 [meta.unary.prop], the "Type property predicates" tab
 struct has_strong_structural_equality;</ins></code></pre></td><td><ins>The type <code>T</code> has strong structural equality ([class.compare.default])</ins>.</td><td><ins><code>T</code> shall be a complete type, <code class="language-cpp">cv void</code>, or an array of unknown bound.</ins></td></tr>
 </table></blockquote>
 
-Change 19.17.2 [type.index.overview]. Note that the relational operators on `type_index` are based on `type_info::before` (effectively `<`). `type_info` _could_ provide a three-way ordering function, but does not. Since an important motivation for the existence of `type_index` is to be used as a key in an associative container, we do not want to pessimize `<` - but do want to provide `<=>`.
+Change 20.17.2 [type.index.overview]. Note that the relational operators on `type_index` are based on `type_info::before` (effectively `<`). `type_info` _could_ provide a three-way ordering function, but does not. Since an important motivation for the existence of `type_index` is to be used as a key in an associative container, we do not want to pessimize `<` - but do want to provide `<=>`.
 
 <blockquote><pre><code>namespace std {
   class type_index {
@@ -1878,7 +1878,7 @@ Change 19.17.2 [type.index.overview]. Note that the relational operators on `typ
   };
 }</code></pre></blockquote>
 
-Change 19.17.3 [type.index.members]:
+Change 20.17.3 [type.index.members]:
 
 > <pre><code>type_index(const type_info& rhs) noexcept;</code></pre>
 > *Effects*: Constructs a `type_index` object, the equivalent of `target = &rhs`.
@@ -1903,7 +1903,7 @@ return strong_ordering::greater;</code></pre></blockquote>
 > *Returns*: `target->hash_code()`.
 > [...]
 
-Change 19.19.1 [charconv.syn]:
+Change 20.19.1 [charconv.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -1929,11 +1929,11 @@ Change 19.19.1 [charconv.syn]:
   [...]
 }</code></pre></blockquote>  
 
-## Clause 20: Strings library
+## Clause 21: Strings library
 
 Changing the operators for `basic_string` and `basic_string_view` and adding extra type alises to the `char_traits` specializations provided by the standard.
 
-Change 20.2.3.1 [char.traits.specializations.char]:
+Change 21.2.3.1 [char.traits.specializations.char]:
 
 <blockquote><pre><code>namespace std {
   template&lt;&gt; struct char_traits&lt;char&gt; {
@@ -1947,7 +1947,7 @@ Change 20.2.3.1 [char.traits.specializations.char]:
   };
 }</code></pre></blockquote>
 
-Change 20.2.3.2 [char.traits.specializations.char8_t]:
+Change 21.2.3.2 [char.traits.specializations.char8_t]:
 
 <blockquote><pre><code>namespace std {
   template&lt;&gt; struct char_traits&lt;char8_t&gt; {
@@ -1961,7 +1961,7 @@ Change 20.2.3.2 [char.traits.specializations.char8_t]:
   };
 }</code></pre></blockquote>
 
-Change 20.2.3.3 [char.traits.specializations.char16_t]:
+Change 21.2.3.3 [char.traits.specializations.char16_t]:
 
 <blockquote><pre><code>namespace std {
   template&lt;&gt; struct char_traits&lt;char16_t&gt; {
@@ -1975,7 +1975,7 @@ Change 20.2.3.3 [char.traits.specializations.char16_t]:
   };
 }</code></pre></blockquote>
 
-Change 20.2.3.4 [char.traits.specializations.char32_t]
+Change 21.2.3.4 [char.traits.specializations.char32_t]
 
 <blockquote><pre><code>namespace std {
   template&lt;&gt; struct char_traits&lt;char32_t&gt; {
@@ -1989,7 +1989,7 @@ Change 20.2.3.4 [char.traits.specializations.char32_t]
   };
 }</code></pre></blockquote>
 
-Change 20.2.3.5 [char.traits.specializations.wchar.t]
+Change 21.2.3.5 [char.traits.specializations.wchar.t]
 
 <blockquote><pre><code>namespace std {
   template&lt;&gt; struct char_traits&lt;wchar_t&gt; {
@@ -2003,7 +2003,7 @@ Change 20.2.3.5 [char.traits.specializations.wchar.t]
   };
 }</code></pre></blockquote>
 
-Change 20.3.1 [string.syn]:
+Change 21.3.1 [string.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2068,7 +2068,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 20.3.2 [basic.string]/3. Insert wherever the editor deems appropriate:
+Change 21.3.2 [basic.string]/3. Insert wherever the editor deems appropriate:
 
 <blockquote><pre><code>namespace std {
   template&lt;class charT, class traits = char_traits&lt;charT&gt;,
@@ -2083,7 +2083,7 @@ Change 20.3.2 [basic.string]/3. Insert wherever the editor deems appropriate:
   };
 }</code></pre></blockquote>
 
-Change 20.3.3.2 [string.cmp].
+Change 21.3.3.2 [string.cmp].
 
 <blockquote><pre><code><del>template&lt;class charT, class traits, class Allocator&gt;
   bool operator==(const basic_string&lt;charT, traits, Allocator&gt;& lhs,
@@ -2147,7 +2147,7 @@ template&lt;class charT, class traits, class Allocator&gt;
   <pre><code>return basic_string_view&lt;charT, traits&gt;(lhs) <del>op</del> <ins>&lt;=&gt;</ins> basic_string_view&lt;charT, traits&gt;(rhs);</code></pre>
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
 
-Change 20.4.1 [string.view.synop]:
+Change 21.4.1 [string.view.synop]:
 
 <blockquote><pre><code>namespace std {
   // [string.view.template], class template basic_string_view
@@ -2177,7 +2177,7 @@ Change 20.4.1 [string.view.synop]:
   [...]
 }</code></pre></blockquote>
   
-Change 20.4.2 [string.view.template], insert wherever the editor deems appropriate
+Change 21.4.2 [string.view.template], insert wherever the editor deems appropriate
 
 <blockquote><pre><code>template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;
 class basic_string_view {
@@ -2187,7 +2187,7 @@ class basic_string_view {
   [...]
 };</code></pre></blockquote>
 
-Remove the entirety of 20.4.3 [string.view.comparison]. The proposed two hidden friend declarations satisfy the requirements without needing extra wording. Replace it with the following:
+Remove the entirety of 21.4.3 [string.view.comparison]. The proposed two hidden friend declarations satisfy the requirements without needing extra wording. Replace it with the following:
 
 > <pre><code>friend constexpr bool operator==(basic_string_view lhs, basic_string_view rhs) noexcept;</code></pre>
 > *Returns:* `lhs.compare(rhs) == 0`.  
@@ -2197,9 +2197,9 @@ Remove the entirety of 20.4.3 [string.view.comparison]. The proposed two hidden 
 > *Returns:* `static_cast<R>(lhs.compare(rhs) <=> 0)`.  
 > *Remarks*: This function is to be found via argument-dependent lookup only.
   
-## Clause 21: Containers library
+## Clause 22: Containers library
 
-Change 21.3.2 [array.syn]:
+Change 22.3.2 [array.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2224,7 +2224,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.3.3 [deque.syn]:
+Change 22.3.3 [deque.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2252,7 +2252,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.3.4 [forward_list.syn]:
+Change 22.3.4 [forward_list.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2280,7 +2280,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.3.5 [list.syn]:
+Change 22.3.5 [list.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2308,7 +2308,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.3.6 [vector.syn]:
+Change 22.3.6 [vector.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2336,7 +2336,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Add to 21.2.1 [container.requirements.general], paragraph 4:
+Add to 22.2.1 [container.requirements.general], paragraph 4:
 
 > In Tables 62, 63, and 64 `X` denotes a container class containing objects of type `T`, `a` and `b` denote values of type `X`, <ins>`i` and `j` denote values of type (possibly-const) `X::iterator`,</ins> `u` denotes an identifier, `r` denotes a non-const value of type `X`, and `rv` denotes a non-const rvalue of type `X`.
 
@@ -2347,7 +2347,7 @@ Add a row to Table 62 — Container requirements:
 <tr><td><pre><code><ins>i &lt;=&gt; j</ins></code></pre></td><td><ins><code>strong_ordering</code> if <code>X::iterator</code> meets the random access iterator requirements, otherwise <code>strong_equality</code></ins></td><td></td><td></td><td><ins>constant</ins></td></tr>
 </table></blockquote>
 
-Add to 21.2.1 [container.requirements.general], paragraph 7:
+Add to 22.2.1 [container.requirements.general], paragraph 7:
 
 > In the expressions
 > <pre><code>i == j
@@ -2360,7 +2360,7 @@ i > j
 i - j</code></pre>
 > where `i` and `j` denote objects of a container's `iterator` type, either or both may be replaced by an object of the container's `const_iterator` type referring to the same element with no change in semantics.
 
-Remove 21.2.1 [container.requirements.general] table 64 - the optional container operations are now just `<=>` instead of the four relational operators, and will be defined inline following the LWG guidance for `flat_map`.
+Remove 22.2.1 [container.requirements.general] table 64 - the optional container operations are now just `<=>` instead of the four relational operators, and will be defined inline following the LWG guidance for `flat_map`.
 
 <blockquote><del>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <code>lexicographical_compare</code> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.</del>
 
@@ -2378,7 +2378,7 @@ Remove 21.2.1 [container.requirements.general] table 64 - the optional container
 
 </blockquote>
 
-Change 21.3.7.1, paragraph 4 [array.overview]:
+Change 22.3.7.1, paragraph 4 [array.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, size_t N&gt;
@@ -2397,7 +2397,7 @@ Change 21.3.7.1, paragraph 4 [array.overview]:
     array(T, U...) -&gt; array&lt;T, 1 + sizeof...(U)&gt;;
 }</code></pre></blockquote>
 
-Change 21.3.8.1, paragraph 2 [deque.overview]:
+Change 22.3.8.1, paragraph 2 [deque.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -2417,7 +2417,7 @@ Change 21.3.8.1, paragraph 2 [deque.overview]:
   [...]
 }</code></pre></blockquote>  
 
-Change 21.3.9.1, paragraph 3 [forwardlist.overview]
+Change 22.3.9.1, paragraph 3 [forwardlist.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -2438,7 +2438,7 @@ Change 21.3.9.1, paragraph 3 [forwardlist.overview]
   [...]
 }</code></pre></blockquote>  
 
-Change 21.3.10.1, paragraph 2 [list.overview]
+Change 22.3.10.1, paragraph 2 [list.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -2459,7 +2459,7 @@ Change 21.3.10.1, paragraph 2 [list.overview]
   [...]  
 }</code></pre></blockquote>
 
-Change 21.3.11.1, paragraph 2 [vector.overview]
+Change 22.3.11.1, paragraph 2 [vector.overview]
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Allocator = allocator&lt;T&gt;&gt;
@@ -2479,7 +2479,7 @@ Change 21.3.11.1, paragraph 2 [vector.overview]
   [...]
 }</code></pre></blockquote>  
 
-Change 21.3.12 [vector.bool]:
+Change 22.3.12 [vector.bool]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Allocator&gt;
@@ -2497,7 +2497,7 @@ Change 21.3.12 [vector.bool]:
   };
 }</code></pre></blockquote>
 
-Change 21.4.2 [associative.map.syn]:
+Change 22.4.2 [associative.map.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2577,7 +2577,7 @@ namespace std {
   }
 }</code></pre></blockquote>
 
-Change 21.4.3 [associative.set.syn]:
+Change 22.4.3 [associative.set.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2653,7 +2653,7 @@ namespace std {
   }
 }</code></pre></blockquote>
 
-Change 21.4.4.1 [map.overview]:
+Change 22.4.4.1 [map.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
@@ -2677,7 +2677,7 @@ Change 21.4.4.1 [map.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 21.4.5.1 [multimap.overview]:
+Change 22.4.5.1 [multimap.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key, class T, class Compare = less&lt;Key&gt;,
@@ -2702,7 +2702,7 @@ Change 21.4.5.1 [multimap.overview]:
   [...]
 }</code></pre></blockquote>  
 
-Change 21.4.6.1 [set.overview]:
+Change 22.4.6.1 [set.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key, class Compare = less&lt;Key&gt;,
@@ -2726,7 +2726,7 @@ Change 21.4.6.1 [set.overview]:
   [...]
 }</code></pre></blockquote>  
 
-Change 21.4.7.1 [multiset.overview]:
+Change 22.4.7.1 [multiset.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key, class Compare = less&lt;Key&gt;,
@@ -2751,7 +2751,7 @@ Change 21.4.7.1 [multiset.overview]:
   [...]
 }</code></pre></blockquote>  
 
-Change 21.5.2 [unord.map.syn]:
+Change 22.5.2 [unord.map.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2794,7 +2794,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.5.3 [unord.set.syn]:
+Change 22.5.3 [unord.set.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2835,7 +2835,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 21.5.4.1 [unord.map.overview]:
+Change 22.5.4.1 [unord.map.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key,
@@ -2860,7 +2860,7 @@ Change 21.5.4.1 [unord.map.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 21.5.5.1 [unord.multimap.overview]:
+Change 22.5.5.1 [unord.multimap.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key,
@@ -2885,7 +2885,7 @@ Change 21.5.5.1 [unord.multimap.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 21.5.6.1 [unord.set.overview]:
+Change 22.5.6.1 [unord.set.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key,
@@ -2909,7 +2909,7 @@ Change 21.5.6.1 [unord.set.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 21.5.7.1 [unord.multiset.overview]:
+Change 22.5.7.1 [unord.multiset.overview]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Key,
@@ -2933,7 +2933,7 @@ Change 21.5.7.1 [unord.multiset.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 21.6.2 [queue.syn]:
+Change 22.6.2 [queue.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2963,7 +2963,7 @@ namespace std {
               priority_queue&lt;T, Container, Compare&gt;& y) noexcept(noexcept(x.swap(y)));
 }</code></pre></blockquote>
 
-Change 21.6.3 [stack.syn]:
+Change 22.6.3 [stack.syn]:
 
 <blockquote><pre><code>#include &lt;initializer_list&gt;
 
@@ -2987,7 +2987,7 @@ namespace std {
     void swap(stack&lt;T, Container&gt;& x, stack&lt;T, Container&gt;& y) noexcept(noexcept(x.swap(y)));
 }</code></pre></blockquote>
 
-Change 21.6.4.1 [queue.defn]:
+Change 22.6.4.1 [queue.defn]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Container = deque&lt;T&gt;&gt;
@@ -3046,14 +3046,14 @@ Change 21.6.4.1 [queue.defn]:
   [...]
 }</code></pre></blockquote>  
 
-Remove 21.6.4.4 [queue.ops] (as we've now defined them all inline in the header):
+Remove 22.6.4.4 [queue.ops] (as we've now defined them all inline in the header):
 
 > <pre><code><del>template&lt;class T, class Container&gt;
   bool operator==(const queue&lt;T, Container&gt;& x, const queue&lt;T, Container&gt;& y);</del></code></pre>
 > <del>*Returns*: `x.c == y.c`.</del>  
 > [...]
 
-Change 21.6.6.1 [stack.defn]:
+Change 22.6.6.1 [stack.defn]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class Container = deque&lt;T&gt;&gt;
@@ -3111,16 +3111,16 @@ Change 21.6.6.1 [stack.defn]:
   [...]
 }</code></pre></blockquote>
 
-Remove 21.6.6.4 [stack.ops] (as we've now defined them all inline in the header):
+Remove 22.6.6.4 [stack.ops] (as we've now defined them all inline in the header):
 
 > <pre><code><del>template&lt;class T, class Container&gt;
   bool operator==(const stack&lt;T, Container&gt;& x, const stack&lt;T, Container&gt;& y);</del></code></pre>
 > <del>*Returns*: `x.c == y.c`.</del>  
 > [...]
 
-## Clause 22: Iterators library
+## Clause 23: Iterators library
 
-Change 22.2 [iterator.synopsis]:
+Change 23.2 [iterator.synopsis]:
 
 <blockquote><pre><code>#include &lt;concepts&gt;
 
@@ -3208,7 +3208,7 @@ namespace std {
   [...]
 }</code></pre></blockquote>
 
-Change 22.5.1.1 [reverse.iterator]:
+Change 23.5.1.1 [reverse.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Iterator&gt;
@@ -3256,7 +3256,7 @@ Change 22.5.1.1 [reverse.iterator]:
   };
 }</code></pre></blockquote>
 
-Change 22.5.1.7 [reverse.iter.cmp]:
+Change 23.5.1.7 [reverse.iter.cmp]:
 
 > <pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
   <ins>friend </ins>constexpr bool operator==(
@@ -3307,7 +3307,7 @@ Change 22.5.1.7 [reverse.iter.cmp]:
 > <ins>*Returns*: `y.current <=> x.current`.</ins>  
 > <ins>*Remarks*: This function is more constrained than ([temp.constr.order]) each of the other relational operator function templates. This function is to be found via argument-dependent lookup only.</ins>
 
-Change 22.5.3.1 [move.iterator]:
+Change 23.5.3.1 [move.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class Iterator&gt;
@@ -3355,7 +3355,7 @@ Change 22.5.3.1 [move.iterator]:
   };
 }</code></pre></blockquote>
 
-Change 22.5.3.7 [move.iter.op.comp]:
+Change 23.5.3.7 [move.iter.op.comp]:
 
 > <pre><code>template&lt;<del>class Iterator1, </del>class Iterator2&gt;
   <ins>friend </ins>constexpr bool operator==(const move_iterator<del>&lt;Iterator1&gt;</del>& x,
@@ -3407,7 +3407,7 @@ template&lt;Sentinel&lt;Iterator&gt; S&gt;
 > <ins>*Returns*: `x.base() <=> y.base()`.</ins>  
 > <ins>*Remarks*: This function is more constrained than ([temp.constr.order]) each of the other relational operator function templates. This function is to be found via argument-dependent lookup only.</ins>
 
-Remove the `operator!=` from 22.5.4.1 [common.iterator]:
+Remove the `operator!=` from 23.5.4.1 [common.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;Iterator I, Sentinel&lt;I&gt; S&gt;
@@ -3434,7 +3434,7 @@ Remove the `operator!=` from 22.5.4.1 [common.iterator]:
   [...]
 }</code></pre></blockquote>
 
-Remove the `operator!=` from 22.5.4.6 [common.iter.cmp]:
+Remove the `operator!=` from 23.5.4.6 [common.iter.cmp]:
 
 > <pre><code><del>template&lt;class I2, Sentinel&lt;I&gt; S2&gt;
   requires Sentinel&lt;S, I2&gt;
@@ -3442,7 +3442,7 @@ friend bool operator!=(
   const common_iterator& x, const common_iterator&lt;I2, S2&gt;& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Change 22.5.6.1 [counted.iterator]:
+Change 23.5.6.1 [counted.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;Iterator I&gt;
@@ -3496,7 +3496,7 @@ Change 22.5.6.1 [counted.iterator]:
   [...]
 }</code></pre></blockquote>
 
-Change 22.5.6.6 [counted.iter.cmp]:
+Change 23.5.6.6 [counted.iter.cmp]:
 
 > <pre><code>template&lt;Common&lt;I&gt; I2&gt;
   friend constexpr bool operator==(
@@ -3539,7 +3539,7 @@ friend constexpr bool operator!=(
     const counted_iterator& x, const counted_iterator&lt;I2&gt;& y);</ins></code></pre>
 > <ins>*Effects*: Equivalent to: `return y <=> x;`</ins>
 
-Change 22.5.7.1 [unreachable.sentinel]:
+Change 23.5.7.1 [unreachable.sentinel]:
 
 <blockquote><pre><code>namespace std {
   struct unreachable_sentinel_t {
@@ -3555,7 +3555,7 @@ Change 22.5.7.1 [unreachable.sentinel]:
   };
 }</code></pre></blockquote>
 
-Remove 22.5.7.2 [unreachable.sentinel.cmp] (as it's now entirely defined in the synopsis):
+Remove 23.5.7.2 [unreachable.sentinel.cmp] (as it's now entirely defined in the synopsis):
 
 > <pre><code><del>template&lt;WeaklyIncrementable I&gt;
   friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept;
@@ -3568,7 +3568,7 @@ template&lt;WeaklyIncrementable I&gt;
   friend constexpr bool operator!=(const I&, unreachable_sentinel_t) noexcept;</del></code></pre>
 > <del>*Returns*: `true`.</del>
 
-Change 22.6.1 [istream.iterator]:
+Change 23.6.1 [istream.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class T, class charT = char, class traits = char_traits&lt;charT&gt;,
@@ -3610,7 +3610,7 @@ Change 22.6.1 [istream.iterator]:
   };
 }</code></pre></blockquote>
 
-Remove the specifications for `operator==` and `operator!=` from 22.6.1.2 [istream.iterator.ops]:
+Remove the specifications for `operator==` and `operator!=` from 23.6.1.2 [istream.iterator.ops]:
 
 > <pre><code><del>template&lt;class T, class charT, class traits, class Distance&gt;
   bool operator==(const istream_iterator&lt;T,charT,traits,Distance&gt;& x,
@@ -3626,7 +3626,7 @@ friend bool operator!=(default_sentinel_t x, const istream_iterator& y);
 friend bool operator!=(const istream_iterator& x, default_sentinel_t y);</del></code></pre>
 > <del>*Returns*: `!(x == y)`</del>
 
-Change 22.6.3 [istreambuf.iterator]:
+Change 23.6.3 [istreambuf.iterator]:
 
 <blockquote><pre><code>namespace std {
   template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;
@@ -3648,7 +3648,7 @@ Change 22.6.3 [istreambuf.iterator]:
   };
 }</code></pre></blockquote>
 
-Remove the specifications for `operator==` and `operator!=` from 22.6.3.3 [istreambuf.iterator.ops]:
+Remove the specifications for `operator==` and `operator!=` from 23.6.3.3 [istreambuf.iterator.ops]:
 
 > <pre><code><del>template&lt;class charT, class traits&gt;
   bool operator==(const istreambuf_iterator&lt;charT,traits&gt;& a,
@@ -3664,9 +3664,9 @@ friend bool operator!=(default_sentinel_t a, const istreambuf_iterator& b);
 friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);</del></code></pre>
 > <del>*Returns*: `!a.equal(b)`.</del>
 
-## Clause 23: Ranges library
+## Clause 24: Ranges library
 
-Change 23.6.3.3 [range.iota.iterator]:
+Change 24.6.3.3 [range.iota.iterator]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class W, class Bound&gt;
@@ -3696,7 +3696,7 @@ Change 23.6.3.3 [range.iota.iterator]:
   };
 }</code></pre></blockquote>
 
-Change 23.6.3.3 [range.iota.iterator], paragraphs 14-20:
+Change 24.6.3.3 [range.iota.iterator], paragraphs 14-20:
 
 > <pre><code>friend constexpr bool operator==(const iterator& x, const iterator& y)
   requires EqualityComparable&lt;W&gt;;</code></pre>
@@ -3715,7 +3715,7 @@ Change 23.6.3.3 [range.iota.iterator], paragraphs 14-20:
   requires StrictTotallyOrdered&lt;W&gt; && ThreeWayComparable&lt;W&gt;;</ins></code></pre>
 > <ins>*Effects*: Equivalent to: `return x.value_ <=> y.value_;`</ins>
 
-Remove obsolete equality operators 23.6.3.4 [range.iota.sentinel]:
+Remove obsolete equality operators 24.6.3.4 [range.iota.sentinel]:
 
 > <pre><code>namespace std::ranges {
   template&lt;class W, class Bound&gt;
@@ -3743,7 +3743,7 @@ Remove obsolete equality operators 23.6.3.4 [range.iota.sentinel]:
 > <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: return !(y == x);</del>
 
-Remove `operator!=` from 23.7.4.3 [range.filter.iterator]:
+Remove `operator!=` from 24.7.4.3 [range.filter.iterator]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class Pred&gt;
@@ -3770,7 +3770,7 @@ and
   requires EqualityComparable&lt;iterator_t&lt;V&gt;&gt;;</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Remove obsolete equality operators from 23.7.4.4 [range.filter.sentinel]:
+Remove obsolete equality operators from 24.7.4.4 [range.filter.sentinel]:
 
 > <pre><code>namespace std::ranges {
   template&lt;class V, class Pred&gt;
@@ -3800,7 +3800,7 @@ Remove obsolete equality operators from 23.7.4.4 [range.filter.sentinel]:
 > <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(y == x);`</del>
 
-Change 23.7.5.3 [range.transform.iterator]:
+Change 24.7.5.3 [range.transform.iterator]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class F&gt;
@@ -3826,7 +3826,7 @@ Change 23.7.5.3 [range.transform.iterator]:
   };
 }</code></pre></blockquote>
 
-Change 23.7.5.3 [range.transform.iterator], paragraphs 13-18:
+Change 24.7.5.3 [range.transform.iterator], paragraphs 13-18:
 
 > <pre><code>friend constexpr bool operator==(const iterator& x, const iterator& y)
   requires EqualityComparable&lt;iterator_t&lt;Base&gt;&gt;;</code></pre>
@@ -3845,7 +3845,7 @@ Change 23.7.5.3 [range.transform.iterator], paragraphs 13-18:
   requires RandomAccessRange&lt;Base&gt;; && ThreeWayComparable&lt;iterator_t&lt;Base&gt;&gt;</ins></code></pre>
 > <ins>*Effects*: Equivalent to: `return x.current_ <=> y.current_;`</ins>
 
-Remove obsolete equality operators from 23.7.5.4 [range.transform.sentinel]:
+Remove obsolete equality operators from 24.7.5.4 [range.transform.sentinel]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class F&gt;
@@ -3860,7 +3860,7 @@ Remove obsolete equality operators from 23.7.5.4 [range.transform.sentinel]:
   };
 }</code></pre></blockquote>
 
-and from 23.7.5.4 [range.transform.sentinel], paragraphs 4-7:
+and from 24.7.5.4 [range.transform.sentinel], paragraphs 4-7:
 
 > <pre><code>friend constexpr bool operator==(const iterator&lt;Const&gt;& x, const sentinel& y);</code></pre>
 > *Effects*: Equivalent to: `return x.current_ == y.end_`;
@@ -3871,7 +3871,7 @@ and from 23.7.5.4 [range.transform.sentinel], paragraphs 4-7:
 > <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator&lt;Const&gt;& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(y == x);`</del>
 
-Remove obsolete equality operators from 23.7.6.3 [range.take.sentinel]:
+Remove obsolete equality operators from 24.7.6.3 [range.take.sentinel]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V&gt;
@@ -3890,7 +3890,7 @@ Remove obsolete equality operators from 23.7.6.3 [range.take.sentinel]:
   };
 }</code></pre></blockquote>
 
-and from 23.7.6.3 [range.take.sentinel] paragraphs 4-5:
+and from 24.7.6.3 [range.take.sentinel] paragraphs 4-5:
 
 > <pre><code><del>friend constexpr bool operator==(const sentinel& x, const CI& y);</del>
 friend constexpr bool operator==(const CI& y, const sentinel& x);</code></pre>
@@ -3899,7 +3899,7 @@ friend constexpr bool operator==(const CI& y, const sentinel& x);</code></pre>
 friend constexpr bool operator!=(const CI& y, const sentinel& x);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Remove obsolete `operator!=` from 23.7.7.3 [range.join.iterator]:
+Remove obsolete `operator!=` from 24.7.7.3 [range.join.iterator]:
 
 <blockquote><pre><code>namespace std::ranges {
 template&lt;class V&gt;
@@ -3917,7 +3917,7 @@ template&lt;class V&gt;
   };
 }</code></pre></blockquote>
 
-and from 23.7.7.3 [range.join.iterator] paragraph 17:
+and from 24.7.7.3 [range.join.iterator] paragraph 17:
 
 > <pre><code>friend constexpr bool operator==(const iterator& x, const iterator& y)
   requires ref_is_glvalue && EqualityComparable&lt;iterator_t&lt;Base&gt;&gt; &&
@@ -3928,7 +3928,7 @@ and from 23.7.7.3 [range.join.iterator] paragraph 17:
            EqualityComparable&lt;iterator_t&lt;iter_reference_t&lt;iterator_t&lt;Base&gt;&gt;&gt;&gt;;</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Remove obsolete equality operators from 23.7.7.4 [range.join.sentinel]:
+Remove obsolete equality operators from 24.7.7.4 [range.join.sentinel]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V&gt;
@@ -3942,7 +3942,7 @@ Remove obsolete equality operators from 23.7.7.4 [range.join.sentinel]:
   };
 }</code></pre></blockquote>
 
-and from 23.7.7.4 [range.join.sentinel] paragraphs 3-6:
+and from 24.7.7.4 [range.join.sentinel] paragraphs 3-6:
 
 > <pre><code>friend constexpr bool operator==(const iterator&lt;Const&gt;& x, const sentinel& y);</code></pre>
 > *Effects*: Equivalent to: `return x.outer_ == y.end_;`
@@ -3953,7 +3953,7 @@ and from 23.7.7.4 [range.join.sentinel] paragraphs 3-6:
 > <pre><code><del>friend constexpr bool operator!=(const sentinel& x, const iterator&lt;Const&gt;& y);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(y == x);`</del>
 
-Remove obsolete equality operators from 23.7.8.3 [range.split.outer]:
+Remove obsolete equality operators from 24.7.8.3 [range.split.outer]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class Pattern&gt;
@@ -3972,7 +3972,7 @@ Remove obsolete equality operators from 23.7.8.3 [range.split.outer]:
   };
 }</code></pre></blockquote>
 
-and from 23.7.8.3 [range.split.outer] paragraphs 7-10:
+and from 24.7.8.3 [range.split.outer] paragraphs 7-10:
 
 > <pre><code>friend constexpr bool operator==(const outer_iterator& x, const outer_iterator& y)
   requires ForwardRange&lt;Base&gt;;</code></pre>
@@ -3987,7 +3987,7 @@ and from 23.7.8.3 [range.split.outer] paragraphs 7-10:
 friend constexpr bool operator!=(default_sentinel_t y, const outer_iterator& x);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-Remove obsolete equality operators from 23.7.8.5 [range.split.inner]:
+Remove obsolete equality operators from 24.7.8.5 [range.split.inner]:
 
 <blockquote><pre><code>namespace std::ranges {
   template&lt;class V, class Pattern&gt;
@@ -4007,7 +4007,7 @@ Remove obsolete equality operators from 23.7.8.5 [range.split.inner]:
   };
 }</code></pre></blockquote>
 
-and from 23.7.8.5 [ranges.split.inner] paragraphs 4-7:
+and from 24.7.8.5 [ranges.split.inner] paragraphs 4-7:
 
 > <pre><code>friend constexpr bool operator==(const inner_iterator& x, const inner_iterator& y)
   requires ForwardRange&lt;Base&gt;;</code></pre>
@@ -4033,9 +4033,9 @@ return false;</code></pre>
 friend constexpr bool operator!=(default_sentinel_t y, const inner_iterator& x);</del></code></pre>
 > <del>*Effects*: Equivalent to: `return !(x == y);`</del>
 
-## Clause 24: Algorithms library
+## Clause 25: Algorithms library
 
-Change 24.4 [algorithm.syn]:
+Change 25.4 [algorithm.syn]:
 
 <blockquote><pre><code>namespace std {
   [...]
@@ -4057,7 +4057,7 @@ Change 24.4 [algorithm.syn]:
   [...]
 }</code></pre></blockquote>
 
-Change 24.7.11 \[alg.3way\]:
+Change 25.7.11 \[alg.3way\]:
 
 <blockquote><del><code>template&lt;class T, class U&gt; constexpr auto compare_3way(const T& a, const U& b);</code>
 
@@ -4069,7 +4069,7 @@ Change 24.7.11 \[alg.3way\]:
 <li>Otherwise, the function is defined as deleted.
 </ul></del></blockquote>
     
-Change 24.7.11 [alg.3way] paragraph 2:
+Change 25.7.11 [alg.3way] paragraph 2:
 
 <blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2, class Cmp&gt;
   constexpr auto
@@ -4078,7 +4078,7 @@ Change 24.7.11 [alg.3way] paragraph 2:
                                  InputIterator2 b2, InputIterator2 e2,
                                  Cmp comp);</code></pre></blockquote>
     
-Change 24.7.11 \[alg.3way\] paragraph 4:
+Change 25.7.11 \[alg.3way\] paragraph 4:
 
 <blockquote><pre><code>template&lt;class InputIterator1, class InputIterator2&gt;
   constexpr auto
@@ -4094,9 +4094,9 @@ Change 24.7.11 \[alg.3way\] paragraph 4:
 <ins>return lexicographical_compare_three_way(b1, e1, b2, e2, compare_three_way());</ins></code></pre>             
 </blockquote>
 
-## Clause 25: Numerics library
+## Clause 26: Numerics library
 
-Remove obsolete equality operators from 25.4.1 [complex.syn]:
+Remove obsolete equality operators from 26.4.1 [complex.syn]:
 
 <blockquote><pre><code>namespace std {
   // [complex], class template complex
@@ -4120,7 +4120,7 @@ Remove obsolete equality operators from 25.4.1 [complex.syn]:
   [...]
 }</code></pre></blockquote>
 
-and in 25.4.6 [complex.ops]:
+and in 26.4.6 [complex.ops]:
 
 > <pre><code>template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;& lhs, const complex&lt;T&gt;& rhs);
 template&lt;class T&gt; constexpr bool operator==(const complex&lt;T&gt;& lhs, const T& rhs);
@@ -4132,7 +4132,7 @@ template&lt;class T&gt; constexpr bool operator!=(const complex&lt;T&gt;& lhs, c
 template&lt;class T&gt; constexpr bool operator!=(const T& lhs, const complex&lt;T&gt;& rhs);</del></code></pre>
 > <del>*Returns*: `rhs.real() != lhs.real() || rhs.imag() != lhs.imag()`.</del>
 
-Add `operator==` to `std::slice` in 25.7.4.1 [class.slice.overview]:
+Add `operator==` to `std::slice` in 26.7.4.1 [class.slice.overview]:
 
 <blockquote><pre><code>namespace std {
   class slice {
@@ -4148,16 +4148,16 @@ Add `operator==` to `std::slice` in 25.7.4.1 [class.slice.overview]:
   };
 }</code></pre></blockquote>
 
-and add a new subclause "Operators" after 25.7.4.3 [slice.access]:
+and add a new subclause "Operators" after 26.7.4.3 [slice.access]:
 
 > <pre><code><ins>friend bool operator==(const slice& x, const slice& y);</ins></code></pre>
 > <ins>*Effects*: Equivalent to <pre><code>return x.start() == y.start() &&
   x.size() == y.size() &&
   x.stride() == y.stride();</code></pre></ins>
 
-## Clause 26: Time library
+## Clause 27: Time library
 
-Change 26.2 [time.syn]:
+Change 27.2 [time.syn]:
 
 <blockquote><pre><code>namespace std {
   namespace chrono {
@@ -4443,7 +4443,7 @@ Change 26.2 [time.syn]:
   }
 }</code></pre></blockquote>
 
-Change 26.5 [time.duration]:
+Change 27.5 [time.duration]:
 
 <blockquote><pre><code>namespace std::chrono {
   template&lt;class Rep, class Period = ratio&lt;1&gt;&gt;
@@ -4473,7 +4473,7 @@ Change 26.5 [time.duration]:
   };
 }</code></pre></blockquote>
 
-Change 26.5.6 [time.duration.comparisons]:
+Change 27.5.6 [time.duration.comparisons]:
 
 In the function descriptions that follow, `CT` represents `common_type_t<A, B>`, where `A` and `B` are the types of the two arguments to the function.
 
@@ -4506,7 +4506,7 @@ In the function descriptions that follow, `CT` represents `common_type_t<A, B>`,
                                                               const duration&lt;Rep2, Period2&gt;& rhs);</ins></code></pre>
 > <ins>*Returns*: `CT(lhs).count() <=> CT(rhs).count()`</ins>
 
-Change 26.6 [time.point]:
+Change 27.6 [time.point]:
 
 <blockquote><pre><code>namespace std::chrono {
   template&lt;class Clock, class Duration = typename Clock::duration&gt;
@@ -4531,7 +4531,7 @@ Change 26.6 [time.point]:
   };
 }</code></pre></blockquote>
 
-Change 26.6.6 [time.point.comparisons]:
+Change 27.6.6 [time.point.comparisons]:
 
 > <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
   <ins>friend </ins>constexpr bool operator==(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
@@ -4562,7 +4562,7 @@ Change 26.6.6 [time.point.comparisons]:
     operator&lt;=&gt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);</ins></code></pre>
 > <ins>*Returns*: `lhs.time_since_epoch() <=> rhs.time_since_epoch()`.</ins>
 
-Change 26.8.3.1 [time.cal.day.overview]:
+Change 27.8.3.1 [time.cal.day.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class day {
@@ -4575,7 +4575,7 @@ Change 26.8.3.1 [time.cal.day.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.3.3 [time.cal.day.nonmembers]:
+Change 27.8.3.3 [time.cal.day.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const day& x, const day& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
@@ -4584,7 +4584,7 @@ Change 26.8.3.3 [time.cal.day.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
 
-Change 26.8.4.1 [time.cal.month.overview]:
+Change 27.8.4.1 [time.cal.month.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month {
@@ -4597,7 +4597,7 @@ Change 26.8.4.1 [time.cal.month.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.4.3 [time.cal.month.nonmembers]:
+Change 27.8.4.3 [time.cal.month.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month& x, const month& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
@@ -4606,7 +4606,7 @@ Change 26.8.4.3 [time.cal.month.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
 
-Change 26.8.5.1 [time.cal.year.overview]:
+Change 27.8.5.1 [time.cal.year.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year {
@@ -4619,7 +4619,7 @@ Change 26.8.5.1 [time.cal.year.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.5.3 [time.cal.year.nonmembers]:
+Change 27.8.5.3 [time.cal.year.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year& x, const year& y) noexcept;</code></pre>
 > *Returns*: `int{x} == int{y}`.
@@ -4628,7 +4628,7 @@ Change 26.8.5.3 [time.cal.year.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `int{x} <=> int{y}`.</ins>
 
-Change 26.8.6.1 [time.cal.wd.overview]:
+Change 27.8.6.1 [time.cal.wd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday {
@@ -4640,12 +4640,12 @@ Change 26.8.6.1 [time.cal.wd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.6.3 [time.cal.wd.nonmembers]:
+Change 27.8.6.3 [time.cal.wd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday& x, const weekday& y) noexcept;</code></pre>
 > *Returns*: `unsigned{x} == unsigned{y}`.
 
-Change 26.8.7.1 [time.cal.wdidx.overview]:
+Change 27.8.7.1 [time.cal.wdidx.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday_indexed {
@@ -4658,12 +4658,12 @@ Change 26.8.7.1 [time.cal.wdidx.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.7.3 [time.cal.wdidx.nonmembers]:
+Change 27.8.7.3 [time.cal.wdidx.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept;</code></pre>
 > *Returns*: `x.weekday() == y.weekday() && x.index() == y.index()`.
 
-Change 26.8.8.1 [time.cal.wdlast.overview]:
+Change 27.8.8.1 [time.cal.wdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class weekday_last {
@@ -4675,12 +4675,12 @@ Change 26.8.8.1 [time.cal.wdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.8.3 [time.cal.wdlast.nonmembers]:
+Change 27.8.8.3 [time.cal.wdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.weekday() == y.weekday()`.
 
-Change 26.8.9.1 [time.cal.md.overview]:
+Change 27.8.9.1 [time.cal.md.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_day {
@@ -4694,7 +4694,7 @@ Change 26.8.9.1 [time.cal.md.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.9.3 [time.cal.md.nonmembers]:
+Change 27.8.9.3 [time.cal.md.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_day& x, const month_day& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.day() == y.day()`.
@@ -4703,7 +4703,7 @@ Change 26.8.9.3 [time.cal.md.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day& x, const month_day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.month() <=> y.month()`. If `c != 0` returns `c`. Otherwise, returns `x.day() <=> y.day()`.</ins>
 
-Change 26.8.10.1 [time.cal.mdlast.overview]:
+Change 27.8.10.1 [time.cal.mdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_day_last {
@@ -4716,7 +4716,7 @@ Change 26.8.10.1 [time.cal.mdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.10.3 [time.cal.mdlast.nonmembers]:
+Change 27.8.10.3 [time.cal.mdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month()`.
@@ -4725,7 +4725,7 @@ Change 26.8.10.3 [time.cal.mdlast.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day_last& x, const month_day_last& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `x.month() <=> y.month()`.</ins>
 
-Change 26.8.11.1 [time.cal.mwd.overview]:
+Change 27.8.11.1 [time.cal.mwd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_weekday {
@@ -4738,12 +4738,12 @@ Change 26.8.11.1 [time.cal.mwd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.11.3 [time.cal.mwd.nonmembers]:
+Change 27.8.11.3 [time.cal.mwd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
 
-Change 26.8.12.1 [time.cal.mwdlast.overview]:
+Change 27.8.12.1 [time.cal.mwdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class month_weekday_last {
@@ -4756,12 +4756,12 @@ Change 26.8.12.1 [time.cal.mwdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.12.3 [time.cal.mwdlast.nonmembers]:
+Change 27.8.12.3 [time.cal.mwdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
 
-Change 26.8.13.1 [time.cal.ym.overview]:
+Change 27.8.13.1 [time.cal.ym.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month {
@@ -4775,7 +4775,7 @@ Change 26.8.13.1 [time.cal.ym.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.13.3 [time.cal.ym.nonmembers]:
+Change 27.8.13.3 [time.cal.ym.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month& x, const year_month& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month()`.
@@ -4784,7 +4784,7 @@ Change 26.8.13.3 [time.cal.ym.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month() <=> y.month()`.</ins>
 
-Change 26.8.14.1 [time.cal.ymd.overview]:
+Change 27.8.14.1 [time.cal.ymd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_day {
@@ -4799,7 +4799,7 @@ Change 26.8.14.1 [time.cal.ymd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.14.3 [time.cal.ymd.nonmembers]:
+Change 27.8.14.3 [time.cal.ymd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.day() == y.day()`.
@@ -4808,7 +4808,7 @@ Change 26.8.14.3 [time.cal.ymd.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day& x, const year_month_day& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Let `c2` be `x.month() <=> y.month()`. If `c2 != 0` returns `c2`. Otherwise, returns `x.day() <=> y.day()`.</ins>
 
-Change 26.8.15.1 [time.cal.ymdlast.overview]:
+Change 27.8.15.1 [time.cal.ymdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_day_last {
@@ -4822,7 +4822,7 @@ Change 26.8.15.1 [time.cal.ymdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.15.3 [time.cal.ymdlast.nonmembers]:
+Change 27.8.15.3 [time.cal.ymdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day_last& x, const year_month_day_last& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month_day_last() == y.month_day_last()`.
@@ -4831,7 +4831,7 @@ Change 26.8.15.3 [time.cal.ymdlast.nonmembers]:
 > <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day_last& x, const year_month_day_last& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month_day_last() <=> y.month_day_last()`.</ins>
 
-Change 26.8.16.1 [time.cal.ymwd.overview]:
+Change 27.8.16.1 [time.cal.ymwd.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_weekday {
@@ -4845,12 +4845,12 @@ Change 26.8.16.1 [time.cal.ymwd.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.16.3 [time.cal.ymwd.nonmembers]:
+Change 27.8.16.3 [time.cal.ymwd.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday& x, const year_month_weekday& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
 
-Change 26.8.17.1 [time.cal.ymwdlast.overview]:
+Change 27.8.17.1 [time.cal.ymwdlast.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class year_month_weekday_last {
@@ -4864,12 +4864,12 @@ Change 26.8.17.1 [time.cal.ymwdlast.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.8.17.3 [time.cal.ymwdlast.nonmembers]:
+Change 27.8.17.3 [time.cal.ymwdlast.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday_last& x, const year_month_weekday_last& y) noexcept;</code></pre>
 > *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
 
-Change 26.10.5.1 [time.zone.overview]:
+Change 27.10.5.1 [time.zone.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class time_zone {
@@ -4885,7 +4885,7 @@ Change 26.10.5.1 [time.zone.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.10.5.3 [time.zone.nonmembers]:
+Change 27.10.5.3 [time.zone.nonmembers]:
 
 > <pre><code><ins>friend </ins>bool operator==(const time_zone& x, const time_zone& y) noexcept;</code></pre>
 > *Returns*: `x.name() == y.name()`.
@@ -4894,7 +4894,7 @@ Change 26.10.5.3 [time.zone.nonmembers]:
 > <pre><code><ins>strong_ordering operator<=>(const time_zone& x, const time_zone& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `x.name() <=> y.name()`.</ins>
 
-Change 26.10.7.1 [time.zone.zonedtime.overview]:
+Change 27.10.7.1 [time.zone.zonedtime.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   template<class Duration, class TimeZonePtr = const time_zone*>
@@ -4910,7 +4910,7 @@ Change 26.10.7.1 [time.zone.zonedtime.overview]:
   [...]
 }</code></pre></blockquote>
 
-Change 26.10.7.4 [time.zone.zonedtime.nonmembers]:
+Change 27.10.7.4 [time.zone.zonedtime.nonmembers]:
 
 > <pre><code>template&lt;<del>class Duration1, </del>class Duration2<del>, class TimeZonePtr</del>&gt;
   <ins>friend  </ins>bool operator==(const zoned_time<del>&lt;Duration1, TimeZonePtr&gt;</del>& x,
@@ -4921,7 +4921,7 @@ Change 26.10.7.4 [time.zone.zonedtime.nonmembers]:
                   const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</del></code></pre>
 > <del>*Returns*: `!(x == y)`.</del>
 
-Change 26.10.8.1 [time.zone.leap.overview]:
+Change 27.10.8.1 [time.zone.leap.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class leap {
@@ -4943,7 +4943,7 @@ Change 26.10.8.1 [time.zone.leap.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.10.8.3 [time.zone.leap.nonmembers]:
+Change 27.10.8.3 [time.zone.leap.nonmembers]:
 
 > <pre><code><ins>friend </ins>constexpr bool operator==(const leap& x, const leap& y) noexcept;</code></pre>
 > *Returns*: `x.date() == y.date()`.
@@ -4991,7 +4991,7 @@ Change 26.10.8.3 [time.zone.leap.nonmembers]:
   constexpr bool operator&gt;=(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
 > <del>*Returns*: `!(x < y)`.</del>
 
-Change 26.10.9.1 [time.zone.link.overview]:
+Change 27.10.9.1 [time.zone.link.overview]:
 
 <blockquote><pre><code>namespace std::chrono {
   class link {
@@ -5009,7 +5009,7 @@ Change 26.10.9.1 [time.zone.link.overview]:
   };
 }</code></pre></blockquote>
 
-Change 26.10.9.3 [time.zone.link.nonmembers]:
+Change 27.10.9.3 [time.zone.link.nonmembers]:
 
 > <pre><code><ins>friend </ins>bool operator==(const link& x, const link& y) noexcept;</code></pre>
 > *Returns*: `x.name() == y.name()`.
@@ -5018,9 +5018,9 @@ Change 26.10.9.3 [time.zone.link.nonmembers]:
 > <pre><code><ins>strong_ordering operator<=>(const link& x, const link& y) noexcept;</ins></code></pre>
 > <ins>*Returns*: `x.name() <=> y.name()`.</ins>
 
-## Clause 27: Localization library
+## Clause 28: Localization library
 
-Change 27.3.1 [locale]:
+Change 28.3.1 [locale]:
 
 <blockquote><pre><code>namespace std {
   class locale {
@@ -5035,7 +5035,7 @@ Change 27.3.1 [locale]:
   };
 }</code></pre></blockquote>
 
-Change 27.3.1.4 [locale.operators]:
+Change 28.3.1.4 [locale.operators]:
 
 > <pre><code>bool operator==(const locale& other) const;</code></pre>
 > *Returns*: `true` if both arguments are the same locale, or one is a copy of the other, or each has a name and the names are identical; `false` otherwise.
@@ -5043,18 +5043,18 @@ Change 27.3.1.4 [locale.operators]:
 > <del>*Returns*: `!(*this == other)`.</del>
 
 
-## Clause 28: Input/output library
+## Clause 29: Input/output library
 
 TBD
 
-## Clause 29: Regular expressions library
+## Clause 30: Regular expressions library
 
 TBD
 
-## Clause 30: Atomic operations library
+## Clause 31: Atomic operations library
 
 TBD
 
-## Clause 31: Thread support library
+## Clause 32: Thread support library
 
 TBD
