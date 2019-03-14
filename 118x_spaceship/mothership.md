@@ -4157,7 +4157,866 @@ and add a new subclause "Operators" after 25.7.4.3 [slice.access]:
 
 ## Clause 26: Time library
 
-TBD
+Change 27.2 [time.syn]:
+
+<blockquote><pre><code>namespace std {
+  namespace chrono {
+    [...]
+<del>    // [time.duration.comparisons], duration comparisons
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator==(const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator!=(const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator&lt; (const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator&gt; (const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator&lt;=(const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+      constexpr bool operator&gt;=(const duration&lt;Rep1, Period1&gt;& lhs,
+                                const duration&lt;Rep2, Period2&gt;& rhs);</del>
+                                
+    [...]
+    
+<del>    // [time.point.comparisons], time_point comparisons
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator==(const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator!=(const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator&lt; (const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator&gt; (const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator&lt;=(const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Clock, class Duration1, class Duration2&gt;
+       constexpr bool operator&gt;=(const time_point&lt;Clock, Duration1&gt;& lhs,
+                                 const time_point&lt;Clock, Duration2&gt;& rhs);</del>
+                                 
+    [...]
+    
+    // [time.cal.day], class day
+    class day;
+
+<del>    constexpr bool operator==(const day& x, const day& y) noexcept;
+    constexpr bool operator!=(const day& x, const day& y) noexcept;
+    constexpr bool operator< (const day& x, const day& y) noexcept;
+    constexpr bool operator> (const day& x, const day& y) noexcept;
+    constexpr bool operator<=(const day& x, const day& y) noexcept;
+    constexpr bool operator>=(const day& x, const day& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.month], class month
+    class month;
+
+<del>    constexpr bool operator==(const month& x, const month& y) noexcept;
+    constexpr bool operator!=(const month& x, const month& y) noexcept;
+    constexpr bool operator< (const month& x, const month& y) noexcept;
+    constexpr bool operator> (const month& x, const month& y) noexcept;
+    constexpr bool operator<=(const month& x, const month& y) noexcept;
+    constexpr bool operator>=(const month& x, const month& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.year], class year
+    class year;
+
+<del>    constexpr bool operator==(const year& x, const year& y) noexcept;
+    constexpr bool operator!=(const year& x, const year& y) noexcept;
+    constexpr bool operator< (const year& x, const year& y) noexcept;
+    constexpr bool operator> (const year& x, const year& y) noexcept;
+    constexpr bool operator<=(const year& x, const year& y) noexcept;
+    constexpr bool operator>=(const year& x, const year& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.wd], class weekday
+    class weekday;
+
+<del>    constexpr bool operator==(const weekday& x, const weekday& y) noexcept;
+    constexpr bool operator!=(const weekday& x, const weekday& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.wdidx], class weekday_indexed
+    class weekday_indexed;
+
+<del>    constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept;
+    constexpr bool operator!=(const weekday_indexed& x, const weekday_indexed& y) noexcept;</del>
+
+    [...]
+    
+    // [time.cal.wdlast], class weekday_last
+    class weekday_last;
+
+<del>    constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept;
+    constexpr bool operator!=(const weekday_last& x, const weekday_last& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.md], class month_day
+    class month_day;
+
+<del>    constexpr bool operator==(const month_day& x, const month_day& y) noexcept;
+    constexpr bool operator!=(const month_day& x, const month_day& y) noexcept;
+    constexpr bool operator< (const month_day& x, const month_day& y) noexcept;
+    constexpr bool operator> (const month_day& x, const month_day& y) noexcept;
+    constexpr bool operator<=(const month_day& x, const month_day& y) noexcept;
+    constexpr bool operator>=(const month_day& x, const month_day& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.mdlast], class month_day_last
+    class month_day_last;
+
+<del>    constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept;
+    constexpr bool operator!=(const month_day_last& x, const month_day_last& y) noexcept;
+    constexpr bool operator< (const month_day_last& x, const month_day_last& y) noexcept;
+    constexpr bool operator> (const month_day_last& x, const month_day_last& y) noexcept;
+    constexpr bool operator<=(const month_day_last& x, const month_day_last& y) noexcept;
+    constexpr bool operator>=(const month_day_last& x, const month_day_last& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.mwd], class month_weekday
+    class month_weekday;
+
+<del>    constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept;
+    constexpr bool operator!=(const month_weekday& x, const month_weekday& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.mwdlast], class month_weekday_last
+    class month_weekday_last;
+
+<del>    constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept;
+    constexpr bool operator!=(const month_weekday_last& x, const month_weekday_last& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.ym], class year_month
+    class year_month;
+
+<del>    constexpr bool operator==(const year_month& x, const year_month& y) noexcept;
+    constexpr bool operator!=(const year_month& x, const year_month& y) noexcept;
+    constexpr bool operator< (const year_month& x, const year_month& y) noexcept;
+    constexpr bool operator> (const year_month& x, const year_month& y) noexcept;
+    constexpr bool operator<=(const year_month& x, const year_month& y) noexcept;
+    constexpr bool operator>=(const year_month& x, const year_month& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.ymd], class year_month_day
+    class year_month_day;
+
+<del>    constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept;
+    constexpr bool operator!=(const year_month_day& x, const year_month_day& y) noexcept;
+    constexpr bool operator< (const year_month_day& x, const year_month_day& y) noexcept;
+    constexpr bool operator> (const year_month_day& x, const year_month_day& y) noexcept;
+    constexpr bool operator<=(const year_month_day& x, const year_month_day& y) noexcept;
+    constexpr bool operator>=(const year_month_day& x, const year_month_day& y) noexcept;</del>
+    
+    [...]
+    
+    // [time.cal.ymdlast], class year_month_day_last
+    class year_month_day_last;
+
+<del>    constexpr bool operator==(const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;
+    constexpr bool operator!=(const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;
+    constexpr bool operator< (const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;
+    constexpr bool operator> (const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;
+    constexpr bool operator<=(const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;
+    constexpr bool operator>=(const year_month_day_last& x,
+                              const year_month_day_last& y) noexcept;</del>
+                              
+    [...]
+    
+    // [time.cal.ymwd], class year_month_weekday
+    class year_month_weekday;
+
+<del>    constexpr bool operator==(const year_month_weekday& x,
+                              const year_month_weekday& y) noexcept;
+    constexpr bool operator!=(const year_month_weekday& x,
+                              const year_month_weekday& y) noexcept;</del>
+                              
+    [...]
+    
+    // [time.cal.ymwdlast], class year_month_weekday_last
+    class year_month_weekday_last;
+
+<del>    constexpr bool operator==(const year_month_weekday_last& x,
+                              const year_month_weekday_last& y) noexcept;
+    constexpr bool operator!=(const year_month_weekday_last& x,
+                              const year_month_weekday_last& y) noexcept;</del>
+                              
+    [...]
+    
+    // [time.zone.timezone], class time_zone
+    enum class choose {earliest, latest};
+    class time_zone;
+
+<del>    bool operator==(const time_zone& x, const time_zone& y) noexcept;
+    bool operator!=(const time_zone& x, const time_zone& y) noexcept;
+    
+    bool operator<(const time_zone& x, const time_zone& y) noexcept;
+    bool operator>(const time_zone& x, const time_zone& y) noexcept;
+    bool operator<=(const time_zone& x, const time_zone& y) noexcept;
+    bool operator>=(const time_zone& x, const time_zone& y) noexcept;</del>    
+    [...]
+    
+    // [time.zone.zonedtime], class template zoned_time
+    template&lt;class Duration, class TimeZonePtr = const time_zone*&gt; class zoned_time;
+
+    using zoned_seconds = zoned_time<seconds>;
+
+<del>    template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;
+      bool operator==(const zoned_time&lt;Duration1, TimeZonePtr&gt;& x,
+                      const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);
+
+    template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;
+      bool operator!=(const zoned_time&lt;Duration1, TimeZonePtr&gt;& x,
+                      const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</del>
+                      
+    [...]
+    
+    // [time.zone.leap], leap second support
+    class leap;
+
+<del>    bool operator==(const leap& x, const leap& y);
+    bool operator!=(const leap& x, const leap& y);
+    bool operator&lt; (const leap& x, const leap& y);
+    bool operator&gt; (const leap& x, const leap& y);
+    bool operator&lt;=(const leap& x, const leap& y);
+    bool operator&gt;=(const leap& x, const leap& y);</del>
+
+<Del>    template&lt;class Duration&gt;
+      bool operator==(const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator==(const sys_time&lt;Duration&gt;& x, const leap& y);
+    template&lt;class Duration&gt;
+      bool operator!=(const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator!=(const sys_time&lt;Duration&gt;& x, const leap& y);
+    template&lt;class Duration&gt;
+      bool operator&lt; (const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator&lt; (const sys_time&lt;Duration&gt;& x, const leap& y);
+    template&lt;class Duration&gt;
+      bool operator&gt; (const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator&gt; (const sys_time&lt;Duration&gt;& x, const leap& y);
+    template&lt;class Duration&gt;
+      bool operator&lt;=(const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator&lt;=(const sys_time&lt;Duration&gt;& x, const leap& y);
+    template&lt;class Duration&gt;
+      bool operator&gt;=(const leap& x, const sys_time&lt;Duration&gt;& y);
+    template&lt;class Duration&gt;
+      bool operator&gt;=(const sys_time&lt;Duration&gt;& x, const leap& y);</del>
+
+    // [time.zone.link], class link
+    class link;
+
+<del>    bool operator==(const link& x, const link& y);
+    bool operator!=(const link& x, const link& y);
+    bool operator&lt; (const link& x, const link& y);
+    bool operator&gt; (const link& x, const link& y);
+    bool operator&lt;=(const link& x, const link& y);
+    bool operator&gt;=(const link& x, const link& y);</del>
+  }
+}</code></pre></blockquote>
+
+Change 27.5 [time.duration]:
+
+<blockquote><pre><code>namespace std::chrono {
+  template&lt;class Rep, class Period = ratio&lt;1&gt;&gt;
+  class duration {
+  public:
+    using rep    = Rep;
+    using period = typename Period::type;
+
+  private:
+    rep rep_;       // exposition only
+
+  public:
+    [...]
+<ins>    // [time.duration.comparisons], duration comparisons
+    template&lt;class Rep2, class Period2&gt;
+      friend constexpr bool operator==(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep2, class Period2&gt;
+      friend constexpr bool operator&lt;(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep2, class Period2&gt;
+      friend constexpr bool operator&gt;(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep2, class Period2&gt;
+      friend constexpr bool operator&lt;=(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep2, class Period2&gt;
+      friend constexpr bool operator&gt;=(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);
+    template&lt;class Rep2, class Period2&gt; requires <i>see below</i>
+      friend constexpr <i>see below</i> operator&lt;=&gt;(const duration& lhs, const duration&lt;Rep2, Period2&gt;& rhs);</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.5.6 [time.duration.comparisons]:
+
+In the function descriptions that follow, `CT` represents `common_type_t<A, B>`, where `A` and `B` are the types of the two arguments to the function.
+
+> <pre><code>template&lt;<del>class Rep1, class Period1, </del>class Rep2, class Period2&gt;
+  <ins>friend</ins> constexpr bool operator==(const duration<del>&lt;Rep1, Period1&gt;</del>& lhs,
+                            const duration&lt;Rep2, Period2&gt;& rhs);</code></pre>
+> *Returns*: `CT(lhs).count() == CT(rhs).count()`.
+> <pre><code><del>template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+  constepxr bool operator!=(const duration&lt;Rep1, Period1&gt;& lhs,
+                            const duration&lt;Rep2, Period2&gt;& rhs);</del></code></pre>
+> <del>*Returns*: `!(lhs == rhs)`.</del>
+> <pre><code>template&lt;<del>class Rep1, class Period1, </del>class Rep2, class Period2&gt;
+  <ins>friend</ins> constexpr bool operator&lt;(const duration<del>&lt;Rep1, Period1&gt;</del>& lhs,
+                           const duration&lt;Rep2, Period2&gt;& rhs);</code></pre>
+> *Returns*: `CT(lhs).count() < CT(rhs).count()`.
+> <pre><code>template&lt;<del>class Rep1, class Period1, </del>class Rep2, class Period2&gt;
+  <ins>friend</ins> constexpr bool operator&gt;(const duration<del>&lt;Rep1, Period1&gt;</del>& lhs,
+                           const duration&lt;Rep2, Period2&gt;& rhs);</code></pre>
+> *Returns*: `rhs < lhs`.
+> <pre><code>template&lt;<del>class Rep1, class Period1, </del>class Rep2, class Period2&gt;
+  <ins>friend</ins> constexpr bool operator&lt;=(const duration<del>&lt;Rep1, Period1&gt;</del>& lhs,
+                            const duration&lt;Rep2, Period2&gt;& rhs);</code></pre>
+> *Returns*: `!(rhs < lhs)`.
+> <pre><code>template&lt;<del>class Rep1, class Period1, </del>class Rep2, class Period2&gt;
+  <ins>friend</ins> constexpr bool operator&gt;=(const duration<del>&lt;Rep1, Period1&gt;</del>& lhs,
+                            const duration&lt;Rep2, Period2&gt;& rhs);</code></pre>
+> *Returns*: `!(lhs < rhs)`.
+> <pre><code><ins>template&lt;class Rep2, class Period2&gt; requires ThreeWayComparable&lt;typename CT::rep&gt;
+  friend constexpr compare_three_way_result_t&lt;typename CT::rep&gt; operator&lt;=&gt;(const duration& lhs,
+                                                              const duration&lt;Rep2, Period2&gt;& rhs);</ins></code></pre>
+> <ins>*Returns*: `CT(lhs).count() <=> CT(rhs).count()`</ins>
+
+Change 27.6 [time.point]:
+
+<blockquote><pre><code>namespace std::chrono {
+  template&lt;class Clock, class Duration = typename Clock::duration&gt;
+  class time_point {
+  public:
+    [...]
+    
+<ins>    // [time.point.comparisons], time_point comparisons
+    template&lt;class Duration2&gt;
+      friend constexpr bool operator==(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Duration2&gt;
+      friend constexpr bool operator&lt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Duration2&gt;
+      friend constexpr bool operator&gt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Duration2&gt;
+      friend constexpr bool operator&lt;=(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;class Duration2&gt;
+      friend constexpr bool operator&gt;=(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);
+    template&lt;ThreeWayComparableWith&lt;Duration&gt; Duration2&gt;
+      friend constexpr compare_three_way_result_t&lt;Duration, Duration2&gt;
+        operator&lt;=&gt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.6.6 [time.point.comparisons]:
+
+> <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
+  <ins>friend </ins>constexpr bool operator==(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
+                            const time_point&lt;Clock, Duration2&gt;& rhs);</code></pre>
+> *Returns*: `lhs.time_since_epoch() == rhs.time_since_epoch()`.
+> <pre><code><del>template&lt;class Clock, class Duration1, class Duration2&gt;
+  constexpr bool operator!=(const time_point&lt;Clock, Duration1&gt;& lhs,
+                            const time_point&lt;Clock, Duration2&gt;& rhs);</del></code></pre>
+> <del>*Returns*: `!(lhs == rhs)`.</del>
+> <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
+  <ins>friend </ins>constexpr bool operator&lt;(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
+                           const time_point&lt;Clock, Duration2&gt;& rhs);</code></pre>
+> *Returns*: `lhs.time_since_epoch() < rhs.time_since_epoch()`.
+> <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
+  <ins>friend </ins>constexpr bool operator&gt;(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
+                           const time_point&lt;Clock, Duration2&gt;& rhs);</code></pre>
+> *Returns*: `rhs < lhs`.
+> <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
+  <ins>friend </ins>constexpr bool operator&lt;=(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
+                            const time_point&lt;Clock, Duration2&gt;& rhs);</code></pre>
+> *Returns*: `!(rhs < lhs)`.
+> <pre><code>template&lt;<del>class Clock, class Duration1, </del>class Duration2&gt;
+  <ins>friend </ins>constexpr bool operator&gt;=(const time_point<del>&lt;Clock, Duration1&gt;</del>& lhs,
+                            const time_point&lt;Clock, Duration2&gt;& rhs);</code></pre>
+> *Returns*: `!(lhs < rhs)`.
+> <pre><code><ins>template&lt;ThreeWayComparableWith&lt;Duration&gt; Duration2&gt;
+  friend constexpr compare_three_way_result_t&lt;Duration, Duration2&gt;
+    operator&lt;=&gt;(const time_point& lhs, const time_point&lt;Clock, Duration2&gt;& rhs);</ins></code></pre>
+> <ins>*Returns*: `lhs.time_since_epoch() <=> rhs.time_since_epoch()`.</ins>
+
+Change 27.8.3.1 [time.cal.day.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class day {
+    unsigned char d_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const day& x, const day& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.3.3 [time.cal.day.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const day& x, const day& y) noexcept;</code></pre>
+> *Returns*: `unsigned{x} == unsigned{y}`.
+> <pre><code><del>constexpr bool operator<(const day& x, const day& y) noexcept;</del></code></pre>
+> <del>*Returns*: `unsigned{x} < unsigned{y}`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const day& x, const day& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
+
+Change 27.8.4.1 [time.cal.month.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class month {
+    unsigned char m_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const month& x, const month& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.4.3 [time.cal.month.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const month& x, const month& y) noexcept;</code></pre>
+> *Returns*: `unsigned{x} == unsigned{y}`.
+> <pre><code><del>constexpr bool operator<(const month& x, const month& y) noexcept;</del></code></pre>
+> <del>*Returns*: `unsigned{x} < unsigned{y}`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const month& x, const month& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `unsigned{x} <=> unsigned{y}`.</ins>
+
+Change 27.8.5.1 [time.cal.year.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year {
+    short y_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year& x, const year& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.5.3 [time.cal.year.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year& x, const year& y) noexcept;</code></pre>
+> *Returns*: `int{x} == int{y}`.
+> <pre><code><del>constexpr bool operator<(const year& x, const year& y) noexcept;</del></code></pre>
+> <del>*Returns*: `int{x} < int{y}`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const year& x, const year& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `int{x} <=> int{y}`.</ins>
+
+Change 27.8.6.1 [time.cal.wd.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class weekday {
+    unsigned char wd_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const weekday& x, const weekday& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.6.3 [time.cal.wd.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const weekday& x, const weekday& y) noexcept;</code></pre>
+> *Returns*: `unsigned{x} == unsigned{y}`.
+
+Change 27.8.7.1 [time.cal.wdidx.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class weekday_indexed {
+    chrono::weekday  wd_;       // exposition only
+    unsigned char    index_;    // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.7.3 [time.cal.wdidx.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_indexed& x, const weekday_indexed& y) noexcept;</code></pre>
+> *Returns*: `x.weekday() == y.weekday() && x.index() == y.index()`.
+
+Change 27.8.8.1 [time.cal.wdlast.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class weekday_last {
+    chrono::weekday wd_;                // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.8.3 [time.cal.wdlast.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const weekday_last& x, const weekday_last& y) noexcept;</code></pre>
+> *Returns*: `x.weekday() == y.weekday()`.
+
+Change 27.8.9.1 [time.cal.md.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class month_day {
+    chrono::month m_;           // exposition only
+    chrono::day   d_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const month_day& x, const month_day& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const month_day& x, const month_day& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.9.3 [time.cal.md.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const month_day& x, const month_day& y) noexcept;</code></pre>
+> *Returns*: `x.month() == y.month() && x.day() == y.day()`.
+> <pre><code><del>constexpr bool operator<(const month_day& x, const month_day& y) noexcept;</del></code></pre>
+> <del>*Returns*: If `x.month() < y.month()` returns `true`. Otherwise, if `x.month() > y.month()` returns `false`. Otherwise, returns `x.day() < y.day()`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day& x, const month_day& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: Let `c` be `x.month() <=> y.month()`. If `c != 0` returns `c`. Otherwise, returns `x.day() <=> y.day()`.</ins>
+
+Change 27.8.10.1 [time.cal.mdlast.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class month_day_last {
+    chrono::month m_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const month_day_last& x, const month_day_last& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.10.3 [time.cal.mdlast.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const month_day_last& x, const month_day_last& y) noexcept;</code></pre>
+> *Returns*: `x.month() == y.month()`.
+> <pre><code><del>constexpr bool operator<(const month_day_last& x, const month_day_last& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.month() < y.month()`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const month_day_last& x, const month_day_last& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `x.month() <=> y.month()`.</ins>
+
+Change 27.8.11.1 [time.cal.mwd.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class month_weekday {
+    chrono::month           m_;         // exposition only
+    chrono::weekday_indexed wdi_;       // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.11.3 [time.cal.mwd.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday& x, const month_weekday& y) noexcept;</code></pre>
+> *Returns*: `x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
+
+Change 27.8.12.1 [time.cal.mwdlast.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class month_weekday_last {
+    chrono::month        m_;    // exposition only
+    chrono::weekday_last wdl_;  // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.12.3 [time.cal.mwdlast.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const month_weekday_last& x, const month_weekday_last& y) noexcept;</code></pre>
+> *Returns*: `x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
+
+Change 27.8.13.1 [time.cal.ym.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year_month {
+    chrono::year  y_;           // exposition only
+    chrono::month m_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year_month& x, const year_month& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.13.3 [time.cal.ym.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year_month& x, const year_month& y) noexcept;</code></pre>
+> *Returns*: `x.year() == y.year() && x.month() == y.month()`.
+> <pre><code><del>constexpr bool operator<(const year_month& x, const year_month& y) noexcept;</del></code></pre>
+> <del>*Returns*: If `x.year() < y.year()` returns `true`. Otherwise, if `x.year() > y.year()` returns `false`. Otherwise, returns `x.month() < y.month()`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month& x, const year_month& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month() <=> y.month()`.</ins>
+
+Change 27.8.14.1 [time.cal.ymd.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year_month_day {
+    chrono::year  y_;           // exposition only
+    chrono::month m_;           // exposition only
+    chrono::day   d_;           // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const year_month_day& x, const year_month_day& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.14.3 [time.cal.ymd.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day& x, const year_month_day& y) noexcept;</code></pre>
+> *Returns*: `x.year() == y.year() && x.month() == y.month() && x.day() == y.day()`.
+> <pre><code><del>constexpr bool operator<(const year_month_day& x, const year_month_day& y) noexcept;</del></code></pre>
+> <del>*Returns*: If x.year() < y.year(), returns true. Otherwise, if x.year() > y.year(), returns false. Otherwise, if x.month() < y.month(), returns true. Otherwise, if x.month() > y.month(), returns false. Otherwise, returns x.day() < y.day().</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day& x, const year_month_day& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Let `c2` be `x.month() <=> y.month()`. If `c2 != 0` returns `c2`. Otherwise, returns `x.day() <=> y.day()`.</ins>
+
+Change 27.8.15.1 [time.cal.ymdlast.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year_month_day_last {
+    chrono::year           y_;          // exposition only
+    chrono::month_day_last mdl_;        // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year_month_day_last& x, const year_month_day_last& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator<=>(const year_month_day_last& x, const year_month_day_last& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.15.3 [time.cal.ymdlast.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_day_last& x, const year_month_day_last& y) noexcept;</code></pre>
+> *Returns*: `x.year() == y.year() && x.month_day_last() == y.month_day_last()`.
+> <pre><code><del>constexpr bool operator<(const year_month_day_last& x, const year_month_day_last& y) noexcept;</del></code></pre>
+> <del>*Returns*: If `x.year() < y.year()` returns `true`. Otherwise, if `x.year() > y.year()` returns `false`. Otherwise, returns `x.month_day_last() < y.month_day_last()`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const year_month_day_last& x, const year_month_day_last& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: Let `c` be `x.year() <=> y.year()`. If `c != 0` returns `c`. Otherwise, returns `x.month_day_last() <=> y.month_day_last()`.</ins>
+
+Change 27.8.16.1 [time.cal.ymwd.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year_month_weekday {
+    chrono::year            y_;         // exposition only
+    chrono::month           m_;         // exposition only
+    chrono::weekday_indexed wdi_;       // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year_month_weekday& x, const year_month_weekday& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.16.3 [time.cal.ymwd.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday& x, const year_month_weekday& y) noexcept;</code></pre>
+> *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_indexed() == y.weekday_indexed()`.
+
+Change 27.8.17.1 [time.cal.ymwdlast.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class year_month_weekday_last {
+    chrono::year         y_;    // exposition only
+    chrono::month        m_;    // exposition only
+    chrono::weekday_last wdl_;  // exposition only
+  public:
+    [...]
+    
+    <ins>friend constexpr bool operator==(const year_month_weekday_last& x, const year_month_weekday_last& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.8.17.3 [time.cal.ymwdlast.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const year_month_weekday_last& x, const year_month_weekday_last& y) noexcept;</code></pre>
+> *Returns*: `x.year() == y.year() && x.month() == y.month() && x.weekday_last() == y.weekday_last()`.
+
+Change 27.10.5.1 [time.zone.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class time_zone {
+  public:
+    [...]
+    
+    template&lt;class Duration&gt;
+      local_time&lt;common_type_t&lt;Duration, seconds&gt;&gt;
+        to_local(const sys_time&lt;Duration&gt;& tp) const;
+        
+    <ins>friend bool operator==(const time_zone& x, const time_zone& y) noexcept;</ins>
+    <ins>friend strong_ordering operator<=>(const time_zone& x, const time_zone& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.10.5.3 [time.zone.nonmembers]:
+
+> <pre><code><ins>friend </ins>bool operator==(const time_zone& x, const time_zone& y) noexcept;</code></pre>
+> *Returns*: `x.name() == y.name()`.
+> <pre><code><del>bool operator<(const time_zone& x, const time_zone& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.name() < y.name()`.</del>
+> <pre><code><ins>strong_ordering operator<=>(const time_zone& x, const time_zone& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `x.name() <=> y.name()`.</ins>
+
+Change 27.10.7.1 [time.zone.zonedtime.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  template<class Duration, class TimeZonePtr = const time_zone*>
+  class zoned_time {
+  public:
+    [...]
+    sys_time<duration>   get_sys_time()   const;
+    sys_info             get_info()       const;
+    
+    <ins>template&lt;class Duration2&gt;</ins>
+    <ins>  friend bool operator==(const zoned_time& x, const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</ins>
+  };
+  [...]
+}</code></pre></blockquote>
+
+Change 27.10.7.4 [time.zone.zonedtime.nonmembers]:
+
+> <pre><code>template&lt;<del>class Duration1, </del>class Duration2<del>, class TimeZonePtr</del>&gt;
+  <ins>friend  </ins>bool operator==(const zoned_time<del>&lt;Duration1, TimeZonePtr&gt;</del>& x,
+                  const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</code></pre>
+> *Returns*: `x.zone_ == y.zone_ && x.tp_ == y.tp_`.
+> <pre><code><del>template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;
+  bool operator!=(const zoned_time&lt;Duration1, TimeZonePtr&gt;& x,
+                  const zoned_time&lt;Duration2, TimeZonePtr&gt;& y);</del></code></pre>
+> <del>*Returns*: `!(x == y)`.</del>
+
+Change 27.10.8.1 [time.zone.leap.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class leap {
+  public:
+    leap(const leap&)            = default;
+    leap& operator=(const leap&) = default;
+
+    // unspecified additional constructors
+
+    constexpr sys_seconds date() const noexcept;
+    
+    <ins>friend constexpr bool operator==(const leap& x, const leap& y) noexcept;</ins>
+    <ins>friend constexpr strong_ordering operator&lt;=&gt;(const leap& x, const leap& y) noexcept;</ins>
+    
+    <ins>template&lt;class Duration&gt;</ins>
+    <ins>  friend constexpr bool operator==(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</ins>
+    <ins>template&lt;class Duration&gt;</ins>
+    <ins>  friend constexpr strong_ordering operator&lt;=&gt;(const leap& x, const sys_time&lt;Duration&gt;& y)</ins> noexcept;      
+  };
+}</code></pre></blockquote>
+
+Change 27.10.8.3 [time.zone.leap.nonmembers]:
+
+> <pre><code><ins>friend </ins>constexpr bool operator==(const leap& x, const leap& y) noexcept;</code></pre>
+> *Returns*: `x.date() == y.date()`.
+> <pre><code><del>constexpr bool operator<(const leap& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.date() < y.date()`.</del>
+> <pre><code><ins>friend constexpr strong_ordering operator<=>(const leap& x, const leap& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `x.date() <=> y.date()`.</ins>
+> <pre><code>template&lt;class Duration&gt;
+  <ins>friend </ins>constexpr bool operator==(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</code></pre>
+> *Returns*: `x.date() == y`.
+> <pre><code><ins>template&lt;class Duration&gt;
+  friend constexpr strong_ordering operator<=>(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `x.date() <=> y`.</ins>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator==(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `y == x`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator!=(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x == y)`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator!=(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x == y)`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&lt;(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.date() < y`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&lt;(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x < y.date()`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&gt;(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</del></code></pre>
+> <del>*Returns*: `y < x`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&gt;(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `y < x`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&lt;=(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(y < x)`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&lt;=(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(y < x)`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&gt;=(const leap& x, const sys_time&lt;Duration&gt;& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x < y)`.</del>
+> <pre><code><del>template&lt;class Duration&gt;
+  constexpr bool operator&gt;=(const sys_time&lt;Duration&gt;& x, const leap& y) noexcept;</del></code></pre>
+> <del>*Returns*: `!(x < y)`.</del>
+
+Change 27.10.9.1 [time.zone.link.overview]:
+
+<blockquote><pre><code>namespace std::chrono {
+  class link {
+  public:
+    link(link&&)            = default;
+    link& operator=(link&&) = default;
+
+    // unspecified additional constructors
+
+    string_view name()   const noexcept;
+    string_view target() const noexcept;
+    
+    <ins>friend bool operator==(const link& x, const link& y) noexcept;</ins>
+    <ins>friend strong_ordering operator<=>(const link& x, const link& y) noexcept;</ins>
+  };
+}</code></pre></blockquote>
+
+Change 27.10.9.3 [time.zone.link.nonmembers]:
+
+> <pre><code><ins>friend </ins>bool operator==(const link& x, const link& y) noexcept;</code></pre>
+> *Returns*: `x.name() == y.name()`.
+> <pre><code><del>bool operator<(const link& x, const link& y) noexcept;</del></code></pre>
+> <del>*Returns*: `x.name() < y.name()`.</del>
+> <pre><code><ins>strong_ordering operator<=>(const link& x, const link& y) noexcept;</ins></code></pre>
+> <ins>*Returns*: `x.name() <=> y.name()`.</ins>
 
 ## Clause 27: Localization library
 
