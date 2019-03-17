@@ -5477,7 +5477,7 @@ and paragraphs 6-11:
 > <pre><code><ins>friend </ins>bool operator==(thread::id x, thread::id y) noexcept;</code></pre>
 > *Returns*: `true` only if `x` and `y` represent the same thread of execution or neither `x` nor `y` represents a thread of execution.
 > <pre><code><del>bool operator!=(thread::id x, thread::id y) noexcept;</del></code></pre>
-> *Returns*: `!(x == y)`
+> <del>*Returns*: `!(x == y)`</del>
 > <pre><code><del>bool operator<(thread::id x, thread::id y) noexcept;</del></code></pre>
 > <del>*Returns*: A value such that `operator<` is a total ordering as described in [alg.sorting].</del>
 > <pre><code><ins>friend strong_ordering operator<=>(thread::id x, thread::id y) noexcept;</ins></code></pre>
