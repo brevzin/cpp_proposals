@@ -2,7 +2,7 @@ Title: constexpr <code><i>INVOKE</i></code>
 Document-Number: D1065R1
 Authors: Tomasz Kamiński, tomaszkam at gmail dot com
 Authors: Barry Revzin, barry dot revzin at gmail dot com
-Audience: LEWG, LWG
+Audience: LWG
 
 # Revision History
 
