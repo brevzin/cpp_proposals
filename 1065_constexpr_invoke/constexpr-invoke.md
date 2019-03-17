@@ -1,7 +1,12 @@
 Title: constexpr <code><i>INVOKE</i></code>
 Document-Number: D1065R1
+Authors: Tomasz Kamiński, tomaszkam at gmail dot com
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG, LWG
+
+# Revision History
+
+Since [R0](https://wg21.link/P1065R0), just wording changes to correctly describe what it means for things `bind` to be `constexpr` and also including `bind_front()`.
 
 # Motivation
 
@@ -68,13 +73,11 @@ This issue was the blocker for having a `constexpr std::invoke()` due to this ea
 
 # Proposal
 
-This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-related machinery: `invoke()`, `reference_wrapper<T>`, `not_fn()`, `bind()`, and `mem_fn()`. The remaining non-`constexpr` elements of the library that are <code><i>INVOKE</i></code>-adjacent are `function<Sig>`, `packaged_task<Sig>`, `async()`, `thread`, and `call_once()`.
-
-The entirety of the wording is the addition of the `constexpr` keyword in 22 places.
+This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-related machinery: `invoke()`, `reference_wrapper<T>`, `not_fn()`, `bind()`, `bind_front()`, and `mem_fn()`. The remaining non-`constexpr` elements of the library that are <code><i>INVOKE</i></code>-adjacent are `function<Sig>`, `packaged_task<Sig>`, `async()`, `thread`, and `call_once()`.
 
 ## Wording
 
-Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
+Add `constexpr` to several places in the synopsis in 20.14.1 [functional.syn]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
   // [func.invoke], invoke
@@ -82,7 +85,7 @@ Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
     </code><code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;F, Args...> invoke(F&& f, Args&&... args)
       noexcept(is_nothrow_invocable_v&lt;F, Args...>);
 
-  // [refwrap], reference_­wrapper
+  // [refwrap], reference_wrapper
   template&lt;class T> class reference_wrapper;
 
   template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(T&) noexcept;
@@ -108,8 +111,11 @@ Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
   // [func.identity], identity
   // ...
 
-  // [func.not_fn], function template not_­fn
+  // [func.not_fn], function template not_fn
   template&lt;class F> </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> not_fn(F&& f);
+  
+  // [func.bind.front], function template bind_front
+  template&lt;class F, class... Args&gt; </code><code><ins>constexpr</ins></code> <i>unspecified</i><code class="language-cpp"> bind_front(F&&, Args&&...);  
 
   // [func.bind], bind
   template&lt;class T> struct is_bind_expression;
@@ -137,20 +143,36 @@ Add `constexpr` to several places in the synopsis in 19.14.1 [functional.syn]
   // ...    
 }</code></pre></blockquote>  
 
-Add `constexpr` to the requirements of <i>forwarding call wrapper</i> in 19.14.3 [func.require]
+The definition of the *simple call wrapper* (used only for `mem_fn`) is changed to be a refinement of *perfect forwarding call wrapper*, instead of *argument forwarding call wrapper*. These make the invocation operator conditionally `constexpr` and `noexcept`. In addition we state explicitly the copy/move constructor/assignment of simple care wrapper is core constant expression. [ *Note*: The definition of simple call wrapper is still required to guarantee assignability. ]
 
-> Every call wrapper ([func.def]) shall be <i>Cpp17MoveConstructible</i>. A <i>forwarding call wrapper</i> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step shall ensure that rvalue arguments are delivered as rvalue references and lvalue arguments are delivered as lvalue references. <ins>The invocation of a forwarding call wrapper is a core constant expression when the invocation of the underlying target object ([func.def]) is a core constant expression.</ins> A <i>simple call wrapper</i> is a forwarding call wrapper that is <i>Cpp17CopyConstructible</i> and <i>Cpp17CopyAssignable</i> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions. [ <i>Note</i>: In a typical implementation forwarding call wrappers have an overloaded function call operator of the form
-<pre class="codehilite"><code class="language-cpp">template&lt;class... UnBoundArgs>
+The requirement of copy/move operation to be defined in terms of state entities is now extended to any argument forwarding call wrapper (as we define them for `not_fn` and `bind`).
+
+Apply following changes to 20.14.3 [func.require]:
+
+> Every call wrapper ([func.def]) is *Cpp17MoveConstructible*. <del>A</del> <ins>An</ins> *argument forwarding call wrapper* is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step delivers rvalue arguments as rvalue references and lvalue arguments as lvalue references. <del>A *simple call wrapper* is an argument forwarding call wrapper that is *Cpp17CopyConstructible* and *Cpp17CopyAssignable* and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions.</del> [ *Note*: In a typical implementation, argument forwarding call wrappers have an overloaded function call operator of the form
+> <pre><code class=language-cpp">template&lt;class... UnBoundArgs&gt;
   </code><code><ins>constexpr</ins></code><code class="language-cpp"> R operator()(UnBoundArgs&&... unbound_args) </code><code><i>cv-qual</i>;</code></pre>
-<i>— end note </i>]
+> —*end note*]  
+> 
+> A *perfect forwarding call wrapper* is an argument forwarding call wrapper that forwards its state entities to the underlying call expression. This forwarding step delivers a state entity of type `T` as *cv* `T&` when the call is performed on an lvalue of the call wrapper type and as *cv* `T&&` otherwise, where *cv* represents the cv-qualifiers of the call wrapper and where *cv* shall be neither `volatile` nor `const volatile`.  
+> 
+> A *call pattern* defines the semantics of invoking a perfect forwarding call wrapper. A postfix call performed on a perfect forwarding call wrapper is expression-equivalent ([defns.expression-equivalent]) to an expression e determined from its call pattern cp by replacing all occurrences of the arguments of the call wrapper and its state entities with references as described in the corresponding forwarding steps.  
+> 
+> <ins>A *simple call wrapper* is a perfect forwarding call wrapper that is *Cpp17CopyConstructible* and *Cpp17CopyAssignable* and whose copy constructor, move constructor, and assignment operator do not throw exceptions and are constant expressions.</ins>
+> 
+> The copy/move constructor of <del>a perfect</del> <ins>an argument</ins> forwarding call wrapper has the same apparent semantics as if memberwise copy/move of its state entities were performed ([class.copy.ctor]). [ *Note*: This implies that each of the copy/move constructors has the same *exception-specification* as the corresponding implicit definition and is declared as `constexpr` if the corresponding implicit definition would be considered to be constexpr. —*end note* ]
+> 
+> <del>Perfect</del> <ins>Argument</ins> forwarding call wrappers returned by a given standard library function template have the same type if the types of their corresponding state entities are the same.
 
-Add `constexpr` to `std::invoke()` in 19.14.4 [func.invoke]
+
+
+Add `constexpr` to `std::invoke()` in 20.14.4 [func.invoke]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F, class... Args>
 </code>  <code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;F, Args...> invoke(F&& f, Args&&... args)
     noexcept(is_nothrow_invocable_v&lt;F, Args...>);</code></pre></blockquote>
 
-Add `constexpr` to `std::reference_wrapper<T>` in 19.14.5 [refwrap]
+Add `constexpr` to `std::reference_wrapper<T>` in 20.14.5 [refwrap]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">namespace std {
   template&lt;class T> class reference_wrapper {
@@ -179,31 +201,31 @@ Add `constexpr` to `std::reference_wrapper<T>` in 19.14.5 [refwrap]
   reference_wrapper(T&) -> reference_wrapper&lt;T>;
 }</code></pre></blockquote>
 
-And its corresponding subsections, 19.14.5.1 [refwrap.const]
+And its corresponding subsections, 20.14.5.1 [refwrap.const]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class U>
 </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper(U&& u) noexcept(see below );</code></pre>
 [...]
 <pre class="codehilite"><code class="language-cpp"></code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper(const reference_wrapper& x) noexcept;</code></pre></blockquote>
 
-19.14.5.2 [refwrap.assign]
+20.14.5.2 [refwrap.assign]
 
 <blockquote><pre class="codehilite"><code class="language-cpp"></code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper& operator=(const reference_wrapper& x) noexcept;</code></pre></blockquote>
 
-19.14.5.3 [refwrap.access]
+20.14.5.3 [refwrap.access]
 
 <blockquote><pre class="codehilite"><code class="language-cpp"></code><code><ins>constexpr</ins></code> <code class="language-cpp">operator T& () const noexcept;</code></pre>
 [...]
 <pre class="codehilite"><code class="language-cpp"></code><code><ins>constexpr</ins></code> <code class="language-cpp">T& get() const noexcept;</code></pre></blockquote>
 
 
-19.14.5.4 [refwrap.invoke]
+20.14.5.4 [refwrap.invoke]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class... ArgTypes>
   </code><code><ins>constexpr</ins></code> <code class="language-cpp">invoke_result_t&lt;T&, ArgTypes...>
     operator()(ArgTypes&&... args) const;</code></pre></blockquote>
 
-and its helper functions, 19.14.5.5 [refwrap.helpers]
+and its helper functions, 20.14.5.5 [refwrap.helpers]
 
 <blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;T> ref(T& t) noexcept;</code></pre>
 <span style="margin-left:2em;" /><i>1 Returns</i>: <code class="language-cpp">reference_wrapper&lt;T>(t)</code>.
@@ -214,80 +236,60 @@ and its helper functions, 19.14.5.5 [refwrap.helpers]
 <pre class="codehilite"><code class="language-cpp">template&lt;class T> </code><code><ins>constexpr</ins></code> <code class="language-cpp">reference_wrapper&lt;const T> cref(reference_wrapper&lt;T> t) noexcept;</code></pre>
 <span style="margin-left:2em;" /><i>4 Returns</i>: <code class="language-cpp">cref(t.get())</code>.</blockquote>
 
-Add `constexpr` to `std::not_fn` in 19.14.11 [func.not_fn]
+Add `constexpr` to `std::not_fn()` in 20.14.12 [func.not.fn]:
 
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F> </code><code><ins>constexpr</ins></code> <i>unspecified</i> <code class="language-cpp">not_fn(F&& f);</code></pre>
-<span style="margin-left:2em;" /><i>1 Effects</i>: Equivalent to: <pre class="inline"><code class="language-cpp">return </code><code><i>call_wrapper</i></code><code class="language-cpp">(std::forward&lt;F>(f));</code></pre> where <code><i>call_wrapper</i></code> is an exposition only class defined as follows:
-<pre class="codehilite" style="margin-left:2em"><code class="language-cpp">class </code><code><i>call_wrapper</i></code><code class="language-cpp"> {
-  using FD = decay_t&lt;F>;
-  FD fd;
+> <pre><code class="language-cpp">template&lt;class F&gt; </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> not_fn(F&& f);</code></pre>
+
+Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], merging `bind` and `bind<R>`:
+
+> In the text that follows:
+> 
+> - <ins>`g` is a value of the result of a bind invocation,</ins>
+> - `FD` is the type `decay_t<F>`,
+> - `fd` is <del>an lvalue of type `FD` constructed from `std::forward<F>(f)`,</del> <ins>a target object of `g` ([func.def]) of type `FD` initialized with initializer `(std::forward<F>(f))`,</ins>
+> - <code>T<sub>i</sub></code> is the `i`th type in the template parameter pack `BoundArgs`,
+> - <code>TD<sub>i</sub></code> is the type <code>decay_t&lt;T<sub>i</sub>&gt;</code>,
+> - <code>t<sub>i</sub></code> is the `i`th argument in the function parameter pack `bound_args`,
+> - <code>td<sub>i</sub></code> is <del>an lvalue of type <code>TD<sub>i</sub></code> constructed from <code>std::forward&lt;T<sub>i</sub>&gt;(t<sub>i</sub>)</code>,</del> <ins>a bound argument entity of `g` ([func.def]) of type <code>TD<sub>i</sub></code> initialized with initializer <code>(std::forward&lt;T<sub>i</sub>&gt;(t<sub>i</sub>))</code>,</ins>
+> - <code>U<sub>j</sub></code> is the `j`th deduced type of the `UnBoundArgs&&...` parameter of the argument forwarding call wrapper, and
+> - <code>u<sub>j</sub></code> is the `j`th argument associated with <code>U<sub>j</sub></code>.
+> 
+> <pre><code class="language-cpp">template&lt;class F, class... BoundArgs&gt;
+  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);
+</code><code><ins>template&lt;class R, class F, class... BoundArgs&gt;
+  constexpr <i>unspecified</i> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
+> 
+> <del>*Requires*</del> <ins>*Mandates*</ins>: `is_constructible_v<FD, F>` <del>shall be</del> <ins>is</ins> `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> <del>shall be</del> <ins>is</ins> `true`.
+
+> <ins>*Expects*: `FD` meets the requirements of *Cpp17MoveConstructible*. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>decay_t&lt;T<sub>i</sub>&gt;</code> meets the requirements of *Cpp17MoveConstructible*.</ins> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <del>shall be</del> <ins>is</ins> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, <del>shall be</del> <ins>is</ins> neither `volatile` nor `const volatile`.
+> 
+> *Returns*: An argument forwarding call wrapper `g` ([func.require]). The <del>effect of</del> <ins>invocation</ins> <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> <del>shall be</del> <ins>is expression-equivalent ([defns.expression-equivalent]) to</ins> <code>INVOKE(<del>fd</del> <ins>static_cast&lt;cv FD&&gt;(fd)</ins>, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> <ins>for the first overload, and <code>INVOKE&lt;R&gt;(static_cast&lt;cv FD&&gt;(fd), std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the second overload,</ins> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. <del>The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.</del>
+> 
+> *Throws*: <del>Nothing unless the construction of `fd` or of one of the values <code>td<sub>i</sub></code> throws an exception.</del> <ins>Any exception thrown by the initialization of the state entities of `g`.</ins>
+> 
+> <del>*Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]</del>
+
+> <pre><code><del>template&lt;class R, class F, class... BoundArgs&gt;
+  unspecified bind(F&& f, BoundArgs&&... bound_args);</del></code></pre>
+> <del>*Requires*: `is_constructible_v<FD, F>` shall be `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, shall be neither `volatile` nor `const volatile`.</del>
+> 
+> <del>*Returns*: An argument forwarding call wrapper g ([func.require]). The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.</del>
+> 
+> <del>*Throws*: Nothing unless the construction of `fd` or of one of the values <code>td<sub>i</sub></code> throws an exception.</del>
+> 
+> <del>*Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]</del>
   
-  explicit </code><code><ins>constexpr</ins> <i>call_wrapper</i></code><code class="language-cpp">(F&& f);  
-public:
-  </code><code><ins>constexpr</ins> <i>call_wrapper</i>(<i>call_wrapper</i></code><code class="language-cpp"> &&) = default;
-  </code><code><ins>constexpr</ins> <i>call_wrapper</i>(</code><code class="language-cpp">const</code><code> <i>call_wrapper</i></code><code class="language-cpp">&) = default;
+Add `constexpr` to `std::bind_front()` in 20.14.13 [func.bind.front]:
+
+> <pre><code class="language-cpp">template&lt;class F, class... Args&gt;
+  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind_front(F&& f, Args&&... args);</code></pre>
   
-  template&lt;class... Args>
-    </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) &
-      -> decltype(!declval&lt;invoke_result_t&lt;FD&, Args...>>());
-      
-  template&lt;class... Args>
-    </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) const&
-      -> decltype(!declval&lt;invoke_result_t&lt;const FD&, Args...>>());
-      
-  template&lt;class... Args>
-    </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) &&
-      -> decltype(!declval&lt;invoke_result_t&lt;FD, Args...>>());
-      
-  template&lt;class... Args>
-    </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) const&&
-      -> decltype(!declval&lt;invoke_result_t&lt;const FD, Args...>>());
-};</code></pre>
+Add `constexpr` to `std::mem_fn()` in 20.14.15 [func.memfn]
 
-<pre class="codehilite"><code class="language-cpp">explicit </code><code><ins>constexpr</ins></code> <code class="language-cpp"><i>call_wrapper</i>(F&& f);</code></pre>
-[...]
-<pre class="codehilite"><code class="language-cpp">template&lt;class... Args>
-  </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) &
-    -> decltype(!declval&lt;invoke_result_t&lt;FD&, Args...>>());
-      
-template&lt;class... Args>
-  </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) const&
-    -> decltype(!declval&lt;invoke_result_t&lt;const FD&, Args...>>());</code></pre>
-<span style="margin-left:2em;" /><i>5 Effects</i>: Equivalent to: <pre class="codehilite" style="margin-left:3em"><code class="language-cpp">return !</code><code><i>INVOKE</i></code><code class="language-cpp">(fd, std::forward&lt;Args>(args)...); // see 19.14.3</code></pre>
+> <pre class="codehilite"><code class="language-cpp">template&lt;class R, class T> </code><code><ins>constexpr</ins> <i>unspecified</i> </code><code class="language-cpp">mem_fn(R T::* pm) noexcept;</code></pre>
 
-<pre class="codehilite"><code class="language-cpp">template&lt;class... Args>
-  </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) &&
-    -> decltype(!declval&lt;invoke_result_t&lt;FD&, Args...>>());
-      
-template&lt;class... Args>
-  </code><code><ins>constexpr</ins></code><code class="language-cpp"> auto operator()(Args&&...) const&&
-    -> decltype(!declval&lt;invoke_result_t&lt;const FD&, Args...>>());</code></pre>
-<span style="margin-left:2em;" /><i>6 Effects</i>: Equivalent to: <pre class="codehilite" style="margin-left:3em"><code class="language-cpp">return !</code><code><i>INVOKE</i></code><code class="language-cpp">(std::move(fd), std::forward&lt;Args>(args)...); // see 19.14.3</code></pre>
-</blockquote>
-
-Add `constexpr` to `std::bind()` and add remarks in 19.14.12.3 [func.bind.bind]
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class F, class... BoundArgs>
-  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
-
-<i>Remarks</i>: The return type shall satisfy the <i>Cpp17MoveConstructible</i> requirements. If all of <code>FD</code> and <code>TD<sub>i</sub></code> satisfy the <i>Cpp17CopyConstructible</i> requirements, then the return type shall satisfy the <i>Cpp17CopyConstructible</i> requirements. [ Note: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <i>Cpp17MoveConstructible</i>. — end note ] <ins>The copy and move constructors of the return type have the same apparent semantics as those of the corresponding implicitly-defined copy and move constructors of all of <code>FD</code> and <code>TD<sub>i</sub></code></ins>.
-  
-<p>[...]
-<pre class="codehilite"><code class="language-cpp">template&lt;class R, class F, class... BoundArgs>
-  </code><code><ins>constexpr</ins> <i>unspecified</i></code><code class="language-cpp"> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
-
-<i>Remarks</i>: The return type shall satisfy the <i>Cpp17MoveConstructible</i> requirements. If all of <code>FD</code> and <code>TD<sub>i</sub></code> satisfy the <i>Cpp17CopyConstructible</i> requirements, then the return type shall satisfy the <i>Cpp17CopyConstructible</i> requirements. [ Note: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <i>Cpp17MoveConstructible</i>. — end note ] <ins>The copy and move constructors of the return type have the same apparent semantics as those of the corresponding implicitly-defined copy and move constructors of all of <code>FD</code> and <code>TD<sub>i</sub></code></ins>.
-  
-</blockquote>
-  
-Add `constexpr` to `std::mem_fn()` in 19.14.13 [func.memfn]
-
-<blockquote><pre class="codehilite"><code class="language-cpp">template&lt;class R, class T> </code><code><ins>constexpr</ins> <i>unspecified</i> </code><code class="language-cpp">mem_fn(R T::* pm) noexcept;</code></pre></blockquote>
-
-And add a remark for it:
-
-> <ins>*Remarks*: The copy and move constructors of the return type are `constexpr`.</ins>
+> *Returns*: A simple call wrapper `fn` <del>such that the expression <code>fn(t, a<sub>2</sub>, …, a<sub>N</sub>)</code> is equivalent to <code>INVOKE(pm, t, a<sub>2</sub>, …, a<sub>N</sub>)</code> ([func.require]).</del> <ins>with call pattern `invoke(pmd, call_args...)`, where `pmd` is target object of `fn` of type `R T::*` direct-not-list-initialized with `pm`, and `call_args` is an argument pack used in a function call expression ([expr.call]) of `pm`.</ins>
 
 # Acknowledgements
 
-Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding `constexpr invoke` and suggesting that this proposal be written. Thanks to Tomasz Kamiński and Tim Song for help on the wording.
+Thanks to Casey Carter and Agustín Bergé for going over the history of issues surrounding `constexpr invoke` and suggesting that this proposal be written. Thanks to Tim Song for help on the wording.
