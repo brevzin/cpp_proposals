@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1614R1 <br />
-Date: 2019-03-14 <br />
+Date: 2019-03-26 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -690,6 +690,14 @@ bool f(StringRef a, std::string b) {
 
 
 <p>In C++17, the <code class="language-cpp">operator==</code> for <code class="language-cpp">variant</code> is a non-member function template and is thus not a viable candidate for the marked line. That check is ill-formed. With the proposed changes, the <code class="language-cpp">operator==</code> for <code class="language-cpp">variant</code> becomes a non-member hidden friend, <em>non-template</em>, which makes it a candidate (converting <code class="language-cpp">42</code> to a <code class="language-cpp">variant&lt;int, string&gt;</code>). This is arguably a fix, since both <code class="language-cpp">variant&lt;int, string&gt; v = 42;</code> and <code class="language-cpp">v = 42;</code> are already well-formed, so it is surely reasonable that <code class="language-cpp">v == 42</code> is as well.</p>
+<pre class="codehilite" data-line="4"><code class="language-cpp">bool ref_equal(std::reference_wrapper&lt;std::string&gt; a,
+               std::reference_wrapper&lt;std::string&gt; b)
+{
+    return a == b;
+}</code></pre>
+
+
+<p>As above, in C++17 the <code class="language-cpp">operator==</code> for <code class="language-cpp">basic_string</code> is a non-member function template and thus not a viable candidate in either case. But with the proposed changes, the <code class="language-cpp">operator==</code> becomes a non-member hidden friend, non-template, and <code class="language-cpp">string</code> is an associated class for <code class="language-cpp">reference&lt;string&gt;</code> and so will be found by argument-dependent lookup. The check becomes valid.</p>
 <h2 id="acknowledgments">3. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thank you to Casey Carter for the tremendous wording review.</p>
 <h2 id="wording">4. Wording<a class="self-link" href="#wording"></a></h2>

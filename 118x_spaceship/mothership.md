@@ -58,6 +58,15 @@ In C++17, the marked line is well-formed. The `operator==` for `basic_string` is
 
 In C++17, the `operator==` for `variant` is a non-member function template and is thus not a viable candidate for the marked line. That check is ill-formed. With the proposed changes, the `operator==` for `variant` becomes a non-member hidden friend, _non-template_, which makes it a candidate (converting `42` to a `variant<int, string>`). This is arguably a fix, since both `variant<int, string> v = 42;` and `v = 42;` are already well-formed, so it is surely reasonable that `v == 42` is as well.
 
+    :::cpp hl_lines="4"
+    bool ref_equal(std::reference_wrapper<std::string> a,
+                   std::reference_wrapper<std::string> b)
+    {
+        return a == b;
+    }
+    
+As above, in C++17 the `operator==` for `basic_string` is a non-member function template and thus not a viable candidate in either case. But with the proposed changes, the `operator==` becomes a non-member hidden friend, non-template, and `string` is an associated class for `reference<string>` and so will be found by argument-dependent lookup. The check becomes valid.
+
 # Acknowledgments
 
 Thank you to Casey Carter for the tremendous wording review.
