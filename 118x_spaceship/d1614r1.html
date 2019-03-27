@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1614R1 <br />
-Date: 2019-03-26 <br />
+Date: 2019-03-27 <br />
 Audience: LWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -1387,9 +1387,9 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
   class error_code {
     [...]
     <ins>// [syserr.compare], comparison functions</ins>
-    <ins>friend bool operator==(const error_code&, const error_code&) { <i>see below</i>; }</ins>
-    <ins>friend strong_ordering operator&lt;=&gt;(const error_code&, const error_code&) { <i>see below</i>; }</ins>
-    <ins>friend bool operator==(const error_code&, const error_condition&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_code&, const error_code&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_code&, const error_code&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_code&, const error_condition&) noexcept { <i>see below</i>; }</ins>
   private:
     int val_;                   // exposition only
     const error_category* cat_; // exposition only
@@ -1404,9 +1404,9 @@ Let <code class="language-cpp">t</code> and <code class="language-cpp">u</code> 
   public:
     [...]
     <ins>// [syserr.compare], comparison functions</ins>
-    <ins>friend bool operator==(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
-    <ins>friend strong_ordering operator&lt;=&gt;(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
-    <ins>friend bool operator==(const error_condition&, const error_code&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_condition&, const error_condition&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_condition&, const error_condition&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_condition&, const error_code&) noexcept { <i>see below</i>; }</ins>
   private:
     int val_;                   // exposition only
     const error_category* cat_; // exposition only
@@ -1705,8 +1705,8 @@ comparison. <em>—end note]</em></p>
     <ins>    { <i>see below</i> }</ins>
 
     <ins>// comparison with nullopt</ins>
-    <ins>friend constexpr bool operator==(const optional& x, nullopt_t) { return !x; }</ins>
-    <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) { return bool(x) &lt;=&gt; false; }</ins>
+    <ins>friend constexpr bool operator==(const optional& x, nullopt_t) noexcept { return !x; }</ins>
+    <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) noexcept { return bool(x) &lt;=&gt; false; }</ins>
 
     <ins>// [optional.comp_with_t], comparison with T</ins>
     <ins>template&lt;class U&gt; friend constexpr bool operator==(const optional&, const U&) { <i>see below</i> }</ins>
@@ -2093,7 +2093,7 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
     void deallocate(T* p, size_t n);
 
     <ins>template&lt;class U&gt;</ins>
-    <ins>  friend bool operator==(const allocator&, const allocator&lt;U&gt;&) { return true; }</ins>
+    <ins>  friend bool operator==(const allocator&, const allocator&lt;U&gt;&) noexcept { return true; }</ins>
   };
 }</code></pre></blockquote>
 
@@ -2135,7 +2135,7 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
       { return compare_three_way()(x.get(), y.get()); }
 
     friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
-    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t) noexcept
       requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
       { return compare_three_way()(x.get(), nullptr); }</ins>
   };
@@ -2167,7 +2167,7 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
       { return compare_three_way()(x.get(), y.get()); }
 
     friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
-    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t) noexcept
       requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
       { return compare_three_way()(x.get(), nullptr); }</ins>  
   };
@@ -2312,7 +2312,7 @@ template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T
     memory_resource* resource() const;
 
     <ins>template&lt;class T2&gt;</ins>
-    <ins>  friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator&lt;T2&gt;& b)</ins>
+    <ins>  friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator&lt;T2&gt;& b) noexcept</ins>
     <ins>  { <i>see below</i> }</ins>
   };
 }</code></pre></blockquote>
@@ -3415,8 +3415,7 @@ namespace std {
     void rehash(size_type n);
     void reserve(size_type n);
 
-    <ins>friend bool operator==(const unordered_map& x, const unordered_map& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend bool operator==(const unordered_map& x, const unordered_map& y);</ins>
   };
 
   [...]
@@ -3439,8 +3438,7 @@ namespace std {
     void rehash(size_type n);
     void reserve(size_type n);
 
-    <ins>friend bool operator==(const unordered_multimap& x, const unordered_multimap& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>    
+    <ins>friend bool operator==(const unordered_multimap& x, const unordered_multimap& y);</ins>
   };
 
   [...]
@@ -3462,8 +3460,7 @@ namespace std {
     void rehash(size_type n);
     void reserve(size_type n);
 
-    <ins>friend bool operator==(const unordered_set& x, const unordered_set& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>        
+    <ins>friend bool operator==(const unordered_set& x, const unordered_set& y);</ins>
   };
 
   [...]
@@ -3485,8 +3482,7 @@ namespace std {
     void rehash(size_type n);
     void reserve(size_type n);
 
-    <ins>friend bool operator==(const unordered_multiset& x, const unordered_multiset& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>        
+    <ins>friend bool operator==(const unordered_multiset& x, const unordered_multiset& y);</ins>
   };
 
   [...]
@@ -3914,9 +3910,9 @@ namespace std {
 template&lt;Sentinel&lt;Iterator&gt; S&gt;
   friend constexpr bool operator==(const move_iterator&amp; x,
                                    const move_sentinel&lt;S&gt;&amp; y);
-template&lt;Sentinel&lt;Iterator&gt; S&gt;
+<del>template&lt;Sentinel&lt;Iterator&gt; S&gt;
   friend constexpr bool operator==(const move_sentinel&lt;S&gt;&amp; x,
-                                   const move_iterator&amp; y);</code></pre>
+                                   const move_iterator&amp; y);</del></code></pre>
 <em>Constraints</em>: <code class="language-cpp">x.base() == y.base()</code> is well-formed and convertible to <code class="language-cpp">bool</code>.<br />
 <em>Returns</em>: <code class="language-cpp">x.base() == y.base()</code>.<br />
 <ins><em>Remarks</em>: This function is to be found via argument-dependent lookup only.</ins>
@@ -4093,7 +4089,7 @@ friend constexpr bool operator!=(
   struct unreachable_sentinel_t {
     template&lt;WeaklyIncrementable I&gt;
       friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept<del>;</del>
-      <ins>{ return true; }</ins>
+      <ins>{ return false; }</ins>
 <del>    template&lt;WeaklyIncrementable I&gt;
       friend constexpr bool operator==(const I&, unreachable_sentinel_t) noexcept;
     template&lt;WeaklyIncrementable I&gt;

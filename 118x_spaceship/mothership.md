@@ -771,9 +771,9 @@ Change 19.5.3.1 [syserr.errcode.overview]:
   class error_code {
     [...]
     <ins>// [syserr.compare], comparison functions</ins>
-    <ins>friend bool operator==(const error_code&, const error_code&) { <i>see below</i>; }</ins>
-    <ins>friend strong_ordering operator&lt;=&gt;(const error_code&, const error_code&) { <i>see below</i>; }</ins>
-    <ins>friend bool operator==(const error_code&, const error_condition&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_code&, const error_code&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_code&, const error_code&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_code&, const error_condition&) noexcept { <i>see below</i>; }</ins>
   private:
     int val_;                   // exposition only
     const error_category* cat_; // exposition only
@@ -789,9 +789,9 @@ Change 19.5.4.1 [syserr.errcondition.overview]:
   public:
     [...]
     <ins>// [syserr.compare], comparison functions</ins>
-    <ins>friend bool operator==(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
-    <ins>friend strong_ordering operator&lt;=&gt;(const error_condition&, const error_condition&) { <i>see below</i>; }</ins>
-    <ins>friend bool operator==(const error_condition&, const error_code&) { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_condition&, const error_condition&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend strong_ordering operator&lt;=&gt;(const error_condition&, const error_condition&) noexcept { <i>see below</i>; }</ins>
+    <ins>friend bool operator==(const error_condition&, const error_code&) noexcept { <i>see below</i>; }</ins>
   private:
     int val_;                   // exposition only
     const error_category* cat_; // exposition only
@@ -1096,8 +1096,8 @@ Change 20.6.3 [optional.optional]:
     <ins>    { <i>see below</i> }</ins>
 
     <ins>// comparison with nullopt</ins>
-    <ins>friend constexpr bool operator==(const optional& x, nullopt_t) { return !x; }</ins>
-    <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) { return bool(x) &lt;=&gt; false; }</ins>
+    <ins>friend constexpr bool operator==(const optional& x, nullopt_t) noexcept { return !x; }</ins>
+    <ins>friend constexpr strong_ordering operator&lt;=&gt;(const optional& x, nullopt_t) noexcept { return bool(x) &lt;=&gt; false; }</ins>
     
     <ins>// [optional.comp_with_t], comparison with T</ins>
     <ins>template&lt;class U&gt; friend constexpr bool operator==(const optional&, const U&) { <i>see below</i> }</ins>
@@ -1492,7 +1492,7 @@ Change 20.10.10 [default.allocator]:
     void deallocate(T* p, size_t n);
     
     <ins>template&lt;class U&gt;</ins>
-    <ins>  friend bool operator==(const allocator&, const allocator&lt;U&gt;&) { return true; }</ins>
+    <ins>  friend bool operator==(const allocator&, const allocator&lt;U&gt;&) noexcept { return true; }</ins>
   };
 }</code></pre></blockquote>
 
@@ -1535,7 +1535,7 @@ Change 20.11.1.2 [unique.ptr.single]:
       { return compare_three_way()(x.get(), y.get()); }
 
     friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
-    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t) noexcept
       requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
       { return compare_three_way()(x.get(), nullptr); }</ins>
   };
@@ -1568,7 +1568,7 @@ Change 20.11.1.3 [unique.ptr.runtime]:
       { return compare_three_way()(x.get(), y.get()); }
 
     friend bool operator==(const unique_ptr& x, nullptr_t) noexcept { return !x; }
-    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t)
+    friend auto operator&lt;=&gt;(const unique_ptr& x, nullptr_t) noexcept
       requires ThreeWayComparableWith&lt;pointer, nullptr_t&gt;
       { return compare_three_way()(x.get(), nullptr); }</ins>  
   };
@@ -1717,7 +1717,7 @@ Change 20.12.3 [mem.poly.allocator.class]:
     memory_resource* resource() const;
     
     <ins>template&lt;class T2&gt;</ins>
-    <ins>  friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator&lt;T2&gt;& b)</ins>
+    <ins>  friend bool operator==(const polymorphic_allocator& a, const polymorphic_allocator&lt;T2&gt;& b) noexcept</ins>
     <ins>  { <i>see below</i> }</ins>
   };
 }</code></pre></blockquote>
@@ -2860,8 +2860,7 @@ Change 22.5.4.1 [unord.map.overview]:
     void rehash(size_type n);
     void reserve(size_type n);
     
-    <ins>friend bool operator==(const unordered_map& x, const unordered_map& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>
+    <ins>friend bool operator==(const unordered_map& x, const unordered_map& y);</ins>
   };
 
   [...]
@@ -2885,8 +2884,7 @@ Change 22.5.5.1 [unord.multimap.overview]:
     void rehash(size_type n);
     void reserve(size_type n);
     
-    <ins>friend bool operator==(const unordered_multimap& x, const unordered_multimap& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>    
+    <ins>friend bool operator==(const unordered_multimap& x, const unordered_multimap& y);</ins>
   };
 
   [...]
@@ -2909,8 +2907,7 @@ Change 22.5.6.1 [unord.set.overview]:
     void rehash(size_type n);
     void reserve(size_type n);
     
-    <ins>friend bool operator==(const unordered_set& x, const unordered_set& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>        
+    <ins>friend bool operator==(const unordered_set& x, const unordered_set& y);</ins>
   };
 
   [...]
@@ -2933,8 +2930,7 @@ Change 22.5.7.1 [unord.multiset.overview]:
     void rehash(size_type n);
     void reserve(size_type n);
     
-    <ins>friend bool operator==(const unordered_multiset& x, const unordered_multiset& y)</ins>
-    <ins>  { return ranges::equal(x, y); }</ins>        
+    <ins>friend bool operator==(const unordered_multiset& x, const unordered_multiset& y);</ins>
   };
 
   [...]
@@ -3370,9 +3366,9 @@ Change 23.5.3.7 [move.iter.op.comp]:
 template&lt;Sentinel&lt;Iterator&gt; S&gt;
   friend constexpr bool operator==(const move_iterator& x,
                                    const move_sentinel&lt;S&gt;& y);
-template&lt;Sentinel&lt;Iterator&gt; S&gt;
+<del>template&lt;Sentinel&lt;Iterator&gt; S&gt;
   friend constexpr bool operator==(const move_sentinel&lt;S&gt;& x,
-                                   const move_iterator& y);</code></pre>
+                                   const move_iterator& y);</del></code></pre>
 > *Constraints*: `x.base() == y.base()` is well-formed and convertible to `bool`.  
 > *Returns*: `x.base() == y.base()`.  
 > <ins>*Remarks*: This function is to be found via argument-dependent lookup only.</ins>
@@ -3552,7 +3548,7 @@ Change 23.5.7.1 [unreachable.sentinel]:
   struct unreachable_sentinel_t {
     template&lt;WeaklyIncrementable I&gt;
       friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept<del>;</del>
-      <ins>{ return true; }</ins>
+      <ins>{ return false; }</ins>
 <del>    template&lt;WeaklyIncrementable I&gt;
       friend constexpr bool operator==(const I&, unreachable_sentinel_t) noexcept;
     template&lt;WeaklyIncrementable I&gt;
