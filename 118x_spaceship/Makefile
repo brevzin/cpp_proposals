@@ -14,3 +14,6 @@ p1189r0.html : add-spaceship-to-lib.md
 
 d1614r1.html : mothership.md
 	python ../md/better_md.py -i $< -o $@ --references
+
+d1630r0.html : annex-c.md
+	python ../md/better_md.py -i $< -o $@ --references

@@ -289,8 +289,11 @@ def main(argv=None):
     write('Audience: {} <br />\n'.format(md.Meta['audience'][0]))
     write('Reply-To: {} <br />\n'.format(u'<br />'.join(authors()).encode('utf-8')))
     write('</address>\n')
+    title_text = md.Meta['title'][0]
+    if 'subtitle' in md.Meta:
+        title_text = '{}<br/>{}'.format(title_text, md.Meta['subtitle'][0]) 
     write('<hr /><h1 align=center>{}</h1>\n'.format(
-        noref_md.convert(md.Meta['title'][0])))
+        noref_md.convert(title_text)))
     write('<h2>Contents</h2>\n')
     write('{}\n{}\n</html>'.format(md.toc, html.encode('utf-8')))
 
