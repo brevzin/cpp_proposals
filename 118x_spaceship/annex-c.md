@@ -46,7 +46,7 @@ The expression `10 == x` in C++17 had only one viable candidate: `operator==(int
     bool operator==(A, int);   // #1
     bool operator==(int, int); // #2 (builtin)
     
-The first is an Exact Match (once the arguments are reversed), whereas the second requires a conversion, so it's the best viable candidate. 
+The first is an Exact Match (once the arguments are reversed), whereas the second requires a Conversion, so the first is the best viable candidate. 
 
 Silently changing which function gets executed is facially the worst thing we can do, but in this particular situation doesn't seem that bad. We're already in a situation where, in C++17, `x == 10` and `10 == x` invoke different kinds of functions (the former invokes a user-defined function, the latter a builtin) and if those two give different answers, that seems like an inherently questionable program. 
 
@@ -60,7 +60,7 @@ The homogeneous comparison is more interesting. `x == y` in C++17 had only one c
     bool operator==(A, int); // #1
     bool operator==(int, A); // #1 reversed
 
-The first candidate has an Exact Match in the 1st argument and a conversion in the 2nd, the second candidate has a conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate ([\[over.match.best\]/2.9](http://eel.is/c++draft/over.match.best#2.9)), that only happens when each argument's conversion sequence _is not worse than_ the other candidates' ([\[over.match.best\]/2](http://eel.is/c++draft/over.match.best#2))... and that's just not the case here. We have one better sequence and one worse sequence, each way.
+The first candidate has an Exact Match in the 1st argument and a Conversion in the 2nd, the second candidate has a Conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate ([\[over.match.best\]/2.9](http://eel.is/c++draft/over.match.best#2.9)), that only happens when each argument's conversion sequence _is not worse than_ the other candidates' ([\[over.match.best\]/2](http://eel.is/c++draft/over.match.best#2))... and that's just not the case here. We have one better sequence and one worse sequence, each way.
 
 As a result, this becomes ambiguous.
 

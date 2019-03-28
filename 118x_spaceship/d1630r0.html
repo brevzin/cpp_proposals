@@ -667,7 +667,7 @@ int check(A x, A y) {
 bool operator==(int, int); // #2 (builtin)</code></pre>
 
 
-<p>The first is an Exact Match (once the arguments are reversed), whereas the second requires a conversion, so it's the best viable candidate. </p>
+<p>The first is an Exact Match (once the arguments are reversed), whereas the second requires a Conversion, so the first is the best viable candidate. </p>
 <p>Silently changing which function gets executed is facially the worst thing we can do, but in this particular situation doesn't seem that bad. We're already in a situation where, in C++17, <code class="language-cpp">x == 10</code> and <code class="language-cpp">10 == x</code> invoke different kinds of functions (the former invokes a user-defined function, the latter a builtin) and if those two give different answers, that seems like an inherently questionable program. </p>
 <p>The inequality expression behaves the same way. In C++17, <code class="language-cpp">10 != x</code> had only one viable candidate: the <code class="language-cpp">operator!=(int, int)</code> builtin, but in C++20 also acquires the reversed and rewritten candidate <code class="language-cpp">(x == 10) ? false : true</code>, which would be an Exact Match. Here, the status quo was that <code class="language-cpp">x != 10</code> and <code class="language-cpp">10 != x</code> both invoke the same function - but again, if that function gave a different answer from <code class="language-cpp">!(x == 10)</code> or <code class="language-cpp">!(10 == x)</code>, that seems suspect. </p>
 <h3 id="code-that-becomes-ambiguous">1.2. Code that becomes ambiguous<a class="self-link" href="#code-that-becomes-ambiguous"></a></h3>
@@ -676,7 +676,7 @@ bool operator==(int, int); // #2 (builtin)</code></pre>
 bool operator==(int, A); // #1 reversed</code></pre>
 
 
-<p>The first candidate has an Exact Match in the 1st argument and a conversion in the 2nd, the second candidate has a conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate (<a href="http://eel.is/c++draft/over.match.best#2.9">[over.match.best]/2.9</a>), that only happens when each argument's conversion sequence <em>is not worse than</em> the other candidates' (<a href="http://eel.is/c++draft/over.match.best#2">[over.match.best]/2</a>)... and that's just not the case here. We have one better sequence and one worse sequence, each way.</p>
+<p>The first candidate has an Exact Match in the 1st argument and a Conversion in the 2nd, the second candidate has a Conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate (<a href="http://eel.is/c++draft/over.match.best#2.9">[over.match.best]/2.9</a>), that only happens when each argument's conversion sequence <em>is not worse than</em> the other candidates' (<a href="http://eel.is/c++draft/over.match.best#2">[over.match.best]/2</a>)... and that's just not the case here. We have one better sequence and one worse sequence, each way.</p>
 <p>As a result, this becomes ambiguous.</p>
 <p>Note that the same thing can happen with <code class="language-cpp">&lt;=&gt;</code> in a similar situation:</p>
 <pre class="codehilite"><code class="language-cpp">struct C {
