@@ -4,9 +4,17 @@ Authors: Barry Revzin, barry dot revzin at gmail dot com
 Authors: Casey Carter, casey at carter dot net
 Audience: CWG
 
-# Introduction and Revision History
+# Revision History
 
-For a complete motivation for this proposal, see [P0848R0](https://wg21.link/p0848). In brief, it is important for certain class template instantiations to propagate the triviality from their template parameters - that is, we want `wrapper<T>` to be trivially copyable if and only if `T` is copyable. In C++17, this is possible, yet is extremely verbose. The introduction of Concepts provides a path to make this propagation substantially easier to write, but the current definition of trivially copyable doesn't quite suffice for what we want.
+[R0](https://wg21.link/p0848r0) was presented to EWG at the San Diego meeting (November 2018). It proposed to change the rules for trivially copyable such that we only consider the _best viable candidate_ amongst the copy constructors given a synthesized overload resolution. That is, depending on `C<T>`, we either consider only `#2` (because `#1` wouldn't be viable) or only `#1` (because it would be more constrained than `#2` and hence a better match). However, EWG considered this to be confusing as trivially copyable is a property of a type and adding overload resolution simply adds more questions about context (e.g. do we consider accessibility?). EWG requested a new mechanism to solve this problem.
+
+[R1](https://wg21.link/p0848r1) was also presented to EWG in San Diego, proposed to introduce an intermediate layer: a constructor for a class `X` of the form `X(X const&)` rather than being considered a copy constructor would instead become a _prospective copy constructor_, and a _copy constructor_ would be any prospective copy constructor whose constraints are satisfied and is at least as constrained as every other prospective copy constructor. In this way, we don't change the definition of trivially copyable at all - we change the definition for each of the special member functions.
+
+During Core wording review in the Kona meeting (February 2019), a new direction was suggested that is somewhat of a compromise between the two other positions: we use the "constraints are satisfied and is at least as constrained as" rule on the special member functions, but we only apply it to the trivially copyable rules. This ensures that we maintain these as properties of the type rather than properties of an expression - and is the direction this paper takes.
+
+# Introduction
+
+For a complete motivation for this proposal, see [P0848R0](https://wg21.link/p0848r0). In brief, it is important for certain class template instantiations to propagate the triviality from their template parameters - that is, we want `wrapper<T>` to be trivially copyable if and only if `T` is copyable. In C++17, this is possible, yet is extremely verbose. The introduction of Concepts provides a path to make this propagation substantially easier to write, but the current definition of trivially copyable doesn't quite suffice for what we want.
 
 Consider:
 
@@ -25,23 +33,31 @@ Consider:
 
 According to the current working draft, both `#1` and `#2` are copy constructors. The current definition for trivially copyable requires that _each_ copy constructor be either deleted or trivial. That is, we always consider both copy constructors, regardless of `T` and `C<T>`, and hence no instantation of `X` is ever trivially copyable. 
 
-R0 of this paper, as presented in San Diego in November 2018, proposed to change the rules for trivially copyable such that we only consider the _best viable candidate_ amongst the copy constructors given a synthesized overload resolution. That is, depending on `C<T>`, we either consider only `#2` (because `#1` wouldn't be viable) or only `#1` (because it would be more constrained than `#2` and hence a better match). However, EWG considered this to be confusing as trivially copyable is a property of a type and adding overload resolution simply adds more questions about context (e.g. do we consider accessibility?). EWG requested a new mechanism to solve this problem.
+This paper suggests that those specializations `X<T>` for which `T` satisfies `C` should be considered trivially copyable - this very logically follows the model of constraints and would make it substantially easier to write class templates that are conditionally trivially copyable. Indeed, it would become actually easy to do such a thing rather than quite complex with multiple layers of conditional base classes. 
 
 # Proposal
 
-The following arguments and definitions are focused specifically on the copy constructor, but also apply similarly to the default constructor, the move constructor, the copy and move assignment operators, and the destructor.
+The current relevant definitions in [class.prop] read:
 
-## Special member function candidates
+> A _trivially copyable class_ is a class:
+> 
+> - where each copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy.ctor], [class.copy.assign]) is either deleted or trivial,
+> - that has at least one non-deleted copy constructor, move constructor, copy assignment operator, or move assignment operator, and
+> - that has a trivial, non-deleted destructor.
 
-In the current working draft, the definition of copy constructor is, from \[class.copy.ctor\]:
+> A _trivial class_ is a class that is trivially copyable and has one or more default constructors ([class.default.ctor]), all of which are either trivial or deleted and at least one of which is not deleted.
 
-> A non-template constructor for class `X` is a copy constructor if its first parameter is of type `X&`, `const X&`,
-`volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters
-have default arguments (9.2.3.6).
+There are two aspects of these definitions that need to be changed for this proposal: one that applies to five of the special member functions in the same way (the copy and move constructors and assignment operators and the default constructor), and one that applies specifically to the destructor.
 
-By this definition, both `#1` and `#2` in the previous example are copy constructors - regardless of `C<T>`. Instead, we could say that both of these functions are simply _candidates_ to be copy constructors. For a given *cv*-qualification, a class can have multiple copy constructor candidates - but only have one copy constructor: the most constrained candidate of the candidates whose constraints are satisfied. If there is no most constrained candidate (that is, either there is no candidate or there is an ambiguity), then there is no copy constructor.
+For the five non-destructor special member functions, we introduce a new concept called an _eligible special member function_ - which is a special member function that is:
 
-With this approach, `#1` and `#2` are both copy constructor candidates for the signature `X(X const&)`. For a given instantiation, if `C<T>` is not satisfied, there is only one candidate whose constraints are met and hence `#2` is _the_ copy constructor. If `C<T>` is satisfied, then `#1` is the most constrained candidate and hence it is _the_ copy constructor. 
+- not deleted
+- has all of its constraints (if any) satisfied
+- no special member function of the same kind, with the same first parameter type (except for the default constructor), is more constrained
+
+And then simplify the definitions of _trivially copyable_ and _trivial_ to use eligible special members instead of just any special members. 
+
+For the destructor, we go in a slightly different direction. We introduce a sub-classification called a _prospective destructor_ which is simply any function declared for a class `X` that is spelled `~X()` with some constraints, and then redefine destructor to be the eligible destructor, requiring that there be only one. 
 
 Using the example from R0:
 
@@ -64,248 +80,49 @@ Using the example from R0:
         }
     };
     
-We have two copy constructor candidates: `#1` and `#2`. For `T=unique_ptr<int>`, neither candidate has its constraints satisfied, so there is no copy constructor. For `T=std::string`, only `#2` has its constraints satisfied, so it is the copy constructor. For `T=int`, both candidates have their constraints satisfied and `#1` is more constrained than `#2`, so `#1` is the copy constructor.
-
-With the introduction of the notion of copy constructor candidates, and reducing the meaning of "copy constructor" to be the most constrained candidate, no change is necessary to the definition of trivially copyable; requiring that each copy constructor be trivial or deleted becomes the correct definition - and meets the requirements of making it easy to propagate triviality.
-
-## Standard Impact
-
-One important question is: now that we have two terms, copy constructor candidate and copy constructor, what do we have to change throughout the standard? In the latest working draft, [N4778](https://wg21.link/n4778), there are 79 uses of the term _copy constructor_. 27 of those are in the core language (several of which are in notes or example), and 52 in the library.
-
-Whenever the library uses "copy constructor," it really means this new refined definition of _the_ copy constructor. Indeed, it's even more specific than that as the library only cares about the most constrained copy constructor candidate which takes an lvalue reference to `const`. Hence, no library wording needs to change all.
-
-Of the 27 core language uses:
-
-- 2 are seemingly unnecessary: \[class.temporary\]/3 and \[expr.call\]/12 contain a complete redefinition of what it means for a type to be trivially copyable.
-- 2 refer to the new, proposed notion of copy constructor as the most constrained candidate
-- 12 refer to what this paper proposes to call a copy constructor candidate, mostly in \[class.copy.ctor\] but also when describing the copyability of lambdas.
-- 11 are non-normative, appearing in comments in examples or notes
-
-In other words, introducing this notion of a copy constructor candidate and the copy constructor would primarily require simply changing \[class.copy.ctor\], which in the working draft describes the rules for what a copy constructor is and when it would be generated. Just about everything outside of that section would not only not need to change, but arguably be silently improved - we typically only care about the most constrained copy constructor candidate and now the wording would actually say that.
+    
+For all specializations, we have two copy constructors: `#1` and `#2`. For `T=unique_ptr<int>`, neither copy constructor has its constraints satisfied so there is no eligible copy constructor. For `T=std::string`, only `#2` has its constraints satisfied, so only `#2` is an eligible copy constructor. For `T=int`, both `#1` and `#2` have their constraints satisfied. `#1` is more constrained than `#2`, so only `#1` is an eligible copy constructor.
 
 # Wording
 
-Relative to N4791. Due to potential confusion with overload resolution, we are using the term "prospective" rather than the term "candidate" throughout.
+Change 6.6.7/p1 [class.temporary] to refer to the future definition of eligibility:
 
-Change 9.4.2 [dcl.fct.def.default], paragraph 1:
+> When an object of class type `X` is passed to or returned from a function, if each <ins>eligible</ins> copy constructor <ins>([class.prop])</ins> <del>,</del> <ins>and</ins> move constructor <ins>is trivial, the</ins> destructor of X is either trivial or deleted, and `X` has at least one <del>non-deleted</del> <ins>eligible</ins> copy or move constructor, implementations are permitted to create a temporary object to hold the function parameter or result object. The temporary object is constructed from the function argument or return value, respectively, and the function's parameter or return object is initialized as if by using the <del>non-deleted</del> <ins>eligible</ins> trivial constructor to copy the temporary (even if that constructor is inaccessible or would not be selected by overload resolution to perform a copy or move of the object). 
 
-> A function definition whose _function-body_ is of the form `= default ;` is called an _explicitly-defaulted definition_. A function that is explicitly defaulted shall
+And likewise for 7.6.1.2/p12 [expr.call]:
+
+> Passing a potentially-evaluated argument of class type having a non-trivial <ins>eligible</ins> copy constructor <ins>([class.prop])</ins>, a non-trivial <ins>eligible</ins> move constructor, or a non-trivial destructor, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.
+
+Insert at the beginning of 11.1 [class.prop] a definition of eligibility:
+
+> <ins>An _eligible special member function_ is a special member function ([special]):</ins>
 > 
-> - be a <ins>prospective</ins> special member function <ins>([10.3.3])</ins> or a comparison operator ([expr.spaceship], [expr.rel], [expr.eq]), and  
-> - not have default arguments.
+> - <ins>that is not deleted,</ins>
+> - <ins>where each of its constraints ([temp.constr]), if any, are satisfied, and</ins>
+> - <ins>no special member function of the same kind with the same first parameter type (if any) is more constrained ([temp.constr.order]).</ins>
 
-Insert into 9.4.2 [dcl.fct.def.default], paragraph 5:
+Change the definitions of _trivially copyable_ and _trivial_ in 11.1/p1 [class.prop]:
 
-> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective special member function ([10.3.3]) that is not a special member function shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
-
-Insert into 10.3.3 [special], paragraph 1:
-
-> The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and destructor ([class.dtor]) are special member functions. <ins>The prospective default constructors ([class.default.ctor]), prospective copy constructors, prospective move constructors ([class.copy.ctor]), prospective copy assignment operators, prospective move assignment operators ([class.copy.assign]), and prospective destructors ([class.dtor]) are <i>prospective special member functions</i>. </ins>
-
-## Default constructor
-
-Change 10.3.4.1 [class.default.ctor], paragraph 1:
-
-> A _<ins>prospective</ins> default constructor_ for a class `X` is a constructor of class `X` for which each parameter that is not a function parameter pack has a default argument (including the case of a constructor with no parameters). If there is no user-declared constructor for class `X`, a non-explicit constructor having no parameters is implicitly declared as defaulted (9.4). An implicitly-declared default constructor is an inline public member of its class.   
-
-> <ins>A _default constructor_ is a prospective default constructor such that</ins>
+> A _trivially copyable class_ is a class:
 > 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective default constructor whose constraints (if any) are satisfied.</ins>
+> - where each <ins>eligible</ins> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy.ctor], [class.copy.assign]) is <del>either deleted or</del> trivial,
+> - that has at least one <del>non-deleted</del> <ins>eligible</ins> copy constructor, move constructor, copy assignment operator, or move assignment operator, and
+> - that has a trivial, non-deleted destructor.
 
-## Copy and move constructor
+> A _trivial class_ is a class that is trivially copyable and has one or more <ins>eligible</ins> default constructors ([class.default.ctor]), all of which are <ins>trivial.</ins> <del>either trivial or deleted and at least one of which is not deleted.</del>
 
-Introduce the concept of prospective copy constructor in 10.3.4.2 [class.copy.ctor], paragraph 1:
-
-> A non-template constructor for class `X` is a _<ins>prospective</ins> copy constructor_ if its first parameter is of type `X&`, `const X&`, `volatile X&` or `const volatile X&`, and either there are no other parameters or else all other parameters have default arguments (9.2.3.6). 
-
-> <ins>A _copy constructor_ is a prospective copy constructor such that</ins>
-> 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy constructor that has the same first parameter type and whose constraints (if any) are satisfied.</ins>
-> 
-> <ins> [ *Note*: A class can have multiple copy constructors, provided they have different signatures *-end note*] </ins>
-
-Introduce the concept of prospective move constructor in 10.3.4.2 [class.copy.ctor], paragraph 2:
-
-> A non-template constructor for class X is a _<ins>prospective</ins> move constructor_ if its first parameter is of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`, and either there are no other parameters or else all other
-parameters have default arguments (9.2.3.6).
-
-> <ins>A _move constructor_ is a prospective move constructor such that</ins>
-> 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move constructor
-that has the same first parameter type and whose constraints (if any) are satisfied.</ins>
-> 
-> <ins> [ *Note*: A class can have multiple move constructors, provided they have different signatures *-end note*] </ins>
-
-Reduce the cases where we implicitly generate special members in 10.3.4.2 [class.copy.ctor], paragraph 6:
-
-> If the class definition does not explicitly declare a <ins>prospective</ins> copy constructor, a non-explicit one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy constructor is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy assignment operator or a user-declared <ins>prospective</ins> destructor (D.5). <ins>[ *Note:* An implicitly-declared prospective copy constructor is a copy constructor. *-end note* ]</ins>
-
-Change 10.3.4.2 [class.copy.ctor], paragraph 7:
-
-> The implicitly-declared <ins>prospective</ins> copy constructor for a class `X` will have the form
-> 
-    :::cpp
-    X::X(const X&)
-> if each potentially constructed subobject of a class type M (or array thereof) has a copy constructor whose first
-parameter is of type `const M&` or `const volatile M&`. Otherwise, the implicitly-declared <ins>prospective</ins> copy constructor will have the form
-> 
-    :::cpp
-    X::X(X&)
-
-Change 10.3.4.2 [class.copy.ctor], paragraph 8:
-
-> If the definition of a class `X` does not explicitly declare a <ins>prospective</ins> move constructor, a non-explicit one will be implicitly declared as defaulted if and only if  
-> 
-— X does not have a user-declared <ins>prospective</ins> copy constructor,  
-— X does not have a user-declared <ins>prospective</ins> copy assignment operator,  
-— X does not have a user-declared <ins>prospective</ins> move assignment operator, and  
-— X does not have a user-declared <ins>prospective</ins> destructor.
-> [*Note:* <ins>An implicitly-declared prospective move constructor is a move constructor.</ins> When <del>the</del> <ins>a</ins> <ins>prospective</ins> move constructor is not implicitly declared or explicitly supplied, expressions that otherwise would have invoked the move constructor may instead invoke a copy constructor. *—end note*]
-
-Change 10.3.4.2 [class.copy.ctor], paragraph 9:
-
-> The implicitly-declared <ins>prospective</ins> move constructor for class `X` will have the form
-> 
-    :::cpp
-    X::X(X&&)
-    
-Change 10.3.4.2 [class.copy.ctor], paragraph 13:
-
-> Before <del>the</del> <ins>a</ins> defaulted copy/move constructor for a class is implicitly defined, all non-user-provided copy/move constructors for its potentially constructed subobjects shall have been implicitly defined.
-
-Change 10.3.4.2 [class.copy.ctor], paragraph 14:
-
-> <del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a non-union class X performs a memberwise copy/move of its bases and members. [Note: Default member initializers of non-static data members are ignored. See also
-the example in 10.9.2. —end note] The order of initialization is the same as the order of initialization of
-bases and members in a user-defined constructor (see 10.9.2). Let `x` be either the parameter of <del>the</del> <ins>a copy</ins> constructor or, for <del>the</del> <ins>a</ins> move constructor, an xvalue referring to the parameter. Each base or non-static data member is copied/moved in the manner appropriate to its type:
-> 
-> - if the member is an array, each element is direct-initialized with the corresponding subobject of `x`;  
-> - if a member `m` has rvalue reference type `T&&`, it is direct-initialized with `static_cast<T&&>(x.m)`;  
-> - otherwise, the base or member is direct-initialized with the corresponding base or member of `x`.  
-> 
-> Virtual base class subobjects shall be initialized only once by <del>the</del> <ins>an</ins> implicitly-defined copy/move constructor (see 10.9.2).
-
-Change 10.3.4.2 [class.copy.ctor], paragraph 15: 
-
-> <del>The</del> <ins>An</ins> implicitly-defined copy/move constructor for a union X copies the object representation (6.7) of X.
-
-## Copy and move assignment
-
-Change 10.3.5 [class.copy.assign], paragraph 1:
-
-> A user-declared _<ins>prospective</ins> copy assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X`, `X&`, `const X&`, `volatile X&`, or `const volatile X&`.
-
-> <ins>A _copy assignment operator_ is a prospective copy assignment operator such that</ins>
-> 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective copy assignment operator
-that has the same parameter type and whose constraints (if any) are satisfied.</ins> 
-
-[*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note]* [*Note:* More than one form of copy assignment operator may be declared for a class. *—end note*] [*Note:* If a class `X` only has a copy assignment operator with a parameter of type `X&`, an expression of type `const X` cannot be assigned to an object of type `X`. [*Example:*
-
-Change 10.3.5 [class.copy.assign], paragraph 2:
-
-> If the class definition does not explicitly declare a <ins>prospective</ins> copy assignment operator, one is declared implicitly. If the class definition declares a <ins>prospective</ins> move constructor or <ins>prospective</ins> move assignment operator, the implicitly declared <ins>prospective</ins> copy assignment operator is defined as deleted; otherwise, it is defined as defaulted (9.4). The latter case is deprecated if the class has a user-declared <ins>prospective</ins> copy constructor or a user-declared <ins>prospective</ins> destructor (D.5). The implicitly-declared <ins>prospective</ins> copy assignment operator for a class `X` will have the form
-> 
-    :::cpp
-    X& X::operator=(const X&)
-> if
-> 
-> - each direct base class `B` of `X` has a copy assignment operator whose parameter is of type `const B&`,
-`const volatile B&`, or `B`, and  
-> - for all the non-static data members of `X` that are of a class type `M` (or array thereof), each such class
-type has a copy assignment operator whose parameter is of type `const M&`, `const volatile M&`, or
-`M`. 
-> 
-> Otherwise, the implicitly-declared <ins>prospective</ins> copy assignment operator will have the form
-> 
-    :::cpp
-    X& X::operator=(X&)
-    
-Change 10.3.5 [class.copy.assign], paragraph 3:
-
-> A user-declared _<ins>prospective</ins> move assignment operator_ `X::operator=` is a non-static non-template member function of class `X` with exactly one parameter of type `X&&`, `const X&&`, `volatile X&&`, or `const volatile X&&`.
-
-> <ins>A _move assignment operator_ is a prospective move assignment operator such that</ins>
-> 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective move assignment operator
-that has the same parameter type and whose constraints (if any) are satisfied.</ins> 
-
-> [*Note:* An overloaded assignment operator must be declared to have only one parameter; see 11.5.3. *—end note*] [*Note:* More than one form of move assignment operator may be declared for a class. *—end note*]
-
-Change 10.3.5 [class.copy.assign], paragraph 4:
-
-> If the definition of a class X does not explicitly declare a <ins>prospective</ins> move assignment operator, one will be implicitly declared as defaulted if and only if
-> 
-> - X does not have a user-declared <ins>prospective</ins> copy constructor,  
-> - X does not have a user-declared <ins>prospective</ins> move constructor,  
-> - X does not have a user-declared <ins>prospective</ins> copy assignment operator, and  
-> - X does not have a user-declared <ins>prospective</ins> destructor.
-> 
-> [*Example*: The class definition
-> 
-    :::cpp
-    struct S {
-      int a;
-      S& operator=(const S&) = default;
-    };
-> will not have a default move assignment operator implicitly declared because <del>the</del> <ins>a</ins> <ins>prospective</ins> copy assignment operator has been user-declared. <del>The</del> <ins>A</ins> <ins>prospective</ins> move assignment operator may be explicitly defaulted.
-> 
-    :::cpp
-    struct S {
-      int a;
-      S& operator=(const S&) = default;
-      S& operator=(S&&) = default;
-    };
-> —*end example*]
-
-Change 10.3.5 [class.copy.assign], paragraph 5: 
-> The implicitly-declared <ins>prospective</ins> move assignment operator for a class X will have the form
-> 
-    :::cpp
-    X& X::operator=(X&&);
-
-Change 10.3.5 [class.copy.assign], paragraph 6:
-> <del>The</del> <ins>An</ins> implicitly-declared <ins>prospective</ins> copy/move assignment operator for class X has the return type `X&`; it returns the object for which the assignment operator is invoked, that is, the object assigned to. An implicitly-declared <ins>prospective</ins> copy/move assignment operator is an inline public member of its class.
-
-Change 10.3.5 [class.copy.assign], paragraph 8:
-> Because a <ins>prospective</ins> copy/move assignment operator is implicitly declared for a class if not declared by the user, a base class copy/move assignment operator is always hidden by the corresponding <ins>prospective</ins> assignment operator of a derived class ([over.ass]). A using-declaration ([namespace.udecl]) that brings in from a base class an assignment operator with a parameter type that could be that of a <ins>prospective</ins> copy/move assignment operator for the derived class is not considered an explicit declaration of such a <ins>prospective</ins> operator and does not suppress the implicit declaration of the derived class <ins>prospective</ins> operator; the operator introduced by the using-declaration is hidden by the implicitly-declared <ins>prospective</ins> operator in the derived class.
-
-Change 10.3.5 [class.copy.assign], paragraph 10:
-> A copy/move assignment operator for a class X that is defaulted and not defined as deleted is implicitly defined when it is odr-used ([basic.def.odr]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. <del>The</del> <ins>An</ins> implicitly-defined <ins>prospective</ins> copy/move assignment operator is constexpr if
-> 
-> - X is a literal type, and
-> - the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and
-> - for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.
-
-Change 10.3.5 [class.copy.assign], paragraph 11:
-> Before <del>the</del> <ins>a</ins> defaulted copy/move assignment operator for a class is implicitly defined, all non-user-provided copy/move assignment operators for its direct base classes and its non-static data members shall have been implicitly defined. [*Note: An implicitly-declared copy/move assignment operator has an implied exception specification ([except.spec]). —*end note*]
-
-Change 10.3.5 [class.copy.assign], paragraph 12: 
-> <del>The</del> <ins>An</ins> implicitly-defined copy/move assignment operator for a non-union class X performs memberwise copy/move assignment of its subobjects. The direct base classes of X are assigned first, in the order of their declaration in the base-specifier-list, and then the immediate non-static data members of X are assigned, in the order in which they were declared in the class definition. Let x be either the parameter of the function or, for the move operator, an xvalue referring to the parameter. Each subobject is assigned in the manner appropriate to its type:
-> 
-> - [...]  
-> 
-> It is unspecified whether subobjects representing virtual base classes are assigned more than once by <del>the</del> <ins>an</ins> implicitly-defined copy/move assignment operator.
-
-Change 10.3.5 [class.copy.assign], paragraph 13:
-> <del>The</del> <ins>An</ins> implicitly-defined copy assignment operator for a union X copies the object representation ([basic.types]) of X.
-
-## Destructor
+Change the definition of destructor as follows.
 
 Change 10.3.6 [class.dtor], paragraph 1:
 
 > In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a <ins>prospective</ins> destructor declaration (if any) shall be `friend`, `inline`, or `virtual`.
 
 > <ins>A _destructor_ is a prospective destructor such that</ins>
-> 
-> - <ins>all of its constraints (if any) are satisfied, and</ins>
-> - <ins>it is at least as constrained as ([temp.constr.order]) every other prospective destructor whose constraints (if any) are satisfied.</ins> 
 >
+> - <ins>all of its constraints (if any) ([temp.constr]) are satisfied, and</ins>
+> - <ins>no other prospective destructor whose constraints (if any) are satisfied is more constrained ([temp.constr.order]) than it.</ins>
+>
+> <ins>At the end of the definition of a class, the program is ill-formed if there is no destructor for the class. Such destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted."
 > <ins>A class shall have a destructor.</ins>
 
 Change 10.3.6 [class.dtor], paragraph 4:
@@ -313,14 +130,14 @@ Change 10.3.6 [class.dtor], paragraph 4:
 > If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.
 
 > <ins>An implicitly-declared prospective destructor for a class X will have the form
-> 
+>
     :::cpp
     ~X()
-
+    
 Change 10.3.6 [class.dtor], paragraph 10:
 
 > A <ins>prospective</ins> destructor can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
 
 # Acknowledgments
 
-Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer for the wording wizardry. 
+Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer and Richard Smiths for the lengthy discussions and wording wizardry. 
