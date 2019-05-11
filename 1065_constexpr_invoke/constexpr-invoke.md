@@ -75,7 +75,15 @@ This issue was the blocker for having a `constexpr std::invoke()` due to this ea
 
 This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-related machinery: `invoke()`, `reference_wrapper<T>`, `not_fn()`, `bind()`, `bind_front()`, and `mem_fn()`. The remaining non-`constexpr` elements of the library that are <code><i>INVOKE</i></code>-adjacent are `function<Sig>`, `packaged_task<Sig>`, `async()`, `thread`, and `call_once()`.
 
-This proposal resolves [LWG 2894](https://wg21.link/lwg2894) and [LWG 2957](https://wg21.link/lwg2957).
+This proposal resolves [LWG 2894](https://wg21.link/lwg2894), [LWG 2957](https://wg21.link/lwg2957), and [LWG 3023](https://wg21.link/lwg3023). The last is addressed by guaranteeing that call wrappers that are produced by `not_fn()` and `bind()` have the same type if their state entities have the same type (note that this guarantee does not imply any restriction on implementors). Thus the types of `f1`, `f2`, `f3`, and `f4` in the following example are now guaranteed to be the same:
+
+    :::cpp
+    auto func = [](std::string) {};
+    std::string s("foo");
+    auto f1 = std::bind(func, s);
+    auto f2 = std::bind(std::as_const(foo), std::as_const(s));
+    auto f3 = std::bind(func, std::string("bar"));
+    auto f4 = std::bind(std::move(foo), std::move(s));
 
 The wording uses the phrase "shall be constexpr functions" in a couple places. We don't seem to have a way to say that in Library, see also [LWG 2833](https://wg21.link/lwg2833) and [LWG 2289](https://wg21.link/lwg2289).
 
