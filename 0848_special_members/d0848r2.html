@@ -696,6 +696,10 @@ struct optional {
 <blockquote>
 <p>Passing a potentially-evaluated argument of class type having a non-trivial <ins>eligible</ins> copy constructor <ins>([class.prop])</ins>, a non-trivial <ins>eligible</ins> move constructor, or a non-trivial destructor, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.</p>
 </blockquote>
+<p>Change 9.4.2/p5 [dcl.fct.def.default] to account for prospective destructors that aren't destructors:</p>
+<blockquote>
+<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted.</ins> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
+</blockquote>
 <p>Insert at the beginning of 11.1 [class.prop] a definition of eligibility:</p>
 <blockquote>
 <p><ins>An <em>eligible special member function</em> is a special member function ([special]):</ins></p>
@@ -715,8 +719,12 @@ struct optional {
 </ul>
 <p>A <em>trivial class</em> is a class that is trivially copyable and has one or more <ins>eligible</ins> default constructors ([class.default.ctor]), all of which are <ins>trivial.</ins> <del>either trivial or deleted and at least one of which is not deleted.</del></p>
 </blockquote>
+<p>Change 11.3.3/p1 [special] to refer to prospective destructors:</p>
+<blockquote>
+<p>The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and <ins>prospective</ins> destructor ([class.dtor]) are <em>special member functions</em>.</p>
+</blockquote>
 <p>Change the definition of destructor as follows.</p>
-<p>Change 10.3.6 [class.dtor], paragraph 1:</p>
+<p>Change 11.3.6 [class.dtor], paragraph 1:</p>
 <blockquote>
 <p>In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each <em>decl-specifier</em> of the <em>decl-specifier-seq</em> of a <ins>prospective</ins> destructor declaration (if any) shall be <code class="language-cpp">friend</code>, <code class="language-cpp">inline</code>, or <code class="language-cpp">virtual</code>.</p>
 <p><ins>A <em>destructor</em> is a prospective destructor such that</ins></p>
@@ -727,7 +735,7 @@ struct optional {
 <p><ins>At the end of the definition of a class, the program is ill-formed if there is no destructor for the class. Such destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted."
 <ins>A class shall have a destructor.</ins></p>
 </blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 4:</p>
+<p>Change 11.3.6 [class.dtor], paragraph 4:</p>
 <blockquote>
 <p>If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.</p>
 <p><ins>An implicitly-declared prospective destructor for a class X will have the form</p>
@@ -735,9 +743,9 @@ struct optional {
 
 
 </blockquote>
-<p>Change 10.3.6 [class.dtor], paragraph 10:</p>
+<p>Change 11.3.6 [class.dtor], paragraph 10:</p>
 <blockquote>
-<p>A <ins>prospective</ins> destructor can be declared <code class="language-cpp">virtual</code> (10.6.2) or pure <code class="language-cpp">virtual</code> (10.6.3); if <ins>the destructor of a class is <code class="language-cpp">virtual</code> and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
+<p>A <ins>prospective</ins> destructor can be declared <code class="language-cpp">virtual</code> (11.6.2) or pure <code class="language-cpp">virtual</code> (11.6.3); if <ins>the destructor of a class is <code class="language-cpp">virtual</code> and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
 </blockquote>
 <h2 id="acknowledgments">5. Acknowledgments<a class="self-link" href="#acknowledgments"></a></h2>
 <p>Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer and Richard Smiths for the lengthy discussions and wording wizardry. </p>

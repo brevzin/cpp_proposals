@@ -93,6 +93,10 @@ And likewise for 7.6.1.2/p12 [expr.call]:
 
 > Passing a potentially-evaluated argument of class type having a non-trivial <ins>eligible</ins> copy constructor <ins>([class.prop])</ins>, a non-trivial <ins>eligible</ins> move constructor, or a non-trivial destructor, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.
 
+Change 9.4.2/p5 [dcl.fct.def.default] to account for prospective destructors that aren't destructors:
+
+> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
+
 Insert at the beginning of 11.1 [class.prop] a definition of eligibility:
 
 > <ins>An _eligible special member function_ is a special member function ([special]):</ins>
@@ -111,9 +115,13 @@ Change the definitions of _trivially copyable_ and _trivial_ in 11.1/p1 [class.p
 
 > A _trivial class_ is a class that is trivially copyable and has one or more <ins>eligible</ins> default constructors ([class.default.ctor]), all of which are <ins>trivial.</ins> <del>either trivial or deleted and at least one of which is not deleted.</del>
 
+Change 11.3.3/p1 [special] to refer to prospective destructors:
+
+> The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and <ins>prospective</ins> destructor ([class.dtor]) are _special member functions_.
+
 Change the definition of destructor as follows.
 
-Change 10.3.6 [class.dtor], paragraph 1:
+Change 11.3.6 [class.dtor], paragraph 1:
 
 > In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a <ins>prospective</ins> destructor declaration (if any) shall be `friend`, `inline`, or `virtual`.
 
@@ -125,7 +133,7 @@ Change 10.3.6 [class.dtor], paragraph 1:
 > <ins>At the end of the definition of a class, the program is ill-formed if there is no destructor for the class. Such destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted."
 > <ins>A class shall have a destructor.</ins>
 
-Change 10.3.6 [class.dtor], paragraph 4:
+Change 11.3.6 [class.dtor], paragraph 4:
 
 > If a class has no user-declared <ins>prospective</ins> destructor, a <ins>prospective</ins> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <ins>prospective</ins> destructor is an inline public member of its class.
 
@@ -134,9 +142,9 @@ Change 10.3.6 [class.dtor], paragraph 4:
     :::cpp
     ~X()
     
-Change 10.3.6 [class.dtor], paragraph 10:
+Change 11.3.6 [class.dtor], paragraph 10:
 
-> A <ins>prospective</ins> destructor can be declared `virtual` (10.6.2) or pure `virtual` (10.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
+> A <ins>prospective</ins> destructor can be declared `virtual` (11.6.2) or pure `virtual` (11.6.3); if <ins>the destructor of a class is `virtual` and</ins> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.
 
 # Acknowledgments
 
