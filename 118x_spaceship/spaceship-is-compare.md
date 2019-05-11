@@ -243,7 +243,7 @@ This paper proposes a new direction for a stop-gap adoption measure for `operato
 
 Currently, the pairwise comparison of the subobjects is always <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. Always `operator<=>`.
 
-This paper proposes defining a new magic specification-only function <code><i>3WAY</i>&lt;R&gt;(a, b)</code>, which only has meaning in the context of defining what a defaulted `operator<=>` does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:
+This paper proposes defining a new say of synthesizing a three-way comparison, which only has meaning in the context of defining what a defaulted `operator<=>` does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:
 
 - We will _only_ synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is `auto`.
 - The presence of `<=>` is _always_ preferred to any kind of synthetic fallback. 
@@ -252,7 +252,7 @@ This paper proposes defining a new magic specification-only function <code><i>3W
 - Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
 - Synthesizing either `strong_equality` or `weak_equality` requires `==`.
 
-We then change the meaning of defaulted `operator<=>` to be defined in terms of this magic <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>, y<sub>i</sub>)</code> function (see [wording](#3way-def)) instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. If <code><i>3WAY</i>&lt;R&gt;(a, b)</code> uses an expression without checking for it and that expression is ill-formed, the function is defined as deleted.
+We then change the meaning of defaulted `operator<=>` to be defined in terms of this new synthesis instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>.
 
 ## Soundness of Synthesis
 
@@ -584,28 +584,29 @@ Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 
 > Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is ill-formed, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
 
-<a name="3way-def"></a>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
+Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
-> <ins>Define <code><i>3WAY</i>&lt;R&gt;(a, b)</code> as follows:</ins>
+> <ins>The _synthesized three-way comparison for category `R`_ of glvalues `x` and `y` of type `T` is defined as follows:</ins>
 > 
-- <ins>If `a <=> b` is well-formed and convertible to `R`, `a <=> b`;</ins>
-- <ins>Otherwise, if `a <=> b` is well-formed, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is ill-formed;</ins>
+- <ins>If `static_cast<R>(x <=> y)` is a well-formed expression, `static_cast<R>(x <=> y)`;</ins>
+- <ins>Otherwise, if overload resolution for `x <=> y` finds at least one viable candidate, the synthesized three-way comparison is ill-formed.</ins>
 - <ins>Otherwise, if `R` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
 - <ins>Otherwise, if `R` is `weak_ordering`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
 - <ins>Otherwise, if `R` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
 - <ins>Otherwise, if `R` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
 - <ins>Otherwise, if `R` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
-- <ins>Otherwise, <code><i>3WAY</i>&lt;R&gt;(a, b)</code> is ill-formed.</ins>
+- <ins>Otherwise, the synthesized three-way comparison is ill-formed.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 2 (note that we do _not_ want to make the noted case ill-formed, we just want to delete the operator):
 
 > If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <ins><code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.</ins> <del><code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
 
-> <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any <code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>,x<sub>i</sub>)</code> is ill-formed, the operator function is defined as deleted.</ins>
+> <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any
+synthesized three-way comparison for category `R` between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is ill-formed, the operator function is defined as deleted.</ins>
 
-Change 10.10.2 [class.spaceship], paragraph 3, to use `3WAY` instead of `<=>`
+Change 10.10.2 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of `<=>`
 
-> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where <del>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></del> <ins><code><i>3WAY</i>&lt;R&gt;(x<sub>i</sub>, y<sub>i</sub>)</code></ins> yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to `bool`, yields `true`; `V` is <code>v<sub>i</sub></code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`. 
+> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub><i>i</i></sub></code> and <code>y<sub><i>i</i></sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where <del><code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code></del>  <ins>the synthesized three-way comparison for category `R` between <code>x<sub><i>i</i></sub></code> and <code>y<sub><i>i</i></sub></code></ins> yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to `bool`, yields `true`; `V` is <code>v<sub>i</sub></code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`. 
                                     
 # Acknowledgments
     
