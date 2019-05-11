@@ -75,6 +75,10 @@ This issue was the blocker for having a `constexpr std::invoke()` due to this ea
 
 This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-related machinery: `invoke()`, `reference_wrapper<T>`, `not_fn()`, `bind()`, `bind_front()`, and `mem_fn()`. The remaining non-`constexpr` elements of the library that are <code><i>INVOKE</i></code>-adjacent are `function<Sig>`, `packaged_task<Sig>`, `async()`, `thread`, and `call_once()`.
 
+This proposal resolves [LWG 2957](https://wg21.link/lwg2957).
+
+The wording uses the phrase "shall be constexpr functions" in a couple places. We don't seem to have a way to say that in Library, see also [LWG 2833](https://wg21.link/lwg2833) and [LWG 2289](https://wg21.link/lwg2289).
+
 ## Wording
 
 Add `constexpr` to several places in the synopsis in 20.14.1 [functional.syn]
@@ -264,7 +268,7 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 > 
 > <del>*Requires*</del> <ins>*Mandates*</ins>: `is_constructible_v<FD, F>` <del>shall be</del> <ins>is</ins> `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> <del>shall be</del> <ins>is</ins> `true`.
 
-> <ins>*Expects*: `FD` meets the requirements of *Cpp17MoveConstructible*. Each <code>TD<sub>i</sub></code> meets the requirements of *Cpp17MoveConstructible*.</ins> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <del>shall be</del> <ins>is</ins> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, <del>shall be</del> <ins>is</ins> neither `volatile` nor `const volatile`.
+> <ins>*Expects*: `FD` meets the requirements of *Cpp17MoveConstructible*. Each <code>TD<sub>i</sub></code> meets the requirements of *Cpp17MoveConstructible*.</ins> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <del>shall be</del> <ins>is</ins> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, <del>shall be</del> <ins>are</ins> neither `volatile` nor `const volatile`.
 > 
 > *Returns*: An argument forwarding call wrapper `g` ([func.require]). The <del>effect of</del> <ins>invocation</ins> <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> <del>shall be</del> <ins>is expression-equivalent ([defns.expression-equivalent]) to</ins> <code>INVOKE(<del>fd</del> <ins>static_cast&lt;cv FD&&gt;(fd)</ins>, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> <ins>for the first overload, and <code>INVOKE&lt;R&gt;(static_cast&lt;cv FD&&gt;(fd), std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the second overload,</ins> where <ins>the cv-qualifiers *cv* are those of `g` and</ins> the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. <del>The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.</del>
 > 
@@ -272,7 +276,7 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 > 
 > <del>*Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]</del>
 > 
-> <ins>[*Note*: If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type satisfies the *Cpp17CopyConstructible* requirements. -*end note*]</ins>
+> <ins>[*Note*: If all of `FD` and <code>TD<sub>i</sub></code> meet the requirements of *Cpp17CopyConstructible*, then the return type meets the requirements of *Cpp17CopyConstructible*. -*end note*]</ins>
 
 > <pre><code><del>template&lt;class R, class F, class... BoundArgs&gt;
   unspecified bind(F&& f, BoundArgs&&... bound_args);</del></code></pre>
@@ -283,7 +287,15 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 > <del>*Throws*: Nothing unless the construction of `fd` or of one of the values <code>td<sub>i</sub></code> throws an exception.</del>
 > 
 > <del>*Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]</del>
- 
+
+Add reference to the *cv*-qualifies in 20.14.14.3 [func.bind.bind]/10: 
+
+> The values of the *bound arguments* <code>v<sub>1</sub></code>, <code>v<sub>2</sub></code>, ..., <code>v<sub>N</sub></code> and their corresponding types <code>V<sub>1</sub></code>, <code>V<sub>2</sub></code>, ..., <code>V<sub>N</sub></code> depend on the types <code>TD<sub><i>i</i></sub></code> derived from the call to bind and the cv-qualifiers *cv* of the call wrapper `g` as follows:
+> 
+> - if <code>TD<sub><i>i</i></sub></code> is `reference_wrapper<T>`, [...]
+> - if the value of <code>is_bind_expression_v&lt;TD<sub><i>i</i></sub>&gt;</code> is `true`, the argument is <code><del>td<sub><i>i</i></sub></del> <ins>static_cast&lt;TD<sub><i>i</i></sub> <i>cv</i> &&gt;</ins>(std::forward&lt;U<sub>j</sub>&gt;(u<sub>j</sub>)...)</code> and its type <code>V<sub><i>i</i></sub></code> is <code>invoke_result_t&lt;TD<sub><i>i</i></sub> <i>cv</i> &, U<sub><i>j</i></sub>...&gt;&&</code>;
+> - if the value `j` of [...] 
+> - otherwise, [...]
 
 Add constant requirement to the placeholders in 20.14.14.4 [func.bind.place]/1:
 
