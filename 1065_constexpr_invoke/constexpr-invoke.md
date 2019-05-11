@@ -75,7 +75,7 @@ This issue was the blocker for having a `constexpr std::invoke()` due to this ea
 
 This proposal adds `constexpr` to the following <code><i>INVOKE</i></code>-related machinery: `invoke()`, `reference_wrapper<T>`, `not_fn()`, `bind()`, `bind_front()`, and `mem_fn()`. The remaining non-`constexpr` elements of the library that are <code><i>INVOKE</i></code>-adjacent are `function<Sig>`, `packaged_task<Sig>`, `async()`, `thread`, and `call_once()`.
 
-This proposal resolves [LWG 2957](https://wg21.link/lwg2957).
+This proposal resolves [LWG 2894](https://wg21.link/lwg2894) and [LWG 2957](https://wg21.link/lwg2957).
 
 The wording uses the phrase "shall be constexpr functions" in a couple places. We don't seem to have a way to say that in Library, see also [LWG 2833](https://wg21.link/lwg2833) and [LWG 2289](https://wg21.link/lwg2289).
 
@@ -147,7 +147,7 @@ Add `constexpr` to several places in the synopsis in 20.14.1 [functional.syn]
   // ...    
 }</code></pre></blockquote>  
 
-The definition of the *simple call wrapper* (used only for `mem_fn`) is changed to be a refinement of *perfect forwarding call wrapper*, instead of *argument forwarding call wrapper*. These make the invocation operator conditionally `constexpr` and `noexcept`. In addition we state explicitly the copy/move constructor/assignment of simple care wrapper is core constant expression. [ *Note*: The definition of simple call wrapper is still required to guarantee assignability. ]
+The definition of the *simple call wrapper* (used only for `mem_fn`) is changed to be a refinement of *perfect forwarding call wrapper*, instead of *argument forwarding call wrapper*. These make the invocation operator conditionally `constexpr` and `noexcept`. In addition we state explicitly the copy/move constructor/assignment of simple call wrapper is core constant expression. [ *Note*: The definition of simple call wrapper is still required to guarantee assignability. ]
 
 The requirement of copy/move operation to be defined in terms of state entities is now extended to any argument forwarding call wrapper (as we define them for `not_fn` and `bind`).
 
@@ -266,9 +266,9 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 </code><code><ins>template&lt;class R, class F, class... BoundArgs&gt;
   constexpr <i>unspecified</i> bind(F&& f, BoundArgs&&... bound_args);</code></pre>
 > 
-> <del>*Requires*</del> <ins>*Mandates*</ins>: `is_constructible_v<FD, F>` <del>shall be</del> <ins>is</ins> `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> <del>shall be</del> <ins>is</ins> `true`.
+> <del>*Requires*</del> <ins>*Mandates*</ins>: `is_constructible_v<FD, F>` <del>shall be</del> <ins>is</ins> `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> <del>shall be</del> <ins>is</ins> `true`. <ins>The cv-qualifiers *cv* of the call wrapper `g`, as specified below, are neither `volatile` nor `const volatile`.</ins>
 
-> <ins>*Expects*: `FD` meets the requirements of *Cpp17MoveConstructible*. Each <code>TD<sub>i</sub></code> meets the requirements of *Cpp17MoveConstructible*.</ins> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <del>shall be</del> <ins>is</ins> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, <del>shall be</del> <ins>are</ins> neither `volatile` nor `const volatile`.
+> <ins>*Expects*: `FD` meets the requirements of *Cpp17MoveConstructible*. Each <code>TD<sub>i</sub></code> meets the requirements of *Cpp17MoveConstructible*.</ins> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <del>shall be</del> <ins>is</ins> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. <del>The cv-qualifiers *cv* of the call wrapper `g`, as specified below, shall be neither `volatile` nor `const volatile`.</del>
 > 
 > *Returns*: An argument forwarding call wrapper `g` ([func.require]). The <del>effect of</del> <ins>invocation</ins> <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> <del>shall be</del> <ins>is expression-equivalent ([defns.expression-equivalent]) to</ins> <del><code>INVOKE(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code></del> <ins><code>INVOKE(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>), static_cast&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), static_cast&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, static_cast&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the first overload, and <code>INVOKE&lt;R&gt;(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>), static_cast&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), static_cast&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, static_cast&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the second overload,</ins> where the values and types of <ins>the target argument <code>v<sub>fd</sub></code> and of</ins> the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. <del>The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.</del>
 > 
