@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D0848R2 <br />
-Date: 2019-05-11 <br />
+Date: 2019-05-13 <br />
 Audience: CWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Casey Carter, casey at carter dot net <br />
 </address>
@@ -698,14 +698,14 @@ struct optional {
 </blockquote>
 <p>Change 9.4.2/p5 [dcl.fct.def.default] to account for prospective destructors that aren't destructors:</p>
 <blockquote>
-<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted.</ins> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
+<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted. A defaulted special member function that is not an eligible special member function ([class.prop]) shall be defined as deleted.</ins> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
 </blockquote>
 <p>Insert at the beginning of 11.1 [class.prop] a definition of eligibility:</p>
 <blockquote>
 <p><ins>An <em>eligible special member function</em> is a special member function ([special]):</ins></p>
 <ul>
 <li><ins>that is not deleted,</ins></li>
-<li><ins>where each of its constraints ([temp.constr]), if any, are satisfied, and</ins></li>
+<li><ins>where each of its associated constraints ([temp.constr]), if any, are satisfied, and</ins></li>
 <li><ins>no special member function of the same kind with the same first parameter type (if any) is more constrained ([temp.constr.order]).</ins></li>
 </ul>
 </blockquote>
@@ -719,21 +719,15 @@ struct optional {
 </ul>
 <p>A <em>trivial class</em> is a class that is trivially copyable and has one or more <ins>eligible</ins> default constructors ([class.default.ctor]), all of which are <ins>trivial.</ins> <del>either trivial or deleted and at least one of which is not deleted.</del></p>
 </blockquote>
-<p>Change 11.3.3/p1 [special] to refer to prospective destructors:</p>
+<p>Change 11.3.3/p1 [special] to refer to prospective destructors, and make everything plural:</p>
 <blockquote>
-<p>The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and <ins>prospective</ins> destructor ([class.dtor]) are <em>special member functions</em>.</p>
+<p><del>The default</del> <ins>Default</ins> constructor ([class.default.ctor]), copy constructor<ins>s</ins>, move constructor<ins>s</ins> ([class.copy.ctor]), copy assignment operator<ins>s</ins>, move assignment operator<ins>s</ins> ([class.copy.assign]), and <ins>prospective</ins> destructor<ins>s</ins> ([class.dtor]) are <em>special member functions</em>.</p>
 </blockquote>
 <p>Change the definition of destructor as follows.</p>
 <p>Change 11.3.6 [class.dtor], paragraph 1:</p>
 <blockquote>
 <p>In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each <em>decl-specifier</em> of the <em>decl-specifier-seq</em> of a <ins>prospective</ins> destructor declaration (if any) shall be <code class="language-cpp">friend</code>, <code class="language-cpp">inline</code>, or <code class="language-cpp">virtual</code>.</p>
-<p><ins>A <em>destructor</em> is a prospective destructor such that</ins></p>
-<ul>
-<li><ins>all of its constraints (if any) ([temp.constr]) are satisfied, and</ins></li>
-<li><ins>no other prospective destructor whose constraints (if any) are satisfied is more constrained ([temp.constr.order]) than it.</ins></li>
-</ul>
-<p><ins>At the end of the definition of a class, the program is ill-formed if there is no destructor for the class. Such destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted."
-<ins>A class shall have a destructor.</ins></p>
+<p><ins>At the end of the definition of a class, overload resolution is performed among the prospective destructors declared in that class with an empty argument list to select the <em>destructor</em> for the class. The program is ill-formed if overload resolution fails. Destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted.</ins></p>
 </blockquote>
 <p>Change 11.3.6 [class.dtor], paragraph 4:</p>
 <blockquote>

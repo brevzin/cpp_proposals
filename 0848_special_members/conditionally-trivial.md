@@ -95,14 +95,14 @@ And likewise for 7.6.1.2/p12 [expr.call]:
 
 Change 9.4.2/p5 [dcl.fct.def.default] to account for prospective destructors that aren't destructors:
 
-> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
+> Explicitly-defaulted functions and implicitly-declared functions are collectively called _defaulted_ functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted. A defaulted special member function that is not an eligible special member function ([class.prop]) shall be defined as deleted.</ins> A function is _user-provided_ if it is user-declared and not explicitly defaulted or deleted on its first declaration.
 
 Insert at the beginning of 11.1 [class.prop] a definition of eligibility:
 
 > <ins>An _eligible special member function_ is a special member function ([special]):</ins>
 > 
 > - <ins>that is not deleted,</ins>
-> - <ins>where each of its constraints ([temp.constr]), if any, are satisfied, and</ins>
+> - <ins>where each of its associated constraints ([temp.constr]), if any, are satisfied, and</ins>
 > - <ins>no special member function of the same kind with the same first parameter type (if any) is more constrained ([temp.constr.order]).</ins>
 
 Change the definitions of _trivially copyable_ and _trivial_ in 11.1/p1 [class.prop]:
@@ -115,9 +115,9 @@ Change the definitions of _trivially copyable_ and _trivial_ in 11.1/p1 [class.p
 
 > A _trivial class_ is a class that is trivially copyable and has one or more <ins>eligible</ins> default constructors ([class.default.ctor]), all of which are <ins>trivial.</ins> <del>either trivial or deleted and at least one of which is not deleted.</del>
 
-Change 11.3.3/p1 [special] to refer to prospective destructors:
+Change 11.3.3/p1 [special] to refer to prospective destructors, and make everything plural:
 
-> The default constructor ([class.default.ctor]), copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, move assignment operator ([class.copy.assign]), and <ins>prospective</ins> destructor ([class.dtor]) are _special member functions_.
+> <del>The default</del> <ins>Default</ins> constructor ([class.default.ctor]), copy constructor<ins>s</ins>, move constructor<ins>s</ins> ([class.copy.ctor]), copy assignment operator<ins>s</ins>, move assignment operator<ins>s</ins> ([class.copy.assign]), and <ins>prospective</ins> destructor<ins>s</ins> ([class.dtor]) are _special member functions_.
 
 Change the definition of destructor as follows.
 
@@ -125,13 +125,7 @@ Change 11.3.6 [class.dtor], paragraph 1:
 
 > In a declaration of a <ins>prospective</ins> destructor, the declarator is a function declarator (9.2.3.5) of the form [...] A <ins>prospective</ins> destructor shall take no arguments (9.2.3.5). Each *decl-specifier* of the *decl-specifier-seq* of a <ins>prospective</ins> destructor declaration (if any) shall be `friend`, `inline`, or `virtual`.
 
-> <ins>A _destructor_ is a prospective destructor such that</ins>
->
-> - <ins>all of its constraints (if any) ([temp.constr]) are satisfied, and</ins>
-> - <ins>no other prospective destructor whose constraints (if any) are satisfied is more constrained ([temp.constr.order]) than it.</ins>
->
-> <ins>At the end of the definition of a class, the program is ill-formed if there is no destructor for the class. Such destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted."
-> <ins>A class shall have a destructor.</ins>
+> <ins>At the end of the definition of a class, overload resolution is performed among the prospective destructors declared in that class with an empty argument list to select the _destructor_ for the class. The program is ill-formed if overload resolution fails. Destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted.</ins>
 
 Change 11.3.6 [class.dtor], paragraph 4:
 
