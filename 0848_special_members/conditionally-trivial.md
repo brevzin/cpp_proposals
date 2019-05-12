@@ -117,7 +117,7 @@ Change the definitions of _trivially copyable_ and _trivial_ in 11.1/p1 [class.p
 
 Change 11.3.3/p1 [special] to refer to prospective destructors, and make everything plural:
 
-> <del>The default</del> <ins>Default</ins> constructor ([class.default.ctor]), copy constructor<ins>s</ins>, move constructor<ins>s</ins> ([class.copy.ctor]), copy assignment operator<ins>s</ins>, move assignment operator<ins>s</ins> ([class.copy.assign]), and <ins>prospective</ins> destructor<ins>s</ins> ([class.dtor]) are _special member functions_.
+> <del>The default</del> <ins>Default</ins> constructor<ins>s</ins> ([class.default.ctor]), copy constructor<ins>s</ins>, move constructor<ins>s</ins> ([class.copy.ctor]), copy assignment operator<ins>s</ins>, move assignment operator<ins>s</ins> ([class.copy.assign]), and <ins>prospective</ins> destructor<ins>s</ins> ([class.dtor]) are _special member functions_.
 
 Change the definition of destructor as follows.
 
