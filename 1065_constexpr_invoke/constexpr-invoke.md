@@ -81,9 +81,9 @@ This proposal resolves [LWG 2894](https://wg21.link/lwg2894), [LWG 2957](https:/
     auto func = [](std::string) {};
     std::string s("foo");
     auto f1 = std::bind(func, s);
-    auto f2 = std::bind(std::as_const(foo), std::as_const(s));
+    auto f2 = std::bind(std::as_const(func), std::as_const(s));
     auto f3 = std::bind(func, std::string("bar"));
-    auto f4 = std::bind(std::move(foo), std::move(s));
+    auto f4 = std::bind(std::move(func), std::move(s));
 
 The wording uses the phrase "shall be constexpr functions" in a couple places. We don't seem to have a way to say that in Library, see also [LWG 2833](https://wg21.link/lwg2833) and [LWG 2289](https://wg21.link/lwg2289).
 

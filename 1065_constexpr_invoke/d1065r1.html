@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1065R1 <br />
-Date: 2019-05-11 <br />
+Date: 2019-05-13 <br />
 Audience: LWG <br />
 Reply-To: Tomasz Kamiński, tomaszkam at gmail dot com<br />Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -688,9 +688,9 @@ int main() {
 <pre class="codehilite"><code class="language-cpp">auto func = [](std::string) {};
 std::string s(&quot;foo&quot;);
 auto f1 = std::bind(func, s);
-auto f2 = std::bind(std::as_const(foo), std::as_const(s));
+auto f2 = std::bind(std::as_const(func), std::as_const(s));
 auto f3 = std::bind(func, std::string(&quot;bar&quot;));
-auto f4 = std::bind(std::move(foo), std::move(s));</code></pre>
+auto f4 = std::bind(std::move(func), std::move(s));</code></pre>
 
 
 <p>The wording uses the phrase "shall be constexpr functions" in a couple places. We don't seem to have a way to say that in Library, see also <a href="https://wg21.link/lwg2833" title="Library needs to specify what it means when it declares a function constexpr">LWG 2833</a> and <a href="https://wg21.link/lwg2289" title="constexpr guarantees of defaulted functions still insufficient">LWG 2289</a>.</p>
