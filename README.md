@@ -1,4 +1,4 @@
-Just a bunch of proposals for standardization that I've worked on. This is probably not up to date, since I always forget to push. Rendered [here](https://brevzin.github.io/cpp_proposals).
+Just a bunch of proposals for standardization that I've worked on. This is probably not up to date, since I always forget to push. Rendered [here](https://brevzin.github.io/cpp_proposals). Requires Python-Markdown 2.6.9 and lxml to build things.
 
 ### Accepted to Working Draft
 
