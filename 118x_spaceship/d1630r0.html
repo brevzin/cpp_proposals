@@ -620,6 +620,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li><a href="#changing-the-result-of-overload-resolution">Changing the result of overload resolution</a></li>
 <li><a href="#code-that-becomes-ambiguous">Code that becomes ambiguous</a></li>
 <li><a href="#similar-examples">Similar examples</a></li>
+<li><a href="#todays-guidance">Today's Guidance</a></li>
 <li><a href="#proposal">Proposal</a></li>
 </ol>
 </li>
@@ -633,6 +634,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </li>
 <li><a href="#default-comparisons-for-reference-data-members">Default comparisons for reference data members</a><ol>
 <li><a href="#anonymous-unions">Anonymous unions</a></li>
+<li><a href="#design-intent">Design intent</a></li>
 <li><a href="#proposal_3">Proposal</a></li>
 </ol>
 </li>
@@ -718,7 +720,18 @@ bool g() {return D()==C();}</code></pre>
 
 
 <p>The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.</p>
-<h3 id="proposal">2.4. Proposal<a class="self-link" href="#proposal"></a></h3>
+<h3 id="todays-guidance">2.4. Today's Guidance<a class="self-link" href="#todays-guidance"></a></h3>
+<p>From Herb Sutter's <a href="http://lists.isocpp.org/ext/2019/03/8704.php" title="Overload resolution changes as a result of P1185R2">post</a> on the topic:</p>
+<blockquote>
+<p>Actually, C++20 is removing a pre-C++20 can of worms we can now unlearn.</p>
+<p>This example is “bad” code that breaks two rules we teach today, and compiling it in C++20 will make it strictly better:</p>
+<p>(1) It violates today’s guidance that you should write symmetric overloads of a heterogeneous <code class="language-cpp">operator==</code> to avoid surprises. In this case, they provided <code class="language-cpp">operator==(A,int)</code> but failed to provide <code class="language-cpp">operator==(int,A)</code>. As a result, today we have to explain arcane details of why <code class="language-cpp">10==x</code> and <code class="language-cpp">x==10</code> do different and possibly inconsistent things in this code, which forces us to explain several language rules plus teach a coding guideline to always remember to provide two overloads of a heterogeneous operator== (because if you forget, this code will compile but do inconsistent things depending on the order of <code class="language-cpp">10==x</code> and <code class="language-cpp">x==10</code>). That’s a can of worms we can stop teaching in C++20.</p>
+<p>(2) It violates today’s guidance that you should also write a homogeneous <code class="language-cpp">operator==</code> to avoid a performance and/or correctness pitfall. In this case, they forgot to provide <code class="language-cpp">operator==(A,A)</code>. As a result, today we have to explain why <code class="language-cpp">x==y</code> “works” in this code, but that’s a bug not a feature – it “works” only because we already violated (1) above, and that it “works” is harboring a performance bug (implicit conversion) and possibly a correctness bug (if comparing two A’s directly might do something different than first converting one to an int). If today the programmer had not violated (1), they would already get a compile-time error; so the fact that <code class="language-cpp">x==y</code> is ambiguous is not actually new in C++20, what is new is that you will now consistently always get the compile-time error that you are missing <code class="language-cpp">operator==(A,A)</code> instead of having it masked sometimes if you broke another rule. </p>
+<p>So recompiling this “bad” code in C++20 mode is strictly good: For (1), C++20 silently fixes the bug, because the existing <code class="language-cpp">operator==(A,int)</code> now does what the user almost certainly intended. For (2), C++20 removes the pitfall by making the existing compile-time diagnostic guaranteed instead of just likely.</p>
+<p>Operationally, the main place you’ll notice a difference in C++20 is in code that a wise man once described as “code that deserves to be broken.”</p>
+<p>Educationally, C++20 does remove a pre-C++20 can of worms, but mostly the only ones who will notice are us “arcana experts” who are steeped in today’s complexity (because we have to unlearn our familiar wormcan); most “normals” will only notice that now C++ does what they thought it did. :)</p>
+</blockquote>
+<h3 id="proposal">2.5. Proposal<a class="self-link" href="#proposal"></a></h3>
 <p>The model around comparisons is better in the working draft than it was in C++17. We're also now in a position where it's simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares <code class="language-cpp">operator&lt;</code> for their types and then everybody writes algorithms that pretend that only <code class="language-cpp">&lt;</code> exists. Or, more relevantly, where everybody only declares <code class="language-cpp">operator==</code> for their types and nobody uses <code class="language-cpp">!=</code>. This is a Good Thing. </p>
 <p>Coming up with a way to design the rewrite rules in a way that makes satisfies both Tomasz's and Davis's examples leads to a <em>very</em> complex set of rules, all to fix code that is fundamentally ambiguous. </p>
 <p>This paper proposes that the status quo is the very best of the quos. Some code will fail to compile, that code can be easily fixed by adding either a homogeneous comparison operator or, if not that, doing an explicit conversion at the call sites. This lets us have the best language rules for the long future this language still has ahead of it. Instead, we add an Annex C entry.</p>
@@ -744,7 +757,6 @@ template &lt;typename T&gt;
 constexpr T&amp; declval();
 
 template &lt;typename, typename = void&gt;
-
 constexpr bool has_neq_operation = false;
 
 template &lt;typename T&gt;
@@ -773,19 +785,20 @@ static_assert(!has_neq_operation&lt;OnlyEq&gt;);</code></pre>
 </blockquote>
 <p>Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the <code class="language-cpp">&lt;=&gt;</code> invocation and the <code class="language-cpp">@</code> invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit <a href="http://lists.isocpp.org/core/2019/05/6420.php" title="Processing relational/spaceship operator rewrites">the following example</a>:</p>
 <pre class="codehilite"><code class="language-cpp">struct Base { 
-  friend bool operator&lt;(const Base&amp;, const Base&amp;); 
+  friend bool operator&lt;(const Base&amp;, const Base&amp;);  // #1
   friend bool operator==(const Base&amp;, const Base&amp;); 
 }; 
 struct Derived : Base { 
-  friend std::strong_equality operator&lt;=&gt;(const Derived&amp;, const Derived&amp;); 
+  friend std::strong_equality operator&lt;=&gt;(const Derived&amp;, const Derived&amp;); // #2
 }; 
 bool f(Derived d1, Derived d2) { return d1 &lt; d2; }</code></pre>
 
 
-<p>The question here is: should we even consider the <code class="language-cpp">@ 0</code> part of the rewritten expression for validity? The status quo is that we do consider it -- <code class="language-cpp">Derived</code>'s <code class="language-cpp">operator&lt;=&gt;</code> is not a viable candidate (because <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code> is not a valid expression) and <code class="language-cpp">d1 &lt; d2</code> invokes <code class="language-cpp">Base</code>'s <code class="language-cpp">operator&lt;</code>. If we <em>do not</em> consider it, then <code class="language-cpp">Derived</code>'s <code class="language-cpp">operator&lt;=&gt;</code> would be a better match leading to the expression being ill-formed due to the subsequent <code class="language-cpp">&lt; 0</code>.</p>
+<p>The status quo is that <code class="language-cpp">d1 &lt; d2</code> invokes <code class="language-cpp">#1</code>. <code class="language-cpp">#2</code> is not actually a candidate because we consider the full expression <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code>, which is not a valid expression.</p>
+<p>The question here is: should we even consider the <code class="language-cpp">@ 0</code> part of the rewritten expression for validity? If we did not, then <code class="language-cpp">#2</code> would be a candidate and it would become the best candidate, leading <code class="language-cpp">d1 &lt; d2</code> to become ill-formed because once we select <code class="language-cpp">#2</code> only then do we find out that <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code> is an error.</p>
 <p>The reasoning here is that by considering the <code class="language-cpp">@ 0</code> part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.</p>
 <h3 id="proposal_2">4.1. Proposal<a class="self-link" href="#proposal_2"></a></h3>
-<p>This paper agrees with Richard that we should not consider the validity of the <code class="language-cpp">@ 0</code> part of the comparison in determining the candidate set, and additionally fixes the word choice with "well-formed".</p>
+<p>This paper agrees with Richard that we should not consider the validity of the <code class="language-cpp">@ 0</code> part of the comparison in determining the candidate set. The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. This change does not affect any C++17 code.</p>
 <h2 id="default-comparisons-for-reference-data-members">5. Default comparisons for reference data members<a class="self-link" href="#default-comparisons-for-reference-data-members"></a></h2>
 <p>The last issue, also raised by <a href="http://lists.isocpp.org/core/2019/05/6462.php" title="Generating comparison operators for classes with reference or anonymous union members">Daveed Vandevoorde</a> is what should happen for the case where we try to default a comparison for a class that has data members of reference type:</p>
 <pre class="codehilite"><code class="language-cpp">struct A {
@@ -832,8 +845,25 @@ Y&lt;A{j}&gt; yj;</code></pre>
 
 
 <p>What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.</p>
-<h3 id="proposal_3">5.2. Proposal<a class="self-link" href="#proposal_3"></a></h3>
-<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction for reference data members by pursuing option 2 above.</p>
+<h3 id="design-intent">5.2. Design intent<a class="self-link" href="#design-intent"></a></h3>
+<p>P0515 clearly lays out the design intent as comparison following copying, emphasis mine:</p>
+<blockquote>
+<p>This proposal unifies and regularizes the noncontroversial parts of previous proposals, and incorporates EWG
+direction to pursue three-way comparison, <strong>letting default copying guide default comparison</strong>, and having a simple way to write a memberwise comparison function body.</p>
+</blockquote>
+<p>and</p>
+<blockquote>
+<p>For raw pointers [...]  I’m going with <code class="language-cpp">strong_ordering</code>, <strong>on the basis of maintaining a strict parallel between default copying and default comparison</strong> (we copy raw pointer members, so we should compare them too unless there is a good
+reason to do otherwise [...])</p>
+</blockquote>
+<p>and</p>
+<blockquote>
+<p>For copyable arrays <code class="language-cpp">T[N]</code> (i.e., that are nonstatic data members), <code class="language-cpp">T[N] &lt;=&gt; T[N]</code> returns the same type
+as <code class="language-cpp">T</code>’s <code class="language-cpp">&lt;=&gt;</code> and performs lexicographical elementwise comparison. For other arrays, <strong>there is no <code class="language-cpp">&lt;=&gt;</code> because the arrays are not copyable.</strong></p>
+</blockquote>
+<h3 id="proposal_3">5.3. Proposal<a class="self-link" href="#proposal_3"></a></h3>
+<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent as laid out in P0515.</p>
+<p>A future proposal can always relax this restriction for reference data members by pursuing option 2 above.</p>
 <h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Insert a new paragraph after 11.10.1 [class.compare.default]/1:</p>
 <blockquote>
@@ -874,5 +904,5 @@ int check(A x, A y) {
     (10 != x);       // calls #1, previously called #3
 }</code></pre></blockquote>
 
-<h2 id="references">7. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">[P0905R1]</a><span style="margin-left: 5px;">"Symmetry for spaceship" by Tomasz Kamiński, Herb Sutter, Richard Smith, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r2.html">[P1185R2]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-02-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://lists.isocpp.org/core/2019/04/5935.php">[cameron.sfinae]</a><span style="margin-left: 5px;">"Potential issue after P1185R2 - SFINAE breaking change" by Cameron daCamara, April 04, 2019</span></li><li><a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">[cwg2407]</a><span style="margin-left: 5px;">"CWG 2407: Missing entry in Annex C for defaulted comparison operators" by Tomasz Kamiński, Feb 26, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6420.php">[smith.unoverloadish]</a><span style="margin-left: 5px;">"Processing relational/spaceship operator rewrites" by Richard Smith, May 21, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6462.php">[vdv.references]</a><span style="margin-left: 5px;">"Generating comparison operators for classes with reference or anonymous union members" by Daveed Vandevoorde, May 23, 2019</span></li></ul>
+<h2 id="references">7. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">[P0905R1]</a><span style="margin-left: 5px;">"Symmetry for spaceship" by Tomasz Kamiński, Herb Sutter, Richard Smith, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r2.html">[P1185R2]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-02-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://lists.isocpp.org/core/2019/04/5935.php">[cameron.sfinae]</a><span style="margin-left: 5px;">"Potential issue after P1185R2 - SFINAE breaking change" by Cameron daCamara, April 04, 2019</span></li><li><a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">[cwg2407]</a><span style="margin-left: 5px;">"CWG 2407: Missing entry in Annex C for defaulted comparison operators" by Tomasz Kamiński, Feb 26, 2019</span></li><li><a href="http://lists.isocpp.org/ext/2019/03/8704.php">[herb.guidance]</a><span style="margin-left: 5px;">"Overload resolution changes as a result of P1185R2" by Herb Sutter, March 28, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6420.php">[smith.unoverloadish]</a><span style="margin-left: 5px;">"Processing relational/spaceship operator rewrites" by Richard Smith, May 21, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6462.php">[vdv.references]</a><span style="margin-left: 5px;">"Generating comparison operators for classes with reference or anonymous union members" by Daveed Vandevoorde, May 23, 2019</span></li></ul>
 </html>

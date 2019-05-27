@@ -103,6 +103,24 @@ Also:
     
 The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.
 
+## Today's Guidance
+
+From Herb Sutter's [post][herb.guidance] on the topic:
+
+> Actually, C++20 is removing a pre-C++20 can of worms we can now unlearn.
+
+> This example is “bad” code that breaks two rules we teach today, and compiling it in C++20 will make it strictly better:
+
+> (1) It violates today’s guidance that you should write symmetric overloads of a heterogeneous `operator==` to avoid surprises. In this case, they provided `operator==(A,int)` but failed to provide `operator==(int,A)`. As a result, today we have to explain arcane details of why `10==x` and `x==10` do different and possibly inconsistent things in this code, which forces us to explain several language rules plus teach a coding guideline to always remember to provide two overloads of a heterogeneous operator== (because if you forget, this code will compile but do inconsistent things depending on the order of `10==x` and `x==10`). That’s a can of worms we can stop teaching in C++20.
+
+> (2) It violates today’s guidance that you should also write a homogeneous `operator==` to avoid a performance and/or correctness pitfall. In this case, they forgot to provide `operator==(A,A)`. As a result, today we have to explain why `x==y` “works” in this code, but that’s a bug not a feature – it “works” only because we already violated (1) above, and that it “works” is harboring a performance bug (implicit conversion) and possibly a correctness bug (if comparing two A’s directly might do something different than first converting one to an int). If today the programmer had not violated (1), they would already get a compile-time error; so the fact that `x==y` is ambiguous is not actually new in C++20, what is new is that you will now consistently always get the compile-time error that you are missing `operator==(A,A)` instead of having it masked sometimes if you broke another rule. 
+
+> So recompiling this “bad” code in C++20 mode is strictly good: For (1), C++20 silently fixes the bug, because the existing `operator==(A,int)` now does what the user almost certainly intended. For (2), C++20 removes the pitfall by making the existing compile-time diagnostic guaranteed instead of just likely.
+
+> Operationally, the main place you’ll notice a difference in C++20 is in code that a wise man once described as “code that deserves to be broken.”
+
+> Educationally, C++20 does remove a pre-C++20 can of worms, but mostly the only ones who will notice are us “arcana experts” who are steeped in today’s complexity (because we have to unlearn our familiar wormcan); most “normals” will only notice that now C++ does what they thought it did. :)
+
 ## Proposal
 
 The model around comparisons is better in the working draft than it was in C++17. We're also now in a position where it's simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares `operator<` for their types and then everybody writes algorithms that pretend that only `<` exists. Or, more relevantly, where everybody only declares `operator==` for their types and nobody uses `!=`. This is a Good Thing. 
@@ -136,7 +154,6 @@ Cameron daCamara submitted the [following example][cameron.sfinae] after MSVC im
     constexpr T& declval();
      
     template <typename, typename = void>
-
     constexpr bool has_neq_operation = false;
 
     template <typename T>
@@ -172,21 +189,23 @@ Well-formed is poor word choice here, as that implies that we would have to full
 
     :::cpp
     struct Base { 
-      friend bool operator<(const Base&, const Base&); 
+      friend bool operator<(const Base&, const Base&);  // #1
       friend bool operator==(const Base&, const Base&); 
     }; 
     struct Derived : Base { 
-      friend std::strong_equality operator<=>(const Derived&, const Derived&); 
+      friend std::strong_equality operator<=>(const Derived&, const Derived&); // #2
     }; 
     bool f(Derived d1, Derived d2) { return d1 < d2; } 
 
-The question here is: should we even consider the `@ 0` part of the rewritten expression for validity? The status quo is that we do consider it -- `Derived`'s `operator<=>` is not a viable candidate (because `(d1 <=> d2) < 0` is not a valid expression) and `d1 < d2` invokes `Base`'s `operator<`. If we _do not_ consider it, then `Derived`'s `operator<=>` would be a better match leading to the expression being ill-formed due to the subsequent `< 0`.
+The status quo is that `d1 < d2` invokes `#1`. `#2` is not actually a candidate because we consider the full expression `(d1 <=> d2) < 0`, which is not a valid expression.
+
+The question here is: should we even consider the `@ 0` part of the rewritten expression for validity? If we did not, then `#2` would be a candidate and it would become the best candidate, leading `d1 < d2` to become ill-formed because once we select `#2` only then do we find out that `(d1 <=> d2) < 0` is an error.
 
 The reasoning here is that by considering the `@ 0` part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.
 
 ## Proposal
 
-This paper agrees with Richard that we should not consider the validity of the `@ 0` part of the comparison in determining the candidate set, and additionally fixes the word choice with "well-formed".
+This paper agrees with Richard that we should not consider the validity of the `@ 0` part of the comparison in determining the candidate set. The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. This change does not affect any C++17 code.
 
 # Default comparisons for reference data members
 
@@ -242,9 +261,28 @@ In the [same post][vdv.references], Daveed also questioned what defaulted compar
 
 What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.
 
+## Design intent
+
+P0515 clearly lays out the design intent as comparison following copying, emphasis mine:
+
+> This proposal unifies and regularizes the noncontroversial parts of previous proposals, and incorporates EWG
+direction to pursue three-way comparison, **letting default copying guide default comparison**, and having a simple way to write a memberwise comparison function body.
+
+and
+
+> For raw pointers [...]  I’m going with `strong_ordering`, **on the basis of maintaining a strict parallel between default copying and default comparison** (we copy raw pointer members, so we should compare them too unless there is a good
+reason to do otherwise [...])
+
+and
+
+> For copyable arrays `T[N]` (i.e., that are nonstatic data members), `T[N] <=> T[N]` returns the same type
+as `T`’s `<=>` and performs lexicographical elementwise comparison. For other arrays, **there is no `<=>` because the arrays are not copyable.**
+
 ## Proposal
 
-This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction for reference data members by pursuing option 2 above.
+This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent as laid out in P0515.
+
+A future proposal can always relax this restriction for reference data members by pursuing option 2 above.
 
 # Wording
 
@@ -295,3 +333,4 @@ int check(A x, A y) {
 [cameron.sfinae]: http://lists.isocpp.org/core/2019/04/5935.php "Potential issue after P1185R2 - SFINAE breaking change||Cameron daCamara||April 04, 2019"
 [smith.unoverloadish]: http://lists.isocpp.org/core/2019/05/6420.php "Processing relational/spaceship operator rewrites||Richard Smith||May 21, 2019"
 [vdv.references]: http://lists.isocpp.org/core/2019/05/6462.php "Generating comparison operators for classes with reference or anonymous union members||Daveed Vandevoorde||May 23, 2019"
+[herb.guidance]: http://lists.isocpp.org/ext/2019/03/8704.php "Overload resolution changes as a result of P1185R2||Herb Sutter||March 28, 2019"
