@@ -582,27 +582,27 @@ This paper proposes synthesizing `strong_equality` and `weak_equality` orderings
 
 Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
 
-> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is ill-formed, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
+> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is not valid, <code>S<sub>i</sub></code> is `void`.</ins> It is unspecified whether virtual base class subobjects are compared more than once.
 
 Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 
-> <ins>The _synthesized three-way comparison for category `R`_ of glvalues `x` and `y` of type `T` is defined as follows:</ins>
+> <ins>The _synthesized three-way comparison for category `R`_ of glvalues `a` and `b` of type `T` is defined as follows:</ins>
 > 
-- <ins>If `static_cast<R>(x <=> y)` is a well-formed expression, `static_cast<R>(x <=> y)`;</ins>
-- <ins>Otherwise, if overload resolution for `x <=> y` finds at least one viable candidate, the synthesized three-way comparison is ill-formed.</ins>
-- <ins>Otherwise, if `R` is `strong_ordering`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
-- <ins>Otherwise, if `R` is `weak_ordering`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
-- <ins>Otherwise, if `R` is `partial_ordering`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
-- <ins>Otherwise, if `R` is `strong_equality`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
-- <ins>Otherwise, if `R` is `weak_equality`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
-- <ins>Otherwise, the synthesized three-way comparison is ill-formed.</ins>
+- <ins>If `static_cast<R>(a <=> b)` is a valid expression, `static_cast<R>(a <=> b)`;</ins>
+- <ins>Otherwise, if overload resolution for `a <=> b` finds at least one viable candidate, the synthesized three-way comparison is not defined.</ins>
+- <ins>Otherwise, if `R` is `strong_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;</ins>
+- <ins>Otherwise, if `R` is `weak_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;</ins>
+- <ins>Otherwise, if `R` is `partial_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;</ins>
+- <ins>Otherwise, if `R` is `strong_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;</ins>
+- <ins>Otherwise, if `R` is `weak_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;</ins>
+- <ins>Otherwise, the synthesized three-way comparison is not defined.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 2 (note that we do _not_ want to make the noted case ill-formed, we just want to delete the operator):
 
 > If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <ins><code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.</ins> <del><code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as `void`, the operator function is defined as deleted.
 
 > <ins>If the declared return type of a defaulted three-way comparison operator function is `R` and any
-synthesized three-way comparison for category `R` between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is ill-formed, the operator function is defined as deleted.</ins>
+synthesized three-way comparison for category `R` between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is not defined, the operator function is defined as deleted.</ins>
 
 Change 10.10.2 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of `<=>`
 

@@ -607,7 +607,7 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1186R2 <br />
-Date: 2019-05-12 <br />
+Date: 2019-05-27 <br />
 Audience: EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
@@ -1138,27 +1138,27 @@ partial_ordering partial_order(T const&amp; a, T const&amp; b) {
 <h2 id="wording">4. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:</p>
 <blockquote>
-<p>Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is ill-formed, <code>S<sub>i</sub></code> is <code class="language-cpp">void</code>.</ins> It is unspecified whether virtual base class subobjects are compared more than once.</p>
+<p>Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by <del><code>R<sub>i</sub></code>.</del> <ins><code>S<sub>i</sub></code>. If the expression is not valid, <code>S<sub>i</sub></code> is <code class="language-cpp">void</code>.</ins> It is unspecified whether virtual base class subobjects are compared more than once.</p>
 </blockquote>
 <p>Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:</p>
 <blockquote>
-<p><ins>The <em>synthesized three-way comparison for category <code class="language-cpp">R</code></em> of glvalues <code class="language-cpp">x</code> and <code class="language-cpp">y</code> of type <code class="language-cpp">T</code> is defined as follows:</ins></p>
+<p><ins>The <em>synthesized three-way comparison for category <code class="language-cpp">R</code></em> of glvalues <code class="language-cpp">a</code> and <code class="language-cpp">b</code> of type <code class="language-cpp">T</code> is defined as follows:</ins></p>
 <ul>
-<li><ins>If <code class="language-cpp">static_cast&lt;R&gt;(x &lt;=&gt; y)</code> is a well-formed expression, <code class="language-cpp">static_cast&lt;R&gt;(x &lt;=&gt; y)</code>;</ins></li>
-<li><ins>Otherwise, if overload resolution for <code class="language-cpp">x &lt;=&gt; y</code> finds at least one viable candidate, the synthesized three-way comparison is ill-formed.</ins></li>
-<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">strong_ordering</code>, then <code class="language-cpp">(a == b) ? strong_ordering::equal : ((a &lt; b) ? strong_ordering::less : strong_ordering::greater)</code>;</ins></li>
-<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">weak_ordering</code>, then <code class="language-cpp">(a == b) ? weak_ordering::equivalent : ((a &lt; b) ? weak_ordering::less : weak_ordering::greater)</code>;</ins></li>
-<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">partial_ordering</code>, then <code class="language-cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</ins></li>
-<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">strong_equality</code>, then <code class="language-cpp">(a == b) ? strong_equality::equal : strong_equality::nonequal</code>;</ins></li>
-<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">weak_equality</code>, then <code class="language-cpp">(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent</code>;</ins></li>
-<li><ins>Otherwise, the synthesized three-way comparison is ill-formed.</ins></li>
+<li><ins>If <code class="language-cpp">static_cast&lt;R&gt;(a &lt;=&gt; b)</code> is a valid expression, <code class="language-cpp">static_cast&lt;R&gt;(a &lt;=&gt; b)</code>;</ins></li>
+<li><ins>Otherwise, if overload resolution for <code class="language-cpp">a &lt;=&gt; b</code> finds at least one viable candidate, the synthesized three-way comparison is not defined.</ins></li>
+<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">strong_ordering</code> and <code class="language-cpp">a == b</code> and <code class="language-cpp">a &lt; b</code> are both valid expressions of type <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? strong_ordering::equal : ((a &lt; b) ? strong_ordering::less : strong_ordering::greater)</code>;</ins></li>
+<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">weak_ordering</code> and <code class="language-cpp">a == b</code> and <code class="language-cpp">a &lt; b</code> are both valid expressions of type <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? weak_ordering::equivalent : ((a &lt; b) ? weak_ordering::less : weak_ordering::greater)</code>;</ins></li>
+<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">partial_ordering</code> and <code class="language-cpp">a == b</code> and <code class="language-cpp">a &lt; b</code> are both valid expressions of type <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</ins></li>
+<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">strong_equality</code> and <code class="language-cpp">a == b</code> is a valid expression of type <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? strong_equality::equal : strong_equality::nonequal</code>;</ins></li>
+<li><ins>Otherwise, if <code class="language-cpp">R</code> is <code class="language-cpp">weak_equality</code> and <code class="language-cpp">a == b</code> is a valid expression of type <code class="language-cpp">bool</code>, then <code class="language-cpp">(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent</code>;</ins></li>
+<li><ins>Otherwise, the synthesized three-way comparison is not defined.</ins></li>
 </ul>
 </blockquote>
 <p>Change 10.10.2 [class.spaceship], paragraph 2 (note that we do <em>not</em> want to make the noted case ill-formed, we just want to delete the operator):</p>
 <blockquote>
 <p>If the declared return type of a defaulted three-way comparison operator function is <code class="language-cpp">auto</code>, then the return type is deduced as the common comparison type (see below) of <ins><code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.</ins> <del><code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]</del> If the return type is deduced as <code class="language-cpp">void</code>, the operator function is defined as deleted.</p>
 <p><ins>If the declared return type of a defaulted three-way comparison operator function is <code class="language-cpp">R</code> and any
-synthesized three-way comparison for category <code class="language-cpp">R</code> between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is ill-formed, the operator function is defined as deleted.</ins></p>
+synthesized three-way comparison for category <code class="language-cpp">R</code> between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is not defined, the operator function is defined as deleted.</ins></p>
 </blockquote>
 <p>Change 10.10.2 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of <code class="language-cpp">&lt;=&gt;</code></p>
 <blockquote>
