@@ -197,9 +197,9 @@ Well-formed is poor word choice here, as that implies that we would have to full
     }; 
     bool f(Derived d1, Derived d2) { return d1 < d2; } 
 
-The status quo is that `d1 < d2` invokes `#1`. `#2` is not actually a candidate because we consider the full expression `(d1 <=> d2) < 0`, which is not a valid expression.
+The status quo is that `d1 < d2` invokes `#1`. `#2` is not actually a candidate because we have to consider the full expression `(d1 <=> d2) < 0`. While `(d1 <=> d2)` is a valid expression, `(d1 <=> d2) < 0` is not, which removes it from consideration.
 
-The question here is: should we even consider the `@ 0` part of the rewritten expression for validity? If we did not, then `#2` would be a candidate and it would become the best candidate, leading `d1 < d2` to become ill-formed because once we select `#2` only then do we find out that `(d1 <=> d2) < 0` is an error.
+The question here is: should we even consider the `@ 0` part of the rewritten expression for validity? If we did not, then `#2` would become a not only a candidate but also the best candidate. As a result, `d1 < d2` would become ill-formed because `(d1 <=> d2) < 0` is not a valid expression. We're no longer hiding that issue.
 
 The reasoning here is that by considering the `@ 0` part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.
 
