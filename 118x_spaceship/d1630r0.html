@@ -632,6 +632,7 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </ol>
 </li>
 <li><a href="#default-comparisons-for-reference-data-members">Default comparisons for reference data members</a><ol>
+<li><a href="#anonymous-unions">Anonymous unions</a></li>
 <li><a href="#proposal_3">Proposal</a></li>
 </ol>
 </li>
@@ -819,12 +820,24 @@ Y&lt;A{j}&gt; yj;</code></pre>
 
 
 <p>In even C++17, <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code> are both well-formed and have different types. Under option 1 above, the declaration of <code class="language-cpp">Y</code> is ill-formed because <code class="language-cpp">A</code> does not have strong structural equality because its <code class="language-cpp">operator==</code> would be defined as deleted. Under option 2, this would be well-formed and <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would have different types -- consistent with <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code>. Under option 3, <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality. </p>
-<h3 id="proposal_3">5.1. Proposal<a class="self-link" href="#proposal_3"></a></h3>
-<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction by pursuing option 2 above.</p>
+<h3 id="anonymous-unions">5.1. Anonymous unions<a class="self-link" href="#anonymous-unions"></a></h3>
+<p>In the <a href="http://lists.isocpp.org/core/2019/05/6462.php" title="Generating comparison operators for classes with reference or anonymous union members">same post</a>, Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:</p>
+<pre class="codehilite"><code class="language-cpp">struct B {
+    union {
+        int i;
+        char c;
+    };
+    auto operator&lt;=&gt;(B const&amp;, B const&amp;) = default;
+};</code></pre>
+
+
+<p>What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.</p>
+<h3 id="proposal_3">5.2. Proposal<a class="self-link" href="#proposal_3"></a></h3>
+<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction for reference data members by pursuing option 2 above.</p>
 <h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
 <p>Insert a new paragraph after 11.10.1 [class.compare.default]/1:</p>
 <blockquote>
-<p><ins>A defaulted comparison operator function for class <code class="language-cpp">C</code> is defined as deleted if any non-static data member of <code class="language-cpp">C</code> is of reference type or is an anonymous union.</ins></p>
+<p><ins>A defaulted comparison operator function for class <code class="language-cpp">C</code> is defined as deleted if any non-static data member of <code class="language-cpp">C</code> is of reference type or <code class="language-cpp">C</code> is a union-like class ([class.union.anon]).</ins></p>
 </blockquote>
 <p>Change 11.10.1 [class.compare.default]/3.2:</p>
 <blockquote>

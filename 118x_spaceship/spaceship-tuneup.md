@@ -227,15 +227,30 @@ Note however that reference data members add one more quirk in conjunction with 
     
 In even C++17, `xi` and `xj` are both well-formed and have different types. Under option 1 above, the declaration of `Y` is ill-formed because `A` does not have strong structural equality because its `operator==` would be defined as deleted. Under option 2, this would be well-formed and `yi` and `yj` would have different types -- consistent with `xi` and `xj`. Under option 3, `yi` and `yj` would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality. 
 
+## Anonymous unions
+
+In the [same post][vdv.references], Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:
+
+    :::cpp
+    struct B {
+        union {
+            int i;
+            char c;
+        };
+        auto operator<=>(B const&, B const&) = default;
+    };
+
+What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.
+
 ## Proposal
 
-This paper proposes making more explicit that defaulted comparisons for classes that have reference data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction by pursuing option 2 above.
+This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction for reference data members by pursuing option 2 above.
 
 # Wording
 
 Insert a new paragraph after 11.10.1 [class.compare.default]/1:
 
-> <ins>A defaulted comparison operator function for class `C` is defined as deleted if any non-static data member of `C` is of reference type or is an anonymous union.</ins>
+> <ins>A defaulted comparison operator function for class `C` is defined as deleted if any non-static data member of `C` is of reference type or `C` is a union-like class ([class.union.anon]).</ins>
 
 Change 11.10.1 [class.compare.default]/3.2:
 
