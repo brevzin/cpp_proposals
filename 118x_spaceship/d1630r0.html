@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>An Annex C entry for ==</title>
+<title>Spaceship needs a tune-up</title>
 <style type="text/css">html {
 	position: relative;
 	max-width: 1024px;
@@ -607,24 +607,32 @@ Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!
 <body>
 <address align=right>
 Document Number: D1630R0 <br />
-Date: 2019-03-28 <br />
+Date: 2019-05-27 <br />
 Audience: CWG, EWG <br />
 Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 </address>
-<hr /><h1 align=center><p>An Annex C entry for ==<br/>Or how I learned to stop worrying and embrace symmetry</p></h1>
+<hr /><h1 align=center><p>Spaceship needs a tune-up<br/>Addressing some discovered issues with P0515 and P1185</p></h1>
 <h2>Contents</h2>
 <div class="toc">
 <ol>
-<li><a href="#introduction">Introduction</a><ol>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#tomaszs-example-cwg-2407">Tomasz's example (CWG 2407)</a><ol>
 <li><a href="#changing-the-result-of-overload-resolution">Changing the result of overload resolution</a></li>
 <li><a href="#code-that-becomes-ambiguous">Code that becomes ambiguous</a></li>
+<li><a href="#similar-examples">Similar examples</a></li>
+<li><a href="#proposal">Proposal</a></li>
 </ol>
 </li>
-<li><a href="#what-do-we-do-about-it">What do we do about it?</a><ol>
-<li><a href="#nothing">Nothing</a></li>
-<li><a href="#carve-out-an-exception-to-overload-resolution-for-this-case">Carve out an exception to overload resolution for this case</a></li>
-<li><a href="#back-out-the-reversed-and-rewritten-equality-candidates">Back out the reversed and rewritten equality candidates</a></li>
-<li><a href="#proposal">Proposal</a></li>
+<li><a href="#camerons-example">Cameron's Example</a><ol>
+<li><a href="#proposal_1">Proposal</a></li>
+</ol>
+</li>
+<li><a href="#richards-example">Richard's Example</a><ol>
+<li><a href="#proposal_2">Proposal</a></li>
+</ol>
+</li>
+<li><a href="#default-comparisons-for-reference-data-members">Default comparisons for reference data members</a><ol>
+<li><a href="#proposal_3">Proposal</a></li>
 </ol>
 </li>
 <li><a href="#wording">Wording</a></li>
@@ -643,8 +651,9 @@ Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
 <li>Strong structural equality is defined in terms of <code class="language-cpp">==</code> instead of <code class="language-cpp">&lt;=&gt;</code>  </li>
 <li>Defaulted <code class="language-cpp">&lt;=&gt;</code> can also implicitly declare defaulted <code class="language-cpp">==</code></li>
 </ol>
-<p>This paper concerns itself specifically with 1b. While the new rewritten and reversed candidate rules for <code class="language-cpp">operator&lt;=&gt;</code> cannot change or break existing code (none of which can possibly have an <code class="language-cpp">operator&lt;=&gt;</code>, except for the builtin types which all have the other comparison operators anyway), that is not the case for <code class="language-cpp">operator==</code>, which is in plentiful use today.</p>
-<p>Consider the following example, courtesy of Tomasz Kamiński in <a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407" title="CWG 2407: Missing entry in Annex C for defaulted comparison operators">CWG 2407</a> (note that the use of <code class="language-cpp">int</code> is not important, simply that we have two types, one of which is implicitly convertible to the other):</p>
+<p>Between P0515 and P1185, several issues have come up in the reflectors that this paper hopes to address. These issues are largely independent from each other, and will be discussed independently. </p>
+<h2 id="tomaszs-example-cwg-2407">2. Tomasz's example (<a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407" title="CWG 2407: Missing entry in Annex C for defaulted comparison operators">CWG 2407</a>)<a class="self-link" href="#tomaszs-example-cwg-2407"></a></h2>
+<p>Consider the following example (note that the use of <code class="language-cpp">int</code> is not important, simply that we have two types, one of which is implicitly convertible to the other):</p>
 <pre class="codehilite"><code class="language-cpp">struct A {
   operator int() const;
 };
@@ -660,17 +669,17 @@ int check(A x, A y) {
 }</code></pre>
 
 
-<p>There are two kinds of issues this example brings up: code that changes which function gets called, and code that becomes ambiguous. I'll cover both separately.</p>
-<h3 id="changing-the-result-of-overload-resolution">1.1. Changing the result of overload resolution<a class="self-link" href="#changing-the-result-of-overload-resolution"></a></h3>
+<p>There are two separate issues demonstrated in this example: code that changes which function gets called, and code that becomes ambiguous.</p>
+<h3 id="changing-the-result-of-overload-resolution">2.1. Changing the result of overload resolution<a class="self-link" href="#changing-the-result-of-overload-resolution"></a></h3>
 <p>The expression <code class="language-cpp">10 == x</code> in C++17 had only one viable candidate: <code class="language-cpp">operator==(int, int)</code>, converting the <code class="language-cpp">A</code> to an <code class="language-cpp">int</code>. But in C++20, due to P1185, equality and inequality get reversed candidates as well. Since equality is symmetric, <code class="language-cpp">10 == x</code> is an equivalent expression to <code class="language-cpp">x == 10</code>, and we consider both forms. This gives us two candidates:</p>
-<pre class="codehilite"><code class="language-cpp">bool operator==(A, int);   // #1
+<pre class="codehilite"><code class="language-cpp">bool operator==(int, A);   // #1 (reversed)
 bool operator==(int, int); // #2 (builtin)</code></pre>
 
 
-<p>The first is an Exact Match (once the arguments are reversed), whereas the second requires a Conversion, so the first is the best viable candidate. </p>
+<p>The first is an Exact Match, whereas the second requires a Conversion, so the first is the best viable candidate. </p>
 <p>Silently changing which function gets executed is facially the worst thing we can do, but in this particular situation doesn't seem that bad. We're already in a situation where, in C++17, <code class="language-cpp">x == 10</code> and <code class="language-cpp">10 == x</code> invoke different kinds of functions (the former invokes a user-defined function, the latter a builtin) and if those two give different answers, that seems like an inherently questionable program. </p>
 <p>The inequality expression behaves the same way. In C++17, <code class="language-cpp">10 != x</code> had only one viable candidate: the <code class="language-cpp">operator!=(int, int)</code> builtin, but in C++20 also acquires the reversed and rewritten candidate <code class="language-cpp">(x == 10) ? false : true</code>, which would be an Exact Match. Here, the status quo was that <code class="language-cpp">x != 10</code> and <code class="language-cpp">10 != x</code> both invoke the same function - but again, if that function gave a different answer from <code class="language-cpp">!(x == 10)</code> or <code class="language-cpp">!(10 == x)</code>, that seems suspect. </p>
-<h3 id="code-that-becomes-ambiguous">1.2. Code that becomes ambiguous<a class="self-link" href="#code-that-becomes-ambiguous"></a></h3>
+<h3 id="code-that-becomes-ambiguous">2.2. Code that becomes ambiguous<a class="self-link" href="#code-that-becomes-ambiguous"></a></h3>
 <p>The homogeneous comparison is more interesting. <code class="language-cpp">x == y</code> in C++17 had only one candidate: <code class="language-cpp">operator==(A, int)</code>, converting <code class="language-cpp">y</code> to an <code class="language-cpp">int</code>. But in C++20, it now has two:</p>
 <pre class="codehilite"><code class="language-cpp">bool operator==(A, int); // #1
 bool operator==(int, A); // #1 reversed</code></pre>
@@ -688,23 +697,151 @@ C{} &lt;=&gt; C{}; // error: ambiguous</code></pre>
 
 
 <p>But in this case, it's completely new code which is ambiguous - rather than existing, functional code. </p>
-<h2 id="what-do-we-do-about-it">2. What do we do about it?<a class="self-link" href="#what-do-we-do-about-it"></a></h2>
-<p>From my personal perspective, I don't consider the changing of overload resolution in these cases to be a problem. Just something that should be noted in Annex C.</p>
-<p>The real issue is the homogeneous comparison case. What do we do about <code class="language-cpp">x == y</code> breaking? We have a few options.</p>
-<h3 id="nothing">2.1. Nothing<a class="self-link" href="#nothing"></a></h3>
-<p>We could do nothing. Arguably, the model around comparisons is better in the working draft than it was in C++17. It does make sense for <code class="language-cpp">x == y</code> to be ambiguous. We're also now in a position where it's simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares <code class="language-cpp">operator&lt;</code> for their types and then everybody writes algorithms that pretend that only <code class="language-cpp">&lt;</code> exists. Or, more relevantly, where everybody only declares <code class="language-cpp">operator==</code> for their types and nobody uses <code class="language-cpp">!=</code>. This is a Good Thing. </p>
-<p>From the perspective of viewing equality as symmetric, having <code class="language-cpp">x == y</code> become ambiguous makes perfect sense. There are two perfectly valid ways of interpreting the expression <code class="language-cpp">x == y</code>: <code class="language-cpp">x == static_cast&lt;int&gt;(y)</code> and <code class="language-cpp">y == static_cast&lt;int&gt;(x)</code>. Which was intended?</p>
-<p>But this perspective has only been part of the Working Draft for a few weeks and such code could have existed for years.</p>
-<h3 id="carve-out-an-exception-to-overload-resolution-for-this-case">2.2. Carve out an exception to overload resolution for this case<a class="self-link" href="#carve-out-an-exception-to-overload-resolution-for-this-case"></a></h3>
-<p>We could add some trailing rule such that if a first round of overload resolution ends up being ambiguous, we try again removing the reversed (but not rewritten) candidates. It's only the reversed candidates that give this criss-cross ambiguity.</p>
-<p>Such a language change would mean that the first round of overload resolution for <code class="language-cpp">x == y</code> fails (with the same ambiguity as before) but the second one succeeds because the only candidate would be forward candidate <code class="language-cpp">operator==(A, int)</code>. It would not change the behavior of either of the other two expressions in the original example: <code class="language-cpp">10 == x</code> and <code class="language-cpp">10 != x</code> still invoke <code class="language-cpp">#1</code> instead of <code class="language-cpp">#2</code> or <code class="language-cpp">#3</code>.</p>
-<p>This has the advantage of not breaking any code, but has the disadvantage of adding additional complexity to overload resolution in a way that doesn't seem particularly sound. Changing overload resolution is scary. See: this paper. </p>
-<h3 id="back-out-the-reversed-and-rewritten-equality-candidates">2.3. Back out the reversed and rewritten equality candidates<a class="self-link" href="#back-out-the-reversed-and-rewritten-equality-candidates"></a></h3>
-<p>We could back out part 1b of P1185R2 entirely, which would end up changing none of the behavior of the original example. I think this would be an unfortunate choice, since we would lose a lot of convenience of not having to write purely boilerplate equality operators just to avoid a small, loud, and easy-to-fix breakage.</p>
-<p>For heterogeneous comparison, being able to write one function - just <code class="language-cpp">operator==(A, B)</code> - instead of four to cover each of <code class="language-cpp">a == b</code>, <code class="language-cpp">b == a</code>, <code class="language-cpp">a != b</code>, and <code class="language-cpp">b != a</code> is really nice. And a significant amount of diff for the wording paper to add <code class="language-cpp">operator&lt;=&gt;</code> to library is really just removing a bunch of now-unnecessary <code class="language-cpp">operator==</code>s and <code class="language-cpp">operator!=</code>s (<a href="https://wg21.link/p1614r0" title="The Mothership Has Landed: Adding &lt;=&gt; to the Library">P1614R0</a>). </p>
+<h3 id="similar-examples">2.3. Similar examples<a class="self-link" href="#similar-examples"></a></h3>
+<p>There are several other examples in this vein that are important to keep in mind, courtesy of Davis Herring.</p>
+<pre class="codehilite"><code class="language-cpp">struct B {
+    B(int);
+};
+bool operator==(B,B);
+bool f() {return B()==0;}</code></pre>
+
+
+<p>We want this example to work, regardless of whatever rule changes we pursue. One potential rule change under consideration was reversing the arguments rather than parameters, which would lead to the above becoming ambiguous between the two argument orderings.</p>
+<p>Also:</p>
+<pre class="codehilite"><code class="language-cpp">struct C {operator int();};
+struct D : C {};
+
+bool operator==(const C&amp;,int);
+
+bool g() {return D()==C();}</code></pre>
+
+
+<p>The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.</p>
 <h3 id="proposal">2.4. Proposal<a class="self-link" href="#proposal"></a></h3>
-<p>My proposal is that the status quo is the very best of the quos. Some code will fail to compile, that code can be easily fixed by adding either a homogeneous comparison operator or, if not that, doing an explicit conversion at the call sites. This lets us have the best language rules for the long future this language still has ahead of it.</p>
-<h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
+<p>The model around comparisons is better in the working draft than it was in C++17. We're also now in a position where it's simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares <code class="language-cpp">operator&lt;</code> for their types and then everybody writes algorithms that pretend that only <code class="language-cpp">&lt;</code> exists. Or, more relevantly, where everybody only declares <code class="language-cpp">operator==</code> for their types and nobody uses <code class="language-cpp">!=</code>. This is a Good Thing. </p>
+<p>Coming up with a way to design the rewrite rules in a way that makes satisfies both Tomasz's and Davis's examples leads to a <em>very</em> complex set of rules, all to fix code that is fundamentally ambiguous. </p>
+<p>This paper proposes that the status quo is the very best of the quos. Some code will fail to compile, that code can be easily fixed by adding either a homogeneous comparison operator or, if not that, doing an explicit conversion at the call sites. This lets us have the best language rules for the long future this language still has ahead of it. Instead, we add an Annex C entry.</p>
+<h2 id="camerons-example">3. Cameron's Example<a class="self-link" href="#camerons-example"></a></h2>
+<p>Cameron daCamara submitted the <a href="http://lists.isocpp.org/core/2019/04/5935.php" title="Potential issue after P1185R2 - SFINAE breaking change">following example</a> after MSVC implemented <code class="language-cpp">operator&lt;=&gt;</code> and P1185R2:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;typename Lhs, typename Rhs&gt;
+struct BinaryHelper {
+  using UnderLhs = typename Lhs::Scalar;
+  using UnderRhs = typename Rhs::Scalar;
+  operator bool() const;
+};
+
+struct OnlyEq {
+  using Scalar = int;
+  template &lt;typename Rhs&gt;
+  const BinaryHelper&lt;OnlyEq, Rhs&gt; operator==(const Rhs&amp;) const;
+};
+
+template &lt;typename...&gt;
+using void_t = void;
+
+template &lt;typename T&gt;
+constexpr T&amp; declval();
+
+template &lt;typename, typename = void&gt;
+
+constexpr bool has_neq_operation = false;
+
+template &lt;typename T&gt;
+constexpr bool has_neq_operation&lt;T, void_t&lt;decltype(declval&lt;T&gt;() != declval&lt;int&gt;())&gt;&gt; = true;
+
+static_assert(!has_neq_operation&lt;OnlyEq&gt;);</code></pre>
+
+
+<p>In C++17, this example compiles fine. <code class="language-cpp">OnlyEq</code> has no <code class="language-cpp">operator!=</code> candidate at all. But, the wording in [over.match.oper] currently states that:</p>
+<blockquote>
+<p>... the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(x == y)</code> is well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code>. </p>
+</blockquote>
+<p>Checking to see whether <code class="language-cpp">OnlyEq</code>'s <code class="language-cpp">operator==</code>'s result is contextually convertible to <code class="language-cpp">bool</code> is not SFINAE-friendly; it is an error outside of the immediate context of the substitution. As a result, this well-formed C++17 program becomes ill-formed in C++20.</p>
+<p>The problem here in particular is that C++20 is linking together the semantics of <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> in a way that they were not linked before -- which leads to errors in situations where there was no intent for them to have been linked.</p>
+<h3 id="proposal_1">3.1. Proposal<a class="self-link" href="#proposal_1"></a></h3>
+<p>This example we must address, and the best way to address is to carve out less space for rewrite candidates. The current rule is too broad:</p>
+<blockquote>
+<p>For the <code class="language-cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(x == y)</code> is well-formed when <strong>contextually converted to <code class="language-cpp">bool</code></strong> using that operator <code class="language-cpp">==</code>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator == for which the rewritten expression <code class="language-cpp">(y == x)</code> is well-formed when <strong>contextually converted to <code class="language-cpp">bool</code></strong> using that operator <code class="language-cpp">==</code>.</p>
+</blockquote>
+<p>We really don't need "contextually converted to <code class="language-cpp">bool</code>" - in fact, we're probably not even getting any benefit as a language from taking that broad a stance. After all, if you wrote a <code class="language-cpp">operator==</code> that returned <code class="language-cpp">std::true_type</code>, you probably have good reasons for that and don't necessarily want an <code class="language-cpp">operator!=</code> that returns just <code class="language-cpp">bool</code>. And for types that are even less <code class="language-cpp">bool</code>-like than <code class="language-cpp">std::true_type</code>, this consideration makes even less sense.</p>
+<p>This paper proposes that we reduce this scope to <em>just</em> those cases where <code class="language-cpp">(x == y)</code> is a valid expression that has type exactly <code class="language-cpp">bool</code>. This unbreaks Cameron's example -- <code class="language-cpp">BinaryHelper&lt;OnlyEq, Rhs&gt;</code> is definitely not <code class="language-cpp">bool</code> and so <code class="language-cpp">OnlyEq</code> continues to have no <code class="language-cpp">!=</code> candidates -- while also both simplifying the language rule, simplifying the specification, and not reducing the usability of the rule at all. Win, win, win.</p>
+<h2 id="richards-example">4. Richard's Example<a class="self-link" href="#richards-example"></a></h2>
+<p>Daveed Vandevoorde pointed out that the wording in [over.match.oper] for determining rewritten candidates is currently:</p>
+<blockquote>
+<p>For the relational (7.6.9) operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">&lt;=&gt;</code> for which the rewritten expression <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> is <strong>well-formed</strong> using that <code class="language-cpp">operator&lt;=&gt;</code>.</p>
+</blockquote>
+<p>Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the <code class="language-cpp">&lt;=&gt;</code> invocation and the <code class="language-cpp">@</code> invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit <a href="http://lists.isocpp.org/core/2019/05/6420.php" title="Processing relational/spaceship operator rewrites">the following example</a>:</p>
+<pre class="codehilite"><code class="language-cpp">struct Base { 
+  friend bool operator&lt;(const Base&amp;, const Base&amp;); 
+  friend bool operator==(const Base&amp;, const Base&amp;); 
+}; 
+struct Derived : Base { 
+  friend std::strong_equality operator&lt;=&gt;(const Derived&amp;, const Derived&amp;); 
+}; 
+bool f(Derived d1, Derived d2) { return d1 &lt; d2; }</code></pre>
+
+
+<p>The question here is: should we even consider the <code class="language-cpp">@ 0</code> part of the rewritten expression for validity? The status quo is that we do consider it -- <code class="language-cpp">Derived</code>'s <code class="language-cpp">operator&lt;=&gt;</code> is not a viable candidate (because <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code> is not a valid expression) and <code class="language-cpp">d1 &lt; d2</code> invokes <code class="language-cpp">Base</code>'s <code class="language-cpp">operator&lt;</code>. If we <em>do not</em> consider it, then <code class="language-cpp">Derived</code>'s <code class="language-cpp">operator&lt;=&gt;</code> would be a better match leading to the expression being ill-formed due to the subsequent <code class="language-cpp">&lt; 0</code>.</p>
+<p>The reasoning here is that by considering the <code class="language-cpp">@ 0</code> part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.</p>
+<h3 id="proposal_2">4.1. Proposal<a class="self-link" href="#proposal_2"></a></h3>
+<p>This paper agrees with Richard that we should not consider the validity of the <code class="language-cpp">@ 0</code> part of the comparison in determining the candidate set, and additionally fixes the word choice with "well-formed".</p>
+<h2 id="default-comparisons-for-reference-data-members">5. Default comparisons for reference data members<a class="self-link" href="#default-comparisons-for-reference-data-members"></a></h2>
+<p>The last issue, also raised by <a href="http://lists.isocpp.org/core/2019/05/6462.php" title="Generating comparison operators for classes with reference or anonymous union members">Daveed Vandevoorde</a> is what should happen for the case where we try to default a comparison for a class that has data members of reference type:</p>
+<pre class="codehilite"><code class="language-cpp">struct A {
+    int const&amp; r;
+    auto operator&lt;=&gt;(A const&amp;, A const&amp;) = default;
+};</code></pre>
+
+
+<p>What should that do? The current wording in [class.compare.default] talks about a list of subobjects, and reference members aren't actually subobjects, so it's not clear what the intent is. There are three behaviors that such a defaulted comparison could have:</p>
+<ol>
+<li>The comparison could be defined as deleted (following copy assignment with reference data members)</li>
+<li>The comparison could compare the identity of the referent (following copy construction with reference data members)</li>
+<li>The comparison could compare through the reference (following what rote expression substitution would do)</li>
+</ol>
+<p>In other words:</p>
+<pre class="codehilite"><code class="language-cpp">int i = 0, j = 0, k = 1;
+              // |  option 1  | option 2 | option 3 |
+A{i} == A{i}; // | ill-formed |   true   |   true   |
+A{i} == A{j}; // | ill-formed |   false  |   true   |
+A{i} == A{k}; // | ill-formed |   false  |   false  |</code></pre>
+
+
+<p>Note however that reference data members add one more quirk in conjunction with <a href="https://wg21.link/p0732r2" title="Class Types in Non-Type Template Parameters">P0732</a>: does <code class="language-cpp">A</code> count as having strong structural equality, and what would it mean for:</p>
+<pre class="codehilite"><code class="language-cpp">template &lt;int&amp;&gt; struct X { };
+template &lt;A&gt; struct Y { };
+static int i = 0, j = 0;
+X&lt;i&gt; xi;
+X&lt;j&gt; xj;
+
+Y&lt;A{i}&gt; yi;
+Y&lt;A{j}&gt; yj;</code></pre>
+
+
+<p>In even C++17, <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code> are both well-formed and have different types. Under option 1 above, the declaration of <code class="language-cpp">Y</code> is ill-formed because <code class="language-cpp">A</code> does not have strong structural equality because its <code class="language-cpp">operator==</code> would be defined as deleted. Under option 2, this would be well-formed and <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would have different types -- consistent with <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code>. Under option 3, <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality. </p>
+<h3 id="proposal_3">5.1. Proposal<a class="self-link" href="#proposal_3"></a></h3>
+<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent. A future standard can always relax this restriction by pursuing option 2 above.</p>
+<h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
+<p>Insert a new paragraph after 11.10.1 [class.compare.default]/1:</p>
+<blockquote>
+<p><ins>A defaulted comparison operator function for class <code class="language-cpp">C</code> is defined as deleted if any non-static data member of <code class="language-cpp">C</code> is of reference type or is an anonymous union.</ins></p>
+</blockquote>
+<p>Change 11.10.1 [class.compare.default]/3.2:</p>
+<blockquote>
+<p>A type <code class="language-cpp">C</code> has <em>strong structural equality</em> if, given a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const C</code>, either:</p>
+<ul>
+<li><code class="language-cpp">C</code> is a non-class type and <code class="language-cpp">x &lt;=&gt; x</code> is a valid expression of type <code class="language-cpp">std::strong_ordering</code> or <code class="language-cpp">std::strong_equality</code>, or</li>
+<li><code class="language-cpp">C</code> is a class type with an <code class="language-cpp">==</code> operator defined as defaulted in the definition of <code class="language-cpp">C</code>, <code class="language-cpp">x == x</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code></del> <ins>a valid expression of type <code class="language-cpp">bool</code></ins>, all of <code class="language-cpp">C</code>'s base class subobjects and non-static data members have strong structural equality, and <code class="language-cpp">C</code> has no <code class="language-cpp">mutable</code> or <code class="language-cpp">volatile</code> subobjects.</li>
+</ul>
+</blockquote>
+<p>Change 12.3.1.2 [over.match.oper]/3.4:</p>
+<blockquote>
+<p>For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the <code class="language-cpp">operator &lt;=&gt;</code> for which the rewritten expression <del><code class="language-cpp">(x &lt;=&gt; y) @ 0</code> is well-formed using that operator<code class="language-cpp">&lt;=&gt;</code></del> <ins><code class="language-cpp">(x &lt;=&gt; y)</code> is valid</ins>. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="language-cpp">&lt;=&gt;</code> for which the rewritten expression <del><code class="language-cpp">0 @ (y &lt;=&gt; x)</code> is well-formed using that <code class="language-cpp">operator&lt;=&gt;</code></del> <ins><code class="language-cpp">(y &lt;=&gt; x)</code> is valid</ins>. For the <code class="language-cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression <code class="language-cpp">(x == y)</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code></del> <ins>valid and of type <code class="language-cpp">bool</code></ins>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(y == x)</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code></del> <ins>valid and of type <code class="language-cpp">bool</code></ins>. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.</p>
+</blockquote>
+<p>Change 12.3.1.2 [over.match.oper]/8 to use <code class="language-cpp">!</code> instead of <code class="language-cpp">?:</code></p>
+<blockquote>
+<p>If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator <code class="language-cpp">@</code>, <code class="language-cpp">x @ y</code> is interpreted as the rewritten expression: <code class="language-cpp">0 @ (y &lt;=&gt; x)</code> if the selected candidate is a synthesized candidate with reversed order of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> otherwise, using the selected rewritten <code class="language-cpp">operator&lt;=&gt;</code> candidate. If a rewritten candidate is selected by overload resolution for a <code class="language-cpp">!=</code> operator, <code class="language-cpp">x != y</code> is interpreted as <del><code class="language-cpp">(y == x) ? false : true</code></del> <ins><code class="language-cpp">!(y == x)</code></ins> if the selected candidate is a synthesized candidate with reversed order of parameters, or <del><code class="language-cpp">(x == y) ? false : true</code></del> <ins><code class="language-cpp">!(x == y)</code></ins> otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an <code class="language-cpp">==</code> operator, <code class="language-cpp">x == y</code> is interpreted as <del><code class="language-cpp">(y == x) ? true : false</code></del> <ins><code class="language-cpp">(y == x)</code></ins> using the selected rewritten <code class="language-cpp">operator==</code> candidate.</p>
+</blockquote>
 <p>Add a new entry to [diff.cpp17.over]:</p>
 <blockquote><p><b>Affected subclause</b>: [over.match.oper]<br />
 <b>Change:</b> Equality and inequality expressions can now find reversed and rewritten candidates.<br />
@@ -724,5 +861,5 @@ int check(A x, A y) {
     (10 != x);       // calls #1, previously called #3
 }</code></pre></blockquote>
 
-<h2 id="references">4. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">[P0905R1]</a><span style="margin-left: 5px;">"Symmetry for spaceship" by Tomasz Kamiński, Herb Sutter, Richard Smith, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r2.html">[P1185R2]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-02-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1614r0.html">[P1614R0]</a><span style="margin-left: 5px;">"The Mothership Has Landed: Adding &lt;=&gt; to the Library" by Barry Revzin, 2019-03-11</span></li><li><a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">[cwg2407]</a><span style="margin-left: 5px;">"CWG 2407: Missing entry in Annex C for defaulted comparison operators" by Tomasz Kamiński, Feb 26, 2019</span></li></ul>
+<h2 id="references">7. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">[P0905R1]</a><span style="margin-left: 5px;">"Symmetry for spaceship" by Tomasz Kamiński, Herb Sutter, Richard Smith, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r2.html">[P1185R2]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-02-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://lists.isocpp.org/core/2019/04/5935.php">[cameron.sfinae]</a><span style="margin-left: 5px;">"Potential issue after P1185R2 - SFINAE breaking change" by Cameron daCamara, April 04, 2019</span></li><li><a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">[cwg2407]</a><span style="margin-left: 5px;">"CWG 2407: Missing entry in Annex C for defaulted comparison operators" by Tomasz Kamiński, Feb 26, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6420.php">[smith.unoverloadish]</a><span style="margin-left: 5px;">"Processing relational/spaceship operator rewrites" by Richard Smith, May 21, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6462.php">[vdv.references]</a><span style="margin-left: 5px;">"Generating comparison operators for classes with reference or anonymous union members" by Daveed Vandevoorde, May 23, 2019</span></li></ul>
 </html>
