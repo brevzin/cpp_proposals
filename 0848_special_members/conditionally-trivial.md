@@ -142,4 +142,4 @@ Change 11.3.6 [class.dtor], paragraph 10:
 
 # Acknowledgments
 
-Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer and Richard Smiths for the lengthy discussions and wording wizardry. 
+Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer and Richard Smith for the lengthy discussions and wording wizardry. 
