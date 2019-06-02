@@ -1,0 +1,22 @@
+#!/bin/bash
+
+root=$(realpath $(dirname "$0"))
+mpdata=${root}/wg21/data
+
+pandoc ${1} ${mpdata}/references.md \
+   --number-sections \
+   --self-contained \
+   --table-of-contents \
+   --bibliography ${mpdata}/index.yaml \
+   --csl ${mpdata}/cpp.csl \
+   --css ${mpdata}/template/14882.css \
+   --css ${root}/pandoc.css \
+   --filter ${mpdata}/filter/wg21.py \
+   --filter ${root}/pandoc.py \
+   --metadata datadir:${mpdata} \
+   --metadata-file ${mpdata}/metadata.yaml \
+   --syntax-definition ${mpdata}/syntax/isocpp.xml \
+   --template ${mpdata}/template/wg21 \
+   --output ${2}
+
+

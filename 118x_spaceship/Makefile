@@ -17,3 +17,6 @@ d1614r1.html : mothership.md
 
 d1630r0.html : spaceship-tuneup.md
 	python ../md/better_md.py -i $< -o $@ --references
+
+mpark_test.html : spaceship-tuneup.md
+	../md/mpark-wg21 $< $@ 

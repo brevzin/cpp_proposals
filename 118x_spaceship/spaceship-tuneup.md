@@ -1,42 +1,48 @@
-Title: Spaceship needs a tune-up
-Subtitle: Addressing some discovered issues with P0515 and P1185
-Document-Number: D1630R0
-Authors: Barry Revzin, barry dot revzin at gmail dot com
-Audience: CWG, EWG
+---
+title: Spaceship needs a tune-up
+subtitle: Addressing some discovered issues with P0515 and P1185
+document: D1630R0
+date: 2019-06-01
+audience: CWG, EWG
+author:
+	- name: Barry Revzin
+	  email: <barry.revzin@gmail.com>
+---
 
 # Introduction
 
-The introduction of `operator<=>` into the language ([P0515R3](https://wg21.link/p0515R3) with relevant extension [P0905R1](https://wg21.link/p0905r1)) added a novel aspect to name lookup: candidate functions can now include both candidates with different names and a reversed order of arguments. The expression `a < b` used to always only find candidates like `operator<(a, b)` and `a.operator<(b)` now also finds `(a <=> b) < 0` and `0 < (b <=> a)`. This change makes it much easier to write comparisons - since you only need to write the one `operator<=>`.
+The introduction of `operator<=>` into the language ([@P0515R3] with relevant extension [@P0905R1]) added a novel aspect to name lookup: candidate functions can now include both candidates with different names and a reversed order of arguments. The expression `a < b` used to always only find candidates like `operator<(a, b)` and `a.operator<(b)` now also finds `(a <=> b) < 0` and `0 < (b <=> a)`. This change makes it much easier to write comparisons - since you only need to write the one `operator<=>`.
 
-However, that ended up being insufficient due to the problems pointed out in [P1190](https://wg21.link/p1190R0), and in response [P1185R2](https://wg21.link/p1185R2) was adopted in Kona which made the following changes:
+However, that ended up being insufficient due to the problems pointed out in [@P1190R0], and in response [@P1185R2] was adopted in Kona which made the following changes:
 
 1. Changing candidate sets for equality and inequality  
-  a. `<=>` is no longer a candidate for either equality or inequality  
-  b. `==` gains `<=>`'s ability for both reversed and rewritten candidates  
+	a. `<=>` is no longer a candidate for either equality or inequality  
+	b. `==` gains `<=>`'s ability for both reversed and rewritten candidates  
 2. Defaulted `==` does memberwise equality, defaulted `!=` invokes `==` instead of `<=>`.  
 3. Strong structural equality is defined in terms of `==` instead of `<=>`  
 4. Defaulted `<=>` can also implicitly declare defaulted `==`
 
 Between P0515 and P1185, several issues have come up in the reflectors that this paper hopes to address. These issues are largely independent from each other, and will be discussed independently. 
 
-# Tomasz's example ([CWG 2407][CWG2407])
+# Tomasz's example
 
-Consider the following example (note that the use of `int` is not important, simply that we have two types, one of which is implicitly convertible to the other):
+Consider the following example [@CWG2407] (note that the use of `int` is not important, simply that we have two types, one of which is implicitly convertible to the other):
 
-    :::cpp
-    struct A {
-      operator int() const;
-    };
+```cpp    
+struct A {
+  operator int() const;
+};
 
-    bool operator==(A, int);              // #1
-    // builtin bool operator==(int, int); // #2
-    // builtin bool operator!=(int, int); // #3
+bool operator==(A, int);              // #1
+// builtin bool operator==(int, int); // #2
+// builtin bool operator!=(int, int); // #3
 
-    int check(A x, A y) {
-      return (x == y) +  // In C++17, calls #1; in C++20, ambiguous between #1 and reversed #1
-        (10 == x) +      // In C++17, calls #2; in C++20, calls #1
-        (10 != x);       // In C++17, calls #3; in C++20, calls #1
-    }    
+int check(A x, A y) {
+  return (x == y) +  // In C++17, calls #1; in C++20, ambiguous between #1 and reversed #1
+	(10 == x) +      // In C++17, calls #2; in C++20, calls #1
+	(10 != x);       // In C++17, calls #3; in C++20, calls #1
+}    
+```
 
 There are two separate issues demonstrated in this example: code that changes which function gets called, and code that becomes ambiguous.
 
@@ -44,9 +50,10 @@ There are two separate issues demonstrated in this example: code that changes wh
 
 The expression `10 == x` in C++17 had only one viable candidate: `operator==(int, int)`, converting the `A` to an `int`. But in C++20, due to P1185, equality and inequality get reversed candidates as well. Since equality is symmetric, `10 == x` is an equivalent expression to `x == 10`, and we consider both forms. This gives us two candidates:
 
-    :::cpp
-    bool operator==(int, A);   // #1 (reversed)
-    bool operator==(int, int); // #2 (builtin)
+```cpp
+bool operator==(int, A);   // #1 (reversed)
+bool operator==(int, int); // #2 (builtin)
+```
     
 The first is an Exact Match, whereas the second requires a Conversion, so the first is the best viable candidate. 
 
@@ -58,9 +65,10 @@ The inequality expression behaves the same way. In C++17, `10 != x` had only one
 
 The homogeneous comparison is more interesting. `x == y` in C++17 had only one candidate: `operator==(A, int)`, converting `y` to an `int`. But in C++20, it now has two:
 
-    :::cpp
-    bool operator==(A, int); // #1
-    bool operator==(int, A); // #1 reversed
+```cpp
+bool operator==(A, int); // #1
+bool operator==(int, A); // #1 reversed
+```
 
 The first candidate has an Exact Match in the 1st argument and a Conversion in the 2nd, the second candidate has a Conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate ([\[over.match.best\]/2.9](http://eel.is/c++draft/over.match.best#2.9)), that only happens when each argument's conversion sequence _is not worse than_ the other candidates' ([\[over.match.best\]/2](http://eel.is/c++draft/over.match.best#2))... and that's just not the case here. We have one better sequence and one worse sequence, each way.
 
@@ -68,13 +76,14 @@ As a result, this becomes ambiguous.
 
 Note that the same thing can happen with `<=>` in a similar situation:
 
-    :::cpp
-    struct C {
-        operator int() const;
-        strong_ordering operator<=>(int) const;
-    };
-    
-    C{} <=> C{}; // error: ambiguous
+```cpp
+struct C {
+	operator int() const;
+	strong_ordering operator<=>(int) const;
+};
+
+C{} <=> C{}; // error: ambiguous
+```
     
 But in this case, it's completely new code which is ambiguous - rather than existing, functional code. 
 
@@ -82,30 +91,32 @@ But in this case, it's completely new code which is ambiguous - rather than exis
 
 There are several other examples in this vein that are important to keep in mind, courtesy of Davis Herring.
 
-    :::cpp
-    struct B {
-        B(int);
-    };
-    bool operator==(B,B);
-    bool f() {return B()==0;}
+```cpp
+struct B {
+	B(int);
+};
+bool operator==(B,B);
+bool f() {return B()==0;}
+```
     
 We want this example to work, regardless of whatever rule changes we pursue. One potential rule change under consideration was reversing the arguments rather than parameters, which would lead to the above becoming ambiguous between the two argument orderings.
 
 Also:
 
-    ::cpp
-    struct C {operator int();};
-    struct D : C {};
+```cpp
+struct C {operator int();};
+struct D : C {};
 
-    bool operator==(const C&,int);
+bool operator==(const C&,int);
 
-    bool g() {return D()==C();}
+bool g() {return D()==C();}
+```
     
 The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.
 
 ## Today's Guidance
 
-From Herb Sutter's [post][herb.guidance] on the topic:
+From Herb Sutter's post [@herb] on the topic:
 
 > Actually, C++20 is removing a pre-C++20 can of worms we can now unlearn.
 
@@ -131,35 +142,36 @@ This paper proposes that the status quo is the very best of the quos. Some code 
 
 # Cameron's Example
 
-Cameron daCamara submitted the [following example][cameron.sfinae] after MSVC implemented `operator<=>` and P1185R2:
+Cameron daCamara submitted the following example [@cameron] after MSVC implemented `operator<=>` and P1185R2:
 
-    :::cpp
-    template <typename Lhs, typename Rhs>
-    struct BinaryHelper {
-      using UnderLhs = typename Lhs::Scalar;
-      using UnderRhs = typename Rhs::Scalar;
-      operator bool() const;
-    };
+```cpp
+template <typename Lhs, typename Rhs>
+struct BinaryHelper {
+  using UnderLhs = typename Lhs::Scalar;
+  using UnderRhs = typename Rhs::Scalar;
+  operator bool() const;
+};
 
-    struct OnlyEq {
-      using Scalar = int;
-      template <typename Rhs>
-      const BinaryHelper<OnlyEq, Rhs> operator==(const Rhs&) const;
-    };
-     
-    template <typename...>
-    using void_t = void;
-     
-    template <typename T>
-    constexpr T& declval();
-     
-    template <typename, typename = void>
-    constexpr bool has_neq_operation = false;
+struct OnlyEq {
+  using Scalar = int;
+  template <typename Rhs>
+  const BinaryHelper<OnlyEq, Rhs> operator==(const Rhs&) const;
+};
+ 
+template <typename...>
+using void_t = void;
+ 
+template <typename T>
+constexpr T& declval();
+ 
+template <typename, typename = void>
+constexpr bool has_neq_operation = false;
 
-    template <typename T>
-    constexpr bool has_neq_operation<T, void_t<decltype(declval<T>() != declval<int>())>> = true;
+template <typename T>
+constexpr bool has_neq_operation<T, void_t<decltype(declval<T>() != declval<int>())>> = true;
 
-    static_assert(!has_neq_operation<OnlyEq>);
+static_assert(!has_neq_operation<OnlyEq>);
+```
     
 In C++17, this example compiles fine. `OnlyEq` has no `operator!=` candidate at all. But, the wording in [over.match.oper] currently states that:
 
@@ -185,17 +197,18 @@ Daveed Vandevoorde pointed out that the wording in [over.match.oper] for determi
 
 >  For the relational (7.6.9) operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is **well-formed** using that `operator<=>`.
 
-Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the `<=>` invocation and the `@` invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit [the following example][smith.unoverloadish]:
+Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the `<=>` invocation and the `@` invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit the following example [@smith]:
 
-    :::cpp
-    struct Base { 
-      friend bool operator<(const Base&, const Base&);  // #1
-      friend bool operator==(const Base&, const Base&); 
-    }; 
-    struct Derived : Base { 
-      friend std::strong_equality operator<=>(const Derived&, const Derived&); // #2
-    }; 
-    bool f(Derived d1, Derived d2) { return d1 < d2; } 
+```cpp
+struct Base { 
+  friend bool operator<(const Base&, const Base&);  // #1
+  friend bool operator==(const Base&, const Base&); 
+}; 
+struct Derived : Base { 
+  friend std::strong_equality operator<=>(const Derived&, const Derived&); // #2
+}; 
+bool f(Derived d1, Derived d2) { return d1 < d2; } 
+```
 
 The status quo is that `d1 < d2` invokes `#1`. `#2` is not actually a candidate because we have to consider the full expression `(d1 <=> d2) < 0`. While `(d1 <=> d2)` is a valid expression, `(d1 <=> d2) < 0` is not, which removes it from consideration.
 
@@ -209,13 +222,14 @@ This paper agrees with Richard that we should not consider the validity of the `
 
 # Default comparisons for reference data members
 
-The last issue, also raised by [Daveed Vandevoorde][vdv.references] is what should happen for the case where we try to default a comparison for a class that has data members of reference type:
+The last issue, also raised by Daveed Vandevoorde ([@vdv]) is what should happen for the case where we try to default a comparison for a class that has data members of reference type:
 
-    :::cpp
-    struct A {
-        int const& r;
-        auto operator<=>(A const&, A const&) = default;
-    };
+```cpp
+struct A {
+	int const& r;
+	auto operator<=>(A const&, A const&) = default;
+};
+```
 
 What should that do? The current wording in [class.compare.default] talks about a list of subobjects, and reference members aren't actually subobjects, so it's not clear what the intent is. There are three behaviors that such a defaulted comparison could have:
 
@@ -225,39 +239,42 @@ What should that do? The current wording in [class.compare.default] talks about 
 
 In other words:
 
-    :::cpp
-    int i = 0, j = 0, k = 1;
-                  // |  option 1  | option 2 | option 3 |
-    A{i} == A{i}; // | ill-formed |   true   |   true   |
-    A{i} == A{j}; // | ill-formed |   false  |   true   |
-    A{i} == A{k}; // | ill-formed |   false  |   false  |
+```cpp
+int i = 0, j = 0, k = 1;
+			  // |  option 1  | option 2 | option 3 |
+A{i} == A{i}; // | ill-formed |   true   |   true   |
+A{i} == A{j}; // | ill-formed |   false  |   true   |
+A{i} == A{k}; // | ill-formed |   false  |   false  |
+```
 
-Note however that reference data members add one more quirk in conjunction with [P0732](https://wg21.link/p0732r2): does `A` count as having strong structural equality, and what would it mean for:
+Note however that reference data members add one more quirk in conjunction with [@P0732R2]: does `A` count as having strong structural equality, and what would it mean for:
 
-    :::cpp
-    template <int&> struct X { };
-    template <A> struct Y { };
-    static int i = 0, j = 0;
-    X<i> xi;
-    X<j> xj;
-    
-    Y<A{i}> yi;
-    Y<A{j}> yj;
+```cpp
+template <int&> struct X { };
+template <A> struct Y { };
+static int i = 0, j = 0;
+X<i> xi;
+X<j> xj;
+
+Y<A{i}> yi;
+Y<A{j}> yj;
+```
     
 In even C++17, `xi` and `xj` are both well-formed and have different types. Under option 1 above, the declaration of `Y` is ill-formed because `A` does not have strong structural equality because its `operator==` would be defined as deleted. Under option 2, this would be well-formed and `yi` and `yj` would have different types -- consistent with `xi` and `xj`. Under option 3, `yi` and `yj` would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality. 
 
 ## Anonymous unions
 
-In the [same post][vdv.references], Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:
+In the same post [@vdv], Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:
 
-    :::cpp
-    struct B {
-        union {
-            int i;
-            char c;
-        };
-        auto operator<=>(B const&, B const&) = default;
-    };
+```cpp
+struct B {
+	union {
+		int i;
+		char c;
+	};
+	auto operator<=>(B const&, B const&) = default;
+};
+```
 
 What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.
 
@@ -288,7 +305,9 @@ A future proposal can always relax this restriction for reference data members b
 
 Insert a new paragraph after 11.10.1 [class.compare.default]/1:
 
-> <ins>A defaulted comparison operator function for class `C` is defined as deleted if any non-static data member of `C` is of reference type or `C` is a union-like class ([class.union.anon]).</ins>
+::: add
+> A defaulted comparison operator function for class `C` is defined as deleted if any non-static data member of `C` is of reference type or `C` is a union-like class ([class.union.anon]).
+:::
 
 Change 11.10.1 [class.compare.default]/3.2:
 
@@ -296,41 +315,83 @@ Change 11.10.1 [class.compare.default]/3.2:
 > A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:
 > 
 - `C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or
-- `C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is <del>well-formed when contextually converted to `bool`</del> <ins>a valid expression of type `bool`</ins>, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
+- `C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is [well-formed when contextually converted to `bool`]{.rm} [a valid expression of type `bool`]{.add}, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
 
 
 Change 12.3.1.2 [over.match.oper]/3.4:
 
-> For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the `operator <=>` for which the rewritten expression <del>`(x <=> y) @ 0` is well-formed using that operator`<=>`</del> <ins>`(x <=> y)` is valid</ins>. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `<=>` for which the rewritten expression <del>`0 @ (y <=> x)` is well-formed using that `operator<=>`</del> <ins>`(y <=> x)` is valid</ins>. For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression `(x == y)` is <del>well-formed when contextually converted to `bool` using that operator `==`</del> <ins>valid and of type `bool`</ins>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x)` is <del>well-formed when contextually converted to `bool` using that operator `==`</del> <ins>valid and of type `bool`</ins>. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
+> For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the `operator <=>` for which the rewritten expression [`(x <=> y) @ 0` is well-formed using that operator`<=>`]{.rm} [`(x <=> y)` is valid]{.add}. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `<=>` for which the rewritten expression [`0 @ (y <=> x)` is well-formed using that `operator<=>`]{.rm} [`(y <=> x)` is valid]{.add}. For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression `(x == y)` is [well-formed when contextually converted to `bool` using that operator `==`]{.rm} [valid and of type `bool`]{.add}. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x)` is [well-formed when contextually converted to `bool` using that operator `==`]{.rm} [valid and of type `bool`]{.add}. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
 
 Change 12.3.1.2 [over.match.oper]/8 to use `!` instead of `?:`
 
-> If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as <del>`(y == x) ? false : true`</del> <ins>`!(y == x)`</ins> if the selected candidate is a synthesized candidate with reversed order of parameters, or <del>`(x == y) ? false : true`</del> <ins>`!(x == y)`</ins> otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as <del>`(y == x) ? true : false`</del> <ins>`(y == x)`</ins> using the selected rewritten `operator==` candidate.
+> If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as [`(y == x) ? false : true`]{.rm} [`!(y == x)`]{.add} if the selected candidate is a synthesized candidate with reversed order of parameters, or [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.add} otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as [`(y == x) ? true : false`]{.rm} [`(y == x)`]{.add} using the selected rewritten `operator==` candidate.
 
 Add a new entry to [diff.cpp17.over]:
 
-<blockquote><p><b>Affected subclause</b>: [over.match.oper]<br />
-<b>Change:</b> Equality and inequality expressions can now find reversed and rewritten candidates.<br />
-<b>Rationale:</b> Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations.<br />
-<b>Effect on original feature:</b> Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.
-<pre><code class="language-cpp">struct A {
-  operator int() const;
-};
+::: add
+> **Affected subclause**: [over.match.oper] <br />
+> **Change**: Equality and inequality expressions can now find reversed and rewritten candidates. <br />
+> **Rationale:** Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations. <br />
+**Effect on original feature:** Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.
+> 
+> ```
+> struct A {
+>   operator int() const;
+> };
+> 
+> bool operator==(A, int);              // #1
+> // builtin bool operator==(int, int); // #2
+> // builtin bool operator!=(int, int); // #3
+> 
+> int check(A x, A y) {
+>   return (x == y) +  // ill-formed; previously well-formed
+>     (10 == x) +      // calls #1, previously called #2
+>     (10 != x);       // calls #1, previously called #3
+> }
+> ```
+:::
 
-bool operator==(A, int);              // #1
-// builtin bool operator==(int, int); // #2
-// builtin bool operator!=(int, int); // #3
-
-int check(A x, A y) {
-  return (x == y) +  // ill-formed; previously well-formed
-    (10 == x) +      // calls #1, previously called #2
-    (10 != x);       // calls #1, previously called #3
-}</code></pre></blockquote>
-
-
-    
-[CWG2407]: http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407 "CWG 2407: Missing entry in Annex C for defaulted comparison operators||Tomasz Kamiński||Feb 26, 2019"
-[cameron.sfinae]: http://lists.isocpp.org/core/2019/04/5935.php "Potential issue after P1185R2 - SFINAE breaking change||Cameron daCamara||April 04, 2019"
-[smith.unoverloadish]: http://lists.isocpp.org/core/2019/05/6420.php "Processing relational/spaceship operator rewrites||Richard Smith||May 21, 2019"
-[vdv.references]: http://lists.isocpp.org/core/2019/05/6462.php "Generating comparison operators for classes with reference or anonymous union members||Daveed Vandevoorde||May 23, 2019"
-[herb.guidance]: http://lists.isocpp.org/ext/2019/03/8704.php "Overload resolution changes as a result of P1185R2||Herb Sutter||March 28, 2019"
+---
+references:
+  - id: CWG2407
+    citation-label: CWG2407
+    title: "Missing entry in Annex C for defaulted comparison operators"
+	author:
+		- family: Tomasz Kamiński
+	date: Feb 26, 2019
+	issued:
+		year: 2019
+	URL: http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407
+  - id: vdv
+    citation-label: vdv
+	title: "Generating comparison operators for classes with reference or anonymous union members"
+	author:
+		- family: Daveed Vandevoorde
+	issued:
+		year: 2019
+	URL: http://lists.isocpp.org/core/2019/05/6462.php
+  - id: cameron
+    citation-label: cameron
+	URL: http://lists.isocpp.org/core/2019/04/5935.php
+	title: "Potential issue after P1185R2 - SFINAE breaking change"
+	author:
+		- family: Cameron daCamara
+	issued:
+		year: 2019
+  - id: smith
+    citation-label: smith
+	URL: http://lists.isocpp.org/core/2019/05/6420.php
+	title: "Processing relational/spaceship operator rewrites"
+	author:
+		- family: Richard Smith
+	issued:
+		year: 2019
+  - id: herb
+    citation-label: herb
+	URL: http://lists.isocpp.org/ext/2019/03/8704.php
+	title: "Overload resolution changes as a result of P1185R2"
+	author:
+		- family: Herb Sutter
+	issued:
+		year: 2019
+---
