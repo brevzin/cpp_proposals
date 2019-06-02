@@ -1,908 +1,803 @@
-<html>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Spaceship needs a tune-up</title>
-<style type="text/css">html {
-	position: relative;
-	max-width: 1024px;
-	height: 100%;
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2019-06-01" />
+  <title>Spaceship needs a tune-up</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style>
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
 }
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #ffffff;
+    color: #a0a0a0;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #a0a0a0;  padding-left: 4px; }
+div.sourceCode
+  { color: #1f1c1b; background-color: #f6f8fa; }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span. { color: #1f1c1b; } /* Normal */
+code span.al { color: #bf0303; background-color: #f7e6e6; font-weight: bold; } /* Alert */
+code span.an { color: #ca60ca; } /* Annotation */
+code span.at { color: #0057ae; } /* Attribute */
+code span.bn { color: #b08000; } /* BaseN */
+code span.bu { color: #1f1c1b; } /* BuiltIn */
+code span.cf { color: #0057ae; } /* ControlFlow */
+code span.ch { color: #924c9d; } /* Char */
+code span.cn { color: #aa5500; } /* Constant */
+code span.co { color: #898887; font-style: italic; } /* Comment */
+code span.cv { color: #0095ff; } /* CommentVar */
+code span.do { color: #607880; } /* Documentation */
+code span.dt { color: #0057ae; } /* DataType */
+code span.dv { color: #b08000; } /* DecVal */
+code span.er { color: #bf0303; text-decoration: underline; } /* Error */
+code span.ex { color: #0095ff; font-weight: bold; } /* Extension */
+code span.fl { color: #b08000; } /* Float */
+code span.fu { color: #644a9b; } /* Function */
+code span.im { color: #ff5500; } /* Import */
+code span.in { color: #b08000; } /* Information */
+code span.kw { color: #0057ae; } /* Keyword */
+code span.op { color: #1f1c1b; } /* Operator */
+code span.ot { color: #006e28; } /* Other */
+code span.pp { color: #006e28; } /* Preprocessor */
+code span.re { color: #0057ae; background-color: #e0e9f8; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #ff5500; } /* SpecialString */
+code span.st { color: #bf0303; } /* String */
+code span.va { color: #006e28; } /* Variable */
+code span.vs { color: #bf0303; } /* VerbatimString */
+code span.wa { color: #bf0303; } /* Warning */
+  </style>
+  <style type="text/css">
 body {
-	font-family: Helvetica, arial, sans-serif;
-	font-size: 14px;
-	line-height: 1.6;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	background-color: white;
-	padding: 30px;
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
 }
-body>*:first-child {
-	margin-top: 0 !important;
+div.wrapper {
+max-width: 60em;
+margin: auto;
 }
-body>*:last-child {
-	margin-bottom: 0 !important;
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
 }
-a {
-	color: #4183C4;
-}
-a.absent {
-	color: #cc0000;
-}
-a.anchor {
-	display: block;
-	padding-left: 30px;
-	margin-left: -30px;
-	cursor: pointer;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-}
-h1, h2, h3, h4, h5, h6 {
-	margin: 20px 0 10px;
-	padding: 0;
-	font-weight: bold;
-	-webkit-font-smoothing: antialiased;
-	cursor: text;
-	position: relative;
-}
-h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
-	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
-	text-decoration: none;
-}
-h1 tt, h1 code {
-	font-size: inherit;
-}
-h2 tt, h2 code {
-	font-size: inherit;
-}
-h3 tt, h3 code {
-	font-size: inherit;
-}
-h4 tt, h4 code {
-	font-size: inherit;
-}
-h5 tt, h5 code {
-	font-size: inherit;
-}
-h6 tt, h6 code {
-	font-size: inherit;
-}
-h1 {
-	font-size: 28px;
-	color: black;
-}
-h2 {
-	font-size: 24px;
-	border-bottom: 1px solid #cccccc;
-	color: black;
-}
-h3 {
-	font-size: 18px;
-}
-h4 {
-	font-size: 16px;
-}
-h5 {
-	font-size: 14px;
-}
-h6 {
-	color: #777777;
-	font-size: 14px;
-}
-p, blockquote, ol, dl, li, table, pre {
-	margin: 15px 0;
-}
-hr {
-	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
-	border: 0 none;
-	color: #cccccc;
-	height: 4px;
-	padding: 0;
-}
-body>h2:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h1:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h1:first-child+h2 {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
-	margin-top: 0;
-	padding-top: 0;
-}
-h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
-	margin-top: 0;
-}
-li p.first {
-	display: inline-block;
+a { text-decoration: none; }
+a.hidden_link {
+text-decoration: none;
+color: inherit;
 }
 li {
-	margin: 0;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
 }
-ol {
-	padding-left: 30px;
-    margin: 5px;
-    counter-reset: item;
-    margin-left: -1px;
-    margin-bottom: -1px;
-    margin-top: -1px;
+h1 { line-height: 1; }
+h2 { line-height: 1; }
+h3 { line-height: 1; }
+h4 { line-height: 1; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
 }
-ol > li {
-    counter-increment: item;
-    margin-bottom: -1px;
-    margin-top: -1px;    
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
 }
-ol ol > li {
-    display: block;
-    margin-bottom: -1px;
-    margin-top: -1px;    
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
 }
-ol ol > li:before {
-    content: counters(item, ".") ". ";
-    margin-left: -30px;
-    margin-bottom: -1px;
-    margin-top: -1px;    
+a.sourceLink:hover {
+opacity: 1;
 }
-ul :first-child, ol :first-child {
-	margin-top: 0;
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
 }
-ul ul { 
-    margin-left: -15px;
+a.itemDeclLink:hover { opacity: 1; }
+div.marginalizedparent {
+position: relative;
+left: -5em;
 }
-dl {
-	padding: 0;
+li > div.marginalizedparent { left: -7em; }
+li > ul > li > div.marginalizedparent { left: -9em; }
+li > ul > li > ul > li > div.marginalizedparent { left: -11em; }
+li > ul > li > ul > li > ul > li > div.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
 }
-dl dt {
-	font-size: 14px;
-	font-weight: bold;
-	font-style: italic;
-	padding: 0;
-	margin: 15px 0 5px;
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
 }
-dl dt:first-child {
-	padding: 0;
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
 }
-dl dt> :first-child {
-	margin-top: 0;
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
 }
-dl dt> :last-child {
-	margin-bottom: 0;
+a.index {
+position: absolute;
+display: none;
 }
-dl dd {
-	margin: 0 0 15px;
-	padding: 0 15px;
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
 }
-dl dd> :first-child {
-	margin-top: 0;
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
 }
-dl dd> :last-child {
-	margin-bottom: 0;
+div.itemdescr {
+margin-left: 3em;
 }
-blockquote {
-	border-left: 4px solid #dddddd;
-	padding: 0 15px;
-	color: #777777;
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
 }
-blockquote.ins {
-	border-left: 4px solid #00a000;
-	padding: 0 15px;
-	color: #00a000;
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
 }
-blockquote> :first-child {
-	margin-top: 0;
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
 }
-blockquote> :last-child {
-	margin-bottom: 0;
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+code {
+font-family: monospace;
+font-style: normal;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.comment { color: green; font-style: italic; font-family: serif; }
+span.keyword { color: #00607c; }
+span.parenthesis { color: #af1915; }
+span.curlybracket { color: #af1915; }
+span.squarebracket { color: #af1915; }
+span.literal { color: #9F6807; }
+span.operator { color: #570057; }
+span.anglebracket { color: #570057; }
+span.preprocessordirective { color: #6F4E37; }
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
 }
 table {
-	padding: 0;
-	border-collapse: collapse;
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
 }
-table tr {
-	border-top: 1px solid #cccccc;
-	background-color: white;
-	margin: 0;
-	padding: 0;
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
 }
-table tr:nth-child(2n) {
-	background-color: #f8f8f8;
+td.empty {
+padding: 0px;
+padding-left: 1px;
 }
-table tr th {
-	font-weight: bold;
-	border: 1px solid #cccccc;
-	margin: 0;
-	padding: 6px 13px;
+td.left {
+text-align: left;
 }
-table tr td {
-	border: 1px solid #cccccc;
-	margin: 0;
-	padding: 6px 13px;
+td.right {
+text-align: right;
 }
-table tr th :first-child, table tr td :first-child {
-	margin-top: 0;
+td.center {
+text-align: center;
 }
-table tr th :last-child, table tr td :last-child {
-	margin-bottom: 0;
+td.justify {
+text-align: justify;
 }
-td {
-	vertical-align: top;
+td.border {
+border-left: 1px solid black;
 }
-img {
-	max-width: 100%;
+tr.rowsep, td.cline {
+border-top: 1px solid black;
 }
-span.frame {
-	display: block;
-	overflow: hidden;
+tr.even, tr.odd {
+border-bottom: 1px solid black;
 }
-span.frame>span {
-	border: 1px solid #dddddd;
-	display: block;
-	float: left;
-	overflow: hidden;
-	margin: 13px 0 0;
-	padding: 7px;
-	width: auto;
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
 }
-span.frame span img {
-	display: block;
-	float: left;
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
 }
-span.frame span span {
-	clear: both;
-	color: #333333;
-	display: block;
-	padding: 5px 0 0;
+th {
+border-bottom: 1px solid black;
 }
-span.align-center {
-	display: block;
-	overflow: hidden;
-	clear: both;
+span.centry {
+font-weight: bold;
 }
-span.align-center>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px auto 0;
-	text-align: center;
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
 }
-span.align-center span img {
-	margin: 0 auto;
-	text-align: center;
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
 }
-span.align-right {
-	display: block;
-	overflow: hidden;
-	clear: both;
-}
-span.align-right>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px 0 0;
-	text-align: right;
-}
-span.align-right span img {
-	margin: 0;
-	text-align: right;
-}
-span.float-left {
-	display: block;
-	margin-right: 13px;
-	overflow: hidden;
-	float: left;
-}
-span.float-left span {
-	margin: 13px 0 0;
-}
-span.float-right {
-	display: block;
-	margin-left: 13px;
-	overflow: hidden;
-	float: right;
-}
-span.float-right>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px auto 0;
-	text-align: right;
-}
-code, tt {
-	margin: 0 2px;
-	padding: 0 5px;
-	white-space: nowrap;
-	border: 1px solid #eaeaea;
-	background-color: #f8f8f8;
-	border-radius: 3px;
-}
-pre code {
-	margin: 0;
-	padding: 0;
-	white-space: pre;
-	border: none;
-	background: transparent;
-}
-.highlight pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	font-size: 13px;
-	line-height: 19px;
-	overflow: auto;
-	padding: 6px 10px;
-	border-radius: 3px;
-}
-pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	font-size: 13px;
-	line-height: 19px;
-	overflow: auto;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 6px 10px;
-	border-radius: 3px;
-}
-pre code, pre tt {
-	background-color: transparent;
-	border: none;
-}
-sup {
-	font-size: 0.83em;
-	vertical-align: super;
-	line-height: 0;
-}
-kbd {
-	display: inline-block;
-	padding: 3px 5px;
-	font-size: 11px;
-	line-height: 10px;
-	color: #555;
-	vertical-align: middle;
-	background-color: #fcfcfc;
-	border: solid 1px #ccc;
-	border-bottom-color: #bbb;
-	border-radius: 3px;
-	box-shadow: inset 0 -1px 0 #bbb
-}
-* {
-	-webkit-print-color-adjust: exact;
-}
-ins {
-	color: #00A000
-}
-del {
-	color: #A00000
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
 }
 a.self-link {
-    position: absolute;
-    top: 0;
-    left: calc(-1 * (3.5rem - 26px));
-    width: calc(3.5rem - 26px);
-    height: 2em;
-    text-align: center;
-    border: none;
-    transition: opacity .2s;
-    opacity: .5;
-    font-size: 83%;
+position: relative;
+top: 0;
+left: -80px;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-size: 100%;
+text-decoration: none;
 }
 a.self-link:hover {
-    opacity: 1;
+opacity: 1;
 }
 a.self-link::before {
-    content: "§";
+content: "§";
 }
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h2.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
 </style>
-<style type="text/css">/* PrismJS 1.15.0
-https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
-/**
- * prism.js default theme for JavaScript, CSS and HTML
- * Based on dabblet (http://dabblet.com)
- * @author Lea Verou
- */
-
-code[class*="language-"],
-pre[class*="language-"] {
-	color: black;
-	background: none;
-	text-shadow: 0 1px white;
-	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-	text-align: left;
-	white-space: pre;
-	word-spacing: normal;
-	word-break: normal;
-	word-wrap: normal;
-	line-height: 1.5;
-
-	-moz-tab-size: 4;
-	-o-tab-size: 4;
-	tab-size: 4;
-
-	-webkit-hyphens: none;
-	-moz-hyphens: none;
-	-ms-hyphens: none;
-	hyphens: none;
-}
-
-pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
-code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
-	text-shadow: none;
-	background: #b3d4fc;
-}
-
-pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
-code[class*="language-"]::selection, code[class*="language-"] ::selection {
-	text-shadow: none;
-	background: #b3d4fc;
-}
-
-@media print {
-	code[class*="language-"],
-	pre[class*="language-"] {
-		text-shadow: none;
-	}
-}
-
-/* Code blocks */
-pre[class*="language-"] {
-	padding: 1em;
-	margin: .5em 0;
-	overflow: auto;
-}
-
-:not(pre) > code[class*="language-"],
-pre[class*="language-"] {
-	background: #f8f8f8;
-}
-
-/* Inline code */
-:not(pre) > code[class*="language-"] {
-	padding: .1em;
-	border-radius: .3em;
-	white-space: normal;
-}
-
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-	color: slategray;
-}
-
-.token.punctuation {
-	color: #999;
-}
-
-.namespace {
-	opacity: .7;
-}
-
-.token.property,
-.token.tag,
-.token.boolean,
-.token.number,
-.token.constant,
-.token.symbol,
-.token.deleted {
-	color: #905;
-}
-
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-	color: #690;
-}
-
-.token.operator,
-.token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string {
-	color: #9a6e3a;
-}
-
-.token.atrule,
-.token.attr-value,
-.token.keyword {
-	color: #07a;
-}
-
-.token.function,
-.token.class-name {
-	color: #DD4A68;
-}
-
-.token.regex,
-.token.important,
-.token.variable {
-	color: #e90;
-}
-
-.token.important,
-.token.bold {
-	font-weight: bold;
-}
-.token.italic {
-	font-style: italic;
-}
-
-.token.entity {
-	cursor: help;
-}
-
-pre[data-line] {
-	position: relative;
-	padding: 1em 0 1em 3em;
-}
-
-.line-highlight {
-	position: absolute;
-	left: 0;
-	right: 0;
-	padding: inherit 0;
-	margin-top: 1em; /* Same as .prism’s padding-top */
-
-	background: hsla(24, 20%, 50%,.08);
-	background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
-
-	pointer-events: none;
-
-	line-height: inherit;
-	white-space: pre;
-}
-
-	.line-highlight:before,
-	.line-highlight[data-end]:after {
-		content: attr(data-start);
-		position: absolute;
-		top: .4em;
-		left: .6em;
-		min-width: 1em;
-		padding: 0 .5em;
-		background-color: hsla(24, 20%, 50%,.4);
-		color: hsl(24, 20%, 95%);
-		font: bold 65%/1.5 sans-serif;
-		text-align: center;
-		vertical-align: .3em;
-		border-radius: 999px;
-		text-shadow: none;
-		box-shadow: 0 1px white;
-	}
-
-	.line-highlight[data-end]:after {
-		content: attr(data-end);
-		top: auto;
-		bottom: .4em;
-	}
-
-.line-numbers .line-highlight:before,
-.line-numbers .line-highlight:after {
-	content: none;
-}
-
-</style>
-<script type="text/javascript">/* PrismJS 1.15.0
-https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp+nasm+rust&plugins=line-highlight */
-var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-([\w-]+)\b/i,t=0,n=_self.Prism={manual:_self.Prism&&_self.Prism.manual,disableWorkerMessageHandler:_self.Prism&&_self.Prism.disableWorkerMessageHandler,util:{encode:function(e){return e instanceof r?new r(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e,t){var r=n.util.type(e);switch(t=t||{},r){case"Object":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a={};t[n.util.objId(e)]=a;for(var l in e)e.hasOwnProperty(l)&&(a[l]=n.util.clone(e[l],t));return a;case"Array":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a=[];return t[n.util.objId(e)]=a,e.forEach(function(e,r){a[r]=n.util.clone(e,t)}),a}return e}},languages:{extend:function(e,t){var r=n.util.clone(n.languages[e]);for(var a in t)r[a]=t[a];return r},insertBefore:function(e,t,r,a){a=a||n.languages;var l=a[e];if(2==arguments.length){r=arguments[1];for(var i in r)r.hasOwnProperty(i)&&(l[i]=r[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in r)r.hasOwnProperty(i)&&(o[i]=r[i]);o[s]=l[s]}var u=a[e];return a[e]=o,n.languages.DFS(n.languages,function(t,n){n===u&&t!=e&&(this[t]=o)}),o},DFS:function(e,t,r,a){a=a||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],r||l),"Object"!==n.util.type(e[l])||a[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||a[n.util.objId(e[l])]||(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,a)):(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,a)))}},plugins:{},highlightAll:function(e,t){n.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,r){var a={callback:r,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var l,i=a.elements||e.querySelectorAll(a.selector),o=0;l=i[o++];)n.highlightElement(l,t===!0,a.callback)},highlightElement:function(t,r,a){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1].toLowerCase(),i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,t.parentNode&&(o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l));var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(n.hooks.run("before-sanity-check",u),!u.code||!u.grammar)return u.code&&(n.hooks.run("before-highlight",u),u.element.textContent=u.code,n.hooks.run("after-highlight",u)),n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),r&&_self.Worker){var g=new Worker(n.filename);g.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},g.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,a){var l={code:e,grammar:t,language:a};return n.hooks.run("before-tokenize",l),l.tokens=n.tokenize(l.code,l.grammar),n.hooks.run("after-tokenize",l),r.stringify(n.util.encode(l.tokens),l.language)},matchGrammar:function(e,t,r,a,l,i,o){var s=n.Token;for(var u in r)if(r.hasOwnProperty(u)&&r[u]){if(u==o)return;var g=r[u];g="Array"===n.util.type(g)?g:[g];for(var c=0;c<g.length;++c){var h=g[c],f=h.inside,d=!!h.lookbehind,m=!!h.greedy,p=0,y=h.alias;if(m&&!h.pattern.global){var v=h.pattern.toString().match(/[imuy]*$/)[0];h.pattern=RegExp(h.pattern.source,v+"g")}h=h.pattern||h;for(var b=a,k=l;b<t.length;k+=t[b].length,++b){var w=t[b];if(t.length>e.length)return;if(!(w instanceof s)){if(m&&b!=t.length-1){h.lastIndex=k;var _=h.exec(e);if(!_)break;for(var j=_.index+(d?_[1].length:0),P=_.index+_[0].length,A=b,x=k,O=t.length;O>A&&(P>x||!t[A].type&&!t[A-1].greedy);++A)x+=t[A].length,j>=x&&(++b,k=x);if(t[b]instanceof s)continue;I=A-b,w=e.slice(k,x),_.index-=k}else{h.lastIndex=0;var _=h.exec(w),I=1}if(_){d&&(p=_[1]?_[1].length:0);var j=_.index+p,_=_[0].slice(p),P=j+_.length,N=w.slice(0,j),S=w.slice(P),C=[b,I];N&&(++b,k+=N.length,C.push(N));var E=new s(u,f?n.tokenize(_,f):_,y,_,m);if(C.push(E),S&&C.push(S),Array.prototype.splice.apply(t,C),1!=I&&n.matchGrammar(e,t,r,b,k,!0,u),i)break}else if(i)break}}}}},tokenize:function(e,t){var r=[e],a=t.rest;if(a){for(var l in a)t[l]=a[l];delete t.rest}return n.matchGrammar(e,r,t,0,0,!1),r},hooks:{all:{},add:function(e,t){var r=n.hooks.all;r[e]=r[e]||[],r[e].push(t)},run:function(e,t){var r=n.hooks.all[e];if(r&&r.length)for(var a,l=0;a=r[l++];)a(t)}}},r=n.Token=function(e,t,n,r,a){this.type=e,this.content=t,this.alias=n,this.length=0|(r||"").length,this.greedy=!!a};if(r.stringify=function(e,t,a){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return r.stringify(n,t,e)}).join("");var l={type:e.type,content:r.stringify(e.content,t,a),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:a};if(e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o=Object.keys(l.attributes).map(function(e){return e+'="'+(l.attributes[e]||"").replace(/"/g,"&quot;")+'"'}).join(" ");return"<"+l.tag+' class="'+l.classes.join(" ")+'"'+(o?" "+o:"")+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(n.disableWorkerMessageHandler||_self.addEventListener("message",function(e){var t=JSON.parse(e.data),r=t.language,a=t.code,l=t.immediateClose;_self.postMessage(n.highlight(a,n.languages[r],r)),l&&_self.close()},!1),_self.Prism):_self.Prism;var a=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return a&&(n.filename=a.src,n.manual||a.hasAttribute("data-manual")||("loading"!==document.readyState?window.requestAnimationFrame?window.requestAnimationFrame(n.highlightAll):window.setTimeout(n.highlightAll,16):document.addEventListener("DOMContentLoaded",n.highlightAll))),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
-Prism.languages.markup={comment:/<!--[\s\S]*?-->/,prolog:/<\?[\s\S]+?\?>/,doctype:/<!DOCTYPE[\s\S]+?>/i,cdata:/<!\[CDATA\[[\s\S]*?]]>/i,tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s+[^\s>\/=]+(?:=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+))?)*\s*\/?>/i,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/i,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"attr-value":{pattern:/=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+)/i,inside:{punctuation:[/^=/,{pattern:/(^|[^\\])["']/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:/&#?[\da-z]{1,8};/i},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.hooks.add("wrap",function(a){"entity"===a.type&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Prism.languages.xml=Prism.languages.markup,Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup;
-Prism.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:/@[\w-]+?.*?(?:;|(?=\s*\{))/i,inside:{rule:/@[\w-]+/}},url:/url\((?:(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1|.*?)\)/i,selector:/[^{}\s][^{};]*?(?=\s*\{)/,string:{pattern:/("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},property:/[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,important:/\B!important\b/i,"function":/[-a-z0-9]+(?=\()/i,punctuation:/[(){};:]/},Prism.languages.css.atrule.inside.rest=Prism.languages.css,Prism.languages.markup&&(Prism.languages.insertBefore("markup","tag",{style:{pattern:/(<style[\s\S]*?>)[\s\S]*?(?=<\/style>)/i,lookbehind:!0,inside:Prism.languages.css,alias:"language-css",greedy:!0}}),Prism.languages.insertBefore("inside","attr-value",{"style-attr":{pattern:/\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,inside:{"attr-name":{pattern:/^\s*style/i,inside:Prism.languages.markup.tag.inside},punctuation:/^\s*=\s*['"]|['"]\s*$/,"attr-value":{pattern:/.+/i,inside:Prism.languages.css}},alias:"language-css"}},Prism.languages.markup.tag));
-Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(?:true|false)\b/,"function":/\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
-Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(?:_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?/,number:/(?:\b0x[\da-f]+|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?)[ful]*/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+(?:[^\r\n\\]|\\(?:\r\n|[\s\S]))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(?:<.+?>|("|')(?:\\?.)+?\2)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(?:define|defined|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(?:__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|SEEK_CUR|SEEK_END|SEEK_SET|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
-Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|concept|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(?:true|false)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)\w+/i,lookbehind:!0}}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
-Prism.languages.nasm={comment:/;.*$/m,string:/(["'`])(?:\\.|(?!\1)[^\\\r\n])*\1/,label:{pattern:/(^\s*)[A-Za-z._?$][\w.?$@~#]*:/m,lookbehind:!0,alias:"function"},keyword:[/\[?BITS (?:16|32|64)\]?/,{pattern:/(^\s*)section\s*[a-zA-Z.]+:?/im,lookbehind:!0},/(?:extern|global)[^;\r\n]*/i,/(?:CPU|FLOAT|DEFAULT).*$/m],register:{pattern:/\b(?:st\d|[xyz]mm\d\d?|[cdt]r\d|r\d\d?[bwd]?|[er]?[abcd]x|[abcd][hl]|[er]?(?:bp|sp|si|di)|[cdefgs]s)\b/i,alias:"variable"},number:/(?:\b|(?=\$))(?:0[hx][\da-f]*\.?[\da-f]+(?:p[+-]?\d+)?|\d[\da-f]+[hx]|\$\d[\da-f]*|0[oq][0-7]+|[0-7]+[oq]|0[by][01]+|[01]+[by]|0[dt]\d+|\d*\.?\d+(?:\.?e[+-]?\d+)?[dt]?)\b/i,operator:/[\[\]*+\-\/%<>=&|$!]/};
-Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:[{pattern:/b?r(#*)"(?:\\.|(?!"\1)[^\\\r\n])*"\1/,greedy:!0},{pattern:/b?"(?:\\.|[^\\\r\n"])*"/,greedy:!0}],"char":{pattern:/b?'(?:\\(?:x[0-7][\da-fA-F]|u{(?:[\da-fA-F]_*){1,6}|.)|[^\\\r\n\t'])'/,alias:"string"},"lifetime-annotation":{pattern:/'[^\s>']+/,alias:"symbol"},keyword:/\b(?:abstract|alignof|as|be|box|break|const|continue|crate|do|else|enum|extern|false|final|fn|for|if|impl|in|let|loop|match|mod|move|mut|offsetof|once|override|priv|pub|pure|ref|return|sizeof|static|self|struct|super|true|trait|type|typeof|unsafe|unsized|use|virtual|where|while|yield)\b/,attribute:{pattern:/#!?\[.+?\]/,greedy:!0,alias:"attr-name"},"function":[/\w+(?=\s*\()/,/\w+!(?=\s*\(|\[)/],"macro-rules":{pattern:/\w+!/,alias:"function"},number:/\b(?:0x[\dA-Fa-f](?:_?[\dA-Fa-f])*|0o[0-7](?:_?[0-7])*|0b[01](?:_?[01])*|(\d(?:_?\d)*)?\.?\d(?:_?\d)*(?:[Ee][+-]?\d+)?)(?:_?(?:[iu](?:8|16|32|64)?|f32|f64))?\b/,"closure-params":{pattern:/\|[^|]*\|(?=\s*[{-])/,inside:{punctuation:/[|:,]/,operator:/[&*]/}},punctuation:/[{}[\];(),:]|\.+|->/,operator:/[-+*\/%!^]=?|=[=>]?|@|&[&=]?|\|[|=]?|<<?=?|>>?=?/};
-!function(){function e(e,t){return Array.prototype.slice.call((t||document).querySelectorAll(e))}function t(e,t){return t=" "+t+" ",(" "+e.className+" ").replace(/[\n\t]/g," ").indexOf(t)>-1}function n(e,n,i){n="string"==typeof n?n:e.getAttribute("data-line");for(var o,l=n.replace(/\s+/g,"").split(","),a=+e.getAttribute("data-line-offset")||0,s=r()?parseInt:parseFloat,d=s(getComputedStyle(e).lineHeight),u=t(e,"line-numbers"),c=0;o=l[c++];){var p=o.split("-"),m=+p[0],f=+p[1]||m,h=e.querySelector('.line-highlight[data-range="'+o+'"]')||document.createElement("div");if(h.setAttribute("aria-hidden","true"),h.setAttribute("data-range",o),h.className=(i||"")+" line-highlight",u&&Prism.plugins.lineNumbers){var g=Prism.plugins.lineNumbers.getLine(e,m),y=Prism.plugins.lineNumbers.getLine(e,f);g&&(h.style.top=g.offsetTop+"px"),y&&(h.style.height=y.offsetTop-g.offsetTop+y.offsetHeight+"px")}else h.setAttribute("data-start",m),f>m&&h.setAttribute("data-end",f),h.style.top=(m-a-1)*d+"px",h.textContent=new Array(f-m+2).join(" \n");u?e.appendChild(h):(e.querySelector("code")||e).appendChild(h)}}function i(){var t=location.hash.slice(1);e(".temporary.line-highlight").forEach(function(e){e.parentNode.removeChild(e)});var i=(t.match(/\.([\d,-]+)$/)||[,""])[1];if(i&&!document.getElementById(t)){var r=t.slice(0,t.lastIndexOf(".")),o=document.getElementById(r);o&&(o.hasAttribute("data-line")||o.setAttribute("data-line",""),n(o,i,"temporary "),document.querySelector(".temporary.line-highlight").scrollIntoView())}}if("undefined"!=typeof self&&self.Prism&&self.document&&document.querySelector){var r=function(){var e;return function(){if("undefined"==typeof e){var t=document.createElement("div");t.style.fontSize="13px",t.style.lineHeight="1.5",t.style.padding=0,t.style.border=0,t.innerHTML="&nbsp;<br />&nbsp;",document.body.appendChild(t),e=38===t.offsetHeight,document.body.removeChild(t)}return e}}(),o=0;Prism.hooks.add("before-sanity-check",function(t){var n=t.element.parentNode,i=n&&n.getAttribute("data-line");if(n&&i&&/pre/i.test(n.nodeName)){var r=0;e(".line-highlight",n).forEach(function(e){r+=e.textContent.length,e.parentNode.removeChild(e)}),r&&/^( \n)+$/.test(t.code.slice(-r))&&(t.code=t.code.slice(0,-r))}}),Prism.hooks.add("complete",function l(e){var r=e.element.parentNode,a=r&&r.getAttribute("data-line");if(r&&a&&/pre/i.test(r.nodeName)){clearTimeout(o);var s=Prism.plugins.lineNumbers,d=e.plugins&&e.plugins.lineNumbers;t(r,"line-numbers")&&s&&!d?Prism.hooks.add("line-numbers",l):(n(r,a),o=setTimeout(i,1))}}),window.addEventListener("hashchange",i),window.addEventListener("resize",function(){var e=document.querySelectorAll("pre[data-line]");Array.prototype.forEach.call(e,function(e){n(e)})})}}();
-</script>
-
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
 </head>
 <body>
-<address align=right>
-Document Number: D1630R0 <br />
-Date: 2019-05-27 <br />
-Audience: CWG, EWG <br />
-Reply-To: Barry Revzin, barry dot revzin at gmail dot com <br />
-</address>
-<hr /><h1 align=center><p>Spaceship needs a tune-up<br/>Addressing some discovered issues with P0515 and P1185</p></h1>
-<h2>Contents</h2>
-<div class="toc">
-<ol>
-<li><a href="#introduction">Introduction</a></li>
-<li><a href="#tomaszs-example-cwg-2407">Tomasz's example (CWG 2407)</a><ol>
-<li><a href="#changing-the-result-of-overload-resolution">Changing the result of overload resolution</a></li>
-<li><a href="#code-that-becomes-ambiguous">Code that becomes ambiguous</a></li>
-<li><a href="#similar-examples">Similar examples</a></li>
-<li><a href="#todays-guidance">Today's Guidance</a></li>
-<li><a href="#proposal">Proposal</a></li>
-</ol>
-</li>
-<li><a href="#camerons-example">Cameron's Example</a><ol>
-<li><a href="#proposal_1">Proposal</a></li>
-</ol>
-</li>
-<li><a href="#richards-example">Richard's Example</a><ol>
-<li><a href="#proposal_2">Proposal</a></li>
-</ol>
-</li>
-<li><a href="#default-comparisons-for-reference-data-members">Default comparisons for reference data members</a><ol>
-<li><a href="#anonymous-unions">Anonymous unions</a></li>
-<li><a href="#design-intent">Design intent</a></li>
-<li><a href="#proposal_3">Proposal</a></li>
-</ol>
-</li>
-<li><a href="#wording">Wording</a></li>
-<li><a href="#references">References</a></li>
-</ol>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Spaceship needs a tune-up</h1>
+<h2 class="subtitle" style="text-align:center">Addressing some discovered issues with P0515 and P1185</h2>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #: </td>
+    <td>D1630R0</td>
+  </tr>
+  <tr>
+    <td>Date: </td>
+    <td>2019-06-01</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project: </td>
+    <td>Programming Language C++<br>
+      CWG, EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to: </td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#introduction"><span class="toc-section-number">1</span> <span></span>Introduction</a></li>
+<li><a href="#tomaszs-example"><span class="toc-section-number">2</span> <span></span>Tomasz’s example</a><ul>
+<li><a href="#changing-the-result-of-overload-resolution"><span class="toc-section-number">2.1</span> <span></span>Changing the result of overload resolution</a></li>
+<li><a href="#code-that-becomes-ambiguous"><span class="toc-section-number">2.2</span> <span></span>Code that becomes ambiguous</a></li>
+<li><a href="#similar-examples"><span class="toc-section-number">2.3</span> <span></span>Similar examples</a></li>
+<li><a href="#todays-guidance"><span class="toc-section-number">2.4</span> <span></span>Today’s Guidance</a></li>
+<li><a href="#proposal"><span class="toc-section-number">2.5</span> <span></span>Proposal</a></li>
+</ul></li>
+<li><a href="#camerons-example"><span class="toc-section-number">3</span> <span></span>Cameron’s Example</a><ul>
+<li><a href="#proposal-1"><span class="toc-section-number">3.1</span> <span></span>Proposal</a></li>
+</ul></li>
+<li><a href="#richards-example"><span class="toc-section-number">4</span> <span></span>Richard’s Example</a><ul>
+<li><a href="#proposal-2"><span class="toc-section-number">4.1</span> <span></span>Proposal</a></li>
+</ul></li>
+<li><a href="#default-comparisons-for-reference-data-members"><span class="toc-section-number">5</span> <span></span>Default comparisons for reference data members</a><ul>
+<li><a href="#anonymous-unions"><span class="toc-section-number">5.1</span> <span></span>Anonymous unions</a></li>
+<li><a href="#design-intent"><span class="toc-section-number">5.2</span> <span></span>Design intent</a></li>
+<li><a href="#proposal-3"><span class="toc-section-number">5.3</span> <span></span>Proposal</a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">6</span> <span></span>Wording</a></li>
+<li><a href="#references"><span class="toc-section-number">7</span> <span></span>References</a></li>
+</ul>
 </div>
-
-<h2 id="introduction">1. Introduction<a class="self-link" href="#introduction"></a></h2>
-<p>The introduction of <code class="language-cpp">operator&lt;=&gt;</code> into the language (<a href="https://wg21.link/p0515R3" title="Consistent comparison">P0515R3</a> with relevant extension <a href="https://wg21.link/p0905r1" title="Symmetry for spaceship">P0905R1</a>) added a novel aspect to name lookup: candidate functions can now include both candidates with different names and a reversed order of arguments. The expression <code class="language-cpp">a &lt; b</code> used to always only find candidates like <code class="language-cpp">operator&lt;(a, b)</code> and <code class="language-cpp">a.operator&lt;(b)</code> now also finds <code class="language-cpp">(a &lt;=&gt; b) &lt; 0</code> and <code class="language-cpp">0 &lt; (b &lt;=&gt; a)</code>. This change makes it much easier to write comparisons - since you only need to write the one <code class="language-cpp">operator&lt;=&gt;</code>.</p>
-<p>However, that ended up being insufficient due to the problems pointed out in <a href="https://wg21.link/p1190R0" title="I did not order this! Why is it on my bill?">P1190</a>, and in response <a href="https://wg21.link/p1185R2" title="&lt;=&gt; != ==">P1185R2</a> was adopted in Kona which made the following changes:</p>
-<ol>
-<li>Changing candidate sets for equality and inequality<br />
-  a. <code class="language-cpp">&lt;=&gt;</code> is no longer a candidate for either equality or inequality<br />
-  b. <code class="language-cpp">==</code> gains <code class="language-cpp">&lt;=&gt;</code>'s ability for both reversed and rewritten candidates  </li>
-<li>Defaulted <code class="language-cpp">==</code> does memberwise equality, defaulted <code class="language-cpp">!=</code> invokes <code class="language-cpp">==</code> instead of <code class="language-cpp">&lt;=&gt;</code>.  </li>
-<li>Strong structural equality is defined in terms of <code class="language-cpp">==</code> instead of <code class="language-cpp">&lt;=&gt;</code>  </li>
-<li>Defaulted <code class="language-cpp">&lt;=&gt;</code> can also implicitly declare defaulted <code class="language-cpp">==</code></li>
+<h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> <a href="#introduction" class="self-link"></a>Introduction</h1>
+<p>The introduction of <code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code> into the language (<span class="citation" data-cites="P0515R3">[<a href="#ref-P0515R3" role="doc-biblioref">P0515R3</a>]</span> with relevant extension <span class="citation" data-cites="P0905R1">[<a href="#ref-P0905R1" role="doc-biblioref">P0905R1</a>]</span>) added a novel aspect to name lookup: candidate functions can now include both candidates with different names and a reversed order of arguments. The expression <code class="sourceCode cpp">a &lt; b</code> used to always only find candidates like <code class="sourceCode cpp"><span class="kw">operator</span>&lt;(a, b)</code> and <code class="sourceCode cpp">a.<span class="kw">operator</span>&lt;(b)</code> now also finds <code class="sourceCode cpp">(a &lt;=&gt; b) &lt; <span class="dv">0</span></code> and <code class="sourceCode cpp"><span class="dv">0</span> &lt; (b &lt;=&gt; a)</code>. This change makes it much easier to write comparisons - since you only need to write the one <code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code>.</p>
+<p>However, that ended up being insufficient due to the problems pointed out in <span class="citation" data-cites="P1190R0">[<a href="#ref-P1190R0" role="doc-biblioref">P1190R0</a>]</span>, and in response <span class="citation" data-cites="P1185R2">[<a href="#ref-P1185R2" role="doc-biblioref">P1185R2</a>]</span> was adopted in Kona which made the following changes:</p>
+<ol type="1">
+<li>Changing candidate sets for equality and inequality
+<ol type="a">
+<li><code class="sourceCode cpp">&lt;=&gt;</code> is no longer a candidate for either equality or inequality<br />
+</li>
+<li><code class="sourceCode cpp">==</code> gains <code class="sourceCode cpp">&lt;=&gt;</code>’s ability for both reversed and rewritten candidates<br />
+</li>
+</ol></li>
+<li>Defaulted <code class="sourceCode cpp">==</code> does memberwise equality, defaulted <code class="sourceCode cpp">!=</code> invokes <code class="sourceCode cpp">==</code> instead of <code class="sourceCode cpp">&lt;=&gt;</code>.<br />
+</li>
+<li>Strong structural equality is defined in terms of <code class="sourceCode cpp">==</code> instead of <code class="sourceCode cpp">&lt;=&gt;</code><br />
+</li>
+<li>Defaulted <code class="sourceCode cpp">&lt;=&gt;</code> can also implicitly declare defaulted <code class="sourceCode cpp">==</code></li>
 </ol>
-<p>Between P0515 and P1185, several issues have come up in the reflectors that this paper hopes to address. These issues are largely independent from each other, and will be discussed independently. </p>
-<h2 id="tomaszs-example-cwg-2407">2. Tomasz's example (<a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407" title="CWG 2407: Missing entry in Annex C for defaulted comparison operators">CWG 2407</a>)<a class="self-link" href="#tomaszs-example-cwg-2407"></a></h2>
-<p>Consider the following example (note that the use of <code class="language-cpp">int</code> is not important, simply that we have two types, one of which is implicitly convertible to the other):</p>
-<pre class="codehilite"><code class="language-cpp">struct A {
-  operator int() const;
-};
-
-bool operator==(A, int);              // #1
-// builtin bool operator==(int, int); // #2
-// builtin bool operator!=(int, int); // #3
-
-int check(A x, A y) {
-  return (x == y) +  // In C++17, calls #1; in C++20, ambiguous between #1 and reversed #1
-    (10 == x) +      // In C++17, calls #2; in C++20, calls #1
-    (10 != x);       // In C++17, calls #3; in C++20, calls #1
-}</code></pre>
-
-
+<p>Between P0515 and P1185, several issues have come up in the reflectors that this paper hopes to address. These issues are largely independent from each other, and will be discussed independently.</p>
+<h1 id="tomaszs-example" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> <a href="#tomaszs-example" class="self-link"></a>Tomasz’s example</h1>
+<p>Consider the following example <span class="citation" data-cites="CWG2407">[<a href="#ref-CWG2407" role="doc-biblioref">CWG2407</a>]</span> (note that the use of <code class="sourceCode cpp"><span class="dt">int</span></code> is not important, simply that we have two types, one of which is implicitly convertible to the other):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">struct</span> A {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">operator</span> <span class="dt">int</span>() <span class="at">const</span>;</a>
+<a class="sourceLine" id="cb1-3" title="3">};</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="dt">bool</span> <span class="kw">operator</span>==(A, <span class="dt">int</span>);              <span class="co">// #1</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// builtin bool operator==(int, int); // #2</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// builtin bool operator!=(int, int); // #3</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="dt">int</span> check(A x, A y) {</a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="cf">return</span> (x == y) +  <span class="co">// In C++17, calls #1; in C++20, ambiguous between #1 and reversed #1</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    (<span class="dv">10</span> == x) +      <span class="co">// In C++17, calls #2; in C++20, calls #1</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    (<span class="dv">10</span> != x);       <span class="co">// In C++17, calls #3; in C++20, calls #1</span></a>
+<a class="sourceLine" id="cb1-13" title="13">}    </a></code></pre></div>
 <p>There are two separate issues demonstrated in this example: code that changes which function gets called, and code that becomes ambiguous.</p>
-<h3 id="changing-the-result-of-overload-resolution">2.1. Changing the result of overload resolution<a class="self-link" href="#changing-the-result-of-overload-resolution"></a></h3>
-<p>The expression <code class="language-cpp">10 == x</code> in C++17 had only one viable candidate: <code class="language-cpp">operator==(int, int)</code>, converting the <code class="language-cpp">A</code> to an <code class="language-cpp">int</code>. But in C++20, due to P1185, equality and inequality get reversed candidates as well. Since equality is symmetric, <code class="language-cpp">10 == x</code> is an equivalent expression to <code class="language-cpp">x == 10</code>, and we consider both forms. This gives us two candidates:</p>
-<pre class="codehilite"><code class="language-cpp">bool operator==(int, A);   // #1 (reversed)
-bool operator==(int, int); // #2 (builtin)</code></pre>
-
-
-<p>The first is an Exact Match, whereas the second requires a Conversion, so the first is the best viable candidate. </p>
-<p>Silently changing which function gets executed is facially the worst thing we can do, but in this particular situation doesn't seem that bad. We're already in a situation where, in C++17, <code class="language-cpp">x == 10</code> and <code class="language-cpp">10 == x</code> invoke different kinds of functions (the former invokes a user-defined function, the latter a builtin) and if those two give different answers, that seems like an inherently questionable program. </p>
-<p>The inequality expression behaves the same way. In C++17, <code class="language-cpp">10 != x</code> had only one viable candidate: the <code class="language-cpp">operator!=(int, int)</code> builtin, but in C++20 also acquires the reversed and rewritten candidate <code class="language-cpp">(x == 10) ? false : true</code>, which would be an Exact Match. Here, the status quo was that <code class="language-cpp">x != 10</code> and <code class="language-cpp">10 != x</code> both invoke the same function - but again, if that function gave a different answer from <code class="language-cpp">!(x == 10)</code> or <code class="language-cpp">!(10 == x)</code>, that seems suspect. </p>
-<h3 id="code-that-becomes-ambiguous">2.2. Code that becomes ambiguous<a class="self-link" href="#code-that-becomes-ambiguous"></a></h3>
-<p>The homogeneous comparison is more interesting. <code class="language-cpp">x == y</code> in C++17 had only one candidate: <code class="language-cpp">operator==(A, int)</code>, converting <code class="language-cpp">y</code> to an <code class="language-cpp">int</code>. But in C++20, it now has two:</p>
-<pre class="codehilite"><code class="language-cpp">bool operator==(A, int); // #1
-bool operator==(int, A); // #1 reversed</code></pre>
-
-
-<p>The first candidate has an Exact Match in the 1st argument and a Conversion in the 2nd, the second candidate has a Conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate (<a href="http://eel.is/c++draft/over.match.best#2.9">[over.match.best]/2.9</a>), that only happens when each argument's conversion sequence <em>is not worse than</em> the other candidates' (<a href="http://eel.is/c++draft/over.match.best#2">[over.match.best]/2</a>)... and that's just not the case here. We have one better sequence and one worse sequence, each way.</p>
+<h2 id="changing-the-result-of-overload-resolution"><span class="header-section-number">2.1</span> <a href="#changing-the-result-of-overload-resolution" class="self-link"></a>Changing the result of overload resolution</h2>
+<p>The expression <code class="sourceCode cpp"><span class="dv">10</span> == x</code> in C++17 had only one viable candidate: <code class="sourceCode cpp"><span class="kw">operator</span>==(<span class="dt">int</span>, <span class="dt">int</span>)</code>, converting the <code class="sourceCode cpp">A</code> to an <code class="sourceCode cpp"><span class="dt">int</span></code>. But in C++20, due to P1185, equality and inequality get reversed candidates as well. Since equality is symmetric, <code class="sourceCode cpp"><span class="dv">10</span> == x</code> is an equivalent expression to <code class="sourceCode cpp">x == <span class="dv">10</span></code>, and we consider both forms. This gives us two candidates:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" title="1"><span class="dt">bool</span> <span class="kw">operator</span>==(<span class="dt">int</span>, A);   <span class="co">// #1 (reversed)</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="dt">bool</span> <span class="kw">operator</span>==(<span class="dt">int</span>, <span class="dt">int</span>); <span class="co">// #2 (builtin)</span></a></code></pre></div>
+<p>The first is an Exact Match, whereas the second requires a Conversion, so the first is the best viable candidate.</p>
+<p>Silently changing which function gets executed is facially the worst thing we can do, but in this particular situation doesn’t seem that bad. We’re already in a situation where, in C++17, <code class="sourceCode cpp">x == <span class="dv">10</span></code> and <code class="sourceCode cpp"><span class="dv">10</span> == x</code> invoke different kinds of functions (the former invokes a user-defined function, the latter a builtin) and if those two give different answers, that seems like an inherently questionable program.</p>
+<p>The inequality expression behaves the same way. In C++17, <code class="sourceCode cpp"><span class="dv">10</span> != x</code> had only one viable candidate: the <code class="sourceCode cpp"><span class="kw">operator</span>!=(<span class="dt">int</span>, <span class="dt">int</span>)</code> builtin, but in C++20 also acquires the reversed and rewritten candidate <code class="sourceCode cpp">(x == <span class="dv">10</span>) ? <span class="kw">false</span> : <span class="kw">true</span></code>, which would be an Exact Match. Here, the status quo was that <code class="sourceCode cpp">x != <span class="dv">10</span></code> and <code class="sourceCode cpp"><span class="dv">10</span> != x</code> both invoke the same function - but again, if that function gave a different answer from <code class="sourceCode cpp">!(x == <span class="dv">10</span>)</code> or <code class="sourceCode cpp">!(<span class="dv">10</span> == x)</code>, that seems suspect.</p>
+<h2 id="code-that-becomes-ambiguous"><span class="header-section-number">2.2</span> <a href="#code-that-becomes-ambiguous" class="self-link"></a>Code that becomes ambiguous</h2>
+<p>The homogeneous comparison is more interesting. <code class="sourceCode cpp">x == y</code> in C++17 had only one candidate: <code class="sourceCode cpp"><span class="kw">operator</span>==(A, <span class="dt">int</span>)</code>, converting <code class="sourceCode cpp">y</code> to an <code class="sourceCode cpp"><span class="dt">int</span></code>. But in C++20, it now has two:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" title="1"><span class="dt">bool</span> <span class="kw">operator</span>==(A, <span class="dt">int</span>); <span class="co">// #1</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="dt">bool</span> <span class="kw">operator</span>==(<span class="dt">int</span>, A); <span class="co">// #1 reversed</span></a></code></pre></div>
+<p>The first candidate has an Exact Match in the 1st argument and a Conversion in the 2nd, the second candidate has a Conversion in the 1st argument and an Exact Match in the 2nd. While we do have a tiebreaker to choose the non-reversed candidate over the reversed candidate (<a href="http://eel.is/c++draft/over.match.best#2.9">[over.match.best]/2.9</a>), that only happens when each argument’s conversion sequence <em>is not worse than</em> the other candidates’ (<a href="http://eel.is/c++draft/over.match.best#2">[over.match.best]/2</a>)… and that’s just not the case here. We have one better sequence and one worse sequence, each way.</p>
 <p>As a result, this becomes ambiguous.</p>
-<p>Note that the same thing can happen with <code class="language-cpp">&lt;=&gt;</code> in a similar situation:</p>
-<pre class="codehilite"><code class="language-cpp">struct C {
-    operator int() const;
-    strong_ordering operator&lt;=&gt;(int) const;
-};
-
-C{} &lt;=&gt; C{}; // error: ambiguous</code></pre>
-
-
-<p>But in this case, it's completely new code which is ambiguous - rather than existing, functional code. </p>
-<h3 id="similar-examples">2.3. Similar examples<a class="self-link" href="#similar-examples"></a></h3>
+<p>Note that the same thing can happen with <code class="sourceCode cpp">&lt;=&gt;</code> in a similar situation:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">struct</span> C {</a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="kw">operator</span> <span class="dt">int</span>() <span class="at">const</span>;</a>
+<a class="sourceLine" id="cb4-3" title="3">    strong_ordering <span class="kw">operator</span>&lt;=&gt;(<span class="dt">int</span>) <span class="at">const</span>;</a>
+<a class="sourceLine" id="cb4-4" title="4">};</a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">C{} &lt;=&gt; C{}; <span class="co">// error: ambiguous</span></a></code></pre></div>
+<p>But in this case, it’s completely new code which is ambiguous - rather than existing, functional code.</p>
+<h2 id="similar-examples"><span class="header-section-number">2.3</span> <a href="#similar-examples" class="self-link"></a>Similar examples</h2>
 <p>There are several other examples in this vein that are important to keep in mind, courtesy of Davis Herring.</p>
-<pre class="codehilite"><code class="language-cpp">struct B {
-    B(int);
-};
-bool operator==(B,B);
-bool f() {return B()==0;}</code></pre>
-
-
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">struct</span> B {</a>
+<a class="sourceLine" id="cb5-2" title="2">    B(<span class="dt">int</span>);</a>
+<a class="sourceLine" id="cb5-3" title="3">};</a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="dt">bool</span> <span class="kw">operator</span>==(B,B);</a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="dt">bool</span> f() {<span class="cf">return</span> B()==<span class="dv">0</span>;}</a></code></pre></div>
 <p>We want this example to work, regardless of whatever rule changes we pursue. One potential rule change under consideration was reversing the arguments rather than parameters, which would lead to the above becoming ambiguous between the two argument orderings.</p>
 <p>Also:</p>
-<pre class="codehilite"><code class="language-cpp">struct C {operator int();};
-struct D : C {};
-
-bool operator==(const C&amp;,int);
-
-bool g() {return D()==C();}</code></pre>
-
-
-<p>The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.</p>
-<h3 id="todays-guidance">2.4. Today's Guidance<a class="self-link" href="#todays-guidance"></a></h3>
-<p>From Herb Sutter's <a href="http://lists.isocpp.org/ext/2019/03/8704.php" title="Overload resolution changes as a result of P1185R2">post</a> on the topic:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">struct</span> C {<span class="kw">operator</span> <span class="dt">int</span>();};</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">struct</span> D : C {};</a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="dt">bool</span> <span class="kw">operator</span>==(<span class="at">const</span> C&amp;,<span class="dt">int</span>);</a>
+<a class="sourceLine" id="cb6-5" title="5"></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="dt">bool</span> g() {<span class="cf">return</span> D()==C();}</a></code></pre></div>
+<p>The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz’s example: valid in C++17, ambiguous in C++20 under the status quo rules.</p>
+<h2 id="todays-guidance"><span class="header-section-number">2.4</span> <a href="#todays-guidance" class="self-link"></a>Today’s Guidance</h2>
+<p>From Herb Sutter’s post <span class="citation" data-cites="herb">[<a href="#ref-herb" role="doc-biblioref">herb</a>]</span> on the topic:</p>
 <blockquote>
 <p>Actually, C++20 is removing a pre-C++20 can of worms we can now unlearn.</p>
+</blockquote>
+<blockquote>
 <p>This example is “bad” code that breaks two rules we teach today, and compiling it in C++20 will make it strictly better:</p>
-<p>(1) It violates today’s guidance that you should write symmetric overloads of a heterogeneous <code class="language-cpp">operator==</code> to avoid surprises. In this case, they provided <code class="language-cpp">operator==(A,int)</code> but failed to provide <code class="language-cpp">operator==(int,A)</code>. As a result, today we have to explain arcane details of why <code class="language-cpp">10==x</code> and <code class="language-cpp">x==10</code> do different and possibly inconsistent things in this code, which forces us to explain several language rules plus teach a coding guideline to always remember to provide two overloads of a heterogeneous operator== (because if you forget, this code will compile but do inconsistent things depending on the order of <code class="language-cpp">10==x</code> and <code class="language-cpp">x==10</code>). That’s a can of worms we can stop teaching in C++20.</p>
-<p>(2) It violates today’s guidance that you should also write a homogeneous <code class="language-cpp">operator==</code> to avoid a performance and/or correctness pitfall. In this case, they forgot to provide <code class="language-cpp">operator==(A,A)</code>. As a result, today we have to explain why <code class="language-cpp">x==y</code> “works” in this code, but that’s a bug not a feature – it “works” only because we already violated (1) above, and that it “works” is harboring a performance bug (implicit conversion) and possibly a correctness bug (if comparing two A’s directly might do something different than first converting one to an int). If today the programmer had not violated (1), they would already get a compile-time error; so the fact that <code class="language-cpp">x==y</code> is ambiguous is not actually new in C++20, what is new is that you will now consistently always get the compile-time error that you are missing <code class="language-cpp">operator==(A,A)</code> instead of having it masked sometimes if you broke another rule. </p>
-<p>So recompiling this “bad” code in C++20 mode is strictly good: For (1), C++20 silently fixes the bug, because the existing <code class="language-cpp">operator==(A,int)</code> now does what the user almost certainly intended. For (2), C++20 removes the pitfall by making the existing compile-time diagnostic guaranteed instead of just likely.</p>
+</blockquote>
+<blockquote>
+<ol type="1">
+<li>It violates today’s guidance that you should write symmetric overloads of a heterogeneous <code class="sourceCode cpp"><span class="kw">operator</span>==</code> to avoid surprises. In this case, they provided <code class="sourceCode cpp"><span class="kw">operator</span>==(A,<span class="dt">int</span>)</code> but failed to provide <code class="sourceCode cpp"><span class="kw">operator</span>==(<span class="dt">int</span>,A)</code>. As a result, today we have to explain arcane details of why <code class="sourceCode cpp"><span class="dv">10</span>==x</code> and <code class="sourceCode cpp">x==<span class="dv">10</span></code> do different and possibly inconsistent things in this code, which forces us to explain several language rules plus teach a coding guideline to always remember to provide two overloads of a heterogeneous operator== (because if you forget, this code will compile but do inconsistent things depending on the order of <code class="sourceCode cpp"><span class="dv">10</span>==x</code> and <code class="sourceCode cpp">x==<span class="dv">10</span></code>). That’s a can of worms we can stop teaching in C++20.</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="2" type="1">
+<li>It violates today’s guidance that you should also write a homogeneous <code class="sourceCode cpp"><span class="kw">operator</span>==</code> to avoid a performance and/or correctness pitfall. In this case, they forgot to provide <code class="sourceCode cpp"><span class="kw">operator</span>==(A,A)</code>. As a result, today we have to explain why <code class="sourceCode cpp">x==y</code> “works” in this code, but that’s a bug not a feature – it “works” only because we already violated (1) above, and that it “works” is harboring a performance bug (implicit conversion) and possibly a correctness bug (if comparing two A’s directly might do something different than first converting one to an int). If today the programmer had not violated (1), they would already get a compile-time error; so the fact that <code class="sourceCode cpp">x==y</code> is ambiguous is not actually new in C++20, what is new is that you will now consistently always get the compile-time error that you are missing <code class="sourceCode cpp"><span class="kw">operator</span>==(A,A)</code> instead of having it masked sometimes if you broke another rule.</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>So recompiling this “bad” code in C++20 mode is strictly good: For (1), C++20 silently fixes the bug, because the existing <code class="sourceCode cpp"><span class="kw">operator</span>==(A,<span class="dt">int</span>)</code> now does what the user almost certainly intended. For (2), C++20 removes the pitfall by making the existing compile-time diagnostic guaranteed instead of just likely.</p>
+</blockquote>
+<blockquote>
 <p>Operationally, the main place you’ll notice a difference in C++20 is in code that a wise man once described as “code that deserves to be broken.”</p>
+</blockquote>
+<blockquote>
 <p>Educationally, C++20 does remove a pre-C++20 can of worms, but mostly the only ones who will notice are us “arcana experts” who are steeped in today’s complexity (because we have to unlearn our familiar wormcan); most “normals” will only notice that now C++ does what they thought it did. :)</p>
 </blockquote>
-<h3 id="proposal">2.5. Proposal<a class="self-link" href="#proposal"></a></h3>
-<p>The model around comparisons is better in the working draft than it was in C++17. We're also now in a position where it's simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares <code class="language-cpp">operator&lt;</code> for their types and then everybody writes algorithms that pretend that only <code class="language-cpp">&lt;</code> exists. Or, more relevantly, where everybody only declares <code class="language-cpp">operator==</code> for their types and nobody uses <code class="language-cpp">!=</code>. This is a Good Thing. </p>
-<p>Coming up with a way to design the rewrite rules in a way that makes satisfies both Tomasz's and Davis's examples leads to a <em>very</em> complex set of rules, all to fix code that is fundamentally ambiguous. </p>
+<h2 id="proposal"><span class="header-section-number">2.5</span> <a href="#proposal" class="self-link"></a>Proposal</h2>
+<p>The model around comparisons is better in the working draft than it was in C++17. We’re also now in a position where it’s simply much easier to write comparisons for types - we no longer have to live in this world where everybody only declares <code class="sourceCode cpp"><span class="kw">operator</span>&lt;</code> for their types and then everybody writes algorithms that pretend that only <code class="sourceCode cpp">&lt;</code> exists. Or, more relevantly, where everybody only declares <code class="sourceCode cpp"><span class="kw">operator</span>==</code> for their types and nobody uses <code class="sourceCode cpp">!=</code>. This is a Good Thing.</p>
+<p>Coming up with a way to design the rewrite rules in a way that makes satisfies both Tomasz’s and Davis’s examples leads to a <em>very</em> complex set of rules, all to fix code that is fundamentally ambiguous.</p>
 <p>This paper proposes that the status quo is the very best of the quos. Some code will fail to compile, that code can be easily fixed by adding either a homogeneous comparison operator or, if not that, doing an explicit conversion at the call sites. This lets us have the best language rules for the long future this language still has ahead of it. Instead, we add an Annex C entry.</p>
-<h2 id="camerons-example">3. Cameron's Example<a class="self-link" href="#camerons-example"></a></h2>
-<p>Cameron daCamara submitted the <a href="http://lists.isocpp.org/core/2019/04/5935.php" title="Potential issue after P1185R2 - SFINAE breaking change">following example</a> after MSVC implemented <code class="language-cpp">operator&lt;=&gt;</code> and P1185R2:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;typename Lhs, typename Rhs&gt;
-struct BinaryHelper {
-  using UnderLhs = typename Lhs::Scalar;
-  using UnderRhs = typename Rhs::Scalar;
-  operator bool() const;
-};
-
-struct OnlyEq {
-  using Scalar = int;
-  template &lt;typename Rhs&gt;
-  const BinaryHelper&lt;OnlyEq, Rhs&gt; operator==(const Rhs&amp;) const;
-};
-
-template &lt;typename...&gt;
-using void_t = void;
-
-template &lt;typename T&gt;
-constexpr T&amp; declval();
-
-template &lt;typename, typename = void&gt;
-constexpr bool has_neq_operation = false;
-
-template &lt;typename T&gt;
-constexpr bool has_neq_operation&lt;T, void_t&lt;decltype(declval&lt;T&gt;() != declval&lt;int&gt;())&gt;&gt; = true;
-
-static_assert(!has_neq_operation&lt;OnlyEq&gt;);</code></pre>
-
-
-<p>In C++17, this example compiles fine. <code class="language-cpp">OnlyEq</code> has no <code class="language-cpp">operator!=</code> candidate at all. But, the wording in [over.match.oper] currently states that:</p>
+<h1 id="camerons-example" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> <a href="#camerons-example" class="self-link"></a>Cameron’s Example</h1>
+<p>Cameron daCamara submitted the following example <span class="citation" data-cites="cameron">[<a href="#ref-cameron" role="doc-biblioref">cameron</a>]</span> after MSVC implemented <code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code> and P1185R2:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">template</span> &lt;<span class="kw">typename</span> Lhs, <span class="kw">typename</span> Rhs&gt;</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">struct</span> BinaryHelper {</a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">using</span> UnderLhs = <span class="kw">typename</span> Lhs::Scalar;</a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">using</span> UnderRhs = <span class="kw">typename</span> Rhs::Scalar;</a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">operator</span> <span class="dt">bool</span>() <span class="at">const</span>;</a>
+<a class="sourceLine" id="cb7-6" title="6">};</a>
+<a class="sourceLine" id="cb7-7" title="7"></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="kw">struct</span> OnlyEq {</a>
+<a class="sourceLine" id="cb7-9" title="9">  <span class="kw">using</span> Scalar = <span class="dt">int</span>;</a>
+<a class="sourceLine" id="cb7-10" title="10">  <span class="kw">template</span> &lt;<span class="kw">typename</span> Rhs&gt;</a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="at">const</span> BinaryHelper&lt;OnlyEq, Rhs&gt; <span class="kw">operator</span>==(<span class="at">const</span> Rhs&amp;) <span class="at">const</span>;</a>
+<a class="sourceLine" id="cb7-12" title="12">};</a>
+<a class="sourceLine" id="cb7-13" title="13"> </a>
+<a class="sourceLine" id="cb7-14" title="14"><span class="kw">template</span> &lt;<span class="kw">typename</span>...&gt;</a>
+<a class="sourceLine" id="cb7-15" title="15"><span class="kw">using</span> <span class="dt">void_t</span> = <span class="dt">void</span>;</a>
+<a class="sourceLine" id="cb7-16" title="16"> </a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="kw">template</span> &lt;<span class="kw">typename</span> T&gt;</a>
+<a class="sourceLine" id="cb7-18" title="18"><span class="kw">constexpr</span> T&amp; declval();</a>
+<a class="sourceLine" id="cb7-19" title="19"> </a>
+<a class="sourceLine" id="cb7-20" title="20"><span class="kw">template</span> &lt;<span class="kw">typename</span>, <span class="kw">typename</span> = <span class="dt">void</span>&gt;</a>
+<a class="sourceLine" id="cb7-21" title="21"><span class="kw">constexpr</span> <span class="dt">bool</span> has_neq_operation = <span class="kw">false</span>;</a>
+<a class="sourceLine" id="cb7-22" title="22"></a>
+<a class="sourceLine" id="cb7-23" title="23"><span class="kw">template</span> &lt;<span class="kw">typename</span> T&gt;</a>
+<a class="sourceLine" id="cb7-24" title="24"><span class="kw">constexpr</span> <span class="dt">bool</span> has_neq_operation&lt;T, <span class="dt">void_t</span>&lt;<span class="kw">decltype</span>(declval&lt;T&gt;() != declval&lt;<span class="dt">int</span>&gt;())&gt;&gt; = <span class="kw">true</span>;</a>
+<a class="sourceLine" id="cb7-25" title="25"></a>
+<a class="sourceLine" id="cb7-26" title="26"><span class="kw">static_assert</span>(!has_neq_operation&lt;OnlyEq&gt;);</a></code></pre></div>
+<p>In C++17, this example compiles fine. <code class="sourceCode cpp">OnlyEq</code> has no <code class="sourceCode cpp"><span class="kw">operator</span>!=</code> candidate at all. But, the wording in [over.match.oper] currently states that:</p>
 <blockquote>
-<p>... the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(x == y)</code> is well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code>. </p>
+<p>… the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="sourceCode cpp">==</code> for which the rewritten expression <code class="sourceCode cpp">(x == y)</code> is well-formed when contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code> using that operator <code class="sourceCode cpp">==</code>.</p>
 </blockquote>
-<p>Checking to see whether <code class="language-cpp">OnlyEq</code>'s <code class="language-cpp">operator==</code>'s result is contextually convertible to <code class="language-cpp">bool</code> is not SFINAE-friendly; it is an error outside of the immediate context of the substitution. As a result, this well-formed C++17 program becomes ill-formed in C++20.</p>
-<p>The problem here in particular is that C++20 is linking together the semantics of <code class="language-cpp">==</code> and <code class="language-cpp">!=</code> in a way that they were not linked before -- which leads to errors in situations where there was no intent for them to have been linked.</p>
-<h3 id="proposal_1">3.1. Proposal<a class="self-link" href="#proposal_1"></a></h3>
+<p>Checking to see whether <code class="sourceCode cpp">OnlyEq</code>’s <code class="sourceCode cpp"><span class="kw">operator</span>==</code>’s result is contextually convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code> is not SFINAE-friendly; it is an error outside of the immediate context of the substitution. As a result, this well-formed C++17 program becomes ill-formed in C++20.</p>
+<p>The problem here in particular is that C++20 is linking together the semantics of <code class="sourceCode cpp">==</code> and <code class="sourceCode cpp">!=</code> in a way that they were not linked before – which leads to errors in situations where there was no intent for them to have been linked.</p>
+<h2 id="proposal-1"><span class="header-section-number">3.1</span> <a href="#proposal-1" class="self-link"></a>Proposal</h2>
 <p>This example we must address, and the best way to address is to carve out less space for rewrite candidates. The current rule is too broad:</p>
 <blockquote>
-<p>For the <code class="language-cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(x == y)</code> is well-formed when <strong>contextually converted to <code class="language-cpp">bool</code></strong> using that operator <code class="language-cpp">==</code>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator == for which the rewritten expression <code class="language-cpp">(y == x)</code> is well-formed when <strong>contextually converted to <code class="language-cpp">bool</code></strong> using that operator <code class="language-cpp">==</code>.</p>
+<p>For the <code class="sourceCode cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="sourceCode cpp">==</code> for which the rewritten expression <code class="sourceCode cpp">(x == y)</code> is well-formed when <strong>contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code></strong> using that operator <code class="sourceCode cpp">==</code>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator == for which the rewritten expression <code class="sourceCode cpp">(y == x)</code> is well-formed when <strong>contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code></strong> using that operator <code class="sourceCode cpp">==</code>.</p>
 </blockquote>
-<p>We really don't need "contextually converted to <code class="language-cpp">bool</code>" - in fact, we're probably not even getting any benefit as a language from taking that broad a stance. After all, if you wrote a <code class="language-cpp">operator==</code> that returned <code class="language-cpp">std::true_type</code>, you probably have good reasons for that and don't necessarily want an <code class="language-cpp">operator!=</code> that returns just <code class="language-cpp">bool</code>. And for types that are even less <code class="language-cpp">bool</code>-like than <code class="language-cpp">std::true_type</code>, this consideration makes even less sense.</p>
-<p>This paper proposes that we reduce this scope to <em>just</em> those cases where <code class="language-cpp">(x == y)</code> is a valid expression that has type exactly <code class="language-cpp">bool</code>. This unbreaks Cameron's example -- <code class="language-cpp">BinaryHelper&lt;OnlyEq, Rhs&gt;</code> is definitely not <code class="language-cpp">bool</code> and so <code class="language-cpp">OnlyEq</code> continues to have no <code class="language-cpp">!=</code> candidates -- while also both simplifying the language rule, simplifying the specification, and not reducing the usability of the rule at all. Win, win, win.</p>
-<h2 id="richards-example">4. Richard's Example<a class="self-link" href="#richards-example"></a></h2>
+<p>We really don’t need “contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code>” - in fact, we’re probably not even getting any benefit as a language from taking that broad a stance. After all, if you wrote a <code class="sourceCode cpp"><span class="kw">operator</span>==</code> that returned <code class="sourceCode cpp"><span class="bu">std::</span>true_type</code>, you probably have good reasons for that and don’t necessarily want an <code class="sourceCode cpp"><span class="kw">operator</span>!=</code> that returns just <code class="sourceCode cpp"><span class="dt">bool</span></code>. And for types that are even less <code class="sourceCode cpp"><span class="dt">bool</span></code>-like than <code class="sourceCode cpp"><span class="bu">std::</span>true_type</code>, this consideration makes even less sense.</p>
+<p>This paper proposes that we reduce this scope to <em>just</em> those cases where <code class="sourceCode cpp">(x == y)</code> is a valid expression that has type exactly <code class="sourceCode cpp"><span class="dt">bool</span></code>. This unbreaks Cameron’s example – <code class="sourceCode cpp">BinaryHelper&lt;OnlyEq, Rhs&gt;</code> is definitely not <code class="sourceCode cpp"><span class="dt">bool</span></code> and so <code class="sourceCode cpp">OnlyEq</code> continues to have no <code class="sourceCode cpp">!=</code> candidates – while also both simplifying the language rule, simplifying the specification, and not reducing the usability of the rule at all. Win, win, win.</p>
+<h1 id="richards-example" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> <a href="#richards-example" class="self-link"></a>Richard’s Example</h1>
 <p>Daveed Vandevoorde pointed out that the wording in [over.match.oper] for determining rewritten candidates is currently:</p>
 <blockquote>
-<p>For the relational (7.6.9) operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="language-cpp">&lt;=&gt;</code> for which the rewritten expression <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> is <strong>well-formed</strong> using that <code class="language-cpp">operator&lt;=&gt;</code>.</p>
+<p>For the relational (7.6.9) operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator <code class="sourceCode cpp">&lt;=&gt;</code> for which the rewritten expression <code class="sourceCode cpp">(x &lt;=&gt; y) @ <span class="dv">0</span></code> is <strong>well-formed</strong> using that <code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code>.</p>
 </blockquote>
-<p>Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the <code class="language-cpp">&lt;=&gt;</code> invocation and the <code class="language-cpp">@</code> invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit <a href="http://lists.isocpp.org/core/2019/05/6420.php" title="Processing relational/spaceship operator rewrites">the following example</a>:</p>
-<pre class="codehilite"><code class="language-cpp">struct Base { 
-  friend bool operator&lt;(const Base&amp;, const Base&amp;);  // #1
-  friend bool operator==(const Base&amp;, const Base&amp;); 
-}; 
-struct Derived : Base { 
-  friend std::strong_equality operator&lt;=&gt;(const Derived&amp;, const Derived&amp;); // #2
-}; 
-bool f(Derived d1, Derived d2) { return d1 &lt; d2; }</code></pre>
-
-
-<p>The status quo is that <code class="language-cpp">d1 &lt; d2</code> invokes <code class="language-cpp">#1</code>. <code class="language-cpp">#2</code> is not actually a candidate because we have to consider the full expression <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code>. While <code class="language-cpp">(d1 &lt;=&gt; d2)</code> is a valid expression, <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code> is not, which removes it from consideration.</p>
-<p>The question here is: should we even consider the <code class="language-cpp">@ 0</code> part of the rewritten expression for validity? If we did not, then <code class="language-cpp">#2</code> would become not only a candidate but also the best candidate. As a result, <code class="language-cpp">d1 &lt; d2</code> becomes ill-formed  by way of <code class="language-cpp">#2</code> because <code class="language-cpp">(d1 &lt;=&gt; d2) &lt; 0</code> is not a valid expression. We're no longer hiding that issue.</p>
-<p>The reasoning here is that by considering the <code class="language-cpp">@ 0</code> part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.</p>
-<h3 id="proposal_2">4.1. Proposal<a class="self-link" href="#proposal_2"></a></h3>
-<p>This paper agrees with Richard that we should not consider the validity of the <code class="language-cpp">@ 0</code> part of the comparison in determining the candidate set. The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. This change does not affect any C++17 code.</p>
-<h2 id="default-comparisons-for-reference-data-members">5. Default comparisons for reference data members<a class="self-link" href="#default-comparisons-for-reference-data-members"></a></h2>
-<p>The last issue, also raised by <a href="http://lists.isocpp.org/core/2019/05/6462.php" title="Generating comparison operators for classes with reference or anonymous union members">Daveed Vandevoorde</a> is what should happen for the case where we try to default a comparison for a class that has data members of reference type:</p>
-<pre class="codehilite"><code class="language-cpp">struct A {
-    int const&amp; r;
-    auto operator&lt;=&gt;(A const&amp;, A const&amp;) = default;
-};</code></pre>
-
-
-<p>What should that do? The current wording in [class.compare.default] talks about a list of subobjects, and reference members aren't actually subobjects, so it's not clear what the intent is. There are three behaviors that such a defaulted comparison could have:</p>
-<ol>
+<p>Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the <code class="sourceCode cpp">&lt;=&gt;</code> invocation and the <code class="sourceCode cpp">@</code> invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit the following example <span class="citation" data-cites="smith">[<a href="#ref-smith" role="doc-biblioref">smith</a>]</span>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">struct</span> Base { </a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">friend</span> <span class="dt">bool</span> <span class="kw">operator</span>&lt;(<span class="at">const</span> Base&amp;, <span class="at">const</span> Base&amp;);  <span class="co">// #1</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">friend</span> <span class="dt">bool</span> <span class="kw">operator</span>==(<span class="at">const</span> Base&amp;, <span class="at">const</span> Base&amp;); </a>
+<a class="sourceLine" id="cb8-4" title="4">}; </a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="kw">struct</span> Derived : Base { </a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="kw">friend</span> <span class="bu">std::</span>strong_equality <span class="kw">operator</span>&lt;=&gt;(<span class="at">const</span> Derived&amp;, <span class="at">const</span> Derived&amp;); <span class="co">// #2</span></a>
+<a class="sourceLine" id="cb8-7" title="7">}; </a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="dt">bool</span> f(Derived d1, Derived d2) { <span class="cf">return</span> d1 &lt; d2; } </a></code></pre></div>
+<p>The status quo is that <code class="sourceCode cpp">d1 &lt; d<span class="dv">2</span></code> invokes <code class="sourceCode cpp"><span class="pp">#1</span></code>. <code class="sourceCode cpp"><span class="pp">#2</span></code> is not actually a candidate because we have to consider the full expression <code class="sourceCode cpp">(d1 &lt;=&gt; d2) &lt; <span class="dv">0</span></code>. While <code class="sourceCode cpp">(d1 &lt;=&gt; d2)</code> is a valid expression, <code class="sourceCode cpp">(d1 &lt;=&gt; d2) &lt; <span class="dv">0</span></code> is not, which removes it from consideration.</p>
+<p>The question here is: should we even consider the <code class="sourceCode cpp">@ <span class="dv">0</span></code> part of the rewritten expression for validity? If we did not, then <code class="sourceCode cpp"><span class="pp">#2</span></code> would become not only a candidate but also the best candidate. As a result, <code class="sourceCode cpp">d1 &lt; d<span class="dv">2</span></code> becomes ill-formed by way of <code class="sourceCode cpp"><span class="pp">#2</span></code> because <code class="sourceCode cpp">(d1 &lt;=&gt; d2) &lt; <span class="dv">0</span></code> is not a valid expression. We’re no longer hiding that issue.</p>
+<p>The reasoning here is that by considering the <code class="sourceCode cpp">@ <span class="dv">0</span></code> part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn’t seem right.</p>
+<h2 id="proposal-2"><span class="header-section-number">4.1</span> <a href="#proposal-2" class="self-link"></a>Proposal</h2>
+<p>This paper agrees with Richard that we should not consider the validity of the <code class="sourceCode cpp">@ <span class="dv">0</span></code> part of the comparison in determining the candidate set. The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. This change does not affect any C++17 code.</p>
+<h1 id="default-comparisons-for-reference-data-members" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> <a href="#default-comparisons-for-reference-data-members" class="self-link"></a>Default comparisons for reference data members</h1>
+<p>The last issue, also raised by Daveed Vandevoorde (<span class="citation" data-cites="vdv">[<a href="#ref-vdv" role="doc-biblioref">vdv</a>]</span>) is what should happen for the case where we try to default a comparison for a class that has data members of reference type:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">struct</span> A {</a>
+<a class="sourceLine" id="cb9-2" title="2">    <span class="dt">int</span> <span class="at">const</span>&amp; r;</a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="kw">auto</span> <span class="kw">operator</span>&lt;=&gt;(A <span class="at">const</span>&amp;, A <span class="at">const</span>&amp;) = <span class="cf">default</span>;</a>
+<a class="sourceLine" id="cb9-4" title="4">};</a></code></pre></div>
+<p>What should that do? The current wording in [class.compare.default] talks about a list of subobjects, and reference members aren’t actually subobjects, so it’s not clear what the intent is. There are three behaviors that such a defaulted comparison could have:</p>
+<ol type="1">
 <li>The comparison could be defined as deleted (following copy assignment with reference data members)</li>
 <li>The comparison could compare the identity of the referent (following copy construction with reference data members)</li>
 <li>The comparison could compare through the reference (following what rote expression substitution would do)</li>
 </ol>
 <p>In other words:</p>
-<pre class="codehilite"><code class="language-cpp">int i = 0, j = 0, k = 1;
-              // |  option 1  | option 2 | option 3 |
-A{i} == A{i}; // | ill-formed |   true   |   true   |
-A{i} == A{j}; // | ill-formed |   false  |   true   |
-A{i} == A{k}; // | ill-formed |   false  |   false  |</code></pre>
-
-
-<p>Note however that reference data members add one more quirk in conjunction with <a href="https://wg21.link/p0732r2" title="Class Types in Non-Type Template Parameters">P0732</a>: does <code class="language-cpp">A</code> count as having strong structural equality, and what would it mean for:</p>
-<pre class="codehilite"><code class="language-cpp">template &lt;int&amp;&gt; struct X { };
-template &lt;A&gt; struct Y { };
-static int i = 0, j = 0;
-X&lt;i&gt; xi;
-X&lt;j&gt; xj;
-
-Y&lt;A{i}&gt; yi;
-Y&lt;A{j}&gt; yj;</code></pre>
-
-
-<p>In even C++17, <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code> are both well-formed and have different types. Under option 1 above, the declaration of <code class="language-cpp">Y</code> is ill-formed because <code class="language-cpp">A</code> does not have strong structural equality because its <code class="language-cpp">operator==</code> would be defined as deleted. Under option 2, this would be well-formed and <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would have different types -- consistent with <code class="language-cpp">xi</code> and <code class="language-cpp">xj</code>. Under option 3, <code class="language-cpp">yi</code> and <code class="language-cpp">yj</code> would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality. </p>
-<h3 id="anonymous-unions">5.1. Anonymous unions<a class="self-link" href="#anonymous-unions"></a></h3>
-<p>In the <a href="http://lists.isocpp.org/core/2019/05/6462.php" title="Generating comparison operators for classes with reference or anonymous union members">same post</a>, Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:</p>
-<pre class="codehilite"><code class="language-cpp">struct B {
-    union {
-        int i;
-        char c;
-    };
-    auto operator&lt;=&gt;(B const&amp;, B const&amp;) = default;
-};</code></pre>
-
-
-<p>What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn't be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.</p>
-<h3 id="design-intent">5.2. Design intent<a class="self-link" href="#design-intent"></a></h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb10-1" title="1"><span class="dt">int</span> i = <span class="dv">0</span>, j = <span class="dv">0</span>, k = <span class="dv">1</span>;</a>
+<a class="sourceLine" id="cb10-2" title="2">              <span class="co">// |  option 1  | option 2 | option 3 |</span></a>
+<a class="sourceLine" id="cb10-3" title="3">A{i} == A{i}; <span class="co">// | ill-formed |   true   |   true   |</span></a>
+<a class="sourceLine" id="cb10-4" title="4">A{i} == A{j}; <span class="co">// | ill-formed |   false  |   true   |</span></a>
+<a class="sourceLine" id="cb10-5" title="5">A{i} == A{k}; <span class="co">// | ill-formed |   false  |   false  |</span></a></code></pre></div>
+<p>Note however that reference data members add one more quirk in conjunction with <span class="citation" data-cites="P0732R2">[<a href="#ref-P0732R2" role="doc-biblioref">P0732R2</a>]</span>: does <code class="sourceCode cpp">A</code> count as having strong structural equality, and what would it mean for:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">template</span> &lt;<span class="dt">int</span>&amp;&gt; <span class="kw">struct</span> X { };</a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="kw">template</span> &lt;A&gt; <span class="kw">struct</span> Y { };</a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="at">static</span> <span class="dt">int</span> i = <span class="dv">0</span>, j = <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb11-4" title="4">X&lt;i&gt; xi;</a>
+<a class="sourceLine" id="cb11-5" title="5">X&lt;j&gt; xj;</a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7">Y&lt;A{i}&gt; yi;</a>
+<a class="sourceLine" id="cb11-8" title="8">Y&lt;A{j}&gt; yj;</a></code></pre></div>
+<p>In even C++17, <code class="sourceCode cpp">xi</code> and <code class="sourceCode cpp">xj</code> are both well-formed and have different types. Under option 1 above, the declaration of <code class="sourceCode cpp">Y</code> is ill-formed because <code class="sourceCode cpp">A</code> does not have strong structural equality because its <code class="sourceCode cpp"><span class="kw">operator</span>==</code> would be defined as deleted. Under option 2, this would be well-formed and <code class="sourceCode cpp">yi</code> and <code class="sourceCode cpp">yj</code> would have different types – consistent with <code class="sourceCode cpp">xi</code> and <code class="sourceCode cpp">xj</code>. Under option 3, <code class="sourceCode cpp">yi</code> and <code class="sourceCode cpp">yj</code> would be well-formed but somehow have the same type, which is a bad result. We would need to introduce a special rule that classes with reference data members cannot have strong structural equality.</p>
+<h2 id="anonymous-unions"><span class="header-section-number">5.1</span> <a href="#anonymous-unions" class="self-link"></a>Anonymous unions</h2>
+<p>In the same post <span class="citation" data-cites="vdv">[<a href="#ref-vdv" role="doc-biblioref">vdv</a>]</span>, Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">struct</span> B {</a>
+<a class="sourceLine" id="cb12-2" title="2">    <span class="kw">union</span> {</a>
+<a class="sourceLine" id="cb12-3" title="3">        <span class="dt">int</span> i;</a>
+<a class="sourceLine" id="cb12-4" title="4">        <span class="dt">char</span> c;</a>
+<a class="sourceLine" id="cb12-5" title="5">    };</a>
+<a class="sourceLine" id="cb12-6" title="6">    <span class="kw">auto</span> <span class="kw">operator</span>&lt;=&gt;(B <span class="at">const</span>&amp;, B <span class="at">const</span>&amp;) = <span class="cf">default</span>;</a>
+<a class="sourceLine" id="cb12-7" title="7">};</a></code></pre></div>
+<p>What does this mean? We can generalize this question to also include union-like classes - or any class that has a variant member. This is an interesting case to explore in the future, since at constexpr time such comparisons could be defined as valid whereas at normal runtime it really couldn’t be. But for now, the easy answer is to consider such defaulted comparisons as being defined as deleted and to make this decision more explicit in the wording.</p>
+<h2 id="design-intent"><span class="header-section-number">5.2</span> <a href="#design-intent" class="self-link"></a>Design intent</h2>
 <p>P0515 clearly lays out the design intent as comparison following copying, emphasis mine:</p>
 <blockquote>
-<p>This proposal unifies and regularizes the noncontroversial parts of previous proposals, and incorporates EWG
-direction to pursue three-way comparison, <strong>letting default copying guide default comparison</strong>, and having a simple way to write a memberwise comparison function body.</p>
+<p>This proposal unifies and regularizes the noncontroversial parts of previous proposals, and incorporates EWG direction to pursue three-way comparison, <strong>letting default copying guide default comparison</strong>, and having a simple way to write a memberwise comparison function body.</p>
 </blockquote>
 <p>and</p>
 <blockquote>
-<p>For raw pointers [...]  I’m going with <code class="language-cpp">strong_ordering</code>, <strong>on the basis of maintaining a strict parallel between default copying and default comparison</strong> (we copy raw pointer members, so we should compare them too unless there is a good
-reason to do otherwise [...])</p>
+<p>For raw pointers […] I’m going with <code class="sourceCode cpp">stron<span class="va">g_ordering</span></code>, <strong>on the basis of maintaining a strict parallel between default copying and default comparison</strong> (we copy raw pointer members, so we should compare them too unless there is a good reason to do otherwise […])</p>
 </blockquote>
 <p>and</p>
 <blockquote>
-<p>For copyable arrays <code class="language-cpp">T[N]</code> (i.e., that are nonstatic data members), <code class="language-cpp">T[N] &lt;=&gt; T[N]</code> returns the same type
-as <code class="language-cpp">T</code>’s <code class="language-cpp">&lt;=&gt;</code> and performs lexicographical elementwise comparison. For other arrays, <strong>there is no <code class="language-cpp">&lt;=&gt;</code> because the arrays are not copyable.</strong></p>
+<p>For copyable arrays <code class="sourceCode cpp">T[N]</code> (i.e., that are nonstatic data members), <code class="sourceCode cpp">T[N] &lt;=&gt; T[N]</code> returns the same type as <code class="sourceCode cpp">T</code>’s <code class="sourceCode cpp">&lt;=&gt;</code> and performs lexicographical elementwise comparison. For other arrays, <strong>there is no <code class="sourceCode cpp">&lt;=&gt;</code> because the arrays are not copyable.</strong></p>
 </blockquote>
-<h3 id="proposal_3">5.3. Proposal<a class="self-link" href="#proposal_3"></a></h3>
-<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It's the safest rule for now and is most consistent with the design intent as laid out in P0515.</p>
+<h2 id="proposal-3"><span class="header-section-number">5.3</span> <a href="#proposal-3" class="self-link"></a>Proposal</h2>
+<p>This paper proposes making more explicit that defaulted comparisons for classes that have reference data members or variant data members are defined as deleted. It’s the safest rule for now and is most consistent with the design intent as laid out in P0515.</p>
 <p>A future proposal can always relax this restriction for reference data members by pursuing option 2 above.</p>
-<h2 id="wording">6. Wording<a class="self-link" href="#wording"></a></h2>
+<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> <a href="#wording" class="self-link"></a>Wording</h1>
 <p>Insert a new paragraph after 11.10.1 [class.compare.default]/1:</p>
+<div class="add" style="color: #006e28">
+
 <blockquote>
-<p><ins>A defaulted comparison operator function for class <code class="language-cpp">C</code> is defined as deleted if any non-static data member of <code class="language-cpp">C</code> is of reference type or <code class="language-cpp">C</code> is a union-like class ([class.union.anon]).</ins></p>
+<p>A defaulted comparison operator function for class <code class="sourceCode cpp">C</code> is defined as deleted if any non-static data member of <code class="sourceCode cpp">C</code> is of reference type or <code class="sourceCode cpp">C</code> is a union-like class ([class.union.anon]).</p>
 </blockquote>
+
+</div>
 <p>Change 11.10.1 [class.compare.default]/3.2:</p>
 <blockquote>
-<p>A type <code class="language-cpp">C</code> has <em>strong structural equality</em> if, given a glvalue <code class="language-cpp">x</code> of type <code class="language-cpp">const C</code>, either:</p>
+<p>A type <code class="sourceCode cpp">C</code> has <em>strong structural equality</em> if, given a glvalue <code class="sourceCode cpp">x</code> of type <code class="sourceCode cpp"><span class="at">const</span> C</code>, either:</p>
 <ul>
-<li><code class="language-cpp">C</code> is a non-class type and <code class="language-cpp">x &lt;=&gt; x</code> is a valid expression of type <code class="language-cpp">std::strong_ordering</code> or <code class="language-cpp">std::strong_equality</code>, or</li>
-<li><code class="language-cpp">C</code> is a class type with an <code class="language-cpp">==</code> operator defined as defaulted in the definition of <code class="language-cpp">C</code>, <code class="language-cpp">x == x</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code></del> <ins>a valid expression of type <code class="language-cpp">bool</code></ins>, all of <code class="language-cpp">C</code>'s base class subobjects and non-static data members have strong structural equality, and <code class="language-cpp">C</code> has no <code class="language-cpp">mutable</code> or <code class="language-cpp">volatile</code> subobjects.</li>
+<li><code class="sourceCode cpp">C</code> is a non-class type and <code class="sourceCode cpp">x &lt;=&gt; x</code> is a valid expression of type <code class="sourceCode cpp"><span class="bu">std::</span>strong_ordering</code> or <code class="sourceCode cpp"><span class="bu">std::</span>strong_equality</code>, or</li>
+<li><code class="sourceCode cpp">C</code> is a class type with an <code class="sourceCode cpp">==</code> operator defined as defaulted in the definition of <code class="sourceCode cpp">C</code>, <code class="sourceCode cpp">x == x</code> is <span class="rm" style="color: #bf0303"><del>well-formed when contextually converted to <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></del></span> <span class="add" style="color: #006e28"><ins>a valid expression of type <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></ins></span>, all of <code class="sourceCode cpp">C</code>’s base class subobjects and non-static data members have strong structural equality, and <code class="sourceCode cpp">C</code> has no <code class="sourceCode cpp"><span class="at">mutable</span></code> or <code class="sourceCode cpp"><span class="at">volatile</span></code> subobjects.</li>
 </ul>
 </blockquote>
 <p>Change 12.3.1.2 [over.match.oper]/3.4:</p>
 <blockquote>
-<p>For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the <code class="language-cpp">operator &lt;=&gt;</code> for which the rewritten expression <del><code class="language-cpp">(x &lt;=&gt; y) @ 0</code> is well-formed using that operator<code class="language-cpp">&lt;=&gt;</code></del> <ins><code class="language-cpp">(x &lt;=&gt; y)</code> is valid</ins>. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="language-cpp">&lt;=&gt;</code> for which the rewritten expression <del><code class="language-cpp">0 @ (y &lt;=&gt; x)</code> is well-formed using that <code class="language-cpp">operator&lt;=&gt;</code></del> <ins><code class="language-cpp">(y &lt;=&gt; x)</code> is valid</ins>. For the <code class="language-cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression <code class="language-cpp">(x == y)</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code></del> <ins>valid and of type <code class="language-cpp">bool</code></ins>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="language-cpp">==</code> for which the rewritten expression <code class="language-cpp">(y == x)</code> is <del>well-formed when contextually converted to <code class="language-cpp">bool</code> using that operator <code class="language-cpp">==</code></del> <ins>valid and of type <code class="language-cpp">bool</code></ins>. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.</p>
+<p>For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the <code class="sourceCode cpp"><span class="kw">operator</span> &lt;=&gt;</code> for which the rewritten expression <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">(x &lt;=&gt; y) @ <span class="dv">0</span></code></span> is well-formed using that operator<span><code class="sourceCode cpp">&lt;=&gt;</code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">(x &lt;=&gt; y)</code></span> is valid</ins></span>. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="sourceCode cpp">&lt;=&gt;</code> for which the rewritten expression <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp"><span class="dv">0</span> @ (y &lt;=&gt; x)</code></span> is well-formed using that <span><code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">(y &lt;=&gt; x)</code></span> is valid</ins></span>. For the <code class="sourceCode cpp">!=</code> operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression <code class="sourceCode cpp">(x == y)</code> is <span class="rm" style="color: #bf0303"><del>well-formed when contextually converted to <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span> using that operator <span><code class="sourceCode cpp">==</code></span></del></span> <span class="add" style="color: #006e28"><ins>valid and of type <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></ins></span>. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator <code class="sourceCode cpp">==</code> for which the rewritten expression <code class="sourceCode cpp">(y == x)</code> is <span class="rm" style="color: #bf0303"><del>well-formed when contextually converted to <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span> using that operator <span><code class="sourceCode cpp">==</code></span></del></span> <span class="add" style="color: #006e28"><ins>valid and of type <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></ins></span>. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.</p>
 </blockquote>
-<p>Change 12.3.1.2 [over.match.oper]/8 to use <code class="language-cpp">!</code> instead of <code class="language-cpp">?:</code></p>
+<p>Change 12.3.1.2 [over.match.oper]/8 to use <code class="sourceCode cpp">!</code> instead of <code class="sourceCode cpp">?:</code></p>
 <blockquote>
-<p>If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator <code class="language-cpp">@</code>, <code class="language-cpp">x @ y</code> is interpreted as the rewritten expression: <code class="language-cpp">0 @ (y &lt;=&gt; x)</code> if the selected candidate is a synthesized candidate with reversed order of parameters, or <code class="language-cpp">(x &lt;=&gt; y) @ 0</code> otherwise, using the selected rewritten <code class="language-cpp">operator&lt;=&gt;</code> candidate. If a rewritten candidate is selected by overload resolution for a <code class="language-cpp">!=</code> operator, <code class="language-cpp">x != y</code> is interpreted as <del><code class="language-cpp">(y == x) ? false : true</code></del> <ins><code class="language-cpp">!(y == x)</code></ins> if the selected candidate is a synthesized candidate with reversed order of parameters, or <del><code class="language-cpp">(x == y) ? false : true</code></del> <ins><code class="language-cpp">!(x == y)</code></ins> otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an <code class="language-cpp">==</code> operator, <code class="language-cpp">x == y</code> is interpreted as <del><code class="language-cpp">(y == x) ? true : false</code></del> <ins><code class="language-cpp">(y == x)</code></ins> using the selected rewritten <code class="language-cpp">operator==</code> candidate.</p>
+<p>If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator <code class="sourceCode cpp">@</code>, <code class="sourceCode cpp">x @ y</code> is interpreted as the rewritten expression: <code class="sourceCode cpp"><span class="dv">0</span> @ (y &lt;=&gt; x)</code> if the selected candidate is a synthesized candidate with reversed order of parameters, or <code class="sourceCode cpp">(x &lt;=&gt; y) @ <span class="dv">0</span></code> otherwise, using the selected rewritten <code class="sourceCode cpp"><span class="kw">operator</span>&lt;=&gt;</code> candidate. If a rewritten candidate is selected by overload resolution for a <code class="sourceCode cpp">!=</code> operator, <code class="sourceCode cpp">x != y</code> is interpreted as <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">(y == x) ? <span class="kw">false</span> : <span class="kw">true</span></code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">!(y == x)</code></span></ins></span> if the selected candidate is a synthesized candidate with reversed order of parameters, or <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">(x == y) ? <span class="kw">false</span> : <span class="kw">true</span></code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">!(x == y)</code></span></ins></span> otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an <code class="sourceCode cpp">==</code> operator, <code class="sourceCode cpp">x == y</code> is interpreted as <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">(y == x) ? <span class="kw">true</span> : <span class="kw">false</span></code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">(y == x)</code></span></ins></span> using the selected rewritten <code class="sourceCode cpp"><span class="kw">operator</span>==</code> candidate.</p>
 </blockquote>
 <p>Add a new entry to [diff.cpp17.over]:</p>
-<blockquote><p><b>Affected subclause</b>: [over.match.oper]<br />
-<b>Change:</b> Equality and inequality expressions can now find reversed and rewritten candidates.<br />
-<b>Rationale:</b> Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations.<br />
-<b>Effect on original feature:</b> Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.
-<pre><code class="language-cpp">struct A {
-  operator int() const;
-};
+<div class="add" style="color: #006e28">
 
-bool operator==(A, int);              // #1
-// builtin bool operator==(int, int); // #2
-// builtin bool operator!=(int, int); // #3
+<blockquote>
+<p><strong>Affected subclause</strong>: [over.match.oper] <br /> <strong>Change</strong>: Equality and inequality expressions can now find reversed and rewritten candidates. <br /> <strong>Rationale:</strong> Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations. <br /> <strong>Effect on original feature:</strong> Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.</p>
+<div class="sourceCode" id="cb13" style="color: inherit"><pre class="sourceCode default"><code class="sourceCode default"><a class="sourceLine" id="cb13-1" title="1">struct A {</a>
+<a class="sourceLine" id="cb13-2" title="2">  operator int() const;</a>
+<a class="sourceLine" id="cb13-3" title="3">};</a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5">bool operator==(A, int);              // #1</a>
+<a class="sourceLine" id="cb13-6" title="6">// builtin bool operator==(int, int); // #2</a>
+<a class="sourceLine" id="cb13-7" title="7">// builtin bool operator!=(int, int); // #3</a>
+<a class="sourceLine" id="cb13-8" title="8"></a>
+<a class="sourceLine" id="cb13-9" title="9">int check(A x, A y) {</a>
+<a class="sourceLine" id="cb13-10" title="10">  return (x == y) +  // ill-formed; previously well-formed</a>
+<a class="sourceLine" id="cb13-11" title="11">    (10 == x) +      // calls #1, previously called #2</a>
+<a class="sourceLine" id="cb13-12" title="12">    (10 != x);       // calls #1, previously called #3</a>
+<a class="sourceLine" id="cb13-13" title="13">}</a></code></pre></div>
+</blockquote>
 
-int check(A x, A y) {
-  return (x == y) +  // ill-formed; previously well-formed
-    (10 == x) +      // calls #1, previously called #2
-    (10 != x);       // calls #1, previously called #3
-}</code></pre></blockquote>
+</div>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> <a href="#references" class="self-link"></a>References</h1>
 
-<h2 id="references">7. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0515r3.pdf">[P0515R3]</a><span style="margin-left: 5px;">"Consistent comparison" by Herb Sutter, Jens Maurer, Walter E. Brown, 2017-11-10</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf">[P0732R2]</a><span style="margin-left: 5px;">"Class Types in Non-Type Template Parameters" by Jeff Snyder, Louis Dionne, 2018-06-06</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">[P0905R1]</a><span style="margin-left: 5px;">"Symmetry for spaceship" by Tomasz Kamiński, Herb Sutter, Richard Smith, 2018-03-16</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1185r2.html">[P1185R2]</a><span style="margin-left: 5px;">"&lt;=&gt; != ==" by Barry Revzin, 2019-02-22</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1190r0.html">[P1190R0]</a><span style="margin-left: 5px;">"I did not order this! Why is it on my bill?" by David Stone, 2018-08-06</span></li><li><a href="http://lists.isocpp.org/core/2019/04/5935.php">[cameron.sfinae]</a><span style="margin-left: 5px;">"Potential issue after P1185R2 - SFINAE breaking change" by Cameron daCamara, April 04, 2019</span></li><li><a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">[cwg2407]</a><span style="margin-left: 5px;">"CWG 2407: Missing entry in Annex C for defaulted comparison operators" by Tomasz Kamiński, Feb 26, 2019</span></li><li><a href="http://lists.isocpp.org/ext/2019/03/8704.php">[herb.guidance]</a><span style="margin-left: 5px;">"Overload resolution changes as a result of P1185R2" by Herb Sutter, March 28, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6420.php">[smith.unoverloadish]</a><span style="margin-left: 5px;">"Processing relational/spaceship operator rewrites" by Richard Smith, May 21, 2019</span></li><li><a href="http://lists.isocpp.org/core/2019/05/6462.php">[vdv.references]</a><span style="margin-left: 5px;">"Generating comparison operators for classes with reference or anonymous union members" by Daveed Vandevoorde, May 23, 2019</span></li></ul>
+<div id="refs" class="references" role="doc-bibliography">
+<div id="ref-cameron">
+<p>[cameron] Cameron daCamara. 2019. Potential issue after P1185R2 - SFINAE breaking change. <br />
+<a href="http://lists.isocpp.org/core/2019/04/5935.php">http://lists.isocpp.org/core/2019/04/5935.php</a></p>
+</div>
+<div id="ref-CWG2407">
+<p>[CWG2407] Tomasz Kamiński. 2019. Missing entry in Annex C for defaulted comparison operators. <br />
+<a href="http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407">http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407</a></p>
+</div>
+<div id="ref-herb">
+<p>[herb] Herb Sutter. 2019. Overload resolution changes as a result of P1185R2. <br />
+<a href="http://lists.isocpp.org/ext/2019/03/8704.php">http://lists.isocpp.org/ext/2019/03/8704.php</a></p>
+</div>
+<div id="ref-P0515R3">
+<p>[P0515R3] Herb Sutter, Jens Maurer, Walter E. Brown. 2017. Consistent comparison. <br />
+<a href="https://wg21.link/p0515r3">https://wg21.link/p0515r3</a></p>
+</div>
+<div id="ref-P0732R2">
+<p>[P0732R2] Jeff Snyder, Louis Dionne. 2018. Class Types in Non-Type Template Parameters. <br />
+<a href="https://wg21.link/p0732r2">https://wg21.link/p0732r2</a></p>
+</div>
+<div id="ref-P0905R1">
+<p>[P0905R1] Tomasz Kamiński, Herb Sutter, Richard Smith. 2018. Symmetry for spaceship. <br />
+<a href="https://wg21.link/p0905r1">https://wg21.link/p0905r1</a></p>
+</div>
+<div id="ref-P1185R2">
+<p>[P1185R2] Barry Revzin. 2019. &lt;=&gt; != ==. <br />
+<a href="https://wg21.link/p1185r2">https://wg21.link/p1185r2</a></p>
+</div>
+<div id="ref-P1190R0">
+<p>[P1190R0] David Stone. 2018. I did not order this! Why is it on my bill? <br />
+<a href="https://wg21.link/p1190r0">https://wg21.link/p1190r0</a></p>
+</div>
+<div id="ref-smith">
+<p>[smith] Richard Smith. 2019. Processing relational/spaceship operator rewrites. <br />
+<a href="http://lists.isocpp.org/core/2019/05/6420.php">http://lists.isocpp.org/core/2019/05/6420.php</a></p>
+</div>
+<div id="ref-vdv">
+<p>[vdv] Daveed Vandevoorde. 2019. Generating comparison operators for classes with reference or anonymous union members. <br />
+<a href="http://lists.isocpp.org/core/2019/05/6462.php">http://lists.isocpp.org/core/2019/05/6462.php</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
 </html>
