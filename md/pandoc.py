@@ -37,5 +37,15 @@ def self_link(elem, doc):
     elem.content.insert(0, link)
     return elem
 
+def cpp2language(elem, doc):
+    """
+    Change all the cpp to language-cpp for prism
+    """
+    if not isinstance(elem, (pf.Code, pf.CodeBlock)):
+        return None
+
+    elem.classes = ['language-cpp' if c == 'cpp' else c for c in elem.classes]
+    return elem
+
 if __name__ == '__main__':
-    pf.run_filters([code_cpp, h1hr, self_link])
+    pf.run_filters([code_cpp, h1hr, self_link, cpp2language])
