@@ -37,6 +37,11 @@ def self_link(elem, doc):
     elem.content.insert(0, link)
     return elem
 
+def printer(elem, doc):
+    import sys
+    print('{}\n'.format(elem), file=sys.stderr)
+    return None
+
 def cpp2language(elem, doc):
     """
     Change all the cpp to language-cpp for prism
