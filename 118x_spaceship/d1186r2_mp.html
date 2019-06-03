@@ -428,7 +428,7 @@ h3:target { background-color: transparent; }
 h4:target { background-color: transparent; }
 h5:target { background-color: transparent; }
 h6:target { background-color: transparent; }
-span.comment { font-family: monospace; }
+code span.co { font-family: monospace; color: green; }
 table tr {
 background-color: white;
 }
@@ -441,6 +441,30 @@ background-color: white;
 td > div.sourceCode {
 background-color: inherit;
 }
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+#title-block-header td { border: 0; }
 </style>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
@@ -968,7 +992,7 @@ Meaning
 <li>Otherwise, if overload resolution for <code class="sourceCode cpp">a &lt;=&gt; b</code> finds at least one viable candidate, the synthesized three-way comparison is not defined.</li>
 <li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">stron<span class="va">g_ordering</span></code> and <code class="sourceCode cpp">a == b</code> and <code class="sourceCode cpp">a &lt; b</code> are both valid expressions of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? strong_ordering::equal : ((a &lt; b) ? strong_ordering::less : strong_ordering::greater)</code>;</li>
 <li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">weak_ordering</code> and <code class="sourceCode cpp">a == b</code> and <code class="sourceCode cpp">a &lt; b</code> are both valid expressions of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? weak_ordering::equivalent : ((a &lt; b) ? weak_ordering::less : weak_ordering::greater)</code>;</li>
-<li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">partial_ordering</code> and <code class="sourceCode cpp">a == b</code> and <code class="sourceCode cpp">a &lt; b</code> are both valid expressions of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less : ((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</li>
+<li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">partial_ordering</code> and <code class="sourceCode cpp">a == b</code> and <code class="sourceCode cpp">a &lt; b</code> are both valid expressions of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? partial_ordering::equivalent : ((a &lt; b) ? partial_ordering::less :</code> <code class="sourceCode cpp">((b &lt; a) ? partial_ordering::greater : partial_ordering::unordered))</code>;</li>
 <li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">stron<span class="va">g_equality</span></code> and <code class="sourceCode cpp">a == b</code> is a valid expression of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? strong_equality::equal : strong_equality::nonequal</code>;</li>
 <li>Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">weak_equality</code> and <code class="sourceCode cpp">a == b</code> is a valid expression of type <code class="sourceCode cpp"><span class="dt">bool</span></code>, then <code class="sourceCode cpp">(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent</code>;</li>
 <li>Otherwise, the synthesized three-way comparison is not defined.</li>

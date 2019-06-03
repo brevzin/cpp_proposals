@@ -627,7 +627,7 @@ Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
 - Otherwise, if overload resolution for `a <=> b` finds at least one viable candidate, the synthesized three-way comparison is not defined.
 - Otherwise, if `R` is `strong_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;
 - Otherwise, if `R` is `weak_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;
-- Otherwise, if `R` is `partial_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less : ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
+- Otherwise, if `R` is `partial_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less :` ` ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
 - Otherwise, if `R` is `strong_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;
 - Otherwise, if `R` is `weak_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;
 - Otherwise, the synthesized three-way comparison is not defined.
