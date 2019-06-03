@@ -48,4 +48,4 @@ def cpp2language(elem, doc):
     return elem
 
 if __name__ == '__main__':
-    pf.run_filters([code_cpp, h1hr, self_link, cpp2language])
+    pf.run_filters([code_cpp, h1hr, self_link])
