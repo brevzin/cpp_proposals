@@ -34,8 +34,8 @@ def self_link(elem, doc):
         return None
 
     link = pf.Link(url='#{}'.format(elem.identifier), classes=['self-link'])
-    elem.attributes['style'] = 'margin-top:-80px;padding-top:80px;{}'.format(
-        elem.attributes.get('style', ''))
+    #elem.attributes['style'] = 'margin-top:-80px;padding-top:80px;{}'.format(
+    #    elem.attributes.get('style', ''))
     elem.content.insert(0, link)
     return elem
 
