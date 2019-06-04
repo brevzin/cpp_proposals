@@ -284,10 +284,10 @@ This might make more sense with examples.
 
 <table style="width:100%">
 <tr>
-<th style="width:50%">
+<th>
 Source Code
 </th>
-<th style="width:50%">
+<th>
 Meaning
 </th>
 </tr>
@@ -295,24 +295,27 @@ Meaning
 <td>
 ```cpp
 struct Aggr {
-	int i;
-	char c;
-	Legacy q;
-	
-	auto operator<=>(Aggr const&) const = default;
+  int i;
+  char c;
+  Legacy q;
+
+  auto operator<=>(Aggr const&) const
+		= default;
 };
 ```
 </td>
 <td>
 ```cpp
 struct Aggr {
-	int i;
-	char c;
-	Legacy q;
+  int i;
+  char c;
+  Legacy q;
 	
-	// x.q <=> y.q is ill-formed and we have no return type
-	// to guide our synthesis. Hence, deleted
-	auto operator<=>(Aggr const&) const = delete;
+  // x.q <=> y.q is ill-formed and we have
+  // no return type to guide our synthesis.
+  // Hence, deleted
+  auto operator<=>(Aggr const&) const
+		= delete;
 };
 ```
 </td>
@@ -321,33 +324,34 @@ struct Aggr {
 <td>
 ```cpp
 struct Aggr {
-	int i;
-	char c;
-	Legacy q;
+  int i;
+  char c;
+  Legacy q;
 	
-	strong_ordering operator<=>(Aggr const&) const = default;
+  strong_ordering operator<=>(Aggr const&) const
+		= default;
 };
 ```
 </td>
 <td>
 ```cpp
 struct Aggr {
-	int i;
-	char c;
-	Legacy q;
+  int i;
+  char c;
+  Legacy q;
 	
-	strong_ordering operator<=>(Aggr const& rhs) const {
-		if (auto cmp = i <=> rhs.i; cmp != 0) return cmp;
-		if (auto cmp = c <=> rhs.c; cmp != 0) return cmp;
-		
-		// synthesizing strong_ordering from == and <
-		if (q == rhs.q) return strong_ordering::equal;
-		if (q < rhs.q) return strong_ordering::less;
-		
-		// sanitizers might also check for
-		[[ assert: rhs.q < q; ]]
-		return strong_ordering::greater;
-	}
+  strong_ordering operator<=>(Aggr const& rhs) const {
+    if (auto cmp = i <=> rhs.i; cmp != 0) return cmp;
+    if (auto cmp = c <=> rhs.c; cmp != 0) return cmp;
+    
+    // synthesizing strong_ordering from == and <
+    if (q == rhs.q) return strong_ordering::equal;
+    if (q < rhs.q) return strong_ordering::less;
+    
+    // sanitizers might also check for
+    [[ assert: rhs.q < q; ]]
+    return strong_ordering::greater;
+  }
 };
 ```
 </td>
@@ -356,28 +360,31 @@ struct Aggr {
 <td>
 ```cpp
 struct X {
-	bool operator<(X const&) const;
+  bool operator<(X const&) const;
 };
 
 struct Y {
-	X x;
-	
-	strong_ordering operator<=>(Y const&) const = default;
+  X x;
+  
+  strong_ordering operator<=>(Y const&) const
+		= default;
 };
 ```
 </td>
 <td>
 ```cpp
 struct X {
-	bool operator<(X const&) const;
+  bool operator<(X const&) const;
 };
 
 struct Y {
-	X x;
-	
-	// defined as deleted because X has no <=>, so we fallback
-	// to synthesizing from == and <, but we have no ==.
-	strong_ordering operator<=>(Y const&) const = delete;
+  X x;
+  
+  // defined as deleted because X has no <=>,
+  // so we fallback to synthesizing from ==
+  // and <, but we have no ==.
+  strong_ordering operator<=>(Y const&) const
+		= delete;
 };
 ```
 </td>
@@ -386,31 +393,34 @@ struct Y {
 <td>
 ```cpp
 struct W {
-	weak_ordering operator<=>(W const&) const;
+  weak_ordering operator<=>(W const&) const;
 };
 
 struct Z {
-	W w;
-	Legacy q;
-	
-	strong_ordering operator<=>(Z const&) const = default;
+  W w;
+  Legacy q;
+  
+  strong_ordering operator<=>(Z const&) const
+		= default;
 };
 ```
 </td>
 <td>
 ```cpp
 struct W {
-	weak_ordering operator<=>(W const&) const;
+  weak_ordering operator<=>(W const&) const;
 };
 
 struct Z {
-	W w;
-	Legacy q;
-	
-	// strong_ordering as a return type is not compatible with
-	// W's comparison category, which is weak_ordering. Hence
-	// defined as deleted
-	strong_ordering operator<=>(Z const&) const = delete;
+  W w;
+  Legacy q;
+  
+  // strong_ordering as a return type is not
+  // compatible with W's comparison category,
+  // which is weak_ordering. Hence defined as
+  // deleted
+  strong_ordering operator<=>(Z const&) const
+		= delete;
 };
 ```
 </td>
@@ -419,46 +429,47 @@ struct Z {
 <td>
 ```cpp
 struct W {
-	weak_ordering operator<=>(W const&) const;
+  weak_ordering operator<=>(W const&) const;
 };
 
 struct Q {
-	bool operator==(Q const&) const;
-	bool operator<(Q const&) const;
+  bool operator==(Q const&) const;
+  bool operator<(Q const&) const;
 };
 
 struct Z {
-	W w;
-	Q q;
-	
-	weak_ordering operator<=>(Z const&) const = default;
+  W w;
+  Q q;
+  
+  weak_ordering operator<=>(Z const&) const 
+		= default;
 };
 ```
 </td>
 <td>
 ```cpp
 struct W {
-	weak_ordering operator<=>(W const&) const;
+  weak_ordering operator<=>(W const&) const;
 };
 
 struct Q {
-	bool operator==(Q const&) const;
-	bool operator<(Q const&) const;
+  bool operator==(Q const&) const;
+  bool operator<(Q const&) const;
 };
 
 struct Z {
-	W w;
-	Q q;
-	
-	weak_ordering operator<=>(Z const& rhs) const
-	{
-		if (auto cmp = w <=> rhs.w; cmp != 0) return cmp;
-		
-		// synthesizing weak_ordering from == and <
-		if (q == rhs.q) return weak_ordering::equivalent;
-		if (q < rhs.q)  return weak_ordering::less;
-		return weak_ordering::greater;
-	}
+  W w;
+  Q q;
+  
+  weak_ordering operator<=>(Z const& rhs) const
+  {
+    if (auto cmp = w <=> rhs.w; cmp != 0) return cmp;
+    
+    // synthesizing weak_ordering from == and <
+    if (q == rhs.q) return weak_ordering::equivalent;
+    if (q < rhs.q)  return weak_ordering::less;
+    return weak_ordering::greater;
+  }
 };
 ```
 </td>
