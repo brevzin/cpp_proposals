@@ -82,7 +82,7 @@ struct C {
 	strong_ordering operator<=>(int) const;
 };
 
-C{} <=> C{}; // error: ambiguous
+auto f() { return C{} <=> C{}; } // error: ambiguous
 ```
     
 But in this case, it's completely new code which is ambiguous - rather than existing, functional code. 
@@ -92,11 +92,11 @@ But in this case, it's completely new code which is ambiguous - rather than exis
 There are several other examples in this vein that are important to keep in mind, courtesy of Davis Herring.
 
 ```cpp
-struct B {
-	B(int);
-};
-bool operator==(B,B);
-bool f() {return B()==0;}
+struct B { B(int); };
+
+bool operator==(B, B);
+
+bool g() { return B() == 0; }
 ```
     
 We want this example to work, regardless of whatever rule changes we pursue. One potential rule change under consideration was reversing the arguments rather than parameters, which would lead to the above becoming ambiguous between the two argument orderings.
@@ -104,12 +104,12 @@ We want this example to work, regardless of whatever rule changes we pursue. One
 Also:
 
 ```cpp
-struct C {operator int();};
+struct C { operator int(); };
 struct D : C {};
 
-bool operator==(const C&,int);
+bool operator==(const C&, int);
 
-bool g() {return D()==C();}
+bool h() { return D() == C(); }
 ```
     
 The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz's example: valid in C++17, ambiguous in C++20 under the status quo rules.

@@ -590,23 +590,23 @@ margin: 5em;
 <a class="sourceLine" id="cb4-3" title="3">    strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span><span class="kw">int</span><span class="op">)</span> <span class="at">const</span>;</a>
 <a class="sourceLine" id="cb4-4" title="4"><span class="op">}</span>;</a>
 <a class="sourceLine" id="cb4-5" title="5"></a>
-<a class="sourceLine" id="cb4-6" title="6">C<span class="op">{}</span> <span class="op">&lt;=&gt;</span> C<span class="op">{}</span>; <span class="co">// error: ambiguous</span></a></code></pre></div>
+<a class="sourceLine" id="cb4-6" title="6"><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> C<span class="op">{}</span> <span class="op">&lt;=&gt;</span> C<span class="op">{}</span>; <span class="op">}</span> <span class="co">// error: ambiguous</span></a></code></pre></div>
 <p>But in this case, it’s completely new code which is ambiguous - rather than existing, functional code.</p>
 <h2 id="similar-examples"><span class="header-section-number">2.3</span> <a href="#similar-examples" class="self-link"></a>Similar examples</h2>
 <p>There are several other examples in this vein that are important to keep in mind, courtesy of Davis Herring.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">struct</span> B <span class="op">{</span></a>
-<a class="sourceLine" id="cb5-2" title="2">    B<span class="op">(</span><span class="kw">int</span><span class="op">)</span>;</a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="op">}</span>;</a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="kw">bool</span> <span class="kw">operator</span><span class="op">==(</span>B,B<span class="op">)</span>;</a>
-<a class="sourceLine" id="cb5-5" title="5"><span class="kw">bool</span> f<span class="op">()</span> <span class="op">{</span><span class="cf">return</span> B<span class="op">()==</span><span class="dv">0</span>;<span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">struct</span> B <span class="op">{</span> B<span class="op">(</span><span class="kw">int</span><span class="op">)</span>; <span class="op">}</span>;</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">bool</span> <span class="kw">operator</span><span class="op">==(</span>B, B<span class="op">)</span>;</a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">bool</span> g<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> B<span class="op">()</span> <span class="op">==</span> <span class="dv">0</span>; <span class="op">}</span></a></code></pre></div>
 <p>We want this example to work, regardless of whatever rule changes we pursue. One potential rule change under consideration was reversing the arguments rather than parameters, which would lead to the above becoming ambiguous between the two argument orderings.</p>
 <p>Also:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">struct</span> C <span class="op">{</span><span class="kw">operator</span> <span class="kw">int</span><span class="op">()</span>;<span class="op">}</span>;</a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">struct</span> C <span class="op">{</span> <span class="kw">operator</span> <span class="kw">int</span><span class="op">()</span>; <span class="op">}</span>;</a>
 <a class="sourceLine" id="cb6-2" title="2"><span class="kw">struct</span> D <span class="op">:</span> C <span class="op">{}</span>;</a>
 <a class="sourceLine" id="cb6-3" title="3"></a>
-<a class="sourceLine" id="cb6-4" title="4"><span class="kw">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="at">const</span> C<span class="op">&amp;</span>,<span class="kw">int</span><span class="op">)</span>;</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="at">const</span> C<span class="op">&amp;</span>, <span class="kw">int</span><span class="op">)</span>;</a>
 <a class="sourceLine" id="cb6-5" title="5"></a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="kw">bool</span> g<span class="op">()</span> <span class="op">{</span><span class="cf">return</span> D<span class="op">()==</span>C<span class="op">()</span>;<span class="op">}</span></a></code></pre></div>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">bool</span> h<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> D<span class="op">()</span> <span class="op">==</span> C<span class="op">()</span>; <span class="op">}</span></a></code></pre></div>
 <p>The normal candidate has Conversion and User, the reversed parameter candidate has User and Exact Match, which makes this similar to Tomasz’s example: valid in C++17, ambiguous in C++20 under the status quo rules.</p>
 <h2 id="todays-guidance"><span class="header-section-number">2.4</span> <a href="#todays-guidance" class="self-link"></a>Today’s Guidance</h2>
 <p>From Herb Sutter’s post <span class="citation" data-cites="herb">[<a href="#ref-herb" role="doc-biblioref">herb</a>]</span> on the topic:</p>
