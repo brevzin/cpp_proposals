@@ -1,7 +1,7 @@
 ---
 title: When do you actually use `<=>`?
 document: D1186R2
-date: 2019-06-02
+date: 2019-06-04
 author:
 	- name: Barry Revzin
 	  email: <barry.revzin@gmail.com>
@@ -9,9 +9,11 @@ author:
 
 # Revision History
 
-[@P1186R1] was presented in EWG in Kona. It was approved with a modification that synthesis of `weak_ordering` is only done by using both `==` and `<`. The previous versions of this proposal would try to fall-back to invoking `<` twice. 
+[@P1186R0] was approved by both EWG and LEWG. Under Core review, the issue of [unintentional comparison category strengthening](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening) was brought up as a reason to strongly oppose the design.
 
-[@P1186R0] was approved by both EWG and LEWG. Under Core review, the issue of [unintentional comparison category strengthening](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening) was brought up as a reason to strongly oppose the design. As a result, this revision proposes a different way to solve the issues presented in R0.
+[@P1186R1] proposed a new design to solve the issues from R0 and was presented to EWG in Kona. It was approved with a modification that synthesis of `weak_ordering` is only done by using both `==` and `<`. The previous versions of this proposal would try to fall-back to invoking `<` twice. 
+
+This paper instead of considering well-formedness of expressions or validity of expressions instead uses the notion of "shallowly well-formed" as described in [@D1630R0] and is based on a new term usable function. Some examples have changed meaning as a result. 
 
 The library portion of R0 was moved into [@P1188R0]. This paper is _solely_ a proposal for language change.
 
@@ -199,7 +201,7 @@ compare_3way_type_t operator<=>(vector<T> const&, vector<T> const&);
     
 This is, indeed, a bad implementation strategy because `v1 < v2` would invoke `operator<` even if `operator<=>` was a viable option, so we lose the potential performance benefit. It's quite important to ensure that we use `<=>` if that's at all an option. It's this problem that partially led to my writing P1186R0.
 
-But since I wrote this paper, I've come up with a much better way of [conditionally adopting spaceship][revzin.sometimes]:
+But since I wrote this paper, I've come up with a much better way of conditionally adopting spaceship [@Revzin]:
 
 ```cpp
 template <HasLess T>
@@ -259,40 +261,75 @@ Or it would, if the marked line were valid. `Legacy` has no `<=>`, so that pairw
 
 This paper proposes a new direction for a stop-gap adoption measure for `operator<=>`: we will synthesize an `operator<=>` for a type, but _only under very specific conditions_, and only when the user provides the comparison category that the comparison needs to use. All we need is a very narrow ability to help with `<=>` adoption. This is that narrow ability.
 
-Currently, the pairwise comparison of the subobjects is always <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>. Always `operator<=>`.
+Currently, the pairwise comparison of the subobjects is always <code>x~*i*~</code> `<=>` <code>y~*i*~</code>. Always `operator<=>`.
 
 This paper proposes defining a new say of synthesizing a three-way comparison, which only has meaning in the context of defining what a defaulted `operator<=>` does. The function definition is very wordy, but it's not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:
 
 - We will _only_ synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is `auto`.
 - The presence of `<=>` is _always_ preferred to any kind of synthetic fallback. 
 - Synthesizing a `strong_ordering` requires both `==` and `<`.
-- Synthesizing a `weak_ordering` can use either `==` and `<` or just `<`.
+- Synthesizing a `weak_ordering` requires both `==` and `<`.
 - Synthesizing a `partial_ordering` requires both `==` and `<` and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.
 - Synthesizing either `strong_equality` or `weak_equality` requires `==`.
 
-We then change the meaning of defaulted `operator<=>` to be defined in terms of this new synthesis instead of in terms of <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>.
+We then change the meaning of defaulted `operator<=>` to be defined in terms of this new synthesis instead of in terms of <code>x~*i*~</code> `<=>` <code>y~*i*~</code>.
 
 ## Soundness of Synthesis
 
 It would be sound to synthesize `strong_ordering` from just performing `<` both ways, but equality is the salient difference between `weak_ordering` and `strong_ordering` and it doesn't seem right to synthesize a `strong_ordering` from a type that doesn't even provide an `==`.
 
-There is no other sound way to synthesize `partial_ordering` from `==` and `<`. If we just do `<` both ways, we'd have to decide between `equivalent` and `unordered` in the case where `!(a < b) && !(b < a)` - the former gets the unordered cases wrong and the latter means our order isn't reflexive..
+There is no other sound way to synthesize `partial_ordering` from `==` and `<`. If we just do `<` both ways, we'd have to decide between `equivalent` and `unordered` in the case where `!(a < b) && !(b < a)` - the former gets the unordered cases wrong and the latter means our order isn't reflexive.
+
+## What does it mean to require an operation
+
+In the above description, I said that a synthesis might require both `==` and `<`. What does that actually mean? How much do we want to require? At the very extreme end, we might require both `a == b` and `a < b` be well-formed expressions whose types are `bool`. But we cannot require that the expression is well-formed, the most we can do is say that overload resolution succeeds and finds a candidate that isn't deleted or inaccessible. Do we want to require contextually convertible to `bool`? Exactly `bool`? 
+
+Ultimately, the questions are all about: what do we want to happen in the error cases? Do we want to end up with a deleted spaceship or an ill-formed spaceship? 
+
+Consider these two cases:
+
+```cpp
+struct Eq {
+	friend bool operator==(Eq, Eq);
+};
+
+struct Weak {
+	friend weak_ordering operator<=>(Weak, Weak);
+};
+
+struct SomeDsl {
+	struct NotBool { };
+	NotBool operator==(SomeDsl) const;
+	NotBool operator<(SomeDsl) const;
+};
+
+struct Nothing { };
+
+template <typename T>
+struct C {
+	T t;
+	strong_ordering operator<=>(C const&) const = default;
+};
+```
+
+Clearly none of `C<Eq>`, `C<Weak>`, `C<SomeDsl>`, and `C<Nothing>` can have a valid `operator<=>`, but should they be deleted or ill-formed? Erring on the side of ill-formed helps programmers catch bugs earlier. Erring on the side of deleted lets you actually check programmaticaly if a type has a function or not. A defaulted copy constructor, for instance, is defined as deleted if some member isn't copyable - it isn't ill-formed. Arguably comparison is a very nearly a special member function. 
+
+To that end, I propose we split the difference here. This particular proposal is entirely about being a stop-gap for types that don't have spaceship - it really shouldn't be broadly used in templates. The line I'm going to draw is that we check that the functions we need exist and are usable but we don't check that their return types meet our requirements. In other words:
+
+- `C<Eq>`'s `<=>` is deleted because we need to have both `==` and `<` and we only have one. 
+- `C<Weak>`'s `<=>` is ill-formed because we just check that we have `<=>`. But using that `<=>` won't work because `weak_ordering` isn't convertible to `strong_ordering`, but that's a "late" failure rather than an "early" one.
+- `C<SomeDsl>`'s `<=>` is ill-formed because we just check that we have `==` and `<`, and we do. We don't check that those operators return something that we can actually build comparisons out of.  
+- `C<Nothing>`'s `<=>` is deleted because we just don't have anything. 
+
+I think that's the right line.
 
 ## Explanatory Examples
 
 This might make more sense with examples.
 
-<table style="width:100%">
-<tr>
-<th>
-Source Code
-</th>
-<th>
-Meaning
-</th>
-</tr>
-<tr>
-<td>
+::: tonytable
+
+### Source Code
 ```cpp
 struct Aggr {
   int i;
@@ -303,25 +340,24 @@ struct Aggr {
 		= default;
 };
 ```
-</td>
-<td>
+
+### Meaning
 ```cpp
 struct Aggr {
   int i;
   char c;
   Legacy q;
 	
-  // x.q <=> y.q is ill-formed and we have
-  // no return type to guide our synthesis.
-  // Hence, deleted
+  // x.q <=> y.q does not find a usable function
+  // and we have no return type to guide our
+  // synthesies. Hence, deleted.
   auto operator<=>(Aggr const&) const
 		= delete;
 };
 ```
-</td>
-</tr>
-<tr>
-<td>
+
+---
+
 ```cpp
 struct Aggr {
   int i;
@@ -332,8 +368,7 @@ struct Aggr {
 		= default;
 };
 ```
-</td>
-<td>
+
 ```cpp
 struct Aggr {
   int i;
@@ -341,6 +376,7 @@ struct Aggr {
   Legacy q;
 	
   strong_ordering operator<=>(Aggr const& rhs) const {
+    // pairwise <=> works fine for these
     if (auto cmp = i <=> rhs.i; cmp != 0) return cmp;
     if (auto cmp = c <=> rhs.c; cmp != 0) return cmp;
     
@@ -354,10 +390,9 @@ struct Aggr {
   }
 };
 ```
-</td>
-</tr>
-<tr>
-<td>
+
+---
+
 ```cpp
 struct X {
   bool operator<(X const&) const;
@@ -370,8 +405,7 @@ struct Y {
 		= default;
 };
 ```
-</td>
-<td>
+
 ```cpp
 struct X {
   bool operator<(X const&) const;
@@ -387,10 +421,9 @@ struct Y {
 		= delete;
 };
 ```
-</td>
-</tr>
-<tr>
-<td>
+
+---
+
 ```cpp
 struct W {
   weak_ordering operator<=>(W const&) const;
@@ -404,8 +437,7 @@ struct Z {
 		= default;
 };
 ```
-</td>
-<td>
+
 ```cpp
 struct W {
   weak_ordering operator<=>(W const&) const;
@@ -415,18 +447,23 @@ struct Z {
   W w;
   Legacy q;
   
-  // strong_ordering as a return type is not
-  // compatible with W's comparison category,
-  // which is weak_ordering. Hence defined as
-  // deleted
-  strong_ordering operator<=>(Z const&) const
-		= delete;
+  strong_ordering operator<=>(Z const& rhs) const {
+    // W has a <=>, but its return type is not
+    // convertible to strong_ordering. So this
+	// operator is simply ill-formed. Instantiating
+	// it is a hard error    
+	if (auto cmp = static_cast<strong_ordering>(
+			w <=> rhs.w); cmp != 0) return cmp;
+		
+    if (q == rhs.q) return strong_ordering::equal;
+    if (q < rhs.q) return strong_ordering::less;
+    return strong_ordering::equal;
+  }
 };
 ```
-</td>
-</tr>
-<tr>
-<td>
+
+---
+
 ```cpp
 struct W {
   weak_ordering operator<=>(W const&) const;
@@ -445,8 +482,7 @@ struct Z {
 		= default;
 };
 ```
-</td>
-<td>
+
 ```cpp
 struct W {
   weak_ordering operator<=>(W const&) const;
@@ -472,9 +508,8 @@ struct Z {
   }
 };
 ```
-</td>
-</tr>
-</table>
+
+:::
 
 ## Differences from Status Quo and P1186R0
 
@@ -625,38 +660,85 @@ This paper proposes synthesizing `strong_equality` and `weak_equality` orderings
     
 # Wording
 
-Remove a sentence from 10.10.2 [class.spaceship], paragraph 1:
+The wording here is based upon the new term *usable function* introduced in [@D1630R0].
 
-> Let <code>x<sub>i</sub></code> be an lvalue denoting the ith element in the expanded list of subobjects for an object x (of length n), where <code>x<sub>i</sub></code> is formed by a sequence of derived-to-base conversions ([over.best.ics]), class member access expressions ([expr.ref]), and array subscript expressions ([expr.sub]) applied to x. The type of the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is denoted by [<code>R<sub>i</sub></code>.]{.rm} [<code>S<sub>i</sub></code>. If the expression is not valid, <code>S<sub>i</sub></code> is `void`.]{.add} It is unspecified whether virtual base class subobjects are compared more than once.
-
-Insert a new paragraph after 10.10.2 [class.spaceship], paragraph 1:
+Insert a new paragraph before 11.10.3 [class.spaceship], paragraph 1:
 
 ::: add
-> The _synthesized three-way comparison for category `R`_ of glvalues `a` and `b` of type `T` is defined as follows:
+> [0]{.pnum} The _synthesized three-way comparison for category `R`_ of glvalues `a` and `b` of type `T` is defined as follows:
 > 
-- If `static_cast<R>(a <=> b)` is a valid expression, `static_cast<R>(a <=> b)`;
-- Otherwise, if overload resolution for `a <=> b` finds at least one viable candidate, the synthesized three-way comparison is not defined.
-- Otherwise, if `R` is `strong_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;
-- Otherwise, if `R` is `weak_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? weak_ordering::equivalent : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;
-- Otherwise, if `R` is `partial_ordering` and `a == b` and `a < b` are both valid expressions of type `bool`, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less :` ` ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
-- Otherwise, if `R` is `strong_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;
-- Otherwise, if `R` is `weak_equality` and `a == b` is a valid expression of type `bool`, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;
-- Otherwise, the synthesized three-way comparison is not defined.
+- [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function, `static_cast<R>(a <=> b)`;
+- [0.2]{.pnum} Otherwise, if overload resolution for `a <=> b` finds at least one viable candidate, the synthesized three-way comparison is not defined;
+- [0.3]{.pnum} Otherwise, if `R` is `strong_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;
+- [0.4]{.pnum} Otherwise, if `R` is `weak_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? weak_ordering::equal : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;
+- [0.5]{.pnum} Otherwise, if `R` is `partial_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less :` ` ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
+- [0.6]{.pnum} Otherwise, if `R` is `strong_equality` and overload resolution for `a == b` finds a usable function, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;
+- [0.7]{.pnum} Otherwise, if `R` is `weak_equality` and overload resolution for `a == b` finds a usable function, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;
+- [0.8]{.pnum} Otherwise, the synthesized three-way comparison is not defined.
+>
+> [*Note*: A synthesized three-way comparison may be ill-formed if overload resolution finds usable functions that don't otherwise meet implied requirements by the defined expression. *-end node* ]
 :::
 
-Change 10.10.2 [class.spaceship], paragraph 2 (note that we do _not_ want to make the noted case ill-formed, we just want to delete the operator):
+Change 11.10.3 [class.spaceship], paragraph 1:
 
-> If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of [<code>S<sub>0</sub></code>, <code>S<sub>1</sub></code>, …, <code>S<sub>n-1</sub></code>.]{.add} [<code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n-1</sub></code>. [ Note: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub> &lt;=&gt; x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code>i</code>. — end note ]]{.rm} If the return type is deduced as `void`, the operator function is defined as deleted.
+> Given an expanded list of subobjects for an object `x` of type `C`, the type of the expression <code>x~*i*~</code> `<=>` <code>x~*i*~</code> is denoted by <code>R~i~</code>. [If overload resolution as applied to <code>x~*i*~</code> `<=>` <code>x~*i*~</code> does not find a usable function, then <code>R~i~</code> is `void`.]{.add} If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R~0~</code>, <code>R~1~</code>, …, <code>R~n−1~</code>. [*Note*: Otherwise, the program will be ill-formed if the expression <code>x~i~</code> `<=>` <code>x~i~</code> is not implicitly convertible to the declared return type for any `i`.—*end note*] If the return type is deduced as `void`, the operator function is defined as deleted. [If the declared return type of a defaulted three-way comparison operator function is `R` and any synthesized three-way comparison for category `R` between objects <code>x~*i*~</code> and <code>x~*i*~</code> is not defined, the operator function is defined as deleted.]{.add}
 
-> [If the declared return type of a defaulted three-way comparison operator function is `R` and any
-synthesized three-way comparison for category `R` between objects <code>x<sub><i>i</i></sub></code> and <code>x<sub><i>i</i></sub></code> is not defined, the operator function is defined as deleted.]{.add}
+Change 11.10.3 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of `<=>`
 
-Change 10.10.2 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of `<=>`
+> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x~*i*~</code> and <code>y~*i*~</code> in the expanded lists of subobjects for `x` and `y` (in increasing index order) until the first index `i` where [<code>x~*i*~</code> `<=>` <code>y~*i*~</code>]{.rm} [the synthesized three-way comparison for category `R` between <code>x~*i*~</code> and <code>y~*i*~</code>]{.add} yields a result value <code>v~*i*~</code> where <code>v~*i*~</code> `!= 0`, contextually converted to `bool`, yields `true`; `V` is <code>v~*i*~</code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`.
 
-> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x<sub><i>i</i></sub></code> and <code>y<sub><i>i</i></sub></code> in the expanded lists of subobjects for `x` and `y` until the first index `i` where [<code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>]{.rm}  [the synthesized three-way comparison for category `R` between <code>x<sub><i>i</i></sub></code> and <code>y<sub><i>i</i></sub></code>]{.add} yields a result value <code>v<sub>i</sub></code> where <code>v<sub>i</sub> != 0</code>, contextually converted to `bool`, yields `true`; `V` is <code>v<sub>i</sub></code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`. 
-                                    
 # Acknowledgments
     
-Thanks to Gašper Ažman, Agustín Bergé, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
+Thanks to Gašper Ažman, Agustín Bergé, Jens Maurer, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
     
-[revzin.sometimes]: https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/ "Conditionally implementing spaceship||Barry Revzin||2018-12-21"
+---
+references:
+  - id: Revzin
+    citation-label: Revzin
+	title: "Conditionally implementing spaceship"
+	author:
+		- family: Barry Revzin
+	issued:
+		year: 2018
+	URL: https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/
+  - id: P1185R2
+    citation-label: P1185R2
+    title: "`<=> != ==`"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://wg21.link/p1185r2	
+  - id: P1186R0
+    citation-label: P1186R0
+    title: "When do you actually use `<=>`?"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2018
+    URL: https://wg21.link/p1186r0
+  - id: P1186R1
+    citation-label: P1186R1
+    title: "When do you actually use `<=>`?"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://wg21.link/p1186r1	
+  - id: P1188R0
+    citation-label: P1188R0
+    title: "Library utilities for `<=>`"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://wg21.link/p1188r0	
+  - id: D1630R0
+    citation-label: D1630R0
+    title: "Spaceship needs a tune-up"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://brevzin.github.io/cpp_proposals/118x_spaceship/d630r2.html
+---

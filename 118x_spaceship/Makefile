@@ -6,7 +6,7 @@ p1188r0.html : spaceship-lib.md
 p1185r2.html : spaceship-no-eq.md
 	python ../md/better_md.py -i $< -o $@ --references
 
-d1186r2_mp.html : spaceship-is-compare.md
+d1186r2.html : spaceship-is-compare.md
 	../md/mpark-wg21 $< $@ 
 
 p1189r0.html : add-spaceship-to-lib.md

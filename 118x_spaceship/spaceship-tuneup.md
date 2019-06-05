@@ -2,7 +2,7 @@
 title: Spaceship needs a tune-up
 subtitle: Addressing some discovered issues with P0515 and P1185
 document: D1630R0
-date: 2019-06-01
+date: 2019-06-04
 audience: CWG, EWG
 author:
 	- name: Barry Revzin
@@ -193,11 +193,13 @@ This paper proposes that we reduce this scope to _just_ those cases where `(x ==
 
 # Richard's Example
 
-Daveed Vandevoorde pointed out that the wording in [over.match.oper] for determining rewritten candidates is currently:
+Daveed Vandevoorde [@vdv.well-formed] pointed out that the wording in [over.match.oper] for determining rewritten candidates is currently:
 
 >  For the relational (7.6.9) operators, the rewritten candidates include all member, non-member, and built-in candidates for the operator `<=>` for which the rewritten expression `(x <=> y) @ 0` is **well-formed** using that `operator<=>`.
 
-Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the `<=>` invocation and the `@` invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. This led Richard Smith to submit the following example [@smith]:
+Well-formed is poor word choice here, as that implies that we would have to fully instantiate both the `<=>` invocation and the `@` invocation. What we really want to do is simply check if this is viable in a SFINAE-like manner. Addressing that may seem like mostly a Core matter, except that it does lead to other interesting questions of what exactly we mean by well-formed and what exactly do we want to check.
+
+This led Richard Smith to submit the following example [@smith]:
 
 ```cpp
 struct Base { 
@@ -216,13 +218,49 @@ The question here is: should we even consider the `@ 0` part of the rewritten ex
 
 The reasoning here is that by considering the `@ 0` part of the expression for determining viable candidates, we are effectively overloading on return type. That doesn't seem right.
 
+## Shallowly well-formed
+
+We cannot use the term "well-formed" in the Core language to describe what it means for, colloquially, an expression to be... "valid." We need something shallower than that. This need comes up several times in the context of comparison operators - both for choosing reversed and rewritten candidates as well as defining defaulted ones (also pointed out by Daveed [@vdv.defaulted]). This also comes up in how to word [@D1186R2].
+
+We already do something like this for the special member functions of class types. For instance, [class.default.ctor] says that:
+
+> [2]{.pnum} A defaulted default constructor for class X is defined as deleted if:
+> 
+> - [2.1]{.pnum} [...]
+> - [2.7]{.pnum} any potentially constructed subobject, except for a non-static data member with a *brace-or-equal-initializer*, has class type `M` (or array thereof) and either `M` has no default constructor or **overload resolution ([over.match]) as applied to find `M`'s corresponding constructor results in an ambiguity or in a function that is deleted or inaccessible from the defaulted default constructor**, or
+> - [2.8]{.pnum} [...]
+
+It's that idea that we want here. Richard Smith in private correspondence suggested the term:
+
+> Overload resolution is said to result in a *usable function* `F` if overload resolution succeeds and selects a function `F` that is not deleted and is accessible from the context in which overload resolution was performed.
+
 ## Proposal
 
-This paper agrees with Richard that we should not consider the validity of the `@ 0` part of the comparison in determining the candidate set. The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. This change does not affect any C++17 code.
+This paper agrees with Richard that we should not consider the validity of the `@ 0` part of the comparison in determining the candidate set. In other words, overload resolution on `x < y` will look up candidates for all of `x < y`, `x <=> y`, and `y <=> x` and perform overload resolution on that full set - without considering what the return type of spaceship might be. If the best viable candidate is a spaceship candidate whose result is not an ordering, then the result is ill-formed. Likewise, overload resolution on `x != y` will look up candidates `x != y`, `y != x`, `x == y`, and `y == x` regardless of whether these return `bool`. 
+
+The provided example is well-formed in the current working draft, but becomes ill-formed as a result of this proposal. It is possible to construct examples that are valid C++17 code that become ill-formed as a result of this change:
+
+```cpp
+struct NotBool { };
+
+struct X {
+	X(int);
+	friend NotBool operator==(X, int);
+	friend NotBool operator!=(X, X);
+};
+
+// in C++17, calls the only candidate, the operator!=(X, X).
+// As a result of this specific change, the operator==
+// is part of the candidate set and is a better match, but
+// its result type is not bool so this is ill-formed
+X() != 4; 
+```
+
+I don't know if there are real-world code examples that would break. 
 
 # Default comparisons for reference data members
 
-The last issue, also raised by Daveed Vandevoorde ([@vdv]) is what should happen for the case where we try to default a comparison for a class that has data members of reference type:
+The last issue, also raised by Daveed Vandevoorde ([@vdv.reference]) is what should happen for the case where we try to default a comparison for a class that has data members of reference type:
 
 ```cpp
 struct A {
@@ -264,7 +302,7 @@ In even C++17, `xi` and `xj` are both well-formed and have different types. Unde
 
 ## Anonymous unions
 
-In the same post [@vdv], Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:
+In the same post [@vdv.reference], Daveed also questioned what defaulted comparisons would do in the case of anonymous unions:
 
 ```cpp
 struct B {
@@ -312,19 +350,40 @@ Insert a new paragraph after 11.10.1 [class.compare.default]/1:
 Change 11.10.1 [class.compare.default]/3.2:
 
 
-> A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:
+> [3]{.pnum} A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:
 > 
-- `C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or
-- `C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is [well-formed when contextually converted to `bool`]{.rm} [a valid expression of type `bool`]{.add}, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
+- [3.1]{.pnum} `C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or
+- [3.2]{.pnum} `C` is a class type with an `==` operator defined as defaulted in the definition of `C`, [`x == x` is well-formed when contextually converted to `bool`,]{.rm} [overload resolution as applied to `x == x` finds a usable function ([over.match]),]{.add} all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
 
+Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle the error cases:
+
+> [4]{.pnum} A defaulted `!=` operator function for a class `C` with parameters `x` and `y` is defined as deleted if
+> 
+> - [4.1]{.pnum} overload resolution ([over.match]), as applied to `x == y` [(also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.add}, or
+> - [4.2]{.pnum} `x == y` [cannot be contextually converted to `bool`]{.rm} [is not of type `bool`]{.add}.
+>
+> Otherwise, the operator function yields [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.add}.
+
+Change 11.10.4 [class.rel]/2 to likewise more exhaustively handle the error cases:
+
+> [2]{.pnum} The operator function with parameters `x` and `y` is defined as deleted if
+> 
+> - [2.1]{.pnum} overload resolution ([over.match]), as applied to `x <=> y` [results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.add}, or
+> - [2.2]{.pnum}  operator `@` cannot be applied to the return type of `x <=> y`.
+
+Add to the end of 12.3 [over.match], the new term *usable function*:
+
+::: add
+> Overload resolution is said to result in a *usable function* `F` if overload resolution succeeds and selects a function `F` that is not deleted and is accessible from the context in which overload resolution was performed.
+:::
 
 Change 12.3.1.2 [over.match.oper]/3.4:
 
-> For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates for the `operator <=>` for which the rewritten expression [`(x <=> y) @ 0` is well-formed using that operator`<=>`]{.rm} [`(x <=> y)` is valid]{.add}. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `<=>` for which the rewritten expression [`0 @ (y <=> x)` is well-formed using that `operator<=>`]{.rm} [`(y <=> x)` is valid]{.add}. For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates for the operator == for which the rewritten expression `(x == y)` is [well-formed when contextually converted to `bool` using that operator `==`]{.rm} [valid and of type `bool`]{.add}. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for the operator `==` for which the rewritten expression `(y == x)` is [well-formed when contextually converted to `bool` using that operator `==`]{.rm} [valid and of type `bool`]{.add}. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
+> For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates [for the `operator <=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator`<=>`]{.rm} [for the rewritten expression `x <=> y`]{.add}. For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for [the operator `<=>` for which the rewritten expression `0 @ (y <=> x)` is well-formed using that `operator<=>`]{.rm} [the rewritten expression `y <=> x`]{.add}. For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates [for the operator == for which the rewritten expression `(x == y)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the rewritten expression `x == y`]{.add}. For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate [for the operator `==` for which the rewritten expression `(y == x)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the rewritten expression `y == x`]{.add}. [-Note: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. —end note] In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.
 
-Change 12.3.1.2 [over.match.oper]/8 to use `!` instead of `?:`
+Change 12.3.1.2 [over.match.oper]/8 to use `!` instead of `?:` and require the type be `bool`:
 
-> If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. If a rewritten candidate is selected by overload resolution for a `!=` operator, `x != y` is interpreted as [`(y == x) ? false : true`]{.rm} [`!(y == x)`]{.add} if the selected candidate is a synthesized candidate with reversed order of parameters, or [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.add} otherwise, using the selected rewritten operator== candidate. If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as [`(y == x) ? true : false`]{.rm} [`(y == x)`]{.add} using the selected rewritten `operator==` candidate.
+> If a rewritten candidate is selected by overload resolution for a relational or three-way comparison operator `@`, `x @ y` is interpreted as the rewritten expression: `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. If a rewritten candidate is selected by overload resolution for a `!=` operator, then `x != y` is [interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten operator== candidate.]{.rm} [interpreted as follows. If the selected candidate is a synthesized candidate with reversed order of parameters, then `y == x` shall be of type `bool` and `x != y` is interpreted as `!(y == x)`. Otherwise, `x == y` shall be of type `bool` and `x != y` is interpreted as `!(x == y)`.]{.add}  If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as [`(y == x) ? true : false`]{.rm} [`y == x`]{.add} using the selected rewritten `operator==` candidate [and the type of `y == x` shall be of type `bool`]{.add}.
 
 Add a new entry to [diff.cpp17.over]:
 
@@ -351,6 +410,10 @@ Add a new entry to [diff.cpp17.over]:
 > ```
 :::
 
+# Acknowledgements
+
+Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon daCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, Herb Sutter, and Daveed Vandevoorde.
+
 ---
 references:
   - id: CWG2407
@@ -358,12 +421,19 @@ references:
     title: "Missing entry in Annex C for defaulted comparison operators"
 	author:
 		- family: Tomasz Kamiński
-	date: Feb 26, 2019
 	issued:
 		year: 2019
 	URL: http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407
-  - id: vdv
-    citation-label: vdv
+  - id: vdv.well-formed
+    citation-label: vdv.well-formed
+	title: "Processing relational/spaceship operator rewrites"
+	author:
+		- family: Daveed Vandevoorde
+	issued:
+		year: 2019
+	URL: http://lists.isocpp.org/core/2019/05/6419.php
+  - id: vdv.reference
+    citation-label: vdv.reference
 	title: "Generating comparison operators for classes with reference or anonymous union members"
 	author:
 		- family: Daveed Vandevoorde
@@ -394,4 +464,28 @@ references:
 		- family: Herb Sutter
 	issued:
 		year: 2019
+  - id: vdv.defaulted
+    citation-label: vdv.defaulted
+	URL: http://lists.isocpp.org/core/2019/05/6478.php
+	title: "Wording for deleted defaulted `operator!=`"
+	author:
+		- family: Daveed Vandevoorde
+	issued:
+		year: 2019
+  - id: P1185R2
+    citation-label: P1185R2
+    title: "`<=> != ==`"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://wg21.link/p1185r2		
+  - id: D1186R2
+    citation-label: D1186R2
+    title: "When do you actually use `<=>`?"
+    author:
+      - family: Barry Revzin
+    issued:
+      year: 2019
+    URL: https://brevzin.github.io/cpp_proposals/118x_spaceship/d1186r2.html
 ---
