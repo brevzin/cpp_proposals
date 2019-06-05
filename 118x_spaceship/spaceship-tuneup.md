@@ -191,6 +191,23 @@ We really don't need "contextually converted to `bool`" - in fact, we're probabl
 
 This paper proposes that we reduce this scope to _just_ those cases where `(x == y)` is a valid expression that has type exactly `bool`. This unbreaks Cameron's example -- `BinaryHelper<OnlyEq, Rhs>` is definitely not `bool` and so `OnlyEq` continues to have no `!=` candidates -- while also both simplifying the language rule, simplifying the specification, and not reducing the usability of the rule at all. Win, win, win.
 
+## Squinty Cases
+
+If we require `bool`, the first casualty will be the closest-to-`bool` types: `std::true_type` and `std::false_type`. Consider an example like:
+
+```cpp
+std::true_type operator==(EmptySequenceIterator, std::default_sentinel_t) { return {}; }
+std::false_type operator==(InfiniteSequenceIterator, std::default_sentinel_t) { return {}; }
+```
+
+Do we really want to disallow `default_sentinel == EmptySequenceIterator{}` or `default_sentinel != InfiniteSequenceIterator[}`? Don't these have "obvious" meanings? Maybe. I think it's harder to say than it at first appears.
+
+Consider `!=` first. What would the type of `default_sentinel != InfiniteSequenceIterator{}` be? `false`, right? But is that really the correct answer -- wouldn't you really want it to be `std::true_type`? And how would the langauge get there? Even these cases seem like if you want to do something special it's really up to you to do that something special.
+
+Now let's go back to `==`. If we allow `default_sentinel == EmptySequenceIterator{}` (since `==` is... obviously symmetric right?), then what's special about `==`? Wouldn't we also want to allow symmety for `!=`? And `<` and `>=`? At this point, this seems like scope creep.
+
+In any case, requiring `bool` today doesn't shut the door to any loosening of these requirements tomorrow. Let's just get the definitely-known-to-be-extremely-useful case in the door and worry about the possibly-interesting-to-consider cases later.
+
 # Richard's Example
 
 Daveed Vandevoorde [@vdv.well-formed] pointed out that the wording in [over.match.oper] for determining rewritten candidates is currently:
