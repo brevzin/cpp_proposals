@@ -202,9 +202,9 @@ std::false_type operator==(InfiniteSequenceIterator, std::default_sentinel_t) { 
 
 Do we really want to disallow `default_sentinel == EmptySequenceIterator{}` or `default_sentinel != InfiniteSequenceIterator[}`? Don't these have "obvious" meanings? Maybe. I think it's harder to say than it at first appears.
 
-Consider `!=` first. What would the type of `default_sentinel != InfiniteSequenceIterator{}` be? `false`, right? But is that really the correct answer -- wouldn't you really want it to be `std::true_type`? And how would the langauge get there? Even these cases seem like if you want to do something special it's really up to you to do that something special.
+Consider `!=` first. What would the type of `default_sentinel != InfiniteSequenceIterator{}` be? `bool`, right? With the value `true`? But is that really the correct answer -- wouldn't you really want it to be of type `std::true_type`? That seems more along the lines of what the user intent might be. But how would the language get there? Even these cases seem like if you want to do something special it's really up to you to do that something special.
 
-Now let's go back to `==`. If we allow `default_sentinel == EmptySequenceIterator{}` (since `==` is... obviously symmetric right?), then what's special about `==`? Wouldn't we also want to allow symmety for `!=`? And `<` and `>=`? At this point, this seems like scope creep.
+Now let's go back to `==`. If we allow `default_sentinel == EmptySequenceIterator{}` (since `==` is... obviously symmetric right?), then what's special about `==`? Wouldn't we also want to allow symmetry for `!=`? And `<` and `>=`? At this point, this seems like scope creep.
 
 In any case, requiring `bool` today doesn't shut the door to any loosening of these requirements tomorrow. Let's just get the definitely-known-to-be-extremely-useful case in the door and worry about the possibly-interesting-to-consider cases later.
 
@@ -427,9 +427,9 @@ Add a new entry to [diff.cpp17.over]:
 > ```
 :::
 
-# Acknowledgements
+# Acknowledgments
 
-Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon DaCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, David Stone, Herb Sutter, and Daveed Vandevoorde.
+Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Cameron DaCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, David Stone, Herb Sutter, and Daveed Vandevoorde.
 
 ---
 references:
