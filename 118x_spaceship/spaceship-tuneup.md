@@ -387,6 +387,8 @@ Change 11.10.4 [class.rel]/2 to likewise more exhaustively handle the error case
 > 
 > - [2.1]{.pnum} overload resolution ([over.match]), as applied to `x <=> y` [results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.add}, or
 > - [2.2]{.pnum}  operator `@` cannot be applied to the return type of `x <=> y`.
+> 
+> Otherwise, the operator function yields `x <=> y @ 0`.
 
 Add to the end of 12.3 [over.match], the new term *usable function*:
 
