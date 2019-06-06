@@ -429,7 +429,7 @@ Add a new entry to [diff.cpp17.over]:
 
 # Acknowledgements
 
-Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon DaCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, Herb Sutter, and Daveed Vandevoorde.
+Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon DaCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, David Stone, Herb Sutter, and Daveed Vandevoorde.
 
 ---
 references:
