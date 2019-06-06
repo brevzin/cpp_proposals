@@ -142,7 +142,7 @@ This paper proposes that the status quo is the very best of the quos. Some code 
 
 # Cameron's Example
 
-Cameron daCamara submitted the following example [@cameron] after MSVC implemented `operator<=>` and P1185R2:
+Cameron DaCamara submitted the following example [@cameron] after MSVC implemented `operator<=>` and P1185R2:
 
 ```cpp
 template <typename Lhs, typename Rhs>
@@ -429,7 +429,7 @@ Add a new entry to [diff.cpp17.over]:
 
 # Acknowledgements
 
-Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon daCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, Herb Sutter, and Daveed Vandevoorde.
+Thank you very much to everyone that has diligently participated in pointing out issues with `operator<=>` and committed lots of time to email traffic with me to help produce this paper (the two groups are heavily overlapping). Thank you to Camreon DaCamara, Davis Herring, Tomasz Kamiński, Jens Maurer, Richard Smith, Herb Sutter, and Daveed Vandevoorde.
 
 ---
 references:
@@ -462,7 +462,7 @@ references:
 	URL: http://lists.isocpp.org/core/2019/04/5935.php
 	title: "Potential issue after P1185R2 - SFINAE breaking change"
 	author:
-		- family: Cameron daCamara
+		- family: Cameron DaCamara
 	issued:
 		year: 2019
   - id: smith
