@@ -508,20 +508,4 @@ references:
 		- family: Daveed Vandevoorde
 	issued:
 		year: 2019
-  - id: P1185R2
-    citation-label: P1185R2
-    title: "`<=> != ==`"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://wg21.link/p1185r2		
-  - id: D1186R2
-    citation-label: D1186R2
-    title: "When do you actually use `<=>`?"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://brevzin.github.io/cpp_proposals/118x_spaceship/d1186r2.html
 ---

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-04" />
+  <meta name="dcterms.date" content="2019-06-11" />
   <title>When do you actually use &lt;=&gt;?</title>
   <style>
       code{white-space: pre-wrap;}
@@ -280,10 +280,6 @@ line-height: 127%;
 margin-left: 1.2em;
 line-height: 127%;
 }
-code {
-font-family: monospace;
-font-style: normal;
-}
 div.itemdecl {
 margin-top: 2ex;
 }
@@ -494,7 +490,7 @@ margin: 5em;
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-04</td>
+    <td>2019-06-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -661,14 +657,14 @@ margin: 5em;
 <a class="sourceLine" id="cb12-10" title="10"></a>
 <a class="sourceLine" id="cb12-11" title="11"><span class="kw">template</span> <span class="op">&lt;</span>ThreeWayComparable T<span class="op">&gt;</span> <span class="co">// see P1188</span></a>
 <a class="sourceLine" id="cb12-12" title="12">compare_3way_type_t <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</a></code></pre></div>
-<p>This is, indeed, a bad implementation strategy because <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v<span class="dv">2</span></code> would invoke <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code> even if <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> was a viable option, so we lose the potential performance benefit. It’s quite important to ensure that we use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> if that’s at all an option. It’s this problem that partially led to my writing P1186R0.</p>
+<p>This is, indeed, a bad implementation strategy because <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v2</code> would invoke <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code> even if <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> was a viable option, so we lose the potential performance benefit. It’s quite important to ensure that we use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> if that’s at all an option. It’s this problem that partially led to my writing P1186R0.</p>
 <p>But since I wrote this paper, I’ve come up with a much better way of conditionally adopting spaceship <span class="citation" data-cites="Revzin">[<a href="#ref-Revzin" role="doc-biblioref">Revzin</a>]</span>:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">template</span> <span class="op">&lt;</span>HasLess T<span class="op">&gt;</span></a>
 <a class="sourceLine" id="cb13-2" title="2"><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</a>
 <a class="sourceLine" id="cb13-3" title="3"></a>
 <a class="sourceLine" id="cb13-4" title="4"><span class="kw">template</span> <span class="op">&lt;</span>ThreeWayComparable T<span class="op">&gt;</span> <span class="kw">requires</span> HasLess<span class="op">&lt;</span>T<span class="op">&gt;</span></a>
 <a class="sourceLine" id="cb13-5" title="5">compare_3way_type_t <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</a></code></pre></div>
-<p>It’s a small, seemingly redundant change (after all, if <code class="sourceCode cpp">ThreeWayComparable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> then surely <code class="sourceCode cpp">HasLess<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for all types other than pathologically absurd ones that provide <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> but explicitly delete <code class="sourceCode cpp"><span class="op">&lt;</span></code>), but it ensures that <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v<span class="dv">2</span></code> invokes <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> where possible.</p>
+<p>It’s a small, seemingly redundant change (after all, if <code class="sourceCode cpp">ThreeWayComparable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> then surely <code class="sourceCode cpp">HasLess<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for all types other than pathologically absurd ones that provide <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> but explicitly delete <code class="sourceCode cpp"><span class="op">&lt;</span></code>), but it ensures that <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v2</code> invokes <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> where possible.</p>
 <p>Conditionally adopting spaceship between C++17 and C++20 is actually even easier:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></a>
 <a class="sourceLine" id="cb14-2" title="2">enable_if_t<span class="op">&lt;</span>supports_lt<span class="op">&lt;</span>T<span class="op">&gt;::</span>value, <span class="dt">bool</span><span class="op">&gt;</span> <span class="co">// normal C++17 SFINAE machinery</span></a>
