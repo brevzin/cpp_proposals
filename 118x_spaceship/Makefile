@@ -19,3 +19,6 @@ d1614r1.html : mothership.md
 
 d1630r0.html : spaceship-tuneup.md
 	$(PANDOC)
+
+d1614r1b.html : mothership2.md
+	$(PANDOC)

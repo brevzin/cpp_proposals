@@ -44,6 +44,16 @@ def printer(elem, doc):
     print('{}\n'.format(elem), file=sys.stderr)
     return None
 
+def bq(elem, doc):
+    """
+    Add a ::: bq div to make a <blockquote>
+    """
+    if not isinstance(elem, pf.Div):
+        return None
+
+    if elem.classes == ['bq']:
+        return pf.BlockQuote(*elem.content)
+
 def cpp2language(elem, doc):
     """
     Change all the cpp to language-cpp for prism
@@ -55,4 +65,4 @@ def cpp2language(elem, doc):
     return elem
 
 if __name__ == '__main__':
-    pf.run_filters([code_cpp, h1hr, self_link])
+    pf.run_filters([code_cpp, h1hr, self_link, bq])
