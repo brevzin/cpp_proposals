@@ -26,19 +26,6 @@ def h1hr(elem, doc):
     elem.attributes['style'] = 'border-bottom:1px solid #cccccc'
     return elem
 
-def self_link(elem, doc):
-    """
-    Add a self-link to each header
-    """
-    if not isinstance(elem, pf.Header):
-        return None
-
-    link = pf.Link(url='#{}'.format(elem.identifier), classes=['self-link'])
-    #elem.attributes['style'] = 'margin-top:-80px;padding-top:80px;{}'.format(
-    #    elem.attributes.get('style', ''))
-    elem.content.insert(0, link)
-    return elem
-
 def printer(elem, doc):
     import sys
     print('{}\n'.format(elem), file=sys.stderr)
@@ -65,4 +52,4 @@ def cpp2language(elem, doc):
     return elem
 
 if __name__ == '__main__':
-    pf.run_filters([code_cpp, h1hr, self_link, bq])
+    pf.run_filters([code_cpp, h1hr, bq])
