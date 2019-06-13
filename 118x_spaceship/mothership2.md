@@ -219,16 +219,6 @@ namespace std {
   constexpr bool is_gt  (partial_ordering cmp) noexcept { return cmp > 0; }
   constexpr bool is_gteq(partial_ordering cmp) noexcept { return cmp >= 0; }
 
-+ // common type specializations
-+ template<> struct common_type<strong_equality, partial_ordering>
-+   { using type = weak_equality; };
-+ template<> struct common_type<partial_ordering, strong_equality>
-+   { using type = weak_equality; };
-+ template<> struct common_type<strong_equality, weak_ordering>
-+   { using type = weak_equality; };
-+ template<> struct common_type<weak_ordering, strong_equality>
-+   { using type = weak_equality; };
-
   // [cmp.common], common comparison category type
   template<class... Ts>
   struct common_comparison_category {
@@ -917,7 +907,34 @@ return lhs.value() <=> rhs.value();
 
 ## Clause 20: General utilities library
 
-TBD.
+Change 20.15.7.6 [meta.trans.other] to add special rule for comparison categories:
+
+::: bq
+[3]{.pnum} Note A: For the `common_type` trait applied to a template parameter pack `T` of types, the member `type` shall be either defined or not present as follows:
+
+- [3.1]{.pnum} If `sizeof...(T)` is zero, there shall be no member `type`.
+- [3.2]{.pnum} If `sizeof...(T)` is one, let `T0` denote the sole type
+constituting the pack `T`. The member typedef-name `type` shall denote the
+same type, if any, as `common_type_t<T0, T0>`; otherwise there shall be no
+member `type`.
+- [3.3]{.pnum} If `sizeof...(T)` is two, let the first and second types
+constituting `T` be denoted by `T1` and `T2`, respectively, and let `D1` and
+`D2` denote the same types as `decay_t<T1>` and `decay_t<T2>`, respectively.
+	- [3.3.1]{.pnum} If `is_same_v<T1, D1>` is `false` or `is_same_v<T2, D2>` is `false`,
+	let `C` denote the same type, if any, as `common_type_t<D1, D2>`.
+    - [3.3.2]{.pnum} [*Note*: None of the following will apply if there is a specialization
+	`common_type<D1, D2>`. —*end note*]
+	- [3.3.*]{.pnum} [Otherwise, if both `D1` and `D2` denote comparison
+	category type ([cmp.categories.pre]), let `C` denote common comparison
+	type ([class.spaceship]) of `D1` and `D2`.]{.add}
+    - [3.3.3]{.pnum} Otherwise, if `decay_t<decltype(false ? declval<D1>() : declval<D2>())>`
+	denotes a valid type, let `C` denote that type.
+    - [3.3.4]{.pnum} Otherwise, if `COND_RES(CREF(D1), CREF(D2))` denotes a type,
+	let `C` denote the type `decay_t<COND_RES(CREF(D1), CREF(D2))>`.
+    In either case, the member typedef-name type shall denote the same type,
+	if any, as `C`. Otherwise, there shall be no member `type`.
+- [3.4]{.pnum} If `sizeof...(T)` is greater than two, let `T1`, `T2`, and `R`, respectively, denote the first, second, and (pack of) remaining types constituting `T`. Let `C` denote the same type, if any, as `common_type_t<T1, T2>`. If there is such a type `C`, the member typedef-name `type` shall denote the same type, if any, as `common_type_t<C, R...>`. Otherwise, there shall be no member `type`.
+:::
 
 ---
 references:
