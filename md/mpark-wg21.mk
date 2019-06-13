@@ -18,5 +18,4 @@ PANDOC = pandoc $< $(MPARK_DATA)/references.md \
    --metadata-file $(MPARK_DATA)/metadata.yaml \
    --syntax-definition $(MPARK_DATA)/syntax/isocpp.xml \
    --template $(MPARK_DATA)/template/wg21 \
-   -M date="$$(date "+%Y-%m-%d")" \
    --output $@

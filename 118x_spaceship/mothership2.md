@@ -3,10 +3,17 @@ title: "The Mothership has Landed"
 subtitle: Adding `<=>` to the Library
 document: D1614R1
 audience: LWG
+date: today
 author:
 	- name: Barry Revzin
 	  email: <barry.revzin@gmail.com>
 ---
+
+# Revision History
+
+[@P1614R0] took the route of adding the new comparison operators as hidden friends. This paper instead preserves the current method of declaring comparisons - typically as non-member functions. See [friendship](#friendship) for a more thorough discussion. 
+
+Additionally, R0 used the `3WAY`{.default}`<R>` wording from [@P1186R1], which was removed in the subsequent [@D1186R2] - so the relevant wording for the fallback objects was changed as well.
 
 # Introduction
 
@@ -121,7 +128,8 @@ Change 16.4.2.1/2 [expos.only.func]:
 and append:
 
 ::: bq
-```cpp
+::: add
+```
 constexpr auto @_synth-3way_@ =
   []<class T, class U>(const T& t, const U& u)
 	requires requires {
@@ -141,6 +149,7 @@ constexpr auto @_synth-3way_@ =
 template<class T, class U=T>
 using @_synth-3way-result_@ = decltype(@_synth-3way_@(declval<T&>(), declval<U&>()));
 ```
+:::
 :::
 
 Remove all of 16.4.2.3 [operators], which begins:
@@ -269,13 +278,7 @@ namespace std {
   class weak_equality {
     int value;  // exposition only
 
-    // exposition-only constructor
-    constexpr explicit weak_equality(eq v) noexcept : value(int(v)) {}  // exposition only
-
-  public:
-    // valid values
-    static const weak_equality equivalent;
-    static const weak_equality nonequivalent;
+    [...]
 
     // comparisons
     friend constexpr bool operator==(weak_equality v, @_unspecified_@) noexcept;
@@ -287,9 +290,7 @@ namespace std {
     friend constexpr weak_equality operator<=>(@_unspecified_@, weak_equality v) noexcept;
   };
 
-  // valid values' definitions
-  inline constexpr weak_equality weak_equality::equivalent(eq::equivalent);
-  inline constexpr weak_equality weak_equality::nonequivalent(eq::nonequivalent);
+  [...]
 }
 ```
 :::
@@ -301,6 +302,7 @@ and remove those functions from the description:
 constexpr bool operator==(weak_equality v, @_unspecified_@) noexcept;
 @[constexpr bool operator==(_unspecified_, weak_equality v) noexcept;]{.rm}@
 ```
+
 [2]{.pnum} *Returns*: `v.value == 0`.
 ```cpp
 @[constexpr bool operator!=(weak_equality v, _unspecified_) noexcept;]{.rm}@
@@ -317,18 +319,7 @@ namespace std {
   class strong_equality {
     int value;  // exposition only
 
-    // exposition-only constructor
-    constexpr explicit strong_equality(eq v) noexcept : value(int(v)) {}    // exposition only
-
-  public:
-    // valid values
-    static const strong_equality equal;
-    static const strong_equality nonequal;
-    static const strong_equality equivalent;
-    static const strong_equality nonequivalent;
-
-    // conversion
-    constexpr operator weak_equality() const noexcept;
+    [...]
 
     // comparisons
     friend constexpr bool operator==(strong_equality v, @_unspecified_@) noexcept;
@@ -340,11 +331,7 @@ namespace std {
     friend constexpr strong_equality operator<=>(@_unspecified_@, strong_equality v) noexcept;
   };
 
-  // valid values' definitions
-  inline constexpr strong_equality strong_equality::equal(eq::equal);
-  inline constexpr strong_equality strong_equality::nonequal(eq::nonequal);
-  inline constexpr strong_equality strong_equality::equivalent(eq::equivalent);
-  inline constexpr strong_equality strong_equality::nonequivalent(eq::nonequivalent);
+  [...]
 }
 ```
 :::
@@ -633,6 +620,304 @@ template <typename T, typename U,
 :::
 :::
 
+Add a new subclause [cmp.result] "spaceship invocation result":
+
+::: add
+> The behavior of a program that adds specializations for the `compare_three_way_result` template defined in this subclause is undefined.
+
+> For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. If the expression `t <=> u` is well-formed when treated as an unevaluted operand ([expr.context]), the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
+:::
+
+Add a new subclause [cmp.object] "spaceship object":
+
+::: add
+::: bq
+[1]{.pnum} In this subclause, `BUILTIN_PTR_3WAY(T, U)` for types `T` and `U` is a boolean constant expression. `BUILTIN_PTR_3WAY(T, U)` is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
+
+```
+struct compare_three_way {
+  template<class T, class U>
+	requires ThreeWayComparableWith<T,U> || BUILTIN_PTR_3WAY(T, U)
+  constexpr auto operator()(T&& t, U&& u) const;
+  
+  using is_transparent = @_unspecified_@;
+};
+```
+
+[2]{.pnum} *Expects*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` are equality-preserving ([concepts.equality]).
+
+[3]{.pnum} *Effects*: 
+ 
+- [3.1]{.pnum} If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`: returns `strong_ordering::less` if (the converted value of) `t` precedes `u` in the implementation-defined strict total order ([range.cmp]) over pointers of type `P`, `strong_ordering::greater` if `u` precedes `t`, and otherwise `strong_ordering::equal`.
+- [3.2]{.pnum} Otherwise, equivalent to: `return std::forward<T>(t) <=> std::forward<U>(u);`
+
+[4]{.pnum} In addition to being available via inclusion of the `<compare>` header, the class `compare_three_way` is available when the header `<functional>` is included.
+:::
+:::
+
+Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design for `strong_order()`, `weak_order()`, `partial_order()`, `strong_equal()`, and `weak_equal()`. The new wording makes them CPOs. 
+
+::: bq
+::: add
+[1]{.pnum} The name `strong_order` denotes a customization point object ([customization.point.object]). The expression `strong_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to the following:
+
+- [1.1]{.pnum} If the decayed types of `E` and `F` differ, `strong_order(E, F)` is ill-formed. 
+- [1.2]{.pnum} Otherwise, `strong_ordering(strong_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::strong_order`.
+- [1.3]{.pnum} Otherwise, if the decayed type `T` of `E` and `F` is a floating point type, yields a value of type `strong_ordering` that is consistent with the ordering observed by `T`'s comparison operators, and if `numeric_limits<T>::is_iec559` is `true` is additionally consistent with the totalOrder operation as specified in ISO/IEC/IEEE 60599.
+- [1.4]{.pnum} Otherwise, `strong_ordering(E <=> F)` if it is a well-formed expression.
+- [1.5]{.pnum} Otherwise, `strong_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `strong_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
+
+[2]{.pnum} The name `weak_order` denotes a customization point object ([customization.point.object]). The expression `weak_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to the following:
+
+- [2.1]{.pnum} If the decayed types of `E` and `F` differ, `weak_order(E, F)` is ill-formed. 
+- [2.2]{.pnum} Otherwise, `weak_ordering(weak_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::weak_order`.
+- [2.3]{.pnum} Otherwise, if the decayed type `T` of `E` and `F` is a floating point type, yields a value of type `weak_ordering` that is consistent with the ordering observed by `T`'s comparison operators and `strong_order`, and if `numeric_liits<T>::is_iec559` is `true` is additionally consistent with the following equivalence classes, ordered from lesser to greater:
+	- [2.3.1]{.pnum} Together, all negative NaN values
+	- [2.3.2]{.pnum} Negative infinity
+	- [2.3.3]{.pnum} Each normal negative value
+	- [2.3.4]{.pnum} Each subnormal negative value
+	- [2.3.5]{.pnum} Together, both zero values
+	- [2.3.6]{.pnum} Each subnormal positive value
+	- [2.3.7]{.pnum} Each normal positive value
+	- [2.3.8]{.pnum} Positive infinity
+	- [2.3.9]{.pnum} Together, all positive NaN values
+- [2.4]{.pnum} Otherwise, `weak_ordering(strong_order(E, F))` if it is a well-formed expression.
+- [2.5]{.pnum} Otherwise, `weak_ordering(E <=> F)` if it is a well-formed expression.
+- [2.6]{.pnum} Otherwise, `weak_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::weak_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
+
+[3]{.pnum} The name `partial_order` denotes a customization point object ([customization.point.object]). The expression `partial_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to the following:
+
+- [3.1]{.pnum} If the decayed types of `E` and `F` differ, `partial_order(E, F)` is ill-formed.
+- [3.2]{.pnum} Otherwise, `partial_ordering(partial_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::partial_order`.
+- [3.3]{.pnum} Otherwise, `partial_ordering(weak_order(E, F))` if it is a well-formed expression.
+- [3.4]{.pnum} Otherwise, `partial_ordering(E <=> F)` if it is a well-formed expression.
+- [3.5]{.pnum} Otherwise, `partial_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::partial_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
+
+[4]{.pnum} The name `compare_strong_order_fallback` denotes a comparison customization point ([customization.point.object]) object. The expression `compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
+
+- [4.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_strong_order_fallback(E, F)` is ill-formed.
+- [4.2]{.pnum} Otherwise, `strong_order(E, F)` if it is a well-formed expression.
+- [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? strong_ordering::equal : ((E < F) ? strong_ordering::less : strong_ordering::greater` except that `E` and `F` are only evaluated once.
+- [4.4]{.pnum} Otherwise, `compare_strong_order_fallback(E, F)` is ill-formed.
+
+[5]{.pnum} The name `compare_weak_order_fallback` denotes a customization point object ([customization.point.object]). The expression `compare_weak_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
+
+- [5.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_weak_order_fallback(E, F)` is ill-formed.
+- [5.2]{.pnum} Otherwise, `weak_order(E, F)` if it is a well-formed expression.
+- [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? weak_ordering::equal : ((E < F) ? weak_ordering::less : weak_ordering::greater` except that `E` and `F` are only evaluated once.
+- [5.4]{.pnum} Otherwise, `compare_weak_order_fallback(E, F)` is ill-formed.
+
+[6]{.pnum} The name `compare_partial_order_fallback` denotes a customization point object ([customization.point.object]). The expression `compare_partial_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
+
+- [6.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_partial_order_fallback(E, F)` is ill-formed.
+- [6.2]{.pnum} Otherwise, `partial_order(E, F)` if it is a well-formed expression.
+- [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? partial_ordering::equivalent : ((E < F) ? partial_ordering::less : ((F < E) ? weak_ordering::greater : weak_ordering::unordered))` except that `E` and `F` are only evaluated once.
+- [6.4]{.pnum} Otherwise, `compare_partial_order_fallback(E, F)` is ill-formed.
+
+:::
+:::
+
+Change 17.13.1 [coroutine.syn]:
+
+::: bq
+```diff
+namespace std {
+  [...]
+  // 17.13.5 noop coroutine
+  noop_coroutine_handle noop_coroutine() noexcept;
+
+  // 17.13.3.6 comparison operators:
+  constexpr bool operator==(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+- constexpr bool operator!=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+- constexpr bool operator<(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+- constexpr bool operator>(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+- constexpr bool operator<=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+- constexpr bool operator>=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
++ constexpr strong_ordering operator<=>(coroutine_handle x, coroutine_handle y) noexcept;
+
+  // 17.13.6 trivial awaitables
+  [...]
+}
+```
+:::
+
+Replace the `<` in 17.13.3.6 [coroutine.handle.compare] with the new `<=>`:
+
+::: bq
+```cpp
+constexpr bool operator==(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+```
+[1]{.pnum} *Returns*: `x.address() == y.address()`.
+
+::: rm
+```
+constexpr bool operator<(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+```
+[2]{.pnum} *Returns*: `less<>()(x.address(), y.address())`.
+:::
+
+::: {.addu}
+```
+constexpr strong_ordering operator<=>(coroutine_handle x, coroutine_handle y) noexcept;
+```
+[3]{.pnum} *Returns*: `compare_three_way()(x.address(), y.address())`.
+:::
+:::
+
+## Clause 18: Concepts Library
+
+No changes.
+
+## Clause 19: Diagnostics Library
+
+Changed operators for: `error_category`, `error_code`, and `error_condition`
+
+Change 19.5.1 [system.error.syn]:
+
+::: bq
+```diff
+namespace std {
+  [...]
+  // [syserr.compare], comparison functions
+  bool operator==(const error_code& lhs, const error_code& rhs) noexcept;
+  bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;
+- bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;
+  bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;
+- bool operator!=(const error_code& lhs, const error_code& rhs) noexcept;
+- bool operator!=(const error_code& lhs, const error_condition& rhs) noexcept;
+- bool operator!=(const error_condition& lhs, const error_code& rhs) noexcept;
+- bool operator!=(const error_condition& lhs, const error_condition& rhs) noexcept;
+- bool operator< (const error_code& lhs, const error_code& rhs) noexcept;
+- bool operator< (const error_condition& lhs, const error_condition& rhs) noexcept;
++ strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;
++ strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;
+  [...]  
+}
+```
+:::
+
+Change 19.5.2.1 [syserr.errcat.overview]:
+
+::: bq
+```diff
+namespace std {
+  class error_category {
+  public:
+    [...]
+
+    bool operator==(const error_category& rhs) const noexcept;
+-   bool operator!=(const error_category& rhs) const noexcept;
+-   bool operator< (const error_category& rhs) const noexcept;
++   strong_ordering operator<=>(const error_category& rhs) const noexcept;
+  };
+
+  const error_category& generic_category() noexcept;
+  const error_category& system_category() noexcept;
+}
+```
+:::
+
+Change 19.5.2.3 [syserr.errcat.nonvirtuals]:
+
+::: bq
+```cpp
+bool operator==(const error_category& rhs) const noexcept;
+```
+[1]{.pnum} *Returns*: `this == &rhs`.
+
+::: rm
+```
+bool operator!=(const error_category& rhs) const noexcept;
+```
+[2]{.pnum} *Returns*: `!(*this == rhs)`.
+```
+bool operator<(const error_category& rhs) const noexcept;
+```
+[3]{.pnum} *Returns*: `less<const error_category*>()(this, &rhs)`.
+:::
+
+::: {.addu}
+```
+strong_ordering operator<=>(const error_category& rhs) const noexcept;
+```
+[4]{.pnum} *Returns*: `compare_three_way()(this, &rhs)`.
+:::
+
+[*Note*: [`less`]{.rm} [`compare_three_way` ([cmp.object])]{.add} provides a total ordering for pointers. —*end note*]
+
+:::
+
+Change 19.5.5 [syserr.compare]:
+
+::: bq
+```cpp
+bool operator==(const error_code& lhs, const error_code& rhs) noexcept;
+```
+[1]{.pnum} *Returns*: `lhs.category() == rhs.category() && lhs.value() == rhs.value()`
+```cpp
+bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;
+```
+[2]{.pnum} *Returns*: `lhs.category().equivalent(lhs.value(), rhs) || rhs.category().equivalent(lhs, rhs.value())`
+
+::: rm
+```
+bool operator==(const error_condition& lhs, const error_code& rhs) noexcept;
+```
+[3]{.pnum} *Returns*: `rhs.category().equivalent(rhs.value(), lhs) || lhs.category().equivalent(rhs, lhs.value())`
+:::
+```cpp
+bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;
+```
+[4]{.pnum} *Returns*: `lhs.category() == rhs.category() && lhs.value() == rhs.value()`
+
+::: rm
+```
+bool operator!=(const error_code& lhs, const error_code& rhs) noexcept;
+bool operator!=(const error_code& lhs, const error_condition& rhs) noexcept;
+bool operator!=(const error_condition& lhs, const error_code& rhs) noexcept;
+bool operator!=(const error_condition& lhs, const error_condition& rhs) noexcept;
+```
+[5]{.pnum} *Returns*: `!(lhs == rhs)`.
+```
+bool operator<(const error_code& lhs, const error_code& rhs) noexcept;
+```
+[6]{.pnum} *Returns*: `lhs.category() < rhs.category() || (lhs.category() == rhs.category() && lhs.value() < rhs.value())`
+```
+bool operator<(const error_condition& lhs, const error_condition& rhs) noexcept;
+```
+[7]{.pnum} *Returns*: `lhs.category() < rhs.category() || (lhs.category() == rhs.category() && lhs.value() < rhs.value())`
+:::
+
+::: {.addu}
+
+```
+strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;
+```
+[8]{.pnum} *Effects*: Equivalent to: 
+
+::: bq
+```
+if (auto c = lhs.category() <=> rhs.category(); c != 0) return c;
+return lhs.value() <=> rhs.value();
+```
+:::
+```
+strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;
+```
+[9]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```
+if (auto c = lhs.category() <=> rhs.category(); c != 0) return c;
+return lhs.value() <=> rhs.value();
+```
+:::
+:::
+:::
+
+## Clause 20: General utilities library
+
+TBD.
 
 ---
 references:
