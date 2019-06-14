@@ -2627,9 +2627,9 @@ lexicographical_compare_three_way(
 ```
 :::
 </td>
-<td>[*Expects*: If `<=>` is defined for values of type (possibly const) `T`,
-then `<=>` is a ordering relationship. Oftherwise, `<` is defined for values
-of type (possibly const) `T` and `<` is a total ordering relationship.]{.addu}</td>
+<td>[*Expects*: Either `<=>` is defined for values of type (possibly const) `T`,
+or `<` is defined for values of type (possibly const) `T` and `<` is a total
+ordering relationship.]{.addu}</td>
 <td>[linear]{.addu}</td>
 </tr>
 
