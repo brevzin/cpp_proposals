@@ -481,11 +481,14 @@ margin: 5em;
 #refs code{padding-left: 0px; text-indent: 0px;}
 div.rm { text-decoration: line-through; }
 div.rm code.sourceCode { text-decoration: line-through; }
-div.addu { color: #006e28; }
-div.addu p { text-decoration: underline; }
-div.addu > pre { text-decoration: underline; }
-div.addu code.sourceCode { text-decoration: underline; }
-div.addu pre, div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu, span.addu {
+color: #006e28;
+background-color: #ddffdd;
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: #ddffdd; }
+div.add, div.add pre { background-color: #ddffdd; }
 div.addu > blockquote {
 border-left: 4px solid #00a000;
 padding: 0 15px;
@@ -495,6 +498,8 @@ text-decoration: none;
 div.addu blockquote code.sourceCode { text-decoration: none; }
 div.addu blockquote pre { text-decoration: none; }
 div.addu blockquote pre code { text-decoration: none; }
+code.diff span.va { color: #000000; background-color: #ddffdd; }
+code.diff span.st { color: #000000; background-color: #ffdddd; }
 </style>
   <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
   <!--[if lt IE 9]>
@@ -551,12 +556,14 @@ div.addu blockquote pre code { text-decoration: none; }
 <li><a href="#clause-18-concepts-library"><span class="toc-section-number">5.3</span> Clause 18: Concepts Library<span></span></a></li>
 <li><a href="#clause-19-diagnostics-library"><span class="toc-section-number">5.4</span> Clause 19: Diagnostics Library<span></span></a></li>
 <li><a href="#clause-20-general-utilities-library"><span class="toc-section-number">5.5</span> Clause 20: General utilities library<span></span></a></li>
+<li><a href="#clause-21-strings-library"><span class="toc-section-number">5.6</span> Clause 21: Strings library<span></span></a></li>
 </ul></li>
 <li><a href="#references"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P1614R0">[<a href="#ref-P1614R0" role="doc-biblioref">P1614R0</a>]</span> took the route of adding the new comparison operators as hidden friends. This paper instead preserves the current method of declaring comparisons - typically as non-member functions. See <a href="#friendship">friendship</a> for a more thorough discussion.</p>
+<p>The comparisons between <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>T, D<span class="op">&gt;</span></code> and <code class="sourceCode cpp"><span class="kw">nullptr</span></code> were originally removed and replaced with a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, but this was reverted.</p>
 <p>Additionally, R0 used the <code class="sourceCode default">3WAY</code><code class="sourceCode cpp"><span class="op">&lt;</span>R<span class="op">&gt;</span></code> wording from <span class="citation" data-cites="P1186R1">[<a href="#ref-P1186R1" role="doc-biblioref">P1186R1</a>]</span>, which was removed in the subsequent <span class="citation" data-cites="D1186R2">[<a href="#ref-D1186R2" role="doc-biblioref">D1186R2</a>]</span> - so the relevant wording for the fallback objects was changed as well.</p>
 <h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>The work of integrating <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> into the library has been performed by multiple different papers, each addressing a different aspect of the integration. In the interest of streamlining review by the Library Working Group, the wording has been combined into a single paper. This is that paper.</p>
@@ -628,7 +635,7 @@ div.addu blockquote pre code { text-decoration: none; }
 <h2 id="clause-16-library-introduction"><span class="header-section-number">5.1</span> Clause 16: Library Introduction<a href="#clause-16-library-introduction" class="self-link"></a></h2>
 <p>Change 16.4.2.1/2 [expos.only.func]:</p>
 <blockquote>
-<p>The following <span class="rm" style="color: #bf0303"><del>function is</del></span> <span class="add" style="color: #006e28"><ins>are</ins></span> defined for exposition only to aid in the specification of the library:</p>
+<p>The following <span class="rm" style="color: #bf0303"><del>function is</del></span> <span class="addu">are</span> defined for exposition only to aid in the specification of the library:</p>
 </blockquote>
 <p>and append:</p>
 <blockquote>
@@ -708,54 +715,44 @@ div.addu blockquote pre code { text-decoration: none; }
 <span id="cb1-14"><a href="#cb1-14"></a>  constexpr bool is_gt  (partial_ordering cmp) noexcept { return cmp &gt; 0; }</span>
 <span id="cb1-15"><a href="#cb1-15"></a>  constexpr bool is_gteq(partial_ordering cmp) noexcept { return cmp &gt;= 0; }</span>
 <span id="cb1-16"><a href="#cb1-16"></a></span>
-<span id="cb1-17"><a href="#cb1-17"></a><span class="va">+ // common type specializations</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a><span class="va">+ template&lt;&gt; struct common_type&lt;strong_equality, partial_ordering&gt;</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a><span class="va">+   { using type = weak_equality; };</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+ template&lt;&gt; struct common_type&lt;partial_ordering, strong_equality&gt;</span></span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="va">+   { using type = weak_equality; };</span></span>
-<span id="cb1-22"><a href="#cb1-22"></a><span class="va">+ template&lt;&gt; struct common_type&lt;strong_equality, weak_ordering&gt;</span></span>
-<span id="cb1-23"><a href="#cb1-23"></a><span class="va">+   { using type = weak_equality; };</span></span>
-<span id="cb1-24"><a href="#cb1-24"></a><span class="va">+ template&lt;&gt; struct common_type&lt;weak_ordering, strong_equality&gt;</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a><span class="va">+   { using type = weak_equality; };</span></span>
-<span id="cb1-26"><a href="#cb1-26"></a></span>
-<span id="cb1-27"><a href="#cb1-27"></a>  // [cmp.common], common comparison category type</span>
-<span id="cb1-28"><a href="#cb1-28"></a>  template&lt;class... Ts&gt;</span>
-<span id="cb1-29"><a href="#cb1-29"></a>  struct common_comparison_category {</span>
-<span id="cb1-30"><a href="#cb1-30"></a>    using type = <em>see below</em>;</span>
-<span id="cb1-31"><a href="#cb1-31"></a>  };</span>
-<span id="cb1-32"><a href="#cb1-32"></a>  template&lt;class... Ts&gt;</span>
-<span id="cb1-33"><a href="#cb1-33"></a>    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;</span>
-<span id="cb1-34"><a href="#cb1-34"></a></span>
-<span id="cb1-35"><a href="#cb1-35"></a><span class="va">+ // [cmp.concept], concept ThreeWayComparable</span></span>
-<span id="cb1-36"><a href="#cb1-36"></a><span class="va">+ template&lt;class T, class Cat = partial_ordering&gt;</span></span>
-<span id="cb1-37"><a href="#cb1-37"></a><span class="va">+   concept ThreeWayComparable = <em>see below</em>;</span></span>
-<span id="cb1-38"><a href="#cb1-38"></a><span class="va">+ template&lt;class T, class U, class Cat = partial_ordering&gt;</span></span>
-<span id="cb1-39"><a href="#cb1-39"></a><span class="va">+   concept ThreeWayComparableWith = <em>see below</em>;</span></span>
-<span id="cb1-40"><a href="#cb1-40"></a><span class="va">+</span></span>
-<span id="cb1-41"><a href="#cb1-41"></a><span class="va">+ // [cmp.result], spaceship invocation result</span></span>
-<span id="cb1-42"><a href="#cb1-42"></a><span class="va">+ template&lt;class T, class U = T&gt; struct compare_three_way_result;</span></span>
-<span id="cb1-43"><a href="#cb1-43"></a><span class="va">+</span></span>
-<span id="cb1-44"><a href="#cb1-44"></a><span class="va">+ template&lt;class T, class U = T&gt;</span></span>
-<span id="cb1-45"><a href="#cb1-45"></a><span class="va">+   using compare_three_way_result_t = typename compare_three_way_result&lt;T, U&gt;::type;</span></span>
-<span id="cb1-46"><a href="#cb1-46"></a><span class="va">+</span></span>
-<span id="cb1-47"><a href="#cb1-47"></a><span class="va">+ // [cmp.object], spaceship object</span></span>
-<span id="cb1-48"><a href="#cb1-48"></a><span class="va">+ struct compare_three_way;</span></span>
-<span id="cb1-49"><a href="#cb1-49"></a></span>
-<span id="cb1-50"><a href="#cb1-50"></a>  // [cmp.alg], comparison algorithms</span>
-<span id="cb1-51"><a href="#cb1-51"></a><span class="st">- template&lt;class T&gt; constexpr strong_ordering strong_order(const T&amp; a, const T&amp; b);</span></span>
-<span id="cb1-52"><a href="#cb1-52"></a><span class="st">- template&lt;class T&gt; constexpr weak_ordering weak_order(const T&amp; a, const T&amp; b);</span></span>
-<span id="cb1-53"><a href="#cb1-53"></a><span class="st">- template&lt;class T&gt; constexpr partial_ordering partial_order(const T&amp; a, const T&amp; b);</span></span>
-<span id="cb1-54"><a href="#cb1-54"></a><span class="st">- template&lt;class T&gt; constexpr strong_equality strong_equal(const T&amp; a, const T&amp; b);</span></span>
-<span id="cb1-55"><a href="#cb1-55"></a><span class="st">- template&lt;class T&gt; constexpr weak_equality weak_equal(const T&amp; a, const T&amp; b);</span></span>
-<span id="cb1-56"><a href="#cb1-56"></a><span class="va">+ inline namespace <em>unspecified</em> {</span></span>
-<span id="cb1-57"><a href="#cb1-57"></a><span class="va">+   inline constexpr <em>unspecified</em> strong_order = <em>unspecified</em>;</span></span>
-<span id="cb1-58"><a href="#cb1-58"></a><span class="va">+   inline constexpr <em>unspecified</em> weak_order = <em>unspecified</em>;</span></span>
-<span id="cb1-59"><a href="#cb1-59"></a><span class="va">+   inline constexpr <em>unspecified</em> partial_order = <em>unspecified</em>;</span></span>
-<span id="cb1-60"><a href="#cb1-60"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_strong_order_fallback = <em>unspecified</em>;</span></span>
-<span id="cb1-61"><a href="#cb1-61"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_weak_order_fallback = <em>unspecified</em>;</span></span>
-<span id="cb1-62"><a href="#cb1-62"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_partial_order_fallback = <em>unspecified</em>;</span></span>
-<span id="cb1-63"><a href="#cb1-63"></a><span class="va">+ }</span></span>
-<span id="cb1-64"><a href="#cb1-64"></a>}</span></code></pre></div>
+<span id="cb1-17"><a href="#cb1-17"></a>  // [cmp.common], common comparison category type</span>
+<span id="cb1-18"><a href="#cb1-18"></a>  template&lt;class... Ts&gt;</span>
+<span id="cb1-19"><a href="#cb1-19"></a>  struct common_comparison_category {</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    using type = <em>see below</em>;</span>
+<span id="cb1-21"><a href="#cb1-21"></a>  };</span>
+<span id="cb1-22"><a href="#cb1-22"></a>  template&lt;class... Ts&gt;</span>
+<span id="cb1-23"><a href="#cb1-23"></a>    using common_comparison_category_t = typename common_comparison_category&lt;Ts...&gt;::type;</span>
+<span id="cb1-24"><a href="#cb1-24"></a></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="va">+ // [cmp.concept], concept ThreeWayComparable</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="va">+ template&lt;class T, class Cat = partial_ordering&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="va">+   concept ThreeWayComparable = <em>see below</em>;</span></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="va">+ template&lt;class T, class U, class Cat = partial_ordering&gt;</span></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="va">+   concept ThreeWayComparableWith = <em>see below</em>;</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a><span class="va">+</span></span>
+<span id="cb1-31"><a href="#cb1-31"></a><span class="va">+ // [cmp.result], spaceship invocation result</span></span>
+<span id="cb1-32"><a href="#cb1-32"></a><span class="va">+ template&lt;class T, class U = T&gt; struct compare_three_way_result;</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a><span class="va">+</span></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="va">+ template&lt;class T, class U = T&gt;</span></span>
+<span id="cb1-35"><a href="#cb1-35"></a><span class="va">+   using compare_three_way_result_t = typename compare_three_way_result&lt;T, U&gt;::type;</span></span>
+<span id="cb1-36"><a href="#cb1-36"></a><span class="va">+</span></span>
+<span id="cb1-37"><a href="#cb1-37"></a><span class="va">+ // [cmp.object], spaceship object</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a><span class="va">+ struct compare_three_way;</span></span>
+<span id="cb1-39"><a href="#cb1-39"></a></span>
+<span id="cb1-40"><a href="#cb1-40"></a>  // [cmp.alg], comparison algorithms</span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="st">- template&lt;class T&gt; constexpr strong_ordering strong_order(const T&amp; a, const T&amp; b);</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="st">- template&lt;class T&gt; constexpr weak_ordering weak_order(const T&amp; a, const T&amp; b);</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="st">- template&lt;class T&gt; constexpr partial_ordering partial_order(const T&amp; a, const T&amp; b);</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a><span class="st">- template&lt;class T&gt; constexpr strong_equality strong_equal(const T&amp; a, const T&amp; b);</span></span>
+<span id="cb1-45"><a href="#cb1-45"></a><span class="st">- template&lt;class T&gt; constexpr weak_equality weak_equal(const T&amp; a, const T&amp; b);</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a><span class="va">+ inline namespace <em>unspecified</em> {</span></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="va">+   inline constexpr <em>unspecified</em> strong_order = <em>unspecified</em>;</span></span>
+<span id="cb1-48"><a href="#cb1-48"></a><span class="va">+   inline constexpr <em>unspecified</em> weak_order = <em>unspecified</em>;</span></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="va">+   inline constexpr <em>unspecified</em> partial_order = <em>unspecified</em>;</span></span>
+<span id="cb1-50"><a href="#cb1-50"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_strong_order_fallback = <em>unspecified</em>;</span></span>
+<span id="cb1-51"><a href="#cb1-51"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_weak_order_fallback = <em>unspecified</em>;</span></span>
+<span id="cb1-52"><a href="#cb1-52"></a><span class="va">+   inline constexpr <em>unspecified</em> compare_partial_order_fallback = <em>unspecified</em>;</span></span>
+<span id="cb1-53"><a href="#cb1-53"></a><span class="va">+ }</span></span>
+<span id="cb1-54"><a href="#cb1-54"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Change 17.11.2.2 [cmp.weakeq]:</p>
@@ -1249,7 +1246,7 @@ div.addu blockquote pre code { text-decoration: none; }
 <div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1"></a>strong_ordering operator&lt;=&gt;(const error_category&amp; rhs) const noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">compare_three_way<span class="op">()(</span><span class="kw">this</span>, <span class="op">&amp;</span>rhs<span class="op">)</span></code>.</p>
 </div>
-<p>[<em>Note</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">less</code></span></del></span> <span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">compare_three_way</code></span> ([cmp.object])</ins></span> provides a total ordering for pointers. —<em>end note</em>]</p>
+<p>[<em>Note</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">less</code></span></del></span> <span class="addu"><code class="sourceCode cpp">compare_three_way</code> ([cmp.object])</span> provides a total ordering for pointers. —<em>end note</em>]</p>
 </blockquote>
 <p>Change 19.5.5 [syserr.compare]:</p>
 <blockquote>
@@ -1292,7 +1289,925 @@ div.addu blockquote pre code { text-decoration: none; }
 </div>
 </blockquote>
 <h2 id="clause-20-general-utilities-library"><span class="header-section-number">5.5</span> Clause 20: General utilities library<a href="#clause-20-general-utilities-library" class="self-link"></a></h2>
-<p>TBD.</p>
+<p>Changed operators for: <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">optional</code>, <code class="sourceCode cpp">variant</code>, <code class="sourceCode cpp">monostate</code>, <code class="sourceCode cpp">bitset</code>, <code class="sourceCode cpp">allocator</code>, <code class="sourceCode cpp">unique_ptr</code>, <code class="sourceCode cpp">shared_ptr</code>, <code class="sourceCode cpp">memory_resource</code> <code class="sourceCode cpp">polymorphic_allocator</code>, <code class="sourceCode cpp">scoped_allocator_adaptor</code>, <code class="sourceCode cpp">function</code>, <code class="sourceCode cpp">type_index</code>.</p>
+<p>Change 20.2.1 [utility.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;     // see [initializer.list.syn]</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  [...]</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>  // [pairs], class template pair</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    struct pair;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  </span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">- // [pairs.spec], pair specialized algorithms</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   constexpr bool operator==(const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   constexpr bool operator!=(const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   constexpr bool operator&lt; (const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   constexpr bool operator&gt; (const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="st">-   constexpr bool operator&lt;=(const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="st">-   constexpr bool operator&gt;=(const pair&lt;T1, T2&gt;&amp;, const pair&lt;T1, T2&gt;&amp;);  </span></span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb1-25"><a href="#cb1-25"></a>    constexpr void swap(pair&lt;T1, T2&gt;&amp; x, pair&lt;T1, T2&gt;&amp; y) noexcept(noexcept(x.swap(y)));</span>
+<span id="cb1-26"><a href="#cb1-26"></a></span>
+<span id="cb1-27"><a href="#cb1-27"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb1-28"><a href="#cb1-28"></a>    constexpr <em>see below</em> make_pair(T1&amp;&amp;, T2&amp;&amp;);</span>
+<span id="cb1-29"><a href="#cb1-29"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.4.2 [pairs.pair]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  struct pair {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    using first_type  = T1;</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    using second_type = T2;</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>    T1 first;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    T2 second;</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    [...]</span>
+<span id="cb1-11"><a href="#cb1-11"></a></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    constexpr void swap(pair&amp; p) noexcept(<em>see below</em>);</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    </span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="va">+   // 20.4.3, pair specialized algorithms</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="va">+   friend constexpr bool operator==(const pair&amp;, const pair&amp;) = default;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="va">+   friend constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;T1&gt;, <em>synth-3way-result</em>&lt;T2&gt;&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="va">+     operator&lt;=&gt;(const pair&amp;, const pair&amp;)</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="va">+     { <em>see below</em> }</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>  };</span>
+<span id="cb1-20"><a href="#cb1-20"></a></span>
+<span id="cb1-21"><a href="#cb1-21"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb1-22"><a href="#cb1-22"></a>    pair(T1, T2) -&gt; pair&lt;T1, T2&gt;;</span>
+<span id="cb1-23"><a href="#cb1-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.4.3 [pairs.spec]:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb28-2"><a href="#cb28-2"></a>  constexpr bool operator==(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>first <span class="op">==</span> y<span class="op">.</span>first <span class="op">&amp;&amp;</span> x<span class="op">.</span>second <span class="op">==</span> y<span class="op">.</span>second</code>.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb29-2"><a href="#cb29-2"></a>  constexpr bool operator!=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb30-2"><a href="#cb30-2"></a>  constexpr bool operator&lt;(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>first <span class="op">&lt;</span> y<span class="op">.</span>first <span class="op">||</span> <span class="op">(!(</span>y<span class="op">.</span>first <span class="op">&lt;</span> x<span class="op">.</span>first<span class="op">)</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>second <span class="op">&lt;</span> y<span class="op">.</span>second<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb31-2"><a href="#cb31-2"></a>  constexpr bool operator&gt;(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">y <span class="op">&lt;</span> x</code>.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb32-2"><a href="#cb32-2"></a>  constexpr bool operator&lt;=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>y <span class="op">&lt;</span> x<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb33-2"><a href="#cb33-2"></a>  constexpr bool operator&gt;=(const pair&lt;T1, T2&gt;&amp; x, const pair&lt;T1, T2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a>friend constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;T1&gt;, <em>synth-3way-result</em>&lt;T2&gt;&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  operator&lt;=&gt;(const pair&amp;, const pair&amp;);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a>if (auto c = <em>synth-3way</em>(lhs.first, rhs.first); c != 0) return c;</span>
+<span id="cb1-2"><a href="#cb1-2"></a>return <em>synth-3way</em>(lhs.second, rhs.second);</span></code></pre></div>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 20.5.3 [tuple.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  // [tuple.tuple], class template tuple</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  template&lt;class... Types&gt;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    class tuple;</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>  [...]</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  </span>
+<span id="cb1-8"><a href="#cb1-8"></a>  // [tuple.rel], relational operators</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    constexpr bool operator==(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   constexpr bool operator!=(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   constexpr bool operator&gt;(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   constexpr bool operator&lt;=(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="st">-   constexpr bool operator&gt;=(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="va">+ template&lt;class... TTypes, class... UTypes&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="va">+   constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="va">+     operator&lt;=&gt;(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a></span>
+<span id="cb1-25"><a href="#cb1-25"></a>  [...]</span>
+<span id="cb1-26"><a href="#cb1-26"></a>}  </span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.5.3.8 [tuple.rel]:</p>
+<blockquote>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> TTypes, <span class="kw">class</span><span class="op">...</span> UTypes<span class="op">&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> tuple<span class="op">&lt;</span>TTypes<span class="op">...&gt;&amp;</span> t, <span class="kw">const</span> tuple<span class="op">&lt;</span>UTypes<span class="op">...&gt;&amp;</span> u<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Requires</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">==</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">)</span></code> is a valid expression returning a type that is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">==</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">)</span></code> for all <code class="sourceCode cpp">i</code>, otherwise <code class="sourceCode cpp"><span class="kw">false</span></code>. For any two zero-length tuples <code class="sourceCode cpp">e</code> and <code class="sourceCode cpp">f</code>, <code class="sourceCode cpp">e <span class="op">==</span> f</code> returns <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: The elementary comparisons are performed in order from the zeroth index upwards. No comparisons or element accesses are performed after the first equality comparison that evaluates to <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb35-2"><a href="#cb35-2"></a>  constexpr bool operator!=(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>t <span class="op">==</span> u<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb36-1"><a href="#cb36-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb36-2"><a href="#cb36-2"></a>  constexpr bool operator&lt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Requires</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, both <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">&lt;</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">)</span></code> and <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">)</span> <span class="op">&lt;</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span></code> are valid expressions returning types that are convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: The result of a lexicographical comparison between <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>. The result is defined as: <code class="sourceCode cpp"><span class="op">(</span><span class="dt">bool</span><span class="op">)(</span>get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">&lt;</span> get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>u<span class="op">))</span> <span class="op">||</span> <span class="op">(!(</span><span class="dt">bool</span><span class="op">)(</span>get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>u<span class="op">)</span> <span class="op">&lt;</span> get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>t<span class="op">))</span> <span class="op">&amp;&amp;</span></code><code>t<sub>tail</sub> &lt; u<sub>tail</sub></code><code class="sourceCode cpp"><span class="op">)</span></code>, where <code>r<sub>tail</sub></code> for some tuple <code class="sourceCode cpp">r</code> is a tuple containing all but the first element of <code class="sourceCode cpp">r</code>. For any two zero-length tuples <code class="sourceCode cpp">e</code> and <code class="sourceCode cpp">f</code>, <code class="sourceCode cpp">e <span class="op">&lt;</span> f</code> returns <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb37-2"><a href="#cb37-2"></a>  constexpr bool operator&gt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">u <span class="op">&lt;</span> t</code>.</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  constexpr bool operator&lt;=(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>u <span class="op">&lt;</span> t<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb39-1"><a href="#cb39-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb39-2"><a href="#cb39-2"></a>  constexpr bool operator&gt;=(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>t <span class="op">&lt;</span> u<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    operator&lt;=&gt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Requires</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, both <code><em>synth-3way</em></code><code class="sourceCode cpp"><span class="op">(</span>get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span>, get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">))</span></code> is a valid expression. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Effects</em>: Performs a lexicographical comparison between <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>. For any two zero-length tuples <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>, <code class="sourceCode cpp">t <span class="op">&lt;=&gt;</span> u</code> returns <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>. Otherwise, equivalent to:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a>auto c = <em>synth-3way</em>(get&lt;0&gt;(t), get&lt;0&gt;(u));</span>
+<span id="cb1-2"><a href="#cb1-2"></a>return (c != 0) ? c : (t<sub>tail</sub> &lt;=&gt; u<sub>tail</sub>);</span></code></pre></div>
+</blockquote>
+<p>where <code>r<sub>tail</sub></code> for some tuple <code class="sourceCode cpp">r</code> is a tuple containing all but the first element of <code class="sourceCode cpp">r</code>.</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> [<em>Note</em>: The above <span class="rm" style="color: #bf0303"><del>definitions for comparison functions do not require</del></span> <span class="addu">definition does not require</span> <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code> are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the comparison. —<em>end note</em>]</p>
+</blockquote>
+<p>Change 20.6.2 [optional.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  // [optional.optional], class template optional</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  template&lt;class T&gt;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    class optional;</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>  // [optional.nullopt], no-value state indicator</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  struct nullopt_t{see below};</span>
+<span id="cb1-8"><a href="#cb1-8"></a>  inline constexpr nullopt_t nullopt(unspecified);</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>  // [optional.bad.access], class bad_optional_access</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  class bad_optional_access;</span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a>  // [optional.relops], relational operators</span>
+<span id="cb1-14"><a href="#cb1-14"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    constexpr bool operator==(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-16"><a href="#cb1-16"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    constexpr bool operator!=(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-18"><a href="#cb1-18"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    constexpr bool operator&lt;(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-20"><a href="#cb1-20"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    constexpr bool operator&gt;(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-22"><a href="#cb1-22"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-23"><a href="#cb1-23"></a>    constexpr bool operator&lt;=(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-24"><a href="#cb1-24"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb1-25"><a href="#cb1-25"></a>    constexpr bool operator&gt;=(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="va">+ template&lt;class T, ThreeWayComparableWith&lt;T&gt; U&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="va">+   constexpr compare_three_way_result_t&lt;T,U&gt;</span></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="va">+     operator&lt;=&gt;(const optional&lt;T&gt;&amp;, const optional&lt;U&gt;&amp;);</span></span>
+<span id="cb1-29"><a href="#cb1-29"></a></span>
+<span id="cb1-30"><a href="#cb1-30"></a>  // [optional.nullops], comparison with nullopt</span>
+<span id="cb1-31"><a href="#cb1-31"></a>  template&lt;class T&gt; constexpr bool operator==(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span>
+<span id="cb1-32"><a href="#cb1-32"></a><span class="st">- template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a><span class="st">- template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="st">- template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-35"><a href="#cb1-35"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-36"><a href="#cb1-36"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-37"><a href="#cb1-37"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-39"><a href="#cb1-39"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-40"><a href="#cb1-40"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="st">- template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;&amp;) noexcept;</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="va">+ template&lt;class T&gt; constexpr strong_ordering operator&lt;=&gt;(const optional&lt;T&gt;&amp;, nullopt_t) noexcept;</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a></span>
+<span id="cb1-45"><a href="#cb1-45"></a>  // [optional.comp.with.t], comparison with T</span>
+<span id="cb1-46"><a href="#cb1-46"></a>  template&lt;class T, class U&gt; constexpr bool operator==(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-47"><a href="#cb1-47"></a>  template&lt;class T, class U&gt; constexpr bool operator==(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-48"><a href="#cb1-48"></a>  template&lt;class T, class U&gt; constexpr bool operator!=(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-49"><a href="#cb1-49"></a>  template&lt;class T, class U&gt; constexpr bool operator!=(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-50"><a href="#cb1-50"></a>  template&lt;class T, class U&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-51"><a href="#cb1-51"></a>  template&lt;class T, class U&gt; constexpr bool operator&lt;(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-52"><a href="#cb1-52"></a>  template&lt;class T, class U&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-53"><a href="#cb1-53"></a>  template&lt;class T, class U&gt; constexpr bool operator&gt;(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-54"><a href="#cb1-54"></a>  template&lt;class T, class U&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-55"><a href="#cb1-55"></a>  template&lt;class T, class U&gt; constexpr bool operator&lt;=(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-56"><a href="#cb1-56"></a>  template&lt;class T, class U&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&amp;, const U&amp;);</span>
+<span id="cb1-57"><a href="#cb1-57"></a>  template&lt;class T, class U&gt; constexpr bool operator&gt;=(const T&amp;, const optional&lt;U&gt;&amp;);</span>
+<span id="cb1-58"><a href="#cb1-58"></a><span class="va">+ template&lt;class T, ThreeWayComparableWith&lt;T&gt; U&gt;</span></span>
+<span id="cb1-59"><a href="#cb1-59"></a><span class="va">+   constexpr compare_three_way_result_t&lt;T,U&gt;</span></span>
+<span id="cb1-60"><a href="#cb1-60"></a><span class="va">+     operator&lt;=&gt;(const optional&lt;T&gt;&amp;, const U&amp;);</span></span>
+<span id="cb1-61"><a href="#cb1-61"></a></span>
+<span id="cb1-62"><a href="#cb1-62"></a>  // [optional.specalg], specialized algorithms</span>
+<span id="cb1-63"><a href="#cb1-63"></a>  template&lt;class T&gt;</span>
+<span id="cb1-64"><a href="#cb1-64"></a>    void swap(optional&lt;T&gt;&amp;, optional&lt;T&gt;&amp;) noexcept(<em>see below</em>);</span>
+<span id="cb1-65"><a href="#cb1-65"></a>    </span>
+<span id="cb1-66"><a href="#cb1-66"></a>  [...]</span>
+<span id="cb1-67"><a href="#cb1-67"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add to 20.6.6 [optional.relops]:</p>
+<blockquote>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> optional<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> x, <span class="kw">const</span> optional<span class="op">&lt;</span>U<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">16</a></span> <em>Requires</em>: The expression <code class="sourceCode cpp"><span class="op">*</span>x <span class="op">&gt;=</span> <span class="op">*</span>y</code> shall be well-formed and its result shall be convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">17</a></span> <em>Returns</em>: If <code class="sourceCode cpp"><span class="op">!</span>y</code>, <code class="sourceCode cpp"><span class="kw">true</span></code>; otherwise, if <code class="sourceCode cpp"><span class="op">!</span>x</code>, <code class="sourceCode cpp"><span class="kw">false</span></code>; otherwise <code class="sourceCode cpp"><span class="op">*</span>x <span class="op">&gt;=</span> <span class="op">*</span>y</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">18</a></span> <em>Remarks</em>: Specializations of this function template for which <code class="sourceCode cpp"><span class="op">*</span>x <span class="op">&gt;=</span> <span class="op">*</span>y</code> is a core constant expression shall be constexpr functions.</p>
+<div class="addu">
+<div class="sourceCode" id="cb41"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb41-1"><a href="#cb41-1"></a>template&lt;class T, ThreeWayComparableWith&lt;T&gt; U&gt;</span>
+<span id="cb41-2"><a href="#cb41-2"></a>  constexpr compare_three_way_result_t&lt;T,U&gt;</span>
+<span id="cb41-3"><a href="#cb41-3"></a>    operator&lt;=&gt;(const optional&lt;T&gt;&amp; x, const optional&lt;U&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">19</a></span> <em>Returns</em>: If <code class="sourceCode cpp">x <span class="op">&amp;&amp;</span> y</code>, <code class="sourceCode cpp"><span class="op">*</span>x <span class="op">&lt;=&gt;</span> <span class="op">*</span>y</code>; otherwise <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="dt">bool</span><span class="op">(</span>y<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">20</a></span> <em>Remarks</em>: Specializations of this function template for which <code class="sourceCode cpp"><span class="op">*</span>x <span class="op">&lt;=&gt;</span> <span class="op">*</span>y</code> is a core constant expression shall be constexpr functions.</p>
+</div>
+</blockquote>
+<p>Change 20.6.7 [optional.nullops], removing most of the comparisons:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> optional<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> x, nullopt_t<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="rm" style="color: #bf0303"><del>template&lt;class T&gt; constexpr bool operator==(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</del></span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb42"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb42-1"><a href="#cb42-1"></a>template&lt;class T&gt; constexpr strong_ordering operator&lt;=&gt;(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="kw">false</span></code>.</p>
+</div>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>template&lt;class T&gt; constexpr bool operator!=(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span>
+<span id="cb43-2"><a href="#cb43-2"></a>template&lt;class T&gt; constexpr bool operator!=(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb44-1"><a href="#cb44-1"></a>template&lt;class T&gt; constexpr bool operator&lt;(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb45-1"><a href="#cb45-1"></a>template&lt;class T&gt; constexpr bool operator&lt;(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb46-1"><a href="#cb46-1"></a>template&lt;class T&gt; constexpr bool operator&gt;(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>template&lt;class T&gt; constexpr bool operator&gt;(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>template&lt;class T&gt; constexpr bool operator&lt;=(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb49-1"><a href="#cb49-1"></a>template&lt;class T&gt; constexpr bool operator&lt;=(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1"></a>template&lt;class T&gt; constexpr bool operator&gt;=(const optional&lt;T&gt;&amp; x, nullopt_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>template&lt;class T&gt; constexpr bool operator&gt;=(nullopt_t, const optional&lt;T&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
+</div>
+</blockquote>
+<p>Add to 20.6.8 [optional.comp.with.t]:</p>
+<blockquote>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> T<span class="op">&amp;</span> v, <span class="kw">const</span> optional<span class="op">&lt;</span>U<span class="op">&gt;&amp;</span> x<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">23</a></span> <em>Requires</em>: The expression <code class="sourceCode cpp">v <span class="op">&gt;=</span> <span class="op">*</span>x</code> shall be well-formed and its result shall be convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">24</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span> <span class="op">?</span> v <span class="op">&gt;=</span> <span class="op">*</span>x <span class="op">:</span> <span class="kw">true</span>;</code></p>
+<div class="addu">
+<div class="sourceCode" id="cb53"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>template&lt;class T, ThreeWayComparableWith&lt;T&gt; U&gt;</span>
+<span id="cb53-2"><a href="#cb53-2"></a>  constexpr compare_three_way_result_t&lt;T,U&gt;</span>
+<span id="cb53-3"><a href="#cb53-3"></a>    operator&lt;=&gt;(const optional&lt;T&gt;&amp; x, const U&amp; v);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">25</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <span class="dt">bool</span><span class="op">(</span>x<span class="op">)</span> <span class="op">?</span> <span class="op">*</span>x <span class="op">&lt;=&gt;</span> v <span class="op">:</span> strong_ordering<span class="op">::</span>less;</code></p>
+</div>
+</blockquote>
+<p>Change 20.7.2 [variant.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb54-1"><a href="#cb54-1"></a>namespace std {</span>
+<span id="cb54-2"><a href="#cb54-2"></a>  // [variant.variant], class template variant</span>
+<span id="cb54-3"><a href="#cb54-3"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-4"><a href="#cb54-4"></a>    class variant;</span>
+<span id="cb54-5"><a href="#cb54-5"></a></span>
+<span id="cb54-6"><a href="#cb54-6"></a>  [...]</span>
+<span id="cb54-7"><a href="#cb54-7"></a>  </span>
+<span id="cb54-8"><a href="#cb54-8"></a>  // [variant.relops], relational operators</span>
+<span id="cb54-9"><a href="#cb54-9"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-10"><a href="#cb54-10"></a>    constexpr bool operator==(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-11"><a href="#cb54-11"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-12"><a href="#cb54-12"></a>    constexpr bool operator!=(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-13"><a href="#cb54-13"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-14"><a href="#cb54-14"></a>    constexpr bool operator&lt;(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-15"><a href="#cb54-15"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-16"><a href="#cb54-16"></a>    constexpr bool operator&gt;(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-17"><a href="#cb54-17"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-18"><a href="#cb54-18"></a>    constexpr bool operator&lt;=(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-19"><a href="#cb54-19"></a>  template&lt;class... Types&gt;</span>
+<span id="cb54-20"><a href="#cb54-20"></a>    constexpr bool operator&gt;=(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span>
+<span id="cb54-21"><a href="#cb54-21"></a><span class="va">+ template&lt;class... Types&gt; requires (ThreeWayComparable&lt;Types&gt; &amp;&amp; ...)  </span></span>
+<span id="cb54-22"><a href="#cb54-22"></a><span class="va">+   constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</span></span>
+<span id="cb54-23"><a href="#cb54-23"></a><span class="va">+     operator&lt;=&gt;(const variant&lt;Types...&gt;&amp;, const variant&lt;Types...&gt;&amp;);</span></span>
+<span id="cb54-24"><a href="#cb54-24"></a>  </span>
+<span id="cb54-25"><a href="#cb54-25"></a>  // [variant.visit], visitation</span>
+<span id="cb54-26"><a href="#cb54-26"></a>  template&lt;class Visitor, class... Variants&gt;</span>
+<span id="cb54-27"><a href="#cb54-27"></a>    constexpr see below visit(Visitor&amp;&amp;, Variants&amp;&amp;...);</span>
+<span id="cb54-28"><a href="#cb54-28"></a>  template&lt;class R, class Visitor, class... Variants&gt;</span>
+<span id="cb54-29"><a href="#cb54-29"></a>    constexpr R visit(Visitor&amp;&amp;, Variants&amp;&amp;...);</span>
+<span id="cb54-30"><a href="#cb54-30"></a></span>
+<span id="cb54-31"><a href="#cb54-31"></a>  // [variant.monostate], class monostate</span>
+<span id="cb54-32"><a href="#cb54-32"></a>  struct monostate;</span>
+<span id="cb54-33"><a href="#cb54-33"></a></span>
+<span id="cb54-34"><a href="#cb54-34"></a>  // [variant.monostate.relops], monostate relational operators</span>
+<span id="cb54-35"><a href="#cb54-35"></a>  constexpr bool operator==(monostate, monostate) noexcept;</span>
+<span id="cb54-36"><a href="#cb54-36"></a><span class="st">- constexpr bool operator!=(monostate, monostate) noexcept;</span></span>
+<span id="cb54-37"><a href="#cb54-37"></a><span class="st">- constexpr bool operator&lt;(monostate, monostate) noexcept;</span></span>
+<span id="cb54-38"><a href="#cb54-38"></a><span class="st">- constexpr bool operator&gt;(monostate, monostate) noexcept;</span></span>
+<span id="cb54-39"><a href="#cb54-39"></a><span class="st">- constexpr bool operator&lt;=(monostate, monostate) noexcept;</span></span>
+<span id="cb54-40"><a href="#cb54-40"></a><span class="st">- constexpr bool operator&gt;=(monostate, monostate) noexcept;</span></span>
+<span id="cb54-41"><a href="#cb54-41"></a><span class="va">+ constexpr strong_ordering operator&lt;=&gt;(monostate, monostate) noexcept;</span></span>
+<span id="cb54-42"><a href="#cb54-42"></a>    </span>
+<span id="cb54-43"><a href="#cb54-43"></a>  [...]</span>
+<span id="cb54-44"><a href="#cb54-44"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add to 20.7.6 [variant.relops]:</p>
+<blockquote>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb55-2"><a href="#cb55-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> variant<span class="op">&lt;</span>Types<span class="op">...&gt;&amp;</span> v, <span class="kw">const</span> variant<span class="op">&lt;</span>Types<span class="op">...&gt;&amp;</span> w<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Requires</em>: <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>v<span class="op">)</span> <span class="op">&gt;=</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>w<span class="op">)</span></code> is a valid expression returning a type that is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>, for all <code class="sourceCode cpp">i</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> <em>Returns</em>: If <code class="sourceCode cpp">w<span class="op">.</span>valueless_by_exception<span class="op">()</span></code>, <code class="sourceCode cpp"><span class="kw">true</span></code>; otherwise if <code class="sourceCode cpp">v<span class="op">.</span>valueless_by_exception<span class="op">()</span></code>, <code class="sourceCode cpp"><span class="kw">false</span></code>; otherwise, if <code class="sourceCode cpp">v<span class="op">.</span>index<span class="op">()</span> <span class="op">&gt;</span> w<span class="op">.</span>index<span class="op">()</span></code>, <code class="sourceCode cpp"><span class="kw">true</span></code>; otherwise if <code class="sourceCode cpp">v<span class="op">.</span>index<span class="op">()</span> <span class="op">&lt;</span> w<span class="op">.</span>index<span class="op">()</span></code>, <code class="sourceCode cpp"><span class="kw">false</span></code>; otherwise <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>v<span class="op">)</span> <span class="op">&gt;=</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>w<span class="op">)</span></code> with <code class="sourceCode cpp">i</code> being <code class="sourceCode cpp">v<span class="op">.</span>index<span class="op">()</span></code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb56"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb56-1"><a href="#cb56-1"></a>template&lt;class... Types&gt; requires (ThreeWayComparable&lt;Types&gt; &amp;&amp; ...)  </span>
+<span id="cb56-2"><a href="#cb56-2"></a>  constexpr common_comparison_category_t&lt;compare_three_way_result_t&lt;Types&gt;...&gt;</span>
+<span id="cb56-3"><a href="#cb56-3"></a>    operator&lt;=&gt;(const variant&lt;Types...&gt;&amp; v, const variant&lt;Types...&gt;&amp; w);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">13</a></span> <em>Returns</em>: Let <code class="sourceCode cpp">c</code> be <code class="sourceCode cpp"><span class="op">(</span>v<span class="op">.</span>index<span class="op">()</span> <span class="op">+</span> <span class="dv">1</span><span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="op">(</span>w<span class="op">.</span>index<span class="op">()</span> <span class="op">+</span> <span class="dv">1</span><span class="op">)</span></code>. If <code class="sourceCode cpp">c <span class="op">!=</span> <span class="dv">0</span></code>, <code class="sourceCode cpp">c</code>. Otherwise, <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;(</span>v<span class="op">)</span> <span class="op">&lt;=&gt;</span> get<span class="op">&lt;</span>i<span class="op">&gt;(</span>w<span class="op">)</span></code> with <code class="sourceCode cpp">i</code> being <code class="sourceCode cpp">v<span class="op">.</span>index<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
+<p>Simplify 20.7.9 [variant.monostate.relops]:</p>
+<blockquote>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>monostate, monostate<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">true</span>; <span class="op">}</span></span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb58"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb58-1"><a href="#cb58-1"></a>constexpr bool operator!=(monostate, monostate) noexcept { return false; }</span>
+<span id="cb58-2"><a href="#cb58-2"></a>constexpr bool operator&lt;(monostate, monostate) noexcept { return false; }</span>
+<span id="cb58-3"><a href="#cb58-3"></a>constexpr bool operator&gt;(monostate, monostate) noexcept { return false; }</span>
+<span id="cb58-4"><a href="#cb58-4"></a>constexpr bool operator&lt;=(monostate, monostate) noexcept { return true; }</span>
+<span id="cb58-5"><a href="#cb58-5"></a>constexpr bool operator&gt;=(monostate, monostate) noexcept { return true; }</span></code></pre></div>
+
+</div>
+<div class="addu">
+<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a>constexpr strong_ordering operator&lt;=&gt;(monostate, monostate) noexcept { return strong_ordering::equal; }</span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> [<em>Note</em>: monostate objects have only a single state; they thus always compare equal. —<em>end note</em>]</p>
+</blockquote>
+<p>Change 20.9.2 [template.bitset]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb60-1"><a href="#cb60-1"></a>namespace std {</span>
+<span id="cb60-2"><a href="#cb60-2"></a>  template&lt;size_t N&gt; class bitset {</span>
+<span id="cb60-3"><a href="#cb60-3"></a>  public:</span>
+<span id="cb60-4"><a href="#cb60-4"></a>    [...]</span>
+<span id="cb60-5"><a href="#cb60-5"></a>    size_t count() const noexcept;</span>
+<span id="cb60-6"><a href="#cb60-6"></a>    constexpr size_t size() const noexcept;</span>
+<span id="cb60-7"><a href="#cb60-7"></a>    bool operator==(const bitset&lt;N&gt;&amp; rhs) const noexcept;</span>
+<span id="cb60-8"><a href="#cb60-8"></a><span class="st">-   bool operator!=(const bitset&lt;N&gt;&amp; rhs) const noexcept;</span></span>
+<span id="cb60-9"><a href="#cb60-9"></a>    bool test(size_t pos) const;</span>
+<span id="cb60-10"><a href="#cb60-10"></a>    [...]   </span>
+<span id="cb60-11"><a href="#cb60-11"></a>  };</span>
+<span id="cb60-12"><a href="#cb60-12"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.9.2.2 [bitset.members]:</p>
+<blockquote>
+<div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> bitset<span class="op">&lt;</span>N<span class="op">&gt;&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">36</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if the value of each bit in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> equals the value of the corresponding bit in <code class="sourceCode cpp">rhs</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>bool operator!=(const bitset&lt;N&gt;&amp; rhs) const noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">37</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp"><span class="op">!(*</span><span class="kw">this</span> <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.10.2 [memory.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb63-1"><a href="#cb63-1"></a>namespace std{</span>
+<span id="cb63-2"><a href="#cb63-2"></a>  [...]</span>
+<span id="cb63-3"><a href="#cb63-3"></a></span>
+<span id="cb63-4"><a href="#cb63-4"></a>  // [default.allocator], the default allocator</span>
+<span id="cb63-5"><a href="#cb63-5"></a>  template&lt;class T&gt; class allocator;</span>
+<span id="cb63-6"><a href="#cb63-6"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb63-7"><a href="#cb63-7"></a>    bool operator==(const allocator&lt;T&gt;&amp;, const allocator&lt;U&gt;&amp;) noexcept;</span>
+<span id="cb63-8"><a href="#cb63-8"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-9"><a href="#cb63-9"></a><span class="st">-   bool operator!=(const allocator&lt;T&gt;&amp;, const allocator&lt;U&gt;&amp;) noexcept;  </span></span>
+<span id="cb63-10"><a href="#cb63-10"></a></span>
+<span id="cb63-11"><a href="#cb63-11"></a>  [...]</span>
+<span id="cb63-12"><a href="#cb63-12"></a>  </span>
+<span id="cb63-13"><a href="#cb63-13"></a>  // [unique.ptr], class template unique_ptr</span>
+<span id="cb63-14"><a href="#cb63-14"></a>  [...]</span>
+<span id="cb63-15"><a href="#cb63-15"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-16"><a href="#cb63-16"></a>    void swap(unique_ptr&lt;T, D&gt;&amp; x, unique_ptr&lt;T, D&gt;&amp; y) noexcept;</span>
+<span id="cb63-17"><a href="#cb63-17"></a></span>
+<span id="cb63-18"><a href="#cb63-18"></a>  template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb63-19"><a href="#cb63-19"></a>    bool operator==(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span>
+<span id="cb63-20"><a href="#cb63-20"></a><span class="st">- template&lt;class T1, class D1, class T2, class D2&gt;</span></span>
+<span id="cb63-21"><a href="#cb63-21"></a><span class="st">-   bool operator!=(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span></span>
+<span id="cb63-22"><a href="#cb63-22"></a>  template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb63-23"><a href="#cb63-23"></a>    bool operator&lt;(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span>
+<span id="cb63-24"><a href="#cb63-24"></a>  template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb63-25"><a href="#cb63-25"></a>    bool operator&gt;(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span>
+<span id="cb63-26"><a href="#cb63-26"></a>  template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb63-27"><a href="#cb63-27"></a>    bool operator&lt;=(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span>
+<span id="cb63-28"><a href="#cb63-28"></a>  template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb63-29"><a href="#cb63-29"></a>    bool operator&gt;=(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span>
+<span id="cb63-30"><a href="#cb63-30"></a><span class="va">+ template&lt;class T1, class D1, class T2, class D2&gt;</span></span>
+<span id="cb63-31"><a href="#cb63-31"></a><span class="va">+     requires ThreeWayComparableWith&lt;typename unique_ptr&lt;T1, D1&gt;::pointer,</span></span>
+<span id="cb63-32"><a href="#cb63-32"></a><span class="va">+                                     typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</span></span>
+<span id="cb63-33"><a href="#cb63-33"></a><span class="va">+   compare_three_way_result_t&lt;typename unique_ptr&lt;T1, D1&gt;::pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</span></span>
+<span id="cb63-34"><a href="#cb63-34"></a><span class="va">+     operator&lt;=&gt;(const unique_ptr&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span></span>
+<span id="cb63-35"><a href="#cb63-35"></a></span>
+<span id="cb63-36"><a href="#cb63-36"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-37"><a href="#cb63-37"></a>    bool operator==(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t) noexcept;</span>
+<span id="cb63-38"><a href="#cb63-38"></a><span class="st">- template&lt;class T, class D&gt;</span></span>
+<span id="cb63-39"><a href="#cb63-39"></a><span class="st">-   bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-40"><a href="#cb63-40"></a><span class="st">- template&lt;class T, class D&gt;</span></span>
+<span id="cb63-41"><a href="#cb63-41"></a><span class="st">-   bool operator!=(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-42"><a href="#cb63-42"></a><span class="st">- template&lt;class T, class D&gt;</span></span>
+<span id="cb63-43"><a href="#cb63-43"></a><span class="st">-   bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-44"><a href="#cb63-44"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-45"><a href="#cb63-45"></a>    bool operator&lt;(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span>
+<span id="cb63-46"><a href="#cb63-46"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-47"><a href="#cb63-47"></a>    bool operator&lt;(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y);</span>
+<span id="cb63-48"><a href="#cb63-48"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-49"><a href="#cb63-49"></a>    bool operator&gt;(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span>
+<span id="cb63-50"><a href="#cb63-50"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-51"><a href="#cb63-51"></a>    bool operator&gt;(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y);</span>
+<span id="cb63-52"><a href="#cb63-52"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-53"><a href="#cb63-53"></a>    bool operator&lt;=(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span>
+<span id="cb63-54"><a href="#cb63-54"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-55"><a href="#cb63-55"></a>    bool operator&lt;=(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y);</span>
+<span id="cb63-56"><a href="#cb63-56"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-57"><a href="#cb63-57"></a>    bool operator&gt;=(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span>
+<span id="cb63-58"><a href="#cb63-58"></a>  template&lt;class T, class D&gt;</span>
+<span id="cb63-59"><a href="#cb63-59"></a>    bool operator&gt;=(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; y);</span>
+<span id="cb63-60"><a href="#cb63-60"></a><span class="va">+ template&lt;class T, class D&gt;</span></span>
+<span id="cb63-61"><a href="#cb63-61"></a><span class="va">+     requires ThreeWayComparableWith&lt;typename unique_ptr&lt;T, D&gt;::pointer, nullptr_t&gt;</span></span>
+<span id="cb63-62"><a href="#cb63-62"></a><span class="va">+   compare_three_way_result_t&lt;typename unique_ptr&lt;T, D&gt;::pointer, nullptr_t&gt;</span></span>
+<span id="cb63-63"><a href="#cb63-63"></a><span class="va">+     operator&lt;=&gt;(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span></span>
+<span id="cb63-64"><a href="#cb63-64"></a></span>
+<span id="cb63-65"><a href="#cb63-65"></a>  template&lt;class E, class T, class Y, class D&gt;</span>
+<span id="cb63-66"><a href="#cb63-66"></a>    basic_ostream&lt;E, T&gt;&amp; operator&lt;&lt;(basic_ostream&lt;E, T&gt;&amp; os, const unique_ptr&lt;Y, D&gt;&amp; p);  </span>
+<span id="cb63-67"><a href="#cb63-67"></a>    </span>
+<span id="cb63-68"><a href="#cb63-68"></a>  [...]</span>
+<span id="cb63-69"><a href="#cb63-69"></a></span>
+<span id="cb63-70"><a href="#cb63-70"></a></span>
+<span id="cb63-71"><a href="#cb63-71"></a>  // [util.smartptr.shared.cmp], shared_ptr comparisons</span>
+<span id="cb63-72"><a href="#cb63-72"></a>  template&lt;class T, class U&gt;</span>
+<span id="cb63-73"><a href="#cb63-73"></a>    bool operator==(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span>
+<span id="cb63-74"><a href="#cb63-74"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-75"><a href="#cb63-75"></a><span class="st">-   bool operator!=(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-76"><a href="#cb63-76"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-77"><a href="#cb63-77"></a><span class="st">-   bool operator&lt;(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-78"><a href="#cb63-78"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-79"><a href="#cb63-79"></a><span class="st">-   bool operator&gt;(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-80"><a href="#cb63-80"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-81"><a href="#cb63-81"></a><span class="st">-   bool operator&lt;=(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-82"><a href="#cb63-82"></a><span class="st">- template&lt;class T, class U&gt;</span></span>
+<span id="cb63-83"><a href="#cb63-83"></a><span class="st">-   bool operator&gt;=(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-84"><a href="#cb63-84"></a><span class="va">+ template&lt;class T, class U&gt;</span></span>
+<span id="cb63-85"><a href="#cb63-85"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></span>
+<span id="cb63-86"><a href="#cb63-86"></a></span>
+<span id="cb63-87"><a href="#cb63-87"></a>  template&lt;class T&gt;</span>
+<span id="cb63-88"><a href="#cb63-88"></a>    bool operator==(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span>
+<span id="cb63-89"><a href="#cb63-89"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-90"><a href="#cb63-90"></a><span class="st">-   bool operator==(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-91"><a href="#cb63-91"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-92"><a href="#cb63-92"></a><span class="st">-   bool operator!=(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-93"><a href="#cb63-93"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-94"><a href="#cb63-94"></a><span class="st">-   bool operator!=(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-95"><a href="#cb63-95"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-96"><a href="#cb63-96"></a><span class="st">-   bool operator&lt;(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-97"><a href="#cb63-97"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-98"><a href="#cb63-98"></a><span class="st">-   bool operator&lt;(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-99"><a href="#cb63-99"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-100"><a href="#cb63-100"></a><span class="st">-   bool operator&gt;(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-101"><a href="#cb63-101"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-102"><a href="#cb63-102"></a><span class="st">-   bool operator&gt;(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-103"><a href="#cb63-103"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-104"><a href="#cb63-104"></a><span class="st">-   bool operator&lt;=(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-105"><a href="#cb63-105"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-106"><a href="#cb63-106"></a><span class="st">-   bool operator&lt;=(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;</span></span>
+<span id="cb63-107"><a href="#cb63-107"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-108"><a href="#cb63-108"></a><span class="st">-   bool operator&gt;=(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-109"><a href="#cb63-109"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb63-110"><a href="#cb63-110"></a><span class="st">-   bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;&amp; y) noexcept;  </span></span>
+<span id="cb63-111"><a href="#cb63-111"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb63-112"><a href="#cb63-112"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const shared_ptr&lt;T&gt;&amp; x, nullptr_t) noexcept;</span></span>
+<span id="cb63-113"><a href="#cb63-113"></a></span>
+<span id="cb63-114"><a href="#cb63-114"></a>  [...]</span>
+<span id="cb63-115"><a href="#cb63-115"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove from 20.10.10.2 [allocator.globals]:</p>
+<blockquote>
+<div class="sourceCode" id="cb64"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb64-1"><a href="#cb64-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb64-2"><a href="#cb64-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> allocator<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span>, <span class="kw">const</span> allocator<span class="op">&lt;</span>U<span class="op">&gt;&amp;)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb65"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb65-1"><a href="#cb65-1"></a>template&lt;class T, class U&gt;</span>
+<span id="cb65-2"><a href="#cb65-2"></a>  bool operator!=(const allocator&lt;T&gt;&amp;, const allocator&lt;U&gt;&amp;) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.11.1.5 [unique.ptr.special]:</p>
+<blockquote>
+<div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T1, <span class="kw">class</span> D1, <span class="kw">class</span> T2, <span class="kw">class</span> D2<span class="op">&gt;</span></span>
+<span id="cb66-2"><a href="#cb66-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T1, D1<span class="op">&gt;&amp;</span> x, <span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T2, D2<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>get<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb67"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb67-1"><a href="#cb67-1"></a>template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb67-2"><a href="#cb67-2"></a>  bool operator!=(const unique_ptr&lt;T1, D1&gt;&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">!=</span> y<span class="op">.</span>get<span class="op">()</span></code>.</p>
+</div>
+<p>[…]</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T1, <span class="kw">class</span> D1, <span class="kw">class</span> T2, <span class="kw">class</span> D2<span class="op">&gt;</span></span>
+<span id="cb68-2"><a href="#cb68-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T1, D1<span class="op">&gt;&amp;</span> x, <span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T2, D2<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb69"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb69-1"><a href="#cb69-1"></a>template&lt;class T1, class D1, class T2, class D2&gt;</span>
+<span id="cb69-2"><a href="#cb69-2"></a>    requires ThreeWayComparableWith&lt;typename unique_ptr&lt;T1, D1&gt;::pointer,</span>
+<span id="cb69-3"><a href="#cb69-3"></a>                                    typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</span>
+<span id="cb69-4"><a href="#cb69-4"></a>  compare_three_way_result_t&lt;typename unique_ptr&lt;T1, D1&gt;::pointer, typename unique_ptr&lt;T2, D2&gt;::pointer&gt;</span>
+<span id="cb69-5"><a href="#cb69-5"></a>    operator&lt;=&gt;(const unique_ptr&amp; x, const unique_ptr&lt;T2, D2&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">10*</a></span> <em>Returns</em>: <code class="sourceCode cpp">compare_three_way<span class="op">()(</span>x<span class="op">.</span>get<span class="op">()</span>, y<span class="op">.</span>get<span class="op">())</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> D<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T, D<span class="op">&gt;&amp;</span> x, nullptr_t<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="rm" style="color: #bf0303"><del>template&lt;class T, class D&gt;</del></span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="rm" style="color: #bf0303"><del>bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; x) noexcept;</del></span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> Returns: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>template&lt;class T, class D&gt;</span>
+<span id="cb70-2"><a href="#cb70-2"></a>  bool operator!=(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t) noexcept;</span>
+<span id="cb70-3"><a href="#cb70-3"></a>template&lt;class T, class D&gt;</span>
+<span id="cb70-4"><a href="#cb70-4"></a>  bool operator!=(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; x) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">(</span><span class="dt">bool</span><span class="op">)</span>x</code>.</p>
+</div>
+<p>[…]</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> D<span class="op">&gt;</span></span>
+<span id="cb71-2"><a href="#cb71-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T, D<span class="op">&gt;&amp;</span> x, nullptr_t<span class="op">)</span>;</span>
+<span id="cb71-3"><a href="#cb71-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> D<span class="op">&gt;</span></span>
+<span id="cb71-4"><a href="#cb71-4"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span>nullptr_t, <span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T, D<span class="op">&gt;&amp;</span> x<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">17</a></span> <em>Returns</em>: The first function template returns <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> <span class="kw">nullptr</span><span class="op">)</span></code>. The second function template returns <code class="sourceCode cpp"><span class="op">!(</span><span class="kw">nullptr</span> <span class="op">&lt;</span> x<span class="op">)</span></code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template&lt;class T, class D&gt;</span>
+<span id="cb72-2"><a href="#cb72-2"></a>    requires ThreeWayComparableWith&lt;typename unique_ptr&lt;T, D&gt;::pointer, nullptr_t&gt;</span>
+<span id="cb72-3"><a href="#cb72-3"></a>  compare_three_way_result_t&lt;typename unique_ptr&lt;T, D&gt;::pointer, nullptr_t&gt;</span>
+<span id="cb72-4"><a href="#cb72-4"></a>    operator&lt;=&gt;(const unique_ptr&lt;T, D&gt;&amp; x, nullptr_t);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">18</a></span> <em>Returns</em>: <code class="sourceCode cpp">compare_three_way<span class="op">()(</span>x<span class="op">.</span>get<span class="op">()</span>, <span class="kw">nullptr</span><span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.11.3.7 [util.smartptr.shared.cmp]:</p>
+<blockquote>
+<div class="sourceCode" id="cb73"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb73-2"><a href="#cb73-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> shared_ptr<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> a, <span class="kw">const</span> shared_ptr<span class="op">&lt;</span>U<span class="op">&gt;&amp;</span> b<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">a<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>get<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a>template&lt;class T, class U&gt;</span>
+<span id="cb74-2"><a href="#cb74-2"></a>  bool operator&lt;(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">less<span class="op">&lt;&gt;()(</span>a<span class="op">.</span>get<span class="op">()</span>, b<span class="op">.</span>get<span class="op">())</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> [<em>Note</em>: Defining a comparison function allows <code class="sourceCode cpp">shared_ptr</code> objects to be used as keys in associative containers. —<em>end note</em>]</p>
+</div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> shared_ptr<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> a, nullptr_t<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="rm" style="color: #bf0303"><del>template&lt;class T&gt;</del></span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="rm" style="color: #bf0303"><del>bool operator==(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</del></span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>a</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a>template&lt;class T&gt;</span>
+<span id="cb75-2"><a href="#cb75-2"></a>  bool operator!=(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span>
+<span id="cb75-3"><a href="#cb75-3"></a>template&lt;class T&gt;</span>
+<span id="cb75-4"><a href="#cb75-4"></a>  bool operator!=(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">(</span><span class="dt">bool</span><span class="op">)</span>a</code>.</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template&lt;class T&gt;</span>
+<span id="cb76-2"><a href="#cb76-2"></a>  bool operator&lt;(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span>
+<span id="cb76-3"><a href="#cb76-3"></a>template&lt;class T&gt;</span>
+<span id="cb76-4"><a href="#cb76-4"></a>  bool operator&lt;(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: The first function template returns <code class="sourceCode cpp">less<span class="op">&lt;</span><span class="kw">typename</span> shared_ptr<span class="op">&lt;</span>T<span class="op">&gt;::</span>element_type<span class="op">*&gt;()(</span>a<span class="op">.</span>get<span class="op">()</span>, <span class="kw">nullptr</span><span class="op">)</span></code> The second function template returns <code class="sourceCode cpp">less<span class="op">&lt;</span><span class="kw">typename</span> shared_ptr<span class="op">&lt;</span>T<span class="op">&gt;::</span>element_type<span class="op">*&gt;()(</span><span class="kw">nullptr</span>, a<span class="op">.</span>get<span class="op">())</span></code></p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb77-1"><a href="#cb77-1"></a>template&lt;class T&gt;</span>
+<span id="cb77-2"><a href="#cb77-2"></a>  bool operator&gt;(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span>
+<span id="cb77-3"><a href="#cb77-3"></a>template&lt;class T&gt;</span>
+<span id="cb77-4"><a href="#cb77-4"></a>  bool operator&gt;(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: The first function template returns <code class="sourceCode cpp"><span class="kw">nullptr</span> <span class="op">&lt;</span> a</code>. The second function template returns <code class="sourceCode cpp">a <span class="op">&lt;</span> <span class="kw">nullptr</span></code>.</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb78-1"><a href="#cb78-1"></a>template&lt;class T&gt;</span>
+<span id="cb78-2"><a href="#cb78-2"></a>  bool operator&lt;=(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span>
+<span id="cb78-3"><a href="#cb78-3"></a>template&lt;class T&gt;</span>
+<span id="cb78-4"><a href="#cb78-4"></a>  bool operator&lt;=(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: The first function template returns <code class="sourceCode cpp"><span class="op">!(</span><span class="kw">nullptr</span> <span class="op">&lt;</span> a<span class="op">)</span></code>. The second function template returns <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">&lt;</span> <span class="kw">nullptr</span><span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb79-1"><a href="#cb79-1"></a>template&lt;class T&gt;</span>
+<span id="cb79-2"><a href="#cb79-2"></a>  bool operator&gt;=(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span>
+<span id="cb79-3"><a href="#cb79-3"></a>template&lt;class T&gt;</span>
+<span id="cb79-4"><a href="#cb79-4"></a>  bool operator&gt;=(nullptr_t, const shared_ptr&lt;T&gt;&amp; a) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: The first function template returns <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">&lt;</span> <span class="kw">nullptr</span><span class="op">)</span></code>. The second function template returns <code class="sourceCode cpp"><span class="op">!(</span><span class="kw">nullptr</span> <span class="op">&lt;</span> a<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<div class="sourceCode" id="cb80"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb80-1"><a href="#cb80-1"></a>template&lt;class T, class U&gt;</span>
+<span id="cb80-2"><a href="#cb80-2"></a>  strong_ordering operator&lt;=&gt;(const shared_ptr&lt;T&gt;&amp; a, const shared_ptr&lt;U&gt;&amp; b) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp">compare_three_way<span class="op">()(</span>a<span class="op">.</span>get<span class="op">()</span>, b<span class="op">.</span>get<span class="op">())</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> [<em>Note</em>: Defining a comparison function allows <code class="sourceCode cpp">shared_ptr</code> objects to be used as keys in associative containers. —<em>end note</em>]</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>template&lt;class T&gt;</span>
+<span id="cb81-2"><a href="#cb81-2"></a>  strong_ordering operator&lt;=&gt;(const shared_ptr&lt;T&gt;&amp; a, nullptr_t) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> <em>Returns</em>: <code class="sourceCode cpp">compare_three_way<span class="op">()(</span>a<span class="op">.</span>get<span class="op">()</span>, <span class="kw">nullptr</span><span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.12.1 [mem.res.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb82-1"><a href="#cb82-1"></a>namespace std::pmr {</span>
+<span id="cb82-2"><a href="#cb82-2"></a>  // [mem.res.class], class memory_­resource</span>
+<span id="cb82-3"><a href="#cb82-3"></a>  class memory_resource;</span>
+<span id="cb82-4"><a href="#cb82-4"></a></span>
+<span id="cb82-5"><a href="#cb82-5"></a>  bool operator==(const memory_resource&amp; a, const memory_resource&amp; b) noexcept;</span>
+<span id="cb82-6"><a href="#cb82-6"></a><span class="st">- bool operator!=(const memory_resource&amp; a, const memory_resource&amp; b) noexcept;</span></span>
+<span id="cb82-7"><a href="#cb82-7"></a></span>
+<span id="cb82-8"><a href="#cb82-8"></a>  // [mem.poly.allocator.class], class template polymorphic_­allocator</span>
+<span id="cb82-9"><a href="#cb82-9"></a>  template&lt;class Tp&gt; class polymorphic_allocator;</span>
+<span id="cb82-10"><a href="#cb82-10"></a></span>
+<span id="cb82-11"><a href="#cb82-11"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb82-12"><a href="#cb82-12"></a>    bool operator==(const polymorphic_allocator&lt;T1&gt;&amp; a,</span>
+<span id="cb82-13"><a href="#cb82-13"></a>                    const polymorphic_allocator&lt;T2&gt;&amp; b) noexcept;</span>
+<span id="cb82-14"><a href="#cb82-14"></a><span class="st">- template&lt;class T1, class T2&gt;</span></span>
+<span id="cb82-15"><a href="#cb82-15"></a><span class="st">-   bool operator!=(const polymorphic_allocator&lt;T1&gt;&amp; a,</span></span>
+<span id="cb82-16"><a href="#cb82-16"></a><span class="st">-                   const polymorphic_allocator&lt;T2&gt;&amp; b) noexcept;</span></span>
+<span id="cb82-17"><a href="#cb82-17"></a></span>
+<span id="cb82-18"><a href="#cb82-18"></a>  [...]</span>
+<span id="cb82-19"><a href="#cb82-19"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.12.2.3 [mem.res.eq]:</p>
+<blockquote>
+<div class="sourceCode" id="cb83"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb83-1"><a href="#cb83-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> memory_resource<span class="op">&amp;</span> a, <span class="kw">const</span> memory_resource<span class="op">&amp;</span> b<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">&amp;</span>a <span class="op">==</span> <span class="op">&amp;</span>b <span class="op">||</span> a<span class="op">.</span>is_equal<span class="op">(</span>b<span class="op">)</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb84"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb84-1"><a href="#cb84-1"></a>bool operator!=(const memory_resource&amp; a, const memory_resource&amp; b) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">==</span> b<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.12.3.3 [mem.poly.allocator.eq]:</p>
+<blockquote>
+<div class="sourceCode" id="cb85"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb85-1"><a href="#cb85-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T1, <span class="kw">class</span> T2<span class="op">&gt;</span></span>
+<span id="cb85-2"><a href="#cb85-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> polymorphic_allocator<span class="op">&lt;</span>T1<span class="op">&gt;&amp;</span> a,</span>
+<span id="cb85-3"><a href="#cb85-3"></a>                  <span class="kw">const</span> polymorphic_allocator<span class="op">&lt;</span>T2<span class="op">&gt;&amp;</span> b<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">*</span>a<span class="op">.</span>resource<span class="op">()</span> <span class="op">==</span> <span class="op">*</span>b<span class="op">.</span>resource<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb86"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb86-1"><a href="#cb86-1"></a>template&lt;class T1, class T2&gt;</span>
+<span id="cb86-2"><a href="#cb86-2"></a>  bool operator!=(const polymorphic_allocator&lt;T1&gt;&amp; a,</span>
+<span id="cb86-3"><a href="#cb86-3"></a>                  const polymorphic_allocator&lt;T2&gt;&amp; b) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">==</span> b<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.13.1 [allocator.adaptor.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb87"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb87-1"><a href="#cb87-1"></a>namespace std {</span>
+<span id="cb87-2"><a href="#cb87-2"></a>  // class template scoped allocator adaptor</span>
+<span id="cb87-3"><a href="#cb87-3"></a>  template&lt;class OuterAlloc, class... InnerAlloc&gt;</span>
+<span id="cb87-4"><a href="#cb87-4"></a>    class scoped_allocator_adaptor;</span>
+<span id="cb87-5"><a href="#cb87-5"></a></span>
+<span id="cb87-6"><a href="#cb87-6"></a>  // [scoped.adaptor.operators], scoped allocator operators</span>
+<span id="cb87-7"><a href="#cb87-7"></a>  template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</span>
+<span id="cb87-8"><a href="#cb87-8"></a>    bool operator==(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;&amp; a,</span>
+<span id="cb87-9"><a href="#cb87-9"></a>                    const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;&amp; b) noexcept;</span>
+<span id="cb87-10"><a href="#cb87-10"></a><span class="st">- template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</span></span>
+<span id="cb87-11"><a href="#cb87-11"></a><span class="st">-   bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;&amp; a,</span></span>
+<span id="cb87-12"><a href="#cb87-12"></a><span class="st">-                   const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;&amp; b) noexcept;</span></span>
+<span id="cb87-13"><a href="#cb87-13"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.13.5 [scoped.adaptor.operators]:</p>
+<blockquote>
+<div class="sourceCode" id="cb88"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb88-1"><a href="#cb88-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> OuterA1, <span class="kw">class</span> OuterA2, <span class="kw">class</span><span class="op">...</span> InnerAllocs<span class="op">&gt;</span></span>
+<span id="cb88-2"><a href="#cb88-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> scoped_allocator_adaptor<span class="op">&lt;</span>OuterA1, InnerAllocs<span class="op">...&gt;&amp;</span> a,</span>
+<span id="cb88-3"><a href="#cb88-3"></a>                  <span class="kw">const</span> scoped_allocator_adaptor<span class="op">&lt;</span>OuterA2, InnerAllocs<span class="op">...&gt;&amp;</span> b<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: If <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>InnerAllocs<span class="op">)</span></code> is zero, <code class="sourceCode cpp">a<span class="op">.</span>outer_allocator<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>outer_allocator<span class="op">()</span></code> otherwise <code class="sourceCode cpp">a<span class="op">.</span>outer_allocator<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>outer_allocator<span class="op">()</span> <span class="op">&amp;&amp;</span> a<span class="op">.</span>inner_allocator<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>inner_allocator<span class="op">()</span></code></p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb89"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb89-1"><a href="#cb89-1"></a>template&lt;class OuterA1, class OuterA2, class... InnerAllocs&gt;</span>
+<span id="cb89-2"><a href="#cb89-2"></a>  bool operator!=(const scoped_allocator_adaptor&lt;OuterA1, InnerAllocs...&gt;&amp; a,</span>
+<span id="cb89-3"><a href="#cb89-3"></a>                  const scoped_allocator_adaptor&lt;OuterA2, InnerAllocs...&gt;&amp; b) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">==</span> b<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 20.14.1 [functional.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb90"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb90-1"><a href="#cb90-1"></a>namespace std {</span>
+<span id="cb90-2"><a href="#cb90-2"></a>  [...]</span>
+<span id="cb90-3"><a href="#cb90-3"></a>  template&lt;class R, class... ArgTypes&gt;</span>
+<span id="cb90-4"><a href="#cb90-4"></a>    void swap(function&lt;R(ArgTypes...)&gt;&amp;, function&lt;R(ArgTypes...)&gt;&amp;) noexcept;</span>
+<span id="cb90-5"><a href="#cb90-5"></a></span>
+<span id="cb90-6"><a href="#cb90-6"></a>  template&lt;class R, class... ArgTypes&gt;</span>
+<span id="cb90-7"><a href="#cb90-7"></a>    bool operator==(const function&lt;R(ArgTypes...)&gt;&amp;, nullptr_t) noexcept;</span>
+<span id="cb90-8"><a href="#cb90-8"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb90-9"><a href="#cb90-9"></a><span class="st">-   bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp;) noexcept;</span></span>
+<span id="cb90-10"><a href="#cb90-10"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb90-11"><a href="#cb90-11"></a><span class="st">-   bool operator!=(const function&lt;R(ArgTypes...)&gt;&amp;, nullptr_t) noexcept;</span></span>
+<span id="cb90-12"><a href="#cb90-12"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb90-13"><a href="#cb90-13"></a><span class="st">-   bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp;) noexcept;</span></span>
+<span id="cb90-14"><a href="#cb90-14"></a></span>
+<span id="cb90-15"><a href="#cb90-15"></a>  // [func.search], searchers</span>
+<span id="cb90-16"><a href="#cb90-16"></a>  template&lt;class ForwardIterator, class BinaryPredicate = equal_to&lt;&gt;&gt;</span>
+<span id="cb90-17"><a href="#cb90-17"></a>    class default_searcher;</span>
+<span id="cb90-18"><a href="#cb90-18"></a>  [...] </span>
+<span id="cb90-19"><a href="#cb90-19"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.14.8 [range.cmp]/2 to add <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>:</p>
+<blockquote>
+<p>There is an implementation-defined strict total ordering over all pointer values of a given type. This total ordering is consistent with the partial order imposed by the builtin operators <code class="sourceCode cpp"><span class="op">&lt;</span></code>, <code class="sourceCode cpp"><span class="op">&gt;</span></code>, <code class="sourceCode cpp"><span class="op">&lt;=</span></code>, <span class="rm" style="color: #bf0303"><del>and</del></span> <code class="sourceCode cpp"><span class="op">&gt;=</span></code> <span class="addu">, and <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code></span>.</p>
+</blockquote>
+<p>Change 20.14.16.2 [func.wrap.func]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb91"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb91-1"><a href="#cb91-1"></a>namespace std {</span>
+<span id="cb91-2"><a href="#cb91-2"></a>  template&lt;class&gt; class function; // not defined</span>
+<span id="cb91-3"><a href="#cb91-3"></a>  </span>
+<span id="cb91-4"><a href="#cb91-4"></a>  [...]</span>
+<span id="cb91-5"><a href="#cb91-5"></a>  </span>
+<span id="cb91-6"><a href="#cb91-6"></a>  // [func.wrap.func.nullptr], Null pointer comparisons</span>
+<span id="cb91-7"><a href="#cb91-7"></a>  template&lt;class R, class... ArgTypes&gt;</span>
+<span id="cb91-8"><a href="#cb91-8"></a>    bool operator==(const function&lt;R(ArgTypes...)&gt;&amp;, nullptr_t) noexcept;</span>
+<span id="cb91-9"><a href="#cb91-9"></a></span>
+<span id="cb91-10"><a href="#cb91-10"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb91-11"><a href="#cb91-11"></a><span class="st">-   bool operator==(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp;) noexcept;</span></span>
+<span id="cb91-12"><a href="#cb91-12"></a><span class="st">-</span></span>
+<span id="cb91-13"><a href="#cb91-13"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb91-14"><a href="#cb91-14"></a><span class="st">-   bool operator!=(const function&lt;R(ArgTypes...)&gt;&amp;, nullptr_t) noexcept;</span></span>
+<span id="cb91-15"><a href="#cb91-15"></a><span class="st">-</span></span>
+<span id="cb91-16"><a href="#cb91-16"></a><span class="st">- template&lt;class R, class... ArgTypes&gt;</span></span>
+<span id="cb91-17"><a href="#cb91-17"></a><span class="st">-   bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp;) noexcept;</span></span>
+<span id="cb91-18"><a href="#cb91-18"></a></span>
+<span id="cb91-19"><a href="#cb91-19"></a>  [...]</span>
+<span id="cb91-20"><a href="#cb91-20"></a>}  </span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.14.16.2.6 [func.wrap.func.nullptr]:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span><span class="op">...</span> ArgTypes<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> function<span class="op">&lt;</span>R<span class="op">(</span>ArgTypes<span class="op">...)&gt;&amp;</span> f, nullptr_t<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="rm" style="color: #bf0303"><del>template&lt;class R, class… ArgTypes&gt;</del></span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="rm" style="color: #bf0303"><del>bool operator==(nullptr_t, const function&lt;R(ArgTypes…)&gt;&amp; f) noexcept;</del></span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>f</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb92"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb92-1"><a href="#cb92-1"></a>template&lt;class R, class... ArgTypes&gt;</span>
+<span id="cb92-2"><a href="#cb92-2"></a>  bool operator!=(const function&lt;R(ArgTypes...)&gt;&amp; f, nullptr_t) noexcept;</span>
+<span id="cb92-3"><a href="#cb92-3"></a>template&lt;class R, class... ArgTypes&gt;</span>
+<span id="cb92-4"><a href="#cb92-4"></a>  bool operator!=(nullptr_t, const function&lt;R(ArgTypes...)&gt;&amp; f) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">(</span><span class="dt">bool</span><span class="op">)</span>f</code>.</p>
+</div>
+</blockquote>
+<p>Add a new row to 20.15.4.3 [meta.unary.prop], the “Type property predicates” table:</p>
+<blockquote>
+<table>
+<tr>
+<th>
+Template
+</th>
+<th>
+Condition
+</th>
+<th>
+Preconditions&gt;
+</th>
+</tr>
+<tr>
+<td>
+<div class="addu">
+<div class="sourceCode" id="cb93"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb93-1"><a href="#cb93-1"></a>template&lt;class T&gt;</span>
+<span id="cb93-2"><a href="#cb93-2"></a>struct has_strong_structural_equality;</span></code></pre></div>
+</div>
+</td>
+<td>
+<span class="addu">The type <code class="sourceCode cpp">T</code> has strong structural equality ([class.compare.default]).</span>
+</td>
+<td>
+<span class="addu"><code class="sourceCode cpp">T</code> shall be a complete type, <em>cv</em> <code class="sourceCode cpp"><span class="dt">void</span></code>, or an array of unknown bound.</span>
+</td>
+</tr>
+</table>
+</blockquote>
+<p>Change 20.15.7.6 [meta.trans.other] to add special rule for comparison categories:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> Note A: For the <code class="sourceCode cpp">common_type</code> trait applied to a template parameter pack <code class="sourceCode cpp">T</code> of types, the member <code class="sourceCode cpp">type</code> shall be either defined or not present as follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>T<span class="op">)</span></code> is zero, there shall be no member <code class="sourceCode cpp">type</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> If <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>T<span class="op">)</span></code> is one, let <code class="sourceCode cpp">T0</code> denote the sole type constituting the pack <code class="sourceCode cpp">T</code>. The member typedef-name <code class="sourceCode cpp">type</code> shall denote the same type, if any, as <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>T0, T0<span class="op">&gt;</span></code>; otherwise there shall be no member <code class="sourceCode cpp">type</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3)</a></span> If <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>T<span class="op">)</span></code> is two, let the first and second types constituting <code class="sourceCode cpp">T</code> be denoted by <code class="sourceCode cpp">T1</code> and <code class="sourceCode cpp">T2</code>, respectively, and let <code class="sourceCode cpp">D1</code> and <code class="sourceCode cpp">D2</code> denote the same types as <code class="sourceCode cpp">decay_t<span class="op">&lt;</span>T1<span class="op">&gt;</span></code> and <code class="sourceCode cpp">decay_t<span class="op">&lt;</span>T2<span class="op">&gt;</span></code>, respectively.
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.1)</a></span> If <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>T1, D1<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> or <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>T2, D2<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>, let <code class="sourceCode cpp">C</code> denote the same type, if any, as <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>D1, D2<span class="op">&gt;</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.2)</a></span> [<em>Note</em>: None of the following will apply if there is a specialization <code class="sourceCode cpp">common_type<span class="op">&lt;</span>D1, D2<span class="op">&gt;</span></code>. —<em>end note</em>]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.*)</a></span> <span class="addu">Otherwise, if both <code class="sourceCode cpp">D1</code> and <code class="sourceCode cpp">D2</code> denote comparison category type ([cmp.categories.pre]), let <code class="sourceCode cpp">C</code> denote common comparison type ([class.spaceship]) of <code class="sourceCode cpp">D1</code> and <code class="sourceCode cpp">D2</code>.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.3)</a></span> Otherwise, if <code class="sourceCode cpp">decay_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><span class="kw">false</span> <span class="op">?</span> declval<span class="op">&lt;</span>D1<span class="op">&gt;()</span> <span class="op">:</span> declval<span class="op">&lt;</span>D2<span class="op">&gt;())&gt;</span></code> denotes a valid type, let <code class="sourceCode cpp">C</code> denote that type.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.4)</a></span> Otherwise, if <code class="sourceCode cpp">COND_RES<span class="op">(</span>CREF<span class="op">(</span>D1<span class="op">)</span>, CREF<span class="op">(</span>D2<span class="op">))</span></code> denotes a type, let <code class="sourceCode cpp">C</code> denote the type <code class="sourceCode cpp">decay_t<span class="op">&lt;</span>COND_RES<span class="op">(</span>CREF<span class="op">(</span>D1<span class="op">)</span>, CREF<span class="op">(</span>D2<span class="op">))&gt;</span></code>. In either case, the member typedef-name type shall denote the same type, if any, as <code class="sourceCode cpp">C</code>. Otherwise, there shall be no member <code class="sourceCode cpp">type</code>.</li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.4)</a></span> If <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>T<span class="op">)</span></code> is greater than two, let <code class="sourceCode cpp">T1</code>, <code class="sourceCode cpp">T2</code>, and <code class="sourceCode cpp">R</code>, respectively, denote the first, second, and (pack of) remaining types constituting <code class="sourceCode cpp">T</code>. Let <code class="sourceCode cpp">C</code> denote the same type, if any, as <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>T1, T2<span class="op">&gt;</span></code>. If there is such a type <code class="sourceCode cpp">C</code>, the member typedef-name <code class="sourceCode cpp">type</code> shall denote the same type, if any, as <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>C, R<span class="op">...&gt;</span></code>. Otherwise, there shall be no member <code class="sourceCode cpp">type</code>.</li>
+</ul>
+</blockquote>
+<p>Change 20.17.2 [type.index.overview]. Note that the relational operators on <code class="sourceCode cpp">type_index</code> are based on <code class="sourceCode cpp">type_info<span class="op">::</span>before</code> (effectively <code class="sourceCode cpp"><span class="op">&lt;</span></code>). <code class="sourceCode cpp">type_info</code> <em>could</em> provide a three-way ordering function, but does not. Since an important motivation for the existence of <code class="sourceCode cpp">type_index</code> is to be used as a key in an associative container, we do not want to pessimize <code class="sourceCode cpp"><span class="op">&lt;</span></code> - but do want to provide <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>.</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb94"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb94-1"><a href="#cb94-1"></a>namespace std {</span>
+<span id="cb94-2"><a href="#cb94-2"></a>  class type_index {</span>
+<span id="cb94-3"><a href="#cb94-3"></a>  public:</span>
+<span id="cb94-4"><a href="#cb94-4"></a>    type_index(const type_info&amp; rhs) noexcept;</span>
+<span id="cb94-5"><a href="#cb94-5"></a>    bool operator==(const type_index&amp; rhs) const noexcept;</span>
+<span id="cb94-6"><a href="#cb94-6"></a><span class="st">-   bool operator!=(const type_index&amp; rhs) const noexcept;</span></span>
+<span id="cb94-7"><a href="#cb94-7"></a>    bool operator&lt; (const type_index&amp; rhs) const noexcept;</span>
+<span id="cb94-8"><a href="#cb94-8"></a>    bool operator&gt; (const type_index&amp; rhs) const noexcept;</span>
+<span id="cb94-9"><a href="#cb94-9"></a>    bool operator&lt;=(const type_index&amp; rhs) const noexcept;</span>
+<span id="cb94-10"><a href="#cb94-10"></a>    bool operator&gt;=(const type_index&amp; rhs) const noexcept;</span>
+<span id="cb94-11"><a href="#cb94-11"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const type_index&amp; rhs) const noexcept;</span></span>
+<span id="cb94-12"><a href="#cb94-12"></a>    size_t hash_code() const noexcept;</span>
+<span id="cb94-13"><a href="#cb94-13"></a>    const char* name() const noexcept;</span>
+<span id="cb94-14"><a href="#cb94-14"></a></span>
+<span id="cb94-15"><a href="#cb94-15"></a>  private:</span>
+<span id="cb94-16"><a href="#cb94-16"></a>    const type_info* target;    // exposition only</span>
+<span id="cb94-17"><a href="#cb94-17"></a>    // Note that the use of a pointer here, rather than a reference,</span>
+<span id="cb94-18"><a href="#cb94-18"></a>    // means that the default copy/move constructor and assignment</span>
+<span id="cb94-19"><a href="#cb94-19"></a>    // operators will be provided and work as expected.</span>
+<span id="cb94-20"><a href="#cb94-20"></a>  };</span>
+<span id="cb94-21"><a href="#cb94-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 20.17.3 [type.index.members]:</p>
+<blockquote>
+<div class="sourceCode" id="cb95"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb95-1"><a href="#cb95-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> type_index<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">*</span>target <span class="op">==</span> <span class="op">*</span>rhs<span class="op">.</span>target</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb96"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb96-1"><a href="#cb96-1"></a>bool operator!=(const type_index&amp; rhs) const noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">*</span>target <span class="op">!=</span> <span class="op">*</span>rhs<span class="op">.</span>target</code>.</p>
+</div>
+<div class="sourceCode" id="cb97"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb97-1"><a href="#cb97-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span><span class="kw">const</span> type_index<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">target<span class="op">-&gt;</span>before<span class="op">(*</span>rhs<span class="op">.</span>target<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb98-1"><a href="#cb98-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;(</span><span class="kw">const</span> type_index<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs<span class="op">.</span>target<span class="op">-&gt;</span>before<span class="op">(*</span>target<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb99-1"><a href="#cb99-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;=(</span><span class="kw">const</span> type_index<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>rhs<span class="op">.</span>target<span class="op">-&gt;</span>before<span class="op">(*</span>target<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> type_index<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>target<span class="op">-&gt;</span>before<span class="op">(*</span>rhs<span class="op">.</span>target<span class="op">)</span></code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb101"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb101-1"><a href="#cb101-1"></a>strong_ordering operator&lt;=&gt;(const type_index&amp; rhs) const noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<div class="sourceCode" id="cb102"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb102-1"><a href="#cb102-1"></a>if (*target == *rhs.target) return strong_ordering::equal;</span>
+<span id="cb102-2"><a href="#cb102-2"></a>if (target-&gt;before(*rhs.target)) return strong_ordering::less;</span>
+<span id="cb102-3"><a href="#cb102-3"></a>return strong_ordering::greater;</span></code></pre></div>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 20.19.1 [charconv.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb103"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb103-1"><a href="#cb103-1"></a>namespace std {</span>
+<span id="cb103-2"><a href="#cb103-2"></a>  [...]</span>
+<span id="cb103-3"><a href="#cb103-3"></a></span>
+<span id="cb103-4"><a href="#cb103-4"></a>  // [charconv.to.chars], primitive numerical output conversion</span>
+<span id="cb103-5"><a href="#cb103-5"></a>  struct to_chars_result {</span>
+<span id="cb103-6"><a href="#cb103-6"></a>    char* ptr;</span>
+<span id="cb103-7"><a href="#cb103-7"></a>    errc ec;</span>
+<span id="cb103-8"><a href="#cb103-8"></a></span>
+<span id="cb103-9"><a href="#cb103-9"></a><span class="va">+   friend bool operator==(const to_chars_result&amp;, const to_chars_result&amp;) = default;</span></span>
+<span id="cb103-10"><a href="#cb103-10"></a>  };</span>
+<span id="cb103-11"><a href="#cb103-11"></a></span>
+<span id="cb103-12"><a href="#cb103-12"></a>  [...]</span>
+<span id="cb103-13"><a href="#cb103-13"></a></span>
+<span id="cb103-14"><a href="#cb103-14"></a>  // [charconv.from.chars], primitive numerical input conversion</span>
+<span id="cb103-15"><a href="#cb103-15"></a>  struct from_chars_result {</span>
+<span id="cb103-16"><a href="#cb103-16"></a>    const char* ptr;</span>
+<span id="cb103-17"><a href="#cb103-17"></a>    errc ec;</span>
+<span id="cb103-18"><a href="#cb103-18"></a></span>
+<span id="cb103-19"><a href="#cb103-19"></a><span class="va">+   friend bool operator==(const from_chars_result&amp;, const from_chars_result&amp;) = default;</span></span>
+<span id="cb103-20"><a href="#cb103-20"></a>  };</span>
+<span id="cb103-21"><a href="#cb103-21"></a></span>
+<span id="cb103-22"><a href="#cb103-22"></a>  [...]</span>
+<span id="cb103-23"><a href="#cb103-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h2 id="clause-21-strings-library"><span class="header-section-number">5.6</span> Clause 21: Strings library<a href="#clause-21-strings-library" class="self-link"></a></h2>
+<p>TBD</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
