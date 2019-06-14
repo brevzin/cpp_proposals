@@ -2140,6 +2140,407 @@ namespace std {
 
 ## Clause 21: Strings library
 
+Changing the operators for `basic_string` and `basic_string_view` and adding extra type alises to the `char_traits` specializations provided by the standard.
+
+Change 21.2.3.1 [char.traits.specializations.char]:
+
+::: bq
+```diff
+namespace std {
+  template<> struct char_traits<char> {
+    using char_type  = char;
+    using int_type   = int;
+    using off_type   = streamoff;
+    using pos_type   = streampos;
+    using state_type = mbstate_t;
++   using comparison_category = strong_ordering;
+    [...]
+  };
+}
+```
+:::
+
+Change 21.2.3.2 [char.traits.specializations.char8.t]
+
+::: bq
+```diff
+namespace std {
+  template<> struct char_traits<char8_t> {
+    using char_type = char8_t;
+    using int_type = unsigned int;
+    using off_type = streamoff;
+    using pos_type = u8streampos;
+    using state_type = mbstate_t;
++   using comparison_category = strong_ordering;	
+    [...]
+  };
+}
+```
+:::
+
+Change 21.2.3.3 [char.traits.specializations.char16.t]:
+
+::: bq
+```diff
+namespace std {
+  template<> struct char_traits<char16_t> {
+    using char_type  = char16_t;
+    using int_type   = uint_least16_t;
+    using off_type   = streamoff;
+    using pos_type   = u16streampos;
+    using state_type = mbstate_t;
++   using comparison_category = strong_ordering;	
+    [...]
+  };
+}
+```
+:::
+
+Change 21.2.3.4 [char.traits.specializations.char32.t]:
+
+::: bq
+```diff
+namespace std {
+  template<> struct char_traits<char32_t> {
+    using char_type  = char32_t;
+    using int_type   = uint_least32_t;
+    using off_type   = streamoff;
+    using pos_type   = u32streampos;
+    using state_type = mbstate_t;
++   using comparison_category = strong_ordering;	
+    [...]
+  };
+}
+```
+:::
+
+Change 21.2.3.5 [char.traits.specializations.wchar.t]:
+
+::: bq
+```diff
+namespace std {
+  template<> struct char_traits<wchar_t> {
+    using char_type  = wchar_t;
+    using int_type   = wint_t;
+    using off_type   = streamoff;
+    using pos_type   = wstreampos;
+    using state_type = mbstate_t;
++   using comparison_category = strong_ordering;	
+    [...]
+  };
+}
+```
+:::
+
+Change 21.3.1 [string.syn]:
+
+::: bq
+```diff
+namespace std {
+  // [char.traits], character traits
+  template<class charT> struct char_traits;
+  template<> struct char_traits<char>;
+  template<> struct char_traits<char8_t>;
+  template<> struct char_traits<char16_t>;
+  template<> struct char_traits<char32_t>;
+  template<> struct char_traits<wchar_t>;
+
+  // [basic.string], basic_­string
+  template<class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+    class basic_string;
+	
+  [...]
+  
+  template<class charT, class traits, class Allocator>
+    bool operator==(const basic_string<charT, traits, Allocator>& lhs,
+                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator==(const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+  template<class charT, class traits, class Allocator>
+    bool operator==(const basic_string<charT, traits, Allocator>& lhs,
+                    const charT* rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator!=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator!=(const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator!=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const charT* rhs);
+
+- template<class charT, class traits, class Allocator>
+-   bool operator< (const basic_string<charT, traits, Allocator>& lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator< (const basic_string<charT, traits, Allocator>& lhs,
+-                   const charT* rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator< (const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator> (const basic_string<charT, traits, Allocator>& lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator> (const basic_string<charT, traits, Allocator>& lhs,
+-                   const charT* rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator> (const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+
+- template<class charT, class traits, class Allocator>
+-   bool operator<=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator<=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const charT* rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator<=(const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator>=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs) noexcept;
+- template<class charT, class traits, class Allocator>
+-   bool operator>=(const basic_string<charT, traits, Allocator>& lhs,
+-                   const charT* rhs);
+- template<class charT, class traits, class Allocator>
+-   bool operator>=(const charT* lhs,
+-                   const basic_string<charT, traits, Allocator>& rhs);
+
++ template<class charT, class traits, class Allocator>
++   @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
++                         const basic_string<charT, traits, Allocator>& rhs) noexcept;
++ template<class charT, class traits, class Allocator>
++   @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
++                         const charT* rhs) noexcept;
+
+
+  [...]
+}  
+```
+:::
+
+Change 21.3.3.2 [string.cmp]:
+
+::: bq
+```diff
+   template<class charT, class traits, class Allocator>
+     bool operator==(const basic_string<charT, traits, Allocator>& lhs,
+                     const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator==(const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+   template<class charT, class traits, class Allocator>
+     bool operator==(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+   
+-  template<class charT, class traits, class Allocator>
+-    bool operator!=(const basic_string<charT, traits, Allocator>& lhs,
+-                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator!=(const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+-  template<class charT, class traits, class Allocator>
+-    bool operator!=(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+   
+-  template<class charT, class traits, class Allocator>
+-    bool operator< (const basic_string<charT, traits, Allocator>& lhs,
+-                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator< (const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+-  template<class charT, class traits, class Allocator>
+-    bool operator< (const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+   
+-  template<class charT, class traits, class Allocator>
+-    bool operator> (const basic_string<charT, traits, Allocator>& lhs,
+-                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator> (const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+-  template<class charT, class traits, class Allocator>
+-    bool operator> (const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+   
+-  template<class charT, class traits, class Allocator>
+-    bool operator<=(const basic_string<charT, traits, Allocator>& lhs,
+                     const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator<=(const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+-  template<class charT, class traits, class Allocator>
+-    bool operator<=(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+   
+-  template<class charT, class traits, class Allocator>
+-    bool operator>=(const basic_string<charT, traits, Allocator>& lhs,
+-                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-  template<class charT, class traits, class Allocator>
+-    bool operator>=(const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
+-  template<class charT, class traits, class Allocator>
+-    bool operator>=(const basic_string<charT, traits, Allocator>& lhs, const charT* rhs);
+
++  template<class charT, class traits, class Allocator>
++    @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
++                          const basic_string<charT, traits, Allocator>& rhs) noexcept;
++  template<class charT, class traits, class Allocator>
++    @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
++                          const charT* rhs) noexcept;
+```
+[1]{.pnum} *Effects*: Let `op` be the operator. Equivalent to:
+
+::: bq
+```cpp
+return basic_string_view<charT, traits>(lhs) @_op_@ basic_string_view<charT, traits>(rhs);
+```
+:::
+:::
+
+Change 21.4.1 [string.view.synop]:
+
+::: bq
+```diff
+namespace std {
+  // [string.view.template], class template basic_­string_­view
+  template<class charT, class traits = char_traits<charT>>
+  class basic_string_view;
+
+  // [string.view.comparison], non-member comparison functions
+  template<class charT, class traits>
+    constexpr bool operator==(basic_string_view<charT, traits> x,
+                              basic_string_view<charT, traits> y) noexcept;
+- template<class charT, class traits>
+-   constexpr bool operator!=(basic_string_view<charT, traits> x,
+-                             basic_string_view<charT, traits> y) noexcept;
+- template<class charT, class traits>
+-   constexpr bool operator< (basic_string_view<charT, traits> x,
+-                             basic_string_view<charT, traits> y) noexcept;
+- template<class charT, class traits>
+-   constexpr bool operator> (basic_string_view<charT, traits> x,
+-                             basic_string_view<charT, traits> y) noexcept;
+- template<class charT, class traits>
+-   constexpr bool operator<=(basic_string_view<charT, traits> x,
+-                             basic_string_view<charT, traits> y) noexcept;
+- template<class charT, class traits>
+-   constexpr bool operator>=(basic_string_view<charT, traits> x,
+-                             basic_string_view<charT, traits> y) noexcept;
++ template<class charT, class traits>
++   constexpr @_see below_@ operator<=>(basic_string_view<charT, traits> x,
++                                   basic_string_view<charT, traits> y) noexcept;
+
+  // see [string.view.comparison], sufficient additional overloads of comparison functions
+
+  [...]
+}
+```
+:::
+
+Add `<=>` to the table at the beginning of 21.4.3 [string.view.comparisons]:
+
+::: bq
+
+<table>
+<tr><th>Expression</th><th>Equivalent to</th></tr>
+<tr><td>`t == sv`</td><td>`S(t) == sv`</td></tr>
+<tr><td>[...]</td><td>[...]</td></tr>
+<tr><td>[<code>t <=> sv</code>]{.addu}</td><td>[<code>S(t) <=> sv</code>]{.addu}</td></tr>
+<tr><td>[<code>sv <=> t</code>]{.addu}</td><td>[<code>sv <=> S(t)</code>]{.addu}</td></tr>
+</table>
+
+:::
+
+Change the rest of 21.4.3 [string.view.comparisons]:
+
+::: bq
+
+```cpp
+template<class charT, class traits>
+  constexpr bool operator==(basic_string_view<charT, traits> lhs,
+                            basic_string_view<charT, traits> rhs) noexcept;
+```
+[2]{.pnum} *Returns*: `lhs.compare(rhs) == 0`.
+
+::: rm
+```
+template<class charT, class traits>
+  constexpr bool operator!=(basic_string_view<charT, traits> lhs,
+                            basic_string_view<charT, traits> rhs) noexcept;
+```
+[3]{.pnum} *Returns*: `lhs.compare(rhs) != 0`.
+```
+template<class charT, class traits>
+  constexpr bool operator<(basic_string_view<charT, traits> lhs,
+                           basic_string_view<charT, traits> rhs) noexcept;
+```
+[4]{.pnum} *Returns*: `lhs.compare(rhs) < 0`.
+```
+template<class charT, class traits>
+  constexpr bool operator>(basic_string_view<charT, traits> lhs,
+                           basic_string_view<charT, traits> rhs) noexcept;
+```
+[5]{.pnum} *Returns*: `lhs.compare(rhs) > 0`.
+```
+template<class charT, class traits>
+  constexpr bool operator<=(basic_string_view<charT, traits> lhs,
+                            basic_string_view<charT, traits> rhs) noexcept;
+```
+[6]{.pnum} *Returns*: `lhs.compare(rhs) <= 0`.
+```
+template<class charT, class traits>
+  constexpr bool operator>=(basic_string_view<charT, traits> lhs,
+                            basic_string_view<charT, traits> rhs) noexcept;
+```
+[7]{.pnum} *Returns*: `lhs.compare(rhs) >= 0`.
+:::
+
+::: {.addu}
+```
+template<class charT, class traits>
+  constexpr @_see below_@ operator<=>(basic_string_view<charT, traits> lhs,
+                                  basic_string_view<charT, traits> rhs) noexcept;
+```
+[8]{.pnum} Let `R` denote the type `traits::comparison_category` if it exists,
+otherwise `R` is `weak_ordering`.
+
+[9]{.pnum} *Returns*: `static_cast<R>(lhs.compare(rhs) <=> 0)`.
+:::
+:::
+
+## Clause 22: Containers library
+
+TBD
+
+## Clause 23: Iterators library
+
+TBD
+
+## Clause 24: Ranges library
+
+TBD
+
+## Clause 25: Algorithms library
+
+TBD
+
+## Clause 26: Numerics library
+
+TBD
+
+## Clause 27: Time library
+
+TBD
+
+## Clause 28: Localization library
+
+TBD
+
+## Clause 29: Input/output library
+
+TBD
+
+## Clause 30: Regular expressions library
+
+TBD
+
+## Clause 31: Atomic operations library
+
+TBD
+
+## Clause 32: Thread support library
+
 TBD
 
 ---
