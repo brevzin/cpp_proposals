@@ -933,7 +933,11 @@ constituting `T` be denoted by `T1` and `T2`, respectively, and let `D1` and
 	let `C` denote the type `decay_t<COND_RES(CREF(D1), CREF(D2))>`.
     In either case, the member typedef-name type shall denote the same type,
 	if any, as `C`. Otherwise, there shall be no member `type`.
-- [3.4]{.pnum} If `sizeof...(T)` is greater than two, let `T1`, `T2`, and `R`, respectively, denote the first, second, and (pack of) remaining types constituting `T`. Let `C` denote the same type, if any, as `common_type_t<T1, T2>`. If there is such a type `C`, the member typedef-name `type` shall denote the same type, if any, as `common_type_t<C, R...>`. Otherwise, there shall be no member `type`.
+- [3.4]{.pnum} If `sizeof...(T)` is greater than two, let `T1`, `T2`, and `R`,
+respectively, denote the first, second, and (pack of) remaining types constituting
+`T`. Let `C` denote the same type, if any, as `common_type_t<T1, T2>`. If there is
+such a type `C`, the member typedef-name `type` shall denote the same type, if any,
+as `common_type_t<C, R...>`. Otherwise, there shall be no member `type`.
 :::
 
 ---
