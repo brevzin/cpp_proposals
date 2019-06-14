@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-13" />
+  <meta name="dcterms.date" content="2019-06-14" />
   <title>The Mothership has Landed</title>
   <style>
       code{white-space: pre-wrap;}
@@ -520,7 +520,7 @@ code.diff span.st { color: #000000; background-color: #ffdddd; }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-13</td>
+    <td>2019-06-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -2569,7 +2569,637 @@ Equivalent to
 </div>
 </blockquote>
 <h2 id="clause-22-containers-library"><span class="header-section-number">5.7</span> Clause 22: Containers library<a href="#clause-22-containers-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p><code class="sourceCode cpp">array</code>’s comparisons move to be hidden friends to allow for use as non-type template parameters. All the other containers drop <code class="sourceCode cpp"><span class="op">!=</span></code> and, if they have relational operators, those get replaced with a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>.</p>
+<p>Add to 22.2.1 [container.requirements.general]/4:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> In Tables 62, 63, and 64 <code class="sourceCode cpp">X</code> denotes a container class containing objects of type <code class="sourceCode cpp">T</code>, <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code> denote values of type <code class="sourceCode cpp">X</code>, <span class="addu"><code class="sourceCode cpp">i</code> and <code class="sourceCode cpp">j</code> denote values of type (possibly-const) <code class="sourceCode cpp">X<span class="op">::</span>iterator</code></span>, <code class="sourceCode cpp">u</code> denotes an identifier, <code class="sourceCode cpp">r</code> denotes a non-const value of type <code class="sourceCode cpp">X</code>, and <code class="sourceCode cpp">rv</code> denotes a non-const rvalue of type <code class="sourceCode cpp">X</code>.</p>
+</blockquote>
+<p>Add a row to 22.2.1, Table 62 [container.req]:</p>
+<blockquote>
+<table>
+<tr>
+<th>
+Expression
+</th>
+<th>
+Return type
+</th>
+<th>
+Operational<br />semantics
+</th>
+<th>
+Assertion/note<br />pre-/post-condition
+</th>
+<th>
+Complexity
+</th>
+</tr>
+<tr>
+<td>
+<span class="addu"><code class="sourceCode cpp">i <span class="op">&lt;=&gt;</span> j</code></span>
+</td>
+<td>
+<span class="addu"><code class="sourceCode cpp">strong_ordering</code> if <code class="sourceCode cpp">X<span class="op">::</span>iterator</code> meets the random access iterator requirements, otherwise <code class="sourceCode cpp">strong_equality</code></span>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+<span class="addu">constant</span>
+</td>
+</tr>
+</table>
+</blockquote>
+<p>Add <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to the requirements in 22.2.1 [container.requirements.general]/7:</p>
+<blockquote>
+<p>In the expressions</p>
+<div>
+<div class="sourceCode" id="cb115"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb115-1"><a href="#cb115-1"></a>  i == j</span>
+<span id="cb115-2"><a href="#cb115-2"></a>  i != j</span>
+<span id="cb115-3"><a href="#cb115-3"></a>  i &lt; j</span>
+<span id="cb115-4"><a href="#cb115-4"></a>  i &lt;= j</span>
+<span id="cb115-5"><a href="#cb115-5"></a>  i &gt;= j</span>
+<span id="cb115-6"><a href="#cb115-6"></a>  i &gt; j</span>
+<span id="cb115-7"><a href="#cb115-7"></a><span class="va">+ i &lt;=&gt; j</span></span>
+<span id="cb115-8"><a href="#cb115-8"></a>  i - j</span></code></pre></div>
+</div>
+<p>where <code class="sourceCode cpp">i</code> and <code class="sourceCode cpp">j</code> denote objects of a container’s iterator type, either or both may be replaced by an object of the container’s <code class="sourceCode cpp">const_iterator</code> type referring to the same element with no change in semantics.</p>
+</blockquote>
+<p>Replace 22.2.1 [container.requirements.general], Table 64 [container.opt] to refer to <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> using <em><code class="sourceCode default">synth-3way</code></em> instead of <code class="sourceCode cpp"><span class="op">&lt;</span></code>.</p>
+<blockquote>
+<p>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">lexicographical_compare</code></span></del></span> <span class="addu"><code class="sourceCode cpp">lexicographical_compare_three_way</code></span> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.</p>
+<table>
+<tr>
+<th>
+Expression
+</th>
+<th>
+Return type
+</th>
+<th>
+Operational<br />semantics
+</th>
+<th>
+Assertion/note<br />pre-/post-condition
+</th>
+<th>
+Complexity
+</th>
+</tr>
+<tr>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">a <span class="op">&lt;</span> b</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>convertible to <span><code class="sourceCode default">bool</code></span></del></span>
+</td>
+<td>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb116"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb116-1"><a href="#cb116-1"></a>lexicographical_compare(</span>
+<span id="cb116-2"><a href="#cb116-2"></a>    a.begin(), a.end(),</span>
+<span id="cb116-3"><a href="#cb116-3"></a>    b.begin(), b.end())</span></code></pre></div>
+
+</div>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del><em>Expects</em>: <span><code class="sourceCode cpp"><span class="op">&lt;</span></code></span> is defined for values of type (possibly const) <span><code class="sourceCode cpp">T</code></span>. <span><code class="sourceCode cpp"><span class="op">&lt;</span></code></span> is a total ordering relationship.</del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>linear</del></span>
+</td>
+</tr>
+<tr>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">a <span class="op">&gt;</span> b</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>convertible to <span><code class="sourceCode default">bool</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">b <span class="op">&lt;</span> a</code></span></del></span>
+</td>
+<td>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>linear</del></span>
+</td>
+</tr>
+<tr>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">a <span class="op">&lt;=</span> b</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>convertible to <span><code class="sourceCode default">bool</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">&gt;</span> b<span class="op">)</span></code></span></del></span>
+</td>
+<td>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>linear</del></span>
+</td>
+</tr>
+<tr>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">a <span class="op">&gt;=</span> b</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>convertible to <span><code class="sourceCode default">bool</code></span></del></span>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">&lt;</span> b<span class="op">)</span></code></span></del></span>
+</td>
+<td>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del>linear</del></span>
+</td>
+</tr>
+<tr>
+<td>
+<span class="addu"><code class="sourceCode cpp">a <span class="op">&lt;=&gt;</span> b</code></span>
+</td>
+<td>
+<span class="addu"><em><code class="sourceCode default">synth-3way-result</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>value_type<span class="op">&gt;</span></code></span>
+</td>
+<td>
+<div class="addu">
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a>lexicographical_compare_three_way(</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    a.begin(), a.end(),</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    b.begin(), b.end(),</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <em>synth-3way</em>)</span></code></pre></div>
+</div>
+</td>
+<td>
+<span class="addu"><em>Expects</em>: If <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is defined for values of type (possibly const) <code class="sourceCode cpp">T</code>, then <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is a ordering relationship. Oftherwise, <code class="sourceCode cpp"><span class="op">&lt;</span></code> is defined for values of type (possibly const) <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code> is a total ordering relationship.</span>
+</td>
+<td>
+<span class="addu">linear</span>
+</td>
+</tr>
+</table>
+</blockquote>
+<p>Change 22.3.2 [array.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb117"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb117-1"><a href="#cb117-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb117-2"><a href="#cb117-2"></a></span>
+<span id="cb117-3"><a href="#cb117-3"></a>namespace std {</span>
+<span id="cb117-4"><a href="#cb117-4"></a>  // [array], class template array</span>
+<span id="cb117-5"><a href="#cb117-5"></a>  template&lt;class T, size_t N&gt; struct array;</span>
+<span id="cb117-6"><a href="#cb117-6"></a></span>
+<span id="cb117-7"><a href="#cb117-7"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-8"><a href="#cb117-8"></a><span class="st">-   constexpr bool operator==(const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-9"><a href="#cb117-9"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-10"><a href="#cb117-10"></a><span class="st">-   constexpr bool operator!=(const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-11"><a href="#cb117-11"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-12"><a href="#cb117-12"></a><span class="st">-   constexpr bool operator&lt; (const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-13"><a href="#cb117-13"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-14"><a href="#cb117-14"></a><span class="st">-   constexpr bool operator&gt; (const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-15"><a href="#cb117-15"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-16"><a href="#cb117-16"></a><span class="st">-   constexpr bool operator&lt;=(const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-17"><a href="#cb117-17"></a><span class="st">- template&lt;class T, size_t N&gt;</span></span>
+<span id="cb117-18"><a href="#cb117-18"></a><span class="st">-   constexpr bool operator&gt;=(const array&lt;T, N&gt;&amp; x, const array&lt;T, N&gt;&amp; y);</span></span>
+<span id="cb117-19"><a href="#cb117-19"></a>  template&lt;class T, size_t N&gt;</span>
+<span id="cb117-20"><a href="#cb117-20"></a>    constexpr void swap(array&lt;T, N&gt;&amp; x, array&lt;T, N&gt;&amp; y) noexcept(noexcept(x.swap(y)));</span>
+<span id="cb117-21"><a href="#cb117-21"></a>  [...]</span>
+<span id="cb117-22"><a href="#cb117-22"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.3.3 [deque.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [deque], class template deque</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class deque;</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  template&lt;class T, class Allocator&gt;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    bool operator==(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">-   bool operator!=(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   bool operator&lt; (const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   bool operator&gt; (const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   bool operator&lt;=(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   bool operator&gt;=(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a>  [...]</span>
+<span id="cb1-23"><a href="#cb1-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.3.4 [forward.list.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [forwardlist], class template forward_­list</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class forward_list;</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  template&lt;class T, class Allocator&gt;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    bool operator==(const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">-   bool operator!=(const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   bool operator&lt; (const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   bool operator&gt; (const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   bool operator&lt;=(const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   bool operator&gt;=(const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const forward_list&lt;T, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="va">+                                    const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a></span>
+<span id="cb1-23"><a href="#cb1-23"></a>  [...]</span>
+<span id="cb1-24"><a href="#cb1-24"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.3.5 [list.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [list], class template list</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class list;</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  template&lt;class T, class Allocator&gt;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    bool operator==(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">-   bool operator!=(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   bool operator&lt; (const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   bool operator&gt; (const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   bool operator&lt;=(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   bool operator&gt;=(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a>    </span>
+<span id="cb1-22"><a href="#cb1-22"></a>  [...]</span>
+<span id="cb1-23"><a href="#cb1-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.3.6 [vector.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [vector], class template vector</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  template&lt;class T, class Allocator&gt;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    bool operator==(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">-   bool operator!=(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   bool operator&lt; (const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-   bool operator&gt; (const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   bool operator&lt;=(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   bool operator&gt;=(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a>  [...]</span>
+<span id="cb1-23"><a href="#cb1-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.3.7.1 [array.overview]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  template&lt;class T, size_t N&gt;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  struct array {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    [...]</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    constexpr T *       data() noexcept;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    constexpr const T * data() const noexcept;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    </span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="va">+   friend constexpr bool operator==(const array&amp;, const array&amp;) = default;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="va">+   friend constexpr <em>synth-3way-result</em>&lt;value_type&gt;</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="va">+     operator&lt;=&gt;(const array&amp;, const array&amp;);</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>  };</span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a>  template&lt;class T, class... U&gt;</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    array(T, U...) -&gt; array&lt;T, 1 + sizeof...(U)&gt;;</span>
+<span id="cb1-16"><a href="#cb1-16"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.4.2 [associative.map.syn]. Instead of writing out the value type of <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="kw">const</span> Key, T<span class="op">&gt;</span></code>, I’m using <em><code class="sourceCode default">see above</code></em> for the return types of all the <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>s.</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [map], class template map</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,</span>
+<span id="cb1-6"><a href="#cb1-6"></a>           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    class map;</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  template&lt;class Key, class T, class Compare, class Allocator&gt;</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    bool operator==(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>                    const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">-   bool operator!=(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-   bool operator&lt; (const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="st">-   bool operator&gt; (const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="st">-   bool operator&lt;=(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="st">-   bool operator&gt;=(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="va">+ template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="va">+   <em>see above</em> operator&lt;=&gt;(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="va">+                         const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a></span>
+<span id="cb1-31"><a href="#cb1-31"></a>  [...]</span>
+<span id="cb1-32"><a href="#cb1-32"></a>  </span>
+<span id="cb1-33"><a href="#cb1-33"></a></span>
+<span id="cb1-34"><a href="#cb1-34"></a>  // [multimap], class template multimap</span>
+<span id="cb1-35"><a href="#cb1-35"></a>  template&lt;class Key, class T, class Compare = less&lt;Key&gt;,</span>
+<span id="cb1-36"><a href="#cb1-36"></a>           class Allocator = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    class multimap;</span>
+<span id="cb1-38"><a href="#cb1-38"></a></span>
+<span id="cb1-39"><a href="#cb1-39"></a>  template&lt;class Key, class T, class Compare, class Allocator&gt;</span>
+<span id="cb1-40"><a href="#cb1-40"></a>    bool operator==(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span>
+<span id="cb1-41"><a href="#cb1-41"></a>                    const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="st">-   bool operator!=(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-45"><a href="#cb1-45"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a><span class="st">-   bool operator&lt; (const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-48"><a href="#cb1-48"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="st">-   bool operator&gt; (const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-50"><a href="#cb1-50"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-51"><a href="#cb1-51"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-52"><a href="#cb1-52"></a><span class="st">-   bool operator&lt;=(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-53"><a href="#cb1-53"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-54"><a href="#cb1-54"></a><span class="st">- template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-55"><a href="#cb1-55"></a><span class="st">-   bool operator&gt;=(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-56"><a href="#cb1-56"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);  </span></span>
+<span id="cb1-57"><a href="#cb1-57"></a><span class="va">+ template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-58"><a href="#cb1-58"></a><span class="va">+   <em>see above</em> operator&lt;=&gt;(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-59"><a href="#cb1-59"></a><span class="va">+                         const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-60"><a href="#cb1-60"></a></span>
+<span id="cb1-61"><a href="#cb1-61"></a>  [...]</span>
+<span id="cb1-62"><a href="#cb1-62"></a>]</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.4.3 [associative.set.syn]. These could just use <code class="sourceCode cpp">Key</code> directly, but decided to use <em><code class="sourceCode default">see above</code></em> anyway just to keep the associative containers consistent.</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>namespace std {</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  // [set], class template set</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  template&lt;class Key, class Compare = less&lt;Key&gt;, class Allocator = allocator&lt;Key&gt;&gt;</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    class set;</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>  template&lt;class Key, class Compare, class Allocator&gt;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    bool operator==(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>                    const set&lt;Key, Compare, Allocator&gt;&amp; y);</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">-   bool operator!=(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="st">-   bool operator&lt; (const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="st">-   bool operator&gt; (const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="st">-   bool operator&lt;=(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="st">-   bool operator&gt;=(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="va">+ template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="va">+   <em>see above</em> operator&lt;=&gt;(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="va">+                         const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-29"><a href="#cb1-29"></a>                    </span>
+<span id="cb1-30"><a href="#cb1-30"></a>  [...]</span>
+<span id="cb1-31"><a href="#cb1-31"></a>  </span>
+<span id="cb1-32"><a href="#cb1-32"></a>  // [multiset], class template multiset</span>
+<span id="cb1-33"><a href="#cb1-33"></a>  template&lt;class Key, class Compare = less&lt;Key&gt;, class Allocator = allocator&lt;Key&gt;&gt;</span>
+<span id="cb1-34"><a href="#cb1-34"></a>    class multiset;</span>
+<span id="cb1-35"><a href="#cb1-35"></a></span>
+<span id="cb1-36"><a href="#cb1-36"></a>  template&lt;class Key, class Compare, class Allocator&gt;</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    bool operator==(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span>
+<span id="cb1-38"><a href="#cb1-38"></a>                    const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span>
+<span id="cb1-39"><a href="#cb1-39"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-40"><a href="#cb1-40"></a><span class="st">-   bool operator!=(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="st">-   bool operator&lt; (const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-45"><a href="#cb1-45"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a><span class="st">-   bool operator&gt; (const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-48"><a href="#cb1-48"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="st">-   bool operator&lt;=(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-50"><a href="#cb1-50"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-51"><a href="#cb1-51"></a><span class="st">- template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-52"><a href="#cb1-52"></a><span class="st">-   bool operator&gt;=(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-53"><a href="#cb1-53"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-54"><a href="#cb1-54"></a><span class="va">+ template&lt;class Key, class Compare, class Allocator&gt;</span></span>
+<span id="cb1-55"><a href="#cb1-55"></a><span class="va">+   <em>see above</em> operator&lt;=&gt;(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb1-56"><a href="#cb1-56"></a><span class="va">+                         const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
+<span id="cb1-57"><a href="#cb1-57"></a></span>
+<span id="cb1-58"><a href="#cb1-58"></a></span>
+<span id="cb1-59"><a href="#cb1-59"></a>  [...]</span>
+<span id="cb1-60"><a href="#cb1-60"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.5.2 [unord.map.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb118"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb118-1"><a href="#cb118-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb118-2"><a href="#cb118-2"></a></span>
+<span id="cb118-3"><a href="#cb118-3"></a>namespace std {</span>
+<span id="cb118-4"><a href="#cb118-4"></a>  // [unord.map], class template unordered_­map</span>
+<span id="cb118-5"><a href="#cb118-5"></a>  template&lt;class Key,</span>
+<span id="cb118-6"><a href="#cb118-6"></a>           class T,</span>
+<span id="cb118-7"><a href="#cb118-7"></a>           class Hash = hash&lt;Key&gt;,</span>
+<span id="cb118-8"><a href="#cb118-8"></a>           class Pred = equal_to&lt;Key&gt;,</span>
+<span id="cb118-9"><a href="#cb118-9"></a>           class Alloc = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;</span>
+<span id="cb118-10"><a href="#cb118-10"></a>    class unordered_map;</span>
+<span id="cb118-11"><a href="#cb118-11"></a></span>
+<span id="cb118-12"><a href="#cb118-12"></a>  // [unord.multimap], class template unordered_­multimap</span>
+<span id="cb118-13"><a href="#cb118-13"></a>  template&lt;class Key,</span>
+<span id="cb118-14"><a href="#cb118-14"></a>           class T,</span>
+<span id="cb118-15"><a href="#cb118-15"></a>           class Hash = hash&lt;Key&gt;,</span>
+<span id="cb118-16"><a href="#cb118-16"></a>           class Pred = equal_to&lt;Key&gt;,</span>
+<span id="cb118-17"><a href="#cb118-17"></a>           class Alloc = allocator&lt;pair&lt;const Key, T&gt;&gt;&gt;</span>
+<span id="cb118-18"><a href="#cb118-18"></a>    class unordered_multimap;</span>
+<span id="cb118-19"><a href="#cb118-19"></a></span>
+<span id="cb118-20"><a href="#cb118-20"></a>  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;</span>
+<span id="cb118-21"><a href="#cb118-21"></a>    bool operator==(const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;&amp; a,</span>
+<span id="cb118-22"><a href="#cb118-22"></a>                    const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;&amp; b);</span>
+<span id="cb118-23"><a href="#cb118-23"></a><span class="st">- template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;</span></span>
+<span id="cb118-24"><a href="#cb118-24"></a><span class="st">-   bool operator!=(const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;&amp; a,</span></span>
+<span id="cb118-25"><a href="#cb118-25"></a><span class="st">-                   const unordered_map&lt;Key, T, Hash, Pred, Alloc&gt;&amp; b);</span></span>
+<span id="cb118-26"><a href="#cb118-26"></a></span>
+<span id="cb118-27"><a href="#cb118-27"></a>  template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;</span>
+<span id="cb118-28"><a href="#cb118-28"></a>    bool operator==(const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;&amp; a,</span>
+<span id="cb118-29"><a href="#cb118-29"></a>                    const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;&amp; b);</span>
+<span id="cb118-30"><a href="#cb118-30"></a><span class="st">- template&lt;class Key, class T, class Hash, class Pred, class Alloc&gt;</span></span>
+<span id="cb118-31"><a href="#cb118-31"></a><span class="st">-   bool operator!=(const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;&amp; a,</span></span>
+<span id="cb118-32"><a href="#cb118-32"></a><span class="st">-                   const unordered_multimap&lt;Key, T, Hash, Pred, Alloc&gt;&amp; b);</span></span>
+<span id="cb118-33"><a href="#cb118-33"></a>                    </span>
+<span id="cb118-34"><a href="#cb118-34"></a>  [...]</span>
+<span id="cb118-35"><a href="#cb118-35"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.5.3 [unordered.set.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb119"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb119-1"><a href="#cb119-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb119-2"><a href="#cb119-2"></a></span>
+<span id="cb119-3"><a href="#cb119-3"></a>namespace std {</span>
+<span id="cb119-4"><a href="#cb119-4"></a>  // [unord.set], class template unordered_­set</span>
+<span id="cb119-5"><a href="#cb119-5"></a>  template&lt;class Key,</span>
+<span id="cb119-6"><a href="#cb119-6"></a>           class Hash = hash&lt;Key&gt;,</span>
+<span id="cb119-7"><a href="#cb119-7"></a>           class Pred = equal_to&lt;Key&gt;,</span>
+<span id="cb119-8"><a href="#cb119-8"></a>           class Alloc = allocator&lt;Key&gt;&gt;</span>
+<span id="cb119-9"><a href="#cb119-9"></a>    class unordered_set;</span>
+<span id="cb119-10"><a href="#cb119-10"></a></span>
+<span id="cb119-11"><a href="#cb119-11"></a>  // [unord.multiset], class template unordered_­multiset</span>
+<span id="cb119-12"><a href="#cb119-12"></a>  template&lt;class Key,</span>
+<span id="cb119-13"><a href="#cb119-13"></a>           class Hash = hash&lt;Key&gt;,</span>
+<span id="cb119-14"><a href="#cb119-14"></a>           class Pred = equal_to&lt;Key&gt;,</span>
+<span id="cb119-15"><a href="#cb119-15"></a>           class Alloc = allocator&lt;Key&gt;&gt;</span>
+<span id="cb119-16"><a href="#cb119-16"></a>    class unordered_multiset;</span>
+<span id="cb119-17"><a href="#cb119-17"></a></span>
+<span id="cb119-18"><a href="#cb119-18"></a>  template&lt;class Key, class Hash, class Pred, class Alloc&gt;</span>
+<span id="cb119-19"><a href="#cb119-19"></a>    bool operator==(const unordered_set&lt;Key, Hash, Pred, Alloc&gt;&amp; a,</span>
+<span id="cb119-20"><a href="#cb119-20"></a>                    const unordered_set&lt;Key, Hash, Pred, Alloc&gt;&amp; b);</span>
+<span id="cb119-21"><a href="#cb119-21"></a><span class="st">- template&lt;class Key, class Hash, class Pred, class Alloc&gt;</span></span>
+<span id="cb119-22"><a href="#cb119-22"></a><span class="st">-   bool operator!=(const unordered_set&lt;Key, Hash, Pred, Alloc&gt;&amp; a,</span></span>
+<span id="cb119-23"><a href="#cb119-23"></a><span class="st">-                   const unordered_set&lt;Key, Hash, Pred, Alloc&gt;&amp; b);</span></span>
+<span id="cb119-24"><a href="#cb119-24"></a></span>
+<span id="cb119-25"><a href="#cb119-25"></a>  template&lt;class Key, class Hash, class Pred, class Alloc&gt;</span>
+<span id="cb119-26"><a href="#cb119-26"></a>    bool operator==(const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;&amp; a,</span>
+<span id="cb119-27"><a href="#cb119-27"></a>                    const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;&amp; b);</span>
+<span id="cb119-28"><a href="#cb119-28"></a><span class="st">- template&lt;class Key, class Hash, class Pred, class Alloc&gt;</span></span>
+<span id="cb119-29"><a href="#cb119-29"></a><span class="st">-   bool operator!=(const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;&amp; a,</span></span>
+<span id="cb119-30"><a href="#cb119-30"></a><span class="st">-                   const unordered_multiset&lt;Key, Hash, Pred, Alloc&gt;&amp; b);</span></span>
+<span id="cb119-31"><a href="#cb119-31"></a></span>
+<span id="cb119-32"><a href="#cb119-32"></a>  [...]</span>
+<span id="cb119-33"><a href="#cb119-33"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.6.2 [queue.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb120"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb120-1"><a href="#cb120-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb120-2"><a href="#cb120-2"></a></span>
+<span id="cb120-3"><a href="#cb120-3"></a>namespace std {</span>
+<span id="cb120-4"><a href="#cb120-4"></a>  template&lt;class T, class Container = deque&lt;T&gt;&gt; class queue;</span>
+<span id="cb120-5"><a href="#cb120-5"></a></span>
+<span id="cb120-6"><a href="#cb120-6"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-7"><a href="#cb120-7"></a>    bool operator==(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-8"><a href="#cb120-8"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-9"><a href="#cb120-9"></a>    bool operator!=(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-10"><a href="#cb120-10"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-11"><a href="#cb120-11"></a>    bool operator&lt; (const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-12"><a href="#cb120-12"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-13"><a href="#cb120-13"></a>    bool operator&gt; (const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-14"><a href="#cb120-14"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-15"><a href="#cb120-15"></a>    bool operator&lt;=(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-16"><a href="#cb120-16"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb120-17"><a href="#cb120-17"></a>    bool operator&gt;=(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span>
+<span id="cb120-18"><a href="#cb120-18"></a><span class="va">+ template&lt;class T, ThreeWayComparable Container&gt;</span></span>
+<span id="cb120-19"><a href="#cb120-19"></a><span class="va">+   compare_three_way_result_t&lt;Container&gt;</span></span>
+<span id="cb120-20"><a href="#cb120-20"></a><span class="va">+     operator&lt;=&gt;(const queue&lt;T, Container&gt;&amp; x, const queue&lt;T, Container&gt;&amp; y);</span></span>
+<span id="cb120-21"><a href="#cb120-21"></a></span>
+<span id="cb120-22"><a href="#cb120-22"></a>  [...]</span>
+<span id="cb120-23"><a href="#cb120-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change 22.6.3 [stack.syn]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb121"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb121-1"><a href="#cb121-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb121-2"><a href="#cb121-2"></a></span>
+<span id="cb121-3"><a href="#cb121-3"></a>namespace std {</span>
+<span id="cb121-4"><a href="#cb121-4"></a>  template&lt;class T, class Container = deque&lt;T&gt;&gt; class stack;</span>
+<span id="cb121-5"><a href="#cb121-5"></a></span>
+<span id="cb121-6"><a href="#cb121-6"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-7"><a href="#cb121-7"></a>    bool operator==(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-8"><a href="#cb121-8"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-9"><a href="#cb121-9"></a>    bool operator!=(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-10"><a href="#cb121-10"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-11"><a href="#cb121-11"></a>    bool operator&lt; (const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-12"><a href="#cb121-12"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-13"><a href="#cb121-13"></a>    bool operator&gt; (const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-14"><a href="#cb121-14"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-15"><a href="#cb121-15"></a>    bool operator&lt;=(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-16"><a href="#cb121-16"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-17"><a href="#cb121-17"></a>    bool operator&gt;=(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span>
+<span id="cb121-18"><a href="#cb121-18"></a><span class="va">+ template&lt;class T, ThreeWayComparable Container&gt;</span></span>
+<span id="cb121-19"><a href="#cb121-19"></a><span class="va">+   compare_three_way_result_t&lt;Container&gt;</span></span>
+<span id="cb121-20"><a href="#cb121-20"></a><span class="va">+     operator&lt;=&gt;(const stack&lt;T, Container&gt;&amp; x, const stack&lt;T, Container&gt;&amp; y);</span></span>
+<span id="cb121-21"><a href="#cb121-21"></a></span>
+<span id="cb121-22"><a href="#cb121-22"></a>  template&lt;class T, class Container&gt;</span>
+<span id="cb121-23"><a href="#cb121-23"></a>    void swap(stack&lt;T, Container&gt;&amp; x, stack&lt;T, Container&gt;&amp; y) noexcept(noexcept(x.swap(y)));</span>
+<span id="cb121-24"><a href="#cb121-24"></a>  template&lt;class T, class Container, class Alloc&gt;</span>
+<span id="cb121-25"><a href="#cb121-25"></a>    struct uses_allocator&lt;stack&lt;T, Container&gt;, Alloc&gt;;</span>
+<span id="cb121-26"><a href="#cb121-26"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add to 22.6.4.4 [queue.ops]:</p>
+<blockquote>
+<div class="sourceCode" id="cb122"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb122-1"><a href="#cb122-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> Container<span class="op">&gt;</span></span>
+<span id="cb122-2"><a href="#cb122-2"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> queue<span class="op">&lt;</span>T, Container<span class="op">&gt;&amp;</span> x,</span>
+<span id="cb122-3"><a href="#cb122-3"></a>                    <span class="kw">const</span> queue<span class="op">&lt;</span>T, Container<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>c <span class="op">&gt;=</span> y<span class="op">.</span>c</code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb123"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb123-1"><a href="#cb123-1"></a>template&lt;class T, ThreeWayComparable Container&gt;</span>
+<span id="cb123-2"><a href="#cb123-2"></a>  compare_three_way_result_t&lt;Container&gt;</span>
+<span id="cb123-3"><a href="#cb123-3"></a>    operator&lt;=&gt;(const queue&lt;T, Container&gt;&amp; x,</span>
+<span id="cb123-4"><a href="#cb123-4"></a>                const queue&lt;T, Container&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>c <span class="op">&lt;=&gt;</span> y<span class="op">.</span>c</code>.</p>
+</div>
+</blockquote>
+<p>Add to 22.6.6.4 [stack.ops]:</p>
+<blockquote>
+<div class="sourceCode" id="cb124"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb124-1"><a href="#cb124-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> Container<span class="op">&gt;</span></span>
+<span id="cb124-2"><a href="#cb124-2"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> stack<span class="op">&lt;</span>T, Container<span class="op">&gt;&amp;</span> x,</span>
+<span id="cb124-3"><a href="#cb124-3"></a>                    <span class="kw">const</span> stack<span class="op">&lt;</span>T, Container<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>c <span class="op">&gt;=</span> y<span class="op">.</span>c</code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb125"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb125-1"><a href="#cb125-1"></a>template&lt;class T, ThreeWayComparable Container&gt;</span>
+<span id="cb125-2"><a href="#cb125-2"></a>  compare_three_way_result_t&lt;Container&gt;</span>
+<span id="cb125-3"><a href="#cb125-3"></a>    operator&lt;=&gt;(const stack&lt;T, Container&gt;&amp; x,</span>
+<span id="cb125-4"><a href="#cb125-4"></a>                const stack&lt;T, Container&gt;&amp; y);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>c <span class="op">&lt;=&gt;</span> y<span class="op">.</span>c</code>.</p>
+</div>
+</blockquote>
 <h2 id="clause-23-iterators-library"><span class="header-section-number">5.8</span> Clause 23: Iterators library<a href="#clause-23-iterators-library" class="self-link"></a></h2>
 <p>TBD</p>
 <h2 id="clause-24-ranges-library"><span class="header-section-number">5.9</span> Clause 24: Ranges library<a href="#clause-24-ranges-library" class="self-link"></a></h2>

@@ -2501,7 +2501,641 @@ otherwise `R` is `weak_ordering`.
 
 ## Clause 22: Containers library
 
-TBD
+`array`'s comparisons move to be hidden friends to allow for use as non-type
+template parameters. All the other containers drop `!=` and, if they have
+relational operators, those get replaced with a `<=>`.
+
+Add to 22.2.1 [container.requirements.general]/4:
+
+::: bq
+[4]{.pnum} In Tables 62, 63, and 64 `X` denotes a container class containing
+objects of type `T`, `a` and `b` denote values of type `X`, [`i` and `j` denote
+values of type (possibly-const) `X::iterator`]{.addu}, `u` denotes an identifier,
+`r` denotes a non-const value of type `X`, and `rv` denotes a non-const rvalue of
+type `X`.
+:::
+
+Add a row to 22.2.1, Table 62 [container.req]:
+
+::: bq
+<table>
+<tr><th>Expression</th>
+<th>Return type</th>
+<th>Operational<br />semantics</th>
+<th>Assertion/note<br />pre-/post-condition</th>
+<th>Complexity</th></tr>
+<tr>
+<td>[`i <=> j`]{.addu}</td>
+<td>[`strong_ordering` if `X::iterator` meets the random access iterator
+requirements, otherwise `strong_equality`]{.addu}</td>
+<td></td>
+<td></td>
+<td>[constant]{.addu}</td>
+</tr>
+</table>
+:::
+
+Add `<=>` to the requirements in 22.2.1 [container.requirements.general]/7:
+
+::: bq
+In the expressions
+
+```diff
+  i == j
+  i != j
+  i < j
+  i <= j
+  i >= j
+  i > j
++ i <=> j
+  i - j
+```
+
+where `i` and `j` denote objects of a container's iterator type, either or both
+may be replaced by an object of the container's `const_iterator` type referring
+to the same element with no change in semantics.
+:::
+
+Replace 22.2.1 [container.requirements.general], Table 64 [container.opt] to 
+refer to `<=>` using _`synth-3way`{.default}_ instead of `<`.
+
+::: bq
+Table 64 lists operations that are provided for some types of containers but not
+others. Those containers for which the listed operations are provided shall
+implement the semantics described in Table 64 unless otherwise stated. If the
+iterators passed to [`lexicographical_compare`]{.rm}
+[`lexicographical_compare_three_way`]{.addu} satisfy the constexpr iterator
+requirements ([iterator.requirements.general]) then the operations described
+in Table 64 are implemented by constexpr functions.
+
+<table>
+<tr><th>Expression</th>
+<th>Return type</th>
+<th>Operational<br />semantics</th>
+<th>Assertion/note<br />pre-/post-condition</th>
+<th>Complexity</th></tr>
+
+<tr>
+<td>[`a < b`]{.rm}</td>
+<td>[convertible to `bool`{.default}]{.rm}</td>
+<td>
+
+::: rm
+```
+lexicographical_compare(
+    a.begin(), a.end(),
+	b.begin(), b.end())
+```
+:::
+</td>
+<td>[*Expects*: `<` is defined for values of type (possibly const) `T`.
+`<` is a total ordering relationship.]{.rm}</td>
+<td>[linear]{.rm}</td>
+</tr>
+<tr>
+<td>[`a > b`]{.rm}</td>
+<td>[convertible to `bool`{.default}]{.rm}</td>
+<td>[`b < a`]{.rm}</td>
+<td></td>
+<td>[linear]{.rm}</td>
+</tr>
+<tr>
+<td>[`a <= b`]{.rm}</td>
+<td>[convertible to `bool`{.default}]{.rm}</td>
+<td>[`!(a > b)`]{.rm}</td>
+<td></td>
+<td>[linear]{.rm}</td>
+</tr>
+<tr>
+<td>[`a >= b`]{.rm}</td>
+<td>[convertible to `bool`{.default}]{.rm}</td>
+<td>[`!(a < b)`]{.rm}</td>
+<td></td>
+<td>[linear]{.rm}</td>
+</tr>
+<tr>
+<td>[`a <=> b`]{.addu}</td>
+<td>[_`synth-3way-result`{.default}_`<value_type>`]{.addu}</td>
+<td>
+
+::: {.addu}
+```
+lexicographical_compare_three_way(
+    a.begin(), a.end(),
+	b.begin(), b.end(),
+	@_synth-3way_@)
+```
+:::
+</td>
+<td>[*Expects*: If `<=>` is defined for values of type (possibly const) `T`,
+then `<=>` is a ordering relationship. Oftherwise, `<` is defined for values
+of type (possibly const) `T` and `<` is a total ordering relationship.]{.addu}</td>
+<td>[linear]{.addu}</td>
+</tr>
+
+
+</table>
+:::
+
+Change 22.3.2 [array.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [array], class template array
+  template<class T, size_t N> struct array;
+
+- template<class T, size_t N>
+-   constexpr bool operator==(const array<T, N>& x, const array<T, N>& y);
+- template<class T, size_t N>
+-   constexpr bool operator!=(const array<T, N>& x, const array<T, N>& y);
+- template<class T, size_t N>
+-   constexpr bool operator< (const array<T, N>& x, const array<T, N>& y);
+- template<class T, size_t N>
+-   constexpr bool operator> (const array<T, N>& x, const array<T, N>& y);
+- template<class T, size_t N>
+-   constexpr bool operator<=(const array<T, N>& x, const array<T, N>& y);
+- template<class T, size_t N>
+-   constexpr bool operator>=(const array<T, N>& x, const array<T, N>& y);
+  template<class T, size_t N>
+    constexpr void swap(array<T, N>& x, array<T, N>& y) noexcept(noexcept(x.swap(y)));
+  [...]
+}
+```
+:::
+
+Change 22.3.3 [deque.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [deque], class template deque
+  template<class T, class Allocator = allocator<T>> class deque;
+
+  template<class T, class Allocator>
+    bool operator==(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator!=(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator< (const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator> (const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator<=(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator>=(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
++ template<class T, class Allocator>
++   @_synth-3way-result_@<T> operator<=>(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
+
+  [...]
+}
+```
+:::
+
+Change 22.3.4 [forward.list.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [forwardlist], class template forward_­list
+  template<class T, class Allocator = allocator<T>> class forward_list;
+
+  template<class T, class Allocator>
+    bool operator==(const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator!=(const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator< (const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator> (const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator<=(const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator>=(const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
++ template<class T, class Allocator>
++   @_synth-3way-result_@<T> operator<=>(const forward_list<T, Allocator>& x,
++                                    const forward_list<T, Allocator>& y);
+
+  [...]
+}
+```
+:::
+
+Change 22.3.5 [list.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [list], class template list
+  template<class T, class Allocator = allocator<T>> class list;
+
+  template<class T, class Allocator>
+    bool operator==(const list<T, Allocator>& x, const list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator!=(const list<T, Allocator>& x, const list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator< (const list<T, Allocator>& x, const list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator> (const list<T, Allocator>& x, const list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator<=(const list<T, Allocator>& x, const list<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator>=(const list<T, Allocator>& x, const list<T, Allocator>& y);
++ template<class T, class Allocator>
++   @_synth-3way-result_@<T> operator<=>(const list<T, Allocator>& x, const list<T, Allocator>& y);
+	
+  [...]
+}
+```
+:::
+
+Change 22.3.6 [vector.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [vector], class template vector
+  template<class T, class Allocator = allocator<T>> class vector;
+
+  template<class T, class Allocator>
+    bool operator==(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator!=(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator< (const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator> (const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator<=(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+- template<class T, class Allocator>
+-   bool operator>=(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
++ template<class T, class Allocator>
++   @_synth-3way-result_@<T> operator<=>(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
+
+  [...]
+}
+```
+:::
+
+Change 22.3.7.1 [array.overview]:
+
+::: bq
+```diff
+namespace std {
+  template<class T, size_t N>
+  struct array {
+    [...]
+
+    constexpr T *       data() noexcept;
+    constexpr const T * data() const noexcept;
+	
++   friend constexpr bool operator==(const array&, const array&) = default;
++   friend constexpr @_synth-3way-result_@<value_type>
++     operator<=>(const array&, const array&);
+  };
+
+  template<class T, class... U>
+    array(T, U...) -> array<T, 1 + sizeof...(U)>;
+}
+```
+:::
+
+Change 22.4.2 [associative.map.syn]. Instead of writing out the value type of
+`pair<const Key, T>`, I'm using _`see above`{.default}_ for the return types of
+all the `<=>`s.
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [map], class template map
+  template<class Key, class T, class Compare = less<Key>,
+           class Allocator = allocator<pair<const Key, T>>>
+    class map;
+
+  template<class Key, class T, class Compare, class Allocator>
+    bool operator==(const map<Key, T, Compare, Allocator>& x,
+                    const map<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator!=(const map<Key, T, Compare, Allocator>& x,
+-                   const map<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator< (const map<Key, T, Compare, Allocator>& x,
+-                   const map<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator> (const map<Key, T, Compare, Allocator>& x,
+-                   const map<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator<=(const map<Key, T, Compare, Allocator>& x,
+-                   const map<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator>=(const map<Key, T, Compare, Allocator>& x,
+-                   const map<Key, T, Compare, Allocator>& y);
++ template<class Key, class T, class Compare, class Allocator>
++   @_see above_@ operator<=>(const map<Key, T, Compare, Allocator>& x,
++                         const map<Key, T, Compare, Allocator>& y);
+
+  [...]
+  
+
+  // [multimap], class template multimap
+  template<class Key, class T, class Compare = less<Key>,
+           class Allocator = allocator<pair<const Key, T>>>
+    class multimap;
+
+  template<class Key, class T, class Compare, class Allocator>
+    bool operator==(const multimap<Key, T, Compare, Allocator>& x,
+                    const multimap<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator!=(const multimap<Key, T, Compare, Allocator>& x,
+-                   const multimap<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator< (const multimap<Key, T, Compare, Allocator>& x,
+-                   const multimap<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator> (const multimap<Key, T, Compare, Allocator>& x,
+-                   const multimap<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator<=(const multimap<Key, T, Compare, Allocator>& x,
+-                   const multimap<Key, T, Compare, Allocator>& y);
+- template<class Key, class T, class Compare, class Allocator>
+-   bool operator>=(const multimap<Key, T, Compare, Allocator>& x,
+-                   const multimap<Key, T, Compare, Allocator>& y);  
++ template<class Key, class T, class Compare, class Allocator>
++   @_see above_@ operator<=>(const multimap<Key, T, Compare, Allocator>& x,
++                         const multimap<Key, T, Compare, Allocator>& y);
+
+  [...]
+]
+```
+:::
+
+Change 22.4.3 [associative.set.syn]. These could just use `Key` directly, but
+decided to use _`see above`{.default}_ anyway just to keep the associative
+containers consistent.
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [set], class template set
+  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
+    class set;
+
+  template<class Key, class Compare, class Allocator>
+    bool operator==(const set<Key, Compare, Allocator>& x,
+                    const set<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator!=(const set<Key, Compare, Allocator>& x,
+-                   const set<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator< (const set<Key, Compare, Allocator>& x,
+-                   const set<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator> (const set<Key, Compare, Allocator>& x,
+-                   const set<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator<=(const set<Key, Compare, Allocator>& x,
+-                   const set<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator>=(const set<Key, Compare, Allocator>& x,
+-                   const set<Key, Compare, Allocator>& y);
++ template<class Key, class Compare, class Allocator>
++   @_see above_@ operator<=>(const set<Key, Compare, Allocator>& x,
++                         const set<Key, Compare, Allocator>& y);
+					
+  [...]
+  
+  // [multiset], class template multiset
+  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
+    class multiset;
+
+  template<class Key, class Compare, class Allocator>
+    bool operator==(const multiset<Key, Compare, Allocator>& x,
+                    const multiset<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator!=(const multiset<Key, Compare, Allocator>& x,
+-                   const multiset<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator< (const multiset<Key, Compare, Allocator>& x,
+-                   const multiset<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator> (const multiset<Key, Compare, Allocator>& x,
+-                   const multiset<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator<=(const multiset<Key, Compare, Allocator>& x,
+-                   const multiset<Key, Compare, Allocator>& y);
+- template<class Key, class Compare, class Allocator>
+-   bool operator>=(const multiset<Key, Compare, Allocator>& x,
+-                   const multiset<Key, Compare, Allocator>& y);
++ template<class Key, class Compare, class Allocator>
++   @_see above_@ operator<=>(const multiset<Key, Compare, Allocator>& x,
++                         const multiset<Key, Compare, Allocator>& y);
+
+
+  [...]
+}
+```
+:::
+
+Change 22.5.2 [unord.map.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [unord.map], class template unordered_­map
+  template<class Key,
+           class T,
+           class Hash = hash<Key>,
+           class Pred = equal_to<Key>,
+           class Alloc = allocator<pair<const Key, T>>>
+    class unordered_map;
+
+  // [unord.multimap], class template unordered_­multimap
+  template<class Key,
+           class T,
+           class Hash = hash<Key>,
+           class Pred = equal_to<Key>,
+           class Alloc = allocator<pair<const Key, T>>>
+    class unordered_multimap;
+
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_map<Key, T, Hash, Pred, Alloc>& a,
+                    const unordered_map<Key, T, Hash, Pred, Alloc>& b);
+- template<class Key, class T, class Hash, class Pred, class Alloc>
+-   bool operator!=(const unordered_map<Key, T, Hash, Pred, Alloc>& a,
+-                   const unordered_map<Key, T, Hash, Pred, Alloc>& b);
+
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_multimap<Key, T, Hash, Pred, Alloc>& a,
+                    const unordered_multimap<Key, T, Hash, Pred, Alloc>& b);
+- template<class Key, class T, class Hash, class Pred, class Alloc>
+-   bool operator!=(const unordered_multimap<Key, T, Hash, Pred, Alloc>& a,
+-                   const unordered_multimap<Key, T, Hash, Pred, Alloc>& b);
+					
+  [...]
+}
+```
+:::
+
+Change 22.5.3 [unordered.set.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  // [unord.set], class template unordered_­set
+  template<class Key,
+           class Hash = hash<Key>,
+           class Pred = equal_to<Key>,
+           class Alloc = allocator<Key>>
+    class unordered_set;
+
+  // [unord.multiset], class template unordered_­multiset
+  template<class Key,
+           class Hash = hash<Key>,
+           class Pred = equal_to<Key>,
+           class Alloc = allocator<Key>>
+    class unordered_multiset;
+
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_set<Key, Hash, Pred, Alloc>& a,
+                    const unordered_set<Key, Hash, Pred, Alloc>& b);
+- template<class Key, class Hash, class Pred, class Alloc>
+-   bool operator!=(const unordered_set<Key, Hash, Pred, Alloc>& a,
+-                   const unordered_set<Key, Hash, Pred, Alloc>& b);
+
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_multiset<Key, Hash, Pred, Alloc>& a,
+                    const unordered_multiset<Key, Hash, Pred, Alloc>& b);
+- template<class Key, class Hash, class Pred, class Alloc>
+-   bool operator!=(const unordered_multiset<Key, Hash, Pred, Alloc>& a,
+-                   const unordered_multiset<Key, Hash, Pred, Alloc>& b);
+
+  [...]
+}
+```
+:::
+
+Change 22.6.2 [queue.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  template<class T, class Container = deque<T>> class queue;
+
+  template<class T, class Container>
+    bool operator==(const queue<T, Container>& x, const queue<T, Container>& y);
+  template<class T, class Container>
+    bool operator!=(const queue<T, Container>& x, const queue<T, Container>& y);
+  template<class T, class Container>
+    bool operator< (const queue<T, Container>& x, const queue<T, Container>& y);
+  template<class T, class Container>
+    bool operator> (const queue<T, Container>& x, const queue<T, Container>& y);
+  template<class T, class Container>
+    bool operator<=(const queue<T, Container>& x, const queue<T, Container>& y);
+  template<class T, class Container>
+    bool operator>=(const queue<T, Container>& x, const queue<T, Container>& y);
++ template<class T, ThreeWayComparable Container>
++   compare_three_way_result_t<Container>
++     operator<=>(const queue<T, Container>& x, const queue<T, Container>& y);
+
+  [...]
+}
+```
+:::
+
+Change 22.6.3 [stack.syn]:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  template<class T, class Container = deque<T>> class stack;
+
+  template<class T, class Container>
+    bool operator==(const stack<T, Container>& x, const stack<T, Container>& y);
+  template<class T, class Container>
+    bool operator!=(const stack<T, Container>& x, const stack<T, Container>& y);
+  template<class T, class Container>
+    bool operator< (const stack<T, Container>& x, const stack<T, Container>& y);
+  template<class T, class Container>
+    bool operator> (const stack<T, Container>& x, const stack<T, Container>& y);
+  template<class T, class Container>
+    bool operator<=(const stack<T, Container>& x, const stack<T, Container>& y);
+  template<class T, class Container>
+    bool operator>=(const stack<T, Container>& x, const stack<T, Container>& y);
++ template<class T, ThreeWayComparable Container>
++   compare_three_way_result_t<Container>
++     operator<=>(const stack<T, Container>& x, const stack<T, Container>& y);
+
+  template<class T, class Container>
+    void swap(stack<T, Container>& x, stack<T, Container>& y) noexcept(noexcept(x.swap(y)));
+  template<class T, class Container, class Alloc>
+    struct uses_allocator<stack<T, Container>, Alloc>;
+}
+```
+:::
+
+Add to 22.6.4.4 [queue.ops]:
+
+::: bq
+```cpp
+template<class T, class Container>
+    bool operator>=(const queue<T, Container>& x,
+                    const queue<T, Container>& y);
+```
+[6]{.pnum} *Returns*: `x.c >= y.c`.
+
+::: {.addu}
+```
+template<class T, ThreeWayComparable Container>
+  compare_three_way_result_t<Container>
+    operator<=>(const queue<T, Container>& x,
+                const queue<T, Container>& y);
+```
+[7]{.pnum} *Returns*: `x.c <=> y.c`.
+:::
+:::
+
+Add to 22.6.6.4 [stack.ops]:
+
+::: bq
+```cpp
+template<class T, class Container>
+    bool operator>=(const stack<T, Container>& x,
+                    const stack<T, Container>& y);
+```
+[6]{.pnum} *Returns*: `x.c >= y.c`.
+
+::: {.addu}
+```
+template<class T, ThreeWayComparable Container>
+  compare_three_way_result_t<Container>
+    operator<=>(const stack<T, Container>& x,
+                const stack<T, Container>& y);
+```
+[7]{.pnum} *Returns*: `x.c <=> y.c`.
+:::
+:::
 
 ## Clause 23: Iterators library
 
