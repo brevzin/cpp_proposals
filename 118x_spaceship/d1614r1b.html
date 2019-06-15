@@ -4122,7 +4122,7 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 </div>
 </blockquote>
 <h2 id="clause-27-time-library"><span class="header-section-number">5.12</span> Clause 27: Time library<a href="#clause-27-time-library" class="self-link"></a></h2>
-<p>Add <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to all the chrono types where possible, in some cases added as a new constrained function template, in other cases replacing the relational operators. Also removing no-longer-necessary <code class="sourceCode cpp"><span class="op">!=</span></code> operators.</p>
+<p>Add <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to all the chrono types where possible, in some cases added as a new constrained function template, in most cases replacing the relational operators. Also removing no-longer-necessary <code class="sourceCode cpp"><span class="op">!=</span></code> operators.</p>
 <p>Change 27.2 [time.syn]:</p>
 <blockquote>
 <div class="sourceCode" id="cb287"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb287-1"><a href="#cb287-1"></a>namespace std {</span>
@@ -4750,7 +4750,30 @@ return x.month_day_last() &lt;=&gt; y.month_day_last();</code></pre>
 </div>
 </blockquote>
 <h2 id="clause-28-localization-library"><span class="header-section-number">5.13</span> Clause 28: Localization library<a href="#clause-28-localization-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>Remove the <code class="sourceCode cpp"><span class="op">!=</span></code> from <code class="sourceCode cpp">locale</code>.</p>
+<p>Change 28.3.1 [locale]:</p>
+<blockquote>
+<div class="sourceCode" id="cb354"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb354-1"><a href="#cb354-1"></a>namespace std {</span>
+<span id="cb354-2"><a href="#cb354-2"></a>  class locale {</span>
+<span id="cb354-3"><a href="#cb354-3"></a>    [...]</span>
+<span id="cb354-4"><a href="#cb354-4"></a>    </span>
+<span id="cb354-5"><a href="#cb354-5"></a>    bool operator==(const locale&amp; other) const;</span>
+<span id="cb354-6"><a href="#cb354-6"></a><span class="st">-   bool operator!=(const locale&amp; other) const; </span></span>
+<span id="cb354-7"><a href="#cb354-7"></a>    </span>
+<span id="cb354-8"><a href="#cb354-8"></a>    [...]</span>
+<span id="cb354-9"><a href="#cb354-9"></a>  };</span>
+<span id="cb354-10"><a href="#cb354-10"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 28.3.1.4 [locale.operators]:</p>
+<blockquote>
+<div class="sourceCode" id="cb355"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb355-1"><a href="#cb355-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> locale<span class="op">&amp;</span> other<span class="op">)</span> <span class="kw">const</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if both arguments are the same locale, or one is a copy of the other, or each has a name and the names are identical; <code class="sourceCode cpp"><span class="kw">false</span></code> otherwise.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>bool operator!=(const locale&amp; other) const;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(*</span><span class="kw">this</span> <span class="op">==</span> other<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
 <h2 id="clause-29-inputoutput-library"><span class="header-section-number">5.14</span> Clause 29: Input/output library<a href="#clause-29-inputoutput-library" class="self-link"></a></h2>
 <p>TBD</p>
 <h2 id="clause-30-regular-expressions-library"><span class="header-section-number">5.15</span> Clause 30: Regular expressions library<a href="#clause-30-regular-expressions-library" class="self-link"></a></h2>

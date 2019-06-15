@@ -4494,7 +4494,7 @@ return x.start() == y.start() &&
 ## Clause 27: Time library
 
 Add `<=>` to all the chrono types where possible, in some cases added as a new
-constrained function template, in other cases replacing the relational operators.
+constrained function template, in most cases replacing the relational operators.
 Also removing no-longer-necessary `!=` operators.
 
 Change 27.2 [time.syn]:
@@ -5319,7 +5319,42 @@ constexpr strong_ordering operator<=>(const link& x, const link& y) noexcept;
 
 ## Clause 28: Localization library
 
-TBD
+Remove the `!=` from `locale`.
+
+Change 28.3.1 [locale]:
+
+::: bq
+```diff
+namespace std {
+  class locale {
+    [...]
+	
+    bool operator==(const locale& other) const;
+-   bool operator!=(const locale& other) const;	
+	
+	[...]
+  };
+}
+```
+:::
+
+Change 28.3.1.4 [locale.operators]:
+
+::: bq
+```cpp
+bool operator==(const locale& other) const;
+```
+[1]{.pnum} *Returns*: `true` if both arguments are the same locale, or one is a
+copy of the other, or each has a name and the names are identical; 
+`false` otherwise.
+
+::: rm
+```
+bool operator!=(const locale& other) const;
+```
+[2]{.pnum} *Returns*: `!(*this == other)`.
+:::
+:::
 
 ## Clause 29: Input/output library
 
