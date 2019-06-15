@@ -4891,9 +4891,511 @@ return x.month_day_last() &lt;=&gt; y.month_day_last();</code></pre>
 </div>
 </blockquote>
 <h2 id="clause-30-regular-expressions-library"><span class="header-section-number">5.15</span> Clause 30: Regular expressions library<a href="#clause-30-regular-expressions-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>Reduce all the <code class="sourceCode cpp">sub_match</code> operators to just <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, and remove <code class="sourceCode cpp"><span class="op">!=</span></code> from <code class="sourceCode cpp">match_results</code>.</p>
+<p>Change 30.4 [re.syn]:</p>
+<blockquote>
+<div class="sourceCode" id="cb375"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb375-1"><a href="#cb375-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb375-2"><a href="#cb375-2"></a></span>
+<span id="cb375-3"><a href="#cb375-3"></a>namespace std {</span>
+<span id="cb375-4"><a href="#cb375-4"></a>  [...]</span>
+<span id="cb375-5"><a href="#cb375-5"></a></span>
+<span id="cb375-6"><a href="#cb375-6"></a>  // [re.submatch], class template sub_match</span>
+<span id="cb375-7"><a href="#cb375-7"></a>  template&lt;class BidirectionalIterator&gt;</span>
+<span id="cb375-8"><a href="#cb375-8"></a>    class sub_match;</span>
+<span id="cb375-9"><a href="#cb375-9"></a></span>
+<span id="cb375-10"><a href="#cb375-10"></a>  using csub_match  = sub_match&lt;const char*&gt;;</span>
+<span id="cb375-11"><a href="#cb375-11"></a>  using wcsub_match = sub_match&lt;const wchar_t*&gt;;</span>
+<span id="cb375-12"><a href="#cb375-12"></a>  using ssub_match  = sub_match&lt;string::const_iterator&gt;;</span>
+<span id="cb375-13"><a href="#cb375-13"></a>  using wssub_match = sub_match&lt;wstring::const_iterator&gt;;</span>
+<span id="cb375-14"><a href="#cb375-14"></a></span>
+<span id="cb375-15"><a href="#cb375-15"></a>  // [re.submatch.op], sub_match non-member operators</span>
+<span id="cb375-16"><a href="#cb375-16"></a>  template&lt;class BiIter&gt;</span>
+<span id="cb375-17"><a href="#cb375-17"></a>    bool operator==(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span>
+<span id="cb375-18"><a href="#cb375-18"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-19"><a href="#cb375-19"></a><span class="st">-   bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-20"><a href="#cb375-20"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-21"><a href="#cb375-21"></a><span class="st">-   bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-22"><a href="#cb375-22"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-23"><a href="#cb375-23"></a><span class="st">-   bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-24"><a href="#cb375-24"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-25"><a href="#cb375-25"></a><span class="st">-   bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-26"><a href="#cb375-26"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-27"><a href="#cb375-27"></a><span class="st">-   bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-28"><a href="#cb375-28"></a><span class="va">+ template&lt;class BiIter&gt;</span></span>
+<span id="cb375-29"><a href="#cb375-29"></a><span class="va">+   constexpr auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-30"><a href="#cb375-30"></a></span>
+<span id="cb375-31"><a href="#cb375-31"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-32"><a href="#cb375-32"></a><span class="st">-   bool operator==(</span></span>
+<span id="cb375-33"><a href="#cb375-33"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-34"><a href="#cb375-34"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-35"><a href="#cb375-35"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-36"><a href="#cb375-36"></a><span class="st">-   bool operator!=(</span></span>
+<span id="cb375-37"><a href="#cb375-37"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-38"><a href="#cb375-38"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-39"><a href="#cb375-39"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-40"><a href="#cb375-40"></a><span class="st">-   bool operator&lt;(</span></span>
+<span id="cb375-41"><a href="#cb375-41"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-42"><a href="#cb375-42"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-43"><a href="#cb375-43"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-44"><a href="#cb375-44"></a><span class="st">-   bool operator&gt;(</span></span>
+<span id="cb375-45"><a href="#cb375-45"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-46"><a href="#cb375-46"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-47"><a href="#cb375-47"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-48"><a href="#cb375-48"></a><span class="st">-   bool operator&lt;=(</span></span>
+<span id="cb375-49"><a href="#cb375-49"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-50"><a href="#cb375-50"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-51"><a href="#cb375-51"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-52"><a href="#cb375-52"></a><span class="st">-   bool operator&gt;=(</span></span>
+<span id="cb375-53"><a href="#cb375-53"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,</span></span>
+<span id="cb375-54"><a href="#cb375-54"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-55"><a href="#cb375-55"></a></span>
+<span id="cb375-56"><a href="#cb375-56"></a>  template&lt;class BiIter, class ST, class SA&gt;</span>
+<span id="cb375-57"><a href="#cb375-57"></a>    bool operator==(</span>
+<span id="cb375-58"><a href="#cb375-58"></a>      const sub_match&lt;BiIter&gt;&amp; lhs,</span>
+<span id="cb375-59"><a href="#cb375-59"></a>      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span>
+<span id="cb375-60"><a href="#cb375-60"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-61"><a href="#cb375-61"></a><span class="st">-   bool operator!=(</span></span>
+<span id="cb375-62"><a href="#cb375-62"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-63"><a href="#cb375-63"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-64"><a href="#cb375-64"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-65"><a href="#cb375-65"></a><span class="st">-   bool operator&lt;(</span></span>
+<span id="cb375-66"><a href="#cb375-66"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-67"><a href="#cb375-67"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-68"><a href="#cb375-68"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-69"><a href="#cb375-69"></a><span class="st">-   bool operator&gt;(</span></span>
+<span id="cb375-70"><a href="#cb375-70"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-71"><a href="#cb375-71"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-72"><a href="#cb375-72"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-73"><a href="#cb375-73"></a><span class="st">-   bool operator&lt;=(</span></span>
+<span id="cb375-74"><a href="#cb375-74"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-75"><a href="#cb375-75"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-76"><a href="#cb375-76"></a><span class="st">- template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-77"><a href="#cb375-77"></a><span class="st">-   bool operator&gt;=(</span></span>
+<span id="cb375-78"><a href="#cb375-78"></a><span class="st">-     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-79"><a href="#cb375-79"></a><span class="st">-     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-80"><a href="#cb375-80"></a><span class="va">+ template&lt;class BiIter, class ST, class SA&gt;</span></span>
+<span id="cb375-81"><a href="#cb375-81"></a><span class="va">+   auto operator&lt;=&gt;(</span></span>
+<span id="cb375-82"><a href="#cb375-82"></a><span class="va">+     const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-83"><a href="#cb375-83"></a><span class="va">+     const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</span></span>
+<span id="cb375-84"><a href="#cb375-84"></a></span>
+<span id="cb375-85"><a href="#cb375-85"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-86"><a href="#cb375-86"></a><span class="st">-   bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-87"><a href="#cb375-87"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-88"><a href="#cb375-88"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-89"><a href="#cb375-89"></a><span class="st">-   bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-90"><a href="#cb375-90"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-91"><a href="#cb375-91"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-92"><a href="#cb375-92"></a><span class="st">-   bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-93"><a href="#cb375-93"></a><span class="st">-                  const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-94"><a href="#cb375-94"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-95"><a href="#cb375-95"></a><span class="st">-   bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-96"><a href="#cb375-96"></a><span class="st">-                  const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-97"><a href="#cb375-97"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-98"><a href="#cb375-98"></a><span class="st">-   bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-99"><a href="#cb375-99"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-100"><a href="#cb375-100"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-101"><a href="#cb375-101"></a><span class="st">-   bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,</span></span>
+<span id="cb375-102"><a href="#cb375-102"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-103"><a href="#cb375-103"></a></span>
+<span id="cb375-104"><a href="#cb375-104"></a>  template&lt;class BiIter&gt;</span>
+<span id="cb375-105"><a href="#cb375-105"></a>    bool operator==(const sub_match&lt;BiIter&gt;&amp; lhs,</span>
+<span id="cb375-106"><a href="#cb375-106"></a>                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span>
+<span id="cb375-107"><a href="#cb375-107"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-108"><a href="#cb375-108"></a><span class="st">-   bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-109"><a href="#cb375-109"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-110"><a href="#cb375-110"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-111"><a href="#cb375-111"></a><span class="st">-   bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-112"><a href="#cb375-112"></a><span class="st">-                  const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-113"><a href="#cb375-113"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-114"><a href="#cb375-114"></a><span class="st">-   bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-115"><a href="#cb375-115"></a><span class="st">-                  const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-116"><a href="#cb375-116"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-117"><a href="#cb375-117"></a><span class="st">-   bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-118"><a href="#cb375-118"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-119"><a href="#cb375-119"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-120"><a href="#cb375-120"></a><span class="st">-   bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-121"><a href="#cb375-121"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-122"><a href="#cb375-122"></a><span class="va">+ template&lt;class BiIter&gt;</span></span>
+<span id="cb375-123"><a href="#cb375-123"></a><span class="va">+   auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-124"><a href="#cb375-124"></a><span class="va">+                    const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</span></span>
+<span id="cb375-125"><a href="#cb375-125"></a></span>
+<span id="cb375-126"><a href="#cb375-126"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-127"><a href="#cb375-127"></a><span class="st">-   bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-128"><a href="#cb375-128"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-129"><a href="#cb375-129"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-130"><a href="#cb375-130"></a><span class="st">-   bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-131"><a href="#cb375-131"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-132"><a href="#cb375-132"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-133"><a href="#cb375-133"></a><span class="st">-   bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-134"><a href="#cb375-134"></a><span class="st">-                  const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-135"><a href="#cb375-135"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-136"><a href="#cb375-136"></a><span class="st">-   bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-137"><a href="#cb375-137"></a><span class="st">-                  const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-138"><a href="#cb375-138"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-139"><a href="#cb375-139"></a><span class="st">-   bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-140"><a href="#cb375-140"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-141"><a href="#cb375-141"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-142"><a href="#cb375-142"></a><span class="st">-   bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,</span></span>
+<span id="cb375-143"><a href="#cb375-143"></a><span class="st">-                   const sub_match&lt;BiIter&gt;&amp; rhs);</span></span>
+<span id="cb375-144"><a href="#cb375-144"></a></span>
+<span id="cb375-145"><a href="#cb375-145"></a>  template&lt;class BiIter&gt;</span>
+<span id="cb375-146"><a href="#cb375-146"></a>    bool operator==(const sub_match&lt;BiIter&gt;&amp; lhs,</span>
+<span id="cb375-147"><a href="#cb375-147"></a>                    const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span>
+<span id="cb375-148"><a href="#cb375-148"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-149"><a href="#cb375-149"></a><span class="st">-   bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-150"><a href="#cb375-150"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-151"><a href="#cb375-151"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-152"><a href="#cb375-152"></a><span class="st">-   bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-153"><a href="#cb375-153"></a><span class="st">-                  const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-154"><a href="#cb375-154"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-155"><a href="#cb375-155"></a><span class="st">-   bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-156"><a href="#cb375-156"></a><span class="st">-                  const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-157"><a href="#cb375-157"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-158"><a href="#cb375-158"></a><span class="st">-   bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-159"><a href="#cb375-159"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-160"><a href="#cb375-160"></a><span class="st">- template&lt;class BiIter&gt;</span></span>
+<span id="cb375-161"><a href="#cb375-161"></a><span class="st">-   bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-162"><a href="#cb375-162"></a><span class="st">-                   const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-163"><a href="#cb375-163"></a><span class="va">+ template&lt;class BiIter&gt;</span></span>
+<span id="cb375-164"><a href="#cb375-164"></a><span class="va">+   auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,</span></span>
+<span id="cb375-165"><a href="#cb375-165"></a><span class="va">+                    const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</span></span>
+<span id="cb375-166"><a href="#cb375-166"></a></span>
+<span id="cb375-167"><a href="#cb375-167"></a>  template&lt;class charT, class ST, class BiIter&gt;</span>
+<span id="cb375-168"><a href="#cb375-168"></a>    basic_ostream&lt;charT, ST&gt;&amp;</span>
+<span id="cb375-169"><a href="#cb375-169"></a>      operator&lt;&lt;(basic_ostream&lt;charT, ST&gt;&amp; os, const sub_match&lt;BiIter&gt;&amp; m);</span>
+<span id="cb375-170"><a href="#cb375-170"></a></span>
+<span id="cb375-171"><a href="#cb375-171"></a>  // [re.results], class template match_results</span>
+<span id="cb375-172"><a href="#cb375-172"></a>  template&lt;class BidirectionalIterator,</span>
+<span id="cb375-173"><a href="#cb375-173"></a>           class Allocator = allocator&lt;sub_match&lt;BidirectionalIterator&gt;&gt;&gt;</span>
+<span id="cb375-174"><a href="#cb375-174"></a>    class match_results;</span>
+<span id="cb375-175"><a href="#cb375-175"></a></span>
+<span id="cb375-176"><a href="#cb375-176"></a>  using cmatch  = match_results&lt;const char*&gt;;</span>
+<span id="cb375-177"><a href="#cb375-177"></a>  using wcmatch = match_results&lt;const wchar_t*&gt;;</span>
+<span id="cb375-178"><a href="#cb375-178"></a>  using smatch  = match_results&lt;string::const_iterator&gt;;</span>
+<span id="cb375-179"><a href="#cb375-179"></a>  using wsmatch = match_results&lt;wstring::const_iterator&gt;;</span>
+<span id="cb375-180"><a href="#cb375-180"></a></span>
+<span id="cb375-181"><a href="#cb375-181"></a>  // match_results comparisons</span>
+<span id="cb375-182"><a href="#cb375-182"></a>  template&lt;class BidirectionalIterator, class Allocator&gt;</span>
+<span id="cb375-183"><a href="#cb375-183"></a>    bool operator==(const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m1,</span>
+<span id="cb375-184"><a href="#cb375-184"></a>                    const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m2);</span>
+<span id="cb375-185"><a href="#cb375-185"></a><span class="st">- template&lt;class BidirectionalIterator, class Allocator&gt;</span></span>
+<span id="cb375-186"><a href="#cb375-186"></a><span class="st">-   bool operator!=(const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m1,</span></span>
+<span id="cb375-187"><a href="#cb375-187"></a><span class="st">-                   const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m2);</span></span>
+<span id="cb375-188"><a href="#cb375-188"></a></span>
+<span id="cb375-189"><a href="#cb375-189"></a>  [...]</span>
+<span id="cb375-190"><a href="#cb375-190"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 30.9.2 [re.submatch.op]. As a result, there should be nine functions left here: four <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code>s, four <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>s, and the <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;&lt;</span></code>.</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">0</a></span> Let <em><code class="sourceCode default">SM_CAT</code></em><code class="sourceCode cpp"><span class="op">(</span>I<span class="op">)</span></code> be <code class="sourceCode cpp">compare_three_way_result_t<span class="op">&lt;</span>basic_string<span class="op">&lt;</span><span class="kw">typename</span> iterator_traits<span class="op">&lt;</span>I<span class="op">&gt;::</span>value_type<span class="op">&gt;&gt;</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb376"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb376-1"><a href="#cb376-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> BiIter<span class="op">&gt;</span></span>
+<span id="cb376-2"><a href="#cb376-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> lhs, <span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter&gt;
+  bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">!=</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;=</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&gt;=</span> <span class="dv">0</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>template&lt;class BiIter&gt;
+  auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs, const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span></code><em><code class="sourceCode cpp">SM_CAT</code></em><code class="sourceCode cpp"><span class="op">(</span>BiIter<span class="op">)&gt;(</span>lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span></code>.</p>
+</div>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator==(
+    const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+    const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>:</p>
+<blockquote>
+<pre><code>rhs.compare(typename sub_match&lt;BiIter&gt;::string_type(lhs.data(), lhs.size())) == 0</code></pre>
+</blockquote>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator!=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+      const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&lt;(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+      const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>:</p>
+<blockquote>
+<pre><code>rhs.compare(typename sub_match&lt;BiIter&gt;::string_type(lhs.data(), lhs.size())) &gt; 0</code></pre>
+</blockquote>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&gt;(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+      const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&lt;=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+      const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&gt;=(
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; lhs,
+      const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb391"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb391-1"><a href="#cb391-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> BiIter, <span class="kw">class</span> ST, <span class="kw">class</span> SA<span class="op">&gt;</span></span>
+<span id="cb391-2"><a href="#cb391-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span></span>
+<span id="cb391-3"><a href="#cb391-3"></a>      <span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb391-4"><a href="#cb391-4"></a>      <span class="kw">const</span> basic_string<span class="op">&lt;</span><span class="kw">typename</span> iterator_traits<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>value_type, ST, SA<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">13</a></span> <em>Returns</em>:</p>
+<blockquote>
+<div class="sourceCode" id="cb392"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb392-1"><a href="#cb392-1"></a>lhs<span class="op">.</span>compare<span class="op">(</span><span class="kw">typename</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>string_type<span class="op">(</span>rhs<span class="op">.</span>data<span class="op">()</span>, rhs<span class="op">.</span>size<span class="op">()))</span> <span class="op">==</span> <span class="dv">0</span></span></code></pre></div>
+</blockquote>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator!=(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">14</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&lt;(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">15</a></span> <em>Returns</em>:</p>
+<blockquote>
+<pre><code>lhs.compare(typename sub_match&lt;BiIter&gt;::string_type(rhs.data(), rhs.size())) &lt; 0</code></pre>
+</blockquote>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&gt;(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">16</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&lt;=(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">17</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  bool operator&gt;=(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">18</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>template&lt;class BiIter, class ST, class SA&gt;
+  auto operator&lt;=&gt;(
+      const sub_match&lt;BiIter&gt;&amp; lhs,
+      const basic_string&lt;typename iterator_traits&lt;BiIter&gt;::value_type, ST, SA&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> <em>Returns</em>:</p>
+<blockquote>
+<pre><code>static_cast&lt;@_SM_CAT_@(BiIter)&gt;(lhs.compare(
+    typename sub_match&lt;BiIter&gt;::string_type(rhs.data(), rhs.size()))
+      &lt;=&gt; 0
+    )</code></pre>
+</blockquote>
+</div>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter&gt;
+  bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">19</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs<span class="op">.</span>compare<span class="op">(</span>lhs<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">20</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                 const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">21</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs<span class="op">.</span>compare<span class="op">(</span>lhs<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                 const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">22</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">23</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type* lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">24</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb407"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb407-1"><a href="#cb407-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> BiIter<span class="op">&gt;</span></span>
+<span id="cb407-2"><a href="#cb407-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb407-3"><a href="#cb407-3"></a>                  <span class="kw">const</span> <span class="kw">typename</span> iterator_traits<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>value_type<span class="op">*</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">25</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter&gt;
+  bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">26</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                 const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">27</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                 const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">28</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">29</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">30</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>template&lt;class BiIter&gt;
+  auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type* rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">c</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span></code><em><code class="sourceCode cpp">SM_CAT</code></em><code class="sourceCode cpp"><span class="op">(</span>BiIter<span class="op">)&gt;(</span>lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="dv">0</span><span class="op">)</span></code>.</p>
+</div>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter&gt;
+  bool operator==(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">31</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs<span class="op">.</span>compare<span class="op">(</span><span class="kw">typename</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>string_type<span class="op">(</span><span class="dv">1</span>, lhs<span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator!=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">32</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                 const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">33</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs<span class="op">.</span>compare<span class="op">(</span><span class="kw">typename</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>string_type<span class="op">(</span><span class="dv">1</span>, lhs<span class="op">))</span> <span class="op">&gt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                 const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">34</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">35</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;=(const typename iterator_traits&lt;BiIter&gt;::value_type&amp; lhs,
+                  const sub_match&lt;BiIter&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">36</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb420"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb420-1"><a href="#cb420-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> BiIter<span class="op">&gt;</span></span>
+<span id="cb420-2"><a href="#cb420-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb420-3"><a href="#cb420-3"></a>                  <span class="kw">const</span> <span class="kw">typename</span> iterator_traits<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>value_type<span class="op">&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">37</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span><span class="kw">typename</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>string_type<span class="op">(</span><span class="dv">1</span>, rhs<span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BiIter&gt;
+  bool operator!=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">38</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                 const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">39</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span><span class="kw">typename</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;::</span>string_type<span class="op">(</span><span class="dv">1</span>, rhs<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                 const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">40</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&lt;=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">41</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class BiIter&gt;
+  bool operator&gt;=(const sub_match&lt;BiIter&gt;&amp; lhs,
+                  const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">42</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>template&lt;class BiIter&gt;
+  auto operator&lt;=&gt;(const sub_match&lt;BiIter&gt;&amp; lhs,
+                   const typename iterator_traits&lt;BiIter&gt;::value_type&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">d</a></span> <em>Returns</em>:</p>
+<blockquote>
+<pre><code>static_cast&lt;@_SM_CAT_@(BiIter)&gt;(lhs.compare(
+    typename sub_match&lt;BiIter&gt;::string_type(1, rhs))
+      &lt;=&gt; 0
+    )</code></pre>
+</blockquote>
+</div>
+<div class="sourceCode" id="cb428"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb428-1"><a href="#cb428-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> charT, <span class="kw">class</span> ST, <span class="kw">class</span> BiIter<span class="op">&gt;</span></span>
+<span id="cb428-2"><a href="#cb428-2"></a>  basic_ostream<span class="op">&lt;</span>charT, ST<span class="op">&gt;&amp;</span></span>
+<span id="cb428-3"><a href="#cb428-3"></a>    <span class="kw">operator</span><span class="op">&lt;&lt;(</span>basic_ostream<span class="op">&lt;</span>charT, ST<span class="op">&gt;&amp;</span> os, <span class="kw">const</span> sub_match<span class="op">&lt;</span>BiIter<span class="op">&gt;&amp;</span> m<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">43</a></span> <em>Returns</em>: <code class="sourceCode cpp">os <span class="op">&lt;&lt;</span> m<span class="op">.</span>str<span class="op">()</span></code>.</p>
+</blockquote>
+<p>Remove the <code class="sourceCode cpp"><span class="op">!=</span></code> from 30.10.8 [re.results.nonmember]:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class BidirectionalIterator, class Allocator&gt;
+bool operator!=(const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m1,
+                const match_results&lt;BidirectionalIterator, Allocator&gt;&amp; m2);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>m1 <span class="op">==</span> m2<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 30.12.1 [re.regiter]:</p>
+<blockquote>
+<div class="sourceCode" id="cb430"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb430-1"><a href="#cb430-1"></a>namespace std {</span>
+<span id="cb430-2"><a href="#cb430-2"></a>  template&lt;class BidirectionalIterator,</span>
+<span id="cb430-3"><a href="#cb430-3"></a>            class charT = typename iterator_traits&lt;BidirectionalIterator&gt;::value_type,</span>
+<span id="cb430-4"><a href="#cb430-4"></a>            class traits = regex_traits&lt;charT&gt;&gt;</span>
+<span id="cb430-5"><a href="#cb430-5"></a>    class regex_iterator {</span>
+<span id="cb430-6"><a href="#cb430-6"></a>      [...]</span>
+<span id="cb430-7"><a href="#cb430-7"></a>      regex_iterator&amp; operator=(const regex_iterator&amp;);</span>
+<span id="cb430-8"><a href="#cb430-8"></a>      bool operator==(const regex_iterator&amp;) const;</span>
+<span id="cb430-9"><a href="#cb430-9"></a><span class="st">-     bool operator!=(const regex_iterator&amp;) const;</span></span>
+<span id="cb430-10"><a href="#cb430-10"></a>      const value_type&amp; operator*() const;</span>
+<span id="cb430-11"><a href="#cb430-11"></a>      [...]</span>
+<span id="cb430-12"><a href="#cb430-12"></a>    };</span>
+<span id="cb430-13"><a href="#cb430-13"></a>}</span></code></pre></div>
+</blockquote>
+<p>Remove the <code class="sourceCode cpp"><span class="op">!=</span></code> from 30.12.1.2 [re.regiter.comp]:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>bool operator!=(const regex_iterator&amp; right) const;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(*</span><span class="kw">this</span> <span class="op">==</span> right<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 30.12.2 [re.tokiter]:</p>
+<blockquote>
+<div class="sourceCode" id="cb432"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb432-1"><a href="#cb432-1"></a>namespace std {</span>
+<span id="cb432-2"><a href="#cb432-2"></a>  template&lt;class BidirectionalIterator,</span>
+<span id="cb432-3"><a href="#cb432-3"></a>            class charT = typename iterator_traits&lt;BidirectionalIterator&gt;::value_type,</span>
+<span id="cb432-4"><a href="#cb432-4"></a>            class traits = regex_traits&lt;charT&gt;&gt;</span>
+<span id="cb432-5"><a href="#cb432-5"></a>    class regex_token_iterator {</span>
+<span id="cb432-6"><a href="#cb432-6"></a>      [...]</span>
+<span id="cb432-7"><a href="#cb432-7"></a>      bool operator==(const regex_token_iterator&amp;) const;</span>
+<span id="cb432-8"><a href="#cb432-8"></a><span class="st">-     bool operator!=(const regex_token_iterator&amp;) const;</span></span>
+<span id="cb432-9"><a href="#cb432-9"></a>      [...]</span>
+<span id="cb432-10"><a href="#cb432-10"></a>    };</span>
+<span id="cb432-11"><a href="#cb432-11"></a>}   </span></code></pre></div>
+</blockquote>
+<p>Remove the <code class="sourceCode cpp"><span class="op">!=</span></code> from 30.12.2.2 [re.tokiter.comp]:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>bool operator!=(const regex_token_iterator&amp; right) const;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(*</span><span class="kw">this</span> <span class="op">==</span> right<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
 <h2 id="clause-31-atomic-operations-library"><span class="header-section-number">5.16</span> Clause 31: Atomic operations library<a href="#clause-31-atomic-operations-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>No changes necessary.</p>
 <h2 id="clause-32-thread-support-library"><span class="header-section-number">5.17</span> Clause 32: Thread support library<a href="#clause-32-thread-support-library" class="self-link"></a></h2>
 <p>TBD</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
