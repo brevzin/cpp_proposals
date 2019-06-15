@@ -3726,6 +3726,9 @@ friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);
 
 ## Clause 24: Ranges library
 
+Remove no-longer-needed `==` and `!=` operators from several iterators. Add a
+constrained `<=>` to `iota_view::iterator` and `transform_view::iterator`.
+
 Change 24.6.3.3 [range.iota.iterator]:
 
 ::: bq
@@ -4392,7 +4395,101 @@ return b1 != e1 ? strong_ordering::greater :
 
 ## Clause 26: Numerics library
 
-TBD
+Remove obsolete `==` and `!=` operators from `complex`, add a new `==` to `slice`.
+
+Change 26.4.1 [complex.syn]:
+
+::: bq
+```diff
+namespace std {
+  // [complex], class template complex
+  template<class T> class complex;
+
+  // [complex.special], specializations
+  template<> class complex<float>;
+  template<> class complex<double>;
+  template<> class complex<long double>;
+  
+  [...]
+  
+  template<class T> constexpr bool operator==(const complex<T>&, const complex<T>&);
+  template<class T> constexpr bool operator==(const complex<T>&, const T&);
+- template<class T> constexpr bool operator==(const T&, const complex<T>&);
+
+- template<class T> constexpr bool operator!=(const complex<T>&, const complex<T>&);
+- template<class T> constexpr bool operator!=(const complex<T>&, const T&);
+- template<class T> constexpr bool operator!=(const T&, const complex<T>&);
+
+  [...]
+}  
+```
+:::
+
+Change 26.4.6 [complex.ops]:
+
+::: bq
+```cpp
+template<class T> constexpr bool operator==(const complex<T>& lhs, const complex<T>& rhs);
+template<class T> constexpr bool operator==(const complex<T>& lhs, const T& rhs);
+```
+
+::: rm
+```
+template<class T> constexpr bool operator==(const T& lhs, const complex<T>& rhs);
+```
+:::
+[9]{.pnum} *Returns*: `lhs.real() == rhs.real() && lhs.imag() == rhs.imag()`.
+
+[10]{.pnum} *Remarks*: The imaginary part is assumed to be `T()`, or `0.0`, for the `T` arguments.
+
+::: rm
+```
+template<class T> constexpr bool operator!=(const complex<T>& lhs, const complex<T>& rhs);
+template<class T> constexpr bool operator!=(const complex<T>& lhs, const T& rhs);
+template<class T> constexpr bool operator!=(const T& lhs, const complex<T>& rhs);
+```
+[11]{.pnum} `Returns`: `rhs.real() != lhs.real() || rhs.imag() != lhs.imag()`.
+:::
+:::
+
+Change 26.7.4.1 [class.slice.overview]:
+
+::: bq
+```diff
+namespace std {
+  class slice {
+  public:
+    slice();
+    slice(size_t, size_t, size_t);
+
+    size_t start() const;
+    size_t size() const;
+    size_t stride() const;
+	
++   friend bool operator==(const slice& x, const slice& y);
+  };
+}
+```
+:::
+
+Add a new subclause 26.7.4.4 "Operators" [slice.ops]:
+
+::: bq
+::: {.addu}
+```
+friend bool operator==(const slice& x, const slice& y);
+```
+[1]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```
+return x.start() == y.start() &&
+  x.size() == y.size() &&
+  x.stride() == y.stride();
+```
+:::
+:::
+:::
 
 ## Clause 27: Time library
 
