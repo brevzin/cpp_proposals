@@ -3139,6 +3139,10 @@ template<class T, ThreeWayComparable Container>
 
 ## Clause 23: Iterators library
 
+Changing the operators for `reverse_iterator`, `move_iterator`,
+`istream_iterator`, `istreambuf_iterator`, `common_iterator`, `counted_iterator`,
+`unreachable_sentinel`.
+
 We preserve existing comparison operators for `reverse_iterator` because `>`
 actually forwards to the base `>` rather than invoking the `<` with the
 arguments reversed. So, like `optional`, we cannot synthesize a `<=>`. 
@@ -3147,7 +3151,8 @@ We preserve existing comparison operators `move_iterator` because it seems
 pretty bad to try to synthesize a three-way comparison out of two operator calls
 instead of just making the one operator call.
 
-Notably, we do _not_ add `<=>` to any iterator requirements.
+Notably, we do _not_ add `<=>` to any iterator requirements, although all
+standard library iterators that are ordered should provide `<=>`.
 
 Change 23.2 [iterator.synopsis]:
 
