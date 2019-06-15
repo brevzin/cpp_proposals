@@ -4293,7 +4293,102 @@ friend constexpr bool operator!=(default_sentinel_t y, const inner_iterator& x);
 
 ## Clause 25: Algorithms library
 
-TBD
+Remove `compare_3way` and rename `lexicographical_compare_3way`.
+
+Change 25.4 [algorithm.syn]:
+
+::: bq
+```diff
+namespace std {
+   [...]
+
+  // [alg.3way], three-way comparison algorithms
+- template<class T, class U>
+-   constexpr auto compare_3way(const T& a, const U& b);
+  template<class InputIterator1, class InputIterator2, class Cmp>
+    constexpr auto
+-     lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
++     @[lexicographical_compare_three_way]{.diffins}@(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -> common_comparison_category_t<decltype(comp(*b1, *b2)), strong_ordering>;
+  template<class InputIterator1, class InputIterator2>
+    constexpr auto
+-     lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
++     @[lexicographical_compare_three_way]{.diffins}@(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);
+   
+   [...]
+}
+```
+:::
+
+Change 25.7.11 [alg.3way]:
+
+::: bq
+::: rm
+```
+template<class T, class U> constexpr auto compare_3way(const T& a, const U& b);
+```
+[1]{.pnum} *Effects*: Compares two values and produces a result of the strongest applicable comparison category type:
+
+- [1.1]{.pnum} Returns `a <=> b` if that expression is well-formed.
+- [1.2]{.pnum} Otherwise, if the expressions `a == b` and `a < b` are each
+well-formed and convertible to `bool`, returns `strong_ordering::equal` when
+`a == b` is `true`, otherwise returns `strong_ordering::less` when `a < b` is
+`true`, and otherwise returns `strong_ordering::greater`.
+- [1.3]{.pnum} Otherwise, if the expression `a == b` is well-formed and
+convertible to `bool`, returns `strong_equality::equal` when `a == b` is `true`,
+and otherwise returns `strong_equality::nonequal`.
+- [1.4]{.pnum} Otherwise, the function is defined as deleted.
+:::
+
+```diff
+  template<class InputIterator1, class InputIterator2, class Cmp>
+    constexpr auto
+-     lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
++     @[lexicographical_compare_three_way]{.diffins}@(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2,
+                                   Cmp comp)
+        -> common_comparison_category_t<decltype(comp(*b1, *b2)), strong_ordering>;
+```
+[2]{.pnum} *Requires*: `Cmp` shall be a function object type whose return type
+is a comparison category type.
+[3]{.pnum} *Effects*: Lexicographically compares two ranges and produces a
+result of the strongest applicable comparison category type.
+Equivalent to:
+
+::: bq
+```cpp
+for ( ; b1 != e1 && b2 != e2; void(++b1), void(++b2) )
+  if (auto cmp = comp(*b1,*b2); cmp != 0)
+    return cmp;
+return b1 != e1 ? strong_ordering::greater :
+       b2 != e2 ? strong_ordering::less :
+                  strong_ordering::equal;
+```
+:::
+
+```diff
+  template<class InputIterator1, class InputIterator2>
+    constexpr auto
+-     lexicographical_compare_3way(InputIterator1 b1, InputIterator1 e1,
++     @[lexicographical_compare_three_way]{.diffins}@(InputIterator1 b1, InputIterator1 e1,
+                                   InputIterator2 b2, InputIterator2 e2);
+```
+[4]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```diff
+  return lexicographical_compare_3way(b1, e1, b2, e2,
+-                                     [](const auto& t, const auto& u) {
+-                                       return compare_3way(t, u);
+-                                     });
++                                     compare_three_way());
+```
+
+:::
+:::
 
 ## Clause 26: Numerics library
 
