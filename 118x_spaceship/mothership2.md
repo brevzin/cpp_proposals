@@ -5358,7 +5358,181 @@ bool operator!=(const locale& other) const;
 
 ## Clause 29: Input/output library
 
-TBD
+Add `==` to `space_info` and `file_status`, replace the relational operators with
+`<=>` for `path` and `directory_entry`.
+
+Change 29.11.5 [fs.filesystem.syn]:
+
+::: bq
+```diff
+namespace std::filesystem {
+  [...]
+  
+  struct space_info {
+    uintmax_t capacity;
+    uintmax_t free;
+    uintmax_t available;
+
++   friend bool operator==(const space_info&, const space_info&) = default;
+  };  
+  
+  [...]
+}
+```
+:::
+
+Change 29.11.7 [fs.class.path]:
+
+::: bq
+```diff
+namespace std::filesystem {
+  class path {
+    [...]
+	
+    // [fs.path.nonmember], non-member operators
+    friend bool operator==(const path& lhs, const path& rhs) noexcept;
+-   friend bool operator!=(const path& lhs, const path& rhs) noexcept;
+-   friend bool operator< (const path& lhs, const path& rhs) noexcept;
+-   friend bool operator<=(const path& lhs, const path& rhs) noexcept;
+-   friend bool operator> (const path& lhs, const path& rhs) noexcept;
+-   friend bool operator>=(const path& lhs, const path& rhs) noexcept;	
++   friend strong_ordering operator<=>(const path& lhs, const path& rhs) noexcept;	
+	
+	[...]
+  };
+}
+```
+:::
+
+Change 29.11.7.7 [fs.path.nonmember]:
+
+::: bq
+```cpp
+friend bool operator==(const path& lhs, const path& rhs) noexcept;
+```
+[3]{.pnum} *Returns*: [`!(lhs < rhs) && !(rhs < lhs)`{.default}]{.rm}
+[`lhs.compare(rhs) == 0`{.default}]{.addu}.
+
+[4]{.pnum} [*Note*: Path equality and path equivalence have different semantics.
+
+- [4.1]{.pnum} Equality is determined by the path non-member `operator==`,
+which considers the two paths' lexical representations only. [*Example:
+`path("foo") == "bar"` is never `true`. —*end example*]
+- [4.2]{.pnum} Equivalence is determined by the `equivalent()` non-member
+function, which determines if two paths resolve ([fs.class.path]) to the same
+file system entity. [*Example*: `equivalent("foo", "bar")` will be true when both
+paths resolve to the same file. —*end example*]
+
+Programmers wishing to determine if two paths are “the same” must decide if
+“the same” means “the same representation” or “resolve to the same actual file”,
+and choose the appropriate function accordingly. —*end note*]
+
+::: rm
+```
+friend bool operator!=(const path& lhs, const path& rhs) noexcept;
+```
+[5]{.pnum} *Returns*: `!(lhs == rhs)`.
+```
+friend bool operator< (const path& lhs, const path& rhs) noexcept;
+```
+[6]{.pnum} *Returns*: `lhs.compare(rhs) < 0`.
+```
+friend bool operator<=(const path& lhs, const path& rhs) noexcept;
+```
+[7]{.pnum} *Returns*: `!(rhs < lhs)`.
+```
+friend bool operator> (const path& lhs, const path& rhs) noexcept;
+```
+[8]{.pnum} *Returns*: `rhs < lhs`.
+```
+friend bool operator>=(const path& lhs, const path& rhs) noexcept;
+```
+[9]{.pnum} *Returns*: `!(lhs < rhs)`.
+:::
+
+::: {.addu}
+```
+friend strong_ordering operator<=>(const path& lhs, const path& rhs) noexcept;
+```
+[10]{.pnum} *Returns*: `lhs.compare(rhs) <=> 0`.
+:::
+:::
+
+Change 29.11.10 [fs.class.file.status]:
+
+::: bq
+```diff
+namespace std::filesystem {
+  class file_status {
+    [...]
+	
++   friend bool operator==(const file_status& lhs, const file_status& rhs) noexcept
++     { return lhs.type() == rhs.type() && lhs.permissions() == rhs.permissions(); }
+  };
+}
+```
+:::
+
+Change 29.11.11 [fs.class.directory.entry]:
+
+::: bq
+```diff
+namespace std::filesystem {
+  class directory_entry {
+    [...]
+
+    bool operator==(const directory_entry& rhs) const noexcept;
+-   bool operator!=(const directory_entry& rhs) const noexcept;
+-   bool operator< (const directory_entry& rhs) const noexcept;
+-   bool operator> (const directory_entry& rhs) const noexcept;
+-   bool operator<=(const directory_entry& rhs) const noexcept;
+-   bool operator>=(const directory_entry& rhs) const noexcept;	
++   strong_ordering operator<=>(const directory_entry& rhs) const noexcept;	
+
+    [...]
+  };
+}
+```
+:::
+
+Change 29.11.11.3 [fs.dir.entry.obs]:
+
+::: bq
+```cpp
+bool operator==(const directory_entry& rhs) const noexcept;
+```
+[31]{.pnum} *Returns*: `pathobject == rhs.pathobject`.
+
+::: rm
+```
+bool operator!=(const directory_entry& rhs) const noexcept;
+```
+[32]{.pnum} *Returns*: `pathobject != rhs.pathobject`.
+```
+bool operator< (const directory_entry& rhs) const noexcept;
+```
+[33]{.pnum} *Returns*: `pathobject < rhs.pathobject`.
+```
+bool operator> (const directory_entry& rhs) const noexcept;
+```
+[34]{.pnum} *Returns*: `pathobject > rhs.pathobject`.
+```
+bool operator<=(const directory_entry& rhs) const noexcept;
+```
+[35]{.pnum} *Returns*: `pathobject <= rhs.pathobject`.
+```
+bool operator>=(const directory_entry& rhs) const noexcept;
+```
+[36]{.pnum} *Returns*: `pathobject >= rhs.pathobject`.
+:::
+
+::: {.addu}
+```
+strong_ordering operator<=>(const directory_entry& rhs) const noexcept;
+```
+[37]{.pnum} *Returns*: `pathobject <=> rhs.pathobject`.
+:::
+:::
 
 ## Clause 30: Regular expressions library
 

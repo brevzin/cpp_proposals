@@ -4775,7 +4775,121 @@ return x.month_day_last() &lt;=&gt; y.month_day_last();</code></pre>
 </div>
 </blockquote>
 <h2 id="clause-29-inputoutput-library"><span class="header-section-number">5.14</span> Clause 29: Input/output library<a href="#clause-29-inputoutput-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>Add <code class="sourceCode cpp"><span class="op">==</span></code> to <code class="sourceCode cpp">space_info</code> and <code class="sourceCode cpp">file_status</code>, replace the relational operators with <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> for <code class="sourceCode cpp">path</code> and <code class="sourceCode cpp">directory_entry</code>.</p>
+<p>Change 29.11.5 [fs.filesystem.syn]:</p>
+<blockquote>
+<div class="sourceCode" id="cb357"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb357-1"><a href="#cb357-1"></a>namespace std::filesystem {</span>
+<span id="cb357-2"><a href="#cb357-2"></a>  [...]</span>
+<span id="cb357-3"><a href="#cb357-3"></a>  </span>
+<span id="cb357-4"><a href="#cb357-4"></a>  struct space_info {</span>
+<span id="cb357-5"><a href="#cb357-5"></a>    uintmax_t capacity;</span>
+<span id="cb357-6"><a href="#cb357-6"></a>    uintmax_t free;</span>
+<span id="cb357-7"><a href="#cb357-7"></a>    uintmax_t available;</span>
+<span id="cb357-8"><a href="#cb357-8"></a></span>
+<span id="cb357-9"><a href="#cb357-9"></a><span class="va">+   friend bool operator==(const space_info&amp;, const space_info&amp;) = default;</span></span>
+<span id="cb357-10"><a href="#cb357-10"></a>  };  </span>
+<span id="cb357-11"><a href="#cb357-11"></a>  </span>
+<span id="cb357-12"><a href="#cb357-12"></a>  [...]</span>
+<span id="cb357-13"><a href="#cb357-13"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 29.11.7 [fs.class.path]:</p>
+<blockquote>
+<div class="sourceCode" id="cb358"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb358-1"><a href="#cb358-1"></a>namespace std::filesystem {</span>
+<span id="cb358-2"><a href="#cb358-2"></a>  class path {</span>
+<span id="cb358-3"><a href="#cb358-3"></a>    [...]</span>
+<span id="cb358-4"><a href="#cb358-4"></a>    </span>
+<span id="cb358-5"><a href="#cb358-5"></a>    // [fs.path.nonmember], non-member operators</span>
+<span id="cb358-6"><a href="#cb358-6"></a>    friend bool operator==(const path&amp; lhs, const path&amp; rhs) noexcept;</span>
+<span id="cb358-7"><a href="#cb358-7"></a><span class="st">-   friend bool operator!=(const path&amp; lhs, const path&amp; rhs) noexcept;</span></span>
+<span id="cb358-8"><a href="#cb358-8"></a><span class="st">-   friend bool operator&lt; (const path&amp; lhs, const path&amp; rhs) noexcept;</span></span>
+<span id="cb358-9"><a href="#cb358-9"></a><span class="st">-   friend bool operator&lt;=(const path&amp; lhs, const path&amp; rhs) noexcept;</span></span>
+<span id="cb358-10"><a href="#cb358-10"></a><span class="st">-   friend bool operator&gt; (const path&amp; lhs, const path&amp; rhs) noexcept;</span></span>
+<span id="cb358-11"><a href="#cb358-11"></a><span class="st">-   friend bool operator&gt;=(const path&amp; lhs, const path&amp; rhs) noexcept;  </span></span>
+<span id="cb358-12"><a href="#cb358-12"></a><span class="va">+   friend strong_ordering operator&lt;=&gt;(const path&amp; lhs, const path&amp; rhs) noexcept;  </span></span>
+<span id="cb358-13"><a href="#cb358-13"></a>    </span>
+<span id="cb358-14"><a href="#cb358-14"></a>    [...]</span>
+<span id="cb358-15"><a href="#cb358-15"></a>  };</span>
+<span id="cb358-16"><a href="#cb358-16"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 29.11.7.7 [fs.path.nonmember]:</p>
+<blockquote>
+<div class="sourceCode" id="cb359"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb359-1"><a href="#cb359-1"></a><span class="kw">friend</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> path<span class="op">&amp;</span> lhs, <span class="kw">const</span> path<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">!(lhs &lt; rhs) &amp;&amp; !(rhs &lt; lhs)</code></span></del></span> <span class="addu"><code class="sourceCode default">lhs.compare(rhs) == 0</code></span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> [<em>Note</em>: Path equality and path equivalence have different semantics.</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> Equality is determined by the path non-member <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code>, which considers the two paths’ lexical representations only. [<em>Example: <code class="sourceCode cpp">path<span class="op">(</span><span class="st">&quot;foo&quot;</span><span class="op">)</span> <span class="op">==</span> <span class="st">&quot;bar&quot;</span></code> is never <code class="sourceCode cpp"><span class="kw">true</span></code>. —</em>end example*]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> Equivalence is determined by the <code class="sourceCode cpp">equivalent<span class="op">()</span></code> non-member function, which determines if two paths resolve ([fs.class.path]) to the same file system entity. [<em>Example</em>: <code class="sourceCode cpp">equivalent<span class="op">(</span><span class="st">&quot;foo&quot;</span>, <span class="st">&quot;bar&quot;</span><span class="op">)</span></code> will be true when both paths resolve to the same file. —<em>end example</em>]</li>
+</ul>
+<p>Programmers wishing to determine if two paths are “the same” must decide if “the same” means “the same representation” or “resolve to the same actual file”, and choose the appropriate function accordingly. —<em>end note</em>]</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>friend bool operator!=(const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+<pre><code>friend bool operator&lt; (const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;</span> <span class="dv">0</span></code>.</p>
+<pre><code>friend bool operator&lt;=(const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<pre><code>friend bool operator&gt; (const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<pre><code>friend bool operator&gt;=(const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>friend strong_ordering operator&lt;=&gt;(const path&amp; lhs, const path&amp; rhs) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>compare<span class="op">(</span>rhs<span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="dv">0</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 29.11.10 [fs.class.file.status]:</p>
+<blockquote>
+<div class="sourceCode" id="cb366"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb366-1"><a href="#cb366-1"></a>namespace std::filesystem {</span>
+<span id="cb366-2"><a href="#cb366-2"></a>  class file_status {</span>
+<span id="cb366-3"><a href="#cb366-3"></a>    [...]</span>
+<span id="cb366-4"><a href="#cb366-4"></a>    </span>
+<span id="cb366-5"><a href="#cb366-5"></a><span class="va">+   friend bool operator==(const file_status&amp; lhs, const file_status&amp; rhs) noexcept</span></span>
+<span id="cb366-6"><a href="#cb366-6"></a><span class="va">+     { return lhs.type() == rhs.type() &amp;&amp; lhs.permissions() == rhs.permissions(); }</span></span>
+<span id="cb366-7"><a href="#cb366-7"></a>  };</span>
+<span id="cb366-8"><a href="#cb366-8"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 29.11.11 [fs.class.directory.entry]:</p>
+<blockquote>
+<div class="sourceCode" id="cb367"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb367-1"><a href="#cb367-1"></a>namespace std::filesystem {</span>
+<span id="cb367-2"><a href="#cb367-2"></a>  class directory_entry {</span>
+<span id="cb367-3"><a href="#cb367-3"></a>    [...]</span>
+<span id="cb367-4"><a href="#cb367-4"></a></span>
+<span id="cb367-5"><a href="#cb367-5"></a>    bool operator==(const directory_entry&amp; rhs) const noexcept;</span>
+<span id="cb367-6"><a href="#cb367-6"></a><span class="st">-   bool operator!=(const directory_entry&amp; rhs) const noexcept;</span></span>
+<span id="cb367-7"><a href="#cb367-7"></a><span class="st">-   bool operator&lt; (const directory_entry&amp; rhs) const noexcept;</span></span>
+<span id="cb367-8"><a href="#cb367-8"></a><span class="st">-   bool operator&gt; (const directory_entry&amp; rhs) const noexcept;</span></span>
+<span id="cb367-9"><a href="#cb367-9"></a><span class="st">-   bool operator&lt;=(const directory_entry&amp; rhs) const noexcept;</span></span>
+<span id="cb367-10"><a href="#cb367-10"></a><span class="st">-   bool operator&gt;=(const directory_entry&amp; rhs) const noexcept; </span></span>
+<span id="cb367-11"><a href="#cb367-11"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const directory_entry&amp; rhs) const noexcept; </span></span>
+<span id="cb367-12"><a href="#cb367-12"></a></span>
+<span id="cb367-13"><a href="#cb367-13"></a>    [...]</span>
+<span id="cb367-14"><a href="#cb367-14"></a>  };</span>
+<span id="cb367-15"><a href="#cb367-15"></a>}</span></code></pre></div>
+</blockquote>
+<p>Change 29.11.11.3 [fs.dir.entry.obs]:</p>
+<blockquote>
+<div class="sourceCode" id="cb368"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb368-1"><a href="#cb368-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> directory_entry<span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">31</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">==</span> rhs<span class="op">.</span>pathobject</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>bool operator!=(const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">32</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">!=</span> rhs<span class="op">.</span>pathobject</code>.</p>
+<pre><code>bool operator&lt; (const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">33</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">&lt;</span> rhs<span class="op">.</span>pathobject</code>.</p>
+<pre><code>bool operator&gt; (const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">34</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">&gt;</span> rhs<span class="op">.</span>pathobject</code>.</p>
+<pre><code>bool operator&lt;=(const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">35</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">&lt;=</span> rhs<span class="op">.</span>pathobject</code>.</p>
+<pre><code>bool operator&gt;=(const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">36</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">&gt;=</span> rhs<span class="op">.</span>pathobject</code>.</p>
+</div>
+<div class="addu">
+<pre><code>strong_ordering operator&lt;=&gt;(const directory_entry&amp; rhs) const noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">37</a></span> <em>Returns</em>: <code class="sourceCode cpp">pathobject <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>pathobject</code>.</p>
+</div>
+</blockquote>
 <h2 id="clause-30-regular-expressions-library"><span class="header-section-number">5.15</span> Clause 30: Regular expressions library<a href="#clause-30-regular-expressions-library" class="self-link"></a></h2>
 <p>TBD</p>
 <h2 id="clause-31-atomic-operations-library"><span class="header-section-number">5.16</span> Clause 31: Atomic operations library<a href="#clause-31-atomic-operations-library" class="self-link"></a></h2>
