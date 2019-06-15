@@ -1839,7 +1839,7 @@ constexpr bool operator&gt;=(monostate, monostate) noexcept { return true; }</co
 <span id="cb103-2"><a href="#cb103-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> unique_ptr<span class="op">&lt;</span>T, D<span class="op">&gt;&amp;</span> x, nullptr_t<span class="op">)</span> <span class="kw">noexcept</span>;</span>
 <span id="cb103-3"><a href="#cb103-3"></a>@[template&lt;class T, class D&gt;]{.rm}@</span>
 <span id="cb103-4"><a href="#cb103-4"></a>@[  bool operator==(nullptr_t, const unique_ptr&lt;T, D&gt;&amp; x) noexcept;]{.rm}@</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">11</a></span> Returns: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>x</code>.</p>
 <div class="rm" style="color: #bf0303">
 
 <pre><code>template&lt;class T, class D&gt;
@@ -4122,7 +4122,633 @@ template&lt;class T&gt; constexpr bool operator!=(const T&amp; lhs, const comple
 </div>
 </blockquote>
 <h2 id="clause-27-time-library"><span class="header-section-number">5.12</span> Clause 27: Time library<a href="#clause-27-time-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>Add <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to all the chrono types where possible, in some cases added as a new constrained function template, in other cases replacing the relational operators. Also removing no-longer-necessary <code class="sourceCode cpp"><span class="op">!=</span></code> operators.</p>
+<p>Change 27.2 [time.syn]:</p>
+<blockquote>
+<div class="sourceCode" id="cb287"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb287-1"><a href="#cb287-1"></a>namespace std {</span>
+<span id="cb287-2"><a href="#cb287-2"></a>  namespace chrono {</span>
+<span id="cb287-3"><a href="#cb287-3"></a>    [...]</span>
+<span id="cb287-4"><a href="#cb287-4"></a>    </span>
+<span id="cb287-5"><a href="#cb287-5"></a>    // [time.duration.comparisons], duration comparisons</span>
+<span id="cb287-6"><a href="#cb287-6"></a>    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span>
+<span id="cb287-7"><a href="#cb287-7"></a>      constexpr bool operator==(const duration&lt;Rep1, Period1&gt;&amp; lhs,</span>
+<span id="cb287-8"><a href="#cb287-8"></a>                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span>
+<span id="cb287-9"><a href="#cb287-9"></a><span class="st">-   template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span></span>
+<span id="cb287-10"><a href="#cb287-10"></a><span class="st">-     constexpr bool operator!=(const duration&lt;Rep1, Period1&gt;&amp; lhs,</span></span>
+<span id="cb287-11"><a href="#cb287-11"></a><span class="st">-                               const duration&lt;Rep2, Period2&gt;&amp; rhs);</span></span>
+<span id="cb287-12"><a href="#cb287-12"></a>    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span>
+<span id="cb287-13"><a href="#cb287-13"></a>      constexpr bool operator&lt; (const duration&lt;Rep1, Period1&gt;&amp; lhs,</span>
+<span id="cb287-14"><a href="#cb287-14"></a>                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span>
+<span id="cb287-15"><a href="#cb287-15"></a>    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span>
+<span id="cb287-16"><a href="#cb287-16"></a>      constexpr bool operator&gt; (const duration&lt;Rep1, Period1&gt;&amp; lhs,</span>
+<span id="cb287-17"><a href="#cb287-17"></a>                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span>
+<span id="cb287-18"><a href="#cb287-18"></a>    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span>
+<span id="cb287-19"><a href="#cb287-19"></a>      constexpr bool operator&lt;=(const duration&lt;Rep1, Period1&gt;&amp; lhs,</span>
+<span id="cb287-20"><a href="#cb287-20"></a>                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span>
+<span id="cb287-21"><a href="#cb287-21"></a>    template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span>
+<span id="cb287-22"><a href="#cb287-22"></a>      constexpr bool operator&gt;=(const duration&lt;Rep1, Period1&gt;&amp; lhs,</span>
+<span id="cb287-23"><a href="#cb287-23"></a>                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span>
+<span id="cb287-24"><a href="#cb287-24"></a><span class="va">+   template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;</span></span>
+<span id="cb287-25"><a href="#cb287-25"></a><span class="va">+       requires @_see below_@</span></span>
+<span id="cb287-26"><a href="#cb287-26"></a><span class="va">+     constexpr auto operator&lt;=&gt;(const duration&lt;Rep1, Period1&gt;&amp; lhs,</span></span>
+<span id="cb287-27"><a href="#cb287-27"></a><span class="va">+                                const duration&lt;Rep2, Period2&gt;&amp; rhs);</span></span>
+<span id="cb287-28"><a href="#cb287-28"></a></span>
+<span id="cb287-29"><a href="#cb287-29"></a>    [...]</span>
+<span id="cb287-30"><a href="#cb287-30"></a>    </span>
+<span id="cb287-31"><a href="#cb287-31"></a>    // [time.point.comparisons], time_point comparisons</span>
+<span id="cb287-32"><a href="#cb287-32"></a>    template&lt;class Clock, class Duration1, class Duration2&gt;</span>
+<span id="cb287-33"><a href="#cb287-33"></a>       constexpr bool operator==(const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span>
+<span id="cb287-34"><a href="#cb287-34"></a>                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs);</span>
+<span id="cb287-35"><a href="#cb287-35"></a><span class="st">-   template&lt;class Clock, class Duration1, class Duration2&gt;</span></span>
+<span id="cb287-36"><a href="#cb287-36"></a><span class="st">-      constexpr bool operator!=(const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span></span>
+<span id="cb287-37"><a href="#cb287-37"></a><span class="st">-                                const time_point&lt;Clock, Duration2&gt;&amp; rhs);</span></span>
+<span id="cb287-38"><a href="#cb287-38"></a>    template&lt;class Clock, class Duration1, class Duration2&gt;</span>
+<span id="cb287-39"><a href="#cb287-39"></a>       constexpr bool operator&lt; (const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span>
+<span id="cb287-40"><a href="#cb287-40"></a>                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs);</span>
+<span id="cb287-41"><a href="#cb287-41"></a>    template&lt;class Clock, class Duration1, class Duration2&gt;</span>
+<span id="cb287-42"><a href="#cb287-42"></a>       constexpr bool operator&gt; (const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span>
+<span id="cb287-43"><a href="#cb287-43"></a>                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs);</span>
+<span id="cb287-44"><a href="#cb287-44"></a>    template&lt;class Clock, class Duration1, class Duration2&gt;</span>
+<span id="cb287-45"><a href="#cb287-45"></a>       constexpr bool operator&lt;=(const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span>
+<span id="cb287-46"><a href="#cb287-46"></a>                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs);</span>
+<span id="cb287-47"><a href="#cb287-47"></a>    template&lt;class Clock, class Duration1, class Duration2&gt;</span>
+<span id="cb287-48"><a href="#cb287-48"></a>       constexpr bool operator&gt;=(const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span>
+<span id="cb287-49"><a href="#cb287-49"></a>                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs);  </span>
+<span id="cb287-50"><a href="#cb287-50"></a><span class="va">+   template&lt;class Clock, class Duration1, ThreeWayComparableWith&lt;Duration1&gt; Duration2&gt;</span></span>
+<span id="cb287-51"><a href="#cb287-51"></a><span class="va">+      constexpr auto operator&lt;=&gt;(const time_point&lt;Clock, Duration1&gt;&amp; lhs,</span></span>
+<span id="cb287-52"><a href="#cb287-52"></a><span class="va">+                                 const time_point&lt;Clock, Duration2&gt;&amp; rhs); </span></span>
+<span id="cb287-53"><a href="#cb287-53"></a></span>
+<span id="cb287-54"><a href="#cb287-54"></a>    [...]</span>
+<span id="cb287-55"><a href="#cb287-55"></a>    </span>
+<span id="cb287-56"><a href="#cb287-56"></a>    // [time.cal.day], class day</span>
+<span id="cb287-57"><a href="#cb287-57"></a>    class day;</span>
+<span id="cb287-58"><a href="#cb287-58"></a></span>
+<span id="cb287-59"><a href="#cb287-59"></a>    constexpr bool operator==(const day&amp; x, const day&amp; y) noexcept;</span>
+<span id="cb287-60"><a href="#cb287-60"></a><span class="st">-   constexpr bool operator!=(const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-61"><a href="#cb287-61"></a><span class="st">-   constexpr bool operator&lt; (const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-62"><a href="#cb287-62"></a><span class="st">-   constexpr bool operator&gt; (const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-63"><a href="#cb287-63"></a><span class="st">-   constexpr bool operator&lt;=(const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-64"><a href="#cb287-64"></a><span class="st">-   constexpr bool operator&gt;=(const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-65"><a href="#cb287-65"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const day&amp; x, const day&amp; y) noexcept;</span></span>
+<span id="cb287-66"><a href="#cb287-66"></a>    </span>
+<span id="cb287-67"><a href="#cb287-67"></a>    [...]</span>
+<span id="cb287-68"><a href="#cb287-68"></a>    </span>
+<span id="cb287-69"><a href="#cb287-69"></a>    // [time.cal.month], class month</span>
+<span id="cb287-70"><a href="#cb287-70"></a>    class month;</span>
+<span id="cb287-71"><a href="#cb287-71"></a></span>
+<span id="cb287-72"><a href="#cb287-72"></a>    constexpr bool operator==(const month&amp; x, const month&amp; y) noexcept;</span>
+<span id="cb287-73"><a href="#cb287-73"></a><span class="st">-   constexpr bool operator!=(const month&amp; x, const month&amp; y) noexcept;</span></span>
+<span id="cb287-74"><a href="#cb287-74"></a><span class="st">-   constexpr bool operator&lt; (const month&amp; x, const month&amp; y) noexcept;</span></span>
+<span id="cb287-75"><a href="#cb287-75"></a><span class="st">-   constexpr bool operator&gt; (const month&amp; x, const month&amp; y) noexcept;</span></span>
+<span id="cb287-76"><a href="#cb287-76"></a><span class="st">-   constexpr bool operator&lt;=(const month&amp; x, const month&amp; y) noexcept;</span></span>
+<span id="cb287-77"><a href="#cb287-77"></a><span class="st">-   constexpr bool operator&gt;=(const month&amp; x, const month&amp; y) noexcept; </span></span>
+<span id="cb287-78"><a href="#cb287-78"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const month&amp; x, const month&amp; y) noexcept;</span></span>
+<span id="cb287-79"><a href="#cb287-79"></a></span>
+<span id="cb287-80"><a href="#cb287-80"></a>    [...]</span>
+<span id="cb287-81"><a href="#cb287-81"></a>    </span>
+<span id="cb287-82"><a href="#cb287-82"></a></span>
+<span id="cb287-83"><a href="#cb287-83"></a>    // [time.cal.year], class year</span>
+<span id="cb287-84"><a href="#cb287-84"></a>    class year;</span>
+<span id="cb287-85"><a href="#cb287-85"></a></span>
+<span id="cb287-86"><a href="#cb287-86"></a>    constexpr bool operator==(const year&amp; x, const year&amp; y) noexcept;</span>
+<span id="cb287-87"><a href="#cb287-87"></a><span class="st">-   constexpr bool operator!=(const year&amp; x, const year&amp; y) noexcept;</span></span>
+<span id="cb287-88"><a href="#cb287-88"></a><span class="st">-   constexpr bool operator&lt; (const year&amp; x, const year&amp; y) noexcept;</span></span>
+<span id="cb287-89"><a href="#cb287-89"></a><span class="st">-   constexpr bool operator&gt; (const year&amp; x, const year&amp; y) noexcept;</span></span>
+<span id="cb287-90"><a href="#cb287-90"></a><span class="st">-   constexpr bool operator&lt;=(const year&amp; x, const year&amp; y) noexcept;</span></span>
+<span id="cb287-91"><a href="#cb287-91"></a><span class="st">-   constexpr bool operator&gt;=(const year&amp; x, const year&amp; y) noexcept;   </span></span>
+<span id="cb287-92"><a href="#cb287-92"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const year&amp; x, const year&amp; y) noexcept;</span></span>
+<span id="cb287-93"><a href="#cb287-93"></a></span>
+<span id="cb287-94"><a href="#cb287-94"></a>    [...]</span>
+<span id="cb287-95"><a href="#cb287-95"></a></span>
+<span id="cb287-96"><a href="#cb287-96"></a>    // [time.cal.wd], class weekday</span>
+<span id="cb287-97"><a href="#cb287-97"></a>    class weekday;</span>
+<span id="cb287-98"><a href="#cb287-98"></a></span>
+<span id="cb287-99"><a href="#cb287-99"></a>    constexpr bool operator==(const weekday&amp; x, const weekday&amp; y) noexcept;</span>
+<span id="cb287-100"><a href="#cb287-100"></a><span class="st">-   constexpr bool operator!=(const weekday&amp; x, const weekday&amp; y) noexcept;</span></span>
+<span id="cb287-101"><a href="#cb287-101"></a></span>
+<span id="cb287-102"><a href="#cb287-102"></a>    [...]</span>
+<span id="cb287-103"><a href="#cb287-103"></a>    </span>
+<span id="cb287-104"><a href="#cb287-104"></a>    // [time.cal.wdidx], class weekday_indexed</span>
+<span id="cb287-105"><a href="#cb287-105"></a>    class weekday_indexed;</span>
+<span id="cb287-106"><a href="#cb287-106"></a></span>
+<span id="cb287-107"><a href="#cb287-107"></a>    constexpr bool operator==(const weekday_indexed&amp; x, const weekday_indexed&amp; y) noexcept;</span>
+<span id="cb287-108"><a href="#cb287-108"></a><span class="st">-   constexpr bool operator!=(const weekday_indexed&amp; x, const weekday_indexed&amp; y) noexcept;</span></span>
+<span id="cb287-109"><a href="#cb287-109"></a>    </span>
+<span id="cb287-110"><a href="#cb287-110"></a>    [...]</span>
+<span id="cb287-111"><a href="#cb287-111"></a>    </span>
+<span id="cb287-112"><a href="#cb287-112"></a>    // [time.cal.wdlast], class weekday_last</span>
+<span id="cb287-113"><a href="#cb287-113"></a>    class weekday_last;</span>
+<span id="cb287-114"><a href="#cb287-114"></a></span>
+<span id="cb287-115"><a href="#cb287-115"></a>    constexpr bool operator==(const weekday_last&amp; x, const weekday_last&amp; y) noexcept;</span>
+<span id="cb287-116"><a href="#cb287-116"></a><span class="st">-   constexpr bool operator!=(const weekday_last&amp; x, const weekday_last&amp; y) noexcept;</span></span>
+<span id="cb287-117"><a href="#cb287-117"></a></span>
+<span id="cb287-118"><a href="#cb287-118"></a>    [...]</span>
+<span id="cb287-119"><a href="#cb287-119"></a></span>
+<span id="cb287-120"><a href="#cb287-120"></a>    // [time.cal.md], class month_day</span>
+<span id="cb287-121"><a href="#cb287-121"></a>    class month_day;</span>
+<span id="cb287-122"><a href="#cb287-122"></a></span>
+<span id="cb287-123"><a href="#cb287-123"></a>    constexpr bool operator==(const month_day&amp; x, const month_day&amp; y) noexcept;</span>
+<span id="cb287-124"><a href="#cb287-124"></a><span class="st">-   constexpr bool operator!=(const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-125"><a href="#cb287-125"></a><span class="st">-   constexpr bool operator&lt; (const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-126"><a href="#cb287-126"></a><span class="st">-   constexpr bool operator&gt; (const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-127"><a href="#cb287-127"></a><span class="st">-   constexpr bool operator&lt;=(const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-128"><a href="#cb287-128"></a><span class="st">-   constexpr bool operator&gt;=(const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-129"><a href="#cb287-129"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const month_day&amp; x, const month_day&amp; y) noexcept;</span></span>
+<span id="cb287-130"><a href="#cb287-130"></a>    </span>
+<span id="cb287-131"><a href="#cb287-131"></a>    [...]</span>
+<span id="cb287-132"><a href="#cb287-132"></a>    </span>
+<span id="cb287-133"><a href="#cb287-133"></a></span>
+<span id="cb287-134"><a href="#cb287-134"></a>    // [time.cal.mdlast], class month_day_last</span>
+<span id="cb287-135"><a href="#cb287-135"></a>    class month_day_last;</span>
+<span id="cb287-136"><a href="#cb287-136"></a></span>
+<span id="cb287-137"><a href="#cb287-137"></a>    constexpr bool operator==(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span>
+<span id="cb287-138"><a href="#cb287-138"></a><span class="st">-   constexpr bool operator!=(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-139"><a href="#cb287-139"></a><span class="st">-   constexpr bool operator&lt; (const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-140"><a href="#cb287-140"></a><span class="st">-   constexpr bool operator&gt; (const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-141"><a href="#cb287-141"></a><span class="st">-   constexpr bool operator&lt;=(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-142"><a href="#cb287-142"></a><span class="st">-   constexpr bool operator&gt;=(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-143"><a href="#cb287-143"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-144"><a href="#cb287-144"></a></span>
+<span id="cb287-145"><a href="#cb287-145"></a>    template&lt;class charT, class traits&gt;</span>
+<span id="cb287-146"><a href="#cb287-146"></a>      basic_ostream&lt;charT, traits&gt;&amp;</span>
+<span id="cb287-147"><a href="#cb287-147"></a>        operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;&amp; os, const month_day_last&amp; mdl);</span>
+<span id="cb287-148"><a href="#cb287-148"></a></span>
+<span id="cb287-149"><a href="#cb287-149"></a>    // [time.cal.mwd], class month_weekday</span>
+<span id="cb287-150"><a href="#cb287-150"></a>    class month_weekday;</span>
+<span id="cb287-151"><a href="#cb287-151"></a></span>
+<span id="cb287-152"><a href="#cb287-152"></a>    constexpr bool operator==(const month_weekday&amp; x, const month_weekday&amp; y) noexcept;</span>
+<span id="cb287-153"><a href="#cb287-153"></a><span class="st">-   constexpr bool operator!=(const month_weekday&amp; x, const month_weekday&amp; y) noexcept;</span></span>
+<span id="cb287-154"><a href="#cb287-154"></a></span>
+<span id="cb287-155"><a href="#cb287-155"></a>    template&lt;class charT, class traits&gt;</span>
+<span id="cb287-156"><a href="#cb287-156"></a>      basic_ostream&lt;charT, traits&gt;&amp;</span>
+<span id="cb287-157"><a href="#cb287-157"></a>        operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;&amp; os, const month_weekday&amp; mwd);</span>
+<span id="cb287-158"><a href="#cb287-158"></a></span>
+<span id="cb287-159"><a href="#cb287-159"></a>    // [time.cal.mwdlast], class month_weekday_last</span>
+<span id="cb287-160"><a href="#cb287-160"></a>    class month_weekday_last;</span>
+<span id="cb287-161"><a href="#cb287-161"></a></span>
+<span id="cb287-162"><a href="#cb287-162"></a>    constexpr bool operator==(const month_weekday_last&amp; x, const month_weekday_last&amp; y) noexcept;</span>
+<span id="cb287-163"><a href="#cb287-163"></a><span class="st">-   constexpr bool operator!=(const month_weekday_last&amp; x, const month_weekday_last&amp; y) noexcept;</span></span>
+<span id="cb287-164"><a href="#cb287-164"></a></span>
+<span id="cb287-165"><a href="#cb287-165"></a>    template&lt;class charT, class traits&gt;</span>
+<span id="cb287-166"><a href="#cb287-166"></a>      basic_ostream&lt;charT, traits&gt;&amp;</span>
+<span id="cb287-167"><a href="#cb287-167"></a>        operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;&amp; os, const month_weekday_last&amp; mwdl);</span>
+<span id="cb287-168"><a href="#cb287-168"></a></span>
+<span id="cb287-169"><a href="#cb287-169"></a>    // [time.cal.ym], class year_month</span>
+<span id="cb287-170"><a href="#cb287-170"></a>    class year_month;</span>
+<span id="cb287-171"><a href="#cb287-171"></a></span>
+<span id="cb287-172"><a href="#cb287-172"></a>    constexpr bool operator==(const year_month&amp; x, const year_month&amp; y) noexcept;</span>
+<span id="cb287-173"><a href="#cb287-173"></a><span class="st">-   constexpr bool operator!=(const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-174"><a href="#cb287-174"></a><span class="st">-   constexpr bool operator&lt; (const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-175"><a href="#cb287-175"></a><span class="st">-   constexpr bool operator&gt; (const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-176"><a href="#cb287-176"></a><span class="st">-   constexpr bool operator&lt;=(const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-177"><a href="#cb287-177"></a><span class="st">-   constexpr bool operator&gt;=(const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-178"><a href="#cb287-178"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const year_month&amp; x, const year_month&amp; y) noexcept;</span></span>
+<span id="cb287-179"><a href="#cb287-179"></a></span>
+<span id="cb287-180"><a href="#cb287-180"></a>    [...]</span>
+<span id="cb287-181"><a href="#cb287-181"></a></span>
+<span id="cb287-182"><a href="#cb287-182"></a>    // [time.cal.ymd], class year_month_day</span>
+<span id="cb287-183"><a href="#cb287-183"></a>    class year_month_day;</span>
+<span id="cb287-184"><a href="#cb287-184"></a></span>
+<span id="cb287-185"><a href="#cb287-185"></a>    constexpr bool operator==(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span>
+<span id="cb287-186"><a href="#cb287-186"></a><span class="st">-   constexpr bool operator!=(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-187"><a href="#cb287-187"></a><span class="st">-   constexpr bool operator&lt; (const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-188"><a href="#cb287-188"></a><span class="st">-   constexpr bool operator&gt; (const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-189"><a href="#cb287-189"></a><span class="st">-   constexpr bool operator&lt;=(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-190"><a href="#cb287-190"></a><span class="st">-   constexpr bool operator&gt;=(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-191"><a href="#cb287-191"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</span></span>
+<span id="cb287-192"><a href="#cb287-192"></a></span>
+<span id="cb287-193"><a href="#cb287-193"></a>    [...]</span>
+<span id="cb287-194"><a href="#cb287-194"></a>    </span>
+<span id="cb287-195"><a href="#cb287-195"></a>    // [time.cal.ymdlast], class year_month_day_last</span>
+<span id="cb287-196"><a href="#cb287-196"></a>    class year_month_day_last;</span>
+<span id="cb287-197"><a href="#cb287-197"></a></span>
+<span id="cb287-198"><a href="#cb287-198"></a>    constexpr bool operator==(const year_month_day_last&amp; x,</span>
+<span id="cb287-199"><a href="#cb287-199"></a>                              const year_month_day_last&amp; y) noexcept;</span>
+<span id="cb287-200"><a href="#cb287-200"></a><span class="st">-   constexpr bool operator!=(const year_month_day_last&amp; x,</span></span>
+<span id="cb287-201"><a href="#cb287-201"></a><span class="st">-                             const year_month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-202"><a href="#cb287-202"></a><span class="st">-   constexpr bool operator&lt; (const year_month_day_last&amp; x,</span></span>
+<span id="cb287-203"><a href="#cb287-203"></a><span class="st">-                             const year_month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-204"><a href="#cb287-204"></a><span class="st">-   constexpr bool operator&gt; (const year_month_day_last&amp; x,</span></span>
+<span id="cb287-205"><a href="#cb287-205"></a><span class="st">-                             const year_month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-206"><a href="#cb287-206"></a><span class="st">-   constexpr bool operator&lt;=(const year_month_day_last&amp; x,</span></span>
+<span id="cb287-207"><a href="#cb287-207"></a><span class="st">-                             const year_month_day_last&amp; y) noexcept;</span></span>
+<span id="cb287-208"><a href="#cb287-208"></a><span class="st">-   constexpr bool operator&gt;=(const year_month_day_last&amp; x,</span></span>
+<span id="cb287-209"><a href="#cb287-209"></a><span class="st">-                             const year_month_day_last&amp; y) noexcept;   </span></span>
+<span id="cb287-210"><a href="#cb287-210"></a><span class="va">+   constexpr strong_ordering operator&lt;=&gt;(const year_month_day_last&amp; x,</span></span>
+<span id="cb287-211"><a href="#cb287-211"></a><span class="va">+                                         const year_month_day_last&amp; y) noexcept;   </span></span>
+<span id="cb287-212"><a href="#cb287-212"></a>    </span>
+<span id="cb287-213"><a href="#cb287-213"></a>    [...]</span>
+<span id="cb287-214"><a href="#cb287-214"></a>    </span>
+<span id="cb287-215"><a href="#cb287-215"></a></span>
+<span id="cb287-216"><a href="#cb287-216"></a>    // [time.cal.ymwd], class year_month_weekday</span>
+<span id="cb287-217"><a href="#cb287-217"></a>    class year_month_weekday;</span>
+<span id="cb287-218"><a href="#cb287-218"></a></span>
+<span id="cb287-219"><a href="#cb287-219"></a>    constexpr bool operator==(const year_month_weekday&amp; x,</span>
+<span id="cb287-220"><a href="#cb287-220"></a>                              const year_month_weekday&amp; y) noexcept;</span>
+<span id="cb287-221"><a href="#cb287-221"></a><span class="st">-   constexpr bool operator!=(const year_month_weekday&amp; x,</span></span>
+<span id="cb287-222"><a href="#cb287-222"></a><span class="st">-                             const year_month_weekday&amp; y) noexcept;</span></span>
+<span id="cb287-223"><a href="#cb287-223"></a></span>
+<span id="cb287-224"><a href="#cb287-224"></a>    [...]</span>
+<span id="cb287-225"><a href="#cb287-225"></a></span>
+<span id="cb287-226"><a href="#cb287-226"></a>    // [time.cal.ymwdlast], class year_month_weekday_last</span>
+<span id="cb287-227"><a href="#cb287-227"></a>    class year_month_weekday_last;</span>
+<span id="cb287-228"><a href="#cb287-228"></a></span>
+<span id="cb287-229"><a href="#cb287-229"></a>    constexpr bool operator==(const year_month_weekday_last&amp; x,</span>
+<span id="cb287-230"><a href="#cb287-230"></a>                              const year_month_weekday_last&amp; y) noexcept;</span>
+<span id="cb287-231"><a href="#cb287-231"></a><span class="st">-   constexpr bool operator!=(const year_month_weekday_last&amp; x,</span></span>
+<span id="cb287-232"><a href="#cb287-232"></a><span class="st">-                             const year_month_weekday_last&amp; y) noexcept;   </span></span>
+<span id="cb287-233"><a href="#cb287-233"></a></span>
+<span id="cb287-234"><a href="#cb287-234"></a>    [...]</span>
+<span id="cb287-235"><a href="#cb287-235"></a>    </span>
+<span id="cb287-236"><a href="#cb287-236"></a>    // [time.zone.timezone], class time_zone</span>
+<span id="cb287-237"><a href="#cb287-237"></a>    enum class choose {earliest, latest};</span>
+<span id="cb287-238"><a href="#cb287-238"></a>    class time_zone;</span>
+<span id="cb287-239"><a href="#cb287-239"></a></span>
+<span id="cb287-240"><a href="#cb287-240"></a>    bool operator==(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span>
+<span id="cb287-241"><a href="#cb287-241"></a><span class="st">-   bool operator!=(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span></span>
+<span id="cb287-242"><a href="#cb287-242"></a></span>
+<span id="cb287-243"><a href="#cb287-243"></a><span class="st">-   bool operator&lt;(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span></span>
+<span id="cb287-244"><a href="#cb287-244"></a><span class="st">-   bool operator&gt;(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span></span>
+<span id="cb287-245"><a href="#cb287-245"></a><span class="st">-   bool operator&lt;=(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span></span>
+<span id="cb287-246"><a href="#cb287-246"></a><span class="st">-   bool operator&gt;=(const time_zone&amp; x, const time_zone&amp; y) noexcept;   </span></span>
+<span id="cb287-247"><a href="#cb287-247"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const time_zone&amp; x, const time_zone&amp; y) noexcept;</span></span>
+<span id="cb287-248"><a href="#cb287-248"></a></span>
+<span id="cb287-249"><a href="#cb287-249"></a>    // [time.zone.zonedtraits], class template zoned_traits</span>
+<span id="cb287-250"><a href="#cb287-250"></a>    template&lt;class T&gt; struct zoned_traits;</span>
+<span id="cb287-251"><a href="#cb287-251"></a></span>
+<span id="cb287-252"><a href="#cb287-252"></a>    // [time.zone.zonedtime], class template zoned_time</span>
+<span id="cb287-253"><a href="#cb287-253"></a>    template&lt;class Duration, class TimeZonePtr = const time_zone*&gt; class zoned_time;</span>
+<span id="cb287-254"><a href="#cb287-254"></a></span>
+<span id="cb287-255"><a href="#cb287-255"></a>    using zoned_seconds = zoned_time&lt;seconds&gt;;</span>
+<span id="cb287-256"><a href="#cb287-256"></a></span>
+<span id="cb287-257"><a href="#cb287-257"></a>    template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;</span>
+<span id="cb287-258"><a href="#cb287-258"></a>      bool operator==(const zoned_time&lt;Duration1, TimeZonePtr&gt;&amp; x,</span>
+<span id="cb287-259"><a href="#cb287-259"></a>                      const zoned_time&lt;Duration2, TimeZonePtr&gt;&amp; y);</span>
+<span id="cb287-260"><a href="#cb287-260"></a></span>
+<span id="cb287-261"><a href="#cb287-261"></a><span class="st">-   template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;</span></span>
+<span id="cb287-262"><a href="#cb287-262"></a><span class="st">-     bool operator!=(const zoned_time&lt;Duration1, TimeZonePtr&gt;&amp; x,</span></span>
+<span id="cb287-263"><a href="#cb287-263"></a><span class="st">-                     const zoned_time&lt;Duration2, TimeZonePtr&gt;&amp; y);</span></span>
+<span id="cb287-264"><a href="#cb287-264"></a></span>
+<span id="cb287-265"><a href="#cb287-265"></a>    [...]</span>
+<span id="cb287-266"><a href="#cb287-266"></a>    </span>
+<span id="cb287-267"><a href="#cb287-267"></a>    // [time.zone.leap], leap second support</span>
+<span id="cb287-268"><a href="#cb287-268"></a>    class leap;</span>
+<span id="cb287-269"><a href="#cb287-269"></a></span>
+<span id="cb287-270"><a href="#cb287-270"></a>    bool operator==(const leap&amp; x, const leap&amp; y);</span>
+<span id="cb287-271"><a href="#cb287-271"></a><span class="st">-   bool operator!=(const leap&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-272"><a href="#cb287-272"></a><span class="st">-   bool operator&lt; (const leap&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-273"><a href="#cb287-273"></a><span class="st">-   bool operator&gt; (const leap&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-274"><a href="#cb287-274"></a><span class="st">-   bool operator&lt;=(const leap&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-275"><a href="#cb287-275"></a><span class="st">-   bool operator&gt;=(const leap&amp; x, const leap&amp; y);  </span></span>
+<span id="cb287-276"><a href="#cb287-276"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const leap&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-277"><a href="#cb287-277"></a></span>
+<span id="cb287-278"><a href="#cb287-278"></a>    template&lt;class Duration&gt;</span>
+<span id="cb287-279"><a href="#cb287-279"></a>      bool operator==(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span>
+<span id="cb287-280"><a href="#cb287-280"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-281"><a href="#cb287-281"></a><span class="st">-     bool operator==(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-282"><a href="#cb287-282"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-283"><a href="#cb287-283"></a><span class="st">-     bool operator!=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-284"><a href="#cb287-284"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-285"><a href="#cb287-285"></a><span class="st">-     bool operator!=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-286"><a href="#cb287-286"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-287"><a href="#cb287-287"></a><span class="st">-     bool operator&lt; (const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-288"><a href="#cb287-288"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-289"><a href="#cb287-289"></a><span class="st">-     bool operator&lt; (const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-290"><a href="#cb287-290"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-291"><a href="#cb287-291"></a><span class="st">-     bool operator&gt; (const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-292"><a href="#cb287-292"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-293"><a href="#cb287-293"></a><span class="st">-     bool operator&gt; (const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-294"><a href="#cb287-294"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-295"><a href="#cb287-295"></a><span class="st">-     bool operator&lt;=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-296"><a href="#cb287-296"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-297"><a href="#cb287-297"></a><span class="st">-     bool operator&lt;=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-298"><a href="#cb287-298"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-299"><a href="#cb287-299"></a><span class="st">-     bool operator&gt;=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-300"><a href="#cb287-300"></a><span class="st">-   template&lt;class Duration&gt;</span></span>
+<span id="cb287-301"><a href="#cb287-301"></a><span class="st">-     bool operator&gt;=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y);</span></span>
+<span id="cb287-302"><a href="#cb287-302"></a><span class="va">+   template&lt;class Duration&gt;</span></span>
+<span id="cb287-303"><a href="#cb287-303"></a><span class="va">+     auto operator&lt;=&gt;(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y);</span></span>
+<span id="cb287-304"><a href="#cb287-304"></a></span>
+<span id="cb287-305"><a href="#cb287-305"></a></span>
+<span id="cb287-306"><a href="#cb287-306"></a>    // [time.zone.link], class link</span>
+<span id="cb287-307"><a href="#cb287-307"></a>    class link;</span>
+<span id="cb287-308"><a href="#cb287-308"></a></span>
+<span id="cb287-309"><a href="#cb287-309"></a>    bool operator==(const link&amp; x, const link&amp; y);</span>
+<span id="cb287-310"><a href="#cb287-310"></a><span class="st">-   bool operator!=(const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-311"><a href="#cb287-311"></a><span class="st">-   bool operator&lt; (const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-312"><a href="#cb287-312"></a><span class="st">-   bool operator&gt; (const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-313"><a href="#cb287-313"></a><span class="st">-   bool operator&lt;=(const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-314"><a href="#cb287-314"></a><span class="st">-   bool operator&gt;=(const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-315"><a href="#cb287-315"></a><span class="va">+   strong_ordering operator&lt;=&gt;(const link&amp; x, const link&amp; y);</span></span>
+<span id="cb287-316"><a href="#cb287-316"></a></span>
+<span id="cb287-317"><a href="#cb287-317"></a>    [...]</span>
+<span id="cb287-318"><a href="#cb287-318"></a>  }</span>
+<span id="cb287-319"><a href="#cb287-319"></a>}  </span></code></pre></div>
+</blockquote>
+<p>Change 27.5.6 [time.duration.comparisons]:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In the function descriptions that follow, <code class="sourceCode cpp">CT</code> represents <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>A, B<span class="op">&gt;</span></code>, where <code class="sourceCode cpp">A</code> and <code class="sourceCode cpp">B</code> are the types of the two arguments to the function.</p>
+<div class="sourceCode" id="cb288"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb288-1"><a href="#cb288-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Rep1, <span class="kw">class</span> Period1, <span class="kw">class</span> Rep2, <span class="kw">class</span> Period2<span class="op">&gt;</span></span>
+<span id="cb288-2"><a href="#cb288-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> duration<span class="op">&lt;</span>Rep1, Period1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb288-3"><a href="#cb288-3"></a>                            <span class="kw">const</span> duration<span class="op">&lt;</span>Rep2, Period2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">CT<span class="op">(</span>lhs<span class="op">).</span>count<span class="op">()</span> <span class="op">==</span> CT<span class="op">(</span>rhs<span class="op">).</span>count<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+  constexpr bool operator!=(const duration&lt;Rep1, Period1&gt;&amp; lhs,
+                            const duration&lt;Rep2, Period2&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb290"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb290-1"><a href="#cb290-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Rep1, <span class="kw">class</span> Period1, <span class="kw">class</span> Rep2, <span class="kw">class</span> Period2<span class="op">&gt;</span></span>
+<span id="cb290-2"><a href="#cb290-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span><span class="kw">const</span> duration<span class="op">&lt;</span>Rep1, Period1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb290-3"><a href="#cb290-3"></a>                           <span class="kw">const</span> duration<span class="op">&lt;</span>Rep2, Period2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">CT<span class="op">(</span>lhs<span class="op">).</span>count<span class="op">()</span> <span class="op">&lt;</span> CT<span class="op">(</span>rhs<span class="op">).</span>count<span class="op">()</span></code>.</p>
+<div class="sourceCode" id="cb291"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb291-1"><a href="#cb291-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Rep1, <span class="kw">class</span> Period1, <span class="kw">class</span> Rep2, <span class="kw">class</span> Period2<span class="op">&gt;</span></span>
+<span id="cb291-2"><a href="#cb291-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;(</span><span class="kw">const</span> duration<span class="op">&lt;</span>Rep1, Period1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb291-3"><a href="#cb291-3"></a>                           <span class="kw">const</span> duration<span class="op">&lt;</span>Rep2, Period2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<div class="sourceCode" id="cb292"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb292-1"><a href="#cb292-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Rep1, <span class="kw">class</span> Period1, <span class="kw">class</span> Rep2, <span class="kw">class</span> Period2<span class="op">&gt;</span></span>
+<span id="cb292-2"><a href="#cb292-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;=(</span><span class="kw">const</span> duration<span class="op">&lt;</span>Rep1, Period1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb292-3"><a href="#cb292-3"></a>                            <span class="kw">const</span> duration<span class="op">&lt;</span>Rep2, Period2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb293"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb293-1"><a href="#cb293-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Rep1, <span class="kw">class</span> Period1, <span class="kw">class</span> Rep2, <span class="kw">class</span> Period2<span class="op">&gt;</span></span>
+<span id="cb293-2"><a href="#cb293-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> duration<span class="op">&lt;</span>Rep1, Period1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb293-3"><a href="#cb293-3"></a>                            <span class="kw">const</span> duration<span class="op">&lt;</span>Rep2, Period2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+<div class="addu">
+<pre><code>template&lt;class Rep1, class Period1, class Rep2, class Period2&gt;
+    requires ThreeWayComparable&lt;typename CT::rep&gt;
+  constexpr auto operator&lt;=&gt;(const duration&lt;Rep1, Period1&gt;&amp; lhs,
+                             const duration&lt;Rep2, Period2&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">CT<span class="op">(</span>lhs<span class="op">).</span>count<span class="op">()</span> <span class="op">&lt;=&gt;</span> CT<span class="op">(</span>rhs<span class="op">).</span>count<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.6.6 [time.point.comparisons]:</p>
+<blockquote>
+<div class="sourceCode" id="cb295"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb295-1"><a href="#cb295-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Clock, <span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2<span class="op">&gt;</span></span>
+<span id="cb295-2"><a href="#cb295-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb295-3"><a href="#cb295-3"></a>                            <span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>time_since_epoch<span class="op">()</span> <span class="op">==</span> rhs<span class="op">.</span>time_since_epoch<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class Clock, class Duration1, class Duration2&gt;
+  constexpr bool operator!=(const time_point&lt;Clock, Duration1&gt;&amp; lhs,
+                            const time_point&lt;Clock, Duration2&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">==</span> rhs<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb297"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb297-1"><a href="#cb297-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Clock, <span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2<span class="op">&gt;</span></span>
+<span id="cb297-2"><a href="#cb297-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span><span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb297-3"><a href="#cb297-3"></a>                           <span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>time_since_epoch<span class="op">()</span> <span class="op">&lt;</span> rhs<span class="op">.</span>time_since_epoch<span class="op">()</span></code>.</p>
+<div class="sourceCode" id="cb298"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb298-1"><a href="#cb298-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Clock, <span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2<span class="op">&gt;</span></span>
+<span id="cb298-2"><a href="#cb298-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;(</span><span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb298-3"><a href="#cb298-3"></a>                           <span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">rhs <span class="op">&lt;</span> lhs</code>.</p>
+<div class="sourceCode" id="cb299"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb299-1"><a href="#cb299-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Clock, <span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2<span class="op">&gt;</span></span>
+<span id="cb299-2"><a href="#cb299-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;=(</span><span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb299-3"><a href="#cb299-3"></a>                            <span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>rhs <span class="op">&lt;</span> lhs<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb300"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb300-1"><a href="#cb300-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Clock, <span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2<span class="op">&gt;</span></span>
+<span id="cb300-2"><a href="#cb300-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;=(</span><span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration1<span class="op">&gt;&amp;</span> lhs,</span>
+<span id="cb300-3"><a href="#cb300-3"></a>                            <span class="kw">const</span> time_point<span class="op">&lt;</span>Clock, Duration2<span class="op">&gt;&amp;</span> rhs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>lhs <span class="op">&lt;</span> rhs<span class="op">)</span></code>.</p>
+<div class="addu">
+<pre><code>template&lt;class Clock, class Duration1,
+         ThreeWayComparableWith&lt;Duration1&gt; Duration2&gt;
+  constexpr auto operator&lt;=&gt;(const time_point&lt;Clock, Duration1&gt;&amp; lhs,
+                             const time_point&lt;Clock, Duration2&gt;&amp; rhs);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">lhs<span class="op">.</span>time_since_epoch<span class="op">()</span> <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>time_since_epoch<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.8.3.3 [time.cal.day.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb302"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb302-1"><a href="#cb302-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> day<span class="op">&amp;</span> x, <span class="kw">const</span> day<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">==</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const day&amp; x, const day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const day&amp; x, const day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;=&gt;</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.8.4.3 [time.cal.month.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb305"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb305-1"><a href="#cb305-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> month<span class="op">&amp;</span> x, <span class="kw">const</span> month<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">==</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const month&amp; x, const month&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const month&amp; x, const month&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">unsigned</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;=&gt;</span> <span class="dt">unsigned</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.8.5.3 [time.cal.year.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb308"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb308-1"><a href="#cb308-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> year<span class="op">&amp;</span> x, <span class="kw">const</span> year<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">int</span><span class="op">{</span>x<span class="op">}</span> <span class="op">==</span> <span class="dt">int</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const year&amp; x, const year&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">int</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;</span> <span class="dt">int</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const year&amp; x, const year&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="dt">int</span><span class="op">{</span>x<span class="op">}</span> <span class="op">&lt;=&gt;</span> <span class="dt">int</span><span class="op">{</span>y<span class="op">}</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.8.9.3 [time.cal.md.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb311"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb311-1"><a href="#cb311-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> month_day<span class="op">&amp;</span> x, <span class="kw">const</span> month_day<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>month<span class="op">()</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>day<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>day<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const month_day&amp; x, const month_day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: If <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>month<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&gt;</span> y<span class="op">.</span>month<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">false</span></code>. Otherwise, returns <code class="sourceCode cpp">x<span class="op">.</span>day<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>day<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const month_day&amp; x, const month_day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<pre><code>if (auto c = x.month() &lt;=&gt; y.month(); c != 0) return c;
+return x.day() &lt;=&gt; y.day();</code></pre>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 27.8.10 [time.cal.mdlast]:</p>
+<blockquote>
+<div class="sourceCode" id="cb315"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb315-1"><a href="#cb315-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> month_day_last<span class="op">&amp;</span> x, <span class="kw">const</span> month_day_last<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>month<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>month<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const month_day_last&amp; x, const month_day_last&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&lt;=&gt;</span> y<span class="op">.</span>month<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.8.13.3 [time.cal.ym.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb318"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb318-1"><a href="#cb318-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> year_month<span class="op">&amp;</span> x, <span class="kw">const</span> year_month<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>year<span class="op">()</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>month<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>month<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const year_month&amp; x, const year_month&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: If <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>year<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&gt;</span> y<span class="op">.</span>year<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">false</span></code>. Otherwise, returns <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>month<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const year_month&amp; x, const year_month&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<pre><code>if (auto c = x.year() &lt;=&gt; y.year(); c != 0) return c;
+return x.month() &lt;=&gt; y.month();</code></pre>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 27.8.14.3 [time.cal.md.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb322"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb322-1"><a href="#cb322-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> year_month_day<span class="op">&amp;</span> x, <span class="kw">const</span> year_month_day<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>year<span class="op">()</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>month<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>month<span class="op">()</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>day<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>day<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: If <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>year<span class="op">()</span></code>, returns <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&gt;</span> y<span class="op">.</span>year<span class="op">()</span></code>, returns <code class="sourceCode cpp"><span class="kw">false</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>month<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>month<span class="op">()</span> <span class="op">&gt;</span> y<span class="op">.</span>month<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">false</span></code>. Otherwise, returns <code class="sourceCode cpp">x<span class="op">.</span>day<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>day<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const year_month_day&amp; x, const year_month_day&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<pre><code>if (auto c = x.year() &lt;=&gt; y.year(); c != 0) return c;
+if (auto c = x.month() &lt;=&gt; y.month(); c != 0) return c;
+return x.day() &lt;=&gt; y.day();</code></pre>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 27.8.15.3 [time.cal.ymdlast.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb326"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb326-1"><a href="#cb326-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> year_month_day_last<span class="op">&amp;</span> x, <span class="kw">const</span> year_month_day_last<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>year<span class="op">()</span> <span class="op">&amp;&amp;</span> x<span class="op">.</span>month_day_last<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>month_day_last<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const year_month_day_last&amp; x, const year_month_day_last&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: If <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>year<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, if <code class="sourceCode cpp">x<span class="op">.</span>year<span class="op">()</span> <span class="op">&gt;</span> y<span class="op">.</span>year<span class="op">()</span></code> returns <code class="sourceCode cpp"><span class="kw">false</span></code>. Otherwise, returns <code class="sourceCode cpp">x<span class="op">.</span>month_day_last<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>month_day_last<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const year_month_day_last&amp; x, const year_month_day_last&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<pre><code>if (auto c = x.year() &lt;=&gt; y.year(); c != 0) return c;
+return x.month_day_last() &lt;=&gt; y.month_day_last();</code></pre>
+</blockquote>
+</div>
+</blockquote>
+<p>Change 27.10.5.3 [time.zone.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb330"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb330-1"><a href="#cb330-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> time_zone<span class="op">&amp;</span> x, <span class="kw">const</span> time_zone<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const time_zone&amp; x, const time_zone&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const time_zone&amp; x, const time_zone&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">&lt;=&gt;</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.10.7.4 [time.zone.zonedtime.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb333"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb333-1"><a href="#cb333-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Duration1, <span class="kw">class</span> Duration2, <span class="kw">class</span> TimeZonePtr<span class="op">&gt;</span></span>
+<span id="cb333-2"><a href="#cb333-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> zoned_time<span class="op">&lt;</span>Duration1, TimeZonePtr<span class="op">&gt;&amp;</span> x,</span>
+<span id="cb333-3"><a href="#cb333-3"></a>                  <span class="kw">const</span> zoned_time<span class="op">&lt;</span>Duration2, TimeZonePtr<span class="op">&gt;&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>zone_ <span class="op">==</span> y<span class="op">.</span>zone_ <span class="op">&amp;&amp;</span> x<span class="op">.</span>tp_ <span class="op">==</span> y<span class="op">.</span>tp_</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class Duration1, class Duration2, class TimeZonePtr&gt;
+  bool operator!=(const zoned_time&lt;Duration1, TimeZonePtr&gt;&amp; x,
+                  const zoned_time&lt;Duration2, TimeZonePtr&gt;&amp; y);</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+<p>Change 27.10.8.3 [time.zone.leap.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb335"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb335-1"><a href="#cb335-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> leap<span class="op">&amp;</span> x, <span class="kw">const</span> leap<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>date<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const leap&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>date<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const leap&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2a</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">&lt;=&gt;</span> y<span class="op">.</span>date<span class="op">()</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb338"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb338-1"><a href="#cb338-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Duration<span class="op">&gt;</span></span>
+<span id="cb338-2"><a href="#cb338-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> leap<span class="op">&amp;</span> x, <span class="kw">const</span> sys_time<span class="op">&lt;</span>Duration<span class="op">&gt;&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">==</span> y</code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator==(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">y <span class="op">==</span> x</code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator!=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator!=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&lt;(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">&lt;</span> y</code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&lt;(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: <code class="sourceCode cpp">x <span class="op">&lt;</span> y<span class="op">.</span>date<span class="op">()</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&gt;(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp">y <span class="op">&lt;</span> x</code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&gt;(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp">y <span class="op">&lt;</span> x</code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&lt;=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>y <span class="op">&lt;</span> x<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&lt;=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>y <span class="op">&lt;</span> x<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&gt;=(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">13</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
+<pre><code>template&lt;class Duration&gt;
+  constexpr bool operator&gt;=(const sys_time&lt;Duration&gt;&amp; x, const leap&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">14</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>template&lt;class Duration&gt;
+  constexpr auto operator&lt;=&gt;(const leap&amp; x, const sys_time&lt;Duration&gt;&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">15</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>date<span class="op">()</span> <span class="op">&lt;=&gt;</span> y</code>.</p>
+</div>
+</blockquote>
+<p>Change 27.10.9.3 [time.zone.link.nonmembers]:</p>
+<blockquote>
+<div class="sourceCode" id="cb351"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb351-1"><a href="#cb351-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> link<span class="op">&amp;</span> x, <span class="kw">const</span> link<span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>constexpr bool operator&lt;(const link&amp; x, const link&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">&lt;</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>constexpr strong_ordering operator&lt;=&gt;(const link&amp; x, const link&amp; y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>name<span class="op">()</span> <span class="op">&lt;=&gt;</span> y<span class="op">.</span>name<span class="op">()</span></code>.</p>
+</div>
+</blockquote>
 <h2 id="clause-28-localization-library"><span class="header-section-number">5.13</span> Clause 28: Localization library<a href="#clause-28-localization-library" class="self-link"></a></h2>
 <p>TBD</p>
 <h2 id="clause-29-inputoutput-library"><span class="header-section-number">5.14</span> Clause 29: Input/output library<a href="#clause-29-inputoutput-library" class="self-link"></a></h2>
