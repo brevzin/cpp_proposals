@@ -3139,7 +3139,590 @@ template<class T, ThreeWayComparable Container>
 
 ## Clause 23: Iterators library
 
-TBD
+We preserve existing comparison operators for `reverse_iterator` because `>`
+actually forwards to the base `>` rather than invoking the `<` with the
+arguments reversed. So, like `optional`, we cannot synthesize a `<=>`. 
+
+We preserve existing comparison operators `move_iterator` because it seems
+pretty bad to try to synthesize a three-way comparison out of two operator calls
+instead of just making the one operator call.
+
+Notably, we do _not_ add `<=>` to any iterator requirements.
+
+Change 23.2 [iterator.synopsis]:
+
+::: bq
+```diff
+#include <concepts>
+
+namespace std {
+  [...]
+  
+  // [predef.iterators], predefined iterators and sentinels
+  // [reverse.iterators], reverse iterators
+  template<class Iterator> class reverse_iterator;
+
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator==(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator!=(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator<(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator>(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator<=(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator>=(
+      const reverse_iterator<Iterator1>& x,
+      const reverse_iterator<Iterator2>& y);  
++ template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
++   constexpr compare_three_way_result_t<Iterator1, Iterator2>
++     operator<=>(const reverse_iterator<Iterator1>& x,
++                 const reverse_iterator<Iterator2>& y);  	  
+
+  [...]
+  
+  // [move.iterators], move iterators and sentinels
+  template<class Iterator> class move_iterator;
+
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator==(
+      const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+- template<class Iterator1, class Iterator2>
+-   constexpr bool operator!=(
+-     const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator<(
+      const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator>(
+      const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator<=(
+      const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+  template<class Iterator1, class Iterator2>
+    constexpr bool operator>=(
+      const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
++ template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
++   constexpr compare_three_way_result_t<Iterator1, Iterator2>
++     operator<=>(const move_iterator<Iterator1>& x,
++                 const move_iterator<Iterator2>& y);
+
+  [...]
+  
+  // [stream.iterators], stream iterators
+  template<class T, class charT = char, class traits = char_traits<charT>,
+           class Distance = ptrdiff_t>
+  class istream_iterator;
+  template<class T, class charT, class traits, class Distance>
+    bool operator==(const istream_iterator<T,charT,traits,Distance>& x,
+            const istream_iterator<T,charT,traits,Distance>& y);
+- template<class T, class charT, class traits, class Distance>
+-   bool operator!=(const istream_iterator<T,charT,traits,Distance>& x,
+-           const istream_iterator<T,charT,traits,Distance>& y);
+
+  template<class T, class charT = char, class traits = char_traits<charT>>
+      class ostream_iterator;
+
+  template<class charT, class traits = char_traits<charT>>
+    class istreambuf_iterator;
+  template<class charT, class traits>
+    bool operator==(const istreambuf_iterator<charT,traits>& a,
+            const istreambuf_iterator<charT,traits>& b);
+- template<class charT, class traits>
+-   bool operator!=(const istreambuf_iterator<charT,traits>& a,
+-           const istreambuf_iterator<charT,traits>& b);
+
+  [...]			
+}
+```
+:::
+
+Add `<=>` to 23.5.1.7 [reverse.iter.cmp]:
+
+::: bq
+```cpp
+template<class Iterator1, class Iterator2>
+  constexpr bool operator>=(
+    const reverse_iterator<Iterator1>& x,
+    const reverse_iterator<Iterator2>& y);
+```
+[11]{.pnum} *Constraints*: `x.base() <= y.base()` is well-formed and convertible
+to `bool`.
+
+[12]{.pnum} *Returns*: `x.base() <= y.base()`.
+
+::: {.addu}
+```
+template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
+  constexpr compare_three_way_result_t<Iterator1, Iterator2>
+    operator<=>(const reverse_iterator<Iterator1>& x,
+                const reverse_iterator<Iterator2>& y);  	
+```
+[13]{.pnum} *Returns*: `x.base() <=> y.base()`.
+:::
+:::
+
+Change 23.5.3.1 [move.iterator]:
+
+::: bq
+```diff
+namespace std {
+  template<class Iterator>
+  class move_iterator {
+  public:
+    [...]
+
+    template<Sentinel<Iterator> S>
+      friend constexpr bool
+        operator==(const move_iterator& x, const move_sentinel<S>& y);
+-   template<Sentinel<Iterator> S>
+-     friend constexpr bool
+-       operator==(const move_sentinel<S>& x, const move_iterator& y);
+-   template<Sentinel<Iterator> S>
+-     friend constexpr bool
+-       operator!=(const move_iterator& x, const move_sentinel<S>& y);
+-   template<Sentinel<Iterator> S>
+-     friend constexpr bool
+-       operator!=(const move_sentinel<S>& x, const move_iterator& y);
+    template<SizedSentinel<Iterator> S>
+      friend constexpr iter_difference_t<Iterator>
+        operator-(const move_sentinel<S>& x, const move_iterator& y);
+		
+    [...]
+  };
+}
+```
+:::
+
+Remove `!=` and add `<=>` to 23.5.3.7 [move.iter.op.comp]:
+
+::: bq
+```cpp
+template<class Iterator1, class Iterator2>
+  constexpr bool operator==(const move_iterator<Iterator1>& x,
+                            const move_iterator<Iterator2>& y);
+template<Sentinel<Iterator> S>
+  friend constexpr bool operator==(const move_iterator& x,
+                                   const move_sentinel<S>& y);
+```
+
+::: rm
+```
+template<Sentinel<Iterator> S>
+  friend constexpr bool operator==(const move_sentinel<S>& x,
+                                   const move_iterator& y);
+```
+:::
+[1]{.pnum} *Constraints*: `x.base() == y.base()` is well-formed and convertible
+to `bool`.
+
+[2]{.pnum} *Returns*: `x.base() == y.base()`.
+
+::: rm
+```
+template<class Iterator1, class Iterator2>
+  constexpr bool operator!=(const move_iterator<Iterator1>& x,
+                            const move_iterator<Iterator2>& y);
+template<Sentinel<Iterator> S>
+  friend constexpr bool operator!=(const move_iterator& x,
+                                   const move_sentinel<S>& y);
+template<Sentinel<Iterator> S>
+  friend constexpr bool operator!=(const move_sentinel<S>& x,
+                                   const move_iterator& y);
+```
+[3]{.pnum} *Constraints*: `x.base() == y.base()` is well-formed and convertible
+to `bool`.
+
+[4]{.pnum} *Returns*: `!(x == y)`.
+:::
+
+```cpp
+template<class Iterator1, class Iterator2>
+constexpr bool operator<(const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+```
+[5]{.pnum} *Constraints*: `x.base() < y.base()` is well-formed and convertible
+to `bool`.
+
+[6]{.pnum} *Returns*: `x.base() < y.base()`.
+
+```cpp
+template<class Iterator1, class Iterator2>
+constexpr bool operator>(const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+```
+[7]{.pnum} *Constraints*: `y.base() < x.base()` is well-formed and convertible
+to `bool`.
+
+[8]{.pnum} *Returns*: `y < x`.
+```cpp
+template<class Iterator1, class Iterator2>
+constexpr bool operator<=(const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+```
+[9]{.pnum} *Constraints*: `y.base() < x.base()` is well-formed and convertible
+to `bool`.
+
+[10]{.pnum} *Returns*: `!(y < x)`.
+
+```cpp
+template<class Iterator1, class Iterator2>
+constexpr bool operator>=(const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
+```
+[11]{.pnum} *Constraints*: `x.base() < y.base()` is well-formed and convertible
+to `bool`.
+
+[12]{.pnum} *Returns*: `!(x < y)`.
+
+::: {.addu}
+```
+template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
+  constexpr compare_three_way_result_t<Iterator1, Iterator2>
+    operator<=>(const move_iterator<Iterator1>& x,
+                const move_iterator<Iterator2>& y);     
+```
+[13]{.pnum} *Returns*: `x.base() <=> y.base()`.
+:::
+:::
+
+Remove `!=` from 23.5.4.1 [common.iterator]:
+
+::: bq
+```diff
+namespace std {
+  template<Iterator I, Sentinel<I> S>
+    requires (!Same<I, S>)
+  class common_iterator {
+  public:
+    [...]
+	
+
+    template<class I2, Sentinel<I> S2>
+      requires Sentinel<S, I2>
+    friend bool operator==(
+      const common_iterator& x, const common_iterator<I2, S2>& y);
+    template<class I2, Sentinel<I> S2>
+      requires Sentinel<S, I2> && EqualityComparableWith<I, I2>
+    friend bool operator==(
+      const common_iterator& x, const common_iterator<I2, S2>& y);
+-   template<class I2, Sentinel<I> S2>
+-     requires Sentinel<S, I2>
+-   friend bool operator!=(
+-     const common_iterator& x, const common_iterator<I2, S2>& y);
+
+    [...]
+  };
+}  
+```
+:::
+
+Remove `!=` from 23.5.4.6 [common.iter.cmp]:
+
+::: bq
+::: rm
+```
+template<class I2, Sentinel<I> S2>
+  requires Sentinel<S, I2>
+friend bool operator!=(
+  const common_iterator& x, const common_iterator<I2, S2>& y);
+```
+[5]{.pnum} *Effects*: Equivalent to: `return !(x == y);`
+:::
+:::
+
+Change 23.5.6.1 [counted.iterator]:
+
+::: bq
+```diff
+namespace std {
+  template<Iterator I>
+  class counted_iterator {
+  public:
+    [...]
+
+    template<Common<I> I2>
+      friend constexpr bool operator==(
+        const counted_iterator& x, const counted_iterator<I2>& y);
+    friend constexpr bool operator==(
+      const counted_iterator& x, default_sentinel_t);
+-   friend constexpr bool operator==(
+-     default_sentinel_t, const counted_iterator& x);
+
+-   template<Common<I> I2>
+-     friend constexpr bool operator!=(
+-       const counted_iterator& x, const counted_iterator<I2>& y);
+-   friend constexpr bool operator!=(
+-     const counted_iterator& x, default_sentinel_t y);
+-   friend constexpr bool operator!=(
+-     default_sentinel_t x, const counted_iterator& y);
+
+-   template<Common<I> I2>
+-     friend constexpr bool operator<(
+-       const counted_iterator& x, const counted_iterator<I2>& y);
+-   template<Common<I> I2>
+-     friend constexpr bool operator>(
+-       const counted_iterator& x, const counted_iterator<I2>& y);
+-   template<Common<I> I2>
+-     friend constexpr bool operator<=(
+-       const counted_iterator& x, const counted_iterator<I2>& y);
+-   template<Common<I> I2>
+-     friend constexpr bool operator>=(
+-       const counted_iterator& x, const counted_iterator<I2>& y);
++   template<Common<I> I2>
++     friend constexpr strong_ordering operator<=>(
++       const counted_iterator& x, const counted_iterator<I2>& y);
+
+    [...]		
+  };
+}
+```
+:::
+
+Make the same changes to 23.5.6.6 [counted.iter.comp]:
+
+::: bq
+```cpp
+template<Common<I> I2>
+  friend constexpr bool operator==(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[1]{.pnum} *Expects*: `x` and `y` refer to elements of the same sequence
+([counted.iterator]).
+
+[2]{.pnum} *Effects*: Equivalent to: `return x.length == y.length;`
+
+```cpp
+  friend constexpr bool operator==(
+    const counted_iterator& x, default_sentinel_t);
+```
+
+::: rm
+```
+friend constexpr bool operator==(
+  default_sentinel_t, const counted_iterator& x);
+```
+:::
+[3]{.pnum} *Effects*: Equivalent to: `return x.length == 0;`
+
+::: rm
+```
+template<Common<I> I2>
+  friend constexpr bool operator!=(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+friend constexpr bool operator!=(
+  const counted_iterator& x, default_sentinel_t y);
+friend constexpr bool operator!=(
+  default_sentinel_t x, const counted_iterator& y);
+```
+[4]{.pnum} *Effects*: Equivalent to: `return !(x == y);`
+
+```
+template<Common<I> I2>
+  friend constexpr bool operator<(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[5]{.pnum} *Expects*: `x` and `y` refer to elements of the same sequence
+([counted.iterator]).
+
+[6]{.pnum} *Effects*: Equivalent to: `return y.length < x.length;`
+
+[7]{.pnum} [*Note*: The argument order in the *Effects*: element is reversed
+because length counts down, not up. —*end note*]
+```
+template<Common<I> I2>
+  friend constexpr bool operator>(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[8]{.pnum} *Effects*: Equivalent to: `return y < x;`
+```
+template<Common<I> I2>
+  friend constexpr bool operator<=(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[9]{.pnum} *Effects*: Equivalent to: `return !(y < x);`
+```
+template<Common<I> I2>
+  friend constexpr bool operator>=(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[10]{.pnum} *Effects*: Equivalent to: `return !(x < y);`
+:::
+
+::: {.addu}
+```
+template<Common<I> I2>
+  friend constexpr strong_ordering operator<=>(
+    const counted_iterator& x, const counted_iterator<I2>& y);
+```
+[11]{.pnum} *Expects*: `x` and `y` refer to elements of the same sequence
+([counted.iterator]).
+
+[12]{.pnum} *Effects*: Equivalent to: `return y.length <=> x.length;`
+
+[13]{.pnum} [*Note*: The argument order in the *Effects*: element is reversed
+because length counts down, not up. —*end note*]
+:::
+:::
+
+Change 23.5.7.1 [unreachable.sentinel] to just define what will become the
+single operator in the synopsis:
+
+::: bq
+```diff
+  namespace std {
+    struct unreachable_sentinel_t {
+      template<WeaklyIncrementable I>
+-       friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept@[;]{.diffdel}@
++       friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept
++         { return false; }
+-       friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept;
+-     template<WeaklyIncrementable I>
+-       friend constexpr bool operator==(const I&, unreachable_sentinel_t) noexcept;
+-     template<WeaklyIncrementable I>
+-       friend constexpr bool operator!=(unreachable_sentinel_t, const I&) noexcept;
+-     template<WeaklyIncrementable I>
+-       friend constexpr bool operator!=(const I&, unreachable_sentinel_t) noexcept;
+    };
+  }
+```
+:::
+
+Remove all of 23.5.7.2 [unreachable.sentinel.cmp] (which is just the definitions
+of `==` and `!=`)
+
+::: bq
+::: rm
+```
+template<WeaklyIncrementable I>
+  friend constexpr bool operator==(unreachable_sentinel_t, const I&) noexcept;
+template<WeaklyIncrementable I>
+  friend constexpr bool operator==(const I&, unreachable_sentinel_t) noexcept;
+```
+[1]{.pnum} *Returns*: `false`.
+```
+template<WeaklyIncrementable I>
+  friend constexpr bool operator!=(unreachable_sentinel_t, const I&) noexcept;
+template<WeaklyIncrementable I>
+  friend constexpr bool operator!=(const I&, unreachable_sentinel_t) noexcept;
+```
+[2]{.pnum} *Returns*: `true`.
+:::
+:::
+
+Change 23.6.1 [istream.iterator]:
+
+::: bq
+```diff
+namespace std {
+  template<class T, class charT = char, class traits = char_traits<charT>,
+           class Distance = ptrdiff_t>
+  class istream_iterator {
+  public:
+    [...]
+
+    friend bool operator==(const istream_iterator& i, default_sentinel_t);
+-   friend bool operator==(default_sentinel_t, const istream_iterator& i);
+-   friend bool operator!=(const istream_iterator& x, default_sentinel_t y);
+-   friend bool operator!=(default_sentinel_t x, const istream_iterator& y);
+
+    [...]
+  };
+}
+```
+:::
+
+Change 23.6.1.2 [istream.iterator.ops]:
+
+::: bq
+```cpp
+template<class T, class charT, class traits, class Distance>
+  bool operator==(const istream_iterator<T,charT,traits,Distance>& x,
+                  const istream_iterator<T,charT,traits,Distance>& y);
+```
+[10]{.pnum} *Returns*: `x.in_stream == y.in_stream`.
+
+::: rm
+```
+friend bool operator==(default_sentinel_t, const istream_iterator& i);
+```
+:::
+```cpp
+friend bool operator==(const istream_iterator& i, default_sentinel_t);
+```
+[11]{.pnum} *Returns*: `!i.in_stream`.
+
+::: rm
+```
+template<class T, class charT, class traits, class Distance>
+  bool operator!=(const istream_iterator<T,charT,traits,Distance>& x,
+                  const istream_iterator<T,charT,traits,Distance>& y);
+friend bool operator!=(default_sentinel_t x, const istream_iterator& y);
+friend bool operator!=(const istream_iterator& x, default_sentinel_t y);
+```
+[12]{.pnum} *Returns*: `!(x == y)`
+:::
+:::
+
+Change 23.6.3 [istreambuf.iterator]:
+
+::: bq
+```diff
+namespace std {
+  template<class charT, class traits = char_traits<charT>>
+  class istreambuf_iterator {
+    [...]
+	
+-   friend bool operator==(default_sentinel_t s, const istreambuf_iterator& i);
+    friend bool operator==(const istreambuf_iterator& i, default_sentinel_t s);
+-   friend bool operator!=(default_sentinel_t a, const istreambuf_iterator& b);
+-   friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);
+
+    [...]
+  };
+}	
+```
+:::
+
+Change 23.6.3.3 [istreambuf.iterator.ops]:
+
+::: bq
+```cpp
+template<class charT, class traits>
+  bool operator==(const istreambuf_iterator<charT,traits>& a,
+                  const istreambuf_iterator<charT,traits>& b);
+```
+[6]{.pnum} *Returns*: `a.equal(b)`.
+
+::: rm
+```
+friend bool operator==(default_sentinel_t s, const istreambuf_iterator& i);
+```
+:::
+```cpp
+friend bool operator==(const istreambuf_iterator& i, default_sentinel_t s);
+```
+[7]{.pnum} *Returns*: `i.equal(s)`.
+
+::: rm
+```
+template<class charT, class traits>
+  bool operator!=(const istreambuf_iterator<charT,traits>& a,
+                  const istreambuf_iterator<charT,traits>& b);
+friend bool operator!=(default_sentinel_t a, const istreambuf_iterator& b);
+friend bool operator!=(const istreambuf_iterator& a, default_sentinel_t b);
+```
+[8]{.pnum} *Returns*: `!a.equal(b)`.
+:::
+:::
 
 ## Clause 24: Ranges library
 
