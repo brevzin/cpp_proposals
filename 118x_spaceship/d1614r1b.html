@@ -5397,7 +5397,53 @@ bool operator!=(const match_results&lt;BidirectionalIterator, Allocator&gt;&amp;
 <h2 id="clause-31-atomic-operations-library"><span class="header-section-number">5.16</span> Clause 31: Atomic operations library<a href="#clause-31-atomic-operations-library" class="self-link"></a></h2>
 <p>No changes necessary.</p>
 <h2 id="clause-32-thread-support-library"><span class="header-section-number">5.17</span> Clause 32: Thread support library<a href="#clause-32-thread-support-library" class="self-link"></a></h2>
-<p>TBD</p>
+<p>Replace <code class="sourceCode cpp">thread<span class="op">::</span>id</code>s operators with just <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>.</p>
+<p>Change 32.3.2.1 [thread.thread.id]:</p>
+<blockquote>
+<div class="sourceCode" id="cb434"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb434-1"><a href="#cb434-1"></a>namespace std {</span>
+<span id="cb434-2"><a href="#cb434-2"></a>  class thread::id {</span>
+<span id="cb434-3"><a href="#cb434-3"></a>  public:</span>
+<span id="cb434-4"><a href="#cb434-4"></a>    id() noexcept;</span>
+<span id="cb434-5"><a href="#cb434-5"></a>  };</span>
+<span id="cb434-6"><a href="#cb434-6"></a></span>
+<span id="cb434-7"><a href="#cb434-7"></a>  bool operator==(thread::id x, thread::id y) noexcept;</span>
+<span id="cb434-8"><a href="#cb434-8"></a><span class="st">- bool operator!=(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-9"><a href="#cb434-9"></a><span class="st">- bool operator&lt;(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-10"><a href="#cb434-10"></a><span class="st">- bool operator&gt;(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-11"><a href="#cb434-11"></a><span class="st">- bool operator&lt;=(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-12"><a href="#cb434-12"></a><span class="st">- bool operator&gt;=(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-13"><a href="#cb434-13"></a><span class="va">+ strong_ordering operator&lt;=&gt;(thread::id x, thread::id y) noexcept;</span></span>
+<span id="cb434-14"><a href="#cb434-14"></a></span>
+<span id="cb434-15"><a href="#cb434-15"></a>  template&lt;class charT, class traits&gt;</span>
+<span id="cb434-16"><a href="#cb434-16"></a>    basic_ostream&lt;charT, traits&gt;&amp;</span>
+<span id="cb434-17"><a href="#cb434-17"></a>      operator&lt;&lt;(basic_ostream&lt;charT, traits&gt;&amp; out, thread::id id);</span>
+<span id="cb434-18"><a href="#cb434-18"></a></span>
+<span id="cb434-19"><a href="#cb434-19"></a>  // hash support</span>
+<span id="cb434-20"><a href="#cb434-20"></a>  template&lt;class T&gt; struct hash;</span>
+<span id="cb434-21"><a href="#cb434-21"></a>  template&lt;&gt; struct hash&lt;thread::id&gt;;</span>
+<span id="cb434-22"><a href="#cb434-22"></a>}</span></code></pre></div>
+</blockquote>
+<blockquote>
+<div class="sourceCode" id="cb435"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb435-1"><a href="#cb435-1"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>thread<span class="op">::</span>id x, thread<span class="op">::</span>id y<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> only if <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> represent the same thread of execution or neither x nor y represents a thread of execution.</p>
+<div class="rm" style="color: #bf0303">
+
+<pre><code>bool operator!=(thread::id x, thread::id y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code></p>
+<pre><code>bool operator&lt;(thread::id x, thread::id y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Returns</em>: A value such that <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code> is a total ordering as described in [alg.sorting].</p>
+<pre><code>bool operator&gt;(thread::id x, thread::id y) noexcept; </code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Returns</em>: <code class="sourceCode cpp">y <span class="op">&lt;</span> x</code>.</p>
+<pre><code>bool operator&lt;=(thread::id x, thread::id y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>y <span class="op">&lt;</span> x<span class="op">)</span></code>.</p>
+<pre><code>bool operator&gt;=(thread::id x, thread::id y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
+</div>
+<div class="addu">
+<pre><code>strong_ordering operator&lt;=&gt;(thread::id x, thread::id y) noexcept;</code></pre>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> <em>Returns</em>: A value such that <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> is a total ordering as described in [alg.sorting].</p>
+</div>
+</blockquote>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">

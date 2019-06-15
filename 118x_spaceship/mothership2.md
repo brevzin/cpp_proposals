@@ -6197,7 +6197,77 @@ No changes necessary.
 
 ## Clause 32: Thread support library
 
-TBD
+Replace `thread::id`s operators with just `==` and `<=>`.
+
+Change 32.3.2.1 [thread.thread.id]:
+
+::: bq
+```diff
+namespace std {
+  class thread::id {
+  public:
+    id() noexcept;
+  };
+
+  bool operator==(thread::id x, thread::id y) noexcept;
+- bool operator!=(thread::id x, thread::id y) noexcept;
+- bool operator<(thread::id x, thread::id y) noexcept;
+- bool operator>(thread::id x, thread::id y) noexcept;
+- bool operator<=(thread::id x, thread::id y) noexcept;
+- bool operator>=(thread::id x, thread::id y) noexcept;
++ strong_ordering operator<=>(thread::id x, thread::id y) noexcept;
+
+  template<class charT, class traits>
+    basic_ostream<charT, traits>&
+      operator<<(basic_ostream<charT, traits>& out, thread::id id);
+
+  // hash support
+  template<class T> struct hash;
+  template<> struct hash<thread::id>;
+}
+```
+:::
+
+::: bq
+```cpp
+bool operator==(thread::id x, thread::id y) noexcept;
+```
+[6]{.pnum} *Returns*: `true` only if `x` and `y` represent the same
+thread of execution or neither x nor y represents a thread of execution.
+
+::: rm
+```
+bool operator!=(thread::id x, thread::id y) noexcept;
+```
+[7]{.pnum} *Returns*: `!(x == y)`
+```
+bool operator<(thread::id x, thread::id y) noexcept;
+```
+[8]{.pnum} *Returns*: A value such that `operator<` is a total ordering as
+described in [alg.sorting].
+```
+bool operator>(thread::id x, thread::id y) noexcept; 
+```
+[9]{.pnum} *Returns*: `y < x`.
+```
+bool operator<=(thread::id x, thread::id y) noexcept;
+```
+[10]{.pnum} *Returns*: `!(y < x)`.
+```
+bool operator>=(thread::id x, thread::id y) noexcept;
+```
+[11]{.pnum} *Returns*: `!(x < y)`.
+:::
+
+::: {.addu}
+```
+strong_ordering operator<=>(thread::id x, thread::id y) noexcept;
+```
+[a]{.pnum} *Returns*: A value such that `operator<=>` is a total ordering as
+described in [alg.sorting].
+:::
+
+:::
 
 ---
 references:
