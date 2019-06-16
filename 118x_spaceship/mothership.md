@@ -657,7 +657,7 @@ struct compare_three_way {
 Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design for `strong_order()`, `weak_order()`, `partial_order()`, `strong_equal()`, and `weak_equal()`. The new wording makes them CPOs. 
 
 ::: bq
-::: add
+::: {.addu}
 [1]{.pnum} The name `strong_order` denotes a customization point object ([customization.point.object]). The expression `strong_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to the following:
 
 - [1.1]{.pnum} If the decayed types of `E` and `F` differ, `strong_order(E, F)` is ill-formed. 
@@ -680,37 +680,71 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 	- [2.3.7]{.pnum} Each normal positive value
 	- [2.3.8]{.pnum} Positive infinity
 	- [2.3.9]{.pnum} Together, all positive NaN values
-- [2.4]{.pnum} Otherwise, `weak_ordering(strong_order(E, F))` if it is a well-formed expression.
-- [2.5]{.pnum} Otherwise, `weak_ordering(E <=> F)` if it is a well-formed expression.
+- [2.4]{.pnum} Otherwise, `weak_ordering(E <=> F)` if it is a well-formed expression.	
+- [2.5]{.pnum} Otherwise, `weak_ordering(strong_order(E, F))` if it is a well-formed expression.
 - [2.6]{.pnum} Otherwise, `weak_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::weak_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
 
 [3]{.pnum} The name `partial_order` denotes a customization point object ([customization.point.object]). The expression `partial_order(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to the following:
 
 - [3.1]{.pnum} If the decayed types of `E` and `F` differ, `partial_order(E, F)` is ill-formed.
 - [3.2]{.pnum} Otherwise, `partial_ordering(partial_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::partial_order`.
-- [3.3]{.pnum} Otherwise, `partial_ordering(weak_order(E, F))` if it is a well-formed expression.
-- [3.4]{.pnum} Otherwise, `partial_ordering(E <=> F)` if it is a well-formed expression.
+- [3.3]{.pnum} Otherwise, `partial_ordering(E <=> F)` if it is a well-formed expression.
+- [3.4]{.pnum} Otherwise, `partial_ordering(weak_order(E, F))` if it is a well-formed expression.
 - [3.5]{.pnum} Otherwise, `partial_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::partial_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
 
 [4]{.pnum} The name `compare_strong_order_fallback` denotes a comparison customization point ([customization.point.object]) object. The expression `compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
 
 - [4.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_strong_order_fallback(E, F)` is ill-formed.
 - [4.2]{.pnum} Otherwise, `strong_order(E, F)` if it is a well-formed expression.
-- [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? strong_ordering::equal : ((E < F) ? strong_ordering::less : strong_ordering::greater` except that `E` and `F` are only evaluated once.
+- [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+
+::: bq
+```
+E == F ? strong_ordering::equal : 
+E < F  ? strong_ordering::less : 
+         strong_ordering::greater
+```
+:::
+
+ except that `E` and `F` are only evaluated once.
+
 - [4.4]{.pnum} Otherwise, `compare_strong_order_fallback(E, F)` is ill-formed.
 
 [5]{.pnum} The name `compare_weak_order_fallback` denotes a customization point object ([customization.point.object]). The expression `compare_weak_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
 
 - [5.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_weak_order_fallback(E, F)` is ill-formed.
 - [5.2]{.pnum} Otherwise, `weak_order(E, F)` if it is a well-formed expression.
-- [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? weak_ordering::equal : ((E < F) ? weak_ordering::less : weak_ordering::greater` except that `E` and `F` are only evaluated once.
+- [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+
+::: bq
+```
+E == F ? weak_ordering::equal :
+E < F  ? weak_ordering::less :
+         weak_ordering::greater
+```
+:::
+
+except that `E` and `F` are only evaluated once.
+
 - [5.4]{.pnum} Otherwise, `compare_weak_order_fallback(E, F)` is ill-formed.
 
 [6]{.pnum} The name `compare_partial_order_fallback` denotes a customization point object ([customization.point.object]). The expression `compare_partial_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
 
 - [6.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_partial_order_fallback(E, F)` is ill-formed.
 - [6.2]{.pnum} Otherwise, `partial_order(E, F)` if it is a well-formed expression.
-- [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool, `(E == F) ? partial_ordering::equivalent : ((E < F) ? partial_ordering::less : ((F < E) ? weak_ordering::greater : weak_ordering::unordered))` except that `E` and `F` are only evaluated once.
+- [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+
+::: bq
+```
+E == F ? partial_ordering::equivalent :
+E < F  ? partial_ordering::less :
+F < E  ? partial_ordering::greater :
+	     partial_ordering::unordered
+```
+:::
+
+except that `E` and `F` are only evaluated once.
+
 - [6.4]{.pnum} Otherwise, `compare_partial_order_fallback(E, F)` is ill-formed.
 
 :::
