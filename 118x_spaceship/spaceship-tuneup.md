@@ -1,8 +1,8 @@
 ---
 title: Spaceship needs a tune-up
 subtitle: Addressing some discovered issues with P0515 and P1185
-document: D1630R0
-date: 2019-06-04
+document: P1630R0
+date: today
 audience: CWG, EWG
 author:
 	- name: Barry Revzin
@@ -370,22 +370,22 @@ Change 11.10.1 [class.compare.default]/3.2:
 > [3]{.pnum} A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:
 > 
 - [3.1]{.pnum} `C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or
-- [3.2]{.pnum} `C` is a class type with [an]{.rm} [a friend or public member]{.add} `==` operator defined as defaulted in the definition of `C`, [`x == x` is well-formed when contextually converted to `bool`,]{.rm} all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
+- [3.2]{.pnum} `C` is a class type with [an]{.rm} [a friend or public member]{.addu} `==` operator defined as defaulted in the definition of `C`, [`x == x` is well-formed when contextually converted to `bool`,]{.rm} all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
 
 Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle the error cases:
 
 > [4]{.pnum} A defaulted `!=` operator function for a class `C` with parameters `x` and `y` is defined as deleted if
 > 
-> - [4.1]{.pnum} overload resolution ([over.match]), as applied to `x == y` [(also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.add}, or
-> - [4.2]{.pnum} `x == y` [cannot be contextually converted to `bool`]{.rm} [is not of type `cv bool`]{.add}.
+> - [4.1]{.pnum} overload resolution ([over.match]), as applied to `x == y` [(also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.addu}, or
+> - [4.2]{.pnum} `x == y` [cannot be contextually converted to `bool`]{.rm} [is not of type `cv bool`]{.addu}.
 >
-> Otherwise, the operator function yields [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.add}.
+> Otherwise, the operator function yields [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.addu}.
 
 Change 11.10.4 [class.rel]/2 to likewise more exhaustively handle the error cases:
 
 > [2]{.pnum} The operator function with parameters `x` and `y` is defined as deleted if
 > 
-> - [2.1]{.pnum} overload resolution ([over.match]), as applied to `x <=> y` [results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.add}, or
+> - [2.1]{.pnum} overload resolution ([over.match]), as applied to `x <=> y` [results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.addu}, or
 > - [2.2]{.pnum}  operator `@` cannot be applied to the return type of `x <=> y`.
 > 
 > Otherwise, the operator function yields `x <=> y @ 0`.
@@ -398,27 +398,27 @@ Add to the end of 12.3 [over.match], the new term *usable function*:
 
 Change 12.3.1.2 [over.match.oper]/3.4, also splitting it up into sub-bullets:
 
-> [3.4]{.pnum} [The rewritten candidate set is determined as follows:]{.add}
+> [3.4]{.pnum} [The rewritten candidate set is determined as follows:]{.addu}
 > 
-> - [3.4.1]{.pnum} For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates [for the `operator <=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator`<=>`]{.rm} [for the expression `x <=> y`]{.add}.
-> - [3.4.2]{.pnum} For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for [the operator `<=>` for which the rewritten expression `0 @ (y <=> x)` is well-formed using that `operator<=>`]{.rm} [the expression `y <=> x`]{.add}. 
-> - [3.4.3]{.pnum} For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates [for the operator == for which the rewritten expression `(x == y)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the expression `x == y`]{.add}.
-> - [3.4.4]{.pnum} For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate [for the operator `==` for which the rewritten expression `(y == x)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the expression `y == x`]{.add}. 
-> - [3.4.5]{.pnum} [For all other operators, the rewritten candidate set is empty.]{.add}
+> - [3.4.1]{.pnum} For the relational ([expr.rel]) operators, the rewritten candidates include all member, non-member, and built-in candidates [for the `operator <=>` for which the rewritten expression `(x <=> y) @ 0` is well-formed using that operator`<=>`]{.rm} [for the expression `x <=> y`]{.addu}.
+> - [3.4.2]{.pnum} For the relational ([expr.rel]) and three-way comparison ([expr.spaceship]) operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate for [the operator `<=>` for which the rewritten expression `0 @ (y <=> x)` is well-formed using that `operator<=>`]{.rm} [the expression `y <=> x`]{.addu}. 
+> - [3.4.3]{.pnum} For the `!=` operator ([expr.eq]), the rewritten candidates include all member, non-member, and built-in candidates [for the operator == for which the rewritten expression `(x == y)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the expression `x == y`]{.addu}.
+> - [3.4.4]{.pnum} For the equality operators, the rewritten candidates also include a synthesized candidate, with the order of the two parameters reversed, for each member, non-member, and built-in candidate [for the operator `==` for which the rewritten expression `(y == x)` is well-formed when contextually converted to `bool` using that operator `==`]{.rm} [for the expression `y == x`]{.addu}. 
+> - [3.4.5]{.pnum} [For all other operators, the rewritten candidate set is empty.]{.addu}
 > 
 > [*Note*: A candidate synthesized from a member candidate has its implicit object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. *end note*] [In each case, rewritten candidates are not considered in the context of the rewritten expression. For all other operators, the rewritten candidate set is empty.]{.rm}
 
 Split 12.3.1.2 [over.match.oper]/8 into two paragraphs, and require the type be `bool`:
 
-> [8]{.pnum} If a rewritten [`operator<=>`]{.add} candidate is selected by overload resolution for [a relational or three-way comparison]{.rm} [an]{.add} operator `@`, `x @ y` is interpreted as [the rewritten expression:]{.rm} `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. [Rewritten candidates for the operator `@` are not considered in the context of the resulting expression.]{.add}
+> [8]{.pnum} If a rewritten [`operator<=>`]{.addu} candidate is selected by overload resolution for [a relational or three-way comparison]{.rm} [an]{.addu} operator `@`, `x @ y` is interpreted as [the rewritten expression:]{.rm} `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. [Rewritten candidates for the operator `@` are not considered in the context of the resulting expression.]{.addu}
 
-> [8*]{.pnum} If a rewritten [`operator==`]{.add} candidate is selected by overload resolution for [a `!=` operator]{.rm} [an operator `@`]{.add}, [its return type shall be `cv bool`, and `x @ y` is interpreted as:]{.add}
+> [8*]{.pnum} If a rewritten [`operator==`]{.addu} candidate is selected by overload resolution for [a `!=` operator]{.rm} [an operator `@`]{.addu}, [its return type shall be `cv bool`, and `x @ y` is interpreted as:]{.addu}
 > 
-> - [8*.1]{.pnum} [If `@` is `!=` and the selected candidate is a synthesized candidate with reversed order of parameters, `!(y == x)`.]{.add}
-> - [8*.2]{.pnum} [Otherwise, if `@` is `!=`, `!(x == y)`.]{.add}
-> - [8*.3]{.pnum} [Otherwise, if `@` is `==`, `y == x`.]{.add}
+> - [8*.1]{.pnum} [If `@` is `!=` and the selected candidate is a synthesized candidate with reversed order of parameters, `!(y == x)`.]{.addu}
+> - [8*.2]{.pnum} [Otherwise, if `@` is `!=`, `!(x == y)`.]{.addu}
+> - [8*.3]{.pnum} [Otherwise, if `@` is `==`, `y == x`.]{.addu}
 > 
-> [in each case using the selected rewritten `operator==` candidate.]{.add} [`x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate.
+> [in each case using the selected rewritten `operator==` candidate.]{.addu} [`x != y` is interpreted as `(y == x) ? false : true` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x == y) ? false : true` otherwise, using the selected rewritten `operator==` candidate.
 If a rewritten candidate is selected by overload resolution for an `==` operator, `x == y` is interpreted as `(y == x) ? true : false` using the selected rewritten `operator==` candidate.]{.rm}
 
 Add a new entry to [diff.cpp17.over]:
