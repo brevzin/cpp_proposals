@@ -15,10 +15,7 @@ p1189r0.html : add-spaceship-to-lib.md
 	python ../md/better_md.py -i $< -o $@ --references
 
 d1614r1.html : mothership.md
-	python ../md/better_md.py -i $< -o $@ --references
-
-d1630r0.html : spaceship-tuneup.md
 	$(PANDOC)
 
-d1614r1b.html : mothership2.md
+d1630r0.html : spaceship-tuneup.md
 	$(PANDOC)
