@@ -18,12 +18,7 @@ make all of my papers.
 - [p1065r1 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r1.html), with Tomasz Kamiński.
 - [p1186r2 - When do you actually use `<=>`?](118x_spaceship/d1186r2.html).
   Approved in San Diego and rejected by Core there, new design approved in Kona
-  and this is the wording for that. The library part was moved to p1188r0.
-- [p1188r0 - Library utilities for `<=>`](118x_spaceship/p1188r0.html).
-  This paper is coalescing the library components of what used to be p1186r0 and
-  p1187r0. The wording can be found in P1614.
-- [p1189r0 - Adding `<=>` to library](118x_spaceship/p1189r0.html).
-  Approved in Kona, wording can be found in P1614.
+  and this is the wording for that. The library part was moved to p1614.
 - [p1614r1 - The Mothership Has Landed](118x_spaceship/p1614r1.html). The one
   library wording paper for everything `<=>` related (including many papers that
   are not mine).
