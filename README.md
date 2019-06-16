@@ -38,5 +38,5 @@ make all of my papers.
   discussed in San Diego. 
 - [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
-- [p1630r0](118x_spaceship/d1630r0.html). A paper addressing several `<=>`-
+- [p1630r0 - Spaceship needs a tuneup](118x_spaceship/p1630r0.html). A paper addressing several `<=>`-
   related issues that have come up. Will be in the pre-Cologne mailing.
