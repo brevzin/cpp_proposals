@@ -200,6 +200,7 @@ and:
 > bool operator==(const type_info& rhs) const noexcept;
 > ```
 > [2]{.pnum} *Effects*: Compares the current object with `rhs`.
+> 
 > [3]{.pnum} *Returns*: `true` if the two values describe the same type.
 > 
 > ```cpp
