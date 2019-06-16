@@ -1,7 +1,7 @@
 ---
 title: "The Mothership has Landed"
 subtitle: Adding `<=>` to the Library
-document: D1614R1
+document: P1614R1
 audience: LWG
 date: today
 author:
@@ -25,18 +25,37 @@ fallback objects was changed as well.
 
 # Introduction
 
-The work of integrating `operator<=>` into the library has been performed by multiple different papers, each addressing a different aspect of the integration. In the interest of streamlining review by the Library Working Group, the wording has been combined into a single paper. This is that paper.
+The work of integrating `operator<=>` into the library has been performed by
+multiple different papers, each addressing a different aspect of the integration.
+In the interest of streamlining review by the Library Working Group, the wording
+has been combined into a single paper. This is that paper.
 
-In San Diego and Kona, several papers were approved by LEWG adding functionality to the library related to comparisons. What follows is the list of those papers, in alphabetical order, with a brief description of what those papers are. The complete motivation and design rationale for each can be found within the papers themselves.
+In San Diego and Kona, several papers were approved by LEWG adding functionality
+to the library related to comparisons. What follows is the list of those papers,
+in alphabetical order, with a brief description of what those papers are. The
+complete motivation and design rationale for each can be found within the papers
+themselves.
 
-- [@P0790R2] - adding `operator<=>` to the standard library types whose behavior is not dependent on a template parameter.
-- [@P0891R2] - making the `XXX_order` algorithms customization points and introducing `compare_XXX_order_fallback` algorithms that preferentially invoke the former algorithm and fallback to synthesizing an ordering from `==` and `<` (using the rules from [@P1186R1]).
-- [@P1154R1] - adding the type trait `has_strong_structural_equality<T>` (useful to check if a type can be used as a non-type template parameter).
-- [@P1188R0] - adding the type trait `compare_three_way_result<T>`, the concepts `ThreeWayComparable<T>` and `ThreeWayComparableWith<T,U>`, removing the algorithm `compare_3way` and replacing it with a function comparison object `compare_three_way` (i.e. the `<=>` version of `std::ranges::less`).
-- [@P1189R0] - adding `operator<=>` to the standard library types whose behavior is dependent on a template parameter, removing those equality operators made redundant by [@P1185R2] and defaulting `operator==` where appropriate.
-- [@P1191R0] - adding equality to several previously incomparable standard library types.
+- [@P0790R2] - adding `operator<=>` to the standard library types whose behavior
+is not dependent on a template parameter.
+- [@P0891R2] - making the `XXX_order` algorithms customization points and
+introducing `compare_XXX_order_fallback` algorithms that preferentially invoke
+the former algorithm and fallback to synthesizing an ordering from `==` and `<`
+(using the rules from [@P1186R1]).
+- [@P1154R1] - adding the type trait `has_strong_structural_equality<T>` (useful
+to check if a type can be used as a non-type template parameter).
+- [@P1188R0] - adding the type trait `compare_three_way_result<T>`, the concepts
+`ThreeWayComparable<T>` and `ThreeWayComparableWith<T,U>`, removing the
+algorithm `compare_3way` and replacing it with a function comparison object
+`compare_three_way` (i.e. the `<=>` version of `std::ranges::less`).
+- [@P1189R0] - adding `operator<=>` to the standard library types whose behavior
+is dependent on a template parameter, removing those equality operators made
+redundant by [@P1185R2] and defaulting `operator==` where appropriate.
+- [@P1191R0] - adding equality to several previously incomparable standard
+library types.
 - [@P1295R0] - adding equality and `common_type` for the comparison categories.
-- [@P1380R1] - extending the floating point customization points for `strong_order` and `weak_order`.
+- [@P1380R1] - extending the floating point customization points for
+`strong_order` and `weak_order`.
 
 # Friendship
 
