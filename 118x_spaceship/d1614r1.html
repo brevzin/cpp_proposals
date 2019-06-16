@@ -504,7 +504,7 @@ background-color: var(--diff-ins);
 div.rm pre, div.add pre { background-color: #f6f8fa; }
 div.addu pre { background-color: var(--diff-ins); }
 div.add, div.add pre { background-color: var(--diff-ins); }
-div.addu > blockquote {
+div.addu blockquote {
 border-left: 4px solid #00a000;
 padding: 0 15px;
 color: #006e28;
@@ -1156,49 +1156,43 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> The name <code class="sourceCode cpp">compare_strong_order_fallback</code> denotes a comparison customization point ([customization.point.object]) object. The expression <code class="sourceCode cpp">compare_strong_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> for some subexpressions <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_strong_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> Otherwise, <code class="sourceCode cpp">strong_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(4.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</li>
-</ul>
+<li><p><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_strong_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> Otherwise, <code class="sourceCode cpp">strong_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(4.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</p>
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1"></a>E == F ? strong_ordering::equal : </span>
-<span id="cb31-2"><a href="#cb31-2"></a>E &lt; F  ? strong_ordering::less : </span>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1"></a>E == F ? strong_ordering::equal :</span>
+<span id="cb31-2"><a href="#cb31-2"></a>E &lt; F  ? strong_ordering::less :</span>
 <span id="cb31-3"><a href="#cb31-3"></a>         strong_ordering::greater</span></code></pre></div>
 </blockquote>
-<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(4.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_strong_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
+<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(4.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_strong_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> The name <code class="sourceCode cpp">compare_weak_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="sourceCode cpp">compare_weak_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> for some subexpressions <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_weak_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> Otherwise, <code class="sourceCode cpp">weak_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</li>
-</ul>
+<li><p><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_weak_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> Otherwise, <code class="sourceCode cpp">weak_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(5.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</p>
 <blockquote>
 <div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1"></a>E == F ? weak_ordering::equal :</span>
 <span id="cb32-2"><a href="#cb32-2"></a>E &lt; F  ? weak_ordering::less :</span>
 <span id="cb32-3"><a href="#cb32-3"></a>         weak_ordering::greater</span></code></pre></div>
 </blockquote>
-<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_weak_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
+<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(5.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_weak_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized">6</a></span> The name <code class="sourceCode cpp">compare_partial_order_fallback</code> denotes a customization point object ([customization.point.object]). The expression <code class="sourceCode cpp">compare_partial_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> for some subexpressions <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> is expression-equivalent ([defns.expression-equivalent]) to:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(6.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_partial_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(6.2)</a></span> Otherwise, <code class="sourceCode cpp">partial_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(6.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</li>
-</ul>
+<li><p><span class="marginalizedparent"><a class="marginalized">(6.1)</a></span> If the decayed types of <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> differ, <code class="sourceCode cpp">compare_partial_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(6.2)</a></span> Otherwise, <code class="sourceCode cpp">partial_order<span class="op">(</span>E, F<span class="op">)</span></code> if it is a well-formed expression.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(6.3)</a></span> Otherwise, if the expressions <code class="sourceCode cpp">E <span class="op">==</span> F</code> and <code class="sourceCode cpp">E <span class="op">&lt;</span> F</code> are each well-formed and convertible to bool,</p>
 <blockquote>
 <div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1"></a>E == F ? partial_ordering::equivalent :</span>
 <span id="cb33-2"><a href="#cb33-2"></a>E &lt; F  ? partial_ordering::less :</span>
 <span id="cb33-3"><a href="#cb33-3"></a>F &lt; E  ? partial_ordering::greater :</span>
-<span id="cb33-4"><a href="#cb33-4"></a>         partial_ordering::unordered</span></code></pre></div>
+<span id="cb33-4"><a href="#cb33-4"></a>       partial_ordering::unordered</span></code></pre></div>
 </blockquote>
-<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(6.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_partial_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</li>
+<p>except that <code class="sourceCode cpp">E</code> and <code class="sourceCode cpp">F</code> are only evaluated once.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(6.4)</a></span> Otherwise, <code class="sourceCode cpp">compare_partial_order_fallback<span class="op">(</span>E, F<span class="op">)</span></code> is ill-formed.</p></li>
 </ul>
 </div>
 </blockquote>

@@ -698,15 +698,13 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 - [4.2]{.pnum} Otherwise, `strong_order(E, F)` if it is a well-formed expression.
 - [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
 
-::: bq
-```
-E == F ? strong_ordering::equal : 
-E < F  ? strong_ordering::less : 
-         strong_ordering::greater
-```
-:::
+  > ```
+  > E == F ? strong_ordering::equal :
+  > E < F  ? strong_ordering::less :
+  >          strong_ordering::greater
+  > ```
 
- except that `E` and `F` are only evaluated once.
+  except that `E` and `F` are only evaluated once.
 
 - [4.4]{.pnum} Otherwise, `compare_strong_order_fallback(E, F)` is ill-formed.
 
@@ -716,15 +714,13 @@ E < F  ? strong_ordering::less :
 - [5.2]{.pnum} Otherwise, `weak_order(E, F)` if it is a well-formed expression.
 - [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
 
-::: bq
-```
-E == F ? weak_ordering::equal :
-E < F  ? weak_ordering::less :
-         weak_ordering::greater
-```
-:::
+  > ```
+  > E == F ? weak_ordering::equal :
+  > E < F  ? weak_ordering::less :
+  >          weak_ordering::greater
+  > ```
 
-except that `E` and `F` are only evaluated once.
+  except that `E` and `F` are only evaluated once.
 
 - [5.4]{.pnum} Otherwise, `compare_weak_order_fallback(E, F)` is ill-formed.
 
@@ -734,16 +730,14 @@ except that `E` and `F` are only evaluated once.
 - [6.2]{.pnum} Otherwise, `partial_order(E, F)` if it is a well-formed expression.
 - [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
 
-::: bq
-```
-E == F ? partial_ordering::equivalent :
-E < F  ? partial_ordering::less :
-F < E  ? partial_ordering::greater :
-	     partial_ordering::unordered
-```
-:::
+  > ```
+  > E == F ? partial_ordering::equivalent :
+  > E < F  ? partial_ordering::less :
+  > F < E  ? partial_ordering::greater :
+  >        partial_ordering::unordered
+  > ```
 
-except that `E` and `F` are only evaluated once.
+  except that `E` and `F` are only evaluated once.
 
 - [6.4]{.pnum} Otherwise, `compare_partial_order_fallback(E, F)` is ill-formed.
 
