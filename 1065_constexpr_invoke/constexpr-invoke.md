@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` _`INVOKE`_"
-document: D1065R1
+document: P1065R1
 audience: LWG
 date: today
 author:
@@ -388,18 +388,20 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 
 [5a]{.pnum} [[*Note*: If all of `FD` and <code>TD<sub>i</sub></code> meet the requirements of *Cpp17CopyConstructible*, then the return type meets the requirements of *Cpp17CopyConstructible*. -*end note*]]{.addu}
 
-```diff
-- template<class R, class F, class... BoundArgs>
--   @_unspecified_@ bind(F&& f, BoundArgs&&... bound_args);
+::: rm
+```
+template<class R, class F, class... BoundArgs>
+  @_unspecified_@ bind(F&& f, BoundArgs&&... bound_args);
 ```
 
-[6]{.pnum} [*Requires*: `is_constructible_v<FD, F>` shall be `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, shall be neither `volatile` nor `const volatile`.]{.rm}
+[6]{.pnum} *Requires*: `is_constructible_v<FD, F>` shall be `true`. For each <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the call wrapper `g`, as specified below, shall be neither `volatile` nor `const volatile`.
 
-[7]{.pnum} [*Returns*: An argument forwarding call wrapper g ([func.require]). The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.]{.rm}
+[7]{.pnum} *Returns*: An argument forwarding call wrapper g ([func.require]). The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of `FD` or of any of the types <code>TD<sub>i</sub></code> throws an exception.
 
-[8]{.pnum} [*Throws*: Nothing unless the construction of `fd` or of one of the values <code>td<sub>i</sub></code> throws an exception.]{.rm}
+[8]{.pnum} *Throws*: Nothing unless the construction of `fd` or of one of the values <code>td<sub>i</sub></code> throws an exception.
 
-[9]{.pnum} [*Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]]{.rm}
+[9]{.pnum} *Remarks*: The return type shall satisfy the *Cpp17MoveConstructible* requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the *Cpp17CopyConstructible* requirements, then the return type shall satisfy the *Cpp17CopyConstructible* requirements. [*Note*: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are *Cpp17MoveConstructible*. —*end note*]
+:::
 
 :::
 

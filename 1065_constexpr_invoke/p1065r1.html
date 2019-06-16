@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-14" />
+  <meta name="dcterms.date" content="2019-06-16" />
   <title>constexpr INVOKE</title>
   <style>
       code{white-space: pre-wrap;}
@@ -171,10 +171,10 @@ span.marginalizedparent {
 position: relative;
 left: -5em;
 }
-li > span.marginalizedparent { left: -7em; }
-li > ul > li > span.marginalizedparent { left: -9em; }
-li > ul > li > ul > li > span.marginalizedparent { left: -11em; }
-li > ul > li > ul > li > ul > li > span.marginalizedparent { left: -13em; }
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
 div.footnoteNumberParent {
 position: relative;
 left: -4.7em;
@@ -401,6 +401,9 @@ margin-top: 1em;
 }
 ol.enumeratea { list-style-type: none; background: inherit; }
 ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+
 div#refs p { padding-left: 32px; text-indent: -32px; }
 </style>
   <style type="text/css">a {
@@ -483,10 +486,13 @@ margin: 5em;
 --diff-ins: #e6ffed;
 --diff-strongins: #acf2bd;
 --diff-del: #ffdddd;
---diff-strongdel: #fdb8c0;
+--diff-strongdel: #ff8888;
 }
 span.diffins {
 background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
 }
 div.rm { text-decoration: line-through; }
 div.rm code.sourceCode { text-decoration: line-through; }
@@ -498,7 +504,7 @@ background-color: var(--diff-ins);
 div.rm pre, div.add pre { background-color: #f6f8fa; }
 div.addu pre { background-color: var(--diff-ins); }
 div.add, div.add pre { background-color: var(--diff-ins); }
-div.addu > blockquote {
+div.addu blockquote {
 border-left: 4px solid #00a000;
 padding: 0 15px;
 color: #006e28;
@@ -524,11 +530,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D1065R1</td>
+    <td>P1065R1</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-14</td>
+    <td>2019-06-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -628,81 +634,81 @@ code span.co { color: #898887; }
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to several places in the synopsis in 20.14.1 [functional.syn]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
-<span id="cb1-2"><a href="#cb1-2"></a>  // [func.invoke], invoke</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  template&lt;class F, class... Args&gt;</span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="st">-   invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>      noexcept(is_nothrow_invocable_v&lt;F, Args...&gt;);</span>
-<span id="cb1-7"><a href="#cb1-7"></a>      </span>
-<span id="cb1-8"><a href="#cb1-8"></a>  // [refwrap], reference_wrapper</span>
-<span id="cb1-9"><a href="#cb1-9"></a>  template&lt;class T&gt; class reference_wrapper;</span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(T&amp;) noexcept;</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(const T&amp;) noexcept;</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(T&amp;) noexcept;</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(const T&amp;) noexcept;</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a>  template&lt;class T&gt; void ref(const T&amp;&amp;) = delete;</span>
-<span id="cb1-16"><a href="#cb1-16"></a>  template&lt;class T&gt; void cref(const T&amp;&amp;) = delete;</span>
-<span id="cb1-17"><a href="#cb1-17"></a></span>
-<span id="cb1-18"><a href="#cb1-18"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt;) noexcept;</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt;);</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt;) noexcept;</span></span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt;) noexcept;   </span></span>
-<span id="cb1-22"><a href="#cb1-22"></a>  </span>
-<span id="cb1-23"><a href="#cb1-23"></a>  // [arithmetic.operations], arithmetic operations</span>
-<span id="cb1-24"><a href="#cb1-24"></a>  // ...</span>
-<span id="cb1-25"><a href="#cb1-25"></a>  </span>
-<span id="cb1-26"><a href="#cb1-26"></a>  // [comparisons], comparisons</span>
-<span id="cb1-27"><a href="#cb1-27"></a>  // ...</span>
-<span id="cb1-28"><a href="#cb1-28"></a></span>
-<span id="cb1-29"><a href="#cb1-29"></a>  // [logical.operations], logical operations</span>
-<span id="cb1-30"><a href="#cb1-30"></a>  // ...</span>
-<span id="cb1-31"><a href="#cb1-31"></a></span>
-<span id="cb1-32"><a href="#cb1-32"></a>  // [bitwise.operations], bitwise operations</span>
-<span id="cb1-33"><a href="#cb1-33"></a>  // ...</span>
-<span id="cb1-34"><a href="#cb1-34"></a></span>
-<span id="cb1-35"><a href="#cb1-35"></a>  // [func.identity], identity</span>
-<span id="cb1-36"><a href="#cb1-36"></a>  // ...</span>
-<span id="cb1-37"><a href="#cb1-37"></a></span>
-<span id="cb1-38"><a href="#cb1-38"></a>  // [func.not.fn], function template not_fn</span>
-<span id="cb1-39"><a href="#cb1-39"></a><span class="st">- template&lt;class F&gt; <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
-<span id="cb1-40"><a href="#cb1-40"></a><span class="va">+ template&lt;class F&gt; <span class="diffins">constexpr</span> <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
-<span id="cb1-41"><a href="#cb1-41"></a></span>
-<span id="cb1-42"><a href="#cb1-42"></a>  // [func.bind.front], function template bind_front</span>
-<span id="cb1-43"><a href="#cb1-43"></a><span class="st">- template&lt;class F, class... Args&gt; <em>unspecified</em> bind_front(F&amp;&amp;, Args&amp;&amp;...);</span></span>
-<span id="cb1-44"><a href="#cb1-44"></a><span class="va">+ template&lt;class F, class... Args&gt; <span class="diffins">constexpr</span> <em>unspecified</em> bind_front(F&amp;&amp;, Args&amp;&amp;...);</span></span>
-<span id="cb1-45"><a href="#cb1-45"></a> </span>
-<span id="cb1-46"><a href="#cb1-46"></a>  // [func.bind], bind</span>
-<span id="cb1-47"><a href="#cb1-47"></a>  template&lt;class T&gt; struct is_bind_expression;</span>
-<span id="cb1-48"><a href="#cb1-48"></a>  template&lt;class T&gt; struct is_placeholder;</span>
-<span id="cb1-49"><a href="#cb1-49"></a></span>
-<span id="cb1-50"><a href="#cb1-50"></a><span class="st">- template&lt;class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-51"><a href="#cb1-51"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
-<span id="cb1-52"><a href="#cb1-52"></a><span class="st">- template&lt;class R, class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-53"><a href="#cb1-53"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
-<span id="cb1-54"><a href="#cb1-54"></a><span class="va">+ template&lt;class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-55"><a href="#cb1-55"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
-<span id="cb1-56"><a href="#cb1-56"></a><span class="va">+ template&lt;class R, class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-57"><a href="#cb1-57"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
-<span id="cb1-58"><a href="#cb1-58"></a></span>
-<span id="cb1-59"><a href="#cb1-59"></a>  namespace placeholders {</span>
-<span id="cb1-60"><a href="#cb1-60"></a>    // M is the implementation-defined number of placeholders</span>
-<span id="cb1-61"><a href="#cb1-61"></a>    <em>see below</em> _1;</span>
-<span id="cb1-62"><a href="#cb1-62"></a>    <em>see below</em> _2;</span>
-<span id="cb1-63"><a href="#cb1-63"></a>               .</span>
-<span id="cb1-64"><a href="#cb1-64"></a>               .</span>
-<span id="cb1-65"><a href="#cb1-65"></a>               .</span>
-<span id="cb1-66"><a href="#cb1-66"></a>    <em>see below</em> _M;</span>
-<span id="cb1-67"><a href="#cb1-67"></a>  }</span>
-<span id="cb1-68"><a href="#cb1-68"></a></span>
-<span id="cb1-69"><a href="#cb1-69"></a>  // [func.memfn], member function adaptors</span>
-<span id="cb1-70"><a href="#cb1-70"></a>  template&lt;class R, class T&gt;</span>
-<span id="cb1-71"><a href="#cb1-71"></a><span class="st">-   <em>unspecified</em> mem_fn(R T::*) noexcept;</span></span>
-<span id="cb1-72"><a href="#cb1-72"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> mem_fn(R T::*) noexcept;</span></span>
-<span id="cb1-73"><a href="#cb1-73"></a></span>
-<span id="cb1-74"><a href="#cb1-74"></a>  // ...    </span>
-<span id="cb1-75"><a href="#cb1-75"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>namespace std {</span>
+<span id="cb4-2"><a href="#cb4-2"></a>  // [func.invoke], invoke</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  template&lt;class F, class... Args&gt;</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="st">-   invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>      noexcept(is_nothrow_invocable_v&lt;F, Args...&gt;);</span>
+<span id="cb4-7"><a href="#cb4-7"></a>      </span>
+<span id="cb4-8"><a href="#cb4-8"></a>  // [refwrap], reference_wrapper</span>
+<span id="cb4-9"><a href="#cb4-9"></a>  template&lt;class T&gt; class reference_wrapper;</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(T&amp;) noexcept;</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(const T&amp;) noexcept;</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(T&amp;) noexcept;</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(const T&amp;) noexcept;</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>  template&lt;class T&gt; void ref(const T&amp;&amp;) = delete;</span>
+<span id="cb4-16"><a href="#cb4-16"></a>  template&lt;class T&gt; void cref(const T&amp;&amp;) = delete;</span>
+<span id="cb4-17"><a href="#cb4-17"></a></span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt;) noexcept;</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt;);</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt;) noexcept;</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt;) noexcept;   </span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>  </span>
+<span id="cb4-23"><a href="#cb4-23"></a>  // [arithmetic.operations], arithmetic operations</span>
+<span id="cb4-24"><a href="#cb4-24"></a>  // ...</span>
+<span id="cb4-25"><a href="#cb4-25"></a>  </span>
+<span id="cb4-26"><a href="#cb4-26"></a>  // [comparisons], comparisons</span>
+<span id="cb4-27"><a href="#cb4-27"></a>  // ...</span>
+<span id="cb4-28"><a href="#cb4-28"></a></span>
+<span id="cb4-29"><a href="#cb4-29"></a>  // [logical.operations], logical operations</span>
+<span id="cb4-30"><a href="#cb4-30"></a>  // ...</span>
+<span id="cb4-31"><a href="#cb4-31"></a></span>
+<span id="cb4-32"><a href="#cb4-32"></a>  // [bitwise.operations], bitwise operations</span>
+<span id="cb4-33"><a href="#cb4-33"></a>  // ...</span>
+<span id="cb4-34"><a href="#cb4-34"></a></span>
+<span id="cb4-35"><a href="#cb4-35"></a>  // [func.identity], identity</span>
+<span id="cb4-36"><a href="#cb4-36"></a>  // ...</span>
+<span id="cb4-37"><a href="#cb4-37"></a></span>
+<span id="cb4-38"><a href="#cb4-38"></a>  // [func.not.fn], function template not_fn</span>
+<span id="cb4-39"><a href="#cb4-39"></a><span class="st">- template&lt;class F&gt; <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
+<span id="cb4-40"><a href="#cb4-40"></a><span class="va">+ template&lt;class F&gt; <span class="diffins">constexpr</span> <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
+<span id="cb4-41"><a href="#cb4-41"></a></span>
+<span id="cb4-42"><a href="#cb4-42"></a>  // [func.bind.front], function template bind_front</span>
+<span id="cb4-43"><a href="#cb4-43"></a><span class="st">- template&lt;class F, class... Args&gt; <em>unspecified</em> bind_front(F&amp;&amp;, Args&amp;&amp;...);</span></span>
+<span id="cb4-44"><a href="#cb4-44"></a><span class="va">+ template&lt;class F, class... Args&gt; <span class="diffins">constexpr</span> <em>unspecified</em> bind_front(F&amp;&amp;, Args&amp;&amp;...);</span></span>
+<span id="cb4-45"><a href="#cb4-45"></a> </span>
+<span id="cb4-46"><a href="#cb4-46"></a>  // [func.bind], bind</span>
+<span id="cb4-47"><a href="#cb4-47"></a>  template&lt;class T&gt; struct is_bind_expression;</span>
+<span id="cb4-48"><a href="#cb4-48"></a>  template&lt;class T&gt; struct is_placeholder;</span>
+<span id="cb4-49"><a href="#cb4-49"></a></span>
+<span id="cb4-50"><a href="#cb4-50"></a><span class="st">- template&lt;class F, class... BoundArgs&gt;</span></span>
+<span id="cb4-51"><a href="#cb4-51"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
+<span id="cb4-52"><a href="#cb4-52"></a><span class="st">- template&lt;class R, class F, class... BoundArgs&gt;</span></span>
+<span id="cb4-53"><a href="#cb4-53"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
+<span id="cb4-54"><a href="#cb4-54"></a><span class="va">+ template&lt;class F, class... BoundArgs&gt;</span></span>
+<span id="cb4-55"><a href="#cb4-55"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
+<span id="cb4-56"><a href="#cb4-56"></a><span class="va">+ template&lt;class R, class F, class... BoundArgs&gt;</span></span>
+<span id="cb4-57"><a href="#cb4-57"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp;, BoundArgs&amp;&amp;...);</span></span>
+<span id="cb4-58"><a href="#cb4-58"></a></span>
+<span id="cb4-59"><a href="#cb4-59"></a>  namespace placeholders {</span>
+<span id="cb4-60"><a href="#cb4-60"></a>    // M is the implementation-defined number of placeholders</span>
+<span id="cb4-61"><a href="#cb4-61"></a>    <em>see below</em> _1;</span>
+<span id="cb4-62"><a href="#cb4-62"></a>    <em>see below</em> _2;</span>
+<span id="cb4-63"><a href="#cb4-63"></a>               .</span>
+<span id="cb4-64"><a href="#cb4-64"></a>               .</span>
+<span id="cb4-65"><a href="#cb4-65"></a>               .</span>
+<span id="cb4-66"><a href="#cb4-66"></a>    <em>see below</em> _M;</span>
+<span id="cb4-67"><a href="#cb4-67"></a>  }</span>
+<span id="cb4-68"><a href="#cb4-68"></a></span>
+<span id="cb4-69"><a href="#cb4-69"></a>  // [func.memfn], member function adaptors</span>
+<span id="cb4-70"><a href="#cb4-70"></a>  template&lt;class R, class T&gt;</span>
+<span id="cb4-71"><a href="#cb4-71"></a><span class="st">-   <em>unspecified</em> mem_fn(R T::*) noexcept;</span></span>
+<span id="cb4-72"><a href="#cb4-72"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> mem_fn(R T::*) noexcept;</span></span>
+<span id="cb4-73"><a href="#cb4-73"></a></span>
+<span id="cb4-74"><a href="#cb4-74"></a>  // ...    </span>
+<span id="cb4-75"><a href="#cb4-75"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>The definition of the <em>simple call wrapper</em> (used only for <code class="sourceCode cpp">mem_fn</code>) is changed to be a refinement of <em>perfect forwarding call wrapper</em>, instead of <em>argument forwarding call wrapper</em>. These make the invocation operator conditionally <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and <code class="sourceCode cpp"><span class="kw">noexcept</span></code>. In addition we state explicitly the copy/move constructor/assignment of simple call wrapper is core constant expression. [ <em>Note</em>: The definition of simple call wrapper is still required to guarantee assignability. ]</p>
@@ -711,9 +717,9 @@ code span.co { color: #898887; }
 <blockquote>
 <p>Every call wrapper ([func.def]) <span class="addu">meets the</span> <span class="rm" style="color: #bf0303"><del>is</del></span> <em>Cpp17MoveConstructible</em> <span class="addu">and <em>Cpp17Destructible</em> requirements</span>. <span class="rm" style="color: #bf0303"><del>A</del></span> <span class="addu">An</span> <em>argument forwarding call wrapper</em> is a call wrapper that can be called with an arbitrary argument list and delivers the arguments to the wrapped callable object as references. This forwarding step delivers rvalue arguments as rvalue references and lvalue arguments as lvalue references. <span class="rm" style="color: #bf0303"><del>A <em>simple call wrapper</em> is an argument forwarding call wrapper that is <em>Cpp17CopyConstructible</em> and <em>Cpp17CopyAssignable</em> and whose copy constructor, move constructor, copy assignment operator, and move assignment operator do not throw exceptions.</del></span> [ <em>Note</em>: In a typical implementation, argument forwarding call wrappers have an overloaded function call operator of the form</p>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a> template&lt;class... UnBoundArgs&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   R operator()(UnBoundArgs&amp;&amp;... unbound_args) <em>cv-qual</em>;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> R operator()(UnBoundArgs&amp;&amp;... unbound_args) <em>cv-qual</em>;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a> template&lt;class... UnBoundArgs&gt;</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="st">-   R operator()(UnBoundArgs&amp;&amp;... unbound_args) <em>cv-qual</em>;</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="va">+   <span class="diffins">constexpr</span> R operator()(UnBoundArgs&amp;&amp;... unbound_args) <em>cv-qual</em>;</span></span></code></pre></div>
 </div>
 <p>—<em>end note</em>]</p>
 <p>A <em>perfect forwarding call wrapper</em> is an argument forwarding call wrapper that forwards its state entities to the underlying call expression. This forwarding step delivers a state entity of type <code class="sourceCode cpp">T</code> as <em>cv</em> <code class="sourceCode cpp">T<span class="op">&amp;</span></code> when the call is performed on an lvalue of the call wrapper type and as <em>cv</em> <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code> otherwise, where <em>cv</em> represents the cv-qualifiers of the call wrapper and where <em>cv</em> shall be neither <code class="sourceCode cpp"><span class="kw">volatile</span></code> nor <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code>.</p>
@@ -725,125 +731,125 @@ code span.co { color: #898887; }
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>invoke<span class="op">()</span></code> in 20.14.4 [func.invoke]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>  template&lt;class F, class... Args&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>      noexcept(is_nothrow_invocable_v&lt;F, Args...&gt;);</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>  template&lt;class F, class... Args&gt;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="st">-   invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;F, Args...&gt; invoke(F&amp;&amp; f, Args&amp;&amp;... args)</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>      noexcept(is_nothrow_invocable_v&lt;F, Args...&gt;);</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> in 20.14.5 [refwrap]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>namespace std {</span>
-<span id="cb1-2"><a href="#cb1-2"></a>  template&lt;class T&gt; class reference_wrapper {</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  public:</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    // types</span>
-<span id="cb1-5"><a href="#cb1-5"></a>    using type = T;</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a>    // construct/copy/destroy</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    template&lt;class U&gt;</span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="st">-     reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="st">-   reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="va">+     <span class="diffins">constexpr</span> reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a></span>
-<span id="cb1-14"><a href="#cb1-14"></a>    // assignment</span>
-<span id="cb1-15"><a href="#cb1-15"></a><span class="st">-   reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a></span>
-<span id="cb1-18"><a href="#cb1-18"></a>    // access</span>
-<span id="cb1-19"><a href="#cb1-19"></a><span class="st">-   operator T&amp; () const noexcept;</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a><span class="st">-   T&amp; get() const noexcept;</span></span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="va">+   <span class="diffins">constexpr</span> operator T&amp; () const noexcept;</span></span>
-<span id="cb1-22"><a href="#cb1-22"></a><span class="va">+   <span class="diffins">constexpr</span> T&amp; get() const noexcept;</span></span>
-<span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a>    // invocation</span>
-<span id="cb1-25"><a href="#cb1-25"></a>    template&lt;class... ArgTypes&gt;</span>
-<span id="cb1-26"><a href="#cb1-26"></a><span class="st">-     invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const;</span></span>
-<span id="cb1-27"><a href="#cb1-27"></a><span class="va">+     <span class="diffins">constexpr</span> invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const;</span></span>
-<span id="cb1-28"><a href="#cb1-28"></a>  };</span>
-<span id="cb1-29"><a href="#cb1-29"></a>  template&lt;class T&gt;</span>
-<span id="cb1-30"><a href="#cb1-30"></a>    reference_wrapper(T&amp;) -&gt; reference_wrapper&lt;T&gt;;</span>
-<span id="cb1-31"><a href="#cb1-31"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>namespace std {</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  template&lt;class T&gt; class reference_wrapper {</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  public:</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    // types</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    using type = T;</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    // construct/copy/destroy</span>
+<span id="cb7-8"><a href="#cb7-8"></a>    template&lt;class U&gt;</span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="st">-     reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="st">-   reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="va">+     <span class="diffins">constexpr</span> reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a></span>
+<span id="cb7-14"><a href="#cb7-14"></a>    // assignment</span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="st">-   reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a></span>
+<span id="cb7-18"><a href="#cb7-18"></a>    // access</span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="st">-   operator T&amp; () const noexcept;</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="st">-   T&amp; get() const noexcept;</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="va">+   <span class="diffins">constexpr</span> operator T&amp; () const noexcept;</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="va">+   <span class="diffins">constexpr</span> T&amp; get() const noexcept;</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a>    // invocation</span>
+<span id="cb7-25"><a href="#cb7-25"></a>    template&lt;class... ArgTypes&gt;</span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="st">-     invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const;</span></span>
+<span id="cb7-27"><a href="#cb7-27"></a><span class="va">+     <span class="diffins">constexpr</span> invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const;</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a>  };</span>
+<span id="cb7-29"><a href="#cb7-29"></a>  template&lt;class T&gt;</span>
+<span id="cb7-30"><a href="#cb7-30"></a>    reference_wrapper(T&amp;) -&gt; reference_wrapper&lt;T&gt;;</span>
+<span id="cb7-31"><a href="#cb7-31"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>And its corresponding subsections, 20.14.5.1 [refwrap.const]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>  template&lt;class U&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   reference_wrapper(U&amp;&amp; u) noexcept(<em>see below</em>);</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper(U&amp;&amp; u) noexcept(<em>see below</em>);</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a>  [...]</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="st">- reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="va">+ <span class="diffins">constexpr</span> reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>  template&lt;class U&gt;</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="st">-   reference_wrapper(U&amp;&amp; u) noexcept(<em>see below</em>);</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="va">+   <span class="diffins">constexpr</span> reference_wrapper(U&amp;&amp; u) noexcept(<em>see below</em>);</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a>  [...]</span>
+<span id="cb8-6"><a href="#cb8-6"></a></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="st">- reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="va">+ <span class="diffins">constexpr</span> reference_wrapper(const reference_wrapper&amp; x) noexcept;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>20.14.5.2 [refwrap.assign]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ <span class="diffins">constexpr</span> reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a><span class="st">- reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="va">+ <span class="diffins">constexpr</span> reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>20.14.5.3 [refwrap.access]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- operator T&amp; () const noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ <span class="diffins">constexpr</span> operator T&amp; () const noexcept;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a>  [...]</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="st">- T&amp; get() const noexcept;</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="va">+ <span class="diffins">constexpr</span> T&amp; get() const noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a><span class="st">- operator T&amp; () const noexcept;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="va">+ <span class="diffins">constexpr</span> operator T&amp; () const noexcept;</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  [...]</span>
+<span id="cb10-5"><a href="#cb10-5"></a></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="st">- T&amp; get() const noexcept;</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="va">+ <span class="diffins">constexpr</span> T&amp; get() const noexcept;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>20.14.5.4 [refwrap.invoke]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>  template&lt;class... ArgTypes&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   invoke_result_t&lt;T&amp;, ArgTypes...&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;T&amp;, ArgTypes...&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>      operator()(ArgTypes&amp;&amp;... args) const;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>  template&lt;class... ArgTypes&gt;</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="st">-   invoke_result_t&lt;T&amp;, ArgTypes...&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="va">+   <span class="diffins">constexpr</span> invoke_result_t&lt;T&amp;, ArgTypes...&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>      operator()(ArgTypes&amp;&amp;... args) const;</span></code></pre></div>
 </div>
 </blockquote>
 <p>and its helper functions, 20.14.5.5 [refwrap.helpers]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(T&amp; t) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(T&amp; t) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(T&amp; t) noexcept;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(T&amp; t) noexcept;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span></code>.</p>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt; t) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt; t) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt; t) noexcept;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;T&gt; ref(reference_wrapper&lt;T&gt; t) noexcept;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp">ref<span class="op">(</span>t<span class="op">.</span>get<span class="op">())</span></code>.</p>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(const T&amp; t) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(const T&amp; t) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(const T&amp; t) noexcept;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(const T&amp; t) noexcept;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">reference_wrapper <span class="op">&lt;</span><span class="kw">const</span> T<span class="op">&gt;(</span>t<span class="op">)</span></code>.</p>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt; t) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt; t) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a><span class="st">- template&lt;class T&gt; reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt; t) noexcept;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="va">+ template&lt;class T&gt; <span class="diffins">constexpr</span> reference_wrapper&lt;const T&gt; cref(reference_wrapper&lt;T&gt; t) noexcept;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">cref<span class="op">(</span>t<span class="op">.</span>get<span class="op">())</span></code>.</p>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>not_fn<span class="op">()</span></code> in 20.14.12 [func.not.fn]:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class F&gt; <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class F&gt; <span class="diffins">constexpr</span> <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a><span class="st">- template&lt;class F&gt; <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="va">+ template&lt;class F&gt; <span class="diffins">constexpr</span> <em>unspecified</em> not_fn(F&amp;&amp; f);</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>bind_front<span class="op">()</span></code> in 20.14.13 [func.bind.front]:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>  template&lt;class F, class... Args&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   <em>unspecified</em> bind_front(F&amp;&amp; f, Args&amp;&amp;... args);</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind_front(F&amp;&amp; f, Args&amp;&amp;... args);</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a>  template&lt;class F, class... Args&gt;</span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="st">-   <em>unspecified</em> bind_front(F&amp;&amp; f, Args&amp;&amp;... args);</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind_front(F&amp;&amp; f, Args&amp;&amp;... args);</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Apply the following changes to <code class="sourceCode cpp">std<span class="op">::</span>bind<span class="op">()</span></code> in 20.14.14.3 [func.bind.bind], merging <code class="sourceCode cpp">bind</code> and <code class="sourceCode cpp">bind<span class="op">&lt;</span>R<span class="op">&gt;</span></code>:</p>
@@ -861,11 +867,11 @@ code span.co { color: #898887; }
 <li><span class="marginalizedparent"><a class="marginalized">(1.8)</a></span> <code>u<sub>j</sub></code> is the <code class="sourceCode cpp">j</code>th argument associated with <code>U<sub>j</sub></code>.</li>
 </ul>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>  template&lt;class F, class... BoundArgs&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="va">+ template&lt;class R, class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1"></a>  template&lt;class F, class... BoundArgs&gt;</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a><span class="va">+ template&lt;class R, class F, class... BoundArgs&gt;</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a><span class="va">+   <span class="diffins">constexpr</span> <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> <span class="rm" style="color: #bf0303"><del><em>Requires</em></del></span> <span class="addu"><em>Mandates</em></span>: <code class="sourceCode cpp">is_constructible_v<span class="op">&lt;</span>FD, F<span class="op">&gt;</span></code> <span class="rm" style="color: #bf0303"><del>shall be</del></span> <span class="addu">is</span> <code class="sourceCode cpp"><span class="kw">true</span></code>. For each <code>T<sub>i</sub></code> in <code class="sourceCode cpp">BoundArgs</code>, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> <span class="rm" style="color: #bf0303"><del>shall be</del></span> <span class="addu">is</span> <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">2a</a></span> <span class="addu"><em>Expects</em>: <code class="sourceCode cpp">FD</code> and each <code>TD<sub>i</sub></code> meets the of <em>Cpp17MoveConstructible</em> and <em>Cpp17Destructible</em> requirements.</span> <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) <span class="rm" style="color: #bf0303"><del>shall be</del></span> <span class="addu">is</span> a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where <code class="sourceCode cpp">N</code> has the value <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>bound_args<span class="op">)</span></code>. <span class="rm" style="color: #bf0303"><del>The cv-qualifiers <em>cv</em> of the call wrapper <span><code class="sourceCode cpp">g</code></span>, as specified below, shall be neither <span><code class="sourceCode cpp"><span class="kw">volatile</span></code></span> nor <span><code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code></span>.</del></span></p>
@@ -873,14 +879,15 @@ code span.co { color: #898887; }
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Throws</em>: <span class="rm" style="color: #bf0303"><del>Nothing unless the construction of <span><code class="sourceCode cpp">fd</code></span> or of one of the values <code>td<sub>i</sub></code> throws an exception.</del></span> <span class="addu">Any exception thrown by the initialization of the state entities of <code class="sourceCode cpp">g</code>.</span></p>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> <span class="rm" style="color: #bf0303"><del><em>Remarks</em>: The return type shall satisfy the <em>Cpp17MoveConstructible</em> requirements. If all of <span><code class="sourceCode cpp">FD</code></span> and <code>TD<sub>i</sub></code> satisfy the <em>Cpp17CopyConstructible</em> requirements, then the return type shall satisfy the <em>Cpp17CopyConstructible</em> requirements. [<em>Note</em>: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <em>Cpp17MoveConstructible</em>. —<em>end note</em>]</del></span></p>
 <p><span class="marginalizedparent"><a class="marginalized">5a</a></span> <span class="addu">[<em>Note</em>: If all of <code class="sourceCode cpp">FD</code> and <code>TD<sub>i</sub></code> meet the requirements of <em>Cpp17CopyConstructible</em>, then the return type meets the requirements of <em>Cpp17CopyConstructible</em>. -<em>end note</em>]</span></p>
-<div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class R, class F, class... BoundArgs&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="st">-   <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1"></a>template&lt;class R, class F, class... BoundArgs&gt;</span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <em>unspecified</em> bind(F&amp;&amp; f, BoundArgs&amp;&amp;... bound_args);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Requires</em>: <code class="sourceCode cpp">is_constructible_v<span class="op">&lt;</span>FD, F<span class="op">&gt;</span></code> shall be <code class="sourceCode cpp"><span class="kw">true</span></code>. For each <code>T<sub>i</sub></code> in <code class="sourceCode cpp">BoundArgs</code>, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where <code class="sourceCode cpp">N</code> has the value <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>bound_args<span class="op">)</span></code>. The cv-qualifiers <em>cv</em> of the call wrapper <code class="sourceCode cpp">g</code>, as specified below, shall be neither <code class="sourceCode cpp"><span class="kw">volatile</span></code> nor <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Returns</em>: An argument forwarding call wrapper g ([func.require]). The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of <code class="sourceCode cpp">FD</code> or of any of the types <code>TD<sub>i</sub></code> throws an exception.</p>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Throws</em>: Nothing unless the construction of <code class="sourceCode cpp">fd</code> or of one of the values <code>td<sub>i</sub></code> throws an exception.</p>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <em>Remarks</em>: The return type shall satisfy the <em>Cpp17MoveConstructible</em> requirements. If all of <code class="sourceCode cpp">FD</code> and <code>TD<sub>i</sub></code> satisfy the <em>Cpp17CopyConstructible</em> requirements, then the return type shall satisfy the <em>Cpp17CopyConstructible</em> requirements. [<em>Note</em>: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <em>Cpp17MoveConstructible</em>. —<em>end note</em>]</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <span class="rm" style="color: #bf0303"><del><em>Requires</em>: <span><code class="sourceCode cpp">is_constructible_v<span class="op">&lt;</span>FD, F<span class="op">&gt;</span></code></span> shall be <span><code class="sourceCode cpp"><span class="kw">true</span></code></span>. For each <code>T<sub>i</sub></code> in <span><code class="sourceCode cpp">BoundArgs</code></span>, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where <span><code class="sourceCode cpp">N</code></span> has the value <span><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>bound_args<span class="op">)</span></code></span>. The cv-qualifiers <em>cv</em> of the call wrapper <span><code class="sourceCode cpp">g</code></span>, as specified below, shall be neither <span><code class="sourceCode cpp"><span class="kw">volatile</span></code></span> nor <span><code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code></span>.</del></span></p>
-<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <span class="rm" style="color: #bf0303"><del><em>Returns</em>: An argument forwarding call wrapper g ([func.require]). The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> where the values and types of the bound arguments <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as specified below. The copy constructor and move constructor of the argument forwarding call wrapper shall throw an exception if and only if the corresponding constructor of <span><code class="sourceCode cpp">FD</code></span> or of any of the types <code>TD<sub>i</sub></code> throws an exception.</del></span></p>
-<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <span class="rm" style="color: #bf0303"><del><em>Throws</em>: Nothing unless the construction of <span><code class="sourceCode cpp">fd</code></span> or of one of the values <code>td<sub>i</sub></code> throws an exception.</del></span></p>
-<p><span class="marginalizedparent"><a class="marginalized">9</a></span> <span class="rm" style="color: #bf0303"><del><em>Remarks</em>: The return type shall satisfy the <em>Cpp17MoveConstructible</em> requirements. If all of <span><code class="sourceCode cpp">FD</code></span> and <code>TD<sub>i</sub></code> satisfy the <em>Cpp17CopyConstructible</em> requirements, then the return type shall satisfy the <em>Cpp17CopyConstructible</em> requirements. [<em>Note</em>: This implies that all of <code>FD</code> and <code>TD<sub>i</sub></code> are <em>Cpp17MoveConstructible</em>. —<em>end note</em>]</del></span></p>
 </blockquote>
 <p>Define <code>v<sub>fd</sub></code> and add reference to the <em>cv</em>-qualifies in 20.14.14.3 [func.bind.bind]/10:</p>
 <blockquote>
@@ -900,8 +907,8 @@ code span.co { color: #898887; }
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>mem_fn<span class="op">()</span></code> in 20.14.15 [func.memfn]</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">- template&lt;class R, class T&gt; <em>unspecified</em> mem_fn(R T::* pm) noexcept;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="va">+ template&lt;class R, class T&gt; <span class="diffins">constexpr</span> <em>unspecified</em> mem_fn(R T::* pm) noexcept;</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a><span class="st">- template&lt;class R, class T&gt; <em>unspecified</em> mem_fn(R T::* pm) noexcept;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="va">+ template&lt;class R, class T&gt; <span class="diffins">constexpr</span> <em>unspecified</em> mem_fn(R T::* pm) noexcept;</span></span></code></pre></div>
 </div>
 </blockquote>
 <blockquote>
