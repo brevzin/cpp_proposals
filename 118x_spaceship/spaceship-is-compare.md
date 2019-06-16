@@ -1,7 +1,7 @@
 ---
 title: When do you actually use `<=>`?
-document: D1186R2
-date: 2019-06-04
+document: P1186R2
+date: today
 author:
 	- name: Barry Revzin
 	  email: <barry.revzin@gmail.com>
@@ -13,7 +13,7 @@ author:
 
 [@P1186R1] proposed a new design to solve the issues from R0 and was presented to EWG in Kona. It was approved with a modification that synthesis of `weak_ordering` is only done by using both `==` and `<`. The previous versions of this proposal would try to fall-back to invoking `<` twice. 
 
-This paper instead of considering well-formedness of expressions or validity of expressions instead uses the notion of "shallowly well-formed" as described in [@D1630R0] and is based on a new term usable function. Some examples have changed meaning as a result. 
+This paper instead of considering well-formedness of expressions or validity of expressions instead uses the notion of "shallowly well-formed" as described in [@P1630R0] and is based on a new term usable function. Some examples have changed meaning as a result. 
 
 The library portion of R0 was moved into [@P1188R0]. This paper is _solely_ a proposal for language change.
 
@@ -660,36 +660,101 @@ This paper proposes synthesizing `strong_equality` and `weak_equality` orderings
     
 # Wording
 
-The wording here is based upon the new term *usable function* introduced in [@D1630R0].
+The wording here is based upon the new term *usable function* introduced in [@P1630R0].
 
 Insert a new paragraph before 11.10.3 [class.spaceship], paragraph 1:
 
-::: add
-> [0]{.pnum} The _synthesized three-way comparison for category `R`_ of glvalues `a` and `b` of type `T` is defined as follows:
-> 
-- [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function, `static_cast<R>(a <=> b)`;
-- [0.2]{.pnum} Otherwise, if overload resolution for `a <=> b` finds at least one viable candidate, the synthesized three-way comparison is not defined;
-- [0.3]{.pnum} Otherwise, if `R` is `strong_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? strong_ordering::equal : ((a < b) ? strong_ordering::less : strong_ordering::greater)`;
-- [0.4]{.pnum} Otherwise, if `R` is `weak_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? weak_ordering::equal : ((a < b) ? weak_ordering::less : weak_ordering::greater)`;
-- [0.5]{.pnum} Otherwise, if `R` is `partial_ordering` and overload resolution for `a == b` and `a < b` find usable functions, then `(a == b) ? partial_ordering::equivalent : ((a < b) ? partial_ordering::less :` ` ((b < a) ? partial_ordering::greater : partial_ordering::unordered))`;
-- [0.6]{.pnum} Otherwise, if `R` is `strong_equality` and overload resolution for `a == b` finds a usable function, then `(a == b) ? strong_equality::equal : strong_equality::nonequal`;
-- [0.7]{.pnum} Otherwise, if `R` is `weak_equality` and overload resolution for `a == b` finds a usable function, then `(a == b) ? weak_equality::equivalent : weak_equality::nonequivalent`;
+::: bq
+::: {.addu}
+[0]{.pnum} The _synthesized three-way comparison for category `R`_ of glvalues
+`a` and `b` of type `T` is defined as follows:
+ 
+- [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function,
+`static_cast<R>(a <=> b)`;
+- [0.2]{.pnum} Otherwise, if overload resolution for `a <=> b` finds at least
+one viable candidate, the synthesized three-way comparison is not defined;
+- [0.3]{.pnum} Otherwise, if `R` is `strong_ordering` and overload resolution
+for `a == b` and `a < b` find usable functions, then
+
+  > ```
+  > a == b ? strong_ordering::equal : 
+  > a < b  ? strong_ordering::less : 
+  >          strong_ordering::greater
+  > ```
+- [0.4]{.pnum} Otherwise, if `R` is `weak_ordering` and overload resolution
+for `a == b` and `a < b` find usable functions, then
+
+  > ```
+  > a == b ? weak_ordering::equal : 
+  > a < b  ? weak_ordering::less : 
+  >          weak_ordering::greater
+  > ```
+- [0.5]{.pnum} Otherwise, if `R` is `partial_ordering` and overload resolution
+for `a == b` and `a < b` find usable functions, then
+
+  > ```
+  > a == b ? partial_ordering::equivalent : 
+  > a < b  ? partial_ordering::less :
+  > b < a  ? partial_ordering::greater :
+  >          partial_ordering::unordered
+  > ```
+- [0.6]{.pnum} Otherwise, if `R` is `strong_equality` and overload resolution
+for `a == b` finds a usable function, then
+`a == b ? strong_equality::equal : strong_equality::nonequal`;
+- [0.7]{.pnum} Otherwise, if `R` is `weak_equality` and overload resolution for
+`a == b` finds a usable function, then
+`a == b ? weak_equality::equivalent : weak_equality::nonequivalent`;
 - [0.8]{.pnum} Otherwise, the synthesized three-way comparison is not defined.
->
-> [*Note*: A synthesized three-way comparison may be ill-formed if overload resolution finds usable functions that don't otherwise meet implied requirements by the defined expression. *-end node* ]
+
+[*Note*: A synthesized three-way comparison may be ill-formed if overload
+resolution finds usable functions that don't otherwise meet implied requirements
+by the defined expression. *-end node* ]
+:::
 :::
 
 Change 11.10.3 [class.spaceship], paragraph 1:
 
-> Given an expanded list of subobjects for an object `x` of type `C`, the type of the expression <code>x~*i*~</code> `<=>` <code>x~*i*~</code> is denoted by <code>R~i~</code>. [If overload resolution as applied to <code>x~*i*~</code> `<=>` <code>x~*i*~</code> does not find a usable function, then <code>R~i~</code> is `void`.]{.add} If the declared return type of a defaulted three-way comparison operator function is `auto`, then the return type is deduced as the common comparison type (see below) of <code>R~0~</code>, <code>R~1~</code>, …, <code>R~n−1~</code>. [*Note*: Otherwise, the program will be ill-formed if the expression <code>x~i~</code> `<=>` <code>x~i~</code> is not implicitly convertible to the declared return type for any `i`.—*end note*] If the return type is deduced as `void`, the operator function is defined as deleted. [If the declared return type of a defaulted three-way comparison operator function is `R` and any synthesized three-way comparison for category `R` between objects <code>x~*i*~</code> and <code>x~*i*~</code> is not defined, the operator function is defined as deleted.]{.add}
+::: bq
+[1]{.pnum} Given an expanded list of subobjects for an object `x` of type `C`,
+the type of the expression <code>x~*i*~</code> `<=>` <code>x~*i*~</code> is
+denoted by <code>R~i~</code>. [If overload resolution as applied to
+<code>x~*i*~</code> `<=>` <code>x~*i*~</code> does not find a usable function,
+then <code>R~i~</code> is `void`.]{.addu} If the declared return type of a
+defaulted three-way comparison operator function is `auto`, then the return type
+is deduced as the common comparison type (see below) of <code>R~0~</code>,
+<code>R~1~</code>, …, <code>R~n−1~</code>. [*Note*: Otherwise, the program will
+be ill-formed if the expression <code>x~i~</code> `<=>` <code>x~i~</code> is not
+implicitly convertible to the declared return type for any `i`.—*end note*] If
+the return type is deduced as `void`, the operator function is defined as
+deleted. [If the declared return type of a defaulted three-way comparison
+operator function is `R` and any synthesized three-way comparison for category
+`R` between objects <code>x~*i*~</code> and <code>x~*i*~</code> is not defined,
+the operator function is defined as deleted.]{.addu}
+:::
 
-Change 11.10.3 [class.spaceship], paragraph 3, to use the new synthesized comparison instead of `<=>`
+Change 11.10.3 [class.spaceship], paragraph 2, to use the new synthesized
+comparison instead of `<=>`
 
-> The return value `V` of type `R` of the defaulted three-way comparison operator function with parameters `x` and `y` of the same type is determined by comparing corresponding elements <code>x~*i*~</code> and <code>y~*i*~</code> in the expanded lists of subobjects for `x` and `y` (in increasing index order) until the first index `i` where [<code>x~*i*~</code> `<=>` <code>y~*i*~</code>]{.rm} [the synthesized three-way comparison for category `R` between <code>x~*i*~</code> and <code>y~*i*~</code>]{.add} yields a result value <code>v~*i*~</code> where <code>v~*i*~</code> `!= 0`, contextually converted to `bool`, yields `true`; `V` is <code>v~*i*~</code> converted to `R`. If no such index exists, `V` is `std::strong_ordering::equal` converted to `R`.
+::: bq
+[2]{.pnum} The return value `V` of type `R` of the defaulted three-way
+comparison operator function with parameters `x` and `y` of the same type is
+determined by comparing corresponding elements <code>x~*i*~</code> and
+<code>y~*i*~</code> in the expanded lists of subobjects for `x` and `y` (in
+increasing index order) until the first index `i` where
+[<code>x~*i*~</code> `<=>` <code>y~*i*~</code>]{.rm} [the synthesized three-way
+comparison for category `R` between <code>x~*i*~</code> and
+<code>y~*i*~</code>]{.addu} yields a result value <code>v~*i*~</code> where
+<code>v~*i*~</code> `!= 0`, contextually converted to `bool`, yields `true`; `V`
+is <code>v~*i*~</code> converted to `R`. If no such index exists, `V` is
+`std::strong_ordering::equal` converted to `R`.
+:::
 
 # Acknowledgments
     
-Thanks to Gašper Ažman, Agustín Bergé, Jens Maurer, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.
+Thanks to Gašper Ažman, Agustín Bergé, Jens Maurer, Richard Smith, Jeff Snyder,
+Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these
+issues. Thanks to the Core Working Group for being vigilant and ensuring a
+better proposal.
     
 ---
 references:
@@ -701,44 +766,4 @@ references:
 	issued:
 		year: 2018
 	URL: https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/
-  - id: P1185R2
-    citation-label: P1185R2
-    title: "`<=> != ==`"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://wg21.link/p1185r2	
-  - id: P1186R0
-    citation-label: P1186R0
-    title: "When do you actually use `<=>`?"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2018
-    URL: https://wg21.link/p1186r0
-  - id: P1186R1
-    citation-label: P1186R1
-    title: "When do you actually use `<=>`?"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://wg21.link/p1186r1	
-  - id: P1188R0
-    citation-label: P1188R0
-    title: "Library utilities for `<=>`"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://wg21.link/p1188r0	
-  - id: D1630R0
-    citation-label: D1630R0
-    title: "Spaceship needs a tune-up"
-    author:
-      - family: Barry Revzin
-    issued:
-      year: 2019
-    URL: https://brevzin.github.io/cpp_proposals/118x_spaceship/d630r2.html
 ---

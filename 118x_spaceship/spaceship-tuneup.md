@@ -237,7 +237,7 @@ The reasoning here is that by considering the `@ 0` part of the expression for d
 
 ## Shallowly well-formed
 
-We cannot use the term "well-formed" in the Core language to describe what it means for, colloquially, an expression to be... "valid." We need something shallower than that. This need comes up several times in the context of comparison operators - both for choosing reversed and rewritten candidates as well as defining defaulted ones (also pointed out by Daveed [@vdv.defaulted]). This also comes up in how to word [@D1186R2].
+We cannot use the term "well-formed" in the Core language to describe what it means for, colloquially, an expression to be... "valid." We need something shallower than that. This need comes up several times in the context of comparison operators - both for choosing reversed and rewritten candidates as well as defining defaulted ones (also pointed out by Daveed [@vdv.defaulted]). This also comes up in how to word [@P1186R2].
 
 We already do something like this for the special member functions of class types. For instance, [class.default.ctor] says that:
 

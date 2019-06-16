@@ -20,7 +20,7 @@ The comparisons between `unique_ptr<T, D>` and `nullptr` were originally removed
 and replaced with a `<=>`, but this was reverted.
 
 Additionally, R0 used the `3WAY`{.default}`<R>` wording from [@P1186R1], which
-was removed in the subsequent [@D1186R2] - so the relevant wording for the
+was removed in the subsequent [@P1186R2] - so the relevant wording for the
 fallback objects was changed as well.
 
 # Introduction
