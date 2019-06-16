@@ -4,19 +4,18 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-06" />
+  <meta name="dcterms.date" content="2019-06-16" />
   <title>Conditionally Trivial Special Member Functions</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
       span.underline{text-decoration: underline;}
       div.column{display: inline-block; vertical-align: top; width: 50%;}
-      #refs p{padding-left: 32px; text-indent: -32px;}
   </style>
   <style>
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -26,14 +25,16 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -42,9 +43,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  { background-color: #f6f8fa; }
+  {  background-color: #f6f8fa; }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span. { } /* Normal */
 code span.al { color: #ff0000; } /* Alert */
@@ -77,6 +78,7 @@ code span.st { color: #9f6807; } /* String */
 code span.va { } /* Variable */
 code span.vs { color: #9f6807; } /* VerbatimString */
 code span.wa { color: #008000; font-weight: bold; } /* Warning */
+code.diff {color: #898887}
 code.diff span.va {color: #006e28}
 code.diff span.st {color: #bf0303}
   </style>
@@ -98,7 +100,10 @@ padding-left: 2em;
 margin-top: -0.2em;
 margin-bottom: -0.2em;
 }
-a { text-decoration: none; }
+a {
+text-decoration: none;
+color: #4183C4;
+}
 a.hidden_link {
 text-decoration: none;
 color: inherit;
@@ -107,10 +112,26 @@ li {
 margin-top: 0.6em;
 margin-bottom: 0.6em;
 }
-h1 { line-height: 1; }
-h2 { line-height: 1; }
-h3 { line-height: 1; }
-h4 { line-height: 1; }
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
 ul > li:before {
 content: "\2014";
 position: absolute;
@@ -146,14 +167,14 @@ width: 5em;
 opacity: 0;
 }
 a.itemDeclLink:hover { opacity: 1; }
-div.marginalizedparent {
+span.marginalizedparent {
 position: relative;
 left: -5em;
 }
-li > div.marginalizedparent { left: -7em; }
-li > ul > li > div.marginalizedparent { left: -9em; }
-li > ul > li > ul > li > div.marginalizedparent { left: -11em; }
-li > ul > li > ul > li > ul > li > div.marginalizedparent { left: -13em; }
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
 div.footnoteNumberParent {
 position: relative;
 left: -4.7em;
@@ -280,10 +301,6 @@ line-height: 127%;
 margin-left: 1.2em;
 line-height: 127%;
 }
-code {
-font-family: monospace;
-font-style: normal;
-}
 div.itemdecl {
 margin-top: 2ex;
 }
@@ -384,6 +401,10 @@ margin-top: 1em;
 }
 ol.enumeratea { list-style-type: none; background: inherit; }
 ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+
+div#refs p { padding-left: 32px; text-indent: -32px; }
 </style>
   <style type="text/css">a {
 color : #4183C4;
@@ -393,21 +414,7 @@ a.marginalized {
 text-decoration: none;
 }
 a.self-link {
-position: absolute;
-left: calc(-1 * (3.5rem - 26px));
-width: calc(3.5rem - 26px);
-bottom: 1px;
-text-align: center;
-border: none;
-transition: opacity .2s;
-opacity: .5;
 text-decoration: none;
-}
-a.self-link:hover {
-opacity: 1;
-}
-a.self-link::before {
-content: "§";
 }
 h1#toctitle {
 border-bottom: 1px solid #cccccc;
@@ -424,7 +431,6 @@ h3:target { background-color: transparent; }
 h4:target { background-color: transparent; }
 h5:target { background-color: transparent; }
 h6:target { background-color: transparent; }
-h1,h2,h3,h4,h5,h6 { position: relative; }
 code span.co { font-family: monospace; }
 table tr {
 background-color: white;
@@ -475,6 +481,40 @@ body {
 margin: 5em;
 }
 }
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </style>
   <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
   <!--[if lt IE 9]>
@@ -490,11 +530,11 @@ margin: 5em;
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D0848R2</td>
+    <td>P0848R2</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-06</td>
+    <td>2019-06-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -516,35 +556,35 @@ margin: 5em;
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#revision-history"><span class="toc-section-number">1</span> <span></span>Revision History</a></li>
-<li><a href="#introduction"><span class="toc-section-number">2</span> <span></span>Introduction</a></li>
-<li><a href="#proposal"><span class="toc-section-number">3</span> <span></span>Proposal</a></li>
-<li><a href="#wording"><span class="toc-section-number">4</span> <span></span>Wording</a></li>
-<li><a href="#acknowledgments"><span class="toc-section-number">5</span> <span></span>Acknowledgments</a></li>
-<li><a href="#references"><span class="toc-section-number">6</span> <span></span>References</a></li>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">5</span> Acknowledgments<span></span></a></li>
+<li><a href="#references"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
-<h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> <a href="#revision-history" class="self-link"></a>Revision History</h1>
+<h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P0848R0">[<a href="#ref-P0848R0" role="doc-biblioref">P0848R0</a>]</span> was presented to EWG at the San Diego meeting (November 2018). It proposed to change the rules for trivially copyable such that we only consider the <em>best viable candidate</em> amongst the copy constructors given a synthesized overload resolution. That is, depending on <code class="sourceCode cpp">C<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, we either consider only <code class="sourceCode cpp"><span class="pp">#2</span></code> (because <code class="sourceCode cpp"><span class="pp">#1</span></code> wouldn’t be viable) or only <code class="sourceCode cpp"><span class="pp">#1</span></code> (because it would be more constrained than <code class="sourceCode cpp"><span class="pp">#2</span></code> and hence a better match). However, EWG considered this to be confusing as trivially copyable is a property of a type and adding overload resolution simply adds more questions about context (e.g. do we consider accessibility?). EWG requested a new mechanism to solve this problem.</p>
 <p><span class="citation" data-cites="P0848R1">[<a href="#ref-P0848R1" role="doc-biblioref">P0848R1</a>]</span> was also presented to EWG in San Diego, proposed to introduce an intermediate layer: a constructor for a class <code class="sourceCode cpp">X</code> of the form <code class="sourceCode cpp">X<span class="op">(</span>X <span class="kw">const</span><span class="op">&amp;)</span></code> rather than being considered a copy constructor would instead become a <em>prospective copy constructor</em>, and a <em>copy constructor</em> would be any prospective copy constructor whose constraints are satisfied and is at least as constrained as every other prospective copy constructor. In this way, we don’t change the definition of trivially copyable at all - we change the definition for each of the special member functions.</p>
 <p>During Core wording review in the Kona meeting (February 2019), a new direction was suggested that is somewhat of a compromise between the two other positions: we use the “constraints are satisfied and is at least as constrained as” rule on the special member functions, but we only apply it to the trivially copyable rules. This ensures that we maintain these as properties of the type rather than properties of an expression - and is the direction this paper takes.</p>
-<h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> <a href="#introduction" class="self-link"></a>Introduction</h1>
+<h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>For a complete motivation for this proposal, see <span class="citation" data-cites="P0848R0">[<a href="#ref-P0848R0" role="doc-biblioref">P0848R0</a>]</span>. In brief, it is important for certain class template instantiations to propagate the triviality from their template parameters - that is, we want <code class="sourceCode cpp">wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> to be trivially copyable if and only if <code class="sourceCode cpp">T</code> is copyable. In C++17, this is possible, yet is extremely verbose. The introduction of Concepts provides a path to make this propagation substantially easier to write, but the current definition of trivially copyable doesn’t quite suffice for what we want.</p>
 <p>Consider:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">concept</span> C <span class="op">=</span> <span class="co">/* ... */</span>;</a>
-<a class="sourceLine" id="cb1-3" title="3"></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="kw">struct</span> X <span class="op">{</span></a>
-<a class="sourceLine" id="cb1-6" title="6">    <span class="co">// #1</span></a>
-<a class="sourceLine" id="cb1-7" title="7">    X<span class="op">(</span>X <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">requires</span> C<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</a>
-<a class="sourceLine" id="cb1-8" title="8">    </a>
-<a class="sourceLine" id="cb1-9" title="9">    <span class="co">// #2</span></a>
-<a class="sourceLine" id="cb1-10" title="10">    X<span class="op">(</span>X <span class="kw">const</span><span class="op">&amp;</span> <span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></a>
-<a class="sourceLine" id="cb1-11" title="11"><span class="op">}</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">concept</span> C <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="co">// #1</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>    X<span class="op">(</span>X <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">requires</span> C<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    </span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="co">// #2</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    X<span class="op">(</span>X <span class="kw">const</span><span class="op">&amp;</span> <span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="op">}</span>;</span></code></pre></div>
 <p>According to the current working draft, both <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> are copy constructors. The current definition for trivially copyable requires that <em>each</em> copy constructor be either deleted or trivial. That is, we always consider both copy constructors, regardless of <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">C<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, and hence no instantation of <code class="sourceCode cpp">X</code> is ever trivially copyable.</p>
 <p>This paper suggests that those specializations <code class="sourceCode cpp">X<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for which <code class="sourceCode cpp">T</code> satisfies <code class="sourceCode cpp">C</code> should be considered trivially copyable - this very logically follows the model of constraints and would make it substantially easier to write class templates that are conditionally trivially copyable. Indeed, it would become actually easy to do such a thing rather than quite complex with multiple layers of conditional base classes.</p>
-<h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> <a href="#proposal" class="self-link"></a>Proposal</h1>
+<h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The current relevant definitions in [class.prop] read:</p>
 <blockquote>
 <p>A <em>trivially copyable class</em> is a class:</p>
@@ -567,93 +607,93 @@ margin: 5em;
 <p>And then simplify the definitions of <em>trivially copyable</em> and <em>trivial</em> to use eligible special members instead of just any special members.</p>
 <p>For the destructor, we go in a slightly different direction. We introduce a sub-classification called a <em>prospective destructor</em> which is simply any function declared for a class <code class="sourceCode cpp">X</code> that is spelled <code class="sourceCode cpp"><span class="op">~</span>X<span class="op">()</span></code> with some constraints, and then redefine destructor to be the eligible destructor, requiring that there be only one.</p>
 <p>Using the example from R0:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="kw">struct</span> optional <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-3" title="3">    <span class="co">// #1</span></a>
-<a class="sourceLine" id="cb2-4" title="4">    optional<span class="op">(</span>optional <span class="kw">const</span><span class="op">&amp;)</span></a>
-<a class="sourceLine" id="cb2-5" title="5">        <span class="kw">requires</span> TriviallyCopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> CopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span></a>
-<a class="sourceLine" id="cb2-6" title="6">        <span class="op">=</span> <span class="cf">default</span>;</a>
-<a class="sourceLine" id="cb2-7" title="7">        </a>
-<a class="sourceLine" id="cb2-8" title="8">    <span class="co">// #2</span></a>
-<a class="sourceLine" id="cb2-9" title="9">    optional<span class="op">(</span>optional <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span></a>
-<a class="sourceLine" id="cb2-10" title="10">            <span class="kw">requires</span> CopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span></a>
-<a class="sourceLine" id="cb2-11" title="11">       <span class="op">:</span> engaged<span class="op">(</span>rhs<span class="op">.</span>engaged<span class="op">)</span></a>
-<a class="sourceLine" id="cb2-12" title="12">    <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-13" title="13">        <span class="cf">if</span> <span class="op">(</span>engaged<span class="op">)</span> <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-14" title="14">            <span class="kw">new</span> <span class="op">(</span>value<span class="op">)</span> T<span class="op">(</span>rhs<span class="op">.</span>value<span class="op">)</span>;</a>
-<a class="sourceLine" id="cb2-15" title="15">        <span class="op">}</span></a>
-<a class="sourceLine" id="cb2-16" title="16">    <span class="op">}</span></a>
-<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">struct</span> optional <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="co">// #1</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    optional<span class="op">(</span>optional <span class="kw">const</span><span class="op">&amp;)</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="kw">requires</span> TriviallyCopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> CopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb2-7"><a href="#cb2-7"></a>        </span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="co">// #2</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    optional<span class="op">(</span>optional <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>            <span class="kw">requires</span> CopyConstructible<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>       <span class="op">:</span> engaged<span class="op">(</span>rhs<span class="op">.</span>engaged<span class="op">)</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="op">{</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>        <span class="cf">if</span> <span class="op">(</span>engaged<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>            <span class="kw">new</span> <span class="op">(</span>value<span class="op">)</span> T<span class="op">(</span>rhs<span class="op">.</span>value<span class="op">)</span>;</span>
+<span id="cb2-15"><a href="#cb2-15"></a>        <span class="op">}</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>    <span class="op">}</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="op">}</span>;</span></code></pre></div>
 <p>For all specializations, we have two copy constructors: <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code>. For <code class="sourceCode cpp">T<span class="op">=</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, neither copy constructor has its constraints satisfied so there is no eligible copy constructor. For <code class="sourceCode cpp">T<span class="op">=</span>std<span class="op">::</span>string</code>, only <code class="sourceCode cpp"><span class="pp">#2</span></code> has its constraints satisfied, so only <code class="sourceCode cpp"><span class="pp">#2</span></code> is an eligible copy constructor. For <code class="sourceCode cpp">T<span class="op">=</span><span class="dt">int</span></code>, both <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> have their constraints satisfied. <code class="sourceCode cpp"><span class="pp">#1</span></code> is more constrained than <code class="sourceCode cpp"><span class="pp">#2</span></code>, so only <code class="sourceCode cpp"><span class="pp">#1</span></code> is an eligible copy constructor.</p>
-<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> <a href="#wording" class="self-link"></a>Wording</h1>
-<p>Change 6.6.7/p1 [class.temporary] to refer to the future definition of eligibility:</p>
+<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Change 6.6.7 [class.temporary] to refer to the future definition of eligibility:</p>
 <blockquote>
-<p>When an object of class type <code class="sourceCode cpp">X</code> is passed to or returned from a function, if each <span class="add" style="color: #006e28"><ins>eligible</ins></span> copy constructor <span class="add" style="color: #006e28"><ins>([class.prop])</ins></span> <span class="rm" style="color: #bf0303"><del>,</del></span> <span class="add" style="color: #006e28"><ins>and</ins></span> move constructor <span class="add" style="color: #006e28"><ins>is trivial, the</ins></span> destructor of X is either trivial or deleted, and <code class="sourceCode cpp">X</code> has at least one <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="add" style="color: #006e28"><ins>eligible</ins></span> copy or move constructor, implementations are permitted to create a temporary object to hold the function parameter or result object. The temporary object is constructed from the function argument or return value, respectively, and the function’s parameter or return object is initialized as if by using the <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="add" style="color: #006e28"><ins>eligible</ins></span> trivial constructor to copy the temporary (even if that constructor is inaccessible or would not be selected by overload resolution to perform a copy or move of the object).</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> When an object of class type <code class="sourceCode cpp">X</code> is passed to or returned from a function, if each <span class="addu">eligible</span> copy constructor <span class="addu">([class.prop])</span> <span class="rm" style="color: #bf0303"><del>,</del></span> <span class="addu">and</span> move constructor <span class="addu">is trivial, the</span> destructor of X is either trivial or deleted, and <code class="sourceCode cpp">X</code> has at least one <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="addu">eligible</span> copy or move constructor, implementations are permitted to create a temporary object to hold the function parameter or result object. The temporary object is constructed from the function argument or return value, respectively, and the function’s parameter or return object is initialized as if by using the <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="addu">eligible</span> trivial constructor to copy the temporary (even if that constructor is inaccessible or would not be selected by overload resolution to perform a copy or move of the object).</p>
 </blockquote>
-<p>And likewise for 7.6.1.2/p12 [expr.call]:</p>
+<p>And likewise for 7.6.1.2 [expr.call]:</p>
 <blockquote>
-<p>Passing a potentially-evaluated argument of class type having a non-trivial <span class="add" style="color: #006e28"><ins>eligible</ins></span> copy constructor <span class="add" style="color: #006e28"><ins>([class.prop])</ins></span>, a non-trivial <span class="add" style="color: #006e28"><ins>eligible</ins></span> move constructor, or a non-trivial destructor, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.</p>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> […] Passing a potentially-evaluated argument of class type having a non-trivial <span class="addu">eligible</span> copy constructor <span class="addu">([class.prop])</span>, a non-trivial <span class="addu">eligible</span> move constructor, or a non-trivial destructor, with no corresponding parameter, is conditionally-supported with implementation-defined semantics.</p>
 </blockquote>
-<p>Change 9.4.2/p5 [dcl.fct.def.default] to account for prospective destructors that aren’t destructors:</p>
+<p>Change 9.4.2 [dcl.fct.def.default] to account for prospective destructors that aren’t destructors:</p>
 <blockquote>
-<p>Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor] [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <span class="add" style="color: #006e28"><ins>A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted. A defaulted special member function that is not an eligible special member function ([class.prop]) shall be defined as deleted.</ins></span> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> Explicitly-defaulted functions and implicitly-declared functions are collectively called <em>defaulted</em> functions, and the implementation shall provide implicit definitions for them ([class.ctor], [class.dtor], [class.copy.ctor], [class.copy.assign]), which might mean defining them as deleted. <span class="addu">A defaulted prospective destructor ([class.dtor]) that is not a destructor shall be defined as deleted. A defaulted special member function that is not an eligible special member function ([class.prop]) shall be defined as deleted.</span> A function is <em>user-provided</em> if it is user-declared and not explicitly defaulted or deleted on its first declaration.</p>
 </blockquote>
 <p>Insert at the beginning of 11.1 [class.prop] a definition of eligibility:</p>
 <div class="add" style="color: #006e28">
 
 <blockquote>
-<p><div class="marginalizedparent"><a class="marginalized">0</a></div> An <em>eligible special member function</em> is a special member function ([special]):</p>
+<p><span class="marginalizedparent"><a class="marginalized">0</a></span> An <em>eligible special member function</em> is a special member function ([special]):</p>
 <ul>
-<li><div class="marginalizedparent"><a class="marginalized">(0.1)</a></div> that is not deleted,</li>
-<li><div class="marginalizedparent"><a class="marginalized">(0.2)</a></div> where each of its associated constraints ([temp.constr]), if any, are satisfied, and</li>
-<li><div class="marginalizedparent"><a class="marginalized">(0.3)</a></div> no special member function of the same kind with the same first parameter type (if any) is more constrained ([temp.constr.order]).</li>
+<li><span class="marginalizedparent"><a class="marginalized">(0.1)</a></span> that is not deleted,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(0.2)</a></span> where each of its associated constraints ([temp.constr]), if any, are satisfied, and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(0.3)</a></span> no special member function of the same kind with the same first parameter type (if any) is more constrained ([temp.constr.order]).</li>
 </ul>
 </blockquote>
 
 </div>
-<p>Change the definitions of <em>trivially copyable</em> and <em>trivial</em> in 11.1/p1 [class.prop]:</p>
+<p>Change the definitions of <em>trivially copyable</em> and <em>trivial</em> in 11.1 [class.prop]:</p>
 <blockquote>
-<p><div class="marginalizedparent"><a class="marginalized">1</a></div> A <em>trivially copyable class</em> is a class:</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>trivially copyable class</em> is a class:</p>
 <ul>
-<li><div class="marginalizedparent"><a class="marginalized">(1.1)</a></div> where each <span class="add" style="color: #006e28"><ins>eligible</ins></span> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy.ctor], [class.copy.assign]) is <span class="rm" style="color: #bf0303"><del>either deleted or</del></span> trivial,</li>
-<li><div class="marginalizedparent"><a class="marginalized">(1.2)</a></div> that has at least one <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="add" style="color: #006e28"><ins>eligible</ins></span> copy constructor, move constructor, copy assignment operator, or move assignment operator, and</li>
-<li><div class="marginalizedparent"><a class="marginalized">(1.3)</a></div> that has a trivial, non-deleted destructor.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> where each <span class="addu">eligible</span> copy constructor, move constructor, copy assignment operator, and move assignment operator ([class.copy.ctor], [class.copy.assign]) is <span class="rm" style="color: #bf0303"><del>either deleted or</del></span> trivial,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> that has at least one <span class="rm" style="color: #bf0303"><del>non-deleted</del></span> <span class="addu">eligible</span> copy constructor, move constructor, copy assignment operator, or move assignment operator, and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> that has a trivial, non-deleted destructor.</li>
 </ul>
 </blockquote>
 <blockquote>
-<p><div class="marginalizedparent"><a class="marginalized">2</a></div> A <em>trivial class</em> is a class that is trivially copyable and has one or more <span class="add" style="color: #006e28"><ins>eligible</ins></span> default constructors ([class.default.ctor]), all of which are <span class="add" style="color: #006e28"><ins>trivial.</ins></span> <span class="rm" style="color: #bf0303"><del>either trivial or deleted and at least one of which is not deleted.</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> A <em>trivial class</em> is a class that is trivially copyable and has one or more <span class="addu">eligible</span> default constructors ([class.default.ctor]), all of which are <span class="addu">trivial.</span> <span class="rm" style="color: #bf0303"><del>either trivial or deleted and at least one of which is not deleted.</del></span></p>
 </blockquote>
-<p>Change 11.3.3/p1 [special] to refer to prospective destructors, and make everything plural:</p>
+<p>Change 11.3.3 [special] to refer to prospective destructors, and make everything plural:</p>
 <blockquote>
-<p><span class="rm" style="color: #bf0303"><del>The default</del></span> <span class="add" style="color: #006e28"><ins>Default</ins></span> constructor<span class="add" style="color: #006e28"><ins>s</ins></span> ([class.default.ctor]), copy constructor<span class="add" style="color: #006e28"><ins>s</ins></span>, move constructor<span class="add" style="color: #006e28"><ins>s</ins></span> ([class.copy.ctor]), copy assignment operator<span class="add" style="color: #006e28"><ins>s</ins></span>, move assignment operator<span class="add" style="color: #006e28"><ins>s</ins></span> ([class.copy.assign]), and <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor<span class="add" style="color: #006e28"><ins>s</ins></span> ([class.dtor]) are <em>special member functions</em>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <span class="rm" style="color: #bf0303"><del>The default</del></span> <span class="addu">Default</span> constructor<span class="addu">s</span> ([class.default.ctor]), copy constructor<span class="addu">s</span>, move constructor<span class="addu">s</span> ([class.copy.ctor]), copy assignment operator<span class="addu">s</span>, move assignment operator<span class="addu">s</span> ([class.copy.assign]), and <span class="addu">prospective</span> destructor<span class="addu">s</span> ([class.dtor]) are <em>special member functions</em>.</p>
 </blockquote>
 <p>Change the definition of destructor as follows.</p>
-<p>Change 11.3.6 [class.dtor], paragraph 1:</p>
+<p>Change 11.3.6 [class.dtor]:</p>
 <blockquote>
-<p>In a declaration of a <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor, the declarator is a function declarator (9.2.3.5) of the form […] A <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor shall take no arguments (9.2.3.5). Each <em>decl-specifier</em> of the <em>decl-specifier-seq</em> of a <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor declaration (if any) shall be <code class="sourceCode cpp"><span class="kw">friend</span></code>, <code class="sourceCode cpp"><span class="kw">inline</span></code>, or <code class="sourceCode cpp"><span class="kw">virtual</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In a declaration of a <span class="addu">prospective</span> destructor, the declarator is a function declarator (9.2.3.5) of the form […] A <span class="addu">prospective</span> destructor shall take no arguments (9.2.3.5). Each <em>decl-specifier</em> of the <em>decl-specifier-seq</em> of a <span class="addu">prospective</span> destructor declaration (if any) shall be <code class="sourceCode cpp"><span class="kw">friend</span></code>, <code class="sourceCode cpp"><span class="kw">inline</span></code>, or <code class="sourceCode cpp"><span class="kw">virtual</span></code>.</p>
 </blockquote>
 <blockquote>
-<p><span class="add" style="color: #006e28"><ins>At the end of the definition of a class, overload resolution is performed among the prospective destructors declared in that class with an empty argument list to select the <em>destructor</em> for the class. The program is ill-formed if overload resolution fails. Destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted.</ins></span></p>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> <span class="addu">At the end of the definition of a class, overload resolution is performed among the prospective destructors declared in that class with an empty argument list to select the <em>destructor</em> for the class. The program is ill-formed if overload resolution fails. Destructor selection does not constitute a reference to ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor, and in particular, the selected destructor may be deleted.</span></p>
 </blockquote>
-<p>Change 11.3.6 [class.dtor], paragraph 4:</p>
+<p>Change 11.3.6 [class.dtor]:</p>
 <blockquote>
-<p>If a class has no user-declared <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor, a <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor is an inline public member of its class.</p>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> If a class has no user-declared <span class="addu">prospective</span> destructor, a <span class="addu">prospective</span> destructor is implicitly declared as defaulted (9.4). An implicitly-declared <span class="addu">prospective</span> destructor is an inline public member of its class.</p>
 </blockquote>
 <div class="add" style="color: #006e28">
 
 <blockquote>
 <p>An implicitly-declared prospective destructor for a class X will have the form</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" title="1"><span class="op">~</span>X<span class="op">()</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="op">~</span>X<span class="op">()</span></span></code></pre></div>
 </blockquote>
 
 </div>
-<p>Change 11.3.6 [class.dtor], paragraph 10:</p>
+<p>Change 11.3.6 [class.dtor]:</p>
 <blockquote>
-<p>A <span class="add" style="color: #006e28"><ins>prospective</ins></span> destructor can be declared <code class="sourceCode cpp"><span class="kw">virtual</span></code> (11.6.2) or pure <code class="sourceCode cpp"><span class="kw">virtual</span></code> (11.6.3); if <span class="add" style="color: #006e28"><ins>the destructor of a class is <span><code class="sourceCode cpp"><span class="kw">virtual</span></code></span> and</ins></span> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> A <span class="addu">prospective</span> destructor can be declared <code class="sourceCode cpp"><span class="kw">virtual</span></code> (11.6.2) or pure <code class="sourceCode cpp"><span class="kw">virtual</span></code> (11.6.3); if <span class="addu">the destructor of a class is <code class="sourceCode cpp"><span class="kw">virtual</span></code> and</span> any objects of that class or any derived class are created in the program, the destructor shall be defined. If a class has a base class with a virtual destructor, its destructor (whether user- or implicitly-declared) is virtual.</p>
 </blockquote>
-<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> <a href="#acknowledgments" class="self-link"></a>Acknowledgments</h1>
+<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping bring us to this design. Thanks to Jens Maurer and Richard Smith for the lengthy discussions and wording wizardry.</p>
-<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> <a href="#references" class="self-link"></a>References</h1>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
 <div id="ref-P0848R0">
