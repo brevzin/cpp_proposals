@@ -2061,7 +2061,7 @@ constituting `T` be denoted by `T1` and `T2`, respectively, and let `D1` and
     - [3.3.2]{.pnum} [*Note*: None of the following will apply if there is a specialization
 	`common_type<D1, D2>`. —*end note*]
 	- [3.3.*]{.pnum} [Otherwise, if both `D1` and `D2` denote comparison
-	category type ([cmp.categories.pre]), let `C` denote common comparison
+	category type ([cmp.categories.pre]), let `C` denote the common comparison
 	type ([class.spaceship]) of `D1` and `D2`.]{.addu}
     - [3.3.3]{.pnum} Otherwise, if `decay_t<decltype(false ? declval<D1>() : declval<D2>())>`
 	denotes a valid type, let `C` denote that type.

@@ -669,7 +669,8 @@ Insert a new paragraph before 11.10.3 [class.spaceship], paragraph 1:
 [0]{.pnum} The _synthesized three-way comparison for category `R`_ of glvalues
 `a` and `b` of type `T` is defined as follows:
  
-- [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function,
+- [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function
+([over.match]),
 `static_cast<R>(a <=> b)`;
 - [0.2]{.pnum} Otherwise, if overload resolution for `a <=> b` finds at least
 one viable candidate, the synthesized three-way comparison is not defined;
