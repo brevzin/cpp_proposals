@@ -1,7 +1,7 @@
 ---
 title: "The Mothership has Landed"
 subtitle: Adding `<=>` to the Library
-document: P1614R1
+document: D1614R2
 audience: LWG
 date: today
 author:
@@ -1022,6 +1022,9 @@ namespace std {
 	
 +   // 20.4.3, pair specialized algorithms
 +   friend constexpr bool operator==(const pair&, const pair&) = default;
++   friend constexpr bool operator==(const pair& x, const pair& y)
++       requires (is_reference_v<T1> || is_reference_v<T2>)
++     { return x.first == y.first && x.second == y.second; }
 +   friend constexpr common_comparison_category_t<@_synth-3way-result_@<T1>, @_synth-3way-result_@<T2>>
 +     operator<=>(const pair&, const pair&)
 +     { @_see below_@ }
