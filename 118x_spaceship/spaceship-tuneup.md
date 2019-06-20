@@ -1,12 +1,12 @@
 ---
 title: Spaceship needs a tune-up
 subtitle: Addressing some discovered issues with P0515 and P1185
-document: P1630R0
+document: D1630R1
 date: today
 audience: CWG, EWG
 author:
-	- name: Barry Revzin
-	  email: <barry.revzin@gmail.com>
+    - name: Barry Revzin
+      email: <barry.revzin@gmail.com>
 ---
 
 # Introduction
@@ -16,8 +16,8 @@ The introduction of `operator<=>` into the language ([@P0515R3] with relevant ex
 However, that ended up being insufficient due to the problems pointed out in [@P1190R0], and in response [@P1185R2] was adopted in Kona which made the following changes:
 
 1. Changing candidate sets for equality and inequality  
-	a. `<=>` is no longer a candidate for either equality or inequality  
-	b. `==` gains `<=>`'s ability for both reversed and rewritten candidates  
+    a. `<=>` is no longer a candidate for either equality or inequality  
+    b. `==` gains `<=>`'s ability for both reversed and rewritten candidates  
 2. Defaulted `==` does memberwise equality, defaulted `!=` invokes `==` instead of `<=>`.  
 3. Strong structural equality is defined in terms of `==` instead of `<=>`  
 4. Defaulted `<=>` can also implicitly declare defaulted `==`
@@ -39,8 +39,8 @@ bool operator==(A, int);              // #1
 
 int check(A x, A y) {
   return (x == y) +  // In C++17, calls #1; in C++20, ambiguous between #1 and reversed #1
-	(10 == x) +      // In C++17, calls #2; in C++20, calls #1
-	(10 != x);       // In C++17, calls #3; in C++20, calls #1
+    (10 == x) +      // In C++17, calls #2; in C++20, calls #1
+    (10 != x);       // In C++17, calls #3; in C++20, calls #1
 }    
 ```
 
@@ -78,8 +78,8 @@ Note that the same thing can happen with `<=>` in a similar situation:
 
 ```cpp
 struct C {
-	operator int() const;
-	strong_ordering operator<=>(int) const;
+    operator int() const;
+    strong_ordering operator<=>(int) const;
 };
 
 auto f() { return C{} <=> C{}; } // error: ambiguous
@@ -261,9 +261,9 @@ The provided example is well-formed in the current working draft, but becomes il
 struct NotBool { };
 
 struct X {
-	X(int);
-	friend NotBool operator==(X, int);
-	friend NotBool operator!=(X, X);
+    X(int);
+    friend NotBool operator==(X, int);
+    friend NotBool operator!=(X, X);
 };
 
 // in C++17, calls the only candidate, the operator!=(X, X).
@@ -281,8 +281,8 @@ The last issue, also raised by Daveed Vandevoorde ([@vdv.reference]) is what sho
 
 ```cpp
 struct A {
-	int const& r;
-	auto operator<=>(A const&, A const&) = default;
+    int const& r;
+    auto operator<=>(A const&, A const&) = default;
 };
 ```
 
@@ -296,7 +296,7 @@ In other words:
 
 ```cpp
 int i = 0, j = 0, k = 1;
-			  // |  option 1  | option 2 | option 3 |
+              // |  option 1  | option 2 | option 3 |
 A{i} == A{i}; // | ill-formed |   true   |   true   |
 A{i} == A{j}; // | ill-formed |   false  |   true   |
 A{i} == A{k}; // | ill-formed |   false  |   false  |
@@ -323,11 +323,11 @@ In the same post [@vdv.reference], Daveed also questioned what defaulted compari
 
 ```cpp
 struct B {
-	union {
-		int i;
-		char c;
-	};
-	auto operator<=>(B const&, B const&) = default;
+    union {
+        int i;
+        char c;
+    };
+    auto operator<=>(B const&, B const&) = default;
 };
 ```
 
@@ -356,6 +356,86 @@ This paper proposes making more explicit that defaulted comparisons for classes 
 
 A future proposal can always relax this restriction for reference data members by pursuing option 2 above.
 
+# `std::pair<T ,U>`, references, and strong structural equality
+
+With the adoption of [@P0732R2], C++20 will get class types as non-type template
+parameters... provided those class types satisfy _strong structural equality_,
+which now means has a defaulted `operator==` plus a few other things. One library
+type that would seem like it would be easy to provide strong structural equality
+for is `std::pair`, since its equality operation is just a memberwise equality
+comparison in declaration order. [@P1614R1] proposes precisely that.
+
+The relevant part of `std::pair` would become, with that proposal:
+
+```cpp
+template <typename T, typename U>
+struct pair {
+    T first;
+    U second;
+    
+    friend constexpr bool operator==(const pair&, const pair&) = default;
+};
+```
+
+However, as Casey Carter pointed out in [@carter.oops], if we take the previous
+proposal and define the above equality operator as deleted if either `T` or `U`
+is a reference type, then we would break existing code that today can compare
+`pair`s holding references:
+
+```cpp
+int i = 42, j = 42;
+pair<int&, int> p(i, 17);
+pair<int&, int> q(j, 17);
+assert(p == q); // valid code today, assertion holds
+```
+
+With concepts in C++20, we should be able to have our cake and eat it too. That
+is, provide a defaulted `operator==` but provide _another_ non-defaulted
+`operator==` to handle the reference cases. Something like this:
+
+```cpp
+template <typename T, typename U>
+struct pair {
+    T first;
+    U second;
+    
+    friend constexpr bool operator==(const pair&, const pair&) = default;
+    
+    friend constexpr bool operator==(const pair& lhs, const pair& rhs)
+        requires (is_reference_v<T> || is_reference_v<U>)
+    {
+        return lhs.first == rhs.first && lhs.second == rhs.second;
+    }
+};
+```
+
+This ensures that we both would not break existing code _and_ that we allow
+`pair`s to be used as non-type template parameters where the underlying types
+could be used as non-type template parameters. 
+
+However, our current wording for strong structural equality doesn't handle this
+particularly well - it just requires that a class have _an_ `operator==` defined
+as defaulted. This happens to give the correct answer for this particular example 
+(`pair<int&, int>` has a defaulted `operator==`, but it is defined as deleted,
+so it would be excluded), but it would be nicer if we got the correct answer
+more soundly... rather than simply by sheer happenstance.
+
+## Proposal
+
+In [@P0848R2], new wording is introduced to select what will become the
+destructor from potentially multiple candidates with differing constraints. The
+proposed wording there, courtesy of Richard Smith, is:
+
+> At the end of the definition of a class, overload resolution is performed among
+> the prospective destructors declared in that class with an empty argument list
+> to select the destructor for the class. The program is ill-formed if overload
+> resolution fails. Destructor selection does not constitute a reference to
+> ([dcl.fct.def.delete]) or odr-use of ([basic.def.odr]) the selected destructor,
+> and in particular, the selected destructor may be deleted.
+
+We want similar wording for class types to select the unique best `operator==`,
+and then stipulate our requirements on that chosen `operator==`.
+
 # Wording
 
 Insert a new paragraph after 11.10.1 [class.compare.default]/1:
@@ -367,10 +447,23 @@ Insert a new paragraph after 11.10.1 [class.compare.default]/1:
 Change 11.10.1 [class.compare.default]/3.2:
 
 
-> [3]{.pnum} A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:
+> [3]{.pnum} A type `C` has _strong structural equality_ if, given a glvalue `x`
+of type `const C`, either:
 > 
-- [3.1]{.pnum} `C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or
-- [3.2]{.pnum} `C` is a class type with [an]{.rm} [a friend or public member]{.addu} `==` operator defined as defaulted in the definition of `C`, [`x == x` is well-formed when contextually converted to `bool`,]{.rm} all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.
+> - [3.1]{.pnum} `C` is a non-class type and `x <=> x` is a valid expression of
+> type `std::strong_ordering` or `std::strong_equality`, or
+> - [3.2]{.pnum} `C` is a class type [where all of the following hold:]{.addu}
+> [with an `==` operator defined as defaulted in the definition of `C`, `x == x`
+> is well-formed when contextually converted to bool, all of `C`'s base class
+> subobjects and non-static data members have strong structural equality, and
+> `C` has no `mutable` or `volatile` subobjects.]{.rm}
+>   - [3.2.1]{.pnum} [All of `C`'s base class subobjects and non-static data
+members have strong structural equality.]{.addu}
+>   - [3.2.2]{.pnum} [`C` has no `mutable` or `volatile` subobjects.]{.addu}
+>   - [3.2.3]{.pnum} [Overload resolution performed on the expression
+`x == x` succeds and finds either a friend or public member `==` operator
+defined as defaulted in the definition of `C`.]{.addu}
+
 
 Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle the error cases:
 
@@ -455,57 +548,74 @@ references:
   - id: CWG2407
     citation-label: CWG2407
     title: "Missing entry in Annex C for defaulted comparison operators"
-	author:
-		- family: Tomasz Kamiński
-	issued:
-		year: 2019
-	URL: http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407
+    author:
+        - family: Tomasz Kamiński
+    issued:
+        year: 2019
+    URL: http://wiki.edg.com/pub/Wg21cologne2019/CoreIssuesProcessingTeleconference2019-03-25/cwg_active.html#2407
   - id: vdv.well-formed
     citation-label: vdv.well-formed
-	title: "Processing relational/spaceship operator rewrites"
-	author:
-		- family: Daveed Vandevoorde
-	issued:
-		year: 2019
-	URL: http://lists.isocpp.org/core/2019/05/6419.php
+    title: "Processing relational/spaceship operator rewrites"
+    author:
+        - family: Daveed Vandevoorde
+    issued:
+        year: 2019
+    URL: http://lists.isocpp.org/core/2019/05/6419.php
   - id: vdv.reference
     citation-label: vdv.reference
-	title: "Generating comparison operators for classes with reference or anonymous union members"
-	author:
-		- family: Daveed Vandevoorde
-	issued:
-		year: 2019
-	URL: http://lists.isocpp.org/core/2019/05/6462.php
+    title: "Generating comparison operators for classes with reference or anonymous union members"
+    author:
+        - family: Daveed Vandevoorde
+    issued:
+        year: 2019
+    URL: http://lists.isocpp.org/core/2019/05/6462.php
   - id: cameron
     citation-label: cameron
-	URL: http://lists.isocpp.org/core/2019/04/5935.php
-	title: "Potential issue after P1185R2 - SFINAE breaking change"
-	author:
-		- family: Cameron DaCamara
-	issued:
-		year: 2019
+    URL: http://lists.isocpp.org/core/2019/04/5935.php
+    title: "Potential issue after P1185R2 - SFINAE breaking change"
+    author:
+        - family: Cameron DaCamara
+    issued:
+        year: 2019
   - id: smith
     citation-label: smith
-	URL: http://lists.isocpp.org/core/2019/05/6420.php
-	title: "Processing relational/spaceship operator rewrites"
-	author:
-		- family: Richard Smith
-	issued:
-		year: 2019
+    URL: http://lists.isocpp.org/core/2019/05/6420.php
+    title: "Processing relational/spaceship operator rewrites"
+    author:
+        - family: Richard Smith
+    issued:
+        year: 2019
   - id: herb
     citation-label: herb
-	URL: http://lists.isocpp.org/ext/2019/03/8704.php
-	title: "Overload resolution changes as a result of P1185R2"
-	author:
-		- family: Herb Sutter
-	issued:
-		year: 2019
+    URL: http://lists.isocpp.org/ext/2019/03/8704.php
+    title: "Overload resolution changes as a result of P1185R2"
+    author:
+        - family: Herb Sutter
+    issued:
+        year: 2019
   - id: vdv.defaulted
     citation-label: vdv.defaulted
-	URL: http://lists.isocpp.org/core/2019/05/6478.php
-	title: "Wording for deleted defaulted `operator!=`"
-	author:
-		- family: Daveed Vandevoorde
-	issued:
-		year: 2019
+    URL: http://lists.isocpp.org/core/2019/05/6478.php
+    title: "Wording for deleted defaulted `operator!=`"
+    author:
+        - family: Daveed Vandevoorde
+    issued:
+        year: 2019
+  - id: carter.oops
+    citation-label: carter.oops
+    URL: http://lists.isocpp.org/core/2019/06/6715.php
+    title: "strong structural equality of library types"
+    author:
+        - family: Casey Carter
+    issued:
+        year: 2019
+  - id: P0848R2
+    citation-label: P0848R2
+    URL: https://wg21.link/p0848r2
+    title: "Conditionally Trivial Special Member Functions"
+    author:
+        - family: Casey Carter
+        - family: Barry Revzin
+    issued:
+        year: 2019        
 ---
