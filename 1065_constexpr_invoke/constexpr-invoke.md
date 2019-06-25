@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` _`INVOKE`_"
-document: P1065R1
+document: D1065R2
 audience: LWG
 date: today
 author:
@@ -432,8 +432,8 @@ Apply the following changes to `std::bind()` in 20.14.14.3 [func.bind.bind], mer
 
 - [1.0]{.pnum}[`g` is a value of the result of a `bind` invocation,]{.addu}
 - [1.1]{.pnum} `FD` is the type `decay_t<F>`,
-- [1.2]{.pnum `fd` is [an lvalue of type `FD` constructed from
-`std::forward<F>(f)`,]{.rm} [a target object of `g` ([func.def]) of type `FD`
+- [1.2]{.pnum} `fd` is an lvalue [of type `FD` constructed from
+`std::forward<F>(f)`,]{.rm} [that is a target object of `g` ([func.def]) of type `FD`
 direct-non-list-initialized with `std::forward<F>(f)`,]{.addu}
 - [1.3]{.pnum} <code>T<sub>i</sub></code> is the `i`th type in the template
 parameter pack `BoundArgs`,
@@ -464,7 +464,7 @@ direct-non-list-initialized with <code>std::forward&lt;T<sub>i</sub>&gt;(t<sub>i
 `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>, T<sub>i</sub>&gt;</code>
 [shall be]{.rm} [is]{.addu} `true`.
 
-[2a]{.pnum} [*Expects*: `FD` and each <code>TD<sub>i</sub></code> meets the of
+[2a]{.pnum} [*Expects*: `FD` and each <code>TD<sub>i</sub></code> meet the
 *Cpp17MoveConstructible* and *Cpp17Destructible* requirements.]{.addu}
 <code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code>
 ([func.require]) [shall be]{.rm} [is]{.addu} a valid expression for some values
@@ -562,7 +562,7 @@ as follows:
 - [10.1]{.pnum} if <code>TD<sub><i>i</i></sub></code> is `reference_wrapper<T>`, [...]
 - [10.2]{.pnum} if the value of <code>is_bind_expression_v&lt;TD<sub><i>i</i></sub>&gt;</code>
 is `true`, the argument is <code>[td<sub><i>i</i></sub>]{.rm}
-[static_cast&lt;TD<sub><i>i</i></sub> <i>cv</i> &&gt;]{.addu}(std::forward&lt;U<sub>j</sub>&gt;(u<sub>j</sub>)...)</code>
+[static_cast&lt;TD<sub><i>i</i></sub> <i>cv</i> &&gt;(td<sub><i>i</i></sub>)]{.addu}(std::forward&lt;U<sub>j</sub>&gt;(u<sub>j</sub>)...)</code>
 and its type <code>V<sub><i>i</i></sub></code> is
 <code>invoke_result_t&lt;TD<sub><i>i</i></sub> <i>cv</i> &, U<sub><i>j</i></sub>...&gt;&&</code>;
 - [10.3]{.pnum} if the value `j` of [...] 
