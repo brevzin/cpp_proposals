@@ -460,9 +460,10 @@ of type `const C`, either:
 >   - [3.2.1]{.pnum} [All of `C`'s base class subobjects and non-static data
 members have strong structural equality.]{.addu}
 >   - [3.2.2]{.pnum} [`C` has no `mutable` or `volatile` subobjects.]{.addu}
->   - [3.2.3]{.pnum} [Overload resolution performed on the expression
-`x == x` succeds and finds either a friend or public member `==` operator
-defined as defaulted in the definition of `C`.]{.addu}
+>   - [3.2.3]{.pnum} [Overload resolution
+performed among the _member-declaration_ s in the definition of `C` for the
+expression `x == x` succeeds and finds either a friend or public member `==`
+operator that is defined as defaulted.]{.addu}
 
 
 Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle the error cases:
