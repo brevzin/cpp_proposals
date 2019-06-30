@@ -410,6 +410,7 @@ namespace xstd {
     get(Tuple const& v) {      // is necessary
         return v.[I];
     }
+}
 ```
 
 Although since the syntax directly allows for `v.[0]`, why would anyone write
@@ -444,6 +445,18 @@ constexpr decltype(auto) apply(F&& f, T@~0~@ t@~0~@, T@~1~@ t@~1~@, ..., T@~N-1~
 ```
 
 And then we unpack each of these `...`s through the appropriate `operator...`s.
+
+Similarly, `tuple_cat` would be:
+
+```cpp
+template <typename... Tuples>
+constexpr std::tuple<Tuples.[:]... ...> tuple_cat(Tuples&&... tuples) {
+    return {std::forward<Tuples>(tuples).[:]... ...};
+}
+```
+
+Admitedly, six `.`s is a little cryptic. But is it any worse than the current
+implementation?
 
 ## Default unpacking
 
@@ -563,6 +576,21 @@ public:
     // ... which possibly reads better if you take an alias first
     using D = T[N];
     Vector(D.[:]... vals);
+};
+```
+
+Note that this behaves differently from the homogenous variadic function packs
+paper [@P1219R1]:
+
+```cpp
+template <typename T, int N>
+class Vector {
+public:
+    // independently deduces each ts and requires that
+    // they all deduce to T. As opposed to the previous
+    // implementation which behaves as if the constructor
+    // were not a template, just that it took N T's.
+    Vector(T... ts) requires (sizeof...(Ts) == N);
 };
 ```
 
