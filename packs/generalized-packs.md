@@ -1005,7 +1005,7 @@ block-scope variable packs. You can declare alias packs.
 These can be directly unpacked when in non-dependent contexts. 
 
 You can declare packs within structured binding declarations (this paper may
-we well just subsume [@P1065R0]). 
+we well just subsume [@P1061R0]). 
 
 ## Pack-like type
 
