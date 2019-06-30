@@ -104,7 +104,8 @@ namespace xstd {
     class tuple {
     public:
         constexpr tuple() requires (DefaultConstructible<Ts> && ...)
-            = default;
+            : elems()...
+        { }
         
         constexpr tuple(Ts const&... args)
                 requires (CopyConstructible<Ts> && ...)
@@ -220,7 +221,7 @@ namespace xstd {
 This isn't quite right though, since we want to constrain `tuple_element` here.
 In the wild, this is fine, since `Tuple.[I]` will be SFINAE-friendly (simply
 discard the overload if the type either does not provide a pack template or
-or the _constant-expression_ `I` is out of bounds for the size of the pack).
+the _constant-expression_ `I` is out of bounds for the size of the pack).
 
 We have the operator `sizeof...`, which takes a pack. We just need a way of
 passing the pack itself. To do that, this paper proposes the syntax `T.[:]`:
@@ -405,9 +406,8 @@ namespace xstd {
         Ts... elems;
     };
     
-    template <size_t I, typeanme Tuple>
-    constexpr Tuple.[I] const& // this is SFINAE-friendly, no requires-clause
-    get(Tuple const& v) {      // is necessary
+    template <size_t I, typename... Ts>
+    constexpr auto const& get(tuple<Ts...> const& v) noexcept {
         return v.[I];
     }
 }

@@ -588,17 +588,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">class</span> tuple <span class="op">{</span></span>
 <span id="cb4-4"><a href="#cb4-4"></a>    <span class="kw">public</span><span class="op">:</span></span>
 <span id="cb4-5"><a href="#cb4-5"></a>        <span class="kw">constexpr</span> tuple<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>DefaultConstructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>            <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb4-7"><a href="#cb4-7"></a>        </span>
-<span id="cb4-8"><a href="#cb4-8"></a>        <span class="kw">constexpr</span> tuple<span class="op">(</span>Ts <span class="kw">const</span><span class="op">&amp;...</span> args<span class="op">)</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>                <span class="kw">requires</span> <span class="op">(</span>CopyConstructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a>            <span class="op">:</span> elems<span class="op">(</span>args<span class="op">)...</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a>        <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a></span>
-<span id="cb4-13"><a href="#cb4-13"></a>    <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a>        Ts<span class="op">...</span> elems;</span>
-<span id="cb4-15"><a href="#cb4-15"></a>    <span class="op">}</span>;</span>
-<span id="cb4-16"><a href="#cb4-16"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb4-6"><a href="#cb4-6"></a>            <span class="op">:</span> elems<span class="op">()...</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        </span>
+<span id="cb4-9"><a href="#cb4-9"></a>        <span class="kw">constexpr</span> tuple<span class="op">(</span>Ts <span class="kw">const</span><span class="op">&amp;...</span> args<span class="op">)</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>                <span class="kw">requires</span> <span class="op">(</span>CopyConstructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>            <span class="op">:</span> elems<span class="op">(</span>args<span class="op">)...</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a></span>
+<span id="cb4-14"><a href="#cb4-14"></a>    <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>        Ts<span class="op">...</span> elems;</span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="op">}</span>;</span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="op">}</span></span></code></pre></div>
 <p>Note the new pack expansion in the <em>mem-initializer</em>. This is a new ability this paper is proposing. It wouldn’t have made sense if you could not declare a member variable pack.</p>
 <p>Let’s pick a more complex constructor. A <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> can be constructed from a <code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> if <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">2</span></code> and the two corresponding types are convertible. How would we implement that? To do that check, we need to get the corresponding types. How do we get the first and second types from <code class="sourceCode cpp">Ts</code>?</p>
 <h2 id="pack-indexing"><span class="header-section-number">2.3</span> Pack Indexing<a href="#pack-indexing" class="self-link"></a></h2>
@@ -665,7 +666,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-11"><a href="#cb8-11"></a>        <span class="kw">using</span> type <span class="op">=</span> Tuple<span class="op">.[</span>I<span class="op">]</span>; <span class="co">// indexes via the pack Tuple::...</span></span>
 <span id="cb8-12"><a href="#cb8-12"></a>    <span class="op">}</span>;</span>
 <span id="cb8-13"><a href="#cb8-13"></a><span class="op">}</span></span></code></pre></div>
-<p>This isn’t quite right though, since we want to constrain <code class="sourceCode cpp">tuple_element</code> here. In the wild, this is fine, since <code class="sourceCode cpp">Tuple<span class="op">.[</span>I<span class="op">]</span></code> will be SFINAE-friendly (simply discard the overload if the type either does not provide a pack template or or the <em>constant-expression</em> <code class="sourceCode cpp">I</code> is out of bounds for the size of the pack).</p>
+<p>This isn’t quite right though, since we want to constrain <code class="sourceCode cpp">tuple_element</code> here. In the wild, this is fine, since <code class="sourceCode cpp">Tuple<span class="op">.[</span>I<span class="op">]</span></code> will be SFINAE-friendly (simply discard the overload if the type either does not provide a pack template or the <em>constant-expression</em> <code class="sourceCode cpp">I</code> is out of bounds for the size of the pack).</p>
 <p>We have the operator <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...</span></code>, which takes a pack. We just need a way of passing the pack itself. To do that, this paper proposes the syntax <code class="sourceCode cpp">T<span class="op">.[:]</span></code>:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
@@ -775,12 +776,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb21-8"><a href="#cb21-8"></a>        Ts<span class="op">...</span> elems;</span>
 <span id="cb21-9"><a href="#cb21-9"></a>    <span class="op">}</span>;</span>
 <span id="cb21-10"><a href="#cb21-10"></a>    </span>
-<span id="cb21-11"><a href="#cb21-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, typeanme Tuple<span class="op">&gt;</span></span>
-<span id="cb21-12"><a href="#cb21-12"></a>    <span class="kw">constexpr</span> Tuple<span class="op">.[</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="co">// this is SFINAE-friendly, no requires-clause</span></span>
-<span id="cb21-13"><a href="#cb21-13"></a>    get<span class="op">(</span>Tuple <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span>      <span class="co">// is necessary</span></span>
-<span id="cb21-14"><a href="#cb21-14"></a>        <span class="cf">return</span> v<span class="op">.[</span>I<span class="op">]</span>;</span>
-<span id="cb21-15"><a href="#cb21-15"></a>    <span class="op">}</span></span>
-<span id="cb21-16"><a href="#cb21-16"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb21-11"><a href="#cb21-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> get<span class="op">(</span>tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a>        <span class="cf">return</span> v<span class="op">.[</span>I<span class="op">]</span>;</span>
+<span id="cb21-14"><a href="#cb21-14"></a>    <span class="op">}</span></span>
+<span id="cb21-15"><a href="#cb21-15"></a><span class="op">}</span></span></code></pre></div>
 <p>Although since the syntax directly allows for <code class="sourceCode cpp">v<span class="op">.[</span><span class="dv">0</span><span class="op">]</span></code>, why would anyone write <code class="sourceCode cpp">xstd<span class="op">::</span>get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>v<span class="op">)</span></code>? And if you could write <code class="sourceCode cpp">f<span class="op">(</span>t<span class="op">.[:]...)</span></code> or, in non-dependent contexts, simply <code class="sourceCode cpp">f<span class="op">(</span>t<span class="op">...)</span></code>, why would anyone call <code class="sourceCode cpp">apply<span class="op">()</span></code>?</p>
 <h2 id="packs-of-tuples"><span class="header-section-number">2.8</span> Packs of tuples<a href="#packs-of-tuples" class="self-link"></a></h2>
 <p>The previous section showed how to write <code class="sourceCode cpp">apply</code> taking a single function and a single tuple. What if we generalized it it taking multiple tuples? We can do that:</p>
