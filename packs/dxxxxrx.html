@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-30" />
+  <meta name="dcterms.date" content="2019-07-01" />
   <title>Generalized pack declaration and usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-30</td>
+    <td>2019-07-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -891,15 +891,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Such a feature would provide an easy way to write a <code class="sourceCode cpp">std<span class="op">::</span>visit</code> that takes the variants first and the function last:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2"></a><span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> better_visit<span class="op">(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb31-3"><a href="#cb31-3"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> N <span class="op">=</span> <span class="kw">sizeof</span><span class="op">...(</span>Args<span class="op">)</span>;</span>
-<span id="cb31-4"><a href="#cb31-4"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">(</span></span>
-<span id="cb31-5"><a href="#cb31-5"></a>        <span class="co">// the function first</span></span>
-<span id="cb31-6"><a href="#cb31-6"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">.[</span>N<span class="op">-</span><span class="dv">1</span><span class="op">]&gt;(</span>args<span class="op">.[</span>N<span class="op">-</span><span class="dv">1</span><span class="op">])</span>,</span>
-<span id="cb31-7"><a href="#cb31-7"></a>        <span class="co">// all the variants next</span></span>
-<span id="cb31-8"><a href="#cb31-8"></a>        <span class="co">// note that both slices on both Args and args are necessary, otherwise</span></span>
-<span id="cb31-9"><a href="#cb31-9"></a>        <span class="co">// we end up with two packs of different sizes that need to get expanded</span></span>
-<span id="cb31-10"><a href="#cb31-10"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">.[</span><span class="dv">0</span><span class="op">:</span>N<span class="op">-</span><span class="dv">1</span><span class="op">]&gt;(</span>args<span class="op">.[</span><span class="dv">0</span><span class="op">:</span>N<span class="op">-</span><span class="dv">1</span><span class="op">])...)</span>;</span>
-<span id="cb31-11"><a href="#cb31-11"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb31-3"><a href="#cb31-3"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">(</span></span>
+<span id="cb31-4"><a href="#cb31-4"></a>        <span class="co">// the function first</span></span>
+<span id="cb31-5"><a href="#cb31-5"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">.[-</span><span class="dv">1</span><span class="op">]&gt;(</span>args<span class="op">.[-</span><span class="dv">1</span><span class="op">])</span>,</span>
+<span id="cb31-6"><a href="#cb31-6"></a>        <span class="co">// all the variants next</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a>        <span class="co">// note that both slices on both Args and args are necessary, otherwise</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>        <span class="co">// we end up with two packs of different sizes that need to get expanded</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">.[:-</span><span class="dv">1</span><span class="op">]&gt;(</span>args<span class="op">.[:-</span><span class="dv">1</span><span class="op">])...)</span>;</span>
+<span id="cb31-10"><a href="#cb31-10"></a><span class="op">}</span></span></code></pre></div>
 <p>Boost.Mp11 works by treating any variadic class template as a type list and providing operations that just work. A common pattern in the implementation of many of the metafunctions is to indirect to a class template specialization to do the pattern matching on the pack. This paper provides a more direct way to implement many of the facilities.</p>
 <p>We just need one helper that we will reuse every time (as opposed to each metafunction needing its own helper):</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> L<span class="op">&gt;</span> <span class="kw">struct</span> pack_impl;</span>
@@ -1009,7 +1008,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb39-3"><a href="#cb39-3"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
 <span id="cb39-4"><a href="#cb39-4"></a>  <span class="kw">consteval</span> <span class="op">{</span></span>
 <span id="cb39-5"><a href="#cb39-5"></a>    <span class="dt">int</span> counter <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb39-6"><a href="#cb39-6"></a>    <span class="cf">for</span><span class="op">...</span> <span class="op">(</span>meta<span class="op">::</span>info type <span class="op">:</span> reflexpr<span class="op">(</span>Types<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb39-6"><a href="#cb39-6"></a>    <span class="cf">for</span><span class="op">...</span> <span class="op">(</span>meta<span class="op">::</span>info type <span class="op">:</span> <span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb39-7"><a href="#cb39-7"></a>      <span class="kw">auto</span> fragment <span class="op">=</span> __fragment <span class="kw">struct</span> <span class="op">{</span></span>
 <span id="cb39-8"><a href="#cb39-8"></a>        <span class="kw">typename</span><span class="op">(</span>type<span class="op">)</span> unqualid<span class="op">(</span><span class="st">&quot;element_&quot;</span>, counter<span class="op">)</span>;</span>
 <span id="cb39-9"><a href="#cb39-9"></a>      <span class="op">}</span>;</span>
@@ -1026,7 +1025,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <tr class="even">
 <td><div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a><span class="co">// pack indexing (P1240)</span></span>
 <span id="cb41-2"><a href="#cb41-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb41-3"><a href="#cb41-3"></a><span class="kw">using</span> at <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span>reflexpr<span class="op">(</span>Ts<span class="op">)...}[</span>I<span class="op">])</span>;</span></code></pre></div></td>
+<span id="cb41-3"><a href="#cb41-3"></a><span class="kw">using</span> at <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Ts<span class="op">)...}[</span>I<span class="op">])</span>;</span></code></pre></div></td>
 <td><div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb42-2"><a href="#cb42-2"></a><span class="kw">using</span> at <span class="op">=</span> Ts<span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span></code></pre></div></td>
 </tr>
@@ -1035,7 +1034,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb43-2"><a href="#cb43-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
 <span id="cb43-3"><a href="#cb43-3"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
 <span id="cb43-4"><a href="#cb43-4"></a>  <span class="kw">consteval</span> <span class="kw">static</span> <span class="kw">auto</span> types<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb43-5"><a href="#cb43-5"></a>    <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span>reflexpr<span class="op">(</span>Types<span class="op">)...}</span>;</span>
+<span id="cb43-5"><a href="#cb43-5"></a>    <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">)...}</span>;</span>
 <span id="cb43-6"><a href="#cb43-6"></a>  <span class="op">}</span></span>
 <span id="cb43-7"><a href="#cb43-7"></a><span class="op">}</span>;</span>
 <span id="cb43-8"><a href="#cb43-8"></a></span>
@@ -1061,7 +1060,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb45-9"><a href="#cb45-9"></a></span>
 <span id="cb45-10"><a href="#cb45-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
 <span id="cb45-11"><a href="#cb45-11"></a><span class="dt">void</span> call_f<span class="op">(</span>Tuple <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb45-12"><a href="#cb45-12"></a>  f<span class="op">(</span>t<span class="op">.</span>unreflexpr<span class="op">(</span>t<span class="op">.</span>members<span class="op">())...)</span>;</span>
+<span id="cb45-12"><a href="#cb45-12"></a>  f<span class="op">(</span>t<span class="op">.</span><span class="kw">unreflexpr</span><span class="op">(</span>t<span class="op">.</span>members<span class="op">())...)</span>;</span>
 <span id="cb45-13"><a href="#cb45-13"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
 <span id="cb46-2"><a href="#cb46-2"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
@@ -1124,16 +1123,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb50-4"><a href="#cb50-4"></a>        T first;</span>
 <span id="cb50-5"><a href="#cb50-5"></a>        U second;</span>
 <span id="cb50-6"><a href="#cb50-6"></a>        </span>
-<span id="cb50-7"><a href="#cb50-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span>reflexpr<span class="op">(</span>T<span class="op">)</span>, reflexpr<span class="op">(</span>U<span class="op">)})</span>;</span>
+<span id="cb50-7"><a href="#cb50-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>T<span class="op">)</span>, <span class="kw">reflexpr</span><span class="op">(</span>U<span class="op">)})</span>;</span>
 <span id="cb50-8"><a href="#cb50-8"></a>        </span>
 <span id="cb50-9"><a href="#cb50-9"></a>        <span class="kw">consteval</span> <span class="kw">operator</span> <span class="kw">auto</span><span class="op">...()</span> <span class="kw">const</span> <span class="op">{</span></span>
 <span id="cb50-10"><a href="#cb50-10"></a>            <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span></span>
-<span id="cb50-11"><a href="#cb50-11"></a>                reflexpr<span class="op">(</span>first<span class="op">)</span>,</span>
-<span id="cb50-12"><a href="#cb50-12"></a>                reflexpr<span class="op">(</span>second<span class="op">)</span></span>
+<span id="cb50-11"><a href="#cb50-11"></a>                <span class="kw">reflexpr</span><span class="op">(</span>first<span class="op">)</span>,</span>
+<span id="cb50-12"><a href="#cb50-12"></a>                <span class="kw">reflexpr</span><span class="op">(</span>second<span class="op">)</span></span>
 <span id="cb50-13"><a href="#cb50-13"></a>            <span class="op">}</span>;</span>
 <span id="cb50-14"><a href="#cb50-14"></a>        <span class="op">}</span></span>
 <span id="cb50-15"><a href="#cb50-15"></a><span class="op">}</span></span></code></pre></div>
-<p>In the above example, <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">...)</span></code> would evaluate as <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">.</span>unreflexpr<span class="op">(</span>p<span class="op">.</span><span class="kw">operator</span><span class="op">...())...)</span></code></p>
+<p>In the above example, <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">...)</span></code> would evaluate as <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">.</span><span class="kw">unreflexpr</span><span class="op">(</span>p<span class="op">.</span><span class="kw">operator</span><span class="op">...())...)</span></code></p>
 <p>Of course, for this particular example, both the pack alias and operator could be defaulted.</p>
 <h2 id="stdinteger_sequence-and-ranges"><span class="header-section-number">3.2</span> <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code> and Ranges<a href="#stdinteger_sequence-and-ranges" class="self-link"></a></h2>
 <p>There is a paper in the pre-Cologne mailing specifially wanting to opt <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code> into expansion statements <span class="citation" data-cites="P1789R0">[<a href="#ref-P1789R0" role="doc-biblioref">P1789R0</a>]</span>. We could instead be able to opt it into the new pack protocol:</p>
@@ -1174,9 +1173,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Tuple-Like types – defined as types that satisfy <code class="sourceCode cpp">std<span class="op">::</span>tuple_size<span class="op">&lt;</span>E<span class="op">&gt;</span></code>, <code class="sourceCode cpp">std<span class="op">::</span>tuple_element<span class="op">&lt;</span>i, E<span class="op">&gt;</span></code>, and <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;()</span></code>.</li>
 <li>Types that have all of their non-static data members in the same class. This one is a little fuzzy because it’s based on accessibility.</li>
 </ol>
-<p>This paper proposes the notion of a <em>pack-like type</em>. A pack-like type is:</p>
+<p>This paper proposes the notion of a <em>pack-like type</em>. A pack-like type:</p>
 <ol type="1">
-<li>An unexpanded pack</li>
+<li>Is an unexpanded pack</li>
 <li>Is an array type</li>
 <li>Has one of:
 <ol type="a">
@@ -1184,9 +1183,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>a pack operator that returns a pack-like type</li>
 </ol>
 If any of these new special named members yields a reflection range, that range will be reified as appropriate before further consideration. If a type provides only a pack alias, it can be indexed into/unpacked as a type but not as a value. If a type provides only a pack operator, it can be indexed/unpacked as a value but not as a type.</li>
-<li>A Tuple-Like type (as per structured bindings)</li>
-<li>A constexpr range.</li>
-<li>Types that have all of their non-static data members in the same class (as per structured bindings).</li>
+<li>Is a Tuple-Like type (as per structured bindings)</li>
+<li>Is a constexpr range.</li>
+<li>Is a types that has all of its non-static data members in the same class (as per structured bindings).</li>
 </ol>
 <p>This paper proposes to redefine both structured bindings and expansion statements in terms of the pack-like type concept, unifying the two ideas. Any pack-like type can be expanded over or used as the right-hand side of a structured binding declaration.</p>
 <p>Any pack-like type can be indexed into, <code class="sourceCode cpp">T<span class="op">.[</span>i<span class="op">]</span></code> will yield the <code class="sourceCode cpp">i</code>th type (if <code class="sourceCode cpp">T</code> is a type) or <code class="sourceCode cpp">i</code>th value (if <code class="sourceCode cpp">T</code> is a variable) of the type. Any pack like type can be sliced and unpacked via <code class="sourceCode cpp">T<span class="op">.[:]...</span></code> or with specific indices.</p>

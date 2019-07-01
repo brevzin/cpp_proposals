@@ -611,14 +611,13 @@ the variants first and the function last:
 ```cpp
 template <typename... Args>
 constexpr decltype(auto) better_visit(Args&&... args) {
-    static constexpr auto N = sizeof...(Args);
     return std::visit(
         // the function first
-        std::forward<Args.[N-1]>(args.[N-1]),
+        std::forward<Args.[-1]>(args.[-1]),
         // all the variants next
         // note that both slices on both Args and args are necessary, otherwise
         // we end up with two packs of different sizes that need to get expanded
-        std::forward<Args.[0:N-1]>(args.[0:N-1])...);
+        std::forward<Args.[:-1]>(args.[:-1])...);
 }
 ```
 
@@ -1017,9 +1016,9 @@ To start with, structured bindings today works on three kinds of types:
 3. Types that have all of their non-static data members in the same class. This
 one is a little fuzzy because it's based on accessibility.
 
-This paper proposes the notion of a _pack-like type_. A pack-like type is:
+This paper proposes the notion of a _pack-like type_. A pack-like type:
 
-1. An unexpanded pack
+1. Is an unexpanded pack
 2. Is an array type
 3. Has one of:
     a. an unnamed pack alias type that names a pack-like type
@@ -1030,10 +1029,10 @@ will be reified as appropriate before further consideration. If a type provides
 only a pack alias, it can be indexed into/unpacked as a type but not as a value.
  If a type provides only a pack operator, it can be indexed/unpacked as a value
 but not as a type.
-4. A Tuple-Like type (as per structured bindings)
-5. A constexpr range.
-6. Types that have all of their non-static data members in the same class (as per
-structured bindings).
+4. Is a Tuple-Like type (as per structured bindings)
+5. Is a constexpr range.
+6. Is a types that has all of its non-static data members in the same class (as
+per structured bindings).
 
 This paper proposes to redefine both structured bindings and expansion statements
 in terms of the pack-like type concept, unifying the two ideas. Any pack-like
