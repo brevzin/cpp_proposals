@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-07-01" />
+  <meta name="dcterms.date" content="2019-07-02" />
   <title>Generalized pack declaration and usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-07-01</td>
+    <td>2019-07-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -1201,6 +1201,71 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb54-5"><a href="#cb54-5"></a><span class="dt">void</span> call_f<span class="op">(</span>Range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb54-6"><a href="#cb54-6"></a>    f<span class="op">(</span>r<span class="op">.[:]...)</span>;                   <span class="co">// .. and this also</span></span>
 <span id="cb54-7"><a href="#cb54-7"></a><span class="op">}</span></span></code></pre></div>
+<h2 id="abbreviated-lambdas"><span class="header-section-number">3.3</span> Abbreviated Lambdas<a href="#abbreviated-lambdas" class="self-link"></a></h2>
+<p>Depending on your perspective, this one may be more of an anti-example. But what these features allow, perhaps surprisingly, is for a way to write very short lambdas using placeholders. What <span class="citation" data-cites="P0573R2">[<a href="#ref-P0573R2" role="doc-biblioref">P0573R2</a>]</span> called hyper-abbreviated lambdas. Of course, the proposal doesn’t do that directly - we still need a macro:</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1"></a><span class="pp">#define FWD</span><span class="op">(</span>e<span class="op">)</span><span class="pp"> </span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>e<span class="op">)&amp;&amp;&gt;(</span>e<span class="op">)</span></span>
+<span id="cb55-2"><a href="#cb55-2"></a></span>
+<span id="cb55-3"><a href="#cb55-3"></a><span class="pp">#define L</span><span class="op">(...)</span><span class="pp">                          </span>\</span>
+<span id="cb55-4"><a href="#cb55-4"></a><span class="pp">    </span><span class="op">[&amp;](</span>autos<span class="op">&amp;&amp;...</span><span class="pp"> </span>_<span class="op">)</span><span class="pp">                   </span>\</span>
+<span id="cb55-5"><a href="#cb55-5"></a><span class="pp">        </span><span class="kw">requires</span><span class="pp"> </span><span class="kw">requires</span><span class="pp"> </span><span class="op">{</span><span class="pp">             </span>\</span>
+<span id="cb55-6"><a href="#cb55-6"></a><span class="pp">            </span><span class="ot">__VA_ARGS__</span>;<span class="pp">                </span>\</span>
+<span id="cb55-7"><a href="#cb55-7"></a><span class="pp">        </span><span class="op">}</span><span class="pp">                               </span>\</span>
+<span id="cb55-8"><a href="#cb55-8"></a><span class="pp">        </span><span class="op">-&gt;</span><span class="pp"> </span><span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">             </span>\</span>
+<span id="cb55-9"><a href="#cb55-9"></a><span class="pp">            </span><span class="cf">return</span><span class="pp"> </span><span class="ot">__VA_ARGS__</span>;<span class="pp">         </span>\</span>
+<span id="cb55-10"><a href="#cb55-10"></a><span class="pp">        </span><span class="op">}</span></span></code></pre></div>
+<p>We have a generic lambda whose default capture is <code class="sourceCode cpp"><span class="op">[&amp;]</span></code>, it takes a variadic parameter pack named <code class="sourceCode cpp">_</code>, constrains its call operator on the body, and then invokes it exactly.</p>
+<p>This allows for very terse lambda bodies by giving us both convenient accesss to the arguments. We basically end up with <span class="citation" data-cites="Boost.Lambda">[<a href="#ref-Boost.Lambda" role="doc-biblioref">Boost.Lambda</a>]</span>, but performant. Note that this uses <code class="sourceCode cpp">_<span class="op">.[</span><span class="dv">0</span><span class="op">]</span></code> to refer to the first argument, where both Boost.Lambda and then <code class="sourceCode cpp">std<span class="op">::</span>bind</code> used <code class="sourceCode cpp">_1</code>. There may be a clever solution to that.</p>
+<p>Here are some of the examples from the Abbreviated Lambda paper:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>C++20</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>This proposal with <code class="sourceCode cpp">L</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1"></a><span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...))</span> <span class="op">{</span></span>
+<span id="cb56-2"><a href="#cb56-2"></a>    <span class="cf">return</span> obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb56-3"><a href="#cb56-3"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1"></a>L<span class="op">(</span>obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>_<span class="op">)...)</span>;</span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{})</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">&gt;</span> _<span class="op">.[</span><span class="dv">1</span><span class="op">]))</span>;</span></code></pre></div></td>
+</tr>
+<tr class="odd">
+<td><div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1"></a><span class="co">// if id isn&#39;t overloaded/a template</span></span>
+<span id="cb60-2"><a href="#cb60-2"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{}</span>,</span>
+<span id="cb60-3"><a href="#cb60-3"></a>    <span class="op">&amp;</span>lib<span class="op">::</span>Widget<span class="op">::</span>id<span class="op">)</span>;</span>
+<span id="cb60-4"><a href="#cb60-4"></a>    </span>
+<span id="cb60-5"><a href="#cb60-5"></a><span class="co">// if it is</span></span>
+<span id="cb60-6"><a href="#cb60-6"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{}</span>,</span>
+<span id="cb60-7"><a href="#cb60-7"></a>    <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> w<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> w<span class="op">.</span>id<span class="op">()</span>; <span class="op">})</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">.[</span><span class="dv">0</span><span class="op">].</span>id<span class="op">()</span> <span class="op">&gt;</span> _<span class="op">.[</span><span class="dv">1</span><span class="op">].</span>id<span class="op">()))</span>;</span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1"></a><span class="co">// note the decltype(auto) is important here to avoid</span></span>
+<span id="cb62-2"><a href="#cb62-2"></a><span class="co">// extra copies</span></span>
+<span id="cb62-3"><a href="#cb62-3"></a>v <span class="op">|</span> view<span class="op">::</span>transform<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> key<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span></span>
+<span id="cb62-4"><a href="#cb62-4"></a>    <span class="op">{</span> <span class="cf">return</span> map<span class="op">[</span>key<span class="op">]</span>; <span class="op">})</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1"></a>v <span class="op">|</span> view<span class="op">::</span>transform<span class="op">(</span>L<span class="op">(</span>map<span class="op">[</span>_<span class="op">.[</span><span class="dv">0</span><span class="op">]]))</span></span></code></pre></div></td>
+</tr>
+<tr class="odd">
+<td><div class="sourceCode" id="cb64"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb64-1"><a href="#cb64-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>find_if<span class="op">(</span>v, <span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb64-2"><a href="#cb64-2"></a>    <span class="cf">return</span> e<span class="op">.</span>id<span class="op">()</span> <span class="op">==</span> id; <span class="op">})</span>;</span>
+<span id="cb64-3"><a href="#cb64-3"></a></span>
+<span id="cb64-4"><a href="#cb64-4"></a>std<span class="op">::</span>ranges<span class="op">::</span>find<span class="op">(</span>v, id, <span class="op">&amp;</span>lib<span class="op">::</span>Widget<span class="op">::</span>id<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb65"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb65-1"><a href="#cb65-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>find_if<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">.[</span><span class="dv">0</span><span class="op">].</span>id<span class="op">()</span> <span class="op">==</span> id<span class="op">))</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Note that the lambda <code class="sourceCode cpp">L<span class="op">(</span>_<span class="op">.[</span><span class="dv">1</span><span class="op">])</span></code> would be a SFINAE-friendly way of just returning the second argument.</p>
+<p>It’s tempting to try to give better names to the arguments, like providing the alias <code class="sourceCode cpp">_1</code> for <code class="sourceCode cpp">_<span class="op">.[</span><span class="dv">1</span><span class="op">]</span></code> (and to save 3 characters), but I cannot think of a way to do that while also maintaining the constraints in the requires clause.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>All the separate bits and pieces of this proposal have been presented one step at a time during the course of this paper. This section will formalize all the important notions.</p>
 <h2 id="pack-declarations"><span class="header-section-number">4.1</span> Pack declarations<a href="#pack-declarations" class="self-link"></a></h2>
@@ -1237,6 +1302,10 @@ If any of these new special named members yields a reflection range, that range 
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
+<div id="ref-Boost.Lambda">
+<p>[Boost.Lambda] Jaakko Järvi. 1999. Boost.Lambda. <br />
+<a href="https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html">https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html</a></p>
+</div>
 <div id="ref-Boost.Mp11">
 <p>[Boost.Mp11] Peter Dimov. 2017. Boost.Mp11: A C++11 metaprogramming library - 1.70.0. <br />
 <a href="https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html">https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html</a></p>
@@ -1280,6 +1349,10 @@ If any of these new special named members yields a reflection range, that range 
 <div id="ref-P0535R0">
 <p>[P0535R0] Matthew Woehlke. 2017. Generalized Unpacking and Parameter Pack Slicing. <br />
 <a href="https://wg21.link/p0535r0">https://wg21.link/p0535r0</a></p>
+</div>
+<div id="ref-P0573R2">
+<p>[P0573R2] Barry Revzin, Tomasz Kamiński. 2017. Abbreviated Lambdas for Fun and Profit. <br />
+<a href="https://wg21.link/p0573r2">https://wg21.link/p0573r2</a></p>
 </div>
 <div id="ref-P0780R2">
 <p>[P0780R2] Barry Revzin. 2018. Allow pack expansion in lambda init-capture. <br />

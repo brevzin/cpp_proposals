@@ -1045,6 +1045,114 @@ void call_f(Range auto&& r) {
 }
 ```
 
+## Abbreviated Lambdas
+
+Depending on your perspective, this one may be more of an anti-example. But what
+these features allow, perhaps surprisingly, is for a way to write very short
+lambdas using placeholders. What [@P0573R2] called hyper-abbreviated lambdas.
+Of course, the proposal doesn't do that directly - we still need a macro:
+
+```cpp
+#define FWD(e) static_cast<decltype(e)&&>(e)
+
+#define L(...)                          \
+    [&](autos&&... _)                   \
+        requires requires {             \
+            __VA_ARGS__;                \
+        }                               \
+        -> decltype(auto) {             \
+            return __VA_ARGS__;         \
+        }
+```
+
+We have a generic lambda whose default capture is `[&]`, it takes a variadic 
+parameter pack named `_`, constrains its call operator on the body, and then
+invokes it exactly.
+
+This allows for very terse lambda bodies by giving us both convenient accesss to
+the arguments. We basically end up with [@Boost.Lambda], but performant. Note
+that this uses `_.[0]` to refer to the first argument, where both Boost.Lambda
+and then `std::bind` used `_1`. There may be a clever solution to that. 
+
+Here are some of the examples from the Abbreviated Lambda paper:
+
+::: tonytable
+
+### C++20
+```cpp
+[&](auto&&... args) -> decltype(obj.func(FWD(args)...)) {
+    return obj.func(FWD(args)...);
+}
+```
+
+### This proposal with `L`
+```cpp
+L(obj.func(FWD(_)...);
+```
+
+---
+
+```cpp
+std::ranges::sort(v, std::greater{});
+```
+
+```cpp
+std::ranges::sort(v, L(_.[0] > _.[1]));
+```
+
+---
+
+```cpp
+// if id isn't overloaded/a template
+std::ranges::sort(v, std::greater{},
+    &lib::Widget::id);
+    
+// if it is
+std::ranges::sort(v, std::greater{},
+    [](auto&& w) -> decltype(auto) { return w.id(); });
+```
+
+```cpp
+std::ranges::sort(v, L(_.[0].id() > _.[1].id()));
+```
+
+---
+
+```cpp
+// note the decltype(auto) is important here to avoid
+// extra copies
+v | view::transform([&](auto&& key) -> decltype(auto)
+    { return map[key]; });
+```
+
+```cpp
+v | view::transform(L(map[_.[0]]))
+```
+
+---
+
+```cpp
+std::ranges::find_if(v, [&](auto&& e) {
+    return e.id() == id; });
+
+std::ranges::find(v, id, &lib::Widget::id);
+```
+
+```cpp
+std::ranges::find_if(v, L(_.[0].id() == id));
+```
+
+:::
+
+Note that the lambda `L(_.[1])` would be a SFINAE-friendly way of just returning
+the second argument.
+
+It's tempting to try to give better names to the arguments,
+like providing the alias `_1` for `_.[1]` (and to save 3 characters), but I cannot
+think of a way to do that while also maintaining the constraints in the requires
+clause. 
+
+
 # Proposal
 
 All the separate bits and pieces of this proposal have been presented one step
@@ -1123,6 +1231,14 @@ references:
     issued:
       - year: 2017
     URL: https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html
+  - id: Boost.Lambda
+    citation-label: Boost.Lambda
+    title: "Boost.Lambda"
+    author:
+      - family:  Jaakko Järvi
+    issued:
+      - year: 1999
+    URL: https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html
   - id: Smith.Pack
     citation-label: Smith.Pack
     title: "A problem with generalized lambda captures and pack expansion"
