@@ -988,7 +988,48 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h2 id="what-about-reflection"><span class="header-section-number">2.13</span> What about Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
+<h2 id="implementing-variant"><span class="header-section-number">2.13</span> Implementing variant<a href="#implementing-variant" class="self-link"></a></h2>
+<p>While most of this paper has dealt specifically with making a better <code class="sourceCode cpp">tuple</code>, the features proposed in this paper would also make it much easier to implement <code class="sourceCode cpp">variant</code> as well. One of the difficulties with <code class="sourceCode cpp">variant</code> implementions is that you need to have a <code class="sourceCode cpp"><span class="kw">union</span></code>. With this proposal, we can declare a variant pack too.</p>
+<p>Here are some parts of a variant implementation, to demonstrate what that might look like. Still need <em>some</em> metaprogramming facilities, but it’s certainly a a lot easier.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb39-2"><a href="#cb39-2"></a><span class="kw">class</span> variant <span class="op">{</span></span>
+<span id="cb39-3"><a href="#cb39-3"></a>    <span class="dt">int</span> index_;</span>
+<span id="cb39-4"><a href="#cb39-4"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb39-5"><a href="#cb39-5"></a>        Ts<span class="op">...</span> alts_;</span>
+<span id="cb39-6"><a href="#cb39-6"></a>    <span class="op">}</span>;</span>
+<span id="cb39-7"><a href="#cb39-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb39-8"><a href="#cb39-8"></a>    <span class="kw">constexpr</span> variant<span class="op">()</span> <span class="kw">requires</span> DefaultConstructible<span class="op">&lt;</span>Ts<span class="op">.[</span><span class="dv">0</span><span class="op">]&gt;</span></span>
+<span id="cb39-9"><a href="#cb39-9"></a>      <span class="op">:</span> index_<span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
+<span id="cb39-10"><a href="#cb39-10"></a>      , alts_<span class="op">.[</span><span class="dv">0</span><span class="op">]()</span></span>
+<span id="cb39-11"><a href="#cb39-11"></a>    <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb39-12"><a href="#cb39-12"></a></span>
+<span id="cb39-13"><a href="#cb39-13"></a>    <span class="op">~</span>variant<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>TriviallyDestructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb39-14"><a href="#cb39-14"></a>    <span class="op">~</span>variant<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb39-15"><a href="#cb39-15"></a>        mp_with_index<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)&gt;(</span>index_,</span>
+<span id="cb39-16"><a href="#cb39-16"></a>            <span class="op">[](</span><span class="kw">auto</span> I<span class="op">){</span> destroy_at<span class="op">(&amp;</span>alts_<span class="op">.[</span>I<span class="op">])</span>; <span class="op">})</span>;</span>
+<span id="cb39-17"><a href="#cb39-17"></a>    <span class="op">}</span></span>
+<span id="cb39-18"><a href="#cb39-18"></a><span class="op">}</span>;</span>
+<span id="cb39-19"><a href="#cb39-19"></a></span>
+<span id="cb39-20"><a href="#cb39-20"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb39-21"><a href="#cb39-21"></a><span class="kw">struct</span> variant_alternative;</span>
+<span id="cb39-22"><a href="#cb39-22"></a></span>
+<span id="cb39-23"><a href="#cb39-23"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb39-24"><a href="#cb39-24"></a>    <span class="kw">requires</span> <span class="op">(</span>I <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">))</span></span>
+<span id="cb39-25"><a href="#cb39-25"></a><span class="kw">struct</span> variant_alternative<span class="op">&lt;</span>I, variant<span class="op">&lt;</span>Ts<span class="op">...&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb39-26"><a href="#cb39-26"></a>    <span class="kw">using</span> type <span class="op">=</span> Ts<span class="op">.[</span>I<span class="op">]</span>;</span>
+<span id="cb39-27"><a href="#cb39-27"></a><span class="op">}</span>;</span>
+<span id="cb39-28"><a href="#cb39-28"></a></span>
+<span id="cb39-29"><a href="#cb39-29"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb39-30"><a href="#cb39-30"></a><span class="kw">constexpr</span> variant_alternative_t<span class="op">&lt;</span>I, variant<span class="op">&lt;</span>Types<span class="op">...&gt;&gt;*</span></span>
+<span id="cb39-31"><a href="#cb39-31"></a>get_if<span class="op">(</span>variant<span class="op">&lt;</span>Types<span class="op">...&gt;*</span> v<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb39-32"><a href="#cb39-32"></a>    <span class="cf">if</span> <span class="op">(</span>v<span class="op">.</span>index_ <span class="op">==</span> I<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb39-33"><a href="#cb39-33"></a>        <span class="cf">return</span> <span class="op">&amp;</span>v<span class="op">.</span>alts_<span class="op">.[</span>I<span class="op">]</span>;</span>
+<span id="cb39-34"><a href="#cb39-34"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb39-35"><a href="#cb39-35"></a>        <span class="cf">return</span> <span class="kw">nullptr</span>;</span>
+<span id="cb39-36"><a href="#cb39-36"></a>    <span class="op">}</span></span>
+<span id="cb39-37"><a href="#cb39-37"></a><span class="op">}</span></span></code></pre></div>
+<p>Directly indexing into the union variant members makes the implementation much easier to write and read. Not needing a recursive union template is a nice bonus.</p>
+<h2 id="what-about-reflection"><span class="header-section-number">2.14</span> What about Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
 <p>Two recent reflection papers (<span class="citation" data-cites="P1240R0">[<a href="#ref-P1240R0" role="doc-biblioref">P1240R0</a>]</span> and <span class="citation" data-cites="P1717R0">[<a href="#ref-P1717R0" role="doc-biblioref">P1717R0</a>]</span>) provide solutions for some of the problems this paper is attempting to solve. What follows is my best attempt to compare the reflection solutions to the generalized pack solutions presented here. I am not entirely sure about the examples on the left, but hopefully they are at least close enough to correct to be able to evaluate the differences.</p>
 <table>
 <thead>
@@ -1003,78 +1044,78 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="co">// member pack declaration (P1717)</span></span>
-<span id="cb39-2"><a href="#cb39-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
-<span id="cb39-3"><a href="#cb39-3"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
-<span id="cb39-4"><a href="#cb39-4"></a>  <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb39-5"><a href="#cb39-5"></a>    <span class="dt">int</span> counter <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb39-6"><a href="#cb39-6"></a>    <span class="cf">for</span><span class="op">...</span> <span class="op">(</span>meta<span class="op">::</span>info type <span class="op">:</span> <span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb39-7"><a href="#cb39-7"></a>      <span class="kw">auto</span> fragment <span class="op">=</span> __fragment <span class="kw">struct</span> <span class="op">{</span></span>
-<span id="cb39-8"><a href="#cb39-8"></a>        <span class="kw">typename</span><span class="op">(</span>type<span class="op">)</span> unqualid<span class="op">(</span><span class="st">&quot;element_&quot;</span>, counter<span class="op">)</span>;</span>
-<span id="cb39-9"><a href="#cb39-9"></a>      <span class="op">}</span>;</span>
-<span id="cb39-10"><a href="#cb39-10"></a>      <span class="op">-&gt;</span> fragment;</span>
-<span id="cb39-11"><a href="#cb39-11"></a>      <span class="op">++</span>counter;</span>
-<span id="cb39-12"><a href="#cb39-12"></a>    <span class="op">}</span></span>
-<span id="cb39-13"><a href="#cb39-13"></a>  <span class="op">}</span></span>
-<span id="cb39-14"><a href="#cb39-14"></a><span class="op">}</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
-<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
-<span id="cb40-3"><a href="#cb40-3"></a>  Types<span class="op">...</span> element;</span>
-<span id="cb40-4"><a href="#cb40-4"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="co">// member pack declaration (P1717)</span></span>
+<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a>  <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb40-5"><a href="#cb40-5"></a>    <span class="dt">int</span> counter <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb40-6"><a href="#cb40-6"></a>    <span class="cf">for</span><span class="op">...</span> <span class="op">(</span>meta<span class="op">::</span>info type <span class="op">:</span> <span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb40-7"><a href="#cb40-7"></a>      <span class="kw">auto</span> fragment <span class="op">=</span> __fragment <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb40-8"><a href="#cb40-8"></a>        <span class="kw">typename</span><span class="op">(</span>type<span class="op">)</span> unqualid<span class="op">(</span><span class="st">&quot;element_&quot;</span>, counter<span class="op">)</span>;</span>
+<span id="cb40-9"><a href="#cb40-9"></a>      <span class="op">}</span>;</span>
+<span id="cb40-10"><a href="#cb40-10"></a>      <span class="op">-&gt;</span> fragment;</span>
+<span id="cb40-11"><a href="#cb40-11"></a>      <span class="op">++</span>counter;</span>
+<span id="cb40-12"><a href="#cb40-12"></a>    <span class="op">}</span></span>
+<span id="cb40-13"><a href="#cb40-13"></a>  <span class="op">}</span></span>
+<span id="cb40-14"><a href="#cb40-14"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb41-2"><a href="#cb41-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
+<span id="cb41-3"><a href="#cb41-3"></a>  Types<span class="op">...</span> element;</span>
+<span id="cb41-4"><a href="#cb41-4"></a><span class="op">}</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a><span class="co">// pack indexing (P1240)</span></span>
-<span id="cb41-2"><a href="#cb41-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb41-3"><a href="#cb41-3"></a><span class="kw">using</span> at <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Ts<span class="op">)...}[</span>I<span class="op">])</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">using</span> at <span class="op">=</span> Ts<span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="co">// pack indexing (P1240)</span></span>
+<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb42-3"><a href="#cb42-3"></a><span class="kw">using</span> at <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Ts<span class="op">)...}[</span>I<span class="op">])</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2"></a><span class="kw">using</span> at <span class="op">=</span> Ts<span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span></code></pre></div></td>
 </tr>
 <tr class="odd">
-<td><div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a><span class="co">// generalized pack indexing (P1240)</span></span>
-<span id="cb43-2"><a href="#cb43-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
-<span id="cb43-3"><a href="#cb43-3"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
-<span id="cb43-4"><a href="#cb43-4"></a>  <span class="kw">consteval</span> <span class="kw">static</span> <span class="kw">auto</span> types<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb43-5"><a href="#cb43-5"></a>    <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">)...}</span>;</span>
-<span id="cb43-6"><a href="#cb43-6"></a>  <span class="op">}</span></span>
-<span id="cb43-7"><a href="#cb43-7"></a><span class="op">}</span>;</span>
-<span id="cb43-8"><a href="#cb43-8"></a></span>
-<span id="cb43-9"><a href="#cb43-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb43-10"><a href="#cb43-10"></a><span class="kw">using</span> tuple_element_t <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>T<span class="op">::</span>types<span class="op">()[</span>I<span class="op">])</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
-<span id="cb44-2"><a href="#cb44-2"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
-<span id="cb44-3"><a href="#cb44-3"></a>    <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> Types;</span>
-<span id="cb44-4"><a href="#cb44-4"></a><span class="op">}</span>;</span>
-<span id="cb44-5"><a href="#cb44-5"></a></span>
-<span id="cb44-6"><a href="#cb44-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb44-7"><a href="#cb44-7"></a><span class="kw">using</span> tuple_element_t <span class="op">=</span> T<span class="op">.[</span>I<span class="op">]</span>;</span></code></pre></div></td>
-</tr>
-<tr class="even">
+<td><div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a><span class="co">// generalized pack indexing (P1240)</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb44-3"><a href="#cb44-3"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
+<span id="cb44-4"><a href="#cb44-4"></a>  <span class="kw">consteval</span> <span class="kw">static</span> <span class="kw">auto</span> types<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb44-5"><a href="#cb44-5"></a>    <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Types<span class="op">)...}</span>;</span>
+<span id="cb44-6"><a href="#cb44-6"></a>  <span class="op">}</span></span>
+<span id="cb44-7"><a href="#cb44-7"></a><span class="op">}</span>;</span>
+<span id="cb44-8"><a href="#cb44-8"></a></span>
+<span id="cb44-9"><a href="#cb44-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb44-10"><a href="#cb44-10"></a><span class="kw">using</span> tuple_element_t <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>T<span class="op">::</span>types<span class="op">()[</span>I<span class="op">])</span>;</span></code></pre></div></td>
 <td><div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
 <span id="cb45-2"><a href="#cb45-2"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
-<span id="cb45-3"><a href="#cb45-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> members<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb45-4"><a href="#cb45-4"></a>    <span class="co">// return some range of vector&lt;meta::info&gt;</span></span>
-<span id="cb45-5"><a href="#cb45-5"></a>    <span class="co">// here that represents the data members.</span></span>
-<span id="cb45-6"><a href="#cb45-6"></a>    <span class="co">// I am not sure how to implement that</span></span>
-<span id="cb45-7"><a href="#cb45-7"></a>  <span class="op">}</span></span>
-<span id="cb45-8"><a href="#cb45-8"></a><span class="op">}</span>;</span>
-<span id="cb45-9"><a href="#cb45-9"></a></span>
-<span id="cb45-10"><a href="#cb45-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
-<span id="cb45-11"><a href="#cb45-11"></a><span class="dt">void</span> call_f<span class="op">(</span>Tuple <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb45-12"><a href="#cb45-12"></a>  f<span class="op">(</span>t<span class="op">.</span><span class="kw">unreflexpr</span><span class="op">(</span>t<span class="op">.</span>members<span class="op">())...)</span>;</span>
-<span id="cb45-13"><a href="#cb45-13"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb45-3"><a href="#cb45-3"></a>    <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> Types;</span>
+<span id="cb45-4"><a href="#cb45-4"></a><span class="op">}</span>;</span>
+<span id="cb45-5"><a href="#cb45-5"></a></span>
+<span id="cb45-6"><a href="#cb45-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb45-7"><a href="#cb45-7"></a><span class="kw">using</span> tuple_element_t <span class="op">=</span> T<span class="op">.[</span>I<span class="op">]</span>;</span></code></pre></div></td>
+</tr>
+<tr class="even">
 <td><div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
 <span id="cb46-2"><a href="#cb46-2"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
-<span id="cb46-3"><a href="#cb46-3"></a>  <span class="kw">operator</span> Types <span class="kw">const</span><span class="op">&amp;...()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> elems; <span class="op">}</span></span>
-<span id="cb46-4"><a href="#cb46-4"></a>  <span class="co">// or:</span></span>
-<span id="cb46-5"><a href="#cb46-5"></a>  <span class="kw">operator</span> <span class="op">...()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb46-6"><a href="#cb46-6"></a>  </span>
-<span id="cb46-7"><a href="#cb46-7"></a>  Types<span class="op">...</span> elems;</span>
+<span id="cb46-3"><a href="#cb46-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> members<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb46-4"><a href="#cb46-4"></a>    <span class="co">// return some range of vector&lt;meta::info&gt;</span></span>
+<span id="cb46-5"><a href="#cb46-5"></a>    <span class="co">// here that represents the data members.</span></span>
+<span id="cb46-6"><a href="#cb46-6"></a>    <span class="co">// I am not sure how to implement that</span></span>
+<span id="cb46-7"><a href="#cb46-7"></a>  <span class="op">}</span></span>
 <span id="cb46-8"><a href="#cb46-8"></a><span class="op">}</span>;</span>
 <span id="cb46-9"><a href="#cb46-9"></a></span>
 <span id="cb46-10"><a href="#cb46-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
 <span id="cb46-11"><a href="#cb46-11"></a><span class="dt">void</span> call_f<span class="op">(</span>Tuple <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb46-12"><a href="#cb46-12"></a>  <span class="cf">return</span> f<span class="op">(</span>t<span class="op">.[:]...)</span>;</span>
+<span id="cb46-12"><a href="#cb46-12"></a>  f<span class="op">(</span>t<span class="op">.</span><span class="kw">unreflexpr</span><span class="op">(</span>t<span class="op">.</span>members<span class="op">())...)</span>;</span>
 <span id="cb46-13"><a href="#cb46-13"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb47-2"><a href="#cb47-2"></a><span class="kw">struct</span> tuple <span class="op">{</span></span>
+<span id="cb47-3"><a href="#cb47-3"></a>  <span class="kw">operator</span> Types <span class="kw">const</span><span class="op">&amp;...()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> elems; <span class="op">}</span></span>
+<span id="cb47-4"><a href="#cb47-4"></a>  <span class="co">// or:</span></span>
+<span id="cb47-5"><a href="#cb47-5"></a>  <span class="kw">operator</span> <span class="op">...()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb47-6"><a href="#cb47-6"></a>  </span>
+<span id="cb47-7"><a href="#cb47-7"></a>  Types<span class="op">...</span> elems;</span>
+<span id="cb47-8"><a href="#cb47-8"></a><span class="op">}</span>;</span>
+<span id="cb47-9"><a href="#cb47-9"></a></span>
+<span id="cb47-10"><a href="#cb47-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
+<span id="cb47-11"><a href="#cb47-11"></a><span class="dt">void</span> call_f<span class="op">(</span>Tuple <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb47-12"><a href="#cb47-12"></a>  <span class="cf">return</span> f<span class="op">(</span>t<span class="op">.[:]...)</span>;</span>
+<span id="cb47-13"><a href="#cb47-13"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1084,82 +1125,82 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 id="stdpair"><span class="header-section-number">3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>pair</code><a href="#stdpair" class="self-link"></a></h2>
 <p>It might seem strange, in a paper proposing language features to make it easier to manipulate packs, to start with <code class="sourceCode cpp">tuple</code> (the quintessential pack example) and then transition to <code class="sourceCode cpp">pair</code> (a type that has no packs). But <code class="sourceCode cpp">pair</code> is in many ways just another <code class="sourceCode cpp">tuple</code>, so it should be usable in the same ways. If we will be able to inline unpack a tuple and call a function with its arguments, it would be somewhat jarring if we couldn’t do the same thing with a <code class="sourceCode cpp">pair</code>. So how do we?</p>
 <p>In the previous section, this paper laid out proposals to declare a variable pack, to provide for an alias pack and <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">...</span></code>, to index into each, and connect all of this into structured bindings. How would this work if we do <em>not</em> have a pack anywhere?</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
-<span id="cb47-2"><a href="#cb47-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
-<span id="cb47-3"><a href="#cb47-3"></a>    <span class="kw">struct</span> pair <span class="op">{</span></span>
-<span id="cb47-4"><a href="#cb47-4"></a>        T first;</span>
-<span id="cb47-5"><a href="#cb47-5"></a>        U second;</span>
-<span id="cb47-6"><a href="#cb47-6"></a>        </span>
-<span id="cb47-7"><a href="#cb47-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="op">???</span>;</span>
-<span id="cb47-8"><a href="#cb47-8"></a>        <span class="kw">operator</span> <span class="op">???</span> <span class="op">...</span> <span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">???</span>; <span class="op">}</span></span>
-<span id="cb47-9"><a href="#cb47-9"></a>    <span class="op">}</span>;</span>
-<span id="cb47-10"><a href="#cb47-10"></a><span class="op">}</span></span></code></pre></div>
-<p>The direction this paper proposes is a recursive one. I’m taking two ideas that are already present in the language and merging them:</p>
-<ul>
-<li><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;()</span></code> recurses down until it finds a pointer</li>
-<li>Expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span> can take either an unexpanded pack, a type that adheres to the structured bindings protocol, or a constexpr range .</li>
-</ul>
-<p>In the same vein, this paper proposes that both the pack operator and pack aliases can be defined in terms of an unexpanded pack or a type that defines one of these aliases:</p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
 <span id="cb48-2"><a href="#cb48-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
 <span id="cb48-3"><a href="#cb48-3"></a>    <span class="kw">struct</span> pair <span class="op">{</span></span>
 <span id="cb48-4"><a href="#cb48-4"></a>        T first;</span>
 <span id="cb48-5"><a href="#cb48-5"></a>        U second;</span>
 <span id="cb48-6"><a href="#cb48-6"></a>        </span>
-<span id="cb48-7"><a href="#cb48-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> tuple<span class="op">&lt;</span>T, U<span class="op">&gt;</span>;</span>
-<span id="cb48-8"><a href="#cb48-8"></a>        <span class="kw">operator</span> tuple<span class="op">&lt;</span>T<span class="op">&amp;</span>, U<span class="op">&amp;&gt;...</span> <span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{</span>first, second<span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb48-7"><a href="#cb48-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="op">???</span>;</span>
+<span id="cb48-8"><a href="#cb48-8"></a>        <span class="kw">operator</span> <span class="op">???</span> <span class="op">...</span> <span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">???</span>; <span class="op">}</span></span>
 <span id="cb48-9"><a href="#cb48-9"></a>    <span class="op">}</span>;</span>
 <span id="cb48-10"><a href="#cb48-10"></a><span class="op">}</span></span></code></pre></div>
+<p>The direction this paper proposes is a recursive one. I’m taking two ideas that are already present in the language and merging them:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;()</span></code> recurses down until it finds a pointer</li>
+<li>Expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span> can take either an unexpanded pack, a type that adheres to the structured bindings protocol, or a constexpr range .</li>
+</ul>
+<p>In the same vein, this paper proposes that both the pack operator and pack aliases can be defined in terms of an unexpanded pack or a type that defines one of these aliases:</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
+<span id="cb49-2"><a href="#cb49-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
+<span id="cb49-3"><a href="#cb49-3"></a>    <span class="kw">struct</span> pair <span class="op">{</span></span>
+<span id="cb49-4"><a href="#cb49-4"></a>        T first;</span>
+<span id="cb49-5"><a href="#cb49-5"></a>        U second;</span>
+<span id="cb49-6"><a href="#cb49-6"></a>        </span>
+<span id="cb49-7"><a href="#cb49-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> tuple<span class="op">&lt;</span>T, U<span class="op">&gt;</span>;</span>
+<span id="cb49-8"><a href="#cb49-8"></a>        <span class="kw">operator</span> tuple<span class="op">&lt;</span>T<span class="op">&amp;</span>, U<span class="op">&amp;&gt;...</span> <span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{</span>first, second<span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb49-9"><a href="#cb49-9"></a>    <span class="op">}</span>;</span>
+<span id="cb49-10"><a href="#cb49-10"></a><span class="op">}</span></span></code></pre></div>
 <p>With the definition of <code class="sourceCode cpp">xstd<span class="op">::</span>tuple</code> presented in this paper, this is now a light type to instantiate (or at least, as light as possible), so the extra overhead might not be a concern.</p>
 <p>In the following example:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a><span class="dt">void</span> f<span class="op">(</span><span class="dt">int</span><span class="op">&amp;</span>, <span class="dt">char</span><span class="op">&amp;)</span>;</span>
-<span id="cb49-2"><a href="#cb49-2"></a>xstd<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span><span class="op">&gt;</span> p<span class="op">{</span><span class="dv">1</span>, <span class="ch">&#39;x&#39;</span><span class="op">}</span>;</span>
-<span id="cb49-3"><a href="#cb49-3"></a>f<span class="op">(</span>p<span class="op">...)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a><span class="dt">void</span> f<span class="op">(</span><span class="dt">int</span><span class="op">&amp;</span>, <span class="dt">char</span><span class="op">&amp;)</span>;</span>
+<span id="cb50-2"><a href="#cb50-2"></a>xstd<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span><span class="op">&gt;</span> p<span class="op">{</span><span class="dv">1</span>, <span class="ch">&#39;x&#39;</span><span class="op">}</span>;</span>
+<span id="cb50-3"><a href="#cb50-3"></a>f<span class="op">(</span>p<span class="op">...)</span>;</span></code></pre></div>
 <p><code class="sourceCode cpp">p<span class="op">...</span></code> will invoke <code class="sourceCode cpp">p<span class="op">.</span><span class="kw">operator</span><span class="op">...()</span></code>, which gives a <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;</span>, <span class="dt">char</span><span class="op">&amp;&gt;</span></code>. That is not a pack, so we invoke its <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">...()</span></code>, which gives us a pack of <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code> and <code class="sourceCode cpp"><span class="dt">char</span><span class="op">&amp;</span></code>.</p>
 <p>A different, non-recursive approach would be to use the reflection facilities introduced in <span class="citation" data-cites="P1240R0">[<a href="#ref-P1240R0" role="doc-biblioref">P1240R0</a>]</span> and allow the returning of a consteval range:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a>namepsace xstd <span class="op">{</span></span>
-<span id="cb50-2"><a href="#cb50-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
-<span id="cb50-3"><a href="#cb50-3"></a>    <span class="kw">struct</span> pair <span class="op">{</span></span>
-<span id="cb50-4"><a href="#cb50-4"></a>        T first;</span>
-<span id="cb50-5"><a href="#cb50-5"></a>        U second;</span>
-<span id="cb50-6"><a href="#cb50-6"></a>        </span>
-<span id="cb50-7"><a href="#cb50-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>T<span class="op">)</span>, <span class="kw">reflexpr</span><span class="op">(</span>U<span class="op">)})</span>;</span>
-<span id="cb50-8"><a href="#cb50-8"></a>        </span>
-<span id="cb50-9"><a href="#cb50-9"></a>        <span class="kw">consteval</span> <span class="kw">operator</span> <span class="kw">auto</span><span class="op">...()</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb50-10"><a href="#cb50-10"></a>            <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span></span>
-<span id="cb50-11"><a href="#cb50-11"></a>                <span class="kw">reflexpr</span><span class="op">(</span>first<span class="op">)</span>,</span>
-<span id="cb50-12"><a href="#cb50-12"></a>                <span class="kw">reflexpr</span><span class="op">(</span>second<span class="op">)</span></span>
-<span id="cb50-13"><a href="#cb50-13"></a>            <span class="op">}</span>;</span>
-<span id="cb50-14"><a href="#cb50-14"></a>        <span class="op">}</span></span>
-<span id="cb50-15"><a href="#cb50-15"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1"></a>namepsace xstd <span class="op">{</span></span>
+<span id="cb51-2"><a href="#cb51-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
+<span id="cb51-3"><a href="#cb51-3"></a>    <span class="kw">struct</span> pair <span class="op">{</span></span>
+<span id="cb51-4"><a href="#cb51-4"></a>        T first;</span>
+<span id="cb51-5"><a href="#cb51-5"></a>        U second;</span>
+<span id="cb51-6"><a href="#cb51-6"></a>        </span>
+<span id="cb51-7"><a href="#cb51-7"></a>        <span class="kw">using</span> <span class="op">...</span> <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>T<span class="op">)</span>, <span class="kw">reflexpr</span><span class="op">(</span>U<span class="op">)})</span>;</span>
+<span id="cb51-8"><a href="#cb51-8"></a>        </span>
+<span id="cb51-9"><a href="#cb51-9"></a>        <span class="kw">consteval</span> <span class="kw">operator</span> <span class="kw">auto</span><span class="op">...()</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb51-10"><a href="#cb51-10"></a>            <span class="cf">return</span> std<span class="op">::</span>vector<span class="op">{</span></span>
+<span id="cb51-11"><a href="#cb51-11"></a>                <span class="kw">reflexpr</span><span class="op">(</span>first<span class="op">)</span>,</span>
+<span id="cb51-12"><a href="#cb51-12"></a>                <span class="kw">reflexpr</span><span class="op">(</span>second<span class="op">)</span></span>
+<span id="cb51-13"><a href="#cb51-13"></a>            <span class="op">}</span>;</span>
+<span id="cb51-14"><a href="#cb51-14"></a>        <span class="op">}</span></span>
+<span id="cb51-15"><a href="#cb51-15"></a><span class="op">}</span></span></code></pre></div>
 <p>In the above example, <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">...)</span></code> would evaluate as <code class="sourceCode cpp">f<span class="op">(</span>p<span class="op">.</span><span class="kw">unreflexpr</span><span class="op">(</span>p<span class="op">.</span><span class="kw">operator</span><span class="op">...())...)</span></code></p>
 <p>Of course, for this particular example, both the pack alias and operator could be defaulted.</p>
 <h2 id="stdinteger_sequence-and-ranges"><span class="header-section-number">3.2</span> <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code> and Ranges<a href="#stdinteger_sequence-and-ranges" class="self-link"></a></h2>
 <p>There is a paper in the pre-Cologne mailing specifially wanting to opt <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code> into expansion statements <span class="citation" data-cites="P1789R0">[<a href="#ref-P1789R0" role="doc-biblioref">P1789R0</a>]</span>. We could instead be able to opt it into the new pack protocol:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Ints<span class="op">&gt;</span></span>
-<span id="cb51-2"><a href="#cb51-2"></a><span class="kw">struct</span> integer_sequence <span class="op">{</span></span>
-<span id="cb51-3"><a href="#cb51-3"></a>    <span class="kw">operator</span> std<span class="op">::</span>integral_constant<span class="op">&lt;</span>T, Ints<span class="op">&gt;</span> <span class="op">...()</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb51-4"><a href="#cb51-4"></a>        <span class="cf">return</span> <span class="op">{}</span>;</span>
-<span id="cb51-5"><a href="#cb51-5"></a>    <span class="op">}</span></span>
-<span id="cb51-6"><a href="#cb51-6"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Ints<span class="op">&gt;</span></span>
+<span id="cb52-2"><a href="#cb52-2"></a><span class="kw">struct</span> integer_sequence <span class="op">{</span></span>
+<span id="cb52-3"><a href="#cb52-3"></a>    <span class="kw">operator</span> std<span class="op">::</span>integral_constant<span class="op">&lt;</span>T, Ints<span class="op">&gt;</span> <span class="op">...()</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb52-4"><a href="#cb52-4"></a>        <span class="cf">return</span> <span class="op">{}</span>;</span>
+<span id="cb52-5"><a href="#cb52-5"></a>    <span class="op">}</span></span>
+<span id="cb52-6"><a href="#cb52-6"></a><span class="op">}</span>;</span></code></pre></div>
 <p>One of the cool things we will be able to do in C++20 is implement tuple swap like so <span class="citation" data-cites="Stone.Swap">[<a href="#ref-Stone.Swap" role="doc-biblioref">Stone.Swap</a>]</span>:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> TYPES<span class="op">&gt;</span></span>
-<span id="cb52-2"><a href="#cb52-2"></a><span class="kw">constexpr</span></span>
-<span id="cb52-3"><a href="#cb52-3"></a><span class="dt">void</span> tuple<span class="op">&lt;</span>TYPES<span class="op">...&gt;::</span>swap<span class="op">(</span>tuple<span class="op">&amp;</span> other<span class="op">)</span></span>
-<span id="cb52-4"><a href="#cb52-4"></a>   <span class="kw">noexcept</span><span class="op">((</span>is_nothrow_swappable_v<span class="op">&lt;</span>TYPES<span class="op">&gt;</span> <span class="kw">and</span> <span class="op">...))</span></span>
-<span id="cb52-5"><a href="#cb52-5"></a><span class="op">{</span></span>
-<span id="cb52-6"><a href="#cb52-6"></a>   <span class="cf">for</span><span class="op">...(</span><span class="kw">constexpr</span> <span class="dt">size_t</span> N <span class="op">:</span> view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span><span class="bu">u</span>, <span class="kw">sizeof</span><span class="op">...(</span>TYPES<span class="op">)))</span> <span class="op">{</span></span>
-<span id="cb52-7"><a href="#cb52-7"></a>      swap<span class="op">(</span>get<span class="op">&lt;</span>N<span class="op">&gt;(*</span><span class="kw">this</span><span class="op">)</span>, get<span class="op">&lt;</span>N<span class="op">&gt;(</span>other<span class="op">))</span>;</span>
-<span id="cb52-8"><a href="#cb52-8"></a>   <span class="op">}</span></span>
-<span id="cb52-9"><a href="#cb52-9"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> TYPES<span class="op">&gt;</span></span>
+<span id="cb53-2"><a href="#cb53-2"></a><span class="kw">constexpr</span></span>
+<span id="cb53-3"><a href="#cb53-3"></a><span class="dt">void</span> tuple<span class="op">&lt;</span>TYPES<span class="op">...&gt;::</span>swap<span class="op">(</span>tuple<span class="op">&amp;</span> other<span class="op">)</span></span>
+<span id="cb53-4"><a href="#cb53-4"></a>   <span class="kw">noexcept</span><span class="op">((</span>is_nothrow_swappable_v<span class="op">&lt;</span>TYPES<span class="op">&gt;</span> <span class="kw">and</span> <span class="op">...))</span></span>
+<span id="cb53-5"><a href="#cb53-5"></a><span class="op">{</span></span>
+<span id="cb53-6"><a href="#cb53-6"></a>   <span class="cf">for</span><span class="op">...(</span><span class="kw">constexpr</span> <span class="dt">size_t</span> N <span class="op">:</span> view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span><span class="bu">u</span>, <span class="kw">sizeof</span><span class="op">...(</span>TYPES<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb53-7"><a href="#cb53-7"></a>      swap<span class="op">(</span>get<span class="op">&lt;</span>N<span class="op">&gt;(*</span><span class="kw">this</span><span class="op">)</span>, get<span class="op">&lt;</span>N<span class="op">&gt;(</span>other<span class="op">))</span>;</span>
+<span id="cb53-8"><a href="#cb53-8"></a>   <span class="op">}</span></span>
+<span id="cb53-9"><a href="#cb53-9"></a><span class="op">}</span></span></code></pre></div>
 <p>But what if I wanted to unpack a range into a function? It’s doesn’t seem so far fetched that if you can use an expansion statement over a range (which requires a known fixed size) that you should be able to use other language constructs that also require a known fixed size: structured bindings and tuple unpacking:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a><span class="dt">void</span> foo<span class="op">(</span><span class="dt">int</span><span class="op">...)</span>;</span>
-<span id="cb53-2"><a href="#cb53-2"></a><span class="kw">auto</span> <span class="op">[</span>a, b, c<span class="op">]</span> <span class="op">=</span> view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)</span>; <span class="co">// maybe this should work</span></span>
-<span id="cb53-3"><a href="#cb53-3"></a>foo<span class="op">(</span>view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)...)</span>;          <span class="co">// ... and this too</span></span>
-<span id="cb53-4"><a href="#cb53-4"></a></span>
-<span id="cb53-5"><a href="#cb53-5"></a><span class="dt">void</span> call_f<span class="op">(</span>Range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb53-6"><a href="#cb53-6"></a>    f<span class="op">(</span>r<span class="op">.[:]...)</span>;                   <span class="co">// .. and this also</span></span>
-<span id="cb53-7"><a href="#cb53-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1"></a><span class="dt">void</span> foo<span class="op">(</span><span class="dt">int</span><span class="op">...)</span>;</span>
+<span id="cb54-2"><a href="#cb54-2"></a><span class="kw">auto</span> <span class="op">[</span>a, b, c<span class="op">]</span> <span class="op">=</span> view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)</span>; <span class="co">// maybe this should work</span></span>
+<span id="cb54-3"><a href="#cb54-3"></a>foo<span class="op">(</span>view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)...)</span>;          <span class="co">// ... and this too</span></span>
+<span id="cb54-4"><a href="#cb54-4"></a></span>
+<span id="cb54-5"><a href="#cb54-5"></a><span class="dt">void</span> call_f<span class="op">(</span>Range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb54-6"><a href="#cb54-6"></a>    f<span class="op">(</span>r<span class="op">.[:]...)</span>;                   <span class="co">// .. and this also</span></span>
+<span id="cb54-7"><a href="#cb54-7"></a><span class="op">}</span></span></code></pre></div>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>All the separate bits and pieces of this proposal have been presented one step at a time during the course of this paper. This section will formalize all the important notions.</p>
 <h2 id="pack-declarations"><span class="header-section-number">4.1</span> Pack declarations<a href="#pack-declarations" class="self-link"></a></h2>

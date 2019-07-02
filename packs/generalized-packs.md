@@ -727,6 +727,61 @@ using mp_replace_front = apply_pack_impl<
 ```
 :::
 
+## Implementing variant
+
+While most of this paper has dealt specifically with making a better `tuple`,
+the features proposed in this paper would also make it much easier to implement
+`variant` as well. One of the difficulties with `variant` implementions is that
+you need to have a `union`. With this proposal, we can declare a variant pack
+too. 
+
+Here are some parts of a variant implementation, to demonstrate what that might
+look like. Still need _some_ metaprogramming facilities, but it's certainly a
+a lot easier.
+
+```cpp
+template <typename... Ts>
+class variant {
+    int index_;
+    union {
+        Ts... alts_;
+    };
+public:
+    constexpr variant() requires DefaultConstructible<Ts.[0]>
+      : index_(0)
+      , alts_.[0]()
+    { }
+
+    ~variant() requires (TriviallyDestructible<Ts> && ...) = default;
+    ~variant() {
+        mp_with_index<sizeof...(Ts)>(index_,
+            [](auto I){ destroy_at(&alts_.[I]); });
+    }
+};
+
+template <size_t I, typename T>
+struct variant_alternative;
+
+template <size_t I, typename... Ts>
+    requires (I < sizeof...(Ts))
+struct variant_alternative<I, variant<Ts...>> {
+    using type = Ts.[I];
+};
+
+template <size_t I, typename... Types>
+constexpr variant_alternative_t<I, variant<Types...>>*
+get_if(variant<Types...>* v) noexcept {
+    if (v.index_ == I) {
+        return &v.alts_.[I];
+    } else {
+        return nullptr;
+    }
+}
+```
+
+Directly indexing into the union variant members makes the implementation much
+easier to write and read. Not needing a recursive union template is a nice bonus.
+
 ## What about Reflection?
 
 Two recent reflection papers ([@P1240R0] and [@P1717R0]) provide solutions for
