@@ -203,7 +203,7 @@ In 17.3.1 [support.limits.general], add a feature test macro:
 </tr>
 <tr>
 <td>[`__cpp_lib_spaceship`]{.addu}</td>
-<td>[`201907L`]{.addu}</td>
+<td>[`??????L`]{.addu}</td>
 <td>[`<compare>`]{.addu}</td>
 </tr>
 </table>
@@ -607,7 +607,7 @@ template <typename T, typename Cat = partial_ordering>
 
 - [2.1]{.pnum} `(a <=> b == 0) == bool(a == b)`.
 - [2.2]{.pnum} `(a <=> b != 0) == bool(a != b)`.
-- [2.3]{.pnum} `((a <=> b) <=> 0)` and `(0 <=> (b <=> a))` are equal
+- [2.3]{.pnum} `((a <=> b) <=> 0)` and `(0 <=> (b <=> a))` are equal.
 - [2.4]{.pnum} If `Cat` is convertible to `strong_equality`, `T` models `EqualityComparable` ([concept.equalitycomparable]).
 - [2.5]{.pnum} If `Cat` is convertible to `partial_ordering`:
 	- [2.5.1]{.pnum} `(a <=> b < 0) == bool(a < b)`.
@@ -638,7 +638,7 @@ template <typename T, typename U,
 [3]{.pnum} Let `t` and `u` be lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. Let `C` be `common_reference_t<const remove_reference_t<T>&, const remove_reference_t<U>&>`. `T`, `U`, and `Cat` model `ThreeWayComparableWith<T, U, Cat>` only if:
 
 - [3.1]{.pnum} `t <=> u` and `u <=> t` have the same domain.
-- [3.2]{.pnum} `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` are equal
+- [3.2]{.pnum} `((t <=> u) <=> 0)` and `(0 <=> (u <=> t))` are equal.
 - [3.3]{.pnum} `(t <=> u == 0) == bool(t == u)`.
 - [3.4]{.pnum} `(t <=> u != 0) == bool(t != u)`.
 - [3.5]{.pnum} `Cat(t <=> u) == Cat(C(t) <=> C(u))`.
@@ -658,26 +658,26 @@ Add a new subclause [cmp.result] "spaceship invocation result":
 ::: add
 > The behavior of a program that adds specializations for the `compare_three_way_result` template defined in this subclause is undefined.
 
-> For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. If the expression `t <=> u` is well-formed when treated as an unevaluted operand ([expr.context]), the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
+> For the `compare_three_way_result` type trait applied to the types `T` and `U`, let `t` and `u` denote lvalues of types `const remove_reference_t<T>` and `const remove_reference_t<U>`, respectively. If the expression `t <=> u` is well-formed when treated as an unevaluated operand ([expr.context]), the member *typedef-name* `type` denotes the type `decltype(t <=> u)`. Otherwise, there is no member `type`.
 :::
 
 Add a new subclause [cmp.object] "spaceship object":
 
 ::: add
 ::: bq
-[1]{.pnum} In this subclause, `BUILTIN_PTR_3WAY(T, U)` for types `T` and `U` is a boolean constant expression. `BUILTIN_PTR_3WAY(T, U)` is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
+[1]{.pnum} In this subclause, _`BUILTIN_PTR_3WAY(T, U)`_ for types `T` and `U` is a boolean constant expression. _`BUILTIN_PTR_3WAY(T, U)`_ is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
 
 ```
 struct compare_three_way {
   template<class T, class U>
-	requires ThreeWayComparableWith<T,U> || BUILTIN_PTR_3WAY(T, U)
+	requires ThreeWayComparableWith<T, U> || @_BUILTIN_PTR_3WAY(T, U)_@
   constexpr auto operator()(T&& t, U&& u) const;
   
   using is_transparent = @_unspecified_@;
 };
 ```
 
-[2]{.pnum} *Expects*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` are equality-preserving ([concepts.equality]).
+[2]{.pnum} *Remarks*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` are equality-preserving ([concepts.equality]).
 
 [3]{.pnum} *Effects*: 
  
@@ -696,7 +696,7 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 
 - [1.1]{.pnum} If the decayed types of `E` and `F` differ, `strong_order(E, F)` is ill-formed. 
 - [1.2]{.pnum} Otherwise, `strong_ordering(strong_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::strong_order`.
-- [1.3]{.pnum} Otherwise, if the decayed type `T` of `E` and `F` is a floating point type, yields a value of type `strong_ordering` that is consistent with the ordering observed by `T`'s comparison operators, and if `numeric_limits<T>::is_iec559` is `true` is additionally consistent with the totalOrder operation as specified in ISO/IEC/IEEE 60599.
+- [1.3]{.pnum} Otherwise, if the decayed type `T` of `E` is a floating point type, yields a value of type `strong_ordering` that is consistent with the ordering observed by `T`'s comparison operators, and if `numeric_limits<T>::is_iec559` is `true` is additionally consistent with the `totalOrder` operation as specified in ISO/IEC/IEEE 60599.
 - [1.4]{.pnum} Otherwise, `strong_ordering(E <=> F)` if it is a well-formed expression.
 - [1.5]{.pnum} Otherwise, `strong_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `strong_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
 
@@ -704,7 +704,7 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 
 - [2.1]{.pnum} If the decayed types of `E` and `F` differ, `weak_order(E, F)` is ill-formed. 
 - [2.2]{.pnum} Otherwise, `weak_ordering(weak_order(E, F))` if it is a well-formed expression with overload resolution performed in a context that does not include a declaration of `std::weak_order`.
-- [2.3]{.pnum} Otherwise, if the decayed type `T` of `E` and `F` is a floating point type, yields a value of type `weak_ordering` that is consistent with the ordering observed by `T`'s comparison operators and `strong_order`, and if `numeric_liits<T>::is_iec559` is `true` is additionally consistent with the following equivalence classes, ordered from lesser to greater:
+- [2.3]{.pnum} Otherwise, if the decayed type `T` of `E` is a floating point type, yields a value of type `weak_ordering` that is consistent with the ordering observed by `T`'s comparison operators and `strong_order`, and if `numeric_limits<T>::is_iec559` is `true` is additionally consistent with the following equivalence classes, ordered from lesser to greater:
 	- [2.3.1]{.pnum} Together, all negative NaN values
 	- [2.3.2]{.pnum} Negative infinity
 	- [2.3.3]{.pnum} Each normal negative value
@@ -726,11 +726,11 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 - [3.4]{.pnum} Otherwise, `partial_ordering(weak_order(E, F))` if it is a well-formed expression.
 - [3.5]{.pnum} Otherwise, `partial_order(E, F)` is ill-formed. [*Note*: This case can result in substitution failure when `std::partial_order(E, F)` appears in the immediate context of a template instantiation. —*end note*]
 
-[4]{.pnum} The name `compare_strong_order_fallback` denotes a comparison customization point ([customization.point.object]) object. The expression `compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
+[4]{.pnum} The name `compare_strong_order_fallback` denotes a customization point object ([customization.point.object]). The expression `compare_strong_order_fallback(E, F)` for some subexpressions `E` and `F` is expression-equivalent ([defns.expression-equivalent]) to:
 
 - [4.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_strong_order_fallback(E, F)` is ill-formed.
 - [4.2]{.pnum} Otherwise, `strong_order(E, F)` if it is a well-formed expression.
-- [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+- [4.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are both well-formed and convertible to bool,
 
   > ```
   > E == F ? strong_ordering::equal :
@@ -746,7 +746,7 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 
 - [5.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_weak_order_fallback(E, F)` is ill-formed.
 - [5.2]{.pnum} Otherwise, `weak_order(E, F)` if it is a well-formed expression.
-- [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+- [5.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are both well-formed and convertible to bool,
 
   > ```
   > E == F ? weak_ordering::equal :
@@ -762,7 +762,7 @@ Replace the entirety of 17.11.4 [cmp.alg]. This section had the original design 
 
 - [6.1]{.pnum} If the decayed types of `E` and `F` differ, `compare_partial_order_fallback(E, F)` is ill-formed.
 - [6.2]{.pnum} Otherwise, `partial_order(E, F)` if it is a well-formed expression.
-- [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are each well-formed and convertible to bool,
+- [6.3]{.pnum} Otherwise, if the expressions `E == F` and `E < F` are both well-formed and convertible to bool,
 
   > ```
   > E == F ? partial_ordering::equivalent :
@@ -794,7 +794,7 @@ namespace std {
 - constexpr bool operator>(coroutine_handle<> x, coroutine_handle<> y) noexcept;
 - constexpr bool operator<=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
 - constexpr bool operator>=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
-+ constexpr strong_ordering operator<=>(coroutine_handle x, coroutine_handle y) noexcept;
++ constexpr strong_ordering operator<=>(coroutine_handle<> x, coroutine_handle<> y) noexcept;
 
   // 17.13.6 trivial awaitables
   [...]
@@ -819,7 +819,7 @@ constexpr bool operator<(coroutine_handle<> x, coroutine_handle<> y) noexcept;
 
 ::: {.addu}
 ```
-constexpr strong_ordering operator<=>(coroutine_handle x, coroutine_handle y) noexcept;
+constexpr strong_ordering operator<=>(coroutine_handle<> x, coroutine_handle<> y) noexcept;
 ```
 [3]{.pnum} *Returns*: `compare_three_way()(x.address(), y.address())`.
 :::
@@ -1041,7 +1041,7 @@ namespace std {
 +       requires (is_reference_v<T1> || is_reference_v<T2>)
 +     { return x.first == y.first && x.second == y.second; }
 +   friend constexpr common_comparison_category_t<@_synth-3way-result_@<T1>, @_synth-3way-result_@<T2>>
-+     operator<=>(const pair&, const pair&)
++     operator<=>(const pair& x, const pair& y)
 +     { @_see below_@ }
   };
 
@@ -1090,14 +1090,14 @@ template<class T1, class T2>
 ::: {.addu}
 ```
 friend constexpr common_comparison_category_t<@_synth-3way-result_@<T1>, @_synth-3way-result_@<T2>>
-  operator<=>(const pair&, const pair&);
+  operator<=>(const pair& x, const pair& y);
 ```
 [7]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```
-if (auto c = @_synth-3way_@(lhs.first, rhs.first); c != 0) return c;
-return @_synth-3way_@(lhs.second, rhs.second);
+if (auto c = @_synth-3way_@(x.first, y.first); c != 0) return c;
+return @_synth-3way_@(x.second, y.second);
 ```
 :::
 :::
@@ -1197,7 +1197,7 @@ template<class... TTypes, class... UTypes>
   constexpr common_comparison_category_t<@_synth-3way-result_@<TTypes, UTypes>...>
     operator<=>(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
 ```
-[10]{.pnum} *Requires*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`,
+[10]{.pnum} *Mandates*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`,
 both <code>_synth-3way_</code>`(get<i>(t), get<i>(u))` is a valid expression.
 `sizeof...(TTypes) == sizeof...(UTypes)`.
 
@@ -1206,8 +1206,8 @@ For any two zero-length tuples `t` and `u`, `t <=> u` returns `strong_ordering::
 
 ::: bq
 ```
-auto c = @_synth-3way_@(get<0>(t), get<0>(u));
-return (c != 0) ? c : (t@~tail~@ <=> u@~tail~@);
+if (auto c = @_synth-3way_@(get<0>(t), get<0>(u)); c != 0) return c;
+return t@~tail~@ <=> u@~tail~@;
 ```
 :::
 
@@ -1481,8 +1481,18 @@ template<class... Types> requires (ThreeWayComparable<Types> && ...)
     operator<=>(const variant<Types...>& v, const variant<Types...>& w);
 ```
 
-[13]{.pnum} *Returns*: Let `c` be `(v.index() + 1) <=> (w.index() + 1)`.
-If `c != 0`, `c`. Otherwise, `get<i>(v) <=> get<i>(w)` with `i` being `v.index()`.
+[13]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```
+if (w.valueless_by_exception()) return strong_ordering::greater;
+if (v.valueless_by_exception()) return strong_ordering::less;
+if (auto c = v.index() <=> w.index(); c != 0) return c;
+return get<i>(v) <=> get<i>(w);
+```
+:::
+
+with `i` being `v.index()`.
 :::
 :::
 
@@ -1587,7 +1597,7 @@ namespace std{
 +     requires ThreeWayComparableWith<typename unique_ptr<T1, D1>::pointer,
 +                                     typename unique_ptr<T2, D2>::pointer>
 +   compare_three_way_result_t<typename unique_ptr<T1, D1>::pointer, typename unique_ptr<T2, D2>::pointer>
-+     operator<=>(const unique_ptr& x, const unique_ptr<T2, D2>& y);
++     operator<=>(const unique_ptr<T1, D1>& x, const unique_ptr<T2, D2>& y);
 
   template<class T, class D>
     bool operator==(const unique_ptr<T, D>& x, nullptr_t) noexcept;
@@ -1720,7 +1730,7 @@ template<class T1, class D1, class T2, class D2>
     requires ThreeWayComparableWith<typename unique_ptr<T1, D1>::pointer,
                                     typename unique_ptr<T2, D2>::pointer>
   compare_three_way_result_t<typename unique_ptr<T1, D1>::pointer, typename unique_ptr<T2, D2>::pointer>
-    operator<=>(const unique_ptr& x, const unique_ptr<T2, D2>& y);
+    operator<=>(const unique_ptr<T1, D1>& x, const unique_ptr<T2, D2>& y);
 ```
 [10*]{.pnum} *Returns*: `compare_three_way()(x.get(), y.get())`.
 :::
@@ -2045,7 +2055,7 @@ Add a new row to 20.15.4.3 [meta.unary.prop], the "Type property predicates" tab
 
 ::: bq
 <table>
-<tr><th>Template</th><th>Condition</th><th>Preconditions></th></tr>
+<tr><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
 <tr><td>
 ::: {.addu}
 ```
@@ -2079,7 +2089,7 @@ constituting `T` be denoted by `T1` and `T2`, respectively, and let `D1` and
     - [3.3.2]{.pnum} [*Note*: None of the following will apply if there is a specialization
 	`common_type<D1, D2>`. —*end note*]
 	- [3.3.*]{.pnum} [Otherwise, if both `D1` and `D2` denote comparison
-	category type ([cmp.categories.pre]), let `C` denote the common comparison
+	category types ([cmp.categories.pre]), let `C` denote the common comparison
 	type ([class.spaceship]) of `D1` and `D2`.]{.addu}
     - [3.3.3]{.pnum} Otherwise, if `decay_t<decltype(false ? declval<D1>() : declval<D2>())>`
 	denotes a valid type, let `C` denote that type.
@@ -2094,7 +2104,7 @@ such a type `C`, the member typedef-name `type` shall denote the same type, if a
 as `common_type_t<C, R...>`. Otherwise, there shall be no member `type`.
 :::
 
-Change 20.17.2 [type.index.overview]. Note that the relational operators on
+Change 20.17.2 [type.index.overview]. **For the reviewer**: note that the relational operators on
 `type_index` are based on `type_info::before` (effectively `<`). `type_info`
 _could_ provide a three-way ordering function, but does not. Since an important
 motivation for the existence of `type_index` is to be used as a key in an
@@ -2174,7 +2184,7 @@ return strong_ordering::greater;
 :::
 :::
 
-Change 20.19.1 [charconv.syn]:
+Change 20.19.1 [charconv.syn] (from [@P1191R0]):
 
 ::: bq
 ```diff
@@ -2379,7 +2389,7 @@ namespace std {
 +                         const basic_string<charT, traits, Allocator>& rhs) noexcept;
 + template<class charT, class traits, class Allocator>
 +   @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
-+                         const charT* rhs) noexcept;
++                         const charT* rhs);
 
 
   [...]
@@ -2425,7 +2435,7 @@ Change 21.3.3.2 [string.cmp]:
    
 -  template<class charT, class traits, class Allocator>
 -    bool operator<=(const basic_string<charT, traits, Allocator>& lhs,
-                     const basic_string<charT, traits, Allocator>& rhs) noexcept;
+-                    const basic_string<charT, traits, Allocator>& rhs) noexcept;
 -  template<class charT, class traits, class Allocator>
 -    bool operator<=(const charT* lhs, const basic_string<charT, traits, Allocator>& rhs);
 -  template<class charT, class traits, class Allocator>
@@ -2444,7 +2454,7 @@ Change 21.3.3.2 [string.cmp]:
 +                          const basic_string<charT, traits, Allocator>& rhs) noexcept;
 +  template<class charT, class traits, class Allocator>
 +    @_see below_@ operator<=>(const basic_string<charT, traits, Allocator>& lhs,
-+                          const charT* rhs) noexcept;
++                          const charT* rhs);
 ```
 [1]{.pnum} *Effects*: Let `op` be the operator. Equivalent to:
 
@@ -2494,7 +2504,7 @@ namespace std {
 ```
 :::
 
-Add `<=>` to the table at the beginning of 21.4.3 [string.view.comparisons]:
+Add `<=>` to the table at the beginning of 21.4.3 [string.view.comparison]:
 
 ::: bq
 
@@ -2506,6 +2516,30 @@ Add `<=>` to the table at the beginning of 21.4.3 [string.view.comparisons]:
 <tr><td>[<code>sv <=> t</code>]{.addu}</td><td>[<code>sv <=> S(t)</code>]{.addu}</td></tr>
 </table>
 
+:::
+
+Remove the redundant `operator==` in the example in 21.4.3 [string.view.comparison]:
+
+::: bq
+[*Example*: A sample conforming implementation for `operator==` would be:
+```diff
+  template<class charT, class traits>
+    constexpr bool operator==(basic_string_view<charT, traits> lhs,
+                              basic_string_view<charT, traits> rhs) noexcept {
+      return lhs.compare(rhs) == 0;
+    }
+  template<class charT, class traits>
+    constexpr bool operator==(basic_string_view<charT, traits> lhs,
+                              type_identity_t<basic_string_view<charT, traits>> rhs) noexcept {
+      return lhs.compare(rhs) == 0;
+    }
+- template<class charT, class traits>
+-   constexpr bool operator==(type_identity_t<basic_string_view<charT, traits>> lhs,
+-                             basic_string_view<charT, traits> rhs) noexcept {
+-     return lhs.compare(rhs) == 0;
+-   }
+```
+—*end example*]
 :::
 
 Change the rest of 21.4.3 [string.view.comparisons]:
@@ -2567,6 +2601,7 @@ otherwise `R` is `weak_ordering`.
 
 ## Clause 22: Containers library
 
+**Reviewer's note**:
 `array`'s comparisons move to be hidden friends to allow for use as non-type
 template parameters. All the other containers drop `!=` and, if they have
 relational operators, those get replaced with a `<=>`.
