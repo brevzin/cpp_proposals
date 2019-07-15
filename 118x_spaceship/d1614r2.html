@@ -1722,10 +1722,12 @@ Header(s)
 <span id="cb92-3"><a href="#cb92-3"></a>    operator&lt;=&gt;(const variant&lt;Types...&gt;&amp; v, const variant&lt;Types...&gt;&amp; w);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">13</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
-<div class="sourceCode" id="cb93"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb93-1"><a href="#cb93-1"></a>if (w.valueless_by_exception()) return strong_ordering::greater;</span>
-<span id="cb93-2"><a href="#cb93-2"></a>if (v.valueless_by_exception()) return strong_ordering::less;</span>
-<span id="cb93-3"><a href="#cb93-3"></a>if (auto c = v.index() &lt;=&gt; w.index(); c != 0) return c;</span>
-<span id="cb93-4"><a href="#cb93-4"></a>return get&lt;i&gt;(v) &lt;=&gt; get&lt;i&gt;(w);</span></code></pre></div>
+<div class="sourceCode" id="cb93"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb93-1"><a href="#cb93-1"></a>if (v.valueless_by_exception() &amp;&amp; w.valueless_by_exception())</span>
+<span id="cb93-2"><a href="#cb93-2"></a>  return strong_ordering::equal;</span>
+<span id="cb93-3"><a href="#cb93-3"></a>if (v.valueless_by_exception()) return strong_ordering::less;</span>
+<span id="cb93-4"><a href="#cb93-4"></a>if (w.valueless_by_exception()) return strong_ordering::greater;</span>
+<span id="cb93-5"><a href="#cb93-5"></a>if (auto c = v.index() &lt;=&gt; w.index(); c != 0) return c;</span>
+<span id="cb93-6"><a href="#cb93-6"></a>return get&lt;i&gt;(v) &lt;=&gt; get&lt;i&gt;(w);</span></code></pre></div>
 </blockquote>
 <p>with <code class="sourceCode cpp">i</code> being <code class="sourceCode cpp">v<span class="op">.</span>index<span class="op">()</span></code>.</p>
 </div>

@@ -1494,8 +1494,10 @@ template<class... Types> requires (ThreeWayComparable<Types> && ...)
 
 ::: bq
 ```
-if (w.valueless_by_exception()) return strong_ordering::greater;
+if (v.valueless_by_exception() && w.valueless_by_exception())
+  return strong_ordering::equal;
 if (v.valueless_by_exception()) return strong_ordering::less;
+if (w.valueless_by_exception()) return strong_ordering::greater;
 if (auto c = v.index() <=> w.index(); c != 0) return c;
 return get<i>(v) <=> get<i>(w);
 ```
