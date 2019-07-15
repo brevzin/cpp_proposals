@@ -57,6 +57,12 @@ library types.
 - [@P1380R1] - extending the floating point customization points for
 `strong_order` and `weak_order`.
 
+A significant amount of the wording in this paper is removing equality operators
+that have now become redundant. After [@P1185R2], `==` and `!=` have been tied
+together at the language level. For the simple case where you need two types to
+have heterogeous equality, it is enough to simply write one `operator==(T, U)`
+and that will now work for both equality and inequality in both directions.
+
 # Friendship
 
 LEWG's unanimous preference was that the new `operator<=>`s be declared as hidden friends. It would follow therefore that we would move the `operator==`s to be declared the same way as well, since it would be pretty odd if the two different comparison operators had different semantics. 
@@ -2104,12 +2110,12 @@ such a type `C`, the member typedef-name `type` shall denote the same type, if a
 as `common_type_t<C, R...>`. Otherwise, there shall be no member `type`.
 :::
 
-Change 20.17.2 [type.index.overview]. **For the reviewer**: note that the relational operators on
+Change 20.17.2 [type.index.overview]. [Note that the relational operators on
 `type_index` are based on `type_info::before` (effectively `<`). `type_info`
 _could_ provide a three-way ordering function, but does not. Since an important
 motivation for the existence of `type_index` is to be used as a key in an
 associative container, we do not want to pessimize `<` - but do want to provide
-`<=>`.
+`<=>`.]{.ednote}
 
 ::: bq
 ```diff
@@ -2601,10 +2607,9 @@ otherwise `R` is `weak_ordering`.
 
 ## Clause 22: Containers library
 
-**Reviewer's note**:
-`array`'s comparisons move to be hidden friends to allow for use as non-type
+[`array`'s comparisons move to be hidden friends to allow for use as non-type
 template parameters. All the other containers drop `!=` and, if they have
-relational operators, those get replaced with a `<=>`.
+relational operators, those get replaced with a `<=>`.]{.ednote}
 
 Add to 22.2.1 [container.requirements.general]/4:
 
@@ -2911,9 +2916,7 @@ namespace std {
 ```
 :::
 
-Change 22.4.2 [associative.map.syn]. Instead of writing out the value type of
-`pair<const Key, T>`, I'm using _`see above`{.default}_ for the return types of
-all the `<=>`s.
+Change 22.4.2 [associative.map.syn].
 
 ::: bq
 ```diff
@@ -2944,8 +2947,8 @@ namespace std {
 -   bool operator>=(const map<Key, T, Compare, Allocator>& x,
 -                   const map<Key, T, Compare, Allocator>& y);
 + template<class Key, class T, class Compare, class Allocator>
-+   @_see above_@ operator<=>(const map<Key, T, Compare, Allocator>& x,
-+                         const map<Key, T, Compare, Allocator>& y);
++   @_synth-3way-result_@<pair<const Key, T>> operator<=>(const map<Key, T, Compare, Allocator>& x,
++                                                     const map<Key, T, Compare, Allocator>& y);
 
   [...]
   
@@ -2974,17 +2977,15 @@ namespace std {
 -   bool operator>=(const multimap<Key, T, Compare, Allocator>& x,
 -                   const multimap<Key, T, Compare, Allocator>& y);  
 + template<class Key, class T, class Compare, class Allocator>
-+   @_see above_@ operator<=>(const multimap<Key, T, Compare, Allocator>& x,
-+                         const multimap<Key, T, Compare, Allocator>& y);
++   @_synth-3way-result_@<pair<const Key, T>> operator<=>(const multimap<Key, T, Compare, Allocator>& x,
++                                                     const multimap<Key, T, Compare, Allocator>& y);
 
   [...]
 ]
 ```
 :::
 
-Change 22.4.3 [associative.set.syn]. These could just use `Key` directly, but
-decided to use _`see above`{.default}_ anyway just to keep the associative
-containers consistent.
+Change 22.4.3 [associative.set.syn].
 
 ::: bq
 ```diff
@@ -3014,8 +3015,8 @@ namespace std {
 -   bool operator>=(const set<Key, Compare, Allocator>& x,
 -                   const set<Key, Compare, Allocator>& y);
 + template<class Key, class Compare, class Allocator>
-+   @_see above_@ operator<=>(const set<Key, Compare, Allocator>& x,
-+                         const set<Key, Compare, Allocator>& y);
++   @_synth-3way-result_@<Key> operator<=>(const set<Key, Compare, Allocator>& x,
++                                      const set<Key, Compare, Allocator>& y);
 					
   [...]
   
@@ -3042,8 +3043,8 @@ namespace std {
 -   bool operator>=(const multiset<Key, Compare, Allocator>& x,
 -                   const multiset<Key, Compare, Allocator>& y);
 + template<class Key, class Compare, class Allocator>
-+   @_see above_@ operator<=>(const multiset<Key, Compare, Allocator>& x,
-+                         const multiset<Key, Compare, Allocator>& y);
++   @_synth-3way-result_@<Key> operator<=>(const multiset<Key, Compare, Allocator>& x,
++                                      const multiset<Key, Compare, Allocator>& y);
 
 
   [...]
@@ -3292,7 +3293,7 @@ namespace std {
     constexpr bool operator>=(
       const reverse_iterator<Iterator1>& x,
       const reverse_iterator<Iterator2>& y);  
-+ template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
++ template<class Iterator1, ThreeWayComparableWith<Iterator1, weak_equality> Iterator2>
 +   constexpr compare_three_way_result_t<Iterator1, Iterator2>
 +     operator<=>(const reverse_iterator<Iterator1>& x,
 +                 const reverse_iterator<Iterator2>& y);  	  
@@ -3320,7 +3321,7 @@ namespace std {
   template<class Iterator1, class Iterator2>
     constexpr bool operator>=(
       const move_iterator<Iterator1>& x, const move_iterator<Iterator2>& y);
-+ template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
++ template<class Iterator1, ThreeWayComparableWith<Iterator1, weak_equality> Iterator2>
 +   constexpr compare_three_way_result_t<Iterator1, Iterator2>
 +     operator<=>(const move_iterator<Iterator1>& x,
 +                 const move_iterator<Iterator2>& y);
@@ -3371,12 +3372,15 @@ to `bool`.
 
 ::: {.addu}
 ```
-template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
+template<class Iterator1, ThreeWayComparableWith<Iterator1, weak_equality> Iterator2>
   constexpr compare_three_way_result_t<Iterator1, Iterator2>
     operator<=>(const reverse_iterator<Iterator1>& x,
                 const reverse_iterator<Iterator2>& y);  	
 ```
-[13]{.pnum} *Returns*: `x.base() <=> y.base()`.
+[13]{.pnum} *Returns*: `y.base() <=> x.base()`.
+
+[*Note*: The argument order in the *Returns*: element is reversed
+because this is a reverse iterator. —*end note*]
 :::
 :::
 
@@ -3491,7 +3495,7 @@ to `bool`.
 
 ::: {.addu}
 ```
-template<class Iterator1, ThreeWayComparableWith<Iterator1> Iterator2>
+template<class Iterator1, ThreeWayComparableWith<Iterator1, weak_equality> Iterator2>
   constexpr compare_three_way_result_t<Iterator1, Iterator2>
     operator<=>(const move_iterator<Iterator1>& x,
                 const move_iterator<Iterator2>& y);     
@@ -4402,7 +4406,9 @@ friend constexpr bool operator!=(default_sentinel_t y, const inner_iterator& x);
 
 ## Clause 25: Algorithms library
 
-Remove `compare_3way` and rename `lexicographical_compare_3way`.
+[Remove `compare_3way` and rename `lexicographical_compare_3way`.
+At the discretion of the editors, change the name of the clause alg.3way to
+alg.threeway or alg.three.way.]{.ednote}
 
 Change 25.4 [algorithm.syn]:
 
@@ -4463,6 +4469,7 @@ and otherwise returns `strong_equality::nonequal`.
 ```
 [2]{.pnum} *Requires*: `Cmp` shall be a function object type whose return type
 is a comparison category type.
+
 [3]{.pnum} *Effects*: Lexicographically compares two ranges and produces a
 result of the strongest applicable comparison category type.
 Equivalent to:
@@ -4489,11 +4496,12 @@ return b1 != e1 ? strong_ordering::greater :
 
 ::: bq
 ```diff
-  return lexicographical_compare_3way(b1, e1, b2, e2,
+- return lexicographical_compare_3way(b1, e1, b2, e2,
 -                                     [](const auto& t, const auto& u) {
 -                                       return compare_3way(t, u);
 -                                     });
-+                                     compare_three_way());
++  return lexicographical_compare_three_way(b1, e1, b2, e2,
++                                           compare_three_way());
 ```
 
 :::
@@ -4892,23 +4900,23 @@ namespace std {
 -     bool operator!=(const leap& x, const sys_time<Duration>& y);
 -   template<class Duration>
 -     bool operator!=(const sys_time<Duration>& x, const leap& y);
--   template<class Duration>
--     bool operator< (const leap& x, const sys_time<Duration>& y);
--   template<class Duration>
--     bool operator< (const sys_time<Duration>& x, const leap& y);
--   template<class Duration>
--     bool operator> (const leap& x, const sys_time<Duration>& y);
--   template<class Duration>
--     bool operator> (const sys_time<Duration>& x, const leap& y);
--   template<class Duration>
--     bool operator<=(const leap& x, const sys_time<Duration>& y);
--   template<class Duration>
--     bool operator<=(const sys_time<Duration>& x, const leap& y);
--   template<class Duration>
--     bool operator>=(const leap& x, const sys_time<Duration>& y);
--   template<class Duration>
--     bool operator>=(const sys_time<Duration>& x, const leap& y);
-+   template<class Duration>
+    template<class Duration>
+      bool operator< (const leap& x, const sys_time<Duration>& y);
+    template<class Duration>
+      bool operator< (const sys_time<Duration>& x, const leap& y);
+    template<class Duration>
+      bool operator> (const leap& x, const sys_time<Duration>& y);
+    template<class Duration>
+      bool operator> (const sys_time<Duration>& x, const leap& y);
+    template<class Duration>
+      bool operator<=(const leap& x, const sys_time<Duration>& y);
+    template<class Duration>
+      bool operator<=(const sys_time<Duration>& x, const leap& y);
+    template<class Duration>
+      bool operator>=(const leap& x, const sys_time<Duration>& y);
+    template<class Duration>
+      bool operator>=(const sys_time<Duration>& x, const leap& y);
++   template<ThreeWayComparableWith<sys_seconds> Duration>
 +     auto operator<=>(const leap& x, const sys_time<Duration>& y);
 
 
@@ -5349,6 +5357,8 @@ template<class Duration>
   constexpr bool operator!=(const sys_time<Duration>& x, const leap& y) noexcept;
 ```
 [6]{.pnum} *Returns*: `!(x == y)`.
+:::
+
 ```
 template<class Duration>
   constexpr bool operator<(const leap& x, const sys_time<Duration>& y) noexcept;
@@ -5389,11 +5399,10 @@ template<class Duration>
   constexpr bool operator>=(const sys_time<Duration>& x, const leap& y) noexcept;
 ```
 [14]{.pnum} *Returns*: `!(x < y)`.
-:::
 
 ::: {.addu}
 ```
-template<class Duration>
+template<ThreeWayComparableWith<sys_seconds> Duration>
   constexpr auto operator<=>(const leap& x, const sys_time<Duration>& y) noexcept;
 ```
 [15]{.pnum} *Returns*: `x.date() <=> y`.
@@ -5842,8 +5851,8 @@ namespace std {
 ```
 :::
 
-Change 30.9.2 [re.submatch.op]. As a result, there should be nine functions left
-here: four `operator==`s, four `operator<=>`s, and the `operator<<`.
+Change 30.9.2 [re.submatch.op]. [As a result, there should be nine functions left
+here: four `operator==`s, four `operator<=>`s, and the `operator<<`.]{.ednote}
 
 ::: bq
 
@@ -5890,7 +5899,7 @@ template<class BiIter>
 template<class BiIter>
   auto operator<=>(const sub_match<BiIter>& lhs, const sub_match<BiIter>& rhs);
 ```
-[a]{.pnum} *Returns*: `static_cast<`_`SM_CAT`_`(BiIter)>(lhs.compare(rhs) >= 0)`.
+[a]{.pnum} *Returns*: `static_cast<`_`SM_CAT`_`(BiIter)>(lhs.compare(rhs) <=> 0)`.
 
 :::
 
@@ -6303,7 +6312,7 @@ No changes necessary.
 
 ## Clause 32: Thread support library
 
-Replace `thread::id`s operators with just `==` and `<=>`.
+[Replace `thread::id`s operators with just `==` and `<=>`.]{.ednote}
 
 Change 32.3.2.1 [thread.thread.id]:
 
@@ -6369,8 +6378,11 @@ bool operator>=(thread::id x, thread::id y) noexcept;
 ```
 strong_ordering operator<=>(thread::id x, thread::id y) noexcept;
 ```
-[a]{.pnum} *Returns*: A value such that `operator<=>` is a total ordering as
-described in [alg.sorting].
+[a]{.pnum} *Returns*: `strong_ordering::less` if `x` precedes `y` in the
+implementation-defined strict total order ([range.cmp]) over `thread::id`,
+`strong_ordering::greater` if `y` precedes `x`, and otherwise
+`strong_ordering::equal`.
+
 :::
 
 :::
