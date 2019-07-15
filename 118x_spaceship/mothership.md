@@ -193,6 +193,21 @@ Respecified: `strong_order()`, `weak_order()`, and `partial_order()`
 
 Removed: `compare_3way()`, `strong_equal()`, and `weak_equal()`
 
+In 17.3.1 [support.limits.general], add a feature test macro:
+
+<table>
+<tr>
+<th>Macro Name</th>
+<th>Value</th>
+<th>Header(s)</th>
+</tr>
+<tr>
+<td>[`__cpp_lib_spaceship`]{.addu}</td>
+<td>[`201907L`]{.addu}</td>
+<td>[`<compare>`]{.addu}</td>
+</tr>
+</table>
+
 In 17.7.2 [type.info], remove `operator!=`:
 
 ::: bq

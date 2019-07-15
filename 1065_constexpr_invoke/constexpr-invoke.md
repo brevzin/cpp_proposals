@@ -134,6 +134,21 @@ We don't seem to have a way to say that in Library, see also [@LWG2833] and
 code span.co { color: #898887; }
 </style>
 
+In 17.3.1 [support.limits.general], add a feature test macro:
+
+<table>
+<tr>
+<th>Macro Name</th>
+<th>Value</th>
+<th>Header(s)</th>
+</tr>
+<tr>
+<td>[`__cpp_lib_constexpr_invoke`]{.addu}</td>
+<td>[`201907L`]{.addu}</td>
+<td>[`<functional>`]{.addu}</td>
+</tr>
+</table>
+
 Add `constexpr` to several places in the synopsis in 20.14.1 [functional.syn]
 
 ::: bq
