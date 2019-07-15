@@ -1122,10 +1122,10 @@ Header(s)
 <div class="add" style="color: #006e28">
 
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In this subclause, <em><code class="sourceCode cpp">BUILTIN_PTR_3WAY<span class="op">(</span>T, U<span class="op">)</span></code></em> for types <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> is a boolean constant expression. <em><code class="sourceCode cpp">BUILTIN_PTR_3WAY<span class="op">(</span>T, U<span class="op">)</span></code></em> is <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> in the expression <code class="sourceCode cpp">declval<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="op">&lt;=&gt;</span> declval<span class="op">&lt;</span>U<span class="op">&gt;()</span></code> resolves to a built-in operator comparing pointers.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In this subclause, <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> for types <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> is a boolean constant expression. <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> in the expression <code class="sourceCode cpp">declval<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="op">&lt;=&gt;</span> declval<span class="op">&lt;</span>U<span class="op">&gt;()</span></code> resolves to a built-in operator comparing pointers.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1"></a>struct compare_three_way {</span>
 <span id="cb30-2"><a href="#cb30-2"></a>  template&lt;class T, class U&gt;</span>
-<span id="cb30-3"><a href="#cb30-3"></a>    requires ThreeWayComparableWith&lt;T, U&gt; || <em>BUILTIN_PTR_3WAY(T, U)</em></span>
+<span id="cb30-3"><a href="#cb30-3"></a>    requires ThreeWayComparableWith&lt;T, U&gt; || <em>BUILTIN_PTR_3WAY</em>(T, U)</span>
 <span id="cb30-4"><a href="#cb30-4"></a>  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp; u) const;</span>
 <span id="cb30-5"><a href="#cb30-5"></a>  </span>
 <span id="cb30-6"><a href="#cb30-6"></a>  using is_transparent = <em>unspecified</em>;</span>
@@ -1521,7 +1521,7 @@ Header(s)
 <div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
 <span id="cb72-2"><a href="#cb72-2"></a>  constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span>
 <span id="cb72-3"><a href="#cb72-3"></a>    operator&lt;=&gt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Mandates</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, both <code><em>synth-3way</em></code><code class="sourceCode cpp"><span class="op">(</span>get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span>, get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">))</span></code> is a valid expression. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Mandates</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, <code><em>synth-3way</em></code><code class="sourceCode cpp"><span class="op">(</span>get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span>, get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">))</span></code> is a valid expression. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Effects</em>: Performs a lexicographical comparison between <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>. For any two zero-length tuples <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>, <code class="sourceCode cpp">t <span class="op">&lt;=&gt;</span> u</code> returns <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>. Otherwise, equivalent to:</p>
 <blockquote>
 <div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>if (auto c = <em>synth-3way</em>(get&lt;0&gt;(t), get&lt;0&gt;(u)); c != 0) return c;</span>
@@ -2624,7 +2624,7 @@ Equivalent to
 </div>
 <p>—<em>end example</em>]</p>
 </blockquote>
-<p>Change the rest of 21.4.3 [string.view.comparisons]:</p>
+<p>Change the rest of 21.4.3 [string.view.comparison]:</p>
 <blockquote>
 <div class="sourceCode" id="cb154"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb154-1"><a href="#cb154-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> charT, <span class="kw">class</span> traits<span class="op">&gt;</span></span>
 <span id="cb154-2"><a href="#cb154-2"></a>  <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span> lhs,</span>
@@ -3904,7 +3904,6 @@ Complexity
 </div>
 </blockquote>
 <p>Change 24.7.5.3 [range.transform.iterator].</p>
-<p>Given that the relational operators here all require <code class="sourceCode cpp">RandomAccessRange</code>, could we just provide a single <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> whose implementation is <code class="sourceCode cpp"><span class="op">(</span>x <span class="op">-</span> y<span class="op">)</span> <span class="op">&lt;=&gt;</span> <span class="dv">0</span></code>? Or at least <code class="sourceCode cpp">x <span class="op">&lt;=&gt;</span> y</code> if possible, else fall back to the subtraction?</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb241"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb241-1"><a href="#cb241-1"></a>namespace std::ranges {</span>

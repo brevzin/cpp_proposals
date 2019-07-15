@@ -671,12 +671,15 @@ Add a new subclause [cmp.object] "spaceship object":
 
 ::: add
 ::: bq
-[1]{.pnum} In this subclause, _`BUILTIN_PTR_3WAY(T, U)`_ for types `T` and `U` is a boolean constant expression. _`BUILTIN_PTR_3WAY(T, U)`_ is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()` resolves to a built-in operator comparing pointers.
+[1]{.pnum} In this subclause, <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> for types
+`T` and `U` is a boolean constant expression. <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code>
+is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()`
+resolves to a built-in operator comparing pointers.
 
 ```
 struct compare_three_way {
   template<class T, class U>
-	requires ThreeWayComparableWith<T, U> || @_BUILTIN_PTR_3WAY(T, U)_@
+	requires ThreeWayComparableWith<T, U> || @_BUILTIN_PTR_3WAY_@(T, U)
   constexpr auto operator()(T&& t, U&& u) const;
   
   using is_transparent = @_unspecified_@;
@@ -1204,7 +1207,7 @@ template<class... TTypes, class... UTypes>
     operator<=>(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
 ```
 [10]{.pnum} *Mandates*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`,
-both <code>_synth-3way_</code>`(get<i>(t), get<i>(u))` is a valid expression.
+<code>_synth-3way_</code>`(get<i>(t), get<i>(u))` is a valid expression.
 `sizeof...(TTypes) == sizeof...(UTypes)`.
 
 [11]{.pnum} *Effects*: Performs a lexicographical comparison between `t` and `u`.
@@ -2548,7 +2551,7 @@ Remove the redundant `operator==` in the example in 21.4.3 [string.view.comparis
 —*end example*]
 :::
 
-Change the rest of 21.4.3 [string.view.comparisons]:
+Change the rest of 21.4.3 [string.view.comparison]:
 
 ::: bq
 
@@ -4035,11 +4038,6 @@ friend constexpr bool operator!=(const sentinel& x, const iterator& y);
 :::
 
 Change 24.7.5.3 [range.transform.iterator]. 
-
-Given that the relational operators
-here all require `RandomAccessRange`, could we just provide a single `<=>` whose
-implementation is `(x - y) <=> 0`? Or at least `x <=> y` if possible, else fall
-back to the subtraction?
 
 ::: bq
 ```diff
