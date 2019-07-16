@@ -1,4 +1,4 @@
-all : p1186r2.html d1614r2.html d1630r1.html
+all : p1186r3.html d1614r2.html d1630r1.html
 
 include ../md/mpark-wg21.mk
 
@@ -8,7 +8,7 @@ p1188r0.html : spaceship-lib.md
 p1185r2.html : spaceship-no-eq.md
 	python ../md/better_md.py -i $< -o $@ --references
 
-p1186r2.html : spaceship-is-compare.md
+p1186r3.html : spaceship-is-compare.md
 	$(PANDOC)
 
 p1189r0.html : add-spaceship-to-lib.md

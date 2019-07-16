@@ -1,6 +1,7 @@
 ---
 title: When do you actually use `<=>`?
-document: P1186R2
+document: P1186R3
+audience: CWG
 date: today
 author:
 	- name: Barry Revzin
@@ -660,38 +661,47 @@ This paper proposes synthesizing `strong_equality` and `weak_equality` orderings
     
 # Wording
 
-The wording here is based upon the new term *usable function* introduced in [@P1630R0].
+[The wording here introduces the term *usable function*, which is also
+introduced in [@P1630R0] with the same wording.]{.ednote}
+
+Add a new subbullet in 6.2 [basic.def.odr], paragraph 12:
+
+> [12]{.pnum} Given such an entity named `D` defined in more than one
+> translation unit, then 
+> 
+>   - [12.8]{.pnum} [if `D` is a class with a defaulted three-way comparison
+> operator function ([class.spaceship]), it is as if the operator was implicitly
+> defined in every translation unit where it is odr-used, and the implicit
+> definition in every translation unit shall call the same comparison operators
+> for each subobject of `D`.]{.addu}
 
 Insert a new paragraph before 11.10.3 [class.spaceship], paragraph 1:
 
 ::: bq
 ::: {.addu}
-[0]{.pnum} The _synthesized three-way comparison for category `R`_ of glvalues
-`a` and `b` of type `T` is defined as follows:
+[0]{.pnum} The _synthesized three-way comparison for comparison category type `R`_ ([cmp.categories])
+of glvalues `a` and `b` of the same type is defined as follows:
  
 - [0.1]{.pnum} If overload resolution for `a <=> b` finds a usable function
 ([over.match]),
 `static_cast<R>(a <=> b)`;
 - [0.2]{.pnum} Otherwise, if overload resolution for `a <=> b` finds at least
 one viable candidate, the synthesized three-way comparison is not defined;
-- [0.3]{.pnum} Otherwise, if `R` is `strong_ordering` and overload resolution
-for `a == b` and `a < b` find usable functions, then
+- [0.3]{.pnum} Otherwise, if `R` is `strong_ordering`, then
 
   > ```
   > a == b ? strong_ordering::equal : 
   > a < b  ? strong_ordering::less : 
   >          strong_ordering::greater
   > ```
-- [0.4]{.pnum} Otherwise, if `R` is `weak_ordering` and overload resolution
-for `a == b` and `a < b` find usable functions, then
+- [0.4]{.pnum} Otherwise, if `R` is `weak_ordering`, then
 
   > ```
   > a == b ? weak_ordering::equal : 
   > a < b  ? weak_ordering::less : 
   >          weak_ordering::greater
   > ```
-- [0.5]{.pnum} Otherwise, if `R` is `partial_ordering` and overload resolution
-for `a == b` and `a < b` find usable functions, then
+- [0.5]{.pnum} Otherwise, if `R` is `partial_ordering`, then
 
   > ```
   > a == b ? partial_ordering::equivalent : 
@@ -699,16 +709,14 @@ for `a == b` and `a < b` find usable functions, then
   > b < a  ? partial_ordering::greater :
   >          partial_ordering::unordered
   > ```
-- [0.6]{.pnum} Otherwise, if `R` is `strong_equality` and overload resolution
-for `a == b` finds a usable function, then
+- [0.6]{.pnum} Otherwise, if `R` is `strong_equality`, then
 `a == b ? strong_equality::equal : strong_equality::nonequal`;
-- [0.7]{.pnum} Otherwise, if `R` is `weak_equality` and overload resolution for
-`a == b` finds a usable function, then
+- [0.7]{.pnum} Otherwise, if `R` is `weak_equality`, then
 `a == b ? weak_equality::equivalent : weak_equality::nonequivalent`;
 - [0.8]{.pnum} Otherwise, the synthesized three-way comparison is not defined.
 
 [*Note*: A synthesized three-way comparison may be ill-formed if overload
-resolution finds usable functions that don't otherwise meet implied requirements
+resolution finds usable functions that do not otherwise meet the requirements implied
 by the defined expression. *-end node* ]
 :::
 :::
@@ -728,9 +736,9 @@ be ill-formed if the expression <code>x~i~</code> `<=>` <code>x~i~</code> is not
 implicitly convertible to the declared return type for any `i`.—*end note*] If
 the return type is deduced as `void`, the operator function is defined as
 deleted. [If the declared return type of a defaulted three-way comparison
-operator function is `R` and any synthesized three-way comparison for category
-`R` between objects <code>x~*i*~</code> and <code>x~*i*~</code> is not defined,
-the operator function is defined as deleted.]{.addu}
+operator function is `R` and the synthesized three-way comparison for comparison category
+type `R` between any objects <code>x~*i*~</code> and <code>x~*i*~</code> is not defined
+or would be ill-formed, the operator function is defined as deleted.]{.addu}
 :::
 
 Change 11.10.3 [class.spaceship], paragraph 2, to use the new synthesized
@@ -743,12 +751,37 @@ determined by comparing corresponding elements <code>x~*i*~</code> and
 <code>y~*i*~</code> in the expanded lists of subobjects for `x` and `y` (in
 increasing index order) until the first index `i` where
 [<code>x~*i*~</code> `<=>` <code>y~*i*~</code>]{.rm} [the synthesized three-way
-comparison for category `R` between <code>x~*i*~</code> and
+comparison for comparison category type `R` between <code>x~*i*~</code> and
 <code>y~*i*~</code>]{.addu} yields a result value <code>v~*i*~</code> where
 <code>v~*i*~</code> `!= 0`, contextually converted to `bool`, yields `true`; `V`
 is <code>v~*i*~</code> converted to `R`. If no such index exists, `V` is
 `std::strong_ordering::equal` converted to `R`.
 :::
+
+Add to the end of 12.3 [over.match], the new term *usable function*:
+
+::: add
+> Overload resolution results in a *usable function* if overload resolution
+> succeeds and the selected function is not deleted and is accessible from
+> the context in which overload resolution was performed.
+:::
+
+Update the feature-test macro in 15.10 [cpp.predefined] for
+`__cpp_impl_three_way_comparison` to the date of the editor's choosing:
+
+<table>
+<tr>
+<th>Macro name</th>
+<th>Value</th>
+</tr>
+<tr>
+<td>`__cpp_impl_three_way_comparison`</td>
+<td>[`201711L`]{.rm} [`??????L`]{.addu}</td>
+</tr>
+</table>
+
+[Why is it `__cpp_impl_three_way_comparison` as opposed to `__cpp_three_way_comparison`
+or even `__cpp_spaceship`?]{.ednote}
 
 # Acknowledgments
     

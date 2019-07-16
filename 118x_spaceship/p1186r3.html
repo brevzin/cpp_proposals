@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2019-07-16" />
+  <title>When do you actually use &lt;=&gt;?</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style>
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f6f8fa; }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span. { } /* Normal */
+code span.al { color: #ff0000; } /* Alert */
+code span.an { } /* Annotation */
+code span.at { } /* Attribute */
+code span.bn { color: #9f6807; } /* BaseN */
+code span.bu { color: #9f6807; } /* BuiltIn */
+code span.cf { color: #00607c; } /* ControlFlow */
+code span.ch { color: #9f6807; } /* Char */
+code span.cn { } /* Constant */
+code span.co { color: #008000; font-style: italic; } /* Comment */
+code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+code span.do { color: #008000; } /* Documentation */
+code span.dt { color: #00607c; } /* DataType */
+code span.dv { color: #9f6807; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #9f6807; } /* Float */
+code span.fu { } /* Function */
+code span.im { } /* Import */
+code span.in { color: #008000; } /* Information */
+code span.kw { color: #00607c; } /* Keyword */
+code span.op { color: #af1915; } /* Operator */
+code span.ot { } /* Other */
+code span.pp { color: #6f4e37; } /* Preprocessor */
+code span.re { } /* RegionMarker */
+code span.sc { color: #9f6807; } /* SpecialChar */
+code span.ss { color: #9f6807; } /* SpecialString */
+code span.st { color: #9f6807; } /* String */
+code span.va { } /* Variable */
+code span.vs { color: #9f6807; } /* VerbatimString */
+code span.wa { color: #008000; font-weight: bold; } /* Warning */
+code.diff {color: #898887}
+code.diff span.va {color: #006e28}
+code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+
+div#refs p { padding-left: 32px; text-indent: -32px; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">When do you actually use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>?</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #: </td>
+    <td>P1186R3</td>
+  </tr>
+  <tr>
+    <td>Date: </td>
+    <td>2019-07-16</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project: </td>
+    <td>Programming Language C++<br>
+      CWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to: </td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#motivation"><span class="toc-section-number">2</span> Motivation<span></span></a><ul>
+<li><a href="#an-adoption-story"><span class="toc-section-number">2.1</span> An Adoption Story<span></span></a></li>
+<li><a href="#the-case-against-automatic-synthesis"><span class="toc-section-number">2.2</span> The Case Against Automatic Synthesis<span></span></a></li>
+<li><a href="#an-adoption-story-for-templates"><span class="toc-section-number">2.3</span> An Adoption Story for Templates<span></span></a></li>
+<li><a href="#status-quo"><span class="toc-section-number">2.4</span> Status Quo<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a><ul>
+<li><a href="#soundness-of-synthesis"><span class="toc-section-number">3.1</span> Soundness of Synthesis<span></span></a></li>
+<li><a href="#what-does-it-mean-to-require-an-operation"><span class="toc-section-number">3.2</span> What does it mean to require an operation<span></span></a></li>
+<li><a href="#explanatory-examples"><span class="toc-section-number">3.3</span> Explanatory Examples<span></span></a></li>
+<li><a href="#differences-from-status-quo-and-p1186r0"><span class="toc-section-number">3.4</span> Differences from Status Quo and P1186R0<span></span></a></li>
+<li><a href="#building-complexity"><span class="toc-section-number">3.5</span> Building complexity<span></span></a></li>
+<li><a href="#what-about-compare_3way"><span class="toc-section-number">3.6</span> What about <code class="sourceCode cpp">compare_3way<span class="op">()</span></code>?<span></span></a></li>
+<li><a href="#what-about-xxx_equality"><span class="toc-section-number">3.7</span> What about <code class="sourceCode cpp">XXX_equality</code>?<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">5</span> Acknowledgments<span></span></a></li>
+<li><a href="#references"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P1186R0">[<a href="#ref-P1186R0" role="doc-biblioref">P1186R0</a>]</span> was approved by both EWG and LEWG. Under Core review, the issue of <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#unintentional-comparison-category-strengthening">unintentional comparison category strengthening</a> was brought up as a reason to strongly oppose the design.</p>
+<p><span class="citation" data-cites="P1186R1">[<a href="#ref-P1186R1" role="doc-biblioref">P1186R1</a>]</span> proposed a new design to solve the issues from R0 and was presented to EWG in Kona. It was approved with a modification that synthesis of <code class="sourceCode cpp">weak_ordering</code> is only done by using both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>. The previous versions of this proposal would try to fall-back to invoking <code class="sourceCode cpp"><span class="op">&lt;</span></code> twice.</p>
+<p>This paper instead of considering well-formedness of expressions or validity of expressions instead uses the notion of “shallowly well-formed” as described in <span class="citation" data-cites="P1630R0">[<a href="#ref-P1630R0" role="doc-biblioref">P1630R0</a>]</span> and is based on a new term usable function. Some examples have changed meaning as a result.</p>
+<p>The library portion of R0 was moved into <span class="citation" data-cites="P1188R0">[<a href="#ref-P1188R0" role="doc-biblioref">P1188R0</a>]</span>. This paper is <em>solely</em> a proposal for language change.</p>
+<h1 id="motivation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Motivation<a href="#motivation" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P0515R3">[<a href="#ref-P0515R3" role="doc-biblioref">P0515R3</a>]</span> introduced <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> as a way of generating all six comparison operators from a single function. As a result of <span class="citation" data-cites="P1185R2">[<a href="#ref-P1185R2" role="doc-biblioref">P1185R2</a>]</span>, that has become two functions, but importantly you still only need to declare one operator function to generate each of the four relational comparison operators.</p>
+<p>In a future world, where all types have adopted <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, this will work great. It will be very easy to implement <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> for a type like <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> (writing as a non-member function for clarity):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>compare_3way_type_t<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="co">// see P1188</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">operator</span><span class="op">&lt;=&gt;(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="cf">if</span> <span class="op">(</span>lhs<span class="op">.</span>has_value<span class="op">()</span> <span class="op">&amp;&amp;</span> rhs<span class="op">.</span>has_value<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="cf">return</span> <span class="op">*</span>lhs <span class="op">&lt;=&gt;</span> <span class="op">*</span>rhs;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>        <span class="cf">return</span> lhs<span class="op">.</span>has_value<span class="op">()</span> <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>has_value<span class="op">()</span>;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="op">}</span></span></code></pre></div>
+<p>This is a clean and elegant way of implementing this functionality, and gives us <code class="sourceCode cpp"><span class="op">&lt;</span></code>, <code class="sourceCode cpp"><span class="op">&gt;</span></code>, <code class="sourceCode cpp"><span class="op">&lt;=</span></code>, and <code class="sourceCode cpp"><span class="op">&gt;=</span></code> that all do the right thing. What about <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>?</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>compare_3way_type_t<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="cf">return</span> lexicographical_compare_3way<span class="op">(</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        lhs<span class="op">.</span>begin<span class="op">()</span>, lhs<span class="op">.</span>end<span class="op">()</span>,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>        rhs<span class="op">.</span>begin<span class="op">()</span>, rhs<span class="op">.</span>end<span class="op">())</span>;</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="op">}</span></span></code></pre></div>
+<p>Even better.</p>
+<p>What about a simple aggregate type, where all we want is to do normal member-by-member lexicographical comparison? No problem:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    X x;</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    Y y;</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    Z z;</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    </span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Beautiful.</p>
+<h2 id="an-adoption-story"><span class="header-section-number">2.1</span> An Adoption Story<a href="#an-adoption-story" class="self-link"></a></h2>
+<p>The problem is that we’re not in this future world quite yet. No program-defined types have <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, the only standard library type that has <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> so far is <code class="sourceCode cpp">nullptr_t</code>. Which means we can’t just replace the existing relational operators from <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> with <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> and probably won’t be able to just default <code class="sourceCode cpp">Aggr</code>’s <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>. We need to do something more involved.</p>
+<p>How do we implement <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> for a type that looks like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">// not in our immedate control</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> Legacy <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Legacy <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>Legacy <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="op">}</span>;</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co">// trying to write/update this type</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>    <span class="dt">int</span> i;</span>
+<span id="cb4-10"><a href="#cb4-10"></a>    <span class="dt">char</span> c;</span>
+<span id="cb4-11"><a href="#cb4-11"></a>    Legacy q;</span>
+<span id="cb4-12"><a href="#cb4-12"></a>    </span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="co">// ok, easy, thanks to P1185</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb4-15"><a href="#cb4-15"></a>    </span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="co">// ... but not this</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="op">}</span>;</span></code></pre></div>
+<p>The implementation of <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> won’t work for <code class="sourceCode cpp">Aggr</code>. <code class="sourceCode cpp">Legacy</code> doesn’t have a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, so our spaceship operator ends up being defined as deleted. We don’t get the “free” memberwise comparison from just defaulting. Right now, we have to write it by hand:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a>strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> i <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>i; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> c <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>c; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    </span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>equal;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">&lt;</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>less;</span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="cf">return</span> strong_ordering<span class="op">::</span>greater;</span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="op">}</span></span></code></pre></div>
+<p>Such an implementation would always give us a correct answer, but it’s not actually a good implementation. At some point, <code class="sourceCode cpp">Legacy</code> is going to adopt <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> and we really need to plan in advance for that scenario; we definitely want to use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> whenever it’s available.</p>
+<p>It would be better to write:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a>strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> i <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>i; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> c <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>c; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="cf">return</span> compare_3way<span class="op">(</span>q, rhs<span class="op">.</span>q<span class="op">)</span>;</span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="op">}</span></span></code></pre></div>
+<p>It’s at this point that R0 went onto suggest that because <code class="sourceCode cpp">compare_3way<span class="op">()</span></code> is transparent to <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, you may as well just always use <code class="sourceCode cpp">compare_3way<span class="op">()</span></code> and then you may as well just define <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to be that exact logic. That language change would allow us to just <code class="sourceCode cpp"><span class="op">=</span> <span class="cf">default</span></code> the spaceship operator for types like <code class="sourceCode cpp">Aggr</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">// P1186R0, this involves just synthesizing an &lt;=&gt; for Legacy</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span></code></pre></div>
+<h2 id="the-case-against-automatic-synthesis"><span class="header-section-number">2.2</span> The Case Against Automatic Synthesis<a href="#the-case-against-automatic-synthesis" class="self-link"></a></h2>
+<p>Consider the following legacy type:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">struct</span> Q <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="dt">float</span> f;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Q rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> f <span class="op">==</span> rhs<span class="op">.</span>f; <span class="op">}</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>Q rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> f <span class="op">&lt;</span> rhs<span class="op">.</span>f; <span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&gt;(</span>Q rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> f <span class="op">&gt;</span> rhs<span class="op">.</span>f; <span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Using <code class="sourceCode cpp"><span class="dt">float</span></code> just makes for a short example, but the salient point here is that <code class="sourceCode cpp">Q</code>’s ordering is partial, not total. The significance of partial orders is that these can all be <code class="sourceCode cpp"><span class="kw">false</span></code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a>Q<span class="op">{</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">}</span> <span class="op">==</span> Q<span class="op">{</span>NAN<span class="op">}</span>; <span class="co">// false</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>Q<span class="op">{</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">}</span> <span class="op">&lt;</span> Q<span class="op">{</span>NAN<span class="op">}</span>;  <span class="co">// false</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>Q<span class="op">{</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">}</span> <span class="op">&gt;</span> Q<span class="op">{</span>NAN<span class="op">}</span>;  <span class="co">// false</span></span></code></pre></div>
+<p>However, the proposed synthesis rules in P1186R0 would have led (with no source code changes!) to the following:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a>Q<span class="op">{</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">}</span> <span class="op">&gt;</span> Q<span class="op">{</span>NAN<span class="op">}</span>;       <span class="co">// false</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>Q<span class="op">{</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">}</span> <span class="op">&lt;=&gt;</span> Q<span class="op">{</span>NAN<span class="op">}</span> <span class="op">&gt;</span> <span class="dv">0</span>; <span class="co">// true</span></span></code></pre></div>
+<p>This is because the proposed rules assumed a total order, wherein <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">==</span> b<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!(</span>a <span class="op">&lt;</span> b<span class="op">)</span></code> imply <code class="sourceCode cpp">a <span class="op">&gt;</span> b</code>.</p>
+<p>Now, you might ask… why don’t we just synthesize a <em>partial</em> ordering instead of a <em>total</em> ordering? Wouldn’t we get it correct in that situation? Yes, we would. But synthesizing a partial order requires an extra comparison:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">friend</span> partial_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Q <span class="kw">const</span><span class="op">&amp;</span> a, Q <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> b<span class="op">)</span> <span class="cf">return</span> partial_ordering<span class="op">::</span>equivalent;</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="cf">if</span> <span class="op">(</span>a <span class="op">&lt;</span> b<span class="op">)</span>  <span class="cf">return</span> partial_ordering<span class="op">::</span>less;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">if</span> <span class="op">(</span>b <span class="op">&lt;</span> a<span class="op">)</span>  <span class="cf">return</span> partial_ordering<span class="op">::</span>greater;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>    <span class="cf">return</span> partial_ordering<span class="op">::</span>unordered;</span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="op">}</span></span></code></pre></div>
+<p>Many types which do not provide <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> do still implement a total order. While assuming a partial order is completely safe and correct (we might say <code class="sourceCode cpp">equivalent</code> when it really should be <code class="sourceCode cpp">equal</code>, but at least we won’t ever say <code class="sourceCode cpp">greater</code> when it really should be <code class="sourceCode cpp">unordered</code>!), for many types that’s a performance burden. For totally ordered types, that last comparison is unnecessary - since by definition there is no case where we return <code class="sourceCode cpp">unordered</code>. It would be unfortunate to adopt a language feature as purely a convenience feature to ease adoption of <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, but end up with a feature that many will eschew and hand-write their own comparisons - possibly incorrectly.</p>
+<p>The goal of this proposal is to try to have our cake an eat it too:</p>
+<ul>
+<li>allow types like <code class="sourceCode cpp">Aggr</code> which just want the simple, default, member-wise comparisons to express that with as little typing as possible</li>
+<li>ensure that we do not provide incorrect answers to comparison queries</li>
+<li>ensure that such a feature does not impose overhead over the handwritten equivalent</li>
+</ul>
+<p>The first bullet implies the need for <em>some</em> language change. The second bullet kills P1186R0, the third bullet kills a variant of P1186R0 that would synthesize <code class="sourceCode cpp">partial_ordering</code> instead of <code class="sourceCode cpp">strong_ordering</code>, and the two taken together basically ensure that we cannot have a language feature that synthesis <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> for a type with opt-in.</p>
+<h2 id="an-adoption-story-for-templates"><span class="header-section-number">2.3</span> An Adoption Story for Templates<a href="#an-adoption-story-for-templates" class="self-link"></a></h2>
+<p>Taking a step to the side to talk about an adoption story for class templates. How would <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and similar containers and templates adopt <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>?</p>
+<p>R0 of this paper <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1186r0.html#the-initial-premise-is-false-optionalt-shouldnt-always-have">argued</a> against the claim that “[a]ny compound type should have <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> only if all of its constituents have <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>.” At the time, my understanding of what “conditional spaceship” meant was this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">// to handle legacy types. This is called Cpp17LessThanComparable in the</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="co">// working draft</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="kw">concept</span> HasLess <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="op">{</span> t <span class="op">&lt;</span> t <span class="op">}</span> <span class="op">-&gt;</span> <span class="dt">bool</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="op">}</span>;</span>
+<span id="cb12-7"><a href="#cb12-7"></a></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="kw">template</span> <span class="op">&lt;</span>HasLess T<span class="op">&gt;</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span>
+<span id="cb12-10"><a href="#cb12-10"></a></span>
+<span id="cb12-11"><a href="#cb12-11"></a><span class="kw">template</span> <span class="op">&lt;</span>ThreeWayComparable T<span class="op">&gt;</span> <span class="co">// see P1188</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a>compare_3way_type_t <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span></code></pre></div>
+<p>This is, indeed, a bad implementation strategy because <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v2</code> would invoke <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code> even if <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> was a viable option, so we lose the potential performance benefit. It’s quite important to ensure that we use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> if that’s at all an option. It’s this problem that partially led to my writing P1186R0.</p>
+<p>But since I wrote this paper, I’ve come up with a much better way of conditionally adopting spaceship <span class="citation" data-cites="Revzin">[<a href="#ref-Revzin" role="doc-biblioref">Revzin</a>]</span>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span>HasLess T<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span>
+<span id="cb13-3"><a href="#cb13-3"></a></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="kw">template</span> <span class="op">&lt;</span>ThreeWayComparable T<span class="op">&gt;</span> <span class="kw">requires</span> HasLess<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>compare_3way_type_t <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span></code></pre></div>
+<p>It’s a small, seemingly redundant change (after all, if <code class="sourceCode cpp">ThreeWayComparable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> then surely <code class="sourceCode cpp">HasLess<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for all types other than pathologically absurd ones that provide <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> but explicitly delete <code class="sourceCode cpp"><span class="op">&lt;</span></code>), but it ensures that <code class="sourceCode cpp">v1 <span class="op">&lt;</span> v2</code> invokes <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> where possible.</p>
+<p>Conditionally adopting spaceship between C++17 and C++20 is actually even easier:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>enable_if_t<span class="op">&lt;</span>supports_lt<span class="op">&lt;</span>T<span class="op">&gt;::</span>value, <span class="dt">bool</span><span class="op">&gt;</span> <span class="co">// normal C++17 SFINAE machinery</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">operator</span><span class="op">&lt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span>
+<span id="cb14-4"><a href="#cb14-4"></a></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="co">// use the feature-test macro for operator&lt;=&gt;</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="pp">#if __cpp_impl_three_way_comparison</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="kw">template</span> <span class="op">&lt;</span>ThreeWayComparable T<span class="op">&gt;</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a>compare_3way_type_t<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span>, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="pp">#endif    </span></span></code></pre></div>
+<p>In short, conditionally adopting <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> has a good user story, once you know how to do it. This is very doable, and is no longer, if of itself, a motivation for making a language change. It is, however, a motivation for <em>not</em> synthesizing <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> in a way that leads to incorrect answers or poor performance - as this would have far-reaching effects.</p>
+<p>The above is solely about the case where we want to adopt <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <em>conditionally</em>. If we want to adopt <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <em>unconditionally</em>, we’ll need to do the same kind of things in the template case as we want to do in the non-template case. We need some way of invoking <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> where possible, but falling back to a synthesized three-way comparison from the two-way comparison operators.</p>
+<h2 id="status-quo"><span class="header-section-number">2.4</span> Status Quo<a href="#status-quo" class="self-link"></a></h2>
+<p>To be perfectly clear, the current rule for defaulting <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> for a class <code class="sourceCode cpp">C</code> is roughly as follows:</p>
+<ul>
+<li>For two objects <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> of type <code class="sourceCode cpp"><span class="kw">const</span> C</code>, we compare their corresponding subobjects <code>x<sub>i</sub></code> and <code>y<sub>i</sub></code> until the first <em>i</em> where given <code>auto v<sub>i</sub> = x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code>, <code>v<sub>i</sub> != 0</code>. If such an <em>i</em> exists, we return <code>v<sub>i</sub></code>. Else, we return <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>.</li>
+<li>If the return type of defaulted <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">auto</span></code>, we determine the return type by taking the common comparison category of all of the <code>x<sub>i</sub> &lt;=&gt; y<sub>i</sub></code> expressions. If the return type is provided, we ensure that it is valid. If any of the pairwise comparisons is ill-formed, or are not compatible with the provided return type, the defaulted <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> is defined as deleted.</li>
+</ul>
+<p>In other words, for the <code class="sourceCode cpp">Aggr</code> example, the declaration <code class="sourceCode cpp">strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</code> expands into something like</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>    <span class="dt">int</span> i;</span>
+<span id="cb15-3"><a href="#cb15-3"></a>    <span class="dt">char</span> c;</span>
+<span id="cb15-4"><a href="#cb15-4"></a>    Legacy q;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>    </span>
+<span id="cb15-6"><a href="#cb15-6"></a>    strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> i <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>i; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb15-8"><a href="#cb15-8"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> c <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>c; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb15-9"><a href="#cb15-9"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> q <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>q; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp; <span class="co">// (*)</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>        <span class="cf">return</span> strong_ordering<span class="op">::</span>equal</span>
+<span id="cb15-11"><a href="#cb15-11"></a>    <span class="op">}</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Or it would, if the marked line were valid. <code class="sourceCode cpp">Legacy</code> has no <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>, so that pairwise comparison is ill-formed, so the operator function would be defined as deleted.</p>
+<h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes a new direction for a stop-gap adoption measure for <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>: we will synthesize an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> for a type, but <em>only under very specific conditions</em>, and only when the user provides the comparison category that the comparison needs to use. All we need is a very narrow ability to help with <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> adoption. This is that narrow ability.</p>
+<p>Currently, the pairwise comparison of the subobjects is always <code>x<sub><em>i</em></sub></code> <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <code>y<sub><em>i</em></sub></code>. Always <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>.</p>
+<p>This paper proposes defining a new say of synthesizing a three-way comparison, which only has meaning in the context of defining what a defaulted <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> does. The function definition is very wordy, but it’s not actually complicated: we will use the provided return type to synthesize an appropriate ordering. The key points are:</p>
+<ul>
+<li>We will <em>only</em> synthesize an ordering if the user provides an explicit return type. We do not synthesize any ordering when the declared return type is <code class="sourceCode cpp"><span class="kw">auto</span></code>.</li>
+<li>The presence of <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is <em>always</em> preferred to any kind of synthetic fallback.</li>
+<li>Synthesizing a <code class="sourceCode cpp">strong_ordering</code> requires both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>.</li>
+<li>Synthesizing a <code class="sourceCode cpp">weak_ordering</code> requires both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>.</li>
+<li>Synthesizing a <code class="sourceCode cpp">partial_ordering</code> requires both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code> and will do up to three comparisons. Those three comparisons are necessary for correctness. Any fewer comparisons would not be sound.</li>
+<li>Synthesizing either <code class="sourceCode cpp">strong_equality</code> or <code class="sourceCode cpp">weak_equality</code> requires <code class="sourceCode cpp"><span class="op">==</span></code>.</li>
+</ul>
+<p>We then change the meaning of defaulted <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> to be defined in terms of this new synthesis instead of in terms of <code>x<sub><em>i</em></sub></code> <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <code>y<sub><em>i</em></sub></code>.</p>
+<h2 id="soundness-of-synthesis"><span class="header-section-number">3.1</span> Soundness of Synthesis<a href="#soundness-of-synthesis" class="self-link"></a></h2>
+<p>It would be sound to synthesize <code class="sourceCode cpp">strong_ordering</code> from just performing <code class="sourceCode cpp"><span class="op">&lt;</span></code> both ways, but equality is the salient difference between <code class="sourceCode cpp">weak_ordering</code> and <code class="sourceCode cpp">strong_ordering</code> and it doesn’t seem right to synthesize a <code class="sourceCode cpp">strong_ordering</code> from a type that doesn’t even provide an <code class="sourceCode cpp"><span class="op">==</span></code>.</p>
+<p>There is no other sound way to synthesize <code class="sourceCode cpp">partial_ordering</code> from <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>. If we just do <code class="sourceCode cpp"><span class="op">&lt;</span></code> both ways, we’d have to decide between <code class="sourceCode cpp">equivalent</code> and <code class="sourceCode cpp">unordered</code> in the case where <code class="sourceCode cpp"><span class="op">!(</span>a <span class="op">&lt;</span> b<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!(</span>b <span class="op">&lt;</span> a<span class="op">)</span></code> - the former gets the unordered cases wrong and the latter means our order isn’t reflexive.</p>
+<h2 id="what-does-it-mean-to-require-an-operation"><span class="header-section-number">3.2</span> What does it mean to require an operation<a href="#what-does-it-mean-to-require-an-operation" class="self-link"></a></h2>
+<p>In the above description, I said that a synthesis might require both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>. What does that actually mean? How much do we want to require? At the very extreme end, we might require both <code class="sourceCode cpp">a <span class="op">==</span> b</code> and <code class="sourceCode cpp">a <span class="op">&lt;</span> b</code> be well-formed expressions whose types are <code class="sourceCode cpp"><span class="dt">bool</span></code>. But we cannot require that the expression is well-formed, the most we can do is say that overload resolution succeeds and finds a candidate that isn’t deleted or inaccessible. Do we want to require contextually convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>? Exactly <code class="sourceCode cpp"><span class="dt">bool</span></code>?</p>
+<p>Ultimately, the questions are all about: what do we want to happen in the error cases? Do we want to end up with a deleted spaceship or an ill-formed spaceship?</p>
+<p>Consider these two cases:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">struct</span> Eq <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>    <span class="kw">friend</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Eq, Eq<span class="op">)</span>;</span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="op">}</span>;</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="kw">struct</span> Weak <span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="kw">friend</span> weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Weak, Weak<span class="op">)</span>;</span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="op">}</span>;</span>
+<span id="cb16-8"><a href="#cb16-8"></a></span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="kw">struct</span> SomeDsl <span class="op">{</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>    <span class="kw">struct</span> NotBool <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb16-11"><a href="#cb16-11"></a>    NotBool <span class="kw">operator</span><span class="op">==(</span>SomeDsl<span class="op">)</span> <span class="kw">const</span>;</span>
+<span id="cb16-12"><a href="#cb16-12"></a>    NotBool <span class="kw">operator</span><span class="op">&lt;(</span>SomeDsl<span class="op">)</span> <span class="kw">const</span>;</span>
+<span id="cb16-13"><a href="#cb16-13"></a><span class="op">}</span>;</span>
+<span id="cb16-14"><a href="#cb16-14"></a></span>
+<span id="cb16-15"><a href="#cb16-15"></a><span class="kw">struct</span> Nothing <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb16-16"><a href="#cb16-16"></a></span>
+<span id="cb16-17"><a href="#cb16-17"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb16-18"><a href="#cb16-18"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb16-19"><a href="#cb16-19"></a>    T t;</span>
+<span id="cb16-20"><a href="#cb16-20"></a>    strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>C <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb16-21"><a href="#cb16-21"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Clearly none of <code class="sourceCode cpp">C<span class="op">&lt;</span>Eq<span class="op">&gt;</span></code>, <code class="sourceCode cpp">C<span class="op">&lt;</span>Weak<span class="op">&gt;</span></code>, <code class="sourceCode cpp">C<span class="op">&lt;</span>SomeDsl<span class="op">&gt;</span></code>, and <code class="sourceCode cpp">C<span class="op">&lt;</span>Nothing<span class="op">&gt;</span></code> can have a valid <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>, but should they be deleted or ill-formed? Erring on the side of ill-formed helps programmers catch bugs earlier. Erring on the side of deleted lets you actually check programmaticaly if a type has a function or not. A defaulted copy constructor, for instance, is defined as deleted if some member isn’t copyable - it isn’t ill-formed. Arguably comparison is a very nearly a special member function.</p>
+<p>To that end, I propose we split the difference here. This particular proposal is entirely about being a stop-gap for types that don’t have spaceship - it really shouldn’t be broadly used in templates. The line I’m going to draw is that we check that the functions we need exist and are usable but we don’t check that their return types meet our requirements. In other words:</p>
+<ul>
+<li><code class="sourceCode cpp">C<span class="op">&lt;</span>Eq<span class="op">&gt;</span></code>’s <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is deleted because we need to have both <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code> and we only have one.</li>
+<li><code class="sourceCode cpp">C<span class="op">&lt;</span>Weak<span class="op">&gt;</span></code>’s <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is ill-formed because we just check that we have <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>. But using that <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> won’t work because <code class="sourceCode cpp">weak_ordering</code> isn’t convertible to <code class="sourceCode cpp">strong_ordering</code>, but that’s a “late” failure rather than an “early” one.</li>
+<li><code class="sourceCode cpp">C<span class="op">&lt;</span>SomeDsl<span class="op">&gt;</span></code>’s <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is ill-formed because we just check that we have <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;</span></code>, and we do. We don’t check that those operators return something that we can actually build comparisons out of.<br />
+</li>
+<li><code class="sourceCode cpp">C<span class="op">&lt;</span>Nothing<span class="op">&gt;</span></code>’s <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> is deleted because we just don’t have anything.</li>
+</ul>
+<p>I think that’s the right line.</p>
+<h2 id="explanatory-examples"><span class="header-section-number">3.3</span> Explanatory Examples<a href="#explanatory-examples" class="self-link"></a></h2>
+<p>This might make more sense with examples.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Source Code</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Meaning</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>  <span class="dt">int</span> i;</span>
+<span id="cb17-3"><a href="#cb17-3"></a>  <span class="dt">char</span> c;</span>
+<span id="cb17-4"><a href="#cb17-4"></a>  Legacy q;</span>
+<span id="cb17-5"><a href="#cb17-5"></a></span>
+<span id="cb17-6"><a href="#cb17-6"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb17-7"><a href="#cb17-7"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb17-8"><a href="#cb17-8"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  <span class="dt">int</span> i;</span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="dt">char</span> c;</span>
+<span id="cb18-4"><a href="#cb18-4"></a>  Legacy q;</span>
+<span id="cb18-5"><a href="#cb18-5"></a>    </span>
+<span id="cb18-6"><a href="#cb18-6"></a>  <span class="co">// x.q &lt;=&gt; y.q does not find a usable function</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a>  <span class="co">// and we have no return type to guide our</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a>  <span class="co">// synthesies. Hence, deleted.</span></span>
+<span id="cb18-9"><a href="#cb18-9"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb18-10"><a href="#cb18-10"></a>        <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb18-11"><a href="#cb18-11"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <span class="dt">int</span> i;</span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="dt">char</span> c;</span>
+<span id="cb19-4"><a href="#cb19-4"></a>  Legacy q;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>    </span>
+<span id="cb19-6"><a href="#cb19-6"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb19-8"><a href="#cb19-8"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> Aggr <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  <span class="dt">int</span> i;</span>
+<span id="cb20-3"><a href="#cb20-3"></a>  <span class="dt">char</span> c;</span>
+<span id="cb20-4"><a href="#cb20-4"></a>  Legacy q;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>    </span>
+<span id="cb20-6"><a href="#cb20-6"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Aggr <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a>    <span class="co">// pairwise &lt;=&gt; works fine for these</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> i <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>i; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb20-9"><a href="#cb20-9"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> c <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>c; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb20-10"><a href="#cb20-10"></a>    </span>
+<span id="cb20-11"><a href="#cb20-11"></a>    <span class="co">// synthesizing strong_ordering from == and &lt;</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>equal;</span>
+<span id="cb20-13"><a href="#cb20-13"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">&lt;</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>less;</span>
+<span id="cb20-14"><a href="#cb20-14"></a>    </span>
+<span id="cb20-15"><a href="#cb20-15"></a>    <span class="co">// sanitizers might also check for</span></span>
+<span id="cb20-16"><a href="#cb20-16"></a>    <span class="op">[[</span><span class="at"> assert</span><span class="op">:</span><span class="at"> rhs</span><span class="op">.</span><span class="at">q </span><span class="op">&lt;</span><span class="at"> q; </span><span class="op">]]</span></span>
+<span id="cb20-17"><a href="#cb20-17"></a>    <span class="cf">return</span> strong_ordering<span class="op">::</span>greater;</span>
+<span id="cb20-18"><a href="#cb20-18"></a>  <span class="op">}</span></span>
+<span id="cb20-19"><a href="#cb20-19"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+<tr class="odd">
+<td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>X <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="op">}</span>;</span>
+<span id="cb21-4"><a href="#cb21-4"></a></span>
+<span id="cb21-5"><a href="#cb21-5"></a><span class="kw">struct</span> Y <span class="op">{</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>  X x;</span>
+<span id="cb21-7"><a href="#cb21-7"></a>  </span>
+<span id="cb21-8"><a href="#cb21-8"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Y <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>X <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="op">}</span>;</span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="kw">struct</span> Y <span class="op">{</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>  X x;</span>
+<span id="cb22-7"><a href="#cb22-7"></a>  </span>
+<span id="cb22-8"><a href="#cb22-8"></a>  <span class="co">// defined as deleted because X has no &lt;=&gt;,</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>  <span class="co">// so we fallback to synthesizing from ==</span></span>
+<span id="cb22-10"><a href="#cb22-10"></a>  <span class="co">// and &lt;, but we have no ==.</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Y <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb22-12"><a href="#cb22-12"></a>        <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb22-13"><a href="#cb22-13"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">struct</span> W <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>W <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span>;</span>
+<span id="cb23-4"><a href="#cb23-4"></a></span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="kw">struct</span> Z <span class="op">{</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a>  W w;</span>
+<span id="cb23-7"><a href="#cb23-7"></a>  Legacy q;</span>
+<span id="cb23-8"><a href="#cb23-8"></a>  </span>
+<span id="cb23-9"><a href="#cb23-9"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Z <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span></span>
+<span id="cb23-10"><a href="#cb23-10"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb23-11"><a href="#cb23-11"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">struct</span> W <span class="op">{</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>W <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="op">}</span>;</span>
+<span id="cb24-4"><a href="#cb24-4"></a></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="kw">struct</span> Z <span class="op">{</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a>  W w;</span>
+<span id="cb24-7"><a href="#cb24-7"></a>  Legacy q;</span>
+<span id="cb24-8"><a href="#cb24-8"></a>  </span>
+<span id="cb24-9"><a href="#cb24-9"></a>  strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Z <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a>    <span class="co">// W has a &lt;=&gt;, but its return type is not</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a>    <span class="co">// convertible to strong_ordering. So this</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a>    <span class="co">// operator is simply ill-formed. Instantiating</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a>    <span class="co">// it is a hard error    </span></span>
+<span id="cb24-14"><a href="#cb24-14"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span>strong_ordering<span class="op">&gt;(</span></span>
+<span id="cb24-15"><a href="#cb24-15"></a>            w <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>w<span class="op">)</span>; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb24-16"><a href="#cb24-16"></a>        </span>
+<span id="cb24-17"><a href="#cb24-17"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>equal;</span>
+<span id="cb24-18"><a href="#cb24-18"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">&lt;</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> strong_ordering<span class="op">::</span>less;</span>
+<span id="cb24-19"><a href="#cb24-19"></a>    <span class="cf">return</span> strong_ordering<span class="op">::</span>equal;</span>
+<span id="cb24-20"><a href="#cb24-20"></a>  <span class="op">}</span></span>
+<span id="cb24-21"><a href="#cb24-21"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+<tr class="odd">
+<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">struct</span> W <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>W <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="op">}</span>;</span>
+<span id="cb25-4"><a href="#cb25-4"></a></span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="kw">struct</span> Q <span class="op">{</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb25-7"><a href="#cb25-7"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb25-8"><a href="#cb25-8"></a><span class="op">}</span>;</span>
+<span id="cb25-9"><a href="#cb25-9"></a></span>
+<span id="cb25-10"><a href="#cb25-10"></a><span class="kw">struct</span> Z <span class="op">{</span></span>
+<span id="cb25-11"><a href="#cb25-11"></a>  W w;</span>
+<span id="cb25-12"><a href="#cb25-12"></a>  Q q;</span>
+<span id="cb25-13"><a href="#cb25-13"></a>  </span>
+<span id="cb25-14"><a href="#cb25-14"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Z <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> </span>
+<span id="cb25-15"><a href="#cb25-15"></a>        <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb25-16"><a href="#cb25-16"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">struct</span> W <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>W <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="op">}</span>;</span>
+<span id="cb26-4"><a href="#cb26-4"></a></span>
+<span id="cb26-5"><a href="#cb26-5"></a><span class="kw">struct</span> Q <span class="op">{</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb26-7"><a href="#cb26-7"></a>  <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb26-8"><a href="#cb26-8"></a><span class="op">}</span>;</span>
+<span id="cb26-9"><a href="#cb26-9"></a></span>
+<span id="cb26-10"><a href="#cb26-10"></a><span class="kw">struct</span> Z <span class="op">{</span></span>
+<span id="cb26-11"><a href="#cb26-11"></a>  W w;</span>
+<span id="cb26-12"><a href="#cb26-12"></a>  Q q;</span>
+<span id="cb26-13"><a href="#cb26-13"></a>  </span>
+<span id="cb26-14"><a href="#cb26-14"></a>  weak_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Z <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span></span>
+<span id="cb26-15"><a href="#cb26-15"></a>  <span class="op">{</span></span>
+<span id="cb26-16"><a href="#cb26-16"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> cmp <span class="op">=</span> w <span class="op">&lt;=&gt;</span> rhs<span class="op">.</span>w; cmp <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> cmp;</span>
+<span id="cb26-17"><a href="#cb26-17"></a>    </span>
+<span id="cb26-18"><a href="#cb26-18"></a>    <span class="co">// synthesizing weak_ordering from == and &lt;</span></span>
+<span id="cb26-19"><a href="#cb26-19"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> rhs<span class="op">.</span>q<span class="op">)</span> <span class="cf">return</span> weak_ordering<span class="op">::</span>equivalent;</span>
+<span id="cb26-20"><a href="#cb26-20"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">&lt;</span> rhs<span class="op">.</span>q<span class="op">)</span>  <span class="cf">return</span> weak_ordering<span class="op">::</span>less;</span>
+<span id="cb26-21"><a href="#cb26-21"></a>    <span class="cf">return</span> weak_ordering<span class="op">::</span>greater;</span>
+<span id="cb26-22"><a href="#cb26-22"></a>  <span class="op">}</span></span>
+<span id="cb26-23"><a href="#cb26-23"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<h2 id="differences-from-status-quo-and-p1186r0"><span class="header-section-number">3.4</span> Differences from Status Quo and P1186R0<a href="#differences-from-status-quo-and-p1186r0" class="self-link"></a></h2>
+<p>Consider the highlighted lines in the following example:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">struct</span> Q <span class="op">{</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb27-3"><a href="#cb27-3"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">&lt;(</span>Q <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span>;</span>
+<span id="cb27-4"><a href="#cb27-4"></a><span class="op">}</span>;</span>
+<span id="cb27-5"><a href="#cb27-5"></a></span>
+<span id="cb27-6"><a href="#cb27-6"></a>Q<span class="op">{}</span> <span class="op">&lt;=&gt;</span> Q<span class="op">{}</span>; <span class="co">// #1</span></span>
+<span id="cb27-7"><a href="#cb27-7"></a></span>
+<span id="cb27-8"><a href="#cb27-8"></a><span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb27-9"><a href="#cb27-9"></a>    Q q;</span>
+<span id="cb27-10"><a href="#cb27-10"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>X <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>; <span class="co">// #2</span></span>
+<span id="cb27-11"><a href="#cb27-11"></a><span class="op">}</span>;</span>
+<span id="cb27-12"><a href="#cb27-12"></a></span>
+<span id="cb27-13"><a href="#cb27-13"></a><span class="kw">struct</span> Y <span class="op">{</span></span>
+<span id="cb27-14"><a href="#cb27-14"></a>    Q q;</span>
+<span id="cb27-15"><a href="#cb27-15"></a>    strong_ordering <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>Y <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>; <span class="co">// #3</span></span>
+<span id="cb27-16"><a href="#cb27-16"></a><span class="op">}</span>;</span></code></pre></div>
+<p>In the working draft, <code class="sourceCode cpp"><span class="pp">#1</span></code> is ill-formed and <code class="sourceCode cpp"><span class="pp">#2</span></code> and <code class="sourceCode cpp"><span class="pp">#3</span></code> are both defined as deleted because <code class="sourceCode cpp">Q</code> has no <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>.</p>
+<p>With P1186R0, <code class="sourceCode cpp"><span class="pp">#1</span></code> is a valid expression of type <code class="sourceCode cpp">std<span class="op">::</span>strong_ordering</code>, and <code class="sourceCode cpp"><span class="pp">#2</span></code> and <code class="sourceCode cpp"><span class="pp">#3</span></code> are both defined as defaulted. In all cases, synthesizing a strong comparison.</p>
+<p>With this proposal, <code class="sourceCode cpp"><span class="pp">#1</span></code> is <em>still</em> ill-formed. <code class="sourceCode cpp"><span class="pp">#2</span></code> is defined as deleted, because <code class="sourceCode cpp">Q</code> still has no <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>. The only change is that in the case of <code class="sourceCode cpp"><span class="pp">#3</span></code>, because we know the user wants <code class="sourceCode cpp">strong_ordering</code>, we provide one.</p>
+<h2 id="building-complexity"><span class="header-section-number">3.5</span> Building complexity<a href="#building-complexity" class="self-link"></a></h2>
+<p>The proposal here <em>only</em> applies to the specific case where we are defaulting <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> and provide the comparison category that we want to default to. That might seem inherently limiting, but we can build up quite a lot from there.</p>
+<p>Consider <code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>. Today, its <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=</span></code> is defined in terms of its <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code>, which assumes a weak ordering. One thing we could do (which this paper is not proposing, this is just a thought experiment) is to synthesize <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> with weak ordering as a fallback.</p>
+<p>We do that with just a simple helper trait (which this paper is also not proposing):</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="co">// use whatever &lt;=&gt; does, or pick weak_ordering</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> C<span class="op">&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="kw">using</span> fallback_to <span class="op">=</span> conditional_t<span class="op">&lt;</span>ThreeWayComparable<span class="op">&lt;</span>T<span class="op">&gt;</span>, compare_3way_type_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, C<span class="op">&gt;</span>;</span>
+<span id="cb28-4"><a href="#cb28-4"></a></span>
+<span id="cb28-5"><a href="#cb28-5"></a><span class="co">// and then we can just...</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="kw">struct</span> pair <span class="op">{</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a>    T first;</span>
+<span id="cb28-9"><a href="#cb28-9"></a>    U second;</span>
+<span id="cb28-10"><a href="#cb28-10"></a>    </span>
+<span id="cb28-11"><a href="#cb28-11"></a>    common_comparison_category_t<span class="op">&lt;</span></span>
+<span id="cb28-12"><a href="#cb28-12"></a>        fallback_to<span class="op">&lt;</span>T, weak_ordering<span class="op">&gt;</span>,</span>
+<span id="cb28-13"><a href="#cb28-13"></a>        fallback_to<span class="op">&lt;</span>U, weak_ordering<span class="op">&gt;&gt;</span></span>
+<span id="cb28-14"><a href="#cb28-14"></a>    <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>pair <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb28-15"><a href="#cb28-15"></a><span class="op">}</span>;</span></code></pre></div>
+<p><code class="sourceCode cpp">pair<span class="op">&lt;</span>T,U<span class="op">&gt;</span></code> is a simple type, we just want the default comparisons. Being able to default spaceship is precisely what we want. This proposal gets us there, with minimal acrobatics. Note that as a result of P1185R0, this would also give us a defaulted <code class="sourceCode cpp"><span class="op">==</span></code>, and hence we get all six comparison functions in one go.</p>
+<p>Building on this idea, we can create a wrapper type which defaults <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> using these language rules for a single type, and wrap that into more complex function objects:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="co">// a type that defaults a 3-way comparison for T for the given category</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a><span class="kw">struct</span> cmp_with_fallback <span class="op">{</span></span>
+<span id="cb29-4"><a href="#cb29-4"></a>    T <span class="kw">const</span><span class="op">&amp;</span> t;</span>
+<span id="cb29-5"><a href="#cb29-5"></a>    fallback_to<span class="op">&lt;</span>T,Cat<span class="op">&gt;</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>cmp_with_fallback <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb29-6"><a href="#cb29-6"></a><span class="op">}</span>;</span>
+<span id="cb29-7"><a href="#cb29-7"></a></span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="co">// Check if that wrapper type has a non-deleted &lt;=&gt;, whether because T</span></span>
+<span id="cb29-9"><a href="#cb29-9"></a><span class="co">// has one or because T provides the necessary operators for one to be</span></span>
+<span id="cb29-10"><a href="#cb29-10"></a><span class="co">// synthesized per this proposal</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb29-12"><a href="#cb29-12"></a><span class="kw">concept</span> FallbackThreeWayComparable <span class="op">=</span></span>
+<span id="cb29-13"><a href="#cb29-13"></a>    ThreeWayComparable<span class="op">&lt;</span>cmp_with_fallback<span class="op">&lt;</span>T, Cat<span class="op">&gt;&gt;</span>;</span>
+<span id="cb29-14"><a href="#cb29-14"></a></span>
+<span id="cb29-15"><a href="#cb29-15"></a><span class="co">// Function objects to do a three-way comparison with the specified fallback</span></span>
+<span id="cb29-16"><a href="#cb29-16"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb29-17"><a href="#cb29-17"></a><span class="kw">struct</span> compare_3way_fallback_t <span class="op">{</span></span>
+<span id="cb29-18"><a href="#cb29-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span>FallbackThreeWayComparable<span class="op">&lt;</span>Cat<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb29-19"><a href="#cb29-19"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>T <span class="kw">const</span><span class="op">&amp;</span> lhs, T <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-20"><a href="#cb29-20"></a>        <span class="kw">using</span> C <span class="op">=</span> cmp_with_fallback<span class="op">&lt;</span>T, Cat<span class="op">&gt;</span>;</span>
+<span id="cb29-21"><a href="#cb29-21"></a>        <span class="cf">return</span> C<span class="op">{</span>lhs<span class="op">}</span> <span class="op">&lt;=&gt;</span> C<span class="op">{</span>rhs<span class="op">}</span>;</span>
+<span id="cb29-22"><a href="#cb29-22"></a>    <span class="op">}</span></span>
+<span id="cb29-23"><a href="#cb29-23"></a><span class="op">}</span>;</span>
+<span id="cb29-24"><a href="#cb29-24"></a></span>
+<span id="cb29-25"><a href="#cb29-25"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb29-26"><a href="#cb29-26"></a><span class="kw">inline</span> <span class="kw">constexpr</span> compare_3way_fallback_t<span class="op">&lt;</span>Cat<span class="op">&gt;</span> compare_3way_fallback<span class="op">{}</span>;</span></code></pre></div>
+<p>And now implementing <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> for <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> unconditionally is straightforward:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span>FallbackThreeWayComparable<span class="op">&lt;</span>weak_ordering<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3"></a>    <span class="co">// Use &lt;=&gt; if T has it, otherwise use a combination of either ==/&lt;</span></span>
+<span id="cb30-4"><a href="#cb30-4"></a>    <span class="co">// or just &lt; based on what T actually has. The proposed language</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>    <span class="co">// change does the right thing for us</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>    <span class="cf">return</span> lexicographical_compare_3way<span class="op">(</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a>        lhs<span class="op">.</span>begin<span class="op">()</span>, lhs<span class="op">.</span>end<span class="op">()</span>,</span>
+<span id="cb30-8"><a href="#cb30-8"></a>        rhs<span class="op">.</span>begin<span class="op">()</span>, rhs<span class="op">.</span>end<span class="op">()</span>,</span>
+<span id="cb30-9"><a href="#cb30-9"></a>        compare_3way_fallback<span class="op">&lt;</span>weak_ordering<span class="op">&gt;)</span>;</span>
+<span id="cb30-10"><a href="#cb30-10"></a><span class="op">}</span></span></code></pre></div>
+<p>As currently specified, <code class="sourceCode cpp">std<span class="op">::</span>weak_order<span class="op">()</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>partial_order<span class="op">()</span></code> from [cmp.alg] basically follow the language rules proposed here. We can implement those with a slightly different approach to the above - no fallback necessary here because we need to enforce a particular category:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">struct</span> compare_as <span class="op">{</span></span>
+<span id="cb31-3"><a href="#cb31-3"></a>    T <span class="kw">const</span><span class="op">&amp;</span> t;</span>
+<span id="cb31-4"><a href="#cb31-4"></a>    Cat <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>compare_as <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb31-5"><a href="#cb31-5"></a><span class="op">}</span>;</span>
+<span id="cb31-6"><a href="#cb31-6"></a></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="co">// Check if the compare_as wrapper has non-deleted &lt;=&gt;, whether because T</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a><span class="co">// provides the desired comparison category or because we can synthesize one</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Cat<span class="op">&gt;</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a><span class="kw">concept</span> SyntheticThreeWayComparable <span class="op">=</span> ThreeWayComparable<span class="op">&lt;</span>compare_as<span class="op">&lt;</span>T, Cat<span class="op">&gt;</span>, Cat<span class="op">&gt;</span>;</span>
+<span id="cb31-11"><a href="#cb31-11"></a></span>
+<span id="cb31-12"><a href="#cb31-12"></a><span class="kw">template</span> <span class="op">&lt;</span>SyntheticThreeWayComparable<span class="op">&lt;</span>weak_ordering<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb31-13"><a href="#cb31-13"></a>weak_ordering weak_order<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> a, T <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-14"><a href="#cb31-14"></a>    <span class="kw">using</span> C <span class="op">=</span> compare_as<span class="op">&lt;</span>T, weak_ordering<span class="op">&gt;</span>;</span>
+<span id="cb31-15"><a href="#cb31-15"></a>    <span class="cf">return</span> C<span class="op">{</span>a<span class="op">}</span> <span class="op">&lt;=&gt;</span> C<span class="op">{</span>b<span class="op">}</span>;</span>
+<span id="cb31-16"><a href="#cb31-16"></a><span class="op">}</span></span>
+<span id="cb31-17"><a href="#cb31-17"></a></span>
+<span id="cb31-18"><a href="#cb31-18"></a><span class="kw">template</span> <span class="op">&lt;</span>SyntheticThreeWayComparable<span class="op">&lt;</span>partial_ordering<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb31-19"><a href="#cb31-19"></a>partial_ordering partial_order<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> a, T <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-20"><a href="#cb31-20"></a>    <span class="kw">using</span> C <span class="op">=</span> compare_as<span class="op">&lt;</span>T, partial_ordering<span class="op">&gt;</span>;</span>
+<span id="cb31-21"><a href="#cb31-21"></a>    <span class="cf">return</span> C<span class="op">{</span>a<span class="op">}</span> <span class="op">&lt;=&gt;</span> C<span class="op">{</span>b<span class="op">}</span>;</span>
+<span id="cb31-22"><a href="#cb31-22"></a><span class="op">}</span></span></code></pre></div>
+<p>None of the above is being proposed, it’s just a demonstration that this language feature is sufficient to build up fairly complex tools in a short amount of code.</p>
+<h2 id="what-about-compare_3way"><span class="header-section-number">3.6</span> What about <code class="sourceCode cpp">compare_3way<span class="op">()</span></code>?<a href="#what-about-compare_3way" class="self-link"></a></h2>
+<p>Notably absent from this paper has been a real discussion over the fate of <code class="sourceCode cpp">std<span class="op">::</span>compare_3way<span class="op">()</span></code>. R0 of this paper made this algorithm obsolete, but that’s technically no longer true. It does, however, fall out from the tools we will need to build up in code to solve other problems. In fact, we’ve already written it:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">constexpr</span> <span class="kw">inline</span> <span class="kw">auto</span> compare_3way <span class="op">=</span> compare_3way_fallback<span class="op">&lt;</span>strong_ordering<span class="op">&gt;</span>;</span></code></pre></div>
+<p>For further discussion, see <span class="citation" data-cites="P1188R0">[<a href="#ref-P1188R0" role="doc-biblioref">P1188R0</a>]</span>. This paper focuses just on the language change for <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>.</p>
+<h2 id="what-about-xxx_equality"><span class="header-section-number">3.7</span> What about <code class="sourceCode cpp">XXX_equality</code>?<a href="#what-about-xxx_equality" class="self-link"></a></h2>
+<p>This paper proposes synthesizing <code class="sourceCode cpp">strong_equality</code> and <code class="sourceCode cpp">weak_equality</code> orderings, simply for consistency, even if such return types from <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> are somewhat questionable. As long as we have language types for which <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> yields a comparison category of type <code class="sourceCode cpp">XXX_equality</code>, all the rules we build on top of <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> should respect that and be consistent.</p>
+<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The wording here introduces the term <em>usable function</em>, which is also introduced in <span class="citation" data-cites="P1630R0">[<a href="#ref-P1630R0" role="doc-biblioref">P1630R0</a>]</span> with the same wording. ]</span></p>
+<p>Add a new subbullet in 6.2 [basic.def.odr], paragraph 12:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">12</a></span> Given such an entity named <code class="sourceCode cpp">D</code> defined in more than one translation unit, then</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(12.8)</a></span> <span class="addu">if <code class="sourceCode cpp">D</code> is a class with a defaulted three-way comparison operator function ([class.spaceship]), it is as if the operator was implicitly defined in every translation unit where it is odr-used, and the implicit definition in every translation unit shall call the same comparison operators for each subobject of <code class="sourceCode cpp">D</code>.</span></li>
+</ul>
+</blockquote>
+<p>Insert a new paragraph before 11.10.3 [class.spaceship], paragraph 1:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">0</a></span> The <em>synthesized three-way comparison for comparison category type <code class="sourceCode cpp">R</code></em> ([cmp.categories]) of glvalues <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code> of the same type is defined as follows:</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.1)</a></span> If overload resolution for <code class="sourceCode cpp">a <span class="op">&lt;=&gt;</span> b</code> finds a usable function ([over.match]), <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>R<span class="op">&gt;(</span>a <span class="op">&lt;=&gt;</span> b<span class="op">)</span></code>;</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.2)</a></span> Otherwise, if overload resolution for <code class="sourceCode cpp">a <span class="op">&lt;=&gt;</span> b</code> finds at least one viable candidate, the synthesized three-way comparison is not defined;</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.3)</a></span> Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">strong_ordering</code>, then</p>
+<blockquote>
+<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1"></a>a == b ? strong_ordering::equal : </span>
+<span id="cb33-2"><a href="#cb33-2"></a>a &lt; b  ? strong_ordering::less : </span>
+<span id="cb33-3"><a href="#cb33-3"></a>         strong_ordering::greater</span></code></pre></div>
+</blockquote></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.4)</a></span> Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">weak_ordering</code>, then</p>
+<blockquote>
+<div class="sourceCode" id="cb34"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb34-1"><a href="#cb34-1"></a>a == b ? weak_ordering::equal : </span>
+<span id="cb34-2"><a href="#cb34-2"></a>a &lt; b  ? weak_ordering::less : </span>
+<span id="cb34-3"><a href="#cb34-3"></a>         weak_ordering::greater</span></code></pre></div>
+</blockquote></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.5)</a></span> Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">partial_ordering</code>, then</p>
+<blockquote>
+<div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1"></a>a == b ? partial_ordering::equivalent : </span>
+<span id="cb35-2"><a href="#cb35-2"></a>a &lt; b  ? partial_ordering::less :</span>
+<span id="cb35-3"><a href="#cb35-3"></a>b &lt; a  ? partial_ordering::greater :</span>
+<span id="cb35-4"><a href="#cb35-4"></a>         partial_ordering::unordered</span></code></pre></div>
+</blockquote></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.6)</a></span> Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">strong_equality</code>, then <code class="sourceCode cpp">a <span class="op">==</span> b <span class="op">?</span> strong_equality<span class="op">::</span>equal <span class="op">:</span> strong_equality<span class="op">::</span>nonequal</code>;</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.7)</a></span> Otherwise, if <code class="sourceCode cpp">R</code> is <code class="sourceCode cpp">weak_equality</code>, then <code class="sourceCode cpp">a <span class="op">==</span> b <span class="op">?</span> weak_equality<span class="op">::</span>equivalent <span class="op">:</span> weak_equality<span class="op">::</span>nonequivalent</code>;</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized">(0.8)</a></span> Otherwise, the synthesized three-way comparison is not defined.</p></li>
+</ul>
+<p>[<em>Note</em>: A synthesized three-way comparison may be ill-formed if overload resolution finds usable functions that do not otherwise meet the requirements implied by the defined expression. <em>-end node</em> ]</p>
+</div>
+</blockquote>
+<p>Change 11.10.3 [class.spaceship], paragraph 1:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> Given an expanded list of subobjects for an object <code class="sourceCode cpp">x</code> of type <code class="sourceCode cpp">C</code>, the type of the expression <code>x<sub><em>i</em></sub></code> <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <code>x<sub><em>i</em></sub></code> is denoted by <code>R<sub>i</sub></code>. <span class="addu">If overload resolution as applied to <code>x<sub><em>i</em></sub></code> <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <code>x<sub><em>i</em></sub></code> does not find a usable function, then <code>R<sub>i</sub></code> is <code class="sourceCode cpp"><span class="dt">void</span></code>.</span> If the declared return type of a defaulted three-way comparison operator function is <code class="sourceCode cpp"><span class="kw">auto</span></code>, then the return type is deduced as the common comparison type (see below) of <code>R<sub>0</sub></code>, <code>R<sub>1</sub></code>, …, <code>R<sub>n−1</sub></code>. [<em>Note</em>: Otherwise, the program will be ill-formed if the expression <code>x<sub>i</sub></code> <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> <code>x<sub>i</sub></code> is not implicitly convertible to the declared return type for any <code class="sourceCode cpp">i</code>.—<em>end note</em>] If the return type is deduced as <code class="sourceCode cpp"><span class="dt">void</span></code>, the operator function is defined as deleted. <span class="addu">If the declared return type of a defaulted three-way comparison operator function is <code class="sourceCode cpp">R</code> and the synthesized three-way comparison for comparison category type <code class="sourceCode cpp">R</code> between any objects <code>x<sub><em>i</em></sub></code> and <code>x<sub><em>i</em></sub></code> is not defined or would be ill-formed, the operator function is defined as deleted.</span></p>
+</blockquote>
+<p>Change 11.10.3 [class.spaceship], paragraph 2, to use the new synthesized comparison instead of <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code></p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> The return value <code class="sourceCode cpp">V</code> of type <code class="sourceCode cpp">R</code> of the defaulted three-way comparison operator function with parameters <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> of the same type is determined by comparing corresponding elements <code>x<sub><em>i</em></sub></code> and <code>y<sub><em>i</em></sub></code> in the expanded lists of subobjects for <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> (in increasing index order) until the first index <code class="sourceCode cpp">i</code> where <span class="rm" style="color: #bf0303"><del><code>x<sub><em>i</em></sub></code> <span><code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code></span> <code>y<sub><em>i</em></sub></code></del></span> <span class="addu">the synthesized three-way comparison for comparison category type <code class="sourceCode cpp">R</code> between <code>x<sub><em>i</em></sub></code> and <code>y<sub><em>i</em></sub></code></span> yields a result value <code>v<sub><em>i</em></sub></code> where <code>v<sub><em>i</em></sub></code> <code class="sourceCode cpp"><span class="op">!=</span> <span class="dv">0</span></code>, contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code>, yields <code class="sourceCode cpp"><span class="kw">true</span></code>; <code class="sourceCode cpp">V</code> is <code>v<sub><em>i</em></sub></code> converted to <code class="sourceCode cpp">R</code>. If no such index exists, <code class="sourceCode cpp">V</code> is <code class="sourceCode cpp">std<span class="op">::</span>strong_ordering<span class="op">::</span>equal</code> converted to <code class="sourceCode cpp">R</code>.</p>
+</blockquote>
+<p>Add to the end of 12.3 [over.match], the new term <em>usable function</em>:</p>
+<div class="add" style="color: #006e28">
+
+<blockquote>
+<p>Overload resolution results in a <em>usable function</em> if overload resolution succeeds and the selected function is not deleted and is accessible from the context in which overload resolution was performed.</p>
+</blockquote>
+
+</div>
+<p>Update the feature-test macro in 15.10 [cpp.predefined] for <code class="sourceCode cpp">__cpp_impl_three_way_comparison</code> to the date of the editor’s choosing:</p>
+<table>
+<tr>
+<th>
+Macro name
+</th>
+<th>
+Value
+</th>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">__cpp_impl_three_way_comparison</code>
+</td>
+<td>
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp"><span class="dv">201711</span><span class="bu">L</span></code></span></del></span> <span class="addu"><code class="sourceCode cpp"><span class="op">??????</span>L</code></span>
+</td>
+</tr>
+</table>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: Why is it <code class="sourceCode cpp">__cpp_impl_three_way_comparison</code> as opposed to <code class="sourceCode cpp">__cpp_three_way_comparison</code> or even <code class="sourceCode cpp">__cpp_spaceship</code>? ]</span></p>
+<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Thanks to Gašper Ažman, Agustín Bergé, Jens Maurer, Richard Smith, Jeff Snyder, Tim Song, Herb Sutter, and Tony van Eerd for the many discussions around these issues. Thanks to the Core Working Group for being vigilant and ensuring a better proposal.</p>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
+
+<div id="refs" role="doc-bibliography">
+<div id="ref-P0515R3">
+<p>[P0515R3] Herb Sutter, Jens Maurer, Walter E. Brown. 2017. Consistent comparison. <br />
+<a href="https://wg21.link/p0515r3">https://wg21.link/p0515r3</a></p>
+</div>
+<div id="ref-P1185R2">
+<p>[P1185R2] Barry Revzin. 2019. <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span> <span class="op">!=</span> <span class="op">==</span></code>. <br />
+<a href="https://wg21.link/p1185r2">https://wg21.link/p1185r2</a></p>
+</div>
+<div id="ref-P1186R0">
+<p>[P1186R0] Barry Revzin. 2019. When do you actually use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>? <br />
+<a href="https://wg21.link/p1186r0">https://wg21.link/p1186r0</a></p>
+</div>
+<div id="ref-P1186R1">
+<p>[P1186R1] Barry Revzin. 2019. When do you actually use <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>? <br />
+<a href="https://wg21.link/p1186r1">https://wg21.link/p1186r1</a></p>
+</div>
+<div id="ref-P1188R0">
+<p>[P1188R0] Barry Revzin. 2019. Library utilities for <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>. <br />
+<a href="https://wg21.link/p1188r0">https://wg21.link/p1188r0</a></p>
+</div>
+<div id="ref-P1630R0">
+<p>[P1630R0] Barry Revzin. 2019. Spaceship needs a tune-up: Addressing some discovered issues with P0515 and P1185. <br />
+<a href="https://wg21.link/p1630r0">https://wg21.link/p1630r0</a></p>
+</div>
+<div id="ref-Revzin">
+<p>[Revzin] Barry Revzin. 2018. Conditionally implementing spaceship. <br />
+<a href="https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/">https://brevzin.github.io/c++/2018/12/21/spaceship-for-vector/</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
