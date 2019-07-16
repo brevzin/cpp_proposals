@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` _`INVOKE`_"
-document: D1065R2
+document: P1065R2
 audience: LWG
 date: today
 author:
@@ -144,7 +144,7 @@ In 17.3.1 [support.limits.general], add a feature test macro:
 </tr>
 <tr>
 <td>[`__cpp_lib_constexpr_invoke`]{.addu}</td>
-<td>[`201907L`]{.addu}</td>
+<td>[`??????L`]{.addu}</td>
 <td>[`<functional>`]{.addu}</td>
 </tr>
 </table>
@@ -282,7 +282,7 @@ Apply following changes to 20.14.3 [func.require]:
 > 
 > [a]{.pnum} [A *simple call wrapper* is a perfect forwarding call wrapper that
 > meets the *Cpp17CopyConstructible* and *Cpp17CopyAssignable* and whose copy
-> constructor, move constructor, and assignment operator are constexpr functions
+> constructor, move constructor, and assignment operators are constexpr functions
 > which do not throw exceptions.]{.addu}
 > 
 > [6]{.pnum} The copy/move constructor of [a perfect]{.rm} [an argument]{.addu}
@@ -481,7 +481,7 @@ direct-non-list-initialized with <code>std::forward&lt;T<sub>i</sub>&gt;(t<sub>i
 
 [2a]{.pnum} [*Expects*: `FD` and each <code>TD<sub>i</sub></code> meet the
 *Cpp17MoveConstructible* and *Cpp17Destructible* requirements.]{.addu}
-<code>INVOKE(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code>
+<code><i>INVOKE</i>(fd, w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub>)</code>
 ([func.require]) [shall be]{.rm} [is]{.addu} a valid expression for some values
 <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>, where `N` has the
 value `sizeof...(bound_args)`. [The cv-qualifiers *cv* of the call wrapper `g`,
@@ -492,13 +492,13 @@ as specified below, shall be neither `volatile` nor `const volatile`.]{.rm}
 `g` is not volatile-qualified,]{.addu} [The effect of]{.rm} [invocation]{.addu}
 <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code> [shall be]{.rm}
 [is expression-equivalent ([defns.expression-equivalent]) to]{.addu}
-[<code>INVOKE(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>),
+[<code><i>INVOKE</i>(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>),
 std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …,
 std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code>]{.rm}
-[<code>INVOKE(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>),
+[<code><i>INVOKE</i>(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>),
 static_cast&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), static_cast&lt;V<sub>2</sub>&gt;(v<sub>2</sub>),
 …, static_cast&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the first
-overload, and <code>INVOKE&lt;R&gt;(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>),
+overload, and <code><i>INVOKE</i>&lt;R&gt;(static_cast&lt;V<sub>fd</sub>&gt;(v<sub>fd</sub>),
 static_cast&lt;V<sub>1</sub>&gt;(v<sub>1</sub>), static_cast&lt;V<sub>2</sub>&gt;(v<sub>2</sub>),
 …, static_cast&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code> for the second
 overload,]{.addu} where the values and types of [the target argument <code>v<sub>fd</sub></code>
@@ -531,7 +531,7 @@ template<class R, class F, class... BoundArgs>
 
 [6]{.pnum} *Requires*: `is_constructible_v<FD, F>` shall be `true`. For each
 <code>T<sub>i</sub></code> in `BoundArgs`, <code>is_constructible_v&lt;TD<sub>i</sub>,
-T<sub>i</sub>&gt;</code> shall be true. <code>INVOKE(fd, w<sub>1</sub>,
+T<sub>i</sub>&gt;</code> shall be true. <code><i>INVOKE</i>(fd, w<sub>1</sub>,
 w<sub>2</sub>, …, w<sub>N</sub>)</code> ([func.require]) shall be a valid
 expression for some values <code>w<sub>1</sub>, w<sub>2</sub>, …, w<sub>N</sub></code>,
 where `N` has the value `sizeof...(bound_args)`. The cv-qualifiers *cv* of the
@@ -540,7 +540,7 @@ call wrapper `g`, as specified below, shall be neither `volatile` nor
 
 [7]{.pnum} *Returns*: An argument forwarding call wrapper g ([func.require]).
 The effect of <code>g(u<sub>1</sub>, u<sub>2</sub>, …, u<sub>M</sub>)</code>
-shall be <code>INVOKE&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>),
+shall be <code><i>INVOKE</i>&lt;R&gt;(fd, std::forward&lt;V<sub>1</sub>&gt;(v<sub>1</sub>),
 std::forward&lt;V<sub>2</sub>&gt;(v<sub>2</sub>), …, std::forward&lt;V<sub>N</sub>&gt;(v<sub>N</sub>))</code>
 where the values and types of the bound arguments
 <code>v<sub>1</sub>, v<sub>2</sub>, …, v<sub>N</sub></code> are determined as
@@ -591,7 +591,7 @@ is <code>fd</code> and its corresponding type <code>V<sub>fd</sub></code> is
 Add constant requirement to the placeholders in 20.14.14.4 [func.bind.place]/1:
 
 > [1]{.pnum} All placeholder types [meet the]{.addu} [shall be]{.rm}
-*Cpp17DefaultConstructible* and *Cpp17CopyConstructible*[ requirements]{.addu},
+*Cpp17DefaultConstructible* and *Cpp17CopyConstructible* [ requirements]{.addu},
 and their default constructors and copy/move constructors [are constexpr
 functions which do]{.addu} [shall]{.rm} not throw exceptions. It is
 implementation-defined whether placeholder types [meet the]{.addu} [are]{.rm}
@@ -610,7 +610,7 @@ Add `constexpr` to `std::mem_fn()` in 20.14.15 [func.memfn]
 
 > [1]{.pnum} *Returns*: A simple call wrapper `fn` [such that the expression
 <code>fn(t, a<sub>2</sub>, …, a<sub>N</sub>)</code> is equivalent to
-<code>INVOKE(pm, t, a<sub>2</sub>, …, a<sub>N</sub>)</code> ([func.require]).]{.rm}
+<code><i>INVOKE</i>(pm, t, a<sub>2</sub>, …, a<sub>N</sub>)</code> ([func.require]).]{.rm}
 [with call pattern `invoke(pmd, call_args...)`, where `pmd` is the target object
 of `fn` of type `R T::*` direct-non-list-initialized with `pm`, and `call_args`
 is an argument pack used in a function call expression ([expr.call]) of `pm`.]{.addu}
@@ -619,7 +619,7 @@ is an argument pack used in a function call expression ([expr.call]) of `pm`.]{.
 
 Thanks to Casey Carter and Agustín Bergé for going over the history of issues
 surrounding `constexpr invoke` and suggesting that this proposal be written.
-Thanks to Daniel Krügler, Tim Song and,  Casey Carter for help on the wording.
+Thanks to Daniel Krügler, Tim Song, and Casey Carter for help on the wording.
 
 ---
 references:
