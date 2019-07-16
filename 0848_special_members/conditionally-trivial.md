@@ -1,6 +1,6 @@
 ---
 title: "Conditionally Trivial Special Member Functions"
-document: P0848R2
+document: P0848R3
 date: today
 audience: CWG
 author:
@@ -151,11 +151,13 @@ constrained than `#2`, so only `#1` is an eligible copy constructor.
 Change 6.6.7 [class.temporary] to refer to the future definition of
 eligibility:
 
-> [3]{.pnum} When an object of class type `X` is passed to or returned from a
-> function, if each [eligible]{.addu} copy constructor [([class.prop])]{.addu}
-> [,]{.rm} [and]{.addu} move constructor [is trivial, the]{.addu} destructor of
-> X is either trivial or deleted, and `X` has at least one [non-deleted]{.rm}
-> [eligible]{.addu} copy or move constructor, implementations are permitted to
+
+> [3]{.pnum} When an object of class type X is passed to or returned from a function,
+> if [each copy constructor, move constructor, and destructor of X is either trivial or deleted,]{.rm}
+> [`X` has at least one one eligible copy or move constructor ([class.prop]),
+> each such constructor is trivial, and the destructor of `X` is either trivial
+> or deleted,]{.addu}
+> implementations are permitted to
 > create a temporary object to hold the function parameter or result object.
 > The temporary object is constructed from the function argument or return
 > value, respectively, and the function's parameter or return object is
@@ -180,8 +182,9 @@ that aren't destructors:
 > provide implicit definitions for them ([class.ctor], [class.dtor],
 > [class.copy.ctor], [class.copy.assign]), which might mean defining them as
 > deleted. [A defaulted prospective destructor ([class.dtor]) that is not a
-> destructor shall be defined as deleted. A defaulted special member function
-> that is not an eligible special member function ([class.prop]) shall be
+> destructor is defined as deleted. A defaulted special member function
+> that is neither a prospective destructor nor an eligible special member
+> function ([class.prop]) is
 > defined as deleted.]{.addu} A function is _user-provided_ if it is
 > user-declared and not explicitly defaulted or deleted on its first
 > declaration.
@@ -189,28 +192,39 @@ that aren't destructors:
 Insert at the beginning of 11.1 [class.prop] a definition of eligibility:
 
 ::: add
+> [-1]{.pnum} Two special member functions are of the same kind if
+>
+> - [-1.1]{.pnum} they are both default constructors,
+> - [-1.2]{.pnum} they are both copy or move constructors with the same first parameter type, or
+> - [-1.3]{.pnum} they are both copy or move assignment operators with 
+> the same first parameter type and the same *cv-qualifier*s
+> and *ref-qualifier*, if any.
+
 > [0]{.pnum} An _eligible special member function_ is a special member function
-> ([special]):
+> ([special])
 > 
 > - [0.1]{.pnum} that is not deleted,
-> - [0.2]{.pnum} where each of its associated constraints ([temp.constr]), if
+> - [0.2]{.pnum} where its associated constraints ([temp.constr]), if
 > any, are satisfied, and
-> - [0.3]{.pnum} no special member function of the same
-> kind with the same first parameter type (if any) is more constrained
+> - [0.3]{.pnum} where no special member function of the same
+> kind is more constrained
 > ([temp.constr.order]).
 :::
 
 Change the definitions of _trivially copyable_ and _trivial_ in 11.1
-[class.prop]:
+[class.prop] (this flips the first two bullet points):
 
 > [1]{.pnum} A _trivially copyable class_ is a class:
 > 
-> - [1.1]{.pnum} where each [eligible]{.addu} copy constructor, move
-> constructor, copy assignment operator, and move assignment operator
-> ([class.copy.ctor], [class.copy.assign]) is [either deleted or]{.rm} trivial,
-> - [1.2]{.pnum} that has at least one [non-deleted]{.rm} [eligible]{.addu}
+> - [1.0]{.pnum} [where each copy constructor, move constructor, copy assignment
+operator, and move assignment operator ([class.copy.ctor], [class.copy.assign])
+is either deleted or trivial,]{.rm}
+> - [1.1]{.pnum} that has at least one [non-deleted]{.rm} [eligible]{.addu}
 > copy constructor, move constructor, copy assignment operator, or move
-> assignment operator, and
+> assignment operator [([class.copy.ctor], [class.copy.assign])]{.addu}, [and]{.rm}
+> - [1.2]{.pnum} [where each eligible copy constructor, move
+> constructor, copy assignment operator, and move assignment operator
+> is trivial, and]{.addu}
 - [1.3]{.pnum} that has a trivial, non-deleted
 > destructor.
 
@@ -241,10 +255,12 @@ Change 11.3.6 [class.dtor]:
 
 > [a]{.pnum} [At the end of the definition of a class, overload resolution is
 > performed among the prospective destructors declared in that class with an
-> empty argument list to select the _destructor_ for the class. The program is
+> empty argument list to select the _destructor_ for the class, also known as
+> the _selected destructor_.
+> The program is
 > ill-formed if overload resolution fails. Destructor selection does not
-> constitute a reference to ([dcl.fct.def.delete]) or odr-use of
-> ([basic.def.odr]) the selected destructor, and in particular, the selected
+> constitute a reference to ([dcl.fct.def.delete]) or odr-use ([basic.def.odr]) of
+> the selected destructor, and in particular, the selected
 > destructor may be deleted.]{.addu}
 
 Change 11.3.6 [class.dtor]:
@@ -265,11 +281,18 @@ Change 11.3.6 [class.dtor]:
 Change 11.3.6 [class.dtor]:
 
 > [10]{.pnum} A [prospective]{.addu} destructor can be declared `virtual`
-> (11.6.2) or pure `virtual` (11.6.3); if [the destructor of a class is
-> `virtual` and]{.addu} any objects of that class or any derived class are
+> (11.6.2) or pure `virtual` (11.6.3)[; if]{.rm} [. If the destructor of a class is
+> virtual and]{.addu} any objects of that class or any derived class are
 > created in the program, the destructor shall be defined. If a class has a
 > base class with a virtual destructor, its destructor (whether user- or
 > implicitly-declared) is virtual.
+
+Add to 13.8.2 [temp.explicit], immediately after paragraph 12:
+
+> [12]{.pnum} An explicit instantiation definition that names a class template specialization explicitly instantiates the class template specialization and is an explicit instantiation definition of only those members that have been defined at the point of instantiation.
+> 
+> [12b]{.pnum} [An explicit instantiation of a prospective destructor shall name
+> the selected destructor of the class.]{.addu}
 
 # Acknowledgments
 
