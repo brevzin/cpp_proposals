@@ -1,4 +1,4 @@
-all : p1186r3.html d1614r2.html d1630r1.html
+all : p1186r3.html d1614r2.html p1630r1.html
 
 include ../md/mpark-wg21.mk
 
@@ -17,5 +17,5 @@ p1189r0.html : add-spaceship-to-lib.md
 d1614r2.html : mothership.md
 	$(PANDOC)
 
-d1630r1.html : spaceship-tuneup.md
+p1630r1.html : spaceship-tuneup.md
 	$(PANDOC)

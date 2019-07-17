@@ -1,7 +1,7 @@
 ---
 title: Spaceship needs a tune-up
 subtitle: Addressing some discovered issues with P0515 and P1185
-document: D1630R1
+document: P1630R1
 date: today
 audience: CWG, EWG
 author:
@@ -438,6 +438,9 @@ and then stipulate our requirements on that chosen `operator==`.
 
 # Wording
 
+[The wording here introduces the term *usable function*, which is also
+introduced in P1186R2 with the same wording.]{.ednote}
+
 Insert a new paragraph after 11.10.1 [class.compare.default]/1:
 
 ::: add
@@ -459,11 +462,12 @@ of type `const C`, either:
 > `C` has no `mutable` or `volatile` subobjects.]{.rm}
 >   - [3.2.1]{.pnum} [All of `C`'s base class subobjects and non-static data
 members have strong structural equality.]{.addu}
->   - [3.2.2]{.pnum} [`C` has no `mutable` or `volatile` subobjects.]{.addu}
->   - [3.2.3]{.pnum} [Overload resolution
-performed among the _member-declaration_ s in the definition of `C` for the
-expression `x == x` succeeds and finds either a friend or public member `==`
-operator that is defined as defaulted.]{.addu}
+>   - [3.2.2]{.pnum} [`C` has no `mutable` or `volatile` non-static data
+> members.]{.addu}
+>   - [3.2.3]{.pnum} [At the end of the definition of `C`, overload resolution
+> performed for the expression `x == x` succeeds and finds either a friend
+> or public member `==` operator that is defined as defaulted in the definition
+> of `C`.]{.addu}
 
 
 Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle the error cases:
@@ -471,7 +475,8 @@ Change 11.10.2 [class.eq]/4 to require `bool` and also more exhaustively handle 
 > [4]{.pnum} A defaulted `!=` operator function for a class `C` with parameters `x` and `y` is defined as deleted if
 > 
 > - [4.1]{.pnum} overload resolution ([over.match]), as applied to `x == y` [(also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function]{.rm} [does not result in a usable function]{.addu}, or
-> - [4.2]{.pnum} `x == y` [cannot be contextually converted to `bool`]{.rm} [is not of type `cv bool`]{.addu}.
+> - [4.2]{.pnum} `x == y` [cannot be contextually converted to `bool`]{.rm} [is
+> not a prvalue of type `bool`]{.addu}.
 >
 > Otherwise, the operator function yields [`(x == y) ? false : true`]{.rm} [`!(x == y)`]{.addu}.
 
@@ -487,7 +492,9 @@ Change 11.10.4 [class.rel]/2 to likewise more exhaustively handle the error case
 Add to the end of 12.3 [over.match], the new term *usable function*:
 
 ::: add
-> Overload resolution is said to result in a *usable function* `F` if overload resolution succeeds and selects a function `F` that is not deleted and is accessible from the context in which overload resolution was performed.
+> Overload resolution results in a *usable function* if overload resolution
+> succeeds and the selected function is not deleted and is accessible from
+> the context in which overload resolution was performed.
 :::
 
 Change 12.3.1.2 [over.match.oper]/3.4, also splitting it up into sub-bullets:
@@ -506,7 +513,8 @@ Split 12.3.1.2 [over.match.oper]/8 into two paragraphs, and require the type be 
 
 > [8]{.pnum} If a rewritten [`operator<=>`]{.addu} candidate is selected by overload resolution for [a relational or three-way comparison]{.rm} [an]{.addu} operator `@`, `x @ y` is interpreted as [the rewritten expression:]{.rm} `0 @ (y <=> x)` if the selected candidate is a synthesized candidate with reversed order of parameters, or `(x <=> y) @ 0` otherwise, using the selected rewritten `operator<=>` candidate. [Rewritten candidates for the operator `@` are not considered in the context of the resulting expression.]{.addu}
 
-> [8*]{.pnum} If a rewritten [`operator==`]{.addu} candidate is selected by overload resolution for [a `!=` operator]{.rm} [an operator `@`]{.addu}, [its return type shall be `cv bool`, and `x @ y` is interpreted as:]{.addu}
+> [8*]{.pnum} If a rewritten [`operator==`]{.addu} candidate is selected by overload resolution for [a `!=` operator]{.rm} [an operator `@`]{.addu},
+> [its return type shall be *cv* `bool`, and `x @ y` is interpreted as:]{.addu}
 > 
 > - [8*.1]{.pnum} [If `@` is `!=` and the selected candidate is a synthesized candidate with reversed order of parameters, `!(y == x)`.]{.addu}
 > - [8*.2]{.pnum} [Otherwise, if `@` is `!=`, `!(x == y)`.]{.addu}
@@ -520,17 +528,21 @@ Add a new entry to [diff.cpp17.over]:
 ::: add
 > **Affected subclause**: [over.match.oper] <br />
 > **Change**: Equality and inequality expressions can now find reversed and rewritten candidates. <br />
-> **Rationale:** Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations. <br />
-**Effect on original feature:** Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.
+> **Rationale:** Improve consistency of equality with three-way comparison
+> and make it easier to write the full complement of equality operations. <br />
+**Effect on original feature:** Equality and inequality expressions between two objects of different types, where one is convertible to the other, could
+> invoke a different operator.
+> Equality and inequality expressions between two objects of the same type
+> could become ambiguous.
 > 
 > ```
 > struct A {
 >   operator int() const;
 > };
 > 
-> bool operator==(A, int);              // #1
-> // builtin bool operator==(int, int); // #2
-> // builtin bool operator!=(int, int); // #3
+> bool operator==(A, int);      // #1
+> // bool operator==(int, int); // #2, built-in
+> // bool operator!=(int, int); // #3, built-in
 > 
 > int check(A x, A y) {
 >   return (x == y) +  // ill-formed; previously well-formed

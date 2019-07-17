@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-06-24" />
+  <meta name="dcterms.date" content="2019-07-17" />
   <title>Spaceship needs a tune-up</title>
   <style>
       code{white-space: pre-wrap;}
@@ -531,11 +531,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D1630R1</td>
+    <td>P1630R1</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-06-24</td>
+    <td>2019-07-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -878,6 +878,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>We want similar wording for class types to select the unique best <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code>, and then stipulate our requirements on that chosen <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code>.</p>
 <h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The wording here introduces the term <em>usable function</em>, which is also introduced in P1186R2 with the same wording. ]</span></p>
 <p>Insert a new paragraph after 11.10.1 [class.compare.default]/1:</p>
 <div class="add" style="color: #006e28">
 
@@ -894,8 +895,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> <code class="sourceCode cpp">C</code> is a class type <span class="addu">where all of the following hold:</span> <span class="rm" style="color: #bf0303"><del>with an <span><code class="sourceCode cpp"><span class="op">==</span></code></span> operator defined as defaulted in the definition of <span><code class="sourceCode cpp">C</code></span>, <span><code class="sourceCode cpp">x <span class="op">==</span> x</code></span> is well-formed when contextually converted to bool, all of <span><code class="sourceCode cpp">C</code></span>’s base class subobjects and non-static data members have strong structural equality, and <span><code class="sourceCode cpp">C</code></span> has no <span><code class="sourceCode cpp"><span class="kw">mutable</span></code></span> or <span><code class="sourceCode cpp"><span class="kw">volatile</span></code></span> subobjects.</del></span>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(3.2.1)</a></span> <span class="addu">All of <code class="sourceCode cpp">C</code>’s base class subobjects and non-static data members have strong structural equality.</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.2.2)</a></span> <span class="addu"><code class="sourceCode cpp">C</code> has no <code class="sourceCode cpp"><span class="kw">mutable</span></code> or <code class="sourceCode cpp"><span class="kw">volatile</span></code> subobjects.</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.2.3)</a></span> <span class="addu">Overload resolution performed among the <em>member-declaration</em> s in the definition of <code class="sourceCode cpp">C</code> for the expression <code class="sourceCode cpp">x <span class="op">==</span> x</code> succeeds and finds either a friend or public member <code class="sourceCode cpp"><span class="op">==</span></code> operator that is defined as defaulted.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.2.2)</a></span> <span class="addu"><code class="sourceCode cpp">C</code> has no <code class="sourceCode cpp"><span class="kw">mutable</span></code> or <code class="sourceCode cpp"><span class="kw">volatile</span></code> non-static data members.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.2.3)</a></span> <span class="addu">At the end of the definition of <code class="sourceCode cpp">C</code>, overload resolution performed for the expression <code class="sourceCode cpp">x <span class="op">==</span> x</code> succeeds and finds either a friend or public member <code class="sourceCode cpp"><span class="op">==</span></code> operator that is defined as defaulted in the definition of <code class="sourceCode cpp">C</code>.</span></li>
 </ul></li>
 </ul>
 </blockquote>
@@ -904,7 +905,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> A defaulted <code class="sourceCode cpp"><span class="op">!=</span></code> operator function for a class <code class="sourceCode cpp">C</code> with parameters <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> is defined as deleted if</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> overload resolution ([over.match]), as applied to <code class="sourceCode cpp">x <span class="op">==</span> y</code> <span class="rm" style="color: #bf0303"><del>(also considering synthesized candidates with reversed order of parameters ([over.match.oper])), results in an ambiguity or a function that is deleted or inaccessible from the operator function</del></span> <span class="addu">does not result in a usable function</span>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> <code class="sourceCode cpp">x <span class="op">==</span> y</code> <span class="rm" style="color: #bf0303"><del>cannot be contextually converted to <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></del></span> <span class="addu">is not of type <code class="sourceCode cpp">cv <span class="dt">bool</span></code></span>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> <code class="sourceCode cpp">x <span class="op">==</span> y</code> <span class="rm" style="color: #bf0303"><del>cannot be contextually converted to <span><code class="sourceCode cpp"><span class="dt">bool</span></code></span></del></span> <span class="addu">is not a prvalue of type <code class="sourceCode cpp"><span class="dt">bool</span></code></span>.</li>
 </ul>
 <p>Otherwise, the operator function yields <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp"><span class="op">(</span>x <span class="op">==</span> y<span class="op">)</span> <span class="op">?</span> <span class="kw">false</span> <span class="op">:</span> <span class="kw">true</span></code></span></del></span> <span class="addu"><code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code></span>.</p>
 </blockquote>
@@ -921,7 +922,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="add" style="color: #006e28">
 
 <blockquote>
-<p>Overload resolution is said to result in a <em>usable function</em> <code class="sourceCode cpp">F</code> if overload resolution succeeds and selects a function <code class="sourceCode cpp">F</code> that is not deleted and is accessible from the context in which overload resolution was performed.</p>
+<p>Overload resolution results in a <em>usable function</em> if overload resolution succeeds and the selected function is not deleted and is accessible from the context in which overload resolution was performed.</p>
 </blockquote>
 
 </div>
@@ -942,7 +943,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized">8</a></span> If a rewritten <span class="addu"><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code></span> candidate is selected by overload resolution for <span class="rm" style="color: #bf0303"><del>a relational or three-way comparison</del></span> <span class="addu">an</span> operator <code class="sourceCode cpp"><span class="op">@</span></code>, <code class="sourceCode cpp">x <span class="op">@</span> y</code> is interpreted as <span class="rm" style="color: #bf0303"><del>the rewritten expression:</del></span> <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">@</span> <span class="op">(</span>y <span class="op">&lt;=&gt;</span> x<span class="op">)</span></code> if the selected candidate is a synthesized candidate with reversed order of parameters, or <code class="sourceCode cpp"><span class="op">(</span>x <span class="op">&lt;=&gt;</span> y<span class="op">)</span> <span class="op">@</span> <span class="dv">0</span></code> otherwise, using the selected rewritten <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> candidate. <span class="addu">Rewritten candidates for the operator <code class="sourceCode cpp"><span class="op">@</span></code> are not considered in the context of the resulting expression.</span></p>
 </blockquote>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">8*</a></span> If a rewritten <span class="addu"><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code></span> candidate is selected by overload resolution for <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode cpp"><span class="op">!=</span></code></span> operator</del></span> <span class="addu">an operator <code class="sourceCode cpp"><span class="op">@</span></code></span>, <span class="addu">its return type shall be <code class="sourceCode cpp">cv <span class="dt">bool</span></code>, and <code class="sourceCode cpp">x <span class="op">@</span> y</code> is interpreted as:</span></p>
+<p><span class="marginalizedparent"><a class="marginalized">8*</a></span> If a rewritten <span class="addu"><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code></span> candidate is selected by overload resolution for <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode cpp"><span class="op">!=</span></code></span> operator</del></span> <span class="addu">an operator <code class="sourceCode cpp"><span class="op">@</span></code></span>, <span class="addu">its return type shall be <em>cv</em> <code class="sourceCode cpp"><span class="dt">bool</span></code>, and <code class="sourceCode cpp">x <span class="op">@</span> y</code> is interpreted as:</span></p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(8*.1)</a></span> <span class="addu">If <code class="sourceCode cpp"><span class="op">@</span></code> is <code class="sourceCode cpp"><span class="op">!=</span></code> and the selected candidate is a synthesized candidate with reversed order of parameters, <code class="sourceCode cpp"><span class="op">!(</span>y <span class="op">==</span> x<span class="op">)</span></code>.</span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(8*.2)</a></span> <span class="addu">Otherwise, if <code class="sourceCode cpp"><span class="op">@</span></code> is <code class="sourceCode cpp"><span class="op">!=</span></code>, <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">==</span> y<span class="op">)</span></code>.</span></li>
@@ -954,14 +955,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="add" style="color: #006e28">
 
 <blockquote>
-<p><strong>Affected subclause</strong>: [over.match.oper] <br /> <strong>Change</strong>: Equality and inequality expressions can now find reversed and rewritten candidates. <br /> <strong>Rationale:</strong> Improve consistency of equality with spaceship and make it easier to write the full complement of equality operations. <br /> <strong>Effect on original feature:</strong> Equality and inequality expressions between two objects of different types, where one is convertible to the other, could change which operator is invoked. Equality and inequality expressions between two objects of the same type could become ambiguous.</p>
+<p><strong>Affected subclause</strong>: [over.match.oper] <br /> <strong>Change</strong>: Equality and inequality expressions can now find reversed and rewritten candidates. <br /> <strong>Rationale:</strong> Improve consistency of equality with three-way comparison and make it easier to write the full complement of equality operations. <br /> <strong>Effect on original feature:</strong> Equality and inequality expressions between two objects of different types, where one is convertible to the other, could invoke a different operator. Equality and inequality expressions between two objects of the same type could become ambiguous.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1"></a>struct A {</span>
 <span id="cb18-2"><a href="#cb18-2"></a>  operator int() const;</span>
 <span id="cb18-3"><a href="#cb18-3"></a>};</span>
 <span id="cb18-4"><a href="#cb18-4"></a></span>
-<span id="cb18-5"><a href="#cb18-5"></a>bool operator==(A, int);              // #1</span>
-<span id="cb18-6"><a href="#cb18-6"></a>// builtin bool operator==(int, int); // #2</span>
-<span id="cb18-7"><a href="#cb18-7"></a>// builtin bool operator!=(int, int); // #3</span>
+<span id="cb18-5"><a href="#cb18-5"></a>bool operator==(A, int);      // #1</span>
+<span id="cb18-6"><a href="#cb18-6"></a>// bool operator==(int, int); // #2, built-in</span>
+<span id="cb18-7"><a href="#cb18-7"></a>// bool operator!=(int, int); // #3, built-in</span>
 <span id="cb18-8"><a href="#cb18-8"></a></span>
 <span id="cb18-9"><a href="#cb18-9"></a>int check(A x, A y) {</span>
 <span id="cb18-10"><a href="#cb18-10"></a>  return (x == y) +  // ill-formed; previously well-formed</span>
