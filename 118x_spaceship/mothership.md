@@ -1,7 +1,7 @@
 ---
 title: "The Mothership has Landed"
 subtitle: Adding `<=>` to the Library
-document: D1614R2
+document: P1614R2
 audience: LWG
 date: today
 author:
@@ -163,7 +163,7 @@ and append:
 ::: bq
 ::: add
 ```
-constexpr auto @_synth-3way_@ =
+constexpr auto @_synth-three-way_@ =
   []<class T, class U>(const T& t, const U& u)
 	requires requires {
 	  { t < u } -> bool;
@@ -180,7 +180,7 @@ constexpr auto @_synth-3way_@ =
   };
 
 template<class T, class U=T>
-using @_synth-3way-result_@ = decltype(@_synth-3way_@(declval<T&>(), declval<U&>()));
+using @_synth-three-way-result_@ = decltype(@_synth-three-way_@(declval<T&>(), declval<U&>()));
 ```
 :::
 :::
@@ -671,22 +671,22 @@ Add a new subclause [cmp.object] "spaceship object":
 
 ::: add
 ::: bq
-[1]{.pnum} In this subclause, <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> for types
-`T` and `U` is a boolean constant expression. <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code>
+[1]{.pnum} In this subclause, <code><i>BUILTIN_PTR_THREE_WAY</i>(T, U)</code> for types
+`T` and `U` is a boolean constant expression. <code><i>BUILTIN_PTR_THREE_WAY</i>(T, U)</code>
 is `true` if and only if `<=>` in the expression `declval<T>() <=> declval<U>()`
 resolves to a built-in operator comparing pointers.
 
 ```
 struct compare_three_way {
   template<class T, class U>
-	requires ThreeWayComparableWith<T, U> || @_BUILTIN_PTR_3WAY_@(T, U)
+	requires ThreeWayComparableWith<T, U> || @_BUILTIN_PTR_THREE_WAY_@(T, U)
   constexpr auto operator()(T&& t, U&& u) const;
   
   using is_transparent = @_unspecified_@;
 };
 ```
 
-[2]{.pnum} *Remarks*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` are equality-preserving ([concepts.equality]).
+[2]{.pnum} *Expects*: If the expression `std::forward<T>(t) <=> std::forward<U>(u)` results in a call to a built-in operator `<=>` comparing pointers of type `P`, the conversion sequences from both `T` and `U` to `P` are equality-preserving ([concepts.equality]).
 
 [3]{.pnum} *Effects*: 
  
@@ -1049,7 +1049,7 @@ namespace std {
 +   friend constexpr bool operator==(const pair& x, const pair& y)
 +       requires (is_reference_v<T1> || is_reference_v<T2>)
 +     { return x.first == y.first && x.second == y.second; }
-+   friend constexpr common_comparison_category_t<@_synth-3way-result_@<T1>, @_synth-3way-result_@<T2>>
++   friend constexpr common_comparison_category_t<@_synth-three-way-result_@<T1>, @_synth-three-way-result_@<T2>>
 +     operator<=>(const pair& x, const pair& y)
 +     { @_see below_@ }
   };
@@ -1098,15 +1098,16 @@ template<class T1, class T2>
 
 ::: {.addu}
 ```
-friend constexpr common_comparison_category_t<@_synth-3way-result_@<T1>, @_synth-3way-result_@<T2>>
-  operator<=>(const pair& x, const pair& y);
+friend constexpr
+  common_comparison_category_t<@_synth-three-way-result_@<T1>, @_synth-three-way-result_@<T2>>
+    operator<=>(const pair& x, const pair& y);
 ```
 [7]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```
-if (auto c = @_synth-3way_@(x.first, y.first); c != 0) return c;
-return @_synth-3way_@(x.second, y.second);
+if (auto c = @_synth-three-way_@(x.first, y.first); c != 0) return c;
+return @_synth-three-way_@(x.second, y.second);
 ```
 :::
 :::
@@ -1137,7 +1138,7 @@ namespace std {
 - template<class... TTypes, class... UTypes>
 -   constexpr bool operator>=(const tuple<TTypes...>&, const tuple<UTypes...>&);
 + template<class... TTypes, class... UTypes>
-+   constexpr common_comparison_category_t<@_synth-3way-result_@<TTypes, UTypes>...>
++   constexpr common_comparison_category_t<@_synth-three-way-result_@<TTypes, UTypes>...>
 +     operator<=>(const tuple<TTypes...>&, const tuple<UTypes...>&);
 
   [...]
@@ -1203,19 +1204,16 @@ template<class... TTypes, class... UTypes>
 ::: {.addu}
 ```
 template<class... TTypes, class... UTypes>
-  constexpr common_comparison_category_t<@_synth-3way-result_@<TTypes, UTypes>...>
+  constexpr common_comparison_category_t<@_synth-three-way-result_@<TTypes, UTypes>...>
     operator<=>(const tuple<TTypes...>& t, const tuple<UTypes...>& u);
 ```
-[10]{.pnum} *Mandates*: For all `i`, where `0 <= i` and `i < sizeof...(TTypes)`,
-<code>_synth-3way_</code>`(get<i>(t), get<i>(u))` is a valid expression.
-`sizeof...(TTypes) == sizeof...(UTypes)`.
 
-[11]{.pnum} *Effects*: Performs a lexicographical comparison between `t` and `u`.
+[10]{.pnum} *Effects*: Performs a lexicographical comparison between `t` and `u`.
 For any two zero-length tuples `t` and `u`, `t <=> u` returns `strong_ordering::equal`. Otherwise, equivalent to:
 
 ::: bq
 ```
-if (auto c = @_synth-3way_@(get<0>(t), get<0>(u)); c != 0) return c;
+if (auto c = @_synth-three-way_@(get<0>(t), get<0>(u)); c != 0) return c;
 return t@~tail~@ <=> u@~tail~@;
 ```
 :::
@@ -1224,7 +1222,7 @@ where <code>r~tail~</code> for some tuple `r` is a tuple containing all but the
 first element of `r`.
 :::
 
-[12]{.pnum} [*Note*: The above [definitions for comparison functions do not
+[11]{.pnum} [*Note*: The above [definitions for comparison functions do not
 require]{.rm} [definition does not require]{.addu} <code>t~tail~</code> (or
 <code>u~tail~</code>) to be constructed.
 It may not even be possible, as `t` and `u` are not required to be copy
@@ -2668,7 +2666,7 @@ to the same element with no change in semantics.
 :::
 
 Replace 22.2.1 [container.requirements.general], Table 64 [container.opt] to 
-refer to `<=>` using _`synth-3way`{.default}_ instead of `<`.
+refer to `<=>` using _`synth-three-way`{.default}_ instead of `<`.
 
 ::: bq
 Table 64 lists operations that are provided for some types of containers but not
@@ -2726,7 +2724,7 @@ lexicographical_compare(
 </tr>
 <tr>
 <td>[`a <=> b`]{.addu}</td>
-<td>[_`synth-3way-result`{.default}_`<value_type>`]{.addu}</td>
+<td>[_`synth-three-way-result`{.default}_`<value_type>`]{.addu}</td>
 <td>
 
 ::: {.addu}
@@ -2734,7 +2732,7 @@ lexicographical_compare(
 lexicographical_compare_three_way(
     a.begin(), a.end(),
 	b.begin(), b.end(),
-	@_synth-3way_@)
+	@_synth-three-way_@)
 ```
 :::
 </td>
@@ -2800,7 +2798,7 @@ namespace std {
 - template<class T, class Allocator>
 -   bool operator>=(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
 + template<class T, class Allocator>
-+   @_synth-3way-result_@<T> operator<=>(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
++   @_synth-three-way-result_@<T> operator<=>(const deque<T, Allocator>& x, const deque<T, Allocator>& y);
 
   [...]
 }
@@ -2830,7 +2828,7 @@ namespace std {
 - template<class T, class Allocator>
 -   bool operator>=(const forward_list<T, Allocator>& x, const forward_list<T, Allocator>& y);
 + template<class T, class Allocator>
-+   @_synth-3way-result_@<T> operator<=>(const forward_list<T, Allocator>& x,
++   @_synth-three-way-result_@<T> operator<=>(const forward_list<T, Allocator>& x,
 +                                    const forward_list<T, Allocator>& y);
 
   [...]
@@ -2861,7 +2859,7 @@ namespace std {
 - template<class T, class Allocator>
 -   bool operator>=(const list<T, Allocator>& x, const list<T, Allocator>& y);
 + template<class T, class Allocator>
-+   @_synth-3way-result_@<T> operator<=>(const list<T, Allocator>& x, const list<T, Allocator>& y);
++   @_synth-three-way-result_@<T> operator<=>(const list<T, Allocator>& x, const list<T, Allocator>& y);
 	
   [...]
 }
@@ -2891,7 +2889,7 @@ namespace std {
 - template<class T, class Allocator>
 -   bool operator>=(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
 + template<class T, class Allocator>
-+   @_synth-3way-result_@<T> operator<=>(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
++   @_synth-three-way-result_@<T> operator<=>(const vector<T, Allocator>& x, const vector<T, Allocator>& y);
 
   [...]
 }
@@ -2911,7 +2909,7 @@ namespace std {
     constexpr const T * data() const noexcept;
 	
 +   friend constexpr bool operator==(const array&, const array&) = default;
-+   friend constexpr @_synth-3way-result_@<value_type>
++   friend constexpr @_synth-three-way-result_@<value_type>
 +     operator<=>(const array&, const array&);
   };
 
@@ -2952,7 +2950,7 @@ namespace std {
 -   bool operator>=(const map<Key, T, Compare, Allocator>& x,
 -                   const map<Key, T, Compare, Allocator>& y);
 + template<class Key, class T, class Compare, class Allocator>
-+   @_synth-3way-result_@<pair<const Key, T>> operator<=>(const map<Key, T, Compare, Allocator>& x,
++   @_synth-three-way-result_@<pair<const Key, T>> operator<=>(const map<Key, T, Compare, Allocator>& x,
 +                                                     const map<Key, T, Compare, Allocator>& y);
 
   [...]
@@ -2982,7 +2980,7 @@ namespace std {
 -   bool operator>=(const multimap<Key, T, Compare, Allocator>& x,
 -                   const multimap<Key, T, Compare, Allocator>& y);  
 + template<class Key, class T, class Compare, class Allocator>
-+   @_synth-3way-result_@<pair<const Key, T>> operator<=>(const multimap<Key, T, Compare, Allocator>& x,
++   @_synth-three-way-result_@<pair<const Key, T>> operator<=>(const multimap<Key, T, Compare, Allocator>& x,
 +                                                     const multimap<Key, T, Compare, Allocator>& y);
 
   [...]
@@ -3020,7 +3018,7 @@ namespace std {
 -   bool operator>=(const set<Key, Compare, Allocator>& x,
 -                   const set<Key, Compare, Allocator>& y);
 + template<class Key, class Compare, class Allocator>
-+   @_synth-3way-result_@<Key> operator<=>(const set<Key, Compare, Allocator>& x,
++   @_synth-three-way-result_@<Key> operator<=>(const set<Key, Compare, Allocator>& x,
 +                                      const set<Key, Compare, Allocator>& y);
 					
   [...]
@@ -3048,7 +3046,7 @@ namespace std {
 -   bool operator>=(const multiset<Key, Compare, Allocator>& x,
 -                   const multiset<Key, Compare, Allocator>& y);
 + template<class Key, class Compare, class Allocator>
-+   @_synth-3way-result_@<Key> operator<=>(const multiset<Key, Compare, Allocator>& x,
++   @_synth-three-way-result_@<Key> operator<=>(const multiset<Key, Compare, Allocator>& x,
 +                                      const multiset<Key, Compare, Allocator>& y);
 
 
@@ -6378,10 +6376,12 @@ bool operator>=(thread::id x, thread::id y) noexcept;
 ```
 strong_ordering operator<=>(thread::id x, thread::id y) noexcept;
 ```
-[a]{.pnum} *Returns*: `strong_ordering::less` if `x` precedes `y` in the
-implementation-defined strict total order ([range.cmp]) over `thread::id`,
-`strong_ordering::greater` if `y` precedes `x`, and otherwise
-`strong_ordering::equal`.
+Let <code><i>P</i>(x, y)</code> be an unspecified total ordering
+over `thread::id` as described in [alg.sorting].
+
+[a]{.pnum} *Returns*: `strong_ordering::less` if <code><i>P</i>(x, y)</code> is `true`.
+Otherwise, `strong_ordering::greater` if <code><i>P</i>(y, x)</code> is `true`. 
+Otherwise, `strong_ordering::equal`.
 
 :::
 

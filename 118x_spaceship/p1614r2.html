@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-07-15" />
+  <meta name="dcterms.date" content="2019-07-17" />
   <title>The Mothership has Landed</title>
   <style>
       code{white-space: pre-wrap;}
@@ -531,11 +531,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D1614R2</td>
+    <td>P1614R2</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-07-15</td>
+    <td>2019-07-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -668,7 +668,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="add" style="color: #006e28">
 
-<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1"></a>constexpr auto <em>synth-3way</em> =</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1"></a>constexpr auto <em>synth-three-way</em> =</span>
 <span id="cb5-2"><a href="#cb5-2"></a>  []&lt;class T, class U&gt;(const T&amp; t, const U&amp; u)</span>
 <span id="cb5-3"><a href="#cb5-3"></a>    requires requires {</span>
 <span id="cb5-4"><a href="#cb5-4"></a>      { t &lt; u } -&gt; bool;</span>
@@ -685,7 +685,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-15"><a href="#cb5-15"></a>  };</span>
 <span id="cb5-16"><a href="#cb5-16"></a></span>
 <span id="cb5-17"><a href="#cb5-17"></a>template&lt;class T, class U=T&gt;</span>
-<span id="cb5-18"><a href="#cb5-18"></a>using <em>synth-3way-result</em> = decltype(<em>synth-3way</em>(declval&lt;T&amp;&gt;(), declval&lt;U&amp;&gt;()));</span></code></pre></div>
+<span id="cb5-18"><a href="#cb5-18"></a>using <em>synth-three-way-result</em> = decltype(<em>synth-three-way</em>(declval&lt;T&amp;&gt;(), declval&lt;U&amp;&gt;()));</span></code></pre></div>
 
 </div>
 </blockquote>
@@ -1122,15 +1122,15 @@ Header(s)
 <div class="add" style="color: #006e28">
 
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In this subclause, <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> for types <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> is a boolean constant expression. <code><i>BUILTIN_PTR_3WAY</i>(T, U)</code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> in the expression <code class="sourceCode cpp">declval<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="op">&lt;=&gt;</span> declval<span class="op">&lt;</span>U<span class="op">&gt;()</span></code> resolves to a built-in operator comparing pointers.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In this subclause, <code><i>BUILTIN_PTR_THREE_WAY</i>(T, U)</code> for types <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> is a boolean constant expression. <code><i>BUILTIN_PTR_THREE_WAY</i>(T, U)</code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> in the expression <code class="sourceCode cpp">declval<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="op">&lt;=&gt;</span> declval<span class="op">&lt;</span>U<span class="op">&gt;()</span></code> resolves to a built-in operator comparing pointers.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1"></a>struct compare_three_way {</span>
 <span id="cb30-2"><a href="#cb30-2"></a>  template&lt;class T, class U&gt;</span>
-<span id="cb30-3"><a href="#cb30-3"></a>    requires ThreeWayComparableWith&lt;T, U&gt; || <em>BUILTIN_PTR_3WAY</em>(T, U)</span>
+<span id="cb30-3"><a href="#cb30-3"></a>    requires ThreeWayComparableWith&lt;T, U&gt; || <em>BUILTIN_PTR_THREE_WAY</em>(T, U)</span>
 <span id="cb30-4"><a href="#cb30-4"></a>  constexpr auto operator()(T&amp;&amp; t, U&amp;&amp; u) const;</span>
 <span id="cb30-5"><a href="#cb30-5"></a>  </span>
 <span id="cb30-6"><a href="#cb30-6"></a>  using is_transparent = <em>unspecified</em>;</span>
 <span id="cb30-7"><a href="#cb30-7"></a>};</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Remarks</em>: If the expression <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">&lt;=&gt;</span> std<span class="op">::</span>forward<span class="op">&lt;</span>U<span class="op">&gt;(</span>u<span class="op">)</span></code> results in a call to a built-in operator <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> comparing pointers of type <code class="sourceCode cpp">P</code>, the conversion sequences from both <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> to <code class="sourceCode cpp">P</code> are equality-preserving ([concepts.equality]).</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Expects</em>: If the expression <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">&lt;=&gt;</span> std<span class="op">::</span>forward<span class="op">&lt;</span>U<span class="op">&gt;(</span>u<span class="op">)</span></code> results in a call to a built-in operator <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> comparing pointers of type <code class="sourceCode cpp">P</code>, the conversion sequences from both <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> to <code class="sourceCode cpp">P</code> are equality-preserving ([concepts.equality]).</p>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If the expression <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span> <span class="op">&lt;=&gt;</span> std<span class="op">::</span>forward<span class="op">&lt;</span>U<span class="op">&gt;(</span>u<span class="op">)</span></code> results in a call to a built-in operator <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> comparing pointers of type <code class="sourceCode cpp">P</code>: returns <code class="sourceCode cpp">strong_ordering<span class="op">::</span>less</code> if (the converted value of) <code class="sourceCode cpp">t</code> precedes <code class="sourceCode cpp">u</code> in the implementation-defined strict total order ([range.cmp]) over pointers of type <code class="sourceCode cpp">P</code>, <code class="sourceCode cpp">strong_ordering<span class="op">::</span>greater</code> if <code class="sourceCode cpp">u</code> precedes <code class="sourceCode cpp">t</code>, and otherwise <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>.</li>
@@ -1417,7 +1417,7 @@ Header(s)
 <span id="cb56-16"><a href="#cb56-16"></a><span class="va">+   friend constexpr bool operator==(const pair&amp; x, const pair&amp; y)</span></span>
 <span id="cb56-17"><a href="#cb56-17"></a><span class="va">+       requires (is_reference_v&lt;T1&gt; || is_reference_v&lt;T2&gt;)</span></span>
 <span id="cb56-18"><a href="#cb56-18"></a><span class="va">+     { return x.first == y.first &amp;&amp; x.second == y.second; }</span></span>
-<span id="cb56-19"><a href="#cb56-19"></a><span class="va">+   friend constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;T1&gt;, <em>synth-3way-result</em>&lt;T2&gt;&gt;</span></span>
+<span id="cb56-19"><a href="#cb56-19"></a><span class="va">+   friend constexpr common_comparison_category_t&lt;<em>synth-three-way-result</em>&lt;T1&gt;, <em>synth-three-way-result</em>&lt;T2&gt;&gt;</span></span>
 <span id="cb56-20"><a href="#cb56-20"></a><span class="va">+     operator&lt;=&gt;(const pair&amp; x, const pair&amp; y)</span></span>
 <span id="cb56-21"><a href="#cb56-21"></a><span class="va">+     { <em>see below</em> }</span></span>
 <span id="cb56-22"><a href="#cb56-22"></a>  };</span>
@@ -1451,12 +1451,13 @@ Header(s)
 <p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!(</span>x <span class="op">&lt;</span> y<span class="op">)</span></code>.</p>
 </div>
 <div class="addu">
-<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>friend constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;T1&gt;, <em>synth-3way-result</em>&lt;T2&gt;&gt;</span>
-<span id="cb63-2"><a href="#cb63-2"></a>  operator&lt;=&gt;(const pair&amp; x, const pair&amp; y);</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>friend constexpr</span>
+<span id="cb63-2"><a href="#cb63-2"></a>  common_comparison_category_t&lt;<em>synth-three-way-result</em>&lt;T1&gt;, <em>synth-three-way-result</em>&lt;T2&gt;&gt;</span>
+<span id="cb63-3"><a href="#cb63-3"></a>    operator&lt;=&gt;(const pair&amp; x, const pair&amp; y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
-<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>if (auto c = <em>synth-3way</em>(x.first, y.first); c != 0) return c;</span>
-<span id="cb64-2"><a href="#cb64-2"></a>return <em>synth-3way</em>(x.second, y.second);</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>if (auto c = <em>synth-three-way</em>(x.first, y.first); c != 0) return c;</span>
+<span id="cb64-2"><a href="#cb64-2"></a>return <em>synth-three-way</em>(x.second, y.second);</span></code></pre></div>
 </blockquote>
 </div>
 </blockquote>
@@ -1484,7 +1485,7 @@ Header(s)
 <span id="cb65-19"><a href="#cb65-19"></a><span class="st">- template&lt;class... TTypes, class... UTypes&gt;</span></span>
 <span id="cb65-20"><a href="#cb65-20"></a><span class="st">-   constexpr bool operator&gt;=(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
 <span id="cb65-21"><a href="#cb65-21"></a><span class="va">+ template&lt;class... TTypes, class... UTypes&gt;</span></span>
-<span id="cb65-22"><a href="#cb65-22"></a><span class="va">+   constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span></span>
+<span id="cb65-22"><a href="#cb65-22"></a><span class="va">+   constexpr common_comparison_category_t&lt;<em>synth-three-way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span></span>
 <span id="cb65-23"><a href="#cb65-23"></a><span class="va">+     operator&lt;=&gt;(const tuple&lt;TTypes...&gt;&amp;, const tuple&lt;UTypes...&gt;&amp;);</span></span>
 <span id="cb65-24"><a href="#cb65-24"></a></span>
 <span id="cb65-25"><a href="#cb65-25"></a>  [...]</span>
@@ -1519,17 +1520,16 @@ Header(s)
 </div>
 <div class="addu">
 <div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template&lt;class... TTypes, class... UTypes&gt;</span>
-<span id="cb72-2"><a href="#cb72-2"></a>  constexpr common_comparison_category_t&lt;<em>synth-3way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span>
+<span id="cb72-2"><a href="#cb72-2"></a>  constexpr common_comparison_category_t&lt;<em>synth-three-way-result</em>&lt;TTypes, UTypes&gt;...&gt;</span>
 <span id="cb72-3"><a href="#cb72-3"></a>    operator&lt;=&gt;(const tuple&lt;TTypes...&gt;&amp; t, const tuple&lt;UTypes...&gt;&amp; u);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Mandates</em>: For all <code class="sourceCode cpp">i</code>, where <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i</code> and <code class="sourceCode cpp">i <span class="op">&lt;</span> <span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span></code>, <code><em>synth-3way</em></code><code class="sourceCode cpp"><span class="op">(</span>get<span class="op">&lt;</span>i<span class="op">&gt;(</span>t<span class="op">)</span>, get<span class="op">&lt;</span>i<span class="op">&gt;(</span>u<span class="op">))</span></code> is a valid expression. <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>TTypes<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">...(</span>UTypes<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">11</a></span> <em>Effects</em>: Performs a lexicographical comparison between <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>. For any two zero-length tuples <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>, <code class="sourceCode cpp">t <span class="op">&lt;=&gt;</span> u</code> returns <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>. Otherwise, equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Effects</em>: Performs a lexicographical comparison between <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>. For any two zero-length tuples <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code>, <code class="sourceCode cpp">t <span class="op">&lt;=&gt;</span> u</code> returns <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>. Otherwise, equivalent to:</p>
 <blockquote>
-<div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>if (auto c = <em>synth-3way</em>(get&lt;0&gt;(t), get&lt;0&gt;(u)); c != 0) return c;</span>
+<div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>if (auto c = <em>synth-three-way</em>(get&lt;0&gt;(t), get&lt;0&gt;(u)); c != 0) return c;</span>
 <span id="cb73-2"><a href="#cb73-2"></a>return t<sub>tail</sub> &lt;=&gt; u<sub>tail</sub>;</span></code></pre></div>
 </blockquote>
 <p>where <code>r<sub>tail</sub></code> for some tuple <code class="sourceCode cpp">r</code> is a tuple containing all but the first element of <code class="sourceCode cpp">r</code>.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized">12</a></span> [<em>Note</em>: The above <span class="rm" style="color: #bf0303"><del>definitions for comparison functions do not require</del></span> <span class="addu">definition does not require</span> <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code> are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the comparison. —<em>end note</em>]</p>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> [<em>Note</em>: The above <span class="rm" style="color: #bf0303"><del>definitions for comparison functions do not require</del></span> <span class="addu">definition does not require</span> <code>t<sub>tail</sub></code> (or <code>u<sub>tail</sub></code>) to be constructed. It may not even be possible, as <code class="sourceCode cpp">t</code> and <code class="sourceCode cpp">u</code> are not required to be copy constructible. Also, all comparison functions are short circuited; they do not perform element accesses beyond what is required to determine the result of the comparison. —<em>end note</em>]</p>
 </blockquote>
 <p>Change 20.6.2 [optional.syn]:</p>
 <blockquote>
@@ -2721,7 +2721,7 @@ Complexity
 </div>
 <p>where <code class="sourceCode cpp">i</code> and <code class="sourceCode cpp">j</code> denote objects of a container’s iterator type, either or both may be replaced by an object of the container’s <code class="sourceCode cpp">const_iterator</code> type referring to the same element with no change in semantics.</p>
 </blockquote>
-<p>Replace 22.2.1 [container.requirements.general], Table 64 [container.opt] to refer to <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> using <em><code class="sourceCode default">synth-3way</code></em> instead of <code class="sourceCode cpp"><span class="op">&lt;</span></code>.</p>
+<p>Replace 22.2.1 [container.requirements.general], Table 64 [container.opt] to refer to <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> using <em><code class="sourceCode default">synth-three-way</code></em> instead of <code class="sourceCode cpp"><span class="op">&lt;</span></code>.</p>
 <blockquote>
 <p>Table 64 lists operations that are provided for some types of containers but not others. Those containers for which the listed operations are provided shall implement the semantics described in Table 64 unless otherwise stated. If the iterators passed to <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">lexicographical_compare</code></span></del></span> <span class="addu"><code class="sourceCode cpp">lexicographical_compare_three_way</code></span> satisfy the constexpr iterator requirements ([iterator.requirements.general]) then the operations described in Table 64 are implemented by constexpr functions.</p>
 <table>
@@ -2818,14 +2818,14 @@ Complexity
 <span class="addu"><code class="sourceCode cpp">a <span class="op">&lt;=&gt;</span> b</code></span>
 </td>
 <td>
-<span class="addu"><em><code class="sourceCode default">synth-3way-result</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>value_type<span class="op">&gt;</span></code></span>
+<span class="addu"><em><code class="sourceCode default">synth-three-way-result</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>value_type<span class="op">&gt;</span></code></span>
 </td>
 <td>
 <div class="addu">
 <div class="sourceCode" id="cb163"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb163-1"><a href="#cb163-1"></a>lexicographical_compare_three_way(</span>
 <span id="cb163-2"><a href="#cb163-2"></a>    a.begin(), a.end(),</span>
 <span id="cb163-3"><a href="#cb163-3"></a>    b.begin(), b.end(),</span>
-<span id="cb163-4"><a href="#cb163-4"></a>    <em>synth-3way</em>)</span></code></pre></div>
+<span id="cb163-4"><a href="#cb163-4"></a>    <em>synth-three-way</em>)</span></code></pre></div>
 </div>
 </td>
 <td>
@@ -2886,7 +2886,7 @@ Complexity
 <span id="cb165-17"><a href="#cb165-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
 <span id="cb165-18"><a href="#cb165-18"></a><span class="st">-   bool operator&gt;=(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb165-19"><a href="#cb165-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
-<span id="cb165-20"><a href="#cb165-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb165-20"><a href="#cb165-20"></a><span class="va">+   <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(const deque&lt;T, Allocator&gt;&amp; x, const deque&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb165-21"><a href="#cb165-21"></a></span>
 <span id="cb165-22"><a href="#cb165-22"></a>  [...]</span>
 <span id="cb165-23"><a href="#cb165-23"></a>}</span></code></pre></div>
@@ -2914,7 +2914,7 @@ Complexity
 <span id="cb166-17"><a href="#cb166-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
 <span id="cb166-18"><a href="#cb166-18"></a><span class="st">-   bool operator&gt;=(const forward_list&lt;T, Allocator&gt;&amp; x, const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb166-19"><a href="#cb166-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
-<span id="cb166-20"><a href="#cb166-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const forward_list&lt;T, Allocator&gt;&amp; x,</span></span>
+<span id="cb166-20"><a href="#cb166-20"></a><span class="va">+   <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(const forward_list&lt;T, Allocator&gt;&amp; x,</span></span>
 <span id="cb166-21"><a href="#cb166-21"></a><span class="va">+                                    const forward_list&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb166-22"><a href="#cb166-22"></a></span>
 <span id="cb166-23"><a href="#cb166-23"></a>  [...]</span>
@@ -2943,7 +2943,7 @@ Complexity
 <span id="cb167-17"><a href="#cb167-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
 <span id="cb167-18"><a href="#cb167-18"></a><span class="st">-   bool operator&gt;=(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb167-19"><a href="#cb167-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
-<span id="cb167-20"><a href="#cb167-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb167-20"><a href="#cb167-20"></a><span class="va">+   <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(const list&lt;T, Allocator&gt;&amp; x, const list&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb167-21"><a href="#cb167-21"></a>    </span>
 <span id="cb167-22"><a href="#cb167-22"></a>  [...]</span>
 <span id="cb167-23"><a href="#cb167-23"></a>}</span></code></pre></div>
@@ -2971,7 +2971,7 @@ Complexity
 <span id="cb168-17"><a href="#cb168-17"></a><span class="st">- template&lt;class T, class Allocator&gt;</span></span>
 <span id="cb168-18"><a href="#cb168-18"></a><span class="st">-   bool operator&gt;=(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb168-19"><a href="#cb168-19"></a><span class="va">+ template&lt;class T, class Allocator&gt;</span></span>
-<span id="cb168-20"><a href="#cb168-20"></a><span class="va">+   <em>synth-3way-result</em>&lt;T&gt; operator&lt;=&gt;(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
+<span id="cb168-20"><a href="#cb168-20"></a><span class="va">+   <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(const vector&lt;T, Allocator&gt;&amp; x, const vector&lt;T, Allocator&gt;&amp; y);</span></span>
 <span id="cb168-21"><a href="#cb168-21"></a></span>
 <span id="cb168-22"><a href="#cb168-22"></a>  [...]</span>
 <span id="cb168-23"><a href="#cb168-23"></a>}</span></code></pre></div>
@@ -2989,7 +2989,7 @@ Complexity
 <span id="cb169-7"><a href="#cb169-7"></a>    constexpr const T * data() const noexcept;</span>
 <span id="cb169-8"><a href="#cb169-8"></a>    </span>
 <span id="cb169-9"><a href="#cb169-9"></a><span class="va">+   friend constexpr bool operator==(const array&amp;, const array&amp;) = default;</span></span>
-<span id="cb169-10"><a href="#cb169-10"></a><span class="va">+   friend constexpr <em>synth-3way-result</em>&lt;value_type&gt;</span></span>
+<span id="cb169-10"><a href="#cb169-10"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;value_type&gt;</span></span>
 <span id="cb169-11"><a href="#cb169-11"></a><span class="va">+     operator&lt;=&gt;(const array&amp;, const array&amp;);</span></span>
 <span id="cb169-12"><a href="#cb169-12"></a>  };</span>
 <span id="cb169-13"><a href="#cb169-13"></a></span>
@@ -3028,7 +3028,7 @@ Complexity
 <span id="cb170-25"><a href="#cb170-25"></a><span class="st">-   bool operator&gt;=(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb170-26"><a href="#cb170-26"></a><span class="st">-                   const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb170-27"><a href="#cb170-27"></a><span class="va">+ template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
-<span id="cb170-28"><a href="#cb170-28"></a><span class="va">+   <em>synth-3way-result</em>&lt;pair&lt;const Key, T&gt;&gt; operator&lt;=&gt;(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb170-28"><a href="#cb170-28"></a><span class="va">+   <em>synth-three-way-result</em>&lt;pair&lt;const Key, T&gt;&gt; operator&lt;=&gt;(const map&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb170-29"><a href="#cb170-29"></a><span class="va">+                                                     const map&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb170-30"><a href="#cb170-30"></a></span>
 <span id="cb170-31"><a href="#cb170-31"></a>  [...]</span>
@@ -3058,7 +3058,7 @@ Complexity
 <span id="cb170-55"><a href="#cb170-55"></a><span class="st">-   bool operator&gt;=(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb170-56"><a href="#cb170-56"></a><span class="st">-                   const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);  </span></span>
 <span id="cb170-57"><a href="#cb170-57"></a><span class="va">+ template&lt;class Key, class T, class Compare, class Allocator&gt;</span></span>
-<span id="cb170-58"><a href="#cb170-58"></a><span class="va">+   <em>synth-3way-result</em>&lt;pair&lt;const Key, T&gt;&gt; operator&lt;=&gt;(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb170-58"><a href="#cb170-58"></a><span class="va">+   <em>synth-three-way-result</em>&lt;pair&lt;const Key, T&gt;&gt; operator&lt;=&gt;(const multimap&lt;Key, T, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb170-59"><a href="#cb170-59"></a><span class="va">+                                                     const multimap&lt;Key, T, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb170-60"><a href="#cb170-60"></a></span>
 <span id="cb170-61"><a href="#cb170-61"></a>  [...]</span>
@@ -3094,7 +3094,7 @@ Complexity
 <span id="cb171-24"><a href="#cb171-24"></a><span class="st">-   bool operator&gt;=(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb171-25"><a href="#cb171-25"></a><span class="st">-                   const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb171-26"><a href="#cb171-26"></a><span class="va">+ template&lt;class Key, class Compare, class Allocator&gt;</span></span>
-<span id="cb171-27"><a href="#cb171-27"></a><span class="va">+   <em>synth-3way-result</em>&lt;Key&gt; operator&lt;=&gt;(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb171-27"><a href="#cb171-27"></a><span class="va">+   <em>synth-three-way-result</em>&lt;Key&gt; operator&lt;=&gt;(const set&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb171-28"><a href="#cb171-28"></a><span class="va">+                                      const set&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb171-29"><a href="#cb171-29"></a>                    </span>
 <span id="cb171-30"><a href="#cb171-30"></a>  [...]</span>
@@ -3122,7 +3122,7 @@ Complexity
 <span id="cb171-52"><a href="#cb171-52"></a><span class="st">-   bool operator&gt;=(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb171-53"><a href="#cb171-53"></a><span class="st">-                   const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb171-54"><a href="#cb171-54"></a><span class="va">+ template&lt;class Key, class Compare, class Allocator&gt;</span></span>
-<span id="cb171-55"><a href="#cb171-55"></a><span class="va">+   <em>synth-3way-result</em>&lt;Key&gt; operator&lt;=&gt;(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
+<span id="cb171-55"><a href="#cb171-55"></a><span class="va">+   <em>synth-three-way-result</em>&lt;Key&gt; operator&lt;=&gt;(const multiset&lt;Key, Compare, Allocator&gt;&amp; x,</span></span>
 <span id="cb171-56"><a href="#cb171-56"></a><span class="va">+                                      const multiset&lt;Key, Compare, Allocator&gt;&amp; y);</span></span>
 <span id="cb171-57"><a href="#cb171-57"></a></span>
 <span id="cb171-58"><a href="#cb171-58"></a></span>
@@ -5684,7 +5684,8 @@ Complexity
 </div>
 <div class="addu">
 <div class="sourceCode" id="cb446"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb446-1"><a href="#cb446-1"></a>strong_ordering operator&lt;=&gt;(thread::id x, thread::id y) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">a</a></span> <em>Returns</em>: <code class="sourceCode cpp">strong_ordering<span class="op">::</span>less</code> if <code class="sourceCode cpp">x</code> precedes <code class="sourceCode cpp">y</code> in the implementation-defined strict total order ([range.cmp]) over <code class="sourceCode cpp">thread<span class="op">::</span>id</code>, <code class="sourceCode cpp">strong_ordering<span class="op">::</span>greater</code> if <code class="sourceCode cpp">y</code> precedes <code class="sourceCode cpp">x</code>, and otherwise <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>.</p>
+<p>Let <code><i>P</i>(x, y)</code> be an unspecified total ordering over <code class="sourceCode cpp">thread<span class="op">::</span>id</code> as described in [alg.sorting].</p>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> <em>Returns</em>: <code class="sourceCode cpp">strong_ordering<span class="op">::</span>less</code> if <code><i>P</i>(x, y)</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, <code class="sourceCode cpp">strong_ordering<span class="op">::</span>greater</code> if <code><i>P</i>(y, x)</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>. Otherwise, <code class="sourceCode cpp">strong_ordering<span class="op">::</span>equal</code>.</p>
 </div>
 </blockquote>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
