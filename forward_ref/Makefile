@@ -1,2 +1,4 @@
+include ../md/mpark-wg21.mk
+
 d1500r0.html : forward-ref.md
-	python ../md/better_md.py -i $< -o $@ --references
+	$(PANDOC)
