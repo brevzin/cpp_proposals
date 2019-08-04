@@ -85,6 +85,12 @@ aggregate initialization:
 xstd::tuple<int, int, int> x{1, 2, 3};
 ```
 
+Or, in C++20:
+
+```cpp
+xstd::tuple y{1, 2, 3};
+```
+
 ## Empty variable pack
 
 One question right off the back: what does `xstd::tuple<> t;` mean? The same way 
@@ -103,12 +109,12 @@ namespace xstd {
     template <typename... Ts>
     class tuple {
     public:
-        constexpr tuple() requires (DefaultConstructible<Ts> && ...)
+        constexpr tuple() requires (std::default_constructible<Ts> && ...)
             : elems()...
         { }
         
         constexpr tuple(Ts const&... args)
-                requires (CopyConstructible<Ts> && ...)
+                requires (std::copy_constructible<Ts> && ...)
             : elems(args)...
         { }
 
@@ -119,7 +125,8 @@ namespace xstd {
 ```
 
 Note the new pack expansion in the _mem-initializer_. This is a new ability this
-paper is proposing. It wouldn't have made sense if you could not declare a member
+paper is proposing. It wouldn't have made sense to have 
+if you could not declare a member
 variable pack.
 
 Let's pick a more complex constructor. A `std::tuple<Ts...>` can be constructed
@@ -129,9 +136,14 @@ the corresponding types. How do we get the first and second types from `Ts`?
 
 ## Pack Indexing
 
-This paper proposes the "simple selection" facility initially introduced in
-[@N4235] (and favorably received in Urbana 2014): `T.[I]` is the `I`th element
-of the pack `T`, which is a type if `T` is a type pack and a value otherwise.
+This paper proposes a "simple selection" facility similar to the one initially
+introduced in
+[@N4235] (and favorably received in Urbana 2014): `T...[I]` is the `I`th element
+of the pack `T`, which is a type or value or template based on what kind of pack
+`T` is.
+[Later sections](#disambiguating-packs-of-tuples)
+ of this paper will discuss why this paper diverges from that
+original proposal in choice of syntax.
 
 Such indexing allows for implementing the pair converting constructor:
 
@@ -140,7 +152,8 @@ namespace xstd {
     template <typename... Ts>
     class tuple {
     public:
-        template <ConvertibleTo<Ts.[0]> T, ConvertibleTo<Ts.[1]> U>
+        template <std::convertible_to<Ts...[0]> T,
+                  std::convertible_to<Ts...[1]> U>
             requires sizeof...(Ts) == 2
         constexpr tuple(std::pair<T, U> const& p)
             : elems.[0](p.first)
@@ -160,11 +173,9 @@ namespace xstd {
     class tuple {
     public:
         template <typename... Us>
-            requires (Constructible<Ts, Us> && ...) // everything is convertible
-                && (sizeof...(Us) > 1 ||            // exclude the copy ctor match
-                    !DerivedFrom<std::remove_cvref_t<Us.[0]>, tuple>)
-        template <ConvertibleTo<Ts.[0]> T, ConvertibleTo<Ts.[1]> U>
-            requires sizeof...(Ts) == 2
+            requires (std::constructible<Ts, Us> && ...) // everything is convertible
+                && (sizeof...(Us) > 1 ||                 // exclude the copy ctor match
+                    !std::derived_from<std::remove_cvref_t<Us...[0]>, tuple>)
         constexpr tuple(Us&&... us)
             : elems(std::forward<Us>(us))...
         { }
@@ -186,7 +197,7 @@ namespace xstd {
     template <size_t I, typename... Ts>
     struct tuple_element<I, tuple<Ts...>> requires (I < sizeof...(Ts))
     {
-        using type = Ts.[I];
+        using type = Ts...[I];
     };
 }
 ```
@@ -196,7 +207,7 @@ a little bit more help.
 
 ## Pack aliases and generalized indexing
 
-The previous section defines the syntax `T.[I]` to be indexing into a pack, `T`.
+The previous section defines the syntax `T...[I]` to be indexing into a pack, `T`.
 Let's immediately generalize this. Let's also say that a _type_ can be pack-indexed
 into is the type provides an alias named `...`
 
@@ -218,13 +229,14 @@ namespace xstd {
 }
 ```
 
-This isn't quite right though, since we want to constrain `tuple_element` here.
-In the wild, this is fine, since `Tuple.[I]` will be SFINAE-friendly (simply
-discard the overload if the type either does not provide a pack template or
-the _constant-expression_ `I` is out of bounds for the size of the pack).
+The above is not a typo: while we index into a _pack_ by way of `x...[I]`, we
+index into a specific type or object via `x.[I]`. A proper discussion of the
+motivation for the differing syntax will follow.
 
+This isn't quite right though, since we want to constrain `tuple_element` here.
 We have the operator `sizeof...`, which takes a pack. We just need a way of
-passing the pack itself. To do that, this paper proposes the syntax `T.[:]`:
+passing the pack itself. To do that, this paper proposes the syntax `T.[:]`. You
+can think of this as the "add a layer of packness" operator:
 
 ```cpp
 namespace xstd {
@@ -237,11 +249,18 @@ namespace xstd {
     template <size_t I, typename Tuple>
     struct tuple_element;
 
-    template <size_t I, typename Tuple> requires (I < sizeof...(Tuple.[:]))
+    template <size_t I, typename Tuple>
+        requires (I < sizeof...(Tuple.[:]))
+    struct tuple_element<I, Tuple>
+    {
         using type = Tuple.[I];
     };
 }
 ```
+
+In the wild, we could use `Tuple.[I]` directly. It is SFINAE-friendly (simply
+discard the overload if the type either does not provide a pack template or
+the _constant-expression_ `I` is out of bounds for the size of the pack).
 
 ## Named pack aliases
 
@@ -259,9 +278,12 @@ namespace xstd {
     
     using Record = tuple<int, double, std::string>;
     static_assert(std::is_same_v<Record.[0], int>);
-    static_assert(std::is_same_v<Record::refs.[1], double&>);
+    static_assert(std::is_same_v<Record::refs...[1], double&>);
 }
 ```
+
+Note the differing access syntax: `Record` is a type that we're treating as a 
+pack, whereas `Record::refs` is a pack.
 
 ## Unpacking
 
@@ -314,31 +336,22 @@ This isn't going to work. From [@Smith.Pack]:
 > possibility of pack expansions occurring outside templates, which current 
 > implementations are not well-suited to handle.
 
-We can't have _no_ syntactic mechanism, so we need one: the same one used in the
-previous section to annotate a pack: `T.[:]`:
+We can't have _no_ syntactic mechanism (and note that this paper very much is
+introducing the possibility of pack expansions occurring outside templates).
+In order to make the dependent `tuple_sum` case work, we need one. One such
+could be a context-sensitive keyword like `pack`:
 
 ```cpp
 template <typename Tuple>
 int tuple_sum(Tuple t) {
-    return sum(t.elems.[:]...);
+    return sum(t.pack elems...);
 }
 ```
 
-Compare the above to the C++20 status quo of having to indirect via `std::apply()`:
-
-
-```cpp
-// status quo
-template <typename Tuple>
-int tuple_sum(Tuple t) {
-    return std::apply([](auto... e){
-        return sum(e...);
-    }, t);
-}
-```
-
-But this is an incomplete solution, since while showing the constructor examples,
-the member `elems` was private. How are we accessing it?
+If necessary, this could be made uglier (`temppack`? `tmplpack`?).
+But such a marker would necessarily be an incomplete solution anyway. With the
+earlier examples of implementing `tuple` having constructors, `elems` was private.
+How would we access it?
 
 ## Generalized unpacking and `operator...`
 
@@ -350,30 +363,29 @@ namespace xstd {
     template <typename... Ts>
     class tuple {
     public:
-        operator Ts&       ...() &       { return elems; }
-        operator Ts const& ...() const&  { return elems; }
-        operator Ts&&      ...() &&      { return std::move(*this).elems; }
-        operator Ts const&&...() const&& { return std::move(*this).elems; }
+        Ts&        operator ...() &       { return elems; }
+        Ts const&  operator ...() const&  { return elems; }
+        Ts&&       operator ...() &&      { return std::move(*this).elems; }
+        Ts const&& operator ...() const&& { return std::move(*this).elems; }
     private:
         Ts... elems;
     };
 }
 ```
 
-We do not need to write `elems.[:]` here because we know `elems` is a pack, it's
-declared as such. Note that this form of the declaration uses an unexpanded pack
-on the left (the `...` does not expand the `Ts const&`, not really anyway) and
-in the body. Later sections in the paper will show other forms. Any other
-declaration syntax kind of looks wrong:
+We do not need to dismabiguate `elems` here because we know `elems` is a pack, it's
+declared as such. Were we to retrieve `elems` from a dependent base class though,
+we would need some form of disambiguation as described above
+(i.e. `this->pack elems`).
 
-```cpp
-operator ...Ts&(); // but we're not introducing a pack named Ts?
-Ts& operator...(); // why is ths Ts& on the wrong side?
-```
+Note that this form of the declaration uses an unexpanded pack
+on the left (the `...` does not expand the `Ts const&`, not really anyway) and
+in the body. Later sections in the paper will show other forms. 
 
 Also, from here on out, this paper will only use the `const&`
-overloads of relevant functions for general sanity (see also [@P0847R2]). The
-above declarations allow for:
+overloads of relevant functions for general sanity (see also [@P0847R2]).
+
+The above declarations allow for:
 
 ```cpp
 template <typename Tuple>
@@ -384,7 +396,12 @@ constexpr auto tuple_sum(Tuple const& tuple) {
 static_assert(tuple_sum(xstd::tuple(1, 2, 3)) == 6);
 ```
 
-or more generally:
+`tuple.[:]` works by adding a layer of packness on top of `tuple` - it does this
+by creating a pack by way of `operator...()` and using that pack as an unexpanded
+pack expression. That unexpanded pack is then expanded with the _fold-expression_
+as if it were a normal pack.
+
+Or more generally:
 
 ```cpp
 template <typename F, typename Tuple>
@@ -401,7 +418,7 @@ namespace xstd {
     class tuple {
     public:
         using ... = Ts;
-        operator Ts const& ...() const& { return elems; }
+        Ts const& operator ...() const& { return elems; }
     private:
         Ts... elems;
     };
@@ -414,24 +431,163 @@ namespace xstd {
 ```
 
 Although since the syntax directly allows for `v.[0]`, why would anyone write
-`xstd::get<0>(v)`? And if you could write `f(t.[:]...)` or, in non-dependent
-contexts, simply `f(t...)`, why would anyone call `apply()`?
+`xstd::get<0>(v)`? And if you could write `f(t.[:]...)`,
+why would anyone call `std::apply()`?
 
-## Packs of tuples
+## Syntax-free unpacking?
+
+The above allows us to write:
+
+```cpp
+xstd::tuple x{1, 2, 3};
+foo(x.[:]...); // calls foo(1, 2, 3)
+```
+
+But do we explicitly need to add a layer of packness to `x` when we already know
+that `x` is a `tuple` and nothing is dependent? Could we simply allow:
+
+```cpp
+foo(x...); // implicitly add packness to x and unpack it
+```
+
+I'm not sure it's worth it to pursue.
+
+## Disambiguating packs of tuples
 
 The previous section showed how to write `apply` taking a single function and a
-single tuple. What if we generalized it it taking multiple tuples? We can do that:
+single tuple. What if we generalized it it taking multiple tuples? How do we
+handle a pack of tuples?
+
+It's at this point that it's worth taking a step back and talking about
+disambiguation and why this paper makes the syntax choices that it makes. We need
+to be able to differentiate between packs and tuples. The two concepts are very
+similar, and this paper seeks to make them much more similar, but we still need
+to differentiate between them. It's the pack of tuples case that really brings
+the ambiguity to light. 
+
+The rules this paper, which have all been introduced at this point, are:
+
+- `e.[:]` takes a [_pack-like type_](#pack-like-type)
+(or object of such) and adds a layer of packness
+to it, by way of either `operator...()` or `using ...`. It never is applied to
+an existing pack, and it is never used to disambiguate dependent member access.
+
+- `e.[I]` never removes a layer of packness. It is picking the `I`th element of
+a pack-like type.
+
+- `e...[I]` always removes a layer of packness. It is picking the `I`th element
+of a pack.
+
+- `e.pack f` disambiguates dependent member access and identifies `f` as a pack
+
+That is, `pack...[I]` and `tuple.[I]` are valid, `tuple...[I]` is an error, and
+`pack.[I]` would be applying `.[I]` to each element of the pack (and is itself
+still an unexpanded pack expression).
+
+`e.[I]` is an equivalent shorthand for `e.[:]...[I]`.
+
+This leads to clear meanings of each of the following. If we have a function
+template taking an argument `e` which has a member `f`, where the kind of `e`
+is specified by the columns of this table and the kind of `f` is specified by
+the rows:
+
+<table>
+<tr><td /><th>`e` is a Pack</th><th>`e` is a Pack-like type</th><th>`e` is not expanded</th></tr>
+<tr>
+<th>`f` is a Pack</th>
+<td>`foo(e.pack f... ...);`</td>
+<td>`foo(e.[:].pack f... ...);`</td>
+<td>`foo(e.pack f...);`</td>
+</tr>
+<tr>
+<th>`f` is a Pack-like type</th>
+<td>`foo(e.f.[:]... ...);`</td>
+<td>`foo(e.[:].f.[:]... ...);`</td>
+<td>`foo(e.f.[:]...);`</td>
+</tr>
+<tr>
+<th>`f` is not expanded</th>
+<td>`foo(e.f...);`</td>
+<td>`foo(e.[:].f...);`</td>
+<td>`foo(e.f);`</td>
+</table>
+
+The only two valid cells in that table in C++20 are the bottom-left and bottom-right
+ones. Note that every cell has different syntax, by design.
+
+## Nested pack expansions
+
+In order for the above table to work at all, we also need a new kind of pack
+expansion. When C++11 introduced pack expansion, the rules were very simple:
+The expression in `expr...` must contain at least one unexpanded pack expression
+and every unexpanded pack expression must have the same length.
+
+But with the concepts introduced in this proposal, we have the ability to
+introduce new things that behave like unexpanded pack expressions within an 
+unexpanded pack expression and we need to define rules for that. Consider:
+
+```cpp
+template <typename... Ts>
+void foo(Ts... e) {
+    bar(e.[:]... ...);
+}
+
+// what does this do?
+foo(xstd::tuple{1}, xstd::tuple{2, 3});
+```
+
+Following the rules presented above, `e.[:]` adds a layer of packness to each
+element in the pack (which is fine because `xstd::tuple`s are pack-like types
+which define an `operator...()`). But what then do the `...`s refer to?
+
+We say that adding layer of packness in the middle of an existing unexpanded
+pack expression will hang a new, nested unexpanded pack expression onto that.
+
+In the above example, `e` is an unexpanded pack expression. `e.[:]` is a nested
+unexpanded pack expression underneath `e`.
+
+When we encounter the the first `...`, we say that it expands the most nested
+unexpanded pack expression that of the expression that it refers to. The most
+nested unexpanded pack expression here is `e.[:]`,
+which transforms the expression into:
+
+```cpp
+bar((e.[0], e.[1], e.[2], ..., e.[M-1])...);
+```
+
+This isn't really valid C++ code (or, worse, it actually is valid but would use
+the comma operator rather than having `M` arguments). But the idea is we now have
+one more `...` which now has a single unexpanded pack expression to be expanded,
+which is the unexpanded pack expression that expands each element in a pack-like
+type. 
+
+A different way of looking at is the outer-most `...` expands the outer-most
+unexpanded pack expression, keeping the inner ones in tact. If we only touch
+the outer-most `...`, we end up with the following transformation:
+
+```cpp
+bar(e@~0~@.[:]..., e@~1~@.[:]..., /* etc. */, e@~N-1~@.[:]...);
+```
+
+The two interpretations are isomorphic, though the latter is likely easier to
+understand.
+
+Either way, the full answer to what does `foo(xstd::tuple{1}, xstd::tuple{2, 3})`
+do in this example is that it calls `bar(1, 2, 3)`.
+
+For more concrete examples, here is a generalized `apply()` which can take
+many tuples and expand them in order:
 
 ```cpp
 template <typename F, typename... Tuples>
 constexpr decltype(auto) apply(F&& f, Tuples&&... tuples) {
-    return std::invoke(std::forward<F>(f), std::forward<Tuples>(tuples).[:]... ...);
+    return std::invoke(
+        std::forward<F>(f),
+        std::forward<Tuples>(tuples).[:]... ...);
 }
 ```
 
-That's six `.`s, I added a space for clarity. This works because with pack
-expansion, we go outside in. The outer-most `...` has to expand the packs in
-the subexpression `std::forward<Tuples>(tuples).[:]...`, which turns the above into:
+which, again more concretely, expands into something like:
 
 ```cpp
 template <typename F, typename T@~0~@, typename T@~1~@, ..., typename T@~N-1~@>
@@ -455,6 +611,17 @@ constexpr std::tuple<Tuples.[:]... ...> tuple_cat(Tuples&&... tuples) {
 }
 ```
 
+And itself leads to a different implementation of generalized `apply`:
+
+```cpp
+template <typename F, typename... Tuples>
+constexpr decltype(auto) apply(F&& f, Tuples&&... tuples) {
+    return std::invoke(
+        std::forward<F>(f),
+        tuple_cat(std::forward<Tuples>(tuples)...).[:]...
+}
+```
+
 Admitedly, six `.`s is a little cryptic. But is it any worse than the current
 implementation?
 
@@ -474,10 +641,10 @@ namespace xstd {
         using ... = default; // same as Ts
         
         // same as elems for the first two and move(*this).elems for the next two
-        constexpr operator Ts&       ...() &       = default;
-        constexpr operator Ts const& ...() const&  = default;
-        constexpr operator Ts&&      ...() &&      = default;
-        constexpr operator Ts const&&...() const&& = default;
+        constexpr Ts&        operator ...() &       = default;
+        constexpr Ts const&  operator ...() const&  = default;
+        constexpr Ts&&       operator ...() &&      = default;
+        constexpr Ts const&& operator ...() const&& = default;
         
     private:
         Ts... elems;
@@ -549,6 +716,10 @@ to what [@P1096R0] proposed). If there is a pack alias declared, then the type w
 be determined from that pack alias. That is, `decltype(iref)` is `int&` if
 `ADD_ALIAS` is defined and `int` otherwise. 
 
+More specifically, the type of the `i`th binding is `E.[I]` if that is a valid
+expression (i.e. if `using ...` is declared),
+otherwise `std::remove_reference_t<decltype(e.[I])>`.
+
 ## Language arrays and types with all-public members
 
 Structured bindings works by default with language arrays and types with all-
@@ -560,7 +731,7 @@ kind seamless unpacking this paper demonstrates for `xstd::tuple`:
 void bar(int, int);
 
 int values[] = {42, 17};
-bar(values...); // equivalent to bar(42, 17)
+bar(values.[:]...); // equivalent to bar(42, 17)
 ```
 
 But also provides a direct solution to the fixed-size pack problem [@N4072]:
@@ -584,20 +755,26 @@ paper [@P1219R1]:
 
 ```cpp
 template <typename T, int N>
-class Vector {
+class Vector2 {
 public:
     // independently deduces each ts and requires that
     // they all deduce to T. As opposed to the previous
     // implementation which behaves as if the constructor
     // were not a template, just that it took N T's.
-    Vector(T... ts) requires (sizeof...(Ts) == N);
+    Vector2(T... ts) requires (sizeof...(Ts) == N);
 };
+```
+
+For instance:
+
+```cpp
+Vector<int, 2>  x('a', 2); // ok
+Vector2<int, 2> y('a', 2); // ill-formed, deduction failure
 ```
 
 ## Generalized Slicing and a simplified Boost.Mp11
 
-This paper proposes `T.[:]` to be a sigil to identify a pack. This isn't just
-necessary for being able to unpack things in dependent contexts. It also allows
+This paper proposes `T.[:]` to be a sigil to add packness. This also allows
 for more fine-grained control over which part of the pack is referenced. 
 
 Similar to Python's syntax for slicing, this paper proposes to provide indexes
@@ -613,13 +790,16 @@ template <typename... Args>
 constexpr decltype(auto) better_visit(Args&&... args) {
     return std::visit(
         // the function first
-        std::forward<Args.[-1]>(args.[-1]),
+        std::forward<Args...[-1]>(args...[-1]),
         // all the variants next
         // note that both slices on both Args and args are necessary, otherwise
         // we end up with two packs of different sizes that need to get expanded
-        std::forward<Args.[:-1]>(args.[:-1])...);
+        std::forward<Args...[:-1]>(args...[:-1])...);
 }
 ```
+
+Recall that since `Args` is a pack already, we index into it with `Args...[I]`
+rather than `Args.[I]` (which would index into each pack-like type of `Args`).
 
 Boost.Mp11 works by treating any variadic class template as a type list and
 providing operations that just work. A common pattern in the implementation
@@ -749,13 +929,13 @@ class variant {
 public:
     constexpr variant() requires DefaultConstructible<Ts.[0]>
       : index_(0)
-      , alts_.[0]()
+      , alts_...[0]()
     { }
 
     ~variant() requires (TriviallyDestructible<Ts> && ...) = default;
     ~variant() {
         mp_with_index<sizeof...(Ts)>(index_,
-            [](auto I){ destroy_at(&alts_.[I]); });
+            [](auto I){ destroy_at(&alts_...[I]); });
     }
 };
 
@@ -765,14 +945,14 @@ struct variant_alternative;
 template <size_t I, typename... Ts>
     requires (I < sizeof...(Ts))
 struct variant_alternative<I, variant<Ts...>> {
-    using type = Ts.[I];
+    using type = Ts...[I];
 };
 
 template <size_t I, typename... Types>
 constexpr variant_alternative_t<I, variant<Types...>>*
 get_if(variant<Types...>* v) noexcept {
     if (v.index_ == I) {
-        return &v.alts_.[I];
+        return &v.alts_...[I];
     } else {
         return nullptr;
     }
@@ -828,7 +1008,7 @@ using at = typename(std::vector{reflexpr(Ts)...}[I]);
 
 ```cpp
 template <size_t I, typename... Ts>
-using at = Ts.[0];
+using at = Ts...[0];
 ```
 
 ---
@@ -951,7 +1131,7 @@ namespace xstd {
         U second;
         
         using ... = tuple<T, U>;
-        operator tuple<T&, U&>... () & { return {first, second}; }
+        tuple<T&, U&> operator ... () & { return {first, second}; }
     };
 }
 ```
@@ -965,10 +1145,10 @@ In the following example:
 ```cpp
 void f(int&, char&);
 xstd::pair<int, char> p{1, 'x'};
-f(p...);
+f(p.[:]..);
 ```
 
-`p...` will invoke `p.operator...()`, which gives a `tuple<int&, char&>`.  That
+`p.[:]...` will invoke `p.operator...()`, which gives a `tuple<int&, char&>`. That
 is not a pack, so we invoke its `operator...()`, which gives us a pack of `int&`
 and `char&`. 
 
@@ -984,7 +1164,7 @@ namepsace xstd {
         
         using ... = typename(std::vector{reflexpr(T), reflexpr(U)});
         
-        consteval operator auto...() const {
+        consteval auto operator...() const {
             return std::vector{
                 reflexpr(first),
                 reflexpr(second)
@@ -993,8 +1173,13 @@ namepsace xstd {
 }
 ```
 
-In the above example, `f(p...)` would evaluate as 
-`f(p.unreflexpr(p.operator...())...)`
+In the above example, `f(p.[:]...)` would evaluate as 
+`f(p.unreflexpr(p.operator...())...)`.
+
+It's not clear if this direction will actually work, since you would have to
+disambiguate between the case where you want the identifiers and the case where
+actually you want the `meta::info` objects themselves. Let's call it an open
+question.
 
 Of course, for this particular example, both the pack alias and operator could be
 defaulted.
@@ -1008,7 +1193,7 @@ be able to opt it into the new pack protocol:
 ```cpp
 template <class T, T... Ints>
 struct integer_sequence {
-    operator std::integral_constant<T, Ints> ...() const {
+    std::integral_constant<T, Ints> operator ...() const {
         return {};
     }
 };
@@ -1036,13 +1221,8 @@ also require a known fixed size: structured bindings and tuple unpacking:
 
 
 ```cpp
-void foo(int...);
 auto [a, b, c] = view::iota(0, 3); // maybe this should work
-foo(view::iota(0, 3)...);          // ... and this too
-
-void call_f(Range auto&& r) {
-    f(r.[:]...);                   // .. and this also
-}
+foo(view::iota(0, 3).[:]...);      // ... and this too
 ```
 
 ## Abbreviated Lambdas
@@ -1056,23 +1236,24 @@ Of course, the proposal doesn't do that directly - we still need a macro:
 #define FWD(e) static_cast<decltype(e)&&>(e)
 
 #define L(...)                          \
-    [&](autos&&... _)                   \
+    [&](autos&&... args                 \
         requires requires {             \
             __VA_ARGS__;                \
         }                               \
         -> decltype(auto) {             \
             return __VA_ARGS__;         \
         }
+#define _(index) FWD(args)...[(index) - 1]
 ```
 
 We have a generic lambda whose default capture is `[&]`, it takes a variadic 
-parameter pack named `_`, constrains its call operator on the body, and then
-invokes it exactly.
+parameter pack named `args`, constrains its call operator on the body, and then
+invokes it exactly. You can index into the pack with `_(1)` referring to the
+pack element `args...[0]` (for consistency with `std::bind` where `_1` is the
+first argument).
 
 This allows for very terse lambda bodies by giving us both convenient accesss to
-the arguments. We basically end up with [@Boost.Lambda], but performant. Note
-that this uses `_.[0]` to refer to the first argument, where both Boost.Lambda
-and then `std::bind` used `_1`. There may be a clever solution to that. 
+the arguments. We basically end up with [@Boost.Lambda], but performant.
 
 Here are some of the examples from the Abbreviated Lambda paper:
 
@@ -1087,7 +1268,7 @@ Here are some of the examples from the Abbreviated Lambda paper:
 
 ### This proposal with `L`
 ```cpp
-L(obj.func(FWD(_)...);
+L(obj.func(FWD(args)...);
 ```
 
 ---
@@ -1097,7 +1278,7 @@ std::ranges::sort(v, std::greater{});
 ```
 
 ```cpp
-std::ranges::sort(v, L(_.[0] > _.[1]));
+std::ranges::sort(v, L(_(1) > _(2)));
 ```
 
 ---
@@ -1113,7 +1294,7 @@ std::ranges::sort(v, std::greater{},
 ```
 
 ```cpp
-std::ranges::sort(v, L(_.[0].id() > _.[1].id()));
+std::ranges::sort(v, L(_(1).id() > _(2).id()));
 ```
 
 ---
@@ -1126,7 +1307,7 @@ v | view::transform([&](auto&& key) -> decltype(auto)
 ```
 
 ```cpp
-v | view::transform(L(map[_.[0]]))
+v | view::transform(L(map[_(1)]))
 ```
 
 ---
@@ -1139,16 +1320,16 @@ std::ranges::find(v, id, &lib::Widget::id);
 ```
 
 ```cpp
-std::ranges::find_if(v, L(_.[0].id() == id));
+std::ranges::find_if(v, L(_(1).id() == id));
 ```
 
 :::
 
-Note that the lambda `L(_.[1])` would be a SFINAE-friendly way of just returning
+Note that the lambda `L(_(2))` would be a SFINAE-friendly way of just returning
 the second argument.
 
 It's tempting to try to give better names to the arguments,
-like providing the alias `_1` for `_.[1]` (and to save 3 characters), but I cannot
+like providing the alias `_1` for `_(0)` (and to save 2 characters), but I cannot
 think of a way to do that while also maintaining the constraints in the requires
 clause. 
 
@@ -1175,15 +1356,15 @@ To start with, structured bindings today works on three kinds of types:
 
 1. Arrays
 2. Tuple-Like types -- defined as types that satisfy `std::tuple_size<E>`,
-`std::tuple_element<i, E>`, and `get<i>()`.
+`std::tuple_element<i, E>`, and `get<i>()`. Note that this is a language feature
+that nevertheless has a library hook.
 3. Types that have all of their non-static data members in the same class. This
 one is a little fuzzy because it's based on accessibility.
 
 This paper proposes the notion of a _pack-like type_. A pack-like type:
 
-1. Is an unexpanded pack
-2. Is an array type
-3. Has one of:
+1. Is an array type
+2. Has one of:
     a. an unnamed pack alias type that names a pack-like type
     b. a pack operator that returns a pack-like type
     
@@ -1192,10 +1373,11 @@ will be reified as appropriate before further consideration. If a type provides
 only a pack alias, it can be indexed into/unpacked as a type but not as a value.
  If a type provides only a pack operator, it can be indexed/unpacked as a value
 but not as a type.
-4. Is a Tuple-Like type (as per structured bindings)
-5. Is a constexpr range.
-6. Is a types that has all of its non-static data members in the same class (as
-per structured bindings).
+3. Is a Tuple-Like type (as per structured bindings)
+4. Is a constexpr range (the constexpr-ness is important because of the fixed
+size)
+5. Is a type that has all of its non-static data members in the same class (as
+per structured bindings)
 
 This paper proposes to redefine both structured bindings and expansion statements
 in terms of the pack-like type concept, unifying the two ideas. Any pack-like
@@ -1211,14 +1393,15 @@ a reflection range is a pack-like type, therefore it can be unpacked.
 
 ## Dependent packs
 
-Member packs, block scope packs, and pack-like types can be directly unpacked
+Member packs and block scope packs can be directly unpacked
 when in non-dependent contexts. We know what they are.
 
 In dependent contexts, anything that is not a pack must be explicitly identified
 as a pack in order to be treated as one. Similar to how we need the `typename`
 and `template` keyword in many places to identify that such and such an expression
-is a type or a template, the `.[]` sequence will identify the expression that
-precedes it as a pack-like type. If that entity is _not_ a pack-like type, then
+is a type or a template, the `pack` context-sensitive keyword (or whatever spelling)
+will identify the expression that
+precedes it as a pack. If that entity is _not_ a pack, then
 the indexing or unpacking expression is ill-formed.
 
 ---
