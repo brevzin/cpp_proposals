@@ -734,6 +734,19 @@ int values[] = {42, 17};
 bar(values.[:]...); // equivalent to bar(42, 17)
 ```
 
+And likewise for those other types that we can already use with structured
+bindings:
+
+```cpp
+struct X { int i, j; };
+struct Y { int k, m; };
+
+int sum(X x, Y y) {
+    // equivalent to: return x.i + x.j + y.k * y.k + y.m * y.m
+    return (x.[:] + ...) + ((y.[:] * y.[:]) + ...);
+}
+```
+
 But also provides a direct solution to the fixed-size pack problem [@N4072]:
 
 ```cpp
