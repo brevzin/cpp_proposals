@@ -1378,8 +1378,8 @@ This paper proposes the notion of a _pack-like type_. A pack-like type:
 
 1. Is an array type
 2. Has one of:
-    a. an unnamed pack alias type that names a pack-like type
-    b. a pack operator that returns a pack-like type
+    a. an unnamed pack alias type that names a pack-like type or a pack
+    b. a pack operator that returns a pack-like type or a pack
     
    If any of these new special named members yields a reflection range, that range
 will be reified as appropriate before further consideration. If a type provides
