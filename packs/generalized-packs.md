@@ -348,10 +348,33 @@ int tuple_sum(Tuple t) {
 }
 ```
 
-If necessary, this could be made uglier (`temppack`? `tmplpack`?).
-But such a marker would necessarily be an incomplete solution anyway. With the
-earlier examples of implementing `tuple` having constructors, `elems` was private.
-How would we access it?
+However, having a context-sensitive keyword isn't going to cut it... because of
+the possibility of writing code like this:
+
+```cpp
+template<typename ...Ts> struct X { using ...types = Ts; };
+template<typename MyX> void f() {
+  using Fn = void(typename MyX::pack types ...);
+}
+```
+
+We would need a new keyword to make this happen, and `pack` seems entirely too
+pretty to make this work. As a placeholder, this paper suggests using _preceding_
+ellipses (which still need to be separated by a space). That is:
+
+```cpp
+template <typename Tuple>
+int tuple_sum(Tuple t) {
+    return sum(t. ...elems...);
+}
+```
+
+Class access wouldn't need a leading dot (e.g. `Tuple::...elems`), but either way
+that's a lot of dots. Don't worry too much about the above syntax, it's not
+intended to be the commonly used approach - simply something that would be
+necessary to have. And such a marker would necessarily be an incomplete 
+solution anyway. With the earlier examples of implementing `tuple` having 
+constructors, `elems` was private. How would we access it?
 
 ## Generalized unpacking and `operator...`
 
@@ -376,7 +399,7 @@ namespace xstd {
 We do not need to dismabiguate `elems` here because we know `elems` is a pack, it's
 declared as such. Were we to retrieve `elems` from a dependent base class though,
 we would need some form of disambiguation as described above
-(i.e. `this->pack elems`).
+(i.e. `this->...elems`).
 
 Note that this form of the declaration uses an unexpanded pack
 on the left (the `...` does not expand the `Ts const&`, not really anyway) and
@@ -478,7 +501,8 @@ a pack-like type.
 - `e...[I]` always removes a layer of packness. It is picking the `I`th element
 of a pack.
 
-- `e.pack f` disambiguates dependent member access and identifies `f` as a pack
+- `e. ...f` disambiguates dependent member access and identifies `f` as a pack
+The space between the `.` and `...` is required. 
 
 That is, `pack...[I]` and `tuple.[I]` are valid, `tuple...[I]` is an error, and
 `pack.[I]` would be applying `.[I]` to each element of the pack (and is itself
@@ -495,9 +519,9 @@ the rows:
 <tr><td /><th>`e` is a Pack</th><th>`e` is a Pack-like type</th><th>`e` is not expanded</th></tr>
 <tr>
 <th>`f` is a Pack</th>
-<td>`foo(e.pack f... ...);`</td>
-<td>`foo(e.[:].pack f... ...);`</td>
-<td>`foo(e.pack f...);`</td>
+<td>`foo(e. ...f... ...);`</td>
+<td>`foo(e.[:]. ...f... ...);`</td>
+<td>`foo(e. ...f...);`</td>
 </tr>
 <tr>
 <th>`f` is a Pack-like type</th>
