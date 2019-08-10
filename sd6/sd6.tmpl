@@ -22,7 +22,11 @@ style="background-color: white"
 {%- endif -%}
 </td>
 {% for val, elem in macro.value.items() | sort %}
+{% if elem['removed'] %}
+<td>[deleted]{.rm}</td>
+{% else %}
 <td>`{{ val }}`</td>
+{% endif %}
 <td> {% for paper in elem['papers'] -%}
 [@{{paper}}] {{refs[paper]}}
 {{ "<br />" if not loop.last }}

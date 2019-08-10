@@ -21,7 +21,8 @@ def refactor(macros):
             macro['value'] = {
                 v['value']: {
                     'papers': v['papers'].split() if v.get('papers') else '',
-                    'feature': v.get('feature', '')
+                    'feature': v.get('feature', ''),
+                    'removed': v.get('removed', False)
                 } for v in macro.pop('values')}
         except KeyError as e:
             print(f'{e} thrown for {macro}', file=sys.stderr)
