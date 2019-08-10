@@ -540,21 +540,148 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Project: </td>
     <td>Programming Language C++<br>
+      C++ Community<br>
     </td>
   </tr>
   <tr>
     <td style="vertical-align:top">Reply-to: </td>
     <td>
+      John Spicer<br>&lt;<a href="mailto:jhs@edg.com" class="email">jhs@edg.com</a>&gt;<br>
     </td>
   </tr>
 </table>
 
 </header>
 <div style="clear:both">
-<h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>Some preamble text should go here.</p>
-<h1 id="table-of-feature-test-macros" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Table of Feature-Test Macros<a href="#table-of-feature-test-macros" class="self-link"></a></h1>
-<h2 id="language-feature-test-macros"><span class="header-section-number">2.1</span> Language Feature-Test Macros<a href="#language-feature-test-macros" class="self-link"></a></h2>
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#explanation-and-rationale-for-the-approach"><span class="toc-section-number">1</span> Explanation and rationale for the approach<span></span></a><ul>
+<li><a href="#status-quo-before-feature-test-macros"><span class="toc-section-number">1.1</span> Status quo before feature-test macros<span></span></a></li>
+<li><a href="#characteristics-of-the-proposed-solution"><span class="toc-section-number">1.2</span> Characteristics of the proposed solution<span></span></a></li>
+</ul></li>
+<li><a href="#recommendations"><span class="toc-section-number">2</span> Recommendations<span></span></a><ul>
+<li><a href="#introduction"><span class="toc-section-number">2.1</span> Introduction<span></span></a></li>
+<li><a href="#testing-for-the-presence-of-a-header-__has_include"><span class="toc-section-number">2.2</span> Testing for the presence of a header: <code class="sourceCode cpp"><span class="ot">__has_include</span></code><span></span></a></li>
+<li><a href="#testing-for-the-presence-of-an-attribute-__has_cpp_attribute"><span class="toc-section-number">2.3</span> Testing for the presence of an attribute: <code class="sourceCode cpp">__has_cpp_attribute</code><span></span></a></li>
+</ul></li>
+<li><a href="#table-of-feature-test-macros"><span class="toc-section-number">3</span> Table of Feature-Test Macros<span></span></a><ul>
+<li><a href="#language-feature-test-macros"><span class="toc-section-number">3.1</span> Language Feature-Test Macros<span></span></a></li>
+<li><a href="#attribute-feature-test-macros"><span class="toc-section-number">3.2</span> Attribute Feature-Test Macros<span></span></a></li>
+<li><a href="#library-feature-test-macros"><span class="toc-section-number">3.3</span> Library Feature-Test Macros<span></span></a></li>
+</ul></li>
+<li><a href="#references"><span class="toc-section-number">4</span> References<span></span></a></li>
+</ul>
+</div>
+<style>
+code span.er { color: #6f4e37; font-weight: normal; }
+</style>
+<h1 id="explanation-and-rationale-for-the-approach" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Explanation and rationale for the approach<a href="#explanation-and-rationale-for-the-approach" class="self-link"></a></h1>
+<p>The pace of innovation in the standardization of C++ makes long-term stability of implementations unlikely. Features are added to the language because programmers want to use those features. Features are added to (the working draft of) the standard as the features become well-specified. In many cases a feature is added to an implementation well before or well after the standard officially introducing it is approved.</p>
+<p>This process makes it difficult for programmers who want to use a feature to know whether it is available in any given implementation. Implementations rarely leap from one formal revision of the standard directly to the next; the implementation process generally proceeds by smaller steps. As a result, testing for a specific revision of the standard (e.g. by examining the value of the <code class="sourceCode cpp"><span class="ot">__cplusplus</span></code> macro) often gives the wrong answer. Implementers generally don’t want to appear to be claiming full conformance to a standard revision until all of its features are implemented. That leaves programmers with no portable way to determine which features are actually available to them.</p>
+<p>It is often possible for a program to determine, in a manner specific to a single implementation, what features are supported by that implementation; but the means are often poorly documented and ad hoc, and sometimes complex – especially when the availability of a feature is controlled by an invocation option. To make this determination for a variety of implementations in a single source base is complex and error-prone.</p>
+<h2 id="status-quo-before-feature-test-macros"><span class="header-section-number">1.1</span> Status quo before feature-test macros<a href="#status-quo-before-feature-test-macros" class="self-link"></a></h2>
+<p>Here is some code that attempts to determine whether rvalue references are available in the implementation in use:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#ifndef __USE_RVALUE_REFERENCES</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="pp">#if (</span><span class="ot">__GNUC__</span><span class="pp"> &gt; 4 || </span><span class="ot">__GNUC__</span><span class="pp"> == 4 &amp;&amp; </span><span class="ot">__GNUC_MINOR__</span><span class="pp"> &gt;= 3) || \</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="pp">      _MSC_VER &gt;= 1600</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="pp">#if __EDG_VERSION__ &gt; 0</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>      <span class="pp">#define __USE_RVALUE_REFERENCES </span><span class="op">(</span>__EDG_VERSION__<span class="pp"> </span><span class="op">&gt;=</span><span class="pp"> </span><span class="dv">410</span><span class="op">)</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="pp">#else</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>      <span class="pp">#define __USE_RVALUE_REFERENCES </span><span class="dv">1</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="pp">#endif</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="pp">#elif __clang__</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="pp">#define __USE_RVALUE_REFERENCES </span>__has_feature<span class="op">(</span>cxx_rvalue_references<span class="op">)</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>  <span class="pp">#else</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="pp">#define __USE_RVALUE_REFERENCES </span><span class="dv">0</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>  <span class="pp">#endif</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="pp">#endif</span></span></code></pre></div>
+<p>First, the GNU and Microsoft version numbers are checked to see if they are high enough. But then a check is made of the EDG version number, since that front end also has compatibility modes for both those compilers, and defines macros indicating (claimed) compatibility with them. If the feature wasn’t implemented in the indicated EDG version, it is assumed that the feature is not available – even though it is possible for a customer of EDG to implement a feature before EDG does.</p>
+<p>Fortunately Clang has ways to test specifically for the presence of specific features. But unfortunately, the function-call-like syntax used for such tests won’t work with a standard preprocessor, so this fine new feature winds up adding its own flavor of complexity to the mix.</p>
+<p>Also note that this code is only the beginning of a real-world solution. A complete solution would need to take into account more compilers, and also command-line option settings specific to various compilers.</p>
+<h2 id="characteristics-of-the-proposed-solution"><span class="header-section-number">1.2</span> Characteristics of the proposed solution<a href="#characteristics-of-the-proposed-solution" class="self-link"></a></h2>
+<p>To preserve implementers’ freedom to add features in the order that makes the most sense for themselves and their customers, implementers should indicate the availability of each separate feature by adding a definition of a macro with the name corresponding to that feature.</p>
+<p>Important note: By recommending the use of these macros, WG21 is not making any feature optional; the absence of a definition for the relevant feature-test macro does not make an implementation that lacks a feature conform to a standard that requires the feature. However, if implementers and programmers follow these recommendations, portability of code between real-world implementations should be improved.</p>
+<p>To a first approximation, a feature is identified by the WG21 paper in which it is specified, and by which it is introduced into the working draft of the standard. Not every paper introduces a new feature worth a feature-test macro, but every paper that is not just a collection of issue resolutions is considered a candidate; exceptions are explicitly justified.</p>
+<p>For C++14, the feature-test macro name generally consists of some combination of words from the title of the paper. In the future, it is hoped that every paper will include its own recommendations concerning feature-test macro names.</p>
+<p>The value specified for a feature-test macro is based on the year and month in which the feature is voted into the working draft. In a case where a feature is subsequently changed in a significant way, but arguably remains the same feature, the value of the macro is changed to indicate the “revision level” of the specification of the feature. However, in most cases it is expected that the presence of a feature can be determined by the presence of any non-zero macro value; for example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">struct</span> use_empty_base_opt <span class="op">:</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    std<span class="op">::</span>integral_constant<span class="op">&lt;</span><span class="dt">bool</span>, </span>
+<span id="cb2-4"><a href="#cb2-4"></a>        std<span class="op">::</span>is_empty<span class="op">&lt;</span>T<span class="op">&gt;::</span>value</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="pp">#if __cpp_lib_is_final</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="op">&amp;&amp;</span> <span class="op">!</span>std<span class="op">::</span>is_final<span class="op">&lt;</span>T<span class="op">&gt;::</span>value</span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="pp">#endif</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<p>To avoid the user’s namespace, names of macros for language features are prefixed by <code class="sourceCode cpp">__cpp_</code>; for library features, by <code class="sourceCode cpp">__cpp_lib_</code>. A library feature that doesn’t introduce a new header is expected to be defined by the header(s) that implement the feature.</p>
+<h1 id="recommendations" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Recommendations<a href="#recommendations" class="self-link"></a></h1>
+<h2 id="introduction"><span class="header-section-number">2.1</span> Introduction<a href="#introduction" class="self-link"></a></h2>
+<p>For the sake of improved portability between partial implementations of various C++ standards, WG21 (the ISO technical committee for the C++ programming language) recommends that implementers and programmers follow the guidelines in this document concerning feature-test macros.</p>
+<p>Implementers who provide a new standard feature should define a macro with the recommended name and value, in the same circumstances under which the feature is available (for example, taking into account relevant command-line options), to indicate the presence of support for that feature.</p>
+<p>Programmers who wish to determine whether a feature is available in an implementation should base that determination on the state of the macro with the recommended name. (The absence of a tested feature may result in a program with decreased functionality, or the relevant functionality may be provided in a different way. A program that strictly depends on support for a feature can just try to use the feature unconditionally; presumably, on an implementation lacking necessary support, translation will fail. Therefore, if the most useful purpose for a feature-test macro would be to control the inclusion of a #error directive if the feature is unavailable, that is considered inadequate justification for the macro. Note that the usefulness of a test macro for a feature is completely independent of the usefulness of the feature itself.)</p>
+<h2 id="testing-for-the-presence-of-a-header-__has_include"><span class="header-section-number">2.2</span> Testing for the presence of a header: <code class="sourceCode cpp"><span class="ot">__has_include</span></code><a href="#testing-for-the-presence-of-a-header-__has_include" class="self-link"></a></h2>
+<p>It is impossible for a C++ program to directly, reliably and portably determine whether or not a library header is available for inclusion. Conditionally including a header requires the use of a configuration macro, whose setting can be determined by a configuration-test process at build time (reliable, but less portable), or by some other means (often not reliable or portable).</p>
+<p>To solve this general problem, WG21 recommends that implementers provide, and programmers use, the <code class="sourceCode cpp"><span class="ot">__has_include</span></code> feature.</p>
+<h3 id="syntax"><span class="header-section-number">2.2.1</span> Syntax<a href="#syntax" class="self-link"></a></h3>
+<blockquote>
+<div class="line-block"><em>h-preprocessing-token</em>:<br />
+    any <em>preprocessing-token</em> other than <code class="sourceCode cpp"><span class="op">&gt;</span></code><br />
+<br />
+<em>h-pp-tokens</em>:<br />
+    <em>h-preprocessing-token</em><br />
+    <em>h-pp-tokens</em> <em>h-preprocessing-token</em></div>
+</blockquote>
+<blockquote>
+<div class="line-block"><em>has-include-expression</em>:<br />
+    <code class="sourceCode cpp"><span class="ot">__has_include</span></code> <code class="sourceCode cpp"><span class="op">(</span></code> <em>header-name</em> <code class="sourceCode cpp"><span class="op">)</span></code><br />
+    <code class="sourceCode cpp"><span class="ot">__has_include</span></code> <code class="sourceCode cpp"><span class="op">(</span></code> <em>string-literal</em> <code class="sourceCode cpp"><span class="op">)</span></code><br />
+    <code class="sourceCode cpp"><span class="ot">__has_include</span></code> <code class="sourceCode cpp"><span class="op">(</span></code> <code class="sourceCode cpp"><span class="op">&lt;</span></code> <em>h-pp-tokens</em> <code class="sourceCode cpp"><span class="op">&gt;</span></code> <code class="sourceCode cpp"><span class="op">)</span></code></div>
+</blockquote>
+<h3 id="semantics"><span class="header-section-number">2.2.2</span> Semantics<a href="#semantics" class="self-link"></a></h3>
+<p>In the first form of the <em>has-include-expression</em>, the parenthesized <em>header-name</em> token is not subject to macro expansion. The second and third forms are considered only if the first form does not match, and the preprocessing tokens are processed just as in normal text.</p>
+<p>A <em>has-include-expression</em> shall appear only in the controlling constant expression of a <code class="sourceCode cpp"><span class="pp">#</span><span class="er">if</span></code> or <code class="sourceCode cpp"><span class="pp">#</span><span class="er">elif</span></code> directive ([cpp.cond] 16.1). Prior to the evaluation of such an expression, the source file identified by the parenthesized preprocessing token sequence in each contained <em>has-include-expression</em> is searched for as if that preprocessing token sequence were the <em>pp-tokens</em> in a <code class="sourceCode cpp"><span class="pp">#include</span></code> directive, except that no further macro expansion is performed. If such a directive would not satisfy the syntactic requirements of a <code class="sourceCode cpp"><span class="pp">#include</span></code> directive, the program is ill-formed. The <em>has-include-expression</em> is replaced by the <em>pp-number</em> <code class="sourceCode cpp"><span class="dv">1</span></code> if the search for the source file succeeds, and by the <em>pp-number</em> <code class="sourceCode cpp"><span class="dv">0</span></code> if the search fails.</p>
+<p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp"><span class="ot">__has_include</span></code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp"><span class="ot">__has_include</span></code> shall not appear in any context not mentioned in this section.</p>
+<h3 id="example"><span class="header-section-number">2.2.3</span> Example<a href="#example" class="self-link"></a></h3>
+<p>This demonstrates a way to use a library optional facility only if it is available.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="pp">#ifdef __has_include</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="pp">#  if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="pp">#    include </span><span class="im">&lt;optional&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="pp">#    define have_optional </span><span class="dv">1</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="pp">#  elif </span><span class="ot">__has_include</span><span class="pp">(&lt;experimental/optional&gt;)</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="pp">#    include </span><span class="im">&lt;experimental/optional&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="pp">#    define have_optional </span><span class="dv">1</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="pp">#    define experimental_optional</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="pp">#  else</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="pp">#    define have_optional </span><span class="dv">0</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="pp">#  endif</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="pp">#endif</span></span></code></pre></div>
+<h2 id="testing-for-the-presence-of-an-attribute-__has_cpp_attribute"><span class="header-section-number">2.3</span> Testing for the presence of an attribute: <code class="sourceCode cpp">__has_cpp_attribute</code><a href="#testing-for-the-presence-of-an-attribute-__has_cpp_attribute" class="self-link"></a></h2>
+<p>A C++ program cannot directly, reliably, and portably determine whether or not a standard or vendor-specific attribute is available for use. Testing for attribute support generally requires complex macro logic, as illustrated above for language features in general.</p>
+<p>To solve this general problem, WG21 recommends that implementers provide, and programmers use, the <code class="sourceCode cpp">__has_cpp_attribute</code> feature.</p>
+<h3 id="syntax-1"><span class="header-section-number">2.3.1</span> Syntax<a href="#syntax-1" class="self-link"></a></h3>
+<blockquote>
+<div class="line-block"><em>has-attribute-expression</em>:<br />
+    <code class="sourceCode cpp">__has_cpp_attribute</code> <code class="sourceCode cpp"><span class="op">(</span></code> <em>attribute-token</em> <code class="sourceCode cpp"><span class="op">)</span></code></div>
+</blockquote>
+<h3 id="semantics-1"><span class="header-section-number">2.3.2</span> Semantics<a href="#semantics-1" class="self-link"></a></h3>
+<p>A <em>has-attribute-expression</em> shall appear only in the controlling constant expression of a <code class="sourceCode cpp"><span class="pp">#</span><span class="er">if</span></code> or <code class="sourceCode cpp"><span class="pp">#</span><span class="er">elif</span></code> directive ([cpp.cond] 16.1). The <em>has-attribute-expression</em> is replaced by a <em>non-zero</em> <em>pp-number</em> if the implementation supports an attribute with the specified name, and by the <em>pp-number</em> <code class="sourceCode cpp"><span class="dv">0</span></code> otherwise.</p>
+<p>For a standard attribute, the value of the <code class="sourceCode cpp">__has_cpp_attribute</code> macro is based on the year and month in which the attribute was voted into the working draft. In the case where the attribute is vendor-specific, the value is implementation-defined. However, in most cases it is expected that the availability of an attribute can be detected by any non-zero result.</p>
+<p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp">__has_cpp_attribute</code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp">__has_cpp_attribute</code> shall not appear in any context not mentioned in this section.</p>
+<h3 id="example-1"><span class="header-section-number">2.3.3</span> Example<a href="#example-1" class="self-link"></a></h3>
+<p>This demonstrates a way to use the attribute <code class="sourceCode cpp"><span class="op">[[</span><span class="at">deprecated</span><span class="op">]]</span></code> only if it is available.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifndef __has_cpp_attribute</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="pp"># define __has_cpp_attribute</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="dv">0</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="pp">#endif</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="pp">#ifdef __has_cpp_attribute</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="pp">#if __has_cpp_attribute(deprecated)</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="pp">#else</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="pp">#endif</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="pp">#endif</span></span></code></pre></div>
+<h1 id="table-of-feature-test-macros" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Table of Feature-Test Macros<a href="#table-of-feature-test-macros" class="self-link"></a></h1>
+<h2 id="language-feature-test-macros"><span class="header-section-number">3.1</span> Language Feature-Test Macros<a href="#language-feature-test-macros" class="self-link"></a></h2>
 <table>
 <tr>
 <th>
@@ -1264,7 +1391,7 @@ Run-time type identification
 </td>
 </tr>
 </table>
-<h2 id="attribute-feature-test-macros"><span class="header-section-number">2.2</span> Attribute Feature-Test Macros<a href="#attribute-feature-test-macros" class="self-link"></a></h2>
+<h2 id="attribute-feature-test-macros"><span class="header-section-number">3.2</span> Attribute Feature-Test Macros<a href="#attribute-feature-test-macros" class="self-link"></a></h2>
 <table>
 <tr>
 <th>
@@ -1385,7 +1512,7 @@ Paper(s)
 </td>
 </tr>
 </table>
-<h2 id="library-feature-test-macros"><span class="header-section-number">2.3</span> Library Feature-Test Macros<a href="#library-feature-test-macros" class="self-link"></a></h2>
+<h2 id="library-feature-test-macros"><span class="header-section-number">3.3</span> Library Feature-Test Macros<a href="#library-feature-test-macros" class="self-link"></a></h2>
 <table>
 <tr>
 <th>
@@ -2650,7 +2777,7 @@ Paper(s)
 </td>
 </tr>
 </table>
-<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> References<a href="#references" class="self-link"></a></h1>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
 <div id="ref-LWG2112">

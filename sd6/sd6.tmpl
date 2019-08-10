@@ -7,7 +7,7 @@
 </tr>
 {% for macro in var %}
 {% set outer_loop = loop %}
-<tr 
+<tr
 {% if loop.index0 % 2 == 0 %}
 style="background-color: #f6f8fa"
 {% else %}
@@ -33,7 +33,7 @@ style="background-color: white"
 {%- endfor -%} {{ elem['feature'] }}</td>
 {% if not loop.last %}
 </tr>
-<tr 
+<tr
 {% if outer_loop.index0 % 2 == 0 %}
 style="background-color: #f6f8fa"
 {% else %}
@@ -51,12 +51,279 @@ style="background-color: white"
 title: "SD-6: SG10 Feature-Test Recommendations"
 document: SD-6
 date: today
-toc: false
+audience: C++ Community
+author:
+    - name: John Spicer
+      email: <jhs@edg.com>
+toc: true
 ---
 
-# Introduction
+<style>
+code span.er { color: #6f4e37; font-weight: normal; }
+</style>
 
-Some preamble text should go here.
+# Explanation and rationale for the approach
+
+The pace of innovation in the standardization of C++ makes long-term
+stability of implementations unlikely. Features are added to the language
+because programmers want to use those features. Features are added to (the
+working draft of) the standard as the features become well-specified. In many
+cases a feature is added to an implementation well before or well after the
+standard officially introducing it is approved.
+
+This process makes it difficult for programmers who want to use a feature to
+know whether it is available in any given implementation. Implementations
+rarely leap from one formal revision of the standard directly to the next;
+the implementation process generally proceeds by smaller steps. As a result,
+testing for a specific revision of the standard (e.g. by examining the value
+of the `__cplusplus` macro) often gives the wrong answer. Implementers
+generally don't want to appear to be claiming full conformance to a standard
+revision until all of its features are implemented. That leaves programmers
+with no portable way to determine which features are actually available to
+them.
+
+It is often possible for a program to determine, in a manner specific to a
+single implementation, what features are supported by that implementation;
+but the means are often poorly documented and ad hoc, and sometimes complex –
+especially when the availability of a feature is controlled by an invocation
+option. To make this determination for a variety of implementations in a
+single source base is complex and error-prone.
+
+## Status quo before feature-test macros
+
+Here is some code that attempts to determine whether rvalue references are
+available in the implementation in use:
+
+```cpp
+#ifndef __USE_RVALUE_REFERENCES
+  #if (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 3) || \
+      _MSC_VER >= 1600
+    #if __EDG_VERSION__ > 0
+      #define __USE_RVALUE_REFERENCES (__EDG_VERSION__ >= 410)
+    #else
+      #define __USE_RVALUE_REFERENCES 1
+    #endif
+  #elif __clang__
+    #define __USE_RVALUE_REFERENCES __has_feature(cxx_rvalue_references)
+  #else
+    #define __USE_RVALUE_REFERENCES 0
+  #endif
+#endif
+```
+
+First, the GNU and Microsoft version numbers are checked to see if they are
+high enough. But then a check is made of the EDG version number, since that
+front end also has compatibility modes for both those compilers, and defines
+macros indicating (claimed) compatibility with them. If the feature wasn’t
+implemented in the indicated EDG version, it is assumed that the feature is
+not available – even though it is possible for a customer of EDG to implement
+a feature before EDG does.
+
+Fortunately Clang has ways to test specifically for the presence of specific
+features. But unfortunately, the function-call-like syntax used for such
+tests won’t work with a standard preprocessor, so this fine new feature winds
+up adding its own flavor of complexity to the mix.
+
+Also note that this code is only the beginning of a real-world solution. A
+complete solution would need to take into account more compilers, and also
+command-line option settings specific to various compilers.
+
+## Characteristics of the proposed solution
+
+To preserve implementers’ freedom to add features in the order that makes the
+most sense for themselves and their customers, implementers should indicate
+the availability of each separate feature by adding a definition of a macro
+with the name corresponding to that feature.
+
+Important note: By recommending the use of these macros, WG21 is not making
+any feature optional; the absence of a definition for the relevant
+feature-test macro does not make an implementation that lacks a feature
+conform to a standard that requires the feature. However, if implementers and
+programmers follow these recommendations, portability of code between
+real-world implementations should be improved.
+
+To a first approximation, a feature is identified by the WG21 paper in which
+it is specified, and by which it is introduced into the working draft of the
+standard. Not every paper introduces a new feature worth a feature-test
+macro, but every paper that is not just a collection of issue resolutions is
+considered a candidate; exceptions are explicitly justified.
+
+For C++14, the feature-test macro name generally consists of some combination
+of words from the title of the paper. In the future, it is hoped that every
+paper will include its own recommendations concerning feature-test macro names.
+
+The value specified for a feature-test macro is based on the year and month
+in which the feature is voted into the working draft. In a case where a
+feature is subsequently changed in a significant way, but arguably remains
+the same feature, the value of the macro is changed to indicate the “revision
+level” of the specification of the feature. However, in most cases it is
+expected that the presence of a feature can be determined by the presence of
+any non-zero macro value; for example:
+
+```cpp
+template<typename T>
+struct use_empty_base_opt :
+    std::integral_constant<bool,
+        std::is_empty<T>::value
+#if __cpp_lib_is_final
+        && !std::is_final<T>::value
+#endif
+    >
+{ };
+```
+
+To avoid the user’s namespace, names of macros for language features are
+prefixed by `__cpp_`; for library features, by `__cpp_lib_`. A library
+feature that doesn’t introduce a new header is expected to be defined by the
+header(s) that implement the feature.
+
+# Recommendations
+
+## Introduction
+
+For the sake of improved portability between partial implementations of
+various C++ standards, WG21 (the ISO technical committee for the C++
+programming language) recommends that implementers and programmers follow the
+guidelines in this document concerning feature-test macros.
+
+Implementers who provide a new standard feature should define a macro with
+the recommended name and value, in the same circumstances under which the
+feature is available (for example, taking into account relevant command-line
+options), to indicate the presence of support for that feature.
+
+Programmers who wish to determine whether a feature is available in an
+implementation should base that determination on the state of the macro with
+the recommended name. (The absence of a tested feature may result in a
+program with decreased functionality, or the relevant functionality may be
+provided in a different way. A program that strictly depends on support for a
+feature can just try to use the feature unconditionally; presumably, on an
+implementation lacking necessary support, translation will fail. Therefore,
+if the most useful purpose for a feature-test macro would be to control the
+inclusion of a #error directive if the feature is unavailable, that is
+considered inadequate justification for the macro. Note that the usefulness
+of a test macro for a feature is completely independent of the usefulness of
+the feature itself.)
+
+## Testing for the presence of a header: `__has_include`
+
+It is impossible for a C++ program to directly, reliably and portably
+determine whether or not a library header is available for inclusion.
+Conditionally including a header requires the use of a configuration macro,
+whose setting can be determined by a configuration-test process at build time
+(reliable, but less portable), or by some other means (often not reliable or
+portable).
+
+To solve this general problem, WG21 recommends that implementers provide, and
+programmers use, the `__has_include` feature.
+
+### Syntax
+
+> | _h-preprocessing-token_:
+> |     any _preprocessing-token_ other than `>`
+> |
+> | _h-pp-tokens_:
+> |     _h-preprocessing-token_
+> |     _h-pp-tokens_ _h-preprocessing-token_
+
+> | _has-include-expression_:
+> |     `__has_include` `(` _header-name_ `)`
+> |     `__has_include` `(` _string-literal_ `)`
+> |     `__has_include` `(` `<` _h-pp-tokens_ `>` `)`
+
+### Semantics
+
+In the first form of the _has-include-expression_, the parenthesized
+_header-name_ token is not subject to macro expansion. The second and third
+forms are considered only if the first form does not match, and the
+preprocessing tokens are processed just as in normal text.
+
+A _has-include-expression_ shall appear only in the controlling constant
+expression of a `#if` or `#elif` directive ([cpp.cond] 16.1). Prior to the
+evaluation of such an expression, the source file identified by the
+parenthesized preprocessing token sequence in each contained
+_has-include-expression_ is searched for as if that preprocessing token
+sequence were the _pp-tokens_ in a `#include` directive, except that no further
+macro expansion is performed. If such a directive would not satisfy the
+syntactic requirements of a `#include` directive, the program is ill-formed.
+The _has-include-expression_ is replaced by the _pp-number_ `1` if the search
+for  the source file succeeds, and by the _pp-number_ `0` if the search fails.
+
+The `#ifdef` and `#ifndef` directives, and the defined conditional inclusion
+operator, shall treat `__has_include` as if it were the name of a defined
+macro. The identifier `__has_include` shall not appear in any context not
+mentioned in this section.
+
+### Example
+
+This demonstrates a way to use a library optional facility only if it is
+available.
+
+```cpp
+#ifdef __has_include
+#  if __has_include(<optional>)
+#    include <optional>
+#    define have_optional 1
+#  elif __has_include(<experimental/optional>)
+#    include <experimental/optional>
+#    define have_optional 1
+#    define experimental_optional
+#  else
+#    define have_optional 0
+#  endif
+#endif
+```
+
+## Testing for the presence of an attribute: `__has_cpp_attribute`
+
+A C++ program cannot directly, reliably, and portably determine whether or
+not a standard or vendor-specific attribute is available for use. Testing for
+attribute support generally requires complex macro logic, as illustrated
+above for language features in general.
+
+To solve this general problem, WG21 recommends that implementers provide, and
+programmers use, the `__has_cpp_attribute` feature.
+
+### Syntax
+
+> | _has-attribute-expression_:
+> |     `__has_cpp_attribute` `(` _attribute-token_ `)`
+
+### Semantics
+
+A _has-attribute-expression_ shall appear only in the controlling constant
+expression of a `#if` or `#elif` directive ([cpp.cond] 16.1). The
+_has-attribute-expression_ is replaced by a _non-zero_ _pp-number_ if the
+implementation supports an attribute with the specified name, and by the
+_pp-number_ `0` otherwise.
+
+For a standard attribute, the value of the `__has_cpp_attribute` macro is
+based on the year and month in which the attribute was voted into the working
+draft. In the case where the attribute is vendor-specific, the value is
+implementation-defined. However, in most cases it is expected that the
+availability of an attribute can be detected by any non-zero result.
+
+The `#ifdef` and `#ifndef` directives, and the defined conditional inclusion
+operator, shall treat `__has_cpp_attribute` as if it were the name of a defined
+macro. The identifier `__has_cpp_attribute` shall not appear in any context not
+mentioned in this section.
+
+### Example
+
+This demonstrates a way to use the attribute `[[deprecated]]` only if it is
+available.
+
+```cpp
+#ifndef __has_cpp_attribute
+# define __has_cpp_attribute(x) 0
+#endif
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(deprecated)
+# define ATTR_DEPRECATED(msg) [[deprecated(msg)]]
+#else
+# define ATTR_DEPRECATED(msg)
+#endif
+#endif
+```
 
 # Table of Feature-Test Macros
 
