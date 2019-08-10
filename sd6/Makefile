@@ -20,6 +20,6 @@ sd6.html : sd6.py sd6.tmpl macros.yaml reduced.json
 	   --template $(MPARK_DATA)/template/wg21 \
 	   --output $@
 
-reduced.json : macros.yaml ../md/wg21_fmt.yaml ../md/wg21/data/index.yaml reduce_refs.py
+reduced.json : ../md/wg21_fmt.yaml ../md/wg21/data/index.yaml reduce_refs.py
 	python reduce_refs.py > $@ 
 
