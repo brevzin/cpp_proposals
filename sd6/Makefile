@@ -1,6 +1,6 @@
 include ../md/mpark-wg21.mk
 
-sd6.html : sd6.py sd6.tmpl macros.yaml
+sd6.html : sd6.py sd6.tmpl macros.yaml reduced.json
 	python sd6.py | pandoc - $(MPARK_DATA)/references.md \
 	   --number-sections \
 	   --self-contained \
@@ -19,3 +19,7 @@ sd6.html : sd6.py sd6.tmpl macros.yaml
 	   --syntax-definition $(MPARK_DATA)/syntax/isocpp.xml \
 	   --template $(MPARK_DATA)/template/wg21 \
 	   --output $@
+
+reduced.json : macros.yaml ../md/wg21_fmt.yaml ../md/wg21/data/index.yaml reduce_refs.py
+	python reduce_refs.py > $@ 
+

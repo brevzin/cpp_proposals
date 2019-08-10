@@ -1,32 +1,69 @@
----
-title: "SD-6: SG10 Feature-Test Recommendations"
-toc: false
----
-
-# Language Feature-Test Macros
-
+{% macro make_table(var, is_attr) %}
 <table>
 <tr>
 <th>Macro</th>
 <th>Value</th>
 <th>Paper(s)</th>
 </tr>
-{% for macro in lang_macros %}
-<tr>
-<td rowspan="{{ macro.value | length }}">`{{macro.name}}`</td>
-{% for val, papers in macro.value.items() | sort %}
+{% for macro in var %}
+{% set outer_loop = loop %}
+<tr 
+{% if loop.index0 % 2 == 0 %}
+style="background-color: #f6f8fa"
+{% else %}
+style="background-color: white"
+{% endif %}
+>
+<td rowspan="{{ macro.value | length }}">
+{%- if is_attr -%}
+`__has_cpp_attribute({{macro.name}})`
+{%- else -%}
+`{{macro.name}}`
+{%- endif -%}
+</td>
+{% for val, elem in macro.value.items() | sort %}
 <td>`{{ val }}`</td>
-<td> {% for paper in papers -%}
-[@{{paper}}] {{refs[paper]['title']}}
-{{ "," if not loop.last }}
-{%- endfor -%} </td>
+<td> {% for paper in elem['papers'] -%}
+[@{{paper}}] {{refs[paper]}}
+{{ "<br />" if not loop.last }}
+{%- endfor -%} {{ elem['feature'] }}</td>
 {% if not loop.last %}
 </tr>
-<tr>
+<tr 
+{% if outer_loop.index0 % 2 == 0 %}
+style="background-color: #f6f8fa"
+{% else %}
+style="background-color: white"
+{% endif %}
+>
 {% endif %}
 {% endfor %}
 </tr>
 {% endfor %}
 </table>
+{% endmacro %}
 
-# Library Feature-Test Macros
+---
+title: "SD-6: SG10 Feature-Test Recommendations"
+document: SD-6
+date: today
+toc: false
+---
+
+# Introduction
+
+Some preamble text should go here.
+
+# Table of Feature-Test Macros
+
+## Language Feature-Test Macros
+
+{{ make_table(lang_macros, False) }}
+
+## Attribute Feature-Test Macros
+
+{{ make_table(attr_macros, True) }}
+
+## Library Feature-Test Macros
+
+{{ make_table(lib_macros, False) }}
