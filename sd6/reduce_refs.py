@@ -7,5 +7,6 @@ def refs_to_dict(filename):
 
 refs = refs_to_dict('../md/wg21/data/index.yaml')
 refs.update(refs_to_dict('../md/wg21_fmt.yaml'))
+refs.update(refs_to_dict('missing.yaml'))
 
 print(json.dumps(refs))

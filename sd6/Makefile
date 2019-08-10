@@ -7,6 +7,7 @@ sd6.html : sd6.py sd6.tmpl macros.yaml reduced.json
 	   --table-of-contents \
        --bibliography $(THIS_DIR)wg21_fmt.yaml \
 	   --bibliography $(MPARK_DATA)/index.yaml \
+	   --bibliography missing.yaml \
 	   --csl $(MPARK_DATA)/cpp.csl \
 	   --css $(MPARK_DATA)/template/14882.css \
 	   --css $(THIS_DIR)/pandoc.css \
@@ -20,6 +21,9 @@ sd6.html : sd6.py sd6.tmpl macros.yaml reduced.json
 	   --template $(MPARK_DATA)/template/wg21 \
 	   --output $@
 
-reduced.json : ../md/wg21_fmt.yaml ../md/wg21/data/index.yaml reduce_refs.py
+missing.yaml : not_yet_published.py missing_papers
+	python not_yet_published.py > $@
+
+reduced.json : ../md/wg21_fmt.yaml ../md/wg21/data/index.yaml reduce_refs.py missing.yaml
 	python reduce_refs.py > $@ 
 
