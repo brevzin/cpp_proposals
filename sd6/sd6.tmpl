@@ -1,0 +1,32 @@
+---
+title: "SD-6: SG10 Feature-Test Recommendations"
+toc: false
+---
+
+# Language Feature-Test Macros
+
+<table>
+<tr>
+<th>Macro</th>
+<th>Value</th>
+<th>Paper(s)</th>
+</tr>
+{% for macro in lang_macros %}
+<tr>
+<td rowspan="{{ macro.value | length }}">`{{macro.name}}`</td>
+{% for val, papers in macro.value.items() | sort %}
+<td>`{{ val }}`</td>
+<td> {% for paper in papers -%}
+[@{{paper}}] {{refs[paper]['title']}}
+{{ "," if not loop.last }}
+{%- endfor -%} </td>
+{% if not loop.last %}
+</tr>
+<tr>
+{% endif %}
+{% endfor %}
+</tr>
+{% endfor %}
+</table>
+
+# Library Feature-Test Macros
