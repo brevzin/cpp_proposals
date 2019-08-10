@@ -643,19 +643,33 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>A <em>has-include-expression</em> shall appear only in the controlling constant expression of a <code class="sourceCode cpp"><span class="pp">#</span><span class="er">if</span></code> or <code class="sourceCode cpp"><span class="pp">#</span><span class="er">elif</span></code> directive ([cpp.cond] 16.1). Prior to the evaluation of such an expression, the source file identified by the parenthesized preprocessing token sequence in each contained <em>has-include-expression</em> is searched for as if that preprocessing token sequence were the <em>pp-tokens</em> in a <code class="sourceCode cpp"><span class="pp">#include</span></code> directive, except that no further macro expansion is performed. If such a directive would not satisfy the syntactic requirements of a <code class="sourceCode cpp"><span class="pp">#include</span></code> directive, the program is ill-formed. The <em>has-include-expression</em> is replaced by the <em>pp-number</em> <code class="sourceCode cpp"><span class="dv">1</span></code> if the search for the source file succeeds, and by the <em>pp-number</em> <code class="sourceCode cpp"><span class="dv">0</span></code> if the search fails.</p>
 <p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp"><span class="ot">__has_include</span></code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp"><span class="ot">__has_include</span></code> shall not appear in any context not mentioned in this section.</p>
 <h3 id="example"><span class="header-section-number">2.2.3</span> Example<a href="#example" class="self-link"></a></h3>
-<p>This demonstrates a way to use a library optional facility only if it is available.</p>
+<p>This demonstrates a way to use a library optional facility only if it is available. Note that having <code class="sourceCode cpp"><span class="ot">__has_include</span><span class="op">(&lt;</span>optional<span class="op">&gt;)</span></code> succeed is insufficient since on many toolchains, headers may exist in installations but have their contents guarded based on compile flags. For example, the following:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="pp">#ifdef __has_include</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="pp">#  if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="pp">#    include </span><span class="im">&lt;optional&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="pp">#    define have_optional </span><span class="dv">1</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="pp">#  elif </span><span class="ot">__has_include</span><span class="pp">(&lt;experimental/optional&gt;)</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a><span class="pp">#    include </span><span class="im">&lt;experimental/optional&gt;</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="pp">#    define have_optional </span><span class="dv">1</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a><span class="pp">#    define experimental_optional</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a><span class="pp">#  else</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="pp">#    define have_optional </span><span class="dv">0</span></span>
-<span id="cb3-11"><a href="#cb3-11"></a><span class="pp">#  endif</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a><span class="pp">#endif</span></span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="pp">#if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="pp">#include </span><span class="im">&lt;optional&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> o;</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="pp">#endif</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="pp">#endif</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="dt">int</span> main<span class="op">(){</span> <span class="op">}</span></span></code></pre></div>
+<p>will still fail to compile with <code class="sourceCode cpp">g<span class="op">++</span> <span class="op">-</span>std<span class="op">=</span>c<span class="op">++</span><span class="dv">14</span></code> (using libstdc++).</p>
+<p>Hence, we need to do:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifdef __has_include</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="pp">#  if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="pp">#    include </span><span class="im">&lt;optional&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="pp">#    if __cpp_lib_optional &gt;= nnnnnn</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="pp">#    endif</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="pp">#  elif </span><span class="ot">__has_include</span><span class="pp">(&lt;experimental/optional&gt;)</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="pp">#    include </span><span class="im">&lt;experimental/optional&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="pp">#    </span><span class="er">#if __cpp_lib_experimental_optional &gt;= nnnnnn</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="pp">#    define experimental_optional</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="pp">#    endif</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="pp">#endif</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="pp">#ifndef have_optional</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="pp">#    define have_optional </span><span class="dv">0</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="pp">#endif</span></span></code></pre></div>
 <h2 id="testing-for-the-presence-of-an-attribute-__has_cpp_attribute"><span class="header-section-number">2.3</span> Testing for the presence of an attribute: <code class="sourceCode cpp">__has_cpp_attribute</code><a href="#testing-for-the-presence-of-an-attribute-__has_cpp_attribute" class="self-link"></a></h2>
 <p>A C++ program cannot directly, reliably, and portably determine whether or not a standard or vendor-specific attribute is available for use. Testing for attribute support generally requires complex macro logic, as illustrated above for language features in general.</p>
 <p>To solve this general problem, WG21 recommends that implementers provide, and programmers use, the <code class="sourceCode cpp">__has_cpp_attribute</code> feature.</p>
@@ -670,14 +684,14 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp">__has_cpp_attribute</code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp">__has_cpp_attribute</code> shall not appear in any context not mentioned in this section.</p>
 <h3 id="example-1"><span class="header-section-number">2.3.3</span> Example<a href="#example-1" class="self-link"></a></h3>
 <p>This demonstrates a way to use the attribute <code class="sourceCode cpp"><span class="op">[[</span><span class="at">deprecated</span><span class="op">]]</span></code> only if it is available.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifndef __has_cpp_attribute</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="pp"># define __has_cpp_attribute</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="dv">0</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="pp">#endif</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="pp">#if __has_cpp_attribute(deprecated)</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="pp">#else</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="pp">#endif</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#ifndef __has_cpp_attribute</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="pp"># define __has_cpp_attribute</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="dv">0</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="pp">#endif</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="pp">#if __has_cpp_attribute(deprecated)</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="pp">#else</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="pp">#endif</span></span></code></pre></div>
 <h1 id="table-of-feature-test-macros" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Table of Feature-Test Macros<a href="#table-of-feature-test-macros" class="self-link"></a></h1>
 <p>The following are all the feature-test macros in the standard, broken up by language macros, attribute macros, and library macros, then sorted by name. Each macro will contain its list of possible values and the papers necessary to be implemented before an implementation should define that macro with that particular value.</p>
 <p>Note that a given paper may introduce or update multiple feature-test macros. A given value may require multiple papers. A paper may also <em>remove</em> a feature-test macro, in which case its value will be specified as <span class="rm" style="color: #bf0303"><del>deleted</del></span>.</p>

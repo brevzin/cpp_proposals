@@ -256,21 +256,43 @@ mentioned in this section.
 ### Example
 
 This demonstrates a way to use a library optional facility only if it is
-available.
+available. Note that having `__has_include(<optional>)` succeed is insufficient
+since on many toolchains, headers may exist in installations but have their
+contents guarded based on compile flags. For example, the following:
+
+```cpp
+#ifdef __has_include
+#if __has_include(<optional>)
+#include <optional>
+std::optional<int> o;
+#endif
+#endif
+int main(){ }
+```
+
+will still fail to compile with `g++ -std=c++14` (using libstdc++). 
+
+Hence, we need to do: 
 
 ```cpp
 #ifdef __has_include
 #  if __has_include(<optional>)
 #    include <optional>
-#    define have_optional 1
+#    if __cpp_lib_optional >= nnnnnn
+#      define have_optional 1
+#    endif
 #  elif __has_include(<experimental/optional>)
 #    include <experimental/optional>
-#    define have_optional 1
+#    #if __cpp_lib_experimental_optional >= nnnnnn
+#      define have_optional 1
 #    define experimental_optional
-#  else
-#    define have_optional 0
-#  endif
+#    endif
 #endif
+
+#ifndef have_optional
+#    define have_optional 0
+#endif
+
 ```
 
 ## Testing for the presence of an attribute: `__has_cpp_attribute`
