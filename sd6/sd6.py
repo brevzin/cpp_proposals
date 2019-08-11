@@ -16,7 +16,11 @@ def refactor(macros):
     # {'name': '__cpp_lib_byte', 'values': [{'value': 201603, 'papers': 'P0298R3'
     # into
     # {'name': '__cpp_lib_byte', 'value': {201603: ['P0298R3']}} 
+    seen = set()
     for macro in macros:
+        if macro['name'] in seen:
+            print(f'Duplicate macro "{macro["name"]}"', file=sys.stderr)
+        seen.add(macro['name'])
         try:
             macro['value'] = {
                 v['value']: {
