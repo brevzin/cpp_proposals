@@ -2,14 +2,16 @@ import json
 import yaml
 import re
 
-data = yaml.load(open('../md/wg21/data/index.yaml'), Loader=yaml.Loader)
-data = {elem['id']: elem for elem in data['references']}
+papers = open('missing_papers').read().splitlines()
+if not papers:
+    new_data = []
+else:
+    data = yaml.load(open('../md/wg21/data/index.yaml'), Loader=yaml.CLoader)
+    data = {elem['id']: elem for elem in data['references']}
 
-new_data = []
-pattern = re.compile('P(?P<num>\d+)R(?P<rev>\d+)')
-with open('missing_papers') as f:
-    for line in f:
-        paper = line.strip()
+    new_data = []
+    pattern = re.compile('P(?P<num>\d+)R(?P<rev>\d+)')
+    for paper in papers:
         m = pattern.match(paper)
         prev_rev = f'P{m["num"]}R{int(m["rev"])-1}'
         elem = data[prev_rev].copy()

@@ -4,7 +4,7 @@ import yaml
 
 import jinja2
 
-data = yaml.load(open('macros.yaml'), Loader=yaml.Loader)
+data = yaml.load(open('macros.yaml'), Loader=yaml.CLoader)
 refs = json.load(open('reduced.json'))
 
 loader = jinja2.FileSystemLoader(searchpath='./')
