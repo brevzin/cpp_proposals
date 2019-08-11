@@ -16,10 +16,11 @@ style="background-color: white"
 >
 <td rowspan="{{ macro.value | length }}">
 {%- if is_attr -%}
-`__has_cpp_attribute({{macro.name}})`
+{% set text = "__has_cpp_attribute(" ~ macro.name ~ ")" %}
 {%- else -%}
-`{{macro.name}}`
+{% set text = macro.name %}
 {%- endif -%}
+<span id="macro_{{macro.name}}"><a href="#macro_{{macro.name}}" style="text-decoration:none">`{{text}}`</a></span>
 </td>
 {% for val, elem in macro.value.items() | sort %}
 {% if elem['removed'] %}
