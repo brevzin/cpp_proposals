@@ -1,11 +1,14 @@
-{% macro make_table(var, is_attr) %}
+{% macro make_table(var, is_attr, use_headers) %}
 <table>
 <tr>
 <th>Macro</th>
+{% if use_headers %}
+<th>Header(s)</th>
+{% endif %}
 <th>Value</th>
 <th>Paper(s)</th>
 </tr>
-{% for macro in var %}
+{% for macro in var | sort(attribute='name') %}
 {% set outer_loop = loop %}
 <tr
 {% if loop.index0 % 2 == 0 %}
@@ -14,7 +17,7 @@ style="background-color: #f6f8fa"
 style="background-color: white"
 {% endif %}
 >
-<td rowspan="{{ macro.value | length }}">
+<td rowspan="{{ macro.rows | length }}">
 {%- if is_attr -%}
 {% set text = "__has_cpp_attribute(" ~ macro.name ~ ")" %}
 {%- else -%}
@@ -22,13 +25,26 @@ style="background-color: white"
 {%- endif -%}
 <span id="{{macro.name}}"><a href="#{{macro.name}}" style="text-decoration:none">`{{text}}`</a></span>
 </td>
-{% for val, elem in macro.value.items() | sort %}
-{% if elem['removed'] %}
+{%- if use_headers -%}
+<td rowspan="{{ macro.rows | length }}">
+{%- if 'header_list' in macro -%}
+{%- for header in macro.header_list.split() | sort %}
+`<{{header}}>`{% endfor -%}
+{%- elif 'header_info' in macro -%}
+{{macro.header_info}}
+{%- else -%}
+OOPS FORGOT
+{%- endif -%}
+</td>
+{%- endif -%}
+{% for elem in macro.rows | sort(attribute='value') %}
+{% set val = elem.value %}
+{% if elem.get('removed') %}
 <td>[deleted]{.rm}</td>
 {% else %}
 <td>`{{ val }}`</td>
 {% endif %}
-<td> {% for paper in elem['papers'] -%}
+<td> {% for paper in elem.get('papers', '').split() -%}
 [@{{paper}}] {{refs[paper]}}
 {{ "<br />" if not loop.last }}
 {%- endfor -%} {{ elem['feature'] }}</td>
@@ -360,12 +376,19 @@ feature-test macro, in which case its value will be specified as
 
 ## Language Feature-Test Macros
 
-{{ make_table(lang_macros, False) }}
+All of the following macros are predefined.
+
+{{ make_table(lang_macros, False, False) }}
 
 ## Attribute Feature-Test Macros
 
-{{ make_table(attr_macros, True) }}
+All of the following macros are predefined.
+
+{{ make_table(attr_macros, True, False) }}
 
 ## Library Feature-Test Macros
 
-{{ make_table(lib_macros, False) }}
+All of the following macros are defined after inclusion of the header 
+`<version>` or one of the corresponding headers specified below.
+
+{{ make_table(lib_macros, False, True) }}
