@@ -189,6 +189,29 @@ struct use_empty_base_opt :
 { };
 ```
 
+or
+
+```cpp
+#if __cpp_variadic_using
+// can use the compile-time efficient, flat inheritance
+template<typename ...T> struct Callable : T... {
+  using T::operator() ...;
+};
+#else
+// fall-back to linear recursion for older compilers
+template<typename ...T> struct Callable;
+template<typename T, typename ...U>
+struct Callable<T, U...> : T, Callable<U...> {
+  using T::operator();
+  using Callable<U...>::operator();
+};
+template<typename T> struct Callable<T> : T {
+  using T::operator();
+};
+template<> struct Callable<> {};
+#endif
+```
+
 To avoid the user’s namespace, names of macros for language features are
 prefixed by `__cpp_`; for library features, by `__cpp_lib_`. A library
 feature that doesn’t introduce a new header is expected to be defined by the
@@ -295,12 +318,12 @@ Hence, we need to do:
 #ifdef __has_include
 #  if __has_include(<optional>)
 #    include <optional>
-#    if __cpp_lib_optional >= nnnnnn
+#    if __cpp_lib_optional >= 201606
 #      define have_optional 1
 #    endif
 #  elif __has_include(<experimental/optional>)
 #    include <experimental/optional>
-#    #if __cpp_lib_experimental_optional >= nnnnnn
+#    #if __cpp_lib_experimental_optional >= 201400
 #      define have_optional 1
 #      define experimental_optional 1
 #    endif
