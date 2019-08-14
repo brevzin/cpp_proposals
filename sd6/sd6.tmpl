@@ -189,8 +189,17 @@ struct use_empty_base_opt :
 { };
 ```
 
-or
+To avoid the user’s namespace, names of macros for language features are
+prefixed by `__cpp_`; for library features, by `__cpp_lib_`. A library
+feature that doesn’t introduce a new header is expected to be defined by the
+header(s) that implement the feature.
 
+## Examples
+
+Selecting a more efficient compile-time implementation based on the availability
+of a feature:
+
+::: bq
 ```cpp
 #if __cpp_variadic_using
 // can use the compile-time efficient, flat inheritance
@@ -211,11 +220,67 @@ template<typename T> struct Callable<T> : T {
 template<> struct Callable<> {};
 #endif
 ```
+:::
 
-To avoid the user’s namespace, names of macros for language features are
-prefixed by `__cpp_`; for library features, by `__cpp_lib_`. A library
-feature that doesn’t introduce a new header is expected to be defined by the
-header(s) that implement the feature.
+Likewise
+
+::: bq
+```cpp
+#if __cpp_fold_expressions
+template<typename... T>
+  auto sum(T... args)  { return (args + ...); }
+#else
+auto sum() { return 0; }
+template<typename T>
+  auto sum(T t) { return t; }
+template(typename T, typename... Ts)
+  auto sum(T t, Ts... ts) { return t + sum(ts...); }
+#endif
+```
+:::
+
+Selecting a more efficient run-time implementation based on the availability of
+a feature:
+
+::: bq
+```cpp
+void update(std::set<X>& set, const X& elem, int val)
+{
+    auto pos = set.find(elem);
+    if (pos == set.end())
+        return;
+#if __cpp_lib_node_extract
+    auto next = std::next(pos);
+    auto x = set.extract(pos);
+    x.value().update(val);
+    set.insert(next, std::move(x));
+#else
+    X tmp = *pos;
+    pos = set.erase(pos);
+    tmp.update(val);
+    set.insert(pos, std::move(tmp));
+#endif
+}
+```
+:::
+
+Conditionally implementing a feature:
+
+::: bq
+```cpp
+#if __cpp_static_assert
+#if __cpp_static_assert > 201400
+#define Static_Assert(cond) static_assert(cond)
+#else
+#define Static_Assert(cond) static_assert(cond, #cond)
+#endif
+#define Static_Assert_Msg(cond, msg) static_assert(cond, msg)
+#else
+#define Static_Assert(cond)
+#define Static_Assert_Msg(cond, msg)
+#endif
+```
+:::
 
 # Recommendations
 

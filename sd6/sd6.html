@@ -559,6 +559,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#explanation-and-rationale-for-the-approach"><span class="toc-section-number">1</span> Explanation and rationale for the approach<span></span></a><ul>
 <li><a href="#status-quo-before-feature-test-macros"><span class="toc-section-number">1.1</span> Status quo before feature-test macros<span></span></a></li>
 <li><a href="#characteristics-of-the-proposed-solution"><span class="toc-section-number">1.2</span> Characteristics of the proposed solution<span></span></a></li>
+<li><a href="#examples"><span class="toc-section-number">1.3</span> Examples<span></span></a></li>
 </ul></li>
 <li><a href="#recommendations"><span class="toc-section-number">2</span> Recommendations<span></span></a><ul>
 <li><a href="#introduction"><span class="toc-section-number">2.1</span> Introduction<span></span></a></li>
@@ -614,7 +615,10 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <span id="cb2-7"><a href="#cb2-7"></a><span class="pp">#endif</span></span>
 <span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">&gt;</span></span>
 <span id="cb2-9"><a href="#cb2-9"></a><span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
-<p>or</p>
+<p>To avoid the user’s namespace, names of macros for language features are prefixed by <code class="sourceCode cpp">__cpp_</code>; for library features, by <code class="sourceCode cpp">__cpp_lib_</code>. A library feature that doesn’t introduce a new header is expected to be defined by the header(s) that implement the feature.</p>
+<h2 id="examples"><span class="header-section-number">1.3</span> Examples<a href="#examples" class="self-link"></a></h2>
+<p>Selecting a more efficient compile-time implementation based on the availability of a feature:</p>
+<blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="pp">#if __cpp_variadic_using</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a><span class="co">// can use the compile-time efficient, flat inheritance</span></span>
 <span id="cb3-3"><a href="#cb3-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> <span class="op">...</span>T<span class="op">&gt;</span> <span class="kw">struct</span> Callable <span class="op">:</span> T<span class="op">...</span> <span class="op">{</span></span>
@@ -633,7 +637,54 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <span id="cb3-16"><a href="#cb3-16"></a><span class="op">}</span>;</span>
 <span id="cb3-17"><a href="#cb3-17"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> Callable<span class="op">&lt;&gt;</span> <span class="op">{}</span>;</span>
 <span id="cb3-18"><a href="#cb3-18"></a><span class="pp">#endif</span></span></code></pre></div>
-<p>To avoid the user’s namespace, names of macros for language features are prefixed by <code class="sourceCode cpp">__cpp_</code>; for library features, by <code class="sourceCode cpp">__cpp_lib_</code>. A library feature that doesn’t introduce a new header is expected to be defined by the header(s) that implement the feature.</p>
+</blockquote>
+<p>Likewise</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#if __cpp_fold_expressions</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> T<span class="op">&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">auto</span> sum<span class="op">(</span>T<span class="op">...</span> args<span class="op">)</span>  <span class="op">{</span> <span class="cf">return</span> <span class="op">(</span>args <span class="op">+</span> <span class="op">...)</span>; <span class="op">}</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="pp">#else</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">auto</span> sum<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>  <span class="kw">auto</span> sum<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> t; <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">template</span><span class="op">(</span><span class="kw">typename</span> T, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">)</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="kw">auto</span> sum<span class="op">(</span>T t, Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> t <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...)</span>; <span class="op">}</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="pp">#endif</span></span></code></pre></div>
+</blockquote>
+<p>Selecting a more efficient run-time implementation based on the availability of a feature:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">void</span> update<span class="op">(</span>std<span class="op">::</span>set<span class="op">&lt;</span>X<span class="op">&gt;&amp;</span> set, <span class="kw">const</span> X<span class="op">&amp;</span> elem, <span class="dt">int</span> val<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">auto</span> pos <span class="op">=</span> set<span class="op">.</span>find<span class="op">(</span>elem<span class="op">)</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="cf">if</span> <span class="op">(</span>pos <span class="op">==</span> set<span class="op">.</span>end<span class="op">())</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>        <span class="cf">return</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="pp">#if __cpp_lib_node_extract</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="kw">auto</span> next <span class="op">=</span> std<span class="op">::</span>next<span class="op">(</span>pos<span class="op">)</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="kw">auto</span> x <span class="op">=</span> set<span class="op">.</span>extract<span class="op">(</span>pos<span class="op">)</span>;</span>
+<span id="cb5-9"><a href="#cb5-9"></a>    x<span class="op">.</span>value<span class="op">().</span>update<span class="op">(</span>val<span class="op">)</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a>    set<span class="op">.</span>insert<span class="op">(</span>next, std<span class="op">::</span>move<span class="op">(</span>x<span class="op">))</span>;</span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="pp">#else</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>    X tmp <span class="op">=</span> <span class="op">*</span>pos;</span>
+<span id="cb5-13"><a href="#cb5-13"></a>    pos <span class="op">=</span> set<span class="op">.</span>erase<span class="op">(</span>pos<span class="op">)</span>;</span>
+<span id="cb5-14"><a href="#cb5-14"></a>    tmp<span class="op">.</span>update<span class="op">(</span>val<span class="op">)</span>;</span>
+<span id="cb5-15"><a href="#cb5-15"></a>    set<span class="op">.</span>insert<span class="op">(</span>pos, std<span class="op">::</span>move<span class="op">(</span>tmp<span class="op">))</span>;</span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="pp">#endif</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Conditionally implementing a feature:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="pp">#if __cpp_static_assert</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="pp">#if __cpp_static_assert &gt; 201400</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="pp">#define Static_Assert</span><span class="op">(</span>cond<span class="op">)</span><span class="pp"> </span><span class="kw">static_assert</span><span class="op">(</span>cond<span class="op">)</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="pp">#else</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="pp">#define Static_Assert</span><span class="op">(</span>cond<span class="op">)</span><span class="pp"> </span><span class="kw">static_assert</span><span class="op">(</span>cond,<span class="pp"> #</span>cond<span class="op">)</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="pp">#endif</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="pp">#define Static_Assert_Msg</span><span class="op">(</span>cond,<span class="pp"> </span>msg<span class="op">)</span><span class="pp"> </span><span class="kw">static_assert</span><span class="op">(</span>cond,<span class="pp"> </span>msg<span class="op">)</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="pp">#else</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="pp">#define Static_Assert</span><span class="op">(</span>cond<span class="op">)</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="pp">#define Static_Assert_Msg</span><span class="op">(</span>cond,<span class="pp"> </span>msg<span class="op">)</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="pp">#endif</span></span></code></pre></div>
+</blockquote>
 <h1 id="recommendations" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Recommendations<a href="#recommendations" class="self-link"></a></h1>
 <h2 id="introduction"><span class="header-section-number">2.1</span> Introduction<a href="#introduction" class="self-link"></a></h2>
 <p>For the sake of improved portability between partial implementations of various C++ standards, WG21 (the ISO technical committee for the C++ programming language) recommends that implementers and programmers follow the guidelines in this document concerning feature-test macros.</p>
@@ -663,32 +714,32 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp"><span class="ot">__has_include</span></code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp"><span class="ot">__has_include</span></code> shall not appear in any context not mentioned in this section.</p>
 <h3 id="example"><span class="header-section-number">2.2.3</span> Example<a href="#example" class="self-link"></a></h3>
 <p>This demonstrates a way to use a library optional facility only if it is available. Note that having <code class="sourceCode cpp"><span class="ot">__has_include</span><span class="op">(&lt;</span>optional<span class="op">&gt;)</span></code> succeed is insufficient since on many toolchains, headers may exist in installations but have their contents guarded based on compile flags. For example, the following:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifdef __has_include</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="pp">#if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="pp">#include </span><span class="im">&lt;optional&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> o;</span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="pp">#endif</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="pp">#endif</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="dt">int</span> main<span class="op">(){</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="pp">#ifdef __has_include</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="pp">#if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="pp">#include </span><span class="im">&lt;optional&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> o;</span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="pp">#endif</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="pp">#endif</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="dt">int</span> main<span class="op">(){</span> <span class="op">}</span></span></code></pre></div>
 <p>will still fail to compile with <code class="sourceCode cpp">g<span class="op">++</span> <span class="op">-</span>std<span class="op">=</span>c<span class="op">++</span><span class="dv">14</span></code> (using libstdc++).</p>
 <p>Hence, we need to do:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#ifdef __has_include</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="pp">#  if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="pp">#    include </span><span class="im">&lt;optional&gt;</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="pp">#    if __cpp_lib_optional &gt;= 201606</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a><span class="pp">#    endif</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="pp">#  elif </span><span class="ot">__has_include</span><span class="pp">(&lt;experimental/optional&gt;)</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a><span class="pp">#    include </span><span class="im">&lt;experimental/optional&gt;</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a><span class="pp">#    </span><span class="er">#if __cpp_lib_experimental_optional &gt;= 201400</span></span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a><span class="pp">#      define experimental_optional </span><span class="dv">1</span></span>
-<span id="cb5-12"><a href="#cb5-12"></a><span class="pp">#    endif</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a><span class="pp">#endif</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a></span>
-<span id="cb5-15"><a href="#cb5-15"></a><span class="pp">#ifndef have_optional</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a><span class="pp">#    define have_optional </span><span class="dv">0</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a><span class="pp">#endif</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="pp">#ifdef __has_include</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="pp">#  if </span><span class="ot">__has_include</span><span class="pp">(&lt;optional&gt;)</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="pp">#    include </span><span class="im">&lt;optional&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="pp">#    if __cpp_lib_optional &gt;= 201606</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="pp">#    endif</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="pp">#  elif </span><span class="ot">__has_include</span><span class="pp">(&lt;experimental/optional&gt;)</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="pp">#    include </span><span class="im">&lt;experimental/optional&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="pp">#    </span><span class="er">#if __cpp_lib_experimental_optional &gt;= 201400</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="pp">#      define have_optional </span><span class="dv">1</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="pp">#      define experimental_optional </span><span class="dv">1</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="pp">#    endif</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="pp">#endif</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="pp">#ifndef have_optional</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="pp">#    define have_optional </span><span class="dv">0</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="pp">#endif</span></span></code></pre></div>
 <h2 id="testing-for-the-presence-of-an-attribute-__has_cpp_attribute"><span class="header-section-number">2.3</span> Testing for the presence of an attribute: <code class="sourceCode cpp">__has_cpp_attribute</code><a href="#testing-for-the-presence-of-an-attribute-__has_cpp_attribute" class="self-link"></a></h2>
 <p>A C++ program cannot directly, reliably, and portably determine whether or not a standard or vendor-specific attribute is available for use. Testing for attribute support generally requires complex macro logic, as illustrated above for language features in general.</p>
 <p>To solve this general problem, WG21 recommends that implementers provide, and programmers use, the <code class="sourceCode cpp">__has_cpp_attribute</code> feature.</p>
@@ -703,14 +754,14 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>The <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifdef</span></code> and <code class="sourceCode cpp"><span class="pp">#</span><span class="er">ifndef</span></code> directives, and the defined conditional inclusion operator, shall treat <code class="sourceCode cpp">__has_cpp_attribute</code> as if it were the name of a defined macro. The identifier <code class="sourceCode cpp">__has_cpp_attribute</code> shall not appear in any context not mentioned in this section.</p>
 <h3 id="example-1"><span class="header-section-number">2.3.3</span> Example<a href="#example-1" class="self-link"></a></h3>
 <p>This demonstrates a way to use the attribute <code class="sourceCode cpp"><span class="op">[[</span><span class="at">deprecated</span><span class="op">]]</span></code> only if it is available.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="pp">#ifndef __has_cpp_attribute</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="pp"># define __has_cpp_attribute</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="dv">0</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="pp">#endif</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="pp">#if __has_cpp_attribute(deprecated)</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="pp">#else</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a><span class="pp">#endif</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="pp">#ifndef __has_cpp_attribute</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="pp"># define __has_cpp_attribute</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="dv">0</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="pp">#endif</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="pp">#if __has_cpp_attribute(deprecated)</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="pp">#else</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="pp"># define ATTR_DEPRECATED</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="pp">#endif</span></span></code></pre></div>
 <h1 id="table-of-feature-test-macros" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Table of Feature-Test Macros<a href="#table-of-feature-test-macros" class="self-link"></a></h1>
 <p>The following are all the feature-test macros in the standard, broken up by language macros, attribute macros, and library macros, then sorted by name. Each macro will contain its list of possible values and the papers necessary to be implemented before an implementation should define that macro with that particular value.</p>
 <p>Note that a given paper may introduce or update multiple feature-test macros. A given value may require multiple papers. A paper may also <em>remove</em> a feature-test macro, in which case its value will be specified as <span class="rm" style="color: #bf0303"><del>deleted</del></span>.</p>
