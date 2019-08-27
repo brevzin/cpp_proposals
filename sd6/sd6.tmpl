@@ -264,23 +264,50 @@ void update(std::set<X>& set, const X& elem, int val)
 ```
 :::
 
-Conditionally implementing a feature:
+In some cases, the value of a feature-test macro can change over time as the
+underlying feature changes. To make it easier to follow the evolution of each
+feature, the tables in this document are grouped by macro name -
+with a row for each possible value and the proposal(s) associated with it.
+
+Conditionally implementing a feature, based on
+[`__cpp_static_assert`](#__cpp_static_assert).
 
 ::: bq
 ```cpp
 #if __cpp_static_assert
-#if __cpp_static_assert > 201400
-#define Static_Assert(cond) static_assert(cond)
+#  if __cpp_static_assert > 201400
+#    define Static_Assert(cond) static_assert(cond)
+#  else
+#    define Static_Assert(cond) static_assert(cond, #cond)
+#  endif
+#  define Static_Assert_Msg(cond, msg) static_assert(cond, msg)
 #else
-#define Static_Assert(cond) static_assert(cond, #cond)
-#endif
-#define Static_Assert_Msg(cond, msg) static_assert(cond, msg)
-#else
-#define Static_Assert(cond)
-#define Static_Assert_Msg(cond, msg)
+#  define Static_Assert(cond)
+#  define Static_Assert_Msg(cond, msg)
 #endif
 ```
 :::
+
+Attributes can also change semantics over time,
+which is why the `__has_cpp_attribute` facility described below evaluates to a
+value rather than simply `1` or `0`. This allows a user to conditionally provide
+a version of nodiscard based on [`__has_cpp_attribute(nodiscard)`](#nodiscard):
+
+::: bq
+```cpp
+#if __has_cpp_attribute(nodiscard) >= 201907
+   // nodiscard has a reason
+#  define NODISCARD(msg) [[nodiscard(msg)]]
+#elif __has_cpp_attribute(nodiscard) >= 201603
+   // nodiscard doesn't have a reason
+#  define NODISCARD(msg) [[nodiscard]]
+#else
+   // nodiscard doesn't exist at all yet
+#  define NODISCARD(msg)
+#endif
+```
+:::
+
 
 # Recommendations
 
@@ -318,8 +345,8 @@ whose setting can be determined by a configuration-test process at build time
 (reliable, but less portable), or by some other means (often not reliable or
 portable).
 
-To solve this general problem, WG21 recommends that implementers provide, and
-programmers use, the `__has_include` feature.
+To solve this general problem, WG21 recommends that programmers use the 
+`__has_include` feature.
 
 ### Syntax
 
@@ -399,6 +426,27 @@ Hence, we need to do:
 #endif
 ```
 
+Additionally, the `<version>` header is a light-weight header that
+defines all the standard library feature-test macros.
+An alternate implementation could be:
+
+```cpp
+#ifndef __has_include
+#  define __has_include(x) 0
+#endif
+
+#if __has_include(<version>)
+#  include <version>
+#elif __has_include(<optional>)
+#  include <optional>
+#endif
+#if __cpp_lib_optional >= 201606
+#  define have_optional 1
+#else
+#  define have_optional 0
+#endif
+```
+
 ## Testing for the presence of an attribute: `__has_cpp_attribute`
 
 A C++ program cannot directly, reliably, and portably determine whether or
@@ -406,8 +454,8 @@ not a standard or vendor-specific attribute is available for use. Testing for
 attribute support generally requires complex macro logic, as illustrated
 above for language features in general.
 
-To solve this general problem, WG21 recommends that implementers provide, and
-programmers use, the `__has_cpp_attribute` feature.
+To solve this general problem, WG21 recommends that programmers use the 
+`__has_cpp_attribute` feature.
 
 ### Syntax
 
