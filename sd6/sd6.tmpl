@@ -296,14 +296,18 @@ a version of nodiscard based on [`__has_cpp_attribute(nodiscard)`](#nodiscard):
 ::: bq
 ```cpp
 #if __has_cpp_attribute(nodiscard) >= 201907
-   // nodiscard has a reason
-#  define NODISCARD(msg) [[nodiscard(msg)]]
+   // nodiscard has a reason and can
+   // be applied to constructors
+#  define NODISCARD(msg)      [[nodiscard(msg)]]
+#  define NODISCARD_CTOR(msg) [[nodiscard(msg)]]
 #elif __has_cpp_attribute(nodiscard) >= 201603
-   // nodiscard doesn't have a reason
-#  define NODISCARD(msg) [[nodiscard]]
+   // nodiscard doesn't have a reason, nor can
+#  define NODISCARD(msg)      [[nodiscard]]
+#  define NODISCARD_CTOR(msg)
 #else
    // nodiscard doesn't exist at all yet
 #  define NODISCARD(msg)
+#  define NODISCARD_CTOR(msg)
 #endif
 ```
 :::

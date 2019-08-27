@@ -689,15 +689,19 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>Attributes can also change semantics over time, which is why the <code class="sourceCode cpp">__has_cpp_attribute</code> facility described below evaluates to a value rather than simply <code class="sourceCode cpp"><span class="dv">1</span></code> or <code class="sourceCode cpp"><span class="dv">0</span></code>. This allows a user to conditionally provide a version of nodiscard based on <a href="#nodiscard"><code class="sourceCode cpp">__has_cpp_attribute<span class="op">(</span>nodiscard<span class="op">)</span></code></a>:</p>
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="pp">#if __has_cpp_attribute(nodiscard) &gt;= 201907</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>   <span class="co">// nodiscard has a reason</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">nodiscard</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="pp">#elif __has_cpp_attribute(nodiscard) &gt;= 201603</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>   <span class="co">// nodiscard doesn&#39;t have a reason</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">nodiscard</span><span class="op">]]</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="pp">#else</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>   <span class="co">// nodiscard doesn&#39;t exist at all yet</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a><span class="pp">#endif</span></span></code></pre></div>
+<span id="cb7-2"><a href="#cb7-2"></a>   <span class="co">// nodiscard has a reason and can</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>   <span class="co">// be applied to constructors</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span><span class="pp">      </span><span class="op">[[</span><span class="at">nodiscard</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="pp">#  define NODISCARD_CTOR</span><span class="op">(</span>msg<span class="op">)</span><span class="pp"> </span><span class="op">[[</span><span class="at">nodiscard</span><span class="op">(</span><span class="at">msg</span><span class="op">)]]</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="pp">#elif __has_cpp_attribute(nodiscard) &gt;= 201603</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>   <span class="co">// nodiscard doesn&#39;t have a reason, nor can</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span><span class="pp">      </span><span class="op">[[</span><span class="at">nodiscard</span><span class="op">]]</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="pp">#  define NODISCARD_CTOR</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="pp">#else</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>   <span class="co">// nodiscard doesn&#39;t exist at all yet</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="pp">#  define NODISCARD</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="pp">#  define NODISCARD_CTOR</span><span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="pp">#endif</span></span></code></pre></div>
 </blockquote>
 <h1 id="recommendations" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Recommendations<a href="#recommendations" class="self-link"></a></h1>
 <h2 id="introduction"><span class="header-section-number">2.1</span> Introduction<a href="#introduction" class="self-link"></a></h2>
@@ -1602,7 +1606,7 @@ Paper(s)
 <code class="sourceCode cpp"><span class="dv">201907</span></code>
 </td>
 <td>
-<span class="citation" data-cites="P1301R4">[<a href="#ref-P1301R4" role="doc-biblioref">P1301R4</a>]</span> <code class="sourceCode cpp"><span class="op">[[</span><span class="at">nodiscard</span><span class="op">(</span><span class="st">&quot;should have a reason&quot;</span><span class="op">)]]</span></code>
+<span class="citation" data-cites="P1301R4">[<a href="#ref-P1301R4" role="doc-biblioref">P1301R4</a>]</span> <code class="sourceCode cpp"><span class="op">[[</span><span class="at">nodiscard</span><span class="op">(</span><span class="st">&quot;should have a reason&quot;</span><span class="op">)]]</span></code> <br /><span class="citation" data-cites="P1771R1">[<a href="#ref-P1771R1" role="doc-biblioref">P1771R1</a>]</span> <code class="sourceCode cpp"><span class="op">[[</span><span class="at">nodiscard</span><span class="op">]]</span></code> for constructors
 </td>
 </tr>
 <tr style="background-color: white">
@@ -2174,7 +2178,7 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <code class="sourceCode cpp"><span class="dv">201907</span></code>
 </td>
 <td>
-<span class="citation" data-cites="P1612R1">[<a href="#ref-P1612R1" role="doc-biblioref">P1612R1</a>]</span> Relocate Endian’s Specification
+<span class="citation" data-cites="P0463R1">[<a href="#ref-P0463R1" role="doc-biblioref">P0463R1</a>]</span> endian, Just endian <br /><span class="citation" data-cites="P1612R1">[<a href="#ref-P1612R1" role="doc-biblioref">P1612R1</a>]</span> Relocate Endian’s Specification
 </td>
 </tr>
 <tr style="background-color: #f6f8fa">
@@ -2268,7 +2272,7 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <code class="sourceCode cpp"><span class="dv">201907</span></code>
 </td>
 <td>
-<span class="citation" data-cites="P0645R10">[<a href="#ref-P0645R10" role="doc-biblioref">P0645R10</a>]</span> Text Formatting
+<span class="citation" data-cites="P0645R10">[<a href="#ref-P0645R10" role="doc-biblioref">P0645R10</a>]</span> Text Formatting <br /><span class="citation" data-cites="P1361R2">[<a href="#ref-P1361R2" role="doc-biblioref">P1361R2</a>]</span> Integration of chrono with text formatting <br /><span class="citation" data-cites="P1652R1">[<a href="#ref-P1652R1" role="doc-biblioref">P1652R1</a>]</span> Printf corner cases in std::format
 </td>
 </tr>
 <tr style="background-color: white">
@@ -3715,6 +3719,10 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <p>[P0393R3] Tony Van Eerd. 2016. Making Variant Greater Equal. <br />
 <a href="https://wg21.link/p0393r3">https://wg21.link/p0393r3</a></p>
 </div>
+<div id="ref-P0463R1">
+<p>[P0463R1] Howard Hinnant. 2017. endian, Just endian. <br />
+<a href="https://wg21.link/p0463r1">https://wg21.link/p0463r1</a></p>
+</div>
 <div id="ref-P0466R5">
 <p>[P0466R5] Lisa Lippincott. 2019. Layout-compatibility and Pointer-interconvertibility Traits. <br />
 <a href="https://wg21.link/p0466r5">https://wg21.link/p0466r5</a></p>
@@ -3907,6 +3915,10 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <p>[P1357R1] Walter E. Brown, Glen J. Fernandes. 2019. Traits for [Un]bounded Arrays. <br />
 <a href="https://wg21.link/p1357r1">https://wg21.link/p1357r1</a></p>
 </div>
+<div id="ref-P1361R2">
+<p>[P1361R2] Victor Zverovich, Daniela Engert, Howard E. Hinnant. 2019. Integration of chrono with text formatting. <br />
+<a href="https://wg21.link/p1361r2">https://wg21.link/p1361r2</a></p>
+</div>
 <div id="ref-P1423R3">
 <p>[P1423R3] Tom Honermann. 2019. <code class="sourceCode cpp"><span class="dt">char8_t</span></code> backward compatibility remediation. <br />
 <a href="https://wg21.link/p1423r2">https://wg21.link/p1423r2</a></p>
@@ -3931,9 +3943,17 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <p>[P1651R0] Tomasz Kamiński. 2019. bind_front should not unwrap reference_wrapper. <br />
 <a href="https://wg21.link/p1651r0">https://wg21.link/p1651r0</a></p>
 </div>
+<div id="ref-P1652R1">
+<p>[P1652R1] Zhihao Yuan, Victor Zverovich. 2019. Printf corner cases in std::format. <br />
+<a href="https://wg21.link/p1652r1">https://wg21.link/p1652r1</a></p>
+</div>
 <div id="ref-P1661R1">
 <p>[P1661R1] Tomasz Kamiński. 2019. Remove dedicated precalculated hash lookup interface. <br />
 <a href="https://wg21.link/p1661r1">https://wg21.link/p1661r1</a></p>
+</div>
+<div id="ref-P1771R1">
+<p>[P1771R1] Peter Sommerlad. 2019. <code class="sourceCode cpp"><span class="op">[[</span><span class="at">nodiscard</span><span class="op">]]</span></code> for constructors. <br />
+<a href="https://wg21.link/p1771r1">https://wg21.link/p1771r1</a></p>
 </div>
 <div id="ref-P1811R0">
 <p>[P1811R0] Richard Smith, Gabriel Dos Reis. 2019. Relaxing redefinition restrictions for re-exportation robustness. <br />
