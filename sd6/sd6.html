@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-08-17" />
+  <meta name="dcterms.date" content="2019-08-26" />
   <title>SD-6: SG10 Feature-Test Recommendations</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-08-17</td>
+    <td>2019-08-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -691,7 +691,7 @@ code span.er { color: #6f4e37; font-weight: normal; }
 <p>Implementers who provide a new standard feature should define a macro with the recommended name and value, in the same circumstances under which the feature is available (for example, taking into account relevant command-line options), to indicate the presence of support for that feature.</p>
 <p>Programmers who wish to determine whether a feature is available in an implementation should base that determination on the state of the macro with the recommended name. (The absence of a tested feature may result in a program with decreased functionality, or the relevant functionality may be provided in a different way. A program that strictly depends on support for a feature can just try to use the feature unconditionally; presumably, on an implementation lacking necessary support, translation will fail. Therefore, if the most useful purpose for a feature-test macro would be to control the inclusion of a #error directive if the feature is unavailable, that is considered inadequate justification for the macro. Note that the usefulness of a test macro for a feature is completely independent of the usefulness of the feature itself.)</p>
 <h2 id="testing-for-the-presence-of-a-header-__has_include"><span class="header-section-number">2.2</span> Testing for the presence of a header: <code class="sourceCode cpp"><span class="ot">__has_include</span></code><a href="#testing-for-the-presence-of-a-header-__has_include" class="self-link"></a></h2>
-<p>It is impossible for a C++ program to directly, reliably and portably determine whether or not a library header is available for inclusion. Conditionally including a header requires the use of a configuration macro, whose setting can be determined by a configuration-test process at build time (reliable, but less portable), or by some other means (often not reliable or portable).</p>
+<p>It is impossible for a C++ program to directly, reliably, and portably determine whether or not a library header is available for inclusion. Conditionally including a header requires the use of a configuration macro, whose setting can be determined by a configuration-test process at build time (reliable, but less portable), or by some other means (often not reliable or portable).</p>
 <p>To solve this general problem, WG21 recommends that implementers provide, and programmers use, the <code class="sourceCode cpp"><span class="ot">__has_include</span></code> feature.</p>
 <h3 id="syntax"><span class="header-section-number">2.2.1</span> Syntax<a href="#syntax" class="self-link"></a></h3>
 <blockquote>
@@ -1681,10 +1681,10 @@ Paper(s)
 </td>
 </tr>
 <tr style="background-color: #f6f8fa">
-<td rowspan="1">
+<td rowspan="2">
 <span id="__cpp_lib_array_constexpr"><a href="#__cpp_lib_array_constexpr" style="text-decoration:none"><code class="sourceCode cpp">__cpp_lib_array_constexpr</code></a></span>
 </td>
-<td rowspan="1">
+<td rowspan="2">
 <code class="sourceCode cpp"><span class="op">&lt;</span>array<span class="op">&gt;</span></code> <code class="sourceCode cpp"><span class="op">&lt;</span>iterator<span class="op">&gt;</span></code>
 </td>
 <td>
@@ -1692,6 +1692,14 @@ Paper(s)
 </td>
 <td>
 <span class="citation" data-cites="P0031R0">[<a href="#ref-P0031R0" role="doc-biblioref">P0031R0</a>]</span> A Proposal to Add Constexpr Modifiers to reverse_iterator, move_iterator, array and Range Access
+</td>
+</tr>
+<tr style="background-color: #f6f8fa">
+<td>
+<code class="sourceCode cpp"><span class="dv">201803</span></code>
+</td>
+<td>
+<span class="citation" data-cites="P0858R0">[<a href="#ref-P0858R0" role="doc-biblioref">P0858R0</a>]</span> Constexpr iterator requirements
 </td>
 </tr>
 <tr style="background-color: white">
@@ -2985,10 +2993,10 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 </td>
 </tr>
 <tr style="background-color: #f6f8fa">
-<td rowspan="2">
+<td rowspan="3">
 <span id="__cpp_lib_string_view"><a href="#__cpp_lib_string_view" style="text-decoration:none"><code class="sourceCode cpp">__cpp_lib_string_view</code></a></span>
 </td>
-<td rowspan="2">
+<td rowspan="3">
 <code class="sourceCode cpp"><span class="op">&lt;</span>string<span class="op">&gt;</span></code> <code class="sourceCode cpp"><span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>
 </td>
 <td>
@@ -3004,6 +3012,14 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 </td>
 <td>
 <span class="citation" data-cites="P0254R2">[<a href="#ref-P0254R2" role="doc-biblioref">P0254R2</a>]</span> Integrating <code class="sourceCode cpp">std<span class="op">::</span>string_view</code> and <code class="sourceCode cpp">std<span class="op">::</span>string</code>
+</td>
+</tr>
+<tr style="background-color: #f6f8fa">
+<td>
+<code class="sourceCode cpp"><span class="dv">201803</span></code>
+</td>
+<td>
+<span class="citation" data-cites="P0858R0">[<a href="#ref-P0858R0" role="doc-biblioref">P0858R0</a>]</span> Constexpr iterator requirements
 </td>
 </tr>
 <tr style="background-color: white">
@@ -3737,6 +3753,10 @@ any C++ library header from <a href="http://eel.is/c++draft/headers#tab:headers.
 <div id="ref-P0840R2">
 <p>[P0840R2] Richard Smith. 2018. Language support for empty objects. <br />
 <a href="https://wg21.link/p0840r2">https://wg21.link/p0840r2</a></p>
+</div>
+<div id="ref-P0858R0">
+<p>[P0858R0] Antony Polukhin. 2017. Constexpr iterator requirements. <br />
+<a href="https://wg21.link/p0858r0">https://wg21.link/p0858r0</a></p>
 </div>
 <div id="ref-P0879R0">
 <p>[P0879R0] Antony Polukhin. 2017. Constexpr for swap and swap related functions. <br />
