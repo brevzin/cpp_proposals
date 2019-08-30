@@ -156,8 +156,8 @@ namespace xstd {
                   std::convertible_to<Ts...[1]> U>
             requires sizeof...(Ts) == 2
         constexpr tuple(std::pair<T, U> const& p)
-            : elems.[0](p.first)
-            , elems.[1](p.second)
+            : elems...[0](p.first)
+            , elems...[1](p.second)
         { }
     private:
         Ts... elems;
@@ -172,9 +172,8 @@ namespace xstd {
     template <typename... Ts>
     class tuple {
     public:
-        template <typename... Us>
-            requires (std::constructible<Ts, Us> && ...) // everything is convertible
-                && (sizeof...(Us) > 1 ||                 // exclude the copy ctor match
+        template <std::constructible<Ts>... Us>   // everything is convertible
+            requires (sizeof...(Us) > 1 ||        // exclude the copy ctor match
                     !std::derived_from<std::remove_cvref_t<Us...[0]>, tuple>)
         constexpr tuple(Us&&... us)
             : elems(std::forward<Us>(us))...
@@ -506,7 +505,8 @@ The space between the `.` and `...` is required.
 
 That is, `pack...[I]` and `tuple.[I]` are valid, `tuple...[I]` is an error, and
 `pack.[I]` would be applying `.[I]` to each element of the pack (and is itself
-still an unexpanded pack expression).
+still an unexpanded pack expression). Rule of thumb: you need `...`s if and only
+if you have a pack. 
 
 `e.[I]` is an equivalent shorthand for `e.[:]...[I]`.
 
@@ -798,7 +798,7 @@ public:
     // they all deduce to T. As opposed to the previous
     // implementation which behaves as if the constructor
     // were not a template, just that it took N T's.
-    Vector2(T... ts) requires (sizeof...(Ts) == N);
+    Vector2(T... ts) requires (sizeof...(ts) == N);
 };
 ```
 
@@ -964,12 +964,12 @@ class variant {
         Ts... alts_;
     };
 public:
-    constexpr variant() requires DefaultConstructible<Ts.[0]>
+    constexpr variant() requires std::default_constructible<Ts...[0]>
       : index_(0)
       , alts_...[0]()
     { }
 
-    ~variant() requires (TriviallyDestructible<Ts> && ...) = default;
+    ~variant() requires (std::is_trivially_destructible<Ts> && ...) = default;
     ~variant() {
         mp_with_index<sizeof...(Ts)>(index_,
             [](auto I){ destroy_at(&alts_...[I]); });
@@ -1045,7 +1045,7 @@ using at = typename(std::vector{reflexpr(Ts)...}[I]);
 
 ```cpp
 template <size_t I, typename... Ts>
-using at = Ts...[0];
+using at = Ts...[I];
 ```
 
 ---
@@ -1262,115 +1262,6 @@ auto [a, b, c] = view::iota(0, 3); // maybe this should work
 foo(view::iota(0, 3).[:]...);      // ... and this too
 ```
 
-## Abbreviated Lambdas
-
-Depending on your perspective, this one may be more of an anti-example. But what
-these features allow, perhaps surprisingly, is for a way to write very short
-lambdas using placeholders. What [@P0573R2] called hyper-abbreviated lambdas.
-Of course, the proposal doesn't do that directly - we still need a macro:
-
-```cpp
-#define FWD(e) static_cast<decltype(e)&&>(e)
-
-#define L(...)                          \
-    [&](autos&&... args                 \
-        requires requires {             \
-            __VA_ARGS__;                \
-        }                               \
-        -> decltype(auto) {             \
-            return __VA_ARGS__;         \
-        }
-#define _(index) FWD(args)...[(index) - 1]
-```
-
-We have a generic lambda whose default capture is `[&]`, it takes a variadic 
-parameter pack named `args`, constrains its call operator on the body, and then
-invokes it exactly. You can index into the pack with `_(1)` referring to the
-pack element `args...[0]` (for consistency with `std::bind` where `_1` is the
-first argument).
-
-This allows for very terse lambda bodies by giving us both convenient accesss to
-the arguments. We basically end up with [@Boost.Lambda], but performant.
-
-Here are some of the examples from the Abbreviated Lambda paper:
-
-::: tonytable
-
-### C++20
-```cpp
-[&](auto&&... args) -> decltype(obj.func(FWD(args)...)) {
-    return obj.func(FWD(args)...);
-}
-```
-
-### This proposal with `L`
-```cpp
-L(obj.func(FWD(args)...);
-```
-
----
-
-```cpp
-std::ranges::sort(v, std::greater{});
-```
-
-```cpp
-std::ranges::sort(v, L(_(1) > _(2)));
-```
-
----
-
-```cpp
-// if id isn't overloaded/a template
-std::ranges::sort(v, std::greater{},
-    &lib::Widget::id);
-    
-// if it is
-std::ranges::sort(v, std::greater{},
-    [](auto&& w) -> decltype(auto) { return w.id(); });
-```
-
-```cpp
-std::ranges::sort(v, L(_(1).id() > _(2).id()));
-```
-
----
-
-```cpp
-// note the decltype(auto) is important here to avoid
-// extra copies
-v | view::transform([&](auto&& key) -> decltype(auto)
-    { return map[key]; });
-```
-
-```cpp
-v | view::transform(L(map[_(1)]))
-```
-
----
-
-```cpp
-std::ranges::find_if(v, [&](auto&& e) {
-    return e.id() == id; });
-
-std::ranges::find(v, id, &lib::Widget::id);
-```
-
-```cpp
-std::ranges::find_if(v, L(_(1).id() == id));
-```
-
-:::
-
-Note that the lambda `L(_(2))` would be a SFINAE-friendly way of just returning
-the second argument.
-
-It's tempting to try to give better names to the arguments,
-like providing the alias `_1` for `_(0)` (and to save 2 characters), but I cannot
-think of a way to do that while also maintaining the constraints in the requires
-clause. 
-
-
 # Proposal
 
 All the separate bits and pieces of this proposal have been presented one step
@@ -1436,10 +1327,15 @@ when in non-dependent contexts. We know what they are.
 In dependent contexts, anything that is not a pack must be explicitly identified
 as a pack in order to be treated as one. Similar to how we need the `typename`
 and `template` keyword in many places to identify that such and such an expression
-is a type or a template, the `pack` context-sensitive keyword (or whatever spelling)
+is a type or a template, a preceding `...` (or whatever alternate spelling)
 will identify the expression that
-precedes it as a pack. If that entity is _not_ a pack, then
+follows it as a pack. If that entity is _not_ a pack, then
 the indexing or unpacking expression is ill-formed.
+
+# Acknowledgments
+
+This paper would not exist without many thorough conversations with
+Agustín Bergé, Matt Calabrese, and Richard Smith. Thank you.
 
 ---
 references:

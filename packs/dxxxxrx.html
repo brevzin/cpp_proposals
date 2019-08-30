@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-08-06" />
+  <meta name="dcterms.date" content="2019-08-29" />
   <title>Generalized pack declaration and usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-08-06</td>
+    <td>2019-08-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -616,8 +616,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-6"><a href="#cb6-6"></a>                  std<span class="op">::</span>convertible_to<span class="op">&lt;</span>Ts<span class="op">...[</span><span class="dv">1</span><span class="op">]&gt;</span> U<span class="op">&gt;</span></span>
 <span id="cb6-7"><a href="#cb6-7"></a>            <span class="kw">requires</span> <span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">2</span></span>
 <span id="cb6-8"><a href="#cb6-8"></a>        <span class="kw">constexpr</span> tuple<span class="op">(</span>std<span class="op">::</span>pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> p<span class="op">)</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>            <span class="op">:</span> elems<span class="op">.[</span><span class="dv">0</span><span class="op">](</span>p<span class="op">.</span>first<span class="op">)</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>            , elems<span class="op">.[</span><span class="dv">1</span><span class="op">](</span>p<span class="op">.</span>second<span class="op">)</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>            <span class="op">:</span> elems<span class="op">...[</span><span class="dv">0</span><span class="op">](</span>p<span class="op">.</span>first<span class="op">)</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>            , elems<span class="op">...[</span><span class="dv">1</span><span class="op">](</span>p<span class="op">.</span>second<span class="op">)</span></span>
 <span id="cb6-11"><a href="#cb6-11"></a>        <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb6-12"><a href="#cb6-12"></a>    <span class="kw">private</span><span class="op">:</span></span>
 <span id="cb6-13"><a href="#cb6-13"></a>        Ts<span class="op">...</span> elems;</span>
@@ -628,17 +628,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-2"><a href="#cb7-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb7-3"><a href="#cb7-3"></a>    <span class="kw">class</span> tuple <span class="op">{</span></span>
 <span id="cb7-4"><a href="#cb7-4"></a>    <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Us<span class="op">&gt;</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>            <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>constructible<span class="op">&lt;</span>Ts, Us<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span> <span class="co">// everything is convertible</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>                <span class="op">&amp;&amp;</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Us<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">1</span> <span class="op">||</span>                 <span class="co">// exclude the copy ctor match</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>                    <span class="op">!</span>std<span class="op">::</span>derived_from<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Us<span class="op">...[</span><span class="dv">0</span><span class="op">]&gt;</span>, tuple<span class="op">&gt;)</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a>        <span class="kw">constexpr</span> tuple<span class="op">(</span>Us<span class="op">&amp;&amp;...</span> us<span class="op">)</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a>            <span class="op">:</span> elems<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Us<span class="op">&gt;(</span>us<span class="op">))...</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>        <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb7-12"><a href="#cb7-12"></a>    <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb7-13"><a href="#cb7-13"></a>        Ts<span class="op">...</span> elems;</span>
-<span id="cb7-14"><a href="#cb7-14"></a>    <span class="op">}</span>;</span>
-<span id="cb7-15"><a href="#cb7-15"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb7-5"><a href="#cb7-5"></a>        <span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>constructible<span class="op">&lt;</span>Ts<span class="op">&gt;...</span> Us<span class="op">&gt;</span>   <span class="co">// everything is convertible</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>            <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Us<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">1</span> <span class="op">||</span>        <span class="co">// exclude the copy ctor match</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>                    <span class="op">!</span>std<span class="op">::</span>derived_from<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Us<span class="op">...[</span><span class="dv">0</span><span class="op">]&gt;</span>, tuple<span class="op">&gt;)</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>        <span class="kw">constexpr</span> tuple<span class="op">(</span>Us<span class="op">&amp;&amp;...</span> us<span class="op">)</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>            <span class="op">:</span> elems<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Us<span class="op">&gt;(</span>us<span class="op">))...</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>    <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>        Ts<span class="op">...</span> elems;</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="op">}</span>;</span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="op">}</span></span></code></pre></div>
 <p>As well as implementing <code class="sourceCode cpp">tuple_element</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
 <span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> <span class="op">&gt;</span> <span class="kw">class</span> tuple;</span>
@@ -809,7 +808,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p><code class="sourceCode cpp">e<span class="op">...[</span>I<span class="op">]</span></code> always removes a layer of packness. It is picking the <code class="sourceCode cpp">I</code>th element of a pack.</p></li>
 <li><p><code class="sourceCode cpp">e<span class="op">.</span> <span class="op">...</span>f</code> disambiguates dependent member access and identifies <code class="sourceCode cpp">f</code> as a pack The space between the <code class="sourceCode cpp"><span class="op">.</span></code> and <code class="sourceCode cpp"><span class="op">...</span></code> is required.</p></li>
 </ul>
-<p>That is, <code class="sourceCode cpp">pack<span class="op">...[</span>I<span class="op">]</span></code> and <code class="sourceCode cpp">tuple<span class="op">.[</span>I<span class="op">]</span></code> are valid, <code class="sourceCode cpp">tuple<span class="op">...[</span>I<span class="op">]</span></code> is an error, and <code class="sourceCode cpp">pack<span class="op">.[</span>I<span class="op">]</span></code> would be applying <code class="sourceCode cpp"><span class="op">.[</span>I<span class="op">]</span></code> to each element of the pack (and is itself still an unexpanded pack expression).</p>
+<p>That is, <code class="sourceCode cpp">pack<span class="op">...[</span>I<span class="op">]</span></code> and <code class="sourceCode cpp">tuple<span class="op">.[</span>I<span class="op">]</span></code> are valid, <code class="sourceCode cpp">tuple<span class="op">...[</span>I<span class="op">]</span></code> is an error, and <code class="sourceCode cpp">pack<span class="op">.[</span>I<span class="op">]</span></code> would be applying <code class="sourceCode cpp"><span class="op">.[</span>I<span class="op">]</span></code> to each element of the pack (and is itself still an unexpanded pack expression). Rule of thumb: you need <code class="sourceCode cpp"><span class="op">...</span></code>s if and only if you have a pack.</p>
 <p><code class="sourceCode cpp">e<span class="op">.[</span>I<span class="op">]</span></code> is an equivalent shorthand for <code class="sourceCode cpp">e<span class="op">.[:]...[</span>I<span class="op">]</span></code>.</p>
 <p>This leads to clear meanings of each of the following. If we have a function template taking an argument <code class="sourceCode cpp">e</code> which has a member <code class="sourceCode cpp">f</code>, where the kind of <code class="sourceCode cpp">e</code> is specified by the columns of this table and the kind of <code class="sourceCode cpp">f</code> is specified by the rows:</p>
 <table>
@@ -1006,7 +1005,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb38-5"><a href="#cb38-5"></a>    <span class="co">// they all deduce to T. As opposed to the previous</span></span>
 <span id="cb38-6"><a href="#cb38-6"></a>    <span class="co">// implementation which behaves as if the constructor</span></span>
 <span id="cb38-7"><a href="#cb38-7"></a>    <span class="co">// were not a template, just that it took N T&#39;s.</span></span>
-<span id="cb38-8"><a href="#cb38-8"></a>    Vector2<span class="op">(</span>T<span class="op">...</span> ts<span class="op">)</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> N<span class="op">)</span>;</span>
+<span id="cb38-8"><a href="#cb38-8"></a>    Vector2<span class="op">(</span>T<span class="op">...</span> ts<span class="op">)</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>ts<span class="op">)</span> <span class="op">==</span> N<span class="op">)</span>;</span>
 <span id="cb38-9"><a href="#cb38-9"></a><span class="op">}</span>;</span></code></pre></div>
 <p>For instance:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a>Vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">2</span><span class="op">&gt;</span>  x<span class="op">(</span><span class="ch">&#39;a&#39;</span>, <span class="dv">2</span><span class="op">)</span>; <span class="co">// ok</span></span>
@@ -1125,12 +1124,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb48-5"><a href="#cb48-5"></a>        Ts<span class="op">...</span> alts_;</span>
 <span id="cb48-6"><a href="#cb48-6"></a>    <span class="op">}</span>;</span>
 <span id="cb48-7"><a href="#cb48-7"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb48-8"><a href="#cb48-8"></a>    <span class="kw">constexpr</span> variant<span class="op">()</span> <span class="kw">requires</span> DefaultConstructible<span class="op">&lt;</span>Ts<span class="op">.[</span><span class="dv">0</span><span class="op">]&gt;</span></span>
+<span id="cb48-8"><a href="#cb48-8"></a>    <span class="kw">constexpr</span> variant<span class="op">()</span> <span class="kw">requires</span> std<span class="op">::</span>default_constructible<span class="op">&lt;</span>Ts<span class="op">...[</span><span class="dv">0</span><span class="op">]&gt;</span></span>
 <span id="cb48-9"><a href="#cb48-9"></a>      <span class="op">:</span> index_<span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
 <span id="cb48-10"><a href="#cb48-10"></a>      , alts_<span class="op">...[</span><span class="dv">0</span><span class="op">]()</span></span>
 <span id="cb48-11"><a href="#cb48-11"></a>    <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb48-12"><a href="#cb48-12"></a></span>
-<span id="cb48-13"><a href="#cb48-13"></a>    <span class="op">~</span>variant<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>TriviallyDestructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb48-13"><a href="#cb48-13"></a>    <span class="op">~</span>variant<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>is_trivially_destructible<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb48-14"><a href="#cb48-14"></a>    <span class="op">~</span>variant<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb48-15"><a href="#cb48-15"></a>        mp_with_index<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)&gt;(</span>index_,</span>
 <span id="cb48-16"><a href="#cb48-16"></a>            <span class="op">[](</span><span class="kw">auto</span> I<span class="op">){</span> destroy_at<span class="op">(&amp;</span>alts_<span class="op">...[</span>I<span class="op">])</span>; <span class="op">})</span>;</span>
@@ -1195,7 +1194,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb51-2"><a href="#cb51-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb51-3"><a href="#cb51-3"></a><span class="kw">using</span> at <span class="op">=</span> <span class="kw">typename</span><span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="kw">reflexpr</span><span class="op">(</span>Ts<span class="op">)...}[</span>I<span class="op">])</span>;</span></code></pre></div></td>
 <td><div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb52-2"><a href="#cb52-2"></a><span class="kw">using</span> at <span class="op">=</span> Ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span>;</span></code></pre></div></td>
+<span id="cb52-2"><a href="#cb52-2"></a><span class="kw">using</span> at <span class="op">=</span> Ts<span class="op">...[</span>I<span class="op">]</span>;</span></code></pre></div></td>
 </tr>
 <tr class="odd">
 <td><div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a><span class="co">// generalized pack indexing (P1240)</span></span>
@@ -1324,72 +1323,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>But what if I wanted to unpack a range into a function? It’s doesn’t seem so far fetched that if you can use an expansion statement over a range (which requires a known fixed size) that you should be able to use other language constructs that also require a known fixed size: structured bindings and tuple unpacking:</p>
 <div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1"></a><span class="kw">auto</span> <span class="op">[</span>a, b, c<span class="op">]</span> <span class="op">=</span> view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)</span>; <span class="co">// maybe this should work</span></span>
 <span id="cb63-2"><a href="#cb63-2"></a>foo<span class="op">(</span>view<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">).[:]...)</span>;      <span class="co">// ... and this too</span></span></code></pre></div>
-<h2 id="abbreviated-lambdas"><span class="header-section-number">3.3</span> Abbreviated Lambdas<a href="#abbreviated-lambdas" class="self-link"></a></h2>
-<p>Depending on your perspective, this one may be more of an anti-example. But what these features allow, perhaps surprisingly, is for a way to write very short lambdas using placeholders. What <span class="citation" data-cites="P0573R2">[<a href="#ref-P0573R2" role="doc-biblioref">P0573R2</a>]</span> called hyper-abbreviated lambdas. Of course, the proposal doesn’t do that directly - we still need a macro:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb64-1"><a href="#cb64-1"></a><span class="pp">#define FWD</span><span class="op">(</span>e<span class="op">)</span><span class="pp"> </span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>e<span class="op">)&amp;&amp;&gt;(</span>e<span class="op">)</span></span>
-<span id="cb64-2"><a href="#cb64-2"></a></span>
-<span id="cb64-3"><a href="#cb64-3"></a><span class="pp">#define L</span><span class="op">(...)</span><span class="pp">                          </span>\</span>
-<span id="cb64-4"><a href="#cb64-4"></a><span class="pp">    </span><span class="op">[&amp;](</span>autos<span class="op">&amp;&amp;...</span><span class="pp"> </span>args<span class="pp">                 </span>\</span>
-<span id="cb64-5"><a href="#cb64-5"></a><span class="pp">        </span><span class="kw">requires</span><span class="pp"> </span><span class="kw">requires</span><span class="pp"> </span><span class="op">{</span><span class="pp">             </span>\</span>
-<span id="cb64-6"><a href="#cb64-6"></a><span class="pp">            </span><span class="ot">__VA_ARGS__</span>;<span class="pp">                </span>\</span>
-<span id="cb64-7"><a href="#cb64-7"></a><span class="pp">        </span><span class="op">}</span><span class="pp">                               </span>\</span>
-<span id="cb64-8"><a href="#cb64-8"></a><span class="pp">        </span><span class="op">-&gt;</span><span class="pp"> </span><span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">             </span>\</span>
-<span id="cb64-9"><a href="#cb64-9"></a><span class="pp">            </span><span class="cf">return</span><span class="pp"> </span><span class="ot">__VA_ARGS__</span>;<span class="pp">         </span>\</span>
-<span id="cb64-10"><a href="#cb64-10"></a><span class="pp">        </span><span class="op">}</span></span>
-<span id="cb64-11"><a href="#cb64-11"></a><span class="pp">#define _</span><span class="op">(</span>index<span class="op">)</span><span class="pp"> </span>FWD<span class="op">(</span>args<span class="op">)...[(</span>index<span class="op">)</span><span class="pp"> </span><span class="op">-</span><span class="pp"> </span><span class="dv">1</span><span class="op">]</span></span></code></pre></div>
-<p>We have a generic lambda whose default capture is <code class="sourceCode cpp"><span class="op">[&amp;]</span></code>, it takes a variadic parameter pack named <code class="sourceCode cpp">args</code>, constrains its call operator on the body, and then invokes it exactly. You can index into the pack with <code class="sourceCode cpp">_<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> referring to the pack element <code class="sourceCode cpp">args<span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> (for consistency with <code class="sourceCode cpp">std<span class="op">::</span>bind</code> where <code class="sourceCode cpp">_1</code> is the first argument).</p>
-<p>This allows for very terse lambda bodies by giving us both convenient accesss to the arguments. We basically end up with <span class="citation" data-cites="Boost.Lambda">[<a href="#ref-Boost.Lambda" role="doc-biblioref">Boost.Lambda</a>]</span>, but performant.</p>
-<p>Here are some of the examples from the Abbreviated Lambda paper:</p>
-<table>
-<thead>
-<tr class="header">
-<th><div style="text-align:center">
-<strong>C++20</strong>
-</div></th>
-<th><div style="text-align:center">
-<strong>This proposal with <code class="sourceCode cpp">L</code></strong>
-</div></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb65"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb65-1"><a href="#cb65-1"></a><span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...))</span> <span class="op">{</span></span>
-<span id="cb65-2"><a href="#cb65-2"></a>    <span class="cf">return</span> obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
-<span id="cb65-3"><a href="#cb65-3"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1"></a>L<span class="op">(</span>obj<span class="op">.</span>func<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span></code></pre></div></td>
-</tr>
-<tr class="even">
-<td><div class="sourceCode" id="cb67"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{})</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb68"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">&gt;</span> _<span class="op">(</span><span class="dv">2</span><span class="op">)))</span>;</span></code></pre></div></td>
-</tr>
-<tr class="odd">
-<td><div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1"></a><span class="co">// if id isn&#39;t overloaded/a template</span></span>
-<span id="cb69-2"><a href="#cb69-2"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{}</span>,</span>
-<span id="cb69-3"><a href="#cb69-3"></a>    <span class="op">&amp;</span>lib<span class="op">::</span>Widget<span class="op">::</span>id<span class="op">)</span>;</span>
-<span id="cb69-4"><a href="#cb69-4"></a>    </span>
-<span id="cb69-5"><a href="#cb69-5"></a><span class="co">// if it is</span></span>
-<span id="cb69-6"><a href="#cb69-6"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, std<span class="op">::</span>greater<span class="op">{}</span>,</span>
-<span id="cb69-7"><a href="#cb69-7"></a>    <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> w<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> w<span class="op">.</span>id<span class="op">()</span>; <span class="op">})</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>sort<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">(</span><span class="dv">1</span><span class="op">).</span>id<span class="op">()</span> <span class="op">&gt;</span> _<span class="op">(</span><span class="dv">2</span><span class="op">).</span>id<span class="op">()))</span>;</span></code></pre></div></td>
-</tr>
-<tr class="even">
-<td><div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1"></a><span class="co">// note the decltype(auto) is important here to avoid</span></span>
-<span id="cb71-2"><a href="#cb71-2"></a><span class="co">// extra copies</span></span>
-<span id="cb71-3"><a href="#cb71-3"></a>v <span class="op">|</span> view<span class="op">::</span>transform<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> key<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span></span>
-<span id="cb71-4"><a href="#cb71-4"></a>    <span class="op">{</span> <span class="cf">return</span> map<span class="op">[</span>key<span class="op">]</span>; <span class="op">})</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb72"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1"></a>v <span class="op">|</span> view<span class="op">::</span>transform<span class="op">(</span>L<span class="op">(</span>map<span class="op">[</span>_<span class="op">(</span><span class="dv">1</span><span class="op">)]))</span></span></code></pre></div></td>
-</tr>
-<tr class="odd">
-<td><div class="sourceCode" id="cb73"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>find_if<span class="op">(</span>v, <span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb73-2"><a href="#cb73-2"></a>    <span class="cf">return</span> e<span class="op">.</span>id<span class="op">()</span> <span class="op">==</span> id; <span class="op">})</span>;</span>
-<span id="cb73-3"><a href="#cb73-3"></a></span>
-<span id="cb73-4"><a href="#cb73-4"></a>std<span class="op">::</span>ranges<span class="op">::</span>find<span class="op">(</span>v, id, <span class="op">&amp;</span>lib<span class="op">::</span>Widget<span class="op">::</span>id<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb74"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb74-1"><a href="#cb74-1"></a>std<span class="op">::</span>ranges<span class="op">::</span>find_if<span class="op">(</span>v, L<span class="op">(</span>_<span class="op">(</span><span class="dv">1</span><span class="op">).</span>id<span class="op">()</span> <span class="op">==</span> id<span class="op">))</span>;</span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
-<p>Note that the lambda <code class="sourceCode cpp">L<span class="op">(</span>_<span class="op">(</span><span class="dv">2</span><span class="op">))</span></code> would be a SFINAE-friendly way of just returning the second argument.</p>
-<p>It’s tempting to try to give better names to the arguments, like providing the alias <code class="sourceCode cpp">_1</code> for <code class="sourceCode cpp">_<span class="op">(</span><span class="dv">0</span><span class="op">)</span></code> (and to save 2 characters), but I cannot think of a way to do that while also maintaining the constraints in the requires clause.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>All the separate bits and pieces of this proposal have been presented one step at a time during the course of this paper. This section will formalize all the important notions.</p>
 <h2 id="pack-declarations"><span class="header-section-number">4.1</span> Pack declarations<a href="#pack-declarations" class="self-link"></a></h2>
@@ -1421,14 +1354,12 @@ If any of these new special named members yields a reflection range, that range 
 <p>This also unifies the special unpacking rules in <span class="citation" data-cites="P1240R0">[<a href="#ref-P1240R0" role="doc-biblioref">P1240R0</a>]</span>: a reflection range is a pack-like type, therefore it can be unpacked.</p>
 <h2 id="dependent-packs"><span class="header-section-number">4.3</span> Dependent packs<a href="#dependent-packs" class="self-link"></a></h2>
 <p>Member packs and block scope packs can be directly unpacked when in non-dependent contexts. We know what they are.</p>
-<p>In dependent contexts, anything that is not a pack must be explicitly identified as a pack in order to be treated as one. Similar to how we need the <code class="sourceCode cpp"><span class="kw">typename</span></code> and <code class="sourceCode cpp"><span class="kw">template</span></code> keyword in many places to identify that such and such an expression is a type or a template, the <code class="sourceCode cpp">pack</code> context-sensitive keyword (or whatever spelling) will identify the expression that precedes it as a pack. If that entity is <em>not</em> a pack, then the indexing or unpacking expression is ill-formed.</p>
-<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> References<a href="#references" class="self-link"></a></h1>
+<p>In dependent contexts, anything that is not a pack must be explicitly identified as a pack in order to be treated as one. Similar to how we need the <code class="sourceCode cpp"><span class="kw">typename</span></code> and <code class="sourceCode cpp"><span class="kw">template</span></code> keyword in many places to identify that such and such an expression is a type or a template, a preceding <code class="sourceCode cpp"><span class="op">...</span></code> (or whatever alternate spelling) will identify the expression that follows it as a pack. If that entity is <em>not</em> a pack, then the indexing or unpacking expression is ill-formed.</p>
+<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>This paper would not exist without many thorough conversations with Agustín Bergé, Matt Calabrese, and Richard Smith. Thank you.</p>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
-<div id="ref-Boost.Lambda">
-<p>[Boost.Lambda] Jaakko Järvi. 1999. Boost.Lambda. <br />
-<a href="https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html">https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html</a></p>
-</div>
 <div id="ref-Boost.Mp11">
 <p>[Boost.Mp11] Peter Dimov. 2017. Boost.Mp11: A C++11 metaprogramming library - 1.70.0. <br />
 <a href="https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html">https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html</a></p>
@@ -1458,7 +1389,7 @@ If any of these new special named members yields a reflection range, that range 
 <a href="https://wg21.link/p0144r2">https://wg21.link/p0144r2</a></p>
 </div>
 <div id="ref-P0195R2">
-<p>[P0195R2] Robert Haberlach, Richard Smith. 2016. Pack expansions in using-declarations. <br />
+<p>[P0195R2] Robert Haberlach, Richard Smith. 2016. Pack expansions in <i>using-declaration</i>s. <br />
 <a href="https://wg21.link/p0195r2">https://wg21.link/p0195r2</a></p>
 </div>
 <div id="ref-P0341R0">
@@ -1472,10 +1403,6 @@ If any of these new special named members yields a reflection range, that range 
 <div id="ref-P0535R0">
 <p>[P0535R0] Matthew Woehlke. 2017. Generalized Unpacking and Parameter Pack Slicing. <br />
 <a href="https://wg21.link/p0535r0">https://wg21.link/p0535r0</a></p>
-</div>
-<div id="ref-P0573R2">
-<p>[P0573R2] Barry Revzin, Tomasz Kamiński. 2017. Abbreviated Lambdas for Fun and Profit. <br />
-<a href="https://wg21.link/p0573r2">https://wg21.link/p0573r2</a></p>
 </div>
 <div id="ref-P0780R2">
 <p>[P0780R2] Barry Revzin. 2018. Allow pack expansion in lambda init-capture. <br />
