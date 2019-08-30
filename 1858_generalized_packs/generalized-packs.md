@@ -335,6 +335,21 @@ This isn't going to work. From [@Smith.Pack]:
 > possibility of pack expansions occurring outside templates, which current 
 > implementations are not well-suited to handle.
 
+As well as introducing ambiguities:
+
+::: bq
+```cpp
+template <typename T, typename... U>
+void call_f(T t, U... us)
+{
+    // Is this intended to add 't' to each element in 'us'
+    // or is intended to pairwise sum the tuple 't' and
+    // the pack 'us'?
+    f((t + us)...);
+}
+```
+:::
+
 We can't have _no_ syntactic mechanism (and note that this paper very much is
 introducing the possibility of pack expansions occurring outside templates).
 In order to make the dependent `tuple_sum` case work, we need one. One such
@@ -576,7 +591,7 @@ nested unexpanded pack expression here is `e.[:]`,
 which transforms the expression into:
 
 ```cpp
-bar((e.[0], e.[1], e.[2], ..., e.[M-1])...);
+bar((e.[0], e.[1], e.[2], /* etc. */, e.[M-1])...);
 ```
 
 This isn't really valid C++ code (or, worse, it actually is valid but would use
@@ -837,6 +852,29 @@ constexpr decltype(auto) better_visit(Args&&... args) {
 
 Recall that since `Args` is a pack already, we index into it with `Args...[I]`
 rather than `Args.[I]` (which would index into each pack-like type of `Args`).
+
+It would also allow for a single-overload variadic fold:
+
+```cpp
+template <typename F, typename Z, typename... Ts>
+constexpr Z fold(F f, Z z, Ts... rest)
+{
+    if constexpr (sizeof...(rest) == 0) {
+        return z;
+    } else {
+        // we need to invoke f on z and the first elem in rest...
+        // and recurse, passing the rest of rest...
+        return fold(f,
+            f(z, rest...[0]),
+            rest...[1:]...);
+
+        // alternate formulation
+        auto head = rest...[0];
+        auto ...tail = rest...[1:];
+        return fold(f, f(z, head), tail...);
+    }
+}
+```
 
 Boost.Mp11 works by treating any variadic class template as a type list and
 providing operations that just work. A common pattern in the implementation
