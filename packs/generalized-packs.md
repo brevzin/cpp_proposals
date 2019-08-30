@@ -1,6 +1,6 @@
 ---
 title: Generalized pack declaration and usage
-document: DxxxxRx
+document: D1858R0
 date: today
 audience: EWG
 author:

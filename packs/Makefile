@@ -1,4 +1,4 @@
 include ../md/mpark-wg21.mk
 
-dxxxxrx.html : generalized-packs.md
+d1858r0.html : generalized-packs.md
 	$(PANDOC)
