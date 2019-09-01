@@ -1,848 +1,856 @@
-<html>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Structured Bindings can introduce a Pack</title>
-<style type="text/css">html {
-	position: relative;
-	max-width: 1024px;
-	height: 100%;
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2019-09-01" />
+  <title>Structured Bindings can introduce a Pack</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style>
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
 }
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f6f8fa; }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span. { } /* Normal */
+code span.al { color: #ff0000; } /* Alert */
+code span.an { } /* Annotation */
+code span.at { } /* Attribute */
+code span.bn { color: #9f6807; } /* BaseN */
+code span.bu { color: #9f6807; } /* BuiltIn */
+code span.cf { color: #00607c; } /* ControlFlow */
+code span.ch { color: #9f6807; } /* Char */
+code span.cn { } /* Constant */
+code span.co { color: #008000; font-style: italic; } /* Comment */
+code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+code span.do { color: #008000; } /* Documentation */
+code span.dt { color: #00607c; } /* DataType */
+code span.dv { color: #9f6807; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #9f6807; } /* Float */
+code span.fu { } /* Function */
+code span.im { } /* Import */
+code span.in { color: #008000; } /* Information */
+code span.kw { color: #00607c; } /* Keyword */
+code span.op { color: #af1915; } /* Operator */
+code span.ot { } /* Other */
+code span.pp { color: #6f4e37; } /* Preprocessor */
+code span.re { } /* RegionMarker */
+code span.sc { color: #9f6807; } /* SpecialChar */
+code span.ss { color: #9f6807; } /* SpecialString */
+code span.st { color: #9f6807; } /* String */
+code span.va { } /* Variable */
+code span.vs { color: #9f6807; } /* VerbatimString */
+code span.wa { color: #008000; font-weight: bold; } /* Warning */
+code.diff {color: #898887}
+code.diff span.va {color: #006e28}
+code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
 body {
-	font-family: Helvetica, arial, sans-serif;
-	font-size: 14px;
-	line-height: 1.6;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	background-color: white;
-	padding: 30px;
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
 }
-body>*:first-child {
-	margin-top: 0 !important;
+div.wrapper {
+max-width: 60em;
+margin: auto;
 }
-body>*:last-child {
-	margin-bottom: 0 !important;
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
 }
 a {
-	color: #4183C4;
+text-decoration: none;
+color: #4183C4;
 }
-a.absent {
-	color: #cc0000;
-}
-a.anchor {
-	display: block;
-	padding-left: 30px;
-	margin-left: -30px;
-	cursor: pointer;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-}
-h1, h2, h3, h4, h5, h6 {
-	margin: 20px 0 10px;
-	padding: 0;
-	font-weight: bold;
-	-webkit-font-smoothing: antialiased;
-	cursor: text;
-	position: relative;
-}
-h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
-	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
-	text-decoration: none;
-}
-h1 tt, h1 code {
-	font-size: inherit;
-}
-h2 tt, h2 code {
-	font-size: inherit;
-}
-h3 tt, h3 code {
-	font-size: inherit;
-}
-h4 tt, h4 code {
-	font-size: inherit;
-}
-h5 tt, h5 code {
-	font-size: inherit;
-}
-h6 tt, h6 code {
-	font-size: inherit;
-}
-h1 {
-	font-size: 28px;
-	color: black;
-}
-h2 {
-	font-size: 24px;
-	border-bottom: 1px solid #cccccc;
-	color: black;
-}
-h3 {
-	font-size: 18px;
-}
-h4 {
-	font-size: 16px;
-}
-h5 {
-	font-size: 14px;
-}
-h6 {
-	color: #777777;
-	font-size: 14px;
-}
-p, blockquote, ol, dl, li, table, pre {
-	margin: 15px 0;
-}
-hr {
-	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
-	border: 0 none;
-	color: #cccccc;
-	height: 4px;
-	padding: 0;
-}
-body>h2:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h1:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h1:first-child+h2 {
-	margin-top: 0;
-	padding-top: 0;
-}
-body>h3:first-child, body>h4:first-child, body>h5:first-child, body>h6:first-child {
-	margin-top: 0;
-	padding-top: 0;
-}
-a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
-	margin-top: 0;
-	padding-top: 0;
-}
-h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
-	margin-top: 0;
-}
-li p.first {
-	display: inline-block;
+a.hidden_link {
+text-decoration: none;
+color: inherit;
 }
 li {
-	margin: 0;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
 }
-ol {
-	padding-left: 30px;
-    margin: 5px;
-    counter-reset: item;
-    margin-left: -1px;
-    margin-bottom: -1px;
-    margin-top: -1px;
-}
-ol > li {
-    counter-increment: item;
-    margin-bottom: -1px;
-    margin-top: -1px;    
-}
-ol ol > li {
-    display: block;
-    margin-bottom: -1px;
-    margin-top: -1px;    
-}
-ol ol > li:before {
-    content: counters(item, ".") ". ";
-    margin-left: -30px;
-    margin-bottom: -1px;
-    margin-top: -1px;    
-}
-ul :first-child, ol :first-child {
-	margin-top: 0;
-}
-ul ul { 
-    margin-left: -15px;
-}
-dl {
-	padding: 0;
-}
-dl dt {
-	font-size: 14px;
-	font-weight: bold;
-	font-style: italic;
-	padding: 0;
-	margin: 15px 0 5px;
-}
-dl dt:first-child {
-	padding: 0;
-}
-dl dt> :first-child {
-	margin-top: 0;
-}
-dl dt> :last-child {
-	margin-bottom: 0;
-}
-dl dd {
-	margin: 0 0 15px;
-	padding: 0 15px;
-}
-dl dd> :first-child {
-	margin-top: 0;
-}
-dl dd> :last-child {
-	margin-bottom: 0;
-}
-blockquote {
-	border-left: 4px solid #dddddd;
-	padding: 0 15px;
-	color: #777777;
-}
-blockquote> :first-child {
-	margin-top: 0;
-}
-blockquote> :last-child {
-	margin-bottom: 0;
-}
-table {
-	padding: 0;
-	border-collapse: collapse;
-}
-table tr {
-	border-top: 1px solid #cccccc;
-	background-color: white;
-	margin: 0;
-	padding: 0;
-}
-table tr:nth-child(2n) {
-	background-color: #f8f8f8;
-}
-table tr th {
-	font-weight: bold;
-	border: 1px solid #cccccc;
-	margin: 0;
-	padding: 6px 13px;
-}
-table tr td {
-	border: 1px solid #cccccc;
-	margin: 0;
-	padding: 6px 13px;
-}
-table tr th :first-child, table tr td :first-child {
-	margin-top: 0;
-}
-table tr th :last-child, table tr td :last-child {
-	margin-bottom: 0;
-}
-td {
-	vertical-align: top;
-}
-img {
-	max-width: 100%;
-}
-span.frame {
-	display: block;
-	overflow: hidden;
-}
-span.frame>span {
-	border: 1px solid #dddddd;
-	display: block;
-	float: left;
-	overflow: hidden;
-	margin: 13px 0 0;
-	padding: 7px;
-	width: auto;
-}
-span.frame span img {
-	display: block;
-	float: left;
-}
-span.frame span span {
-	clear: both;
-	color: #333333;
-	display: block;
-	padding: 5px 0 0;
-}
-span.align-center {
-	display: block;
-	overflow: hidden;
-	clear: both;
-}
-span.align-center>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px auto 0;
-	text-align: center;
-}
-span.align-center span img {
-	margin: 0 auto;
-	text-align: center;
-}
-span.align-right {
-	display: block;
-	overflow: hidden;
-	clear: both;
-}
-span.align-right>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px 0 0;
-	text-align: right;
-}
-span.align-right span img {
-	margin: 0;
-	text-align: right;
-}
-span.float-left {
-	display: block;
-	margin-right: 13px;
-	overflow: hidden;
-	float: left;
-}
-span.float-left span {
-	margin: 13px 0 0;
-}
-span.float-right {
-	display: block;
-	margin-left: 13px;
-	overflow: hidden;
-	float: right;
-}
-span.float-right>span {
-	display: block;
-	overflow: hidden;
-	margin: 13px auto 0;
-	text-align: right;
-}
-code, tt {
-	margin: 0 2px;
-	padding: 0 5px;
-	white-space: nowrap;
-	border: 1px solid #eaeaea;
-	background-color: #f8f8f8;
-	border-radius: 3px;
-}
-pre code {
-	margin: 0;
-	padding: 0;
-	white-space: pre;
-	border: none;
-	background: transparent;
-}
-.highlight pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	font-size: 13px;
-	line-height: 19px;
-	overflow: auto;
-	padding: 6px 10px;
-	border-radius: 3px;
-}
-pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	font-size: 13px;
-	line-height: 19px;
-	overflow: auto;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 6px 10px;
-	border-radius: 3px;
-}
-pre code, pre tt {
-	background-color: transparent;
-	border: none;
-}
-sup {
-	font-size: 0.83em;
-	vertical-align: super;
-	line-height: 0;
-}
-kbd {
-	display: inline-block;
-	padding: 3px 5px;
-	font-size: 11px;
-	line-height: 10px;
-	color: #555;
-	vertical-align: middle;
-	background-color: #fcfcfc;
-	border: solid 1px #ccc;
-	border-bottom-color: #bbb;
-	border-radius: 3px;
-	box-shadow: inset 0 -1px 0 #bbb
-}
-* {
-	-webkit-print-color-adjust: exact;
-}
-ins {
-	color: #00A000
-}
-del {
-	color: #A00000
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
 }
 a.self-link {
-    position: absolute;
-    top: 0;
-    left: calc(-1 * (3.5rem - 26px));
-    width: calc(3.5rem - 26px);
-    height: 2em;
-    text-align: center;
-    border: none;
-    transition: opacity .2s;
-    opacity: .5;
-    font-size: 83%;
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
 }
-a.self-link:hover {
-    opacity: 1;
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
 }
-a.self-link::before {
-    content: "§";
-}</style>
-<style type="text/css">/* PrismJS 1.15.0
-https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp&plugins=line-highlight */
-/**
- * prism.js default theme for JavaScript, CSS and HTML
- * Based on dabblet (http://dabblet.com)
- * @author Lea Verou
- */
-
-code[class*="language-"],
-pre[class*="language-"] {
-	color: black;
-	background: none;
-	text-shadow: 0 1px white;
-	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-	text-align: left;
-	white-space: pre;
-	word-spacing: normal;
-	word-break: normal;
-	word-wrap: normal;
-	line-height: 1.5;
-
-	-moz-tab-size: 4;
-	-o-tab-size: 4;
-	tab-size: 4;
-
-	-webkit-hyphens: none;
-	-moz-hyphens: none;
-	-ms-hyphens: none;
-	hyphens: none;
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
 }
-
-pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
-code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
-	text-shadow: none;
-	background: #b3d4fc;
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
 }
-
-pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
-code[class*="language-"]::selection, code[class*="language-"] ::selection {
-	text-shadow: none;
-	background: #b3d4fc;
+a.sourceLink:hover {
+opacity: 1;
 }
-
-@media print {
-	code[class*="language-"],
-	pre[class*="language-"] {
-		text-shadow: none;
-	}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
 }
-
-/* Code blocks */
-pre[class*="language-"] {
-	padding: 1em;
-	margin: .5em 0;
-	overflow: auto;
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
 }
-
-:not(pre) > code[class*="language-"],
-pre[class*="language-"] {
-	background: #f8f8f8;
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
 }
-
-/* Inline code */
-:not(pre) > code[class*="language-"] {
-	padding: .1em;
-	border-radius: .3em;
-	white-space: normal;
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
 }
-
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-	color: slategray;
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
 }
-
-.token.punctuation {
-	color: #999;
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
 }
-
-.namespace {
-	opacity: .7;
+a.index {
+position: absolute;
+display: none;
 }
+a.index:before { content: "⟵"; }
 
-.token.property,
-.token.tag,
-.token.boolean,
-.token.number,
-.token.constant,
-.token.symbol,
-.token.deleted {
-	color: #905;
+a.index:target {
+display: inline;
 }
-
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-	color: #690;
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
 }
-
-.token.operator,
-.token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string {
-	color: #9a6e3a;
+div.itemdescr {
+margin-left: 3em;
 }
-
-.token.atrule,
-.token.attr-value,
-.token.keyword {
-	color: #07a;
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
 }
-
-.token.function,
-.token.class-name {
-	color: #DD4A68;
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
 }
-
-.token.regex,
-.token.important,
-.token.variable {
-	color: #e90;
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
 }
-
-.token.important,
-.token.bold {
-	font-weight: bold;
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
 }
-.token.italic {
-	font-style: italic;
+span.rlap {
+display: inline-block;
+width: 0px;
 }
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
 
-.token.entity {
-	cursor: help;
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
 }
-
-pre[data-line] {
-	position: relative;
-	padding: 1em 0 1em 3em;
+span.mathalpha {
+font-style: italic;
 }
-
-.line-highlight {
-	position: absolute;
-	left: 0;
-	right: 0;
-	padding: inherit 0;
-	margin-top: 1em; /* Same as .prism’s padding-top */
-
-	background: hsla(24, 20%, 50%,.08);
-	background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
-
-	pointer-events: none;
-
-	line-height: inherit;
-	white-space: pre;
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
 }
-
-	.line-highlight:before,
-	.line-highlight[data-end]:after {
-		content: attr(data-start);
-		position: absolute;
-		top: .4em;
-		left: .6em;
-		min-width: 1em;
-		padding: 0 .5em;
-		background-color: hsla(24, 20%, 50%,.4);
-		color: hsl(24, 20%, 95%);
-		font: bold 65%/1.5 sans-serif;
-		text-align: center;
-		vertical-align: .3em;
-		border-radius: 999px;
-		text-shadow: none;
-		box-shadow: 0 1px white;
-	}
-
-	.line-highlight[data-end]:after {
-		content: attr(data-end);
-		top: auto;
-		bottom: .4em;
-	}
-
-.line-numbers .line-highlight:before,
-.line-numbers .line-highlight:after {
-	content: none;
+span.definition {
+font-weight: bold;
+display: block;
 }
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
 
+code.sourceCode > span { display: inline; }
+
+div#refs p { padding-left: 32px; text-indent: -32px; }
 </style>
-<script type="text/javascript">/* PrismJS 1.15.0
-https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+c+cpp+nasm+rust&plugins=line-highlight */
-var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-([\w-]+)\b/i,t=0,n=_self.Prism={manual:_self.Prism&&_self.Prism.manual,disableWorkerMessageHandler:_self.Prism&&_self.Prism.disableWorkerMessageHandler,util:{encode:function(e){return e instanceof r?new r(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e,t){var r=n.util.type(e);switch(t=t||{},r){case"Object":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a={};t[n.util.objId(e)]=a;for(var l in e)e.hasOwnProperty(l)&&(a[l]=n.util.clone(e[l],t));return a;case"Array":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a=[];return t[n.util.objId(e)]=a,e.forEach(function(e,r){a[r]=n.util.clone(e,t)}),a}return e}},languages:{extend:function(e,t){var r=n.util.clone(n.languages[e]);for(var a in t)r[a]=t[a];return r},insertBefore:function(e,t,r,a){a=a||n.languages;var l=a[e];if(2==arguments.length){r=arguments[1];for(var i in r)r.hasOwnProperty(i)&&(l[i]=r[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in r)r.hasOwnProperty(i)&&(o[i]=r[i]);o[s]=l[s]}var u=a[e];return a[e]=o,n.languages.DFS(n.languages,function(t,n){n===u&&t!=e&&(this[t]=o)}),o},DFS:function(e,t,r,a){a=a||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],r||l),"Object"!==n.util.type(e[l])||a[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||a[n.util.objId(e[l])]||(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,a)):(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,a)))}},plugins:{},highlightAll:function(e,t){n.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,r){var a={callback:r,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var l,i=a.elements||e.querySelectorAll(a.selector),o=0;l=i[o++];)n.highlightElement(l,t===!0,a.callback)},highlightElement:function(t,r,a){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1].toLowerCase(),i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,t.parentNode&&(o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l));var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(n.hooks.run("before-sanity-check",u),!u.code||!u.grammar)return u.code&&(n.hooks.run("before-highlight",u),u.element.textContent=u.code,n.hooks.run("after-highlight",u)),n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),r&&_self.Worker){var g=new Worker(n.filename);g.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},g.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,a){var l={code:e,grammar:t,language:a};return n.hooks.run("before-tokenize",l),l.tokens=n.tokenize(l.code,l.grammar),n.hooks.run("after-tokenize",l),r.stringify(n.util.encode(l.tokens),l.language)},matchGrammar:function(e,t,r,a,l,i,o){var s=n.Token;for(var u in r)if(r.hasOwnProperty(u)&&r[u]){if(u==o)return;var g=r[u];g="Array"===n.util.type(g)?g:[g];for(var c=0;c<g.length;++c){var h=g[c],f=h.inside,d=!!h.lookbehind,m=!!h.greedy,p=0,y=h.alias;if(m&&!h.pattern.global){var v=h.pattern.toString().match(/[imuy]*$/)[0];h.pattern=RegExp(h.pattern.source,v+"g")}h=h.pattern||h;for(var b=a,k=l;b<t.length;k+=t[b].length,++b){var w=t[b];if(t.length>e.length)return;if(!(w instanceof s)){if(m&&b!=t.length-1){h.lastIndex=k;var _=h.exec(e);if(!_)break;for(var j=_.index+(d?_[1].length:0),P=_.index+_[0].length,A=b,x=k,O=t.length;O>A&&(P>x||!t[A].type&&!t[A-1].greedy);++A)x+=t[A].length,j>=x&&(++b,k=x);if(t[b]instanceof s)continue;I=A-b,w=e.slice(k,x),_.index-=k}else{h.lastIndex=0;var _=h.exec(w),I=1}if(_){d&&(p=_[1]?_[1].length:0);var j=_.index+p,_=_[0].slice(p),P=j+_.length,N=w.slice(0,j),S=w.slice(P),C=[b,I];N&&(++b,k+=N.length,C.push(N));var E=new s(u,f?n.tokenize(_,f):_,y,_,m);if(C.push(E),S&&C.push(S),Array.prototype.splice.apply(t,C),1!=I&&n.matchGrammar(e,t,r,b,k,!0,u),i)break}else if(i)break}}}}},tokenize:function(e,t){var r=[e],a=t.rest;if(a){for(var l in a)t[l]=a[l];delete t.rest}return n.matchGrammar(e,r,t,0,0,!1),r},hooks:{all:{},add:function(e,t){var r=n.hooks.all;r[e]=r[e]||[],r[e].push(t)},run:function(e,t){var r=n.hooks.all[e];if(r&&r.length)for(var a,l=0;a=r[l++];)a(t)}}},r=n.Token=function(e,t,n,r,a){this.type=e,this.content=t,this.alias=n,this.length=0|(r||"").length,this.greedy=!!a};if(r.stringify=function(e,t,a){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return r.stringify(n,t,e)}).join("");var l={type:e.type,content:r.stringify(e.content,t,a),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:a};if(e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o=Object.keys(l.attributes).map(function(e){return e+'="'+(l.attributes[e]||"").replace(/"/g,"&quot;")+'"'}).join(" ");return"<"+l.tag+' class="'+l.classes.join(" ")+'"'+(o?" "+o:"")+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(n.disableWorkerMessageHandler||_self.addEventListener("message",function(e){var t=JSON.parse(e.data),r=t.language,a=t.code,l=t.immediateClose;_self.postMessage(n.highlight(a,n.languages[r],r)),l&&_self.close()},!1),_self.Prism):_self.Prism;var a=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return a&&(n.filename=a.src,n.manual||a.hasAttribute("data-manual")||("loading"!==document.readyState?window.requestAnimationFrame?window.requestAnimationFrame(n.highlightAll):window.setTimeout(n.highlightAll,16):document.addEventListener("DOMContentLoaded",n.highlightAll))),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
-Prism.languages.markup={comment:/<!--[\s\S]*?-->/,prolog:/<\?[\s\S]+?\?>/,doctype:/<!DOCTYPE[\s\S]+?>/i,cdata:/<!\[CDATA\[[\s\S]*?]]>/i,tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s+[^\s>\/=]+(?:=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+))?)*\s*\/?>/i,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/i,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"attr-value":{pattern:/=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+)/i,inside:{punctuation:[/^=/,{pattern:/(^|[^\\])["']/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:/&#?[\da-z]{1,8};/i},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.hooks.add("wrap",function(a){"entity"===a.type&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Prism.languages.xml=Prism.languages.markup,Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup;
-Prism.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:/@[\w-]+?.*?(?:;|(?=\s*\{))/i,inside:{rule:/@[\w-]+/}},url:/url\((?:(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1|.*?)\)/i,selector:/[^{}\s][^{};]*?(?=\s*\{)/,string:{pattern:/("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},property:/[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,important:/\B!important\b/i,"function":/[-a-z0-9]+(?=\()/i,punctuation:/[(){};:]/},Prism.languages.css.atrule.inside.rest=Prism.languages.css,Prism.languages.markup&&(Prism.languages.insertBefore("markup","tag",{style:{pattern:/(<style[\s\S]*?>)[\s\S]*?(?=<\/style>)/i,lookbehind:!0,inside:Prism.languages.css,alias:"language-css",greedy:!0}}),Prism.languages.insertBefore("inside","attr-value",{"style-attr":{pattern:/\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,inside:{"attr-name":{pattern:/^\s*style/i,inside:Prism.languages.markup.tag.inside},punctuation:/^\s*=\s*['"]|['"]\s*$/,"attr-value":{pattern:/.+/i,inside:Prism.languages.css}},alias:"language-css"}},Prism.languages.markup.tag));
-Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(?:true|false)\b/,"function":/\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
-Prism.languages.c=Prism.languages.extend("clike",{keyword:/\b(?:_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|asm|typeof|inline|auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?/,number:/(?:\b0x[\da-f]+|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?)[ful]*/i}),Prism.languages.insertBefore("c","string",{macro:{pattern:/(^\s*)#\s*[a-z]+(?:[^\r\n\\]|\\(?:\r\n|[\s\S]))*/im,lookbehind:!0,alias:"property",inside:{string:{pattern:/(#\s*include\s*)(?:<.+?>|("|')(?:\\?.)+?\2)/,lookbehind:!0},directive:{pattern:/(#\s*)\b(?:define|defined|elif|else|endif|error|ifdef|ifndef|if|import|include|line|pragma|undef|using)\b/,lookbehind:!0,alias:"keyword"}}},constant:/\b(?:__FILE__|__LINE__|__DATE__|__TIME__|__TIMESTAMP__|__func__|EOF|NULL|SEEK_CUR|SEEK_END|SEEK_SET|stdin|stdout|stderr)\b/}),delete Prism.languages.c["class-name"],delete Prism.languages.c["boolean"];
-Prism.languages.cpp=Prism.languages.extend("c",{keyword:/\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|float|for|friend|goto|if|inline|int|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while)\b/,"boolean":/\b(?:true|false)\b/,operator:/>>=?|<<=?|->|([-+&|:])\1|[?:~]|[-+*\/%&|^!=<>]=?|\b(?:and|and_eq|bitand|bitor|not|not_eq|or|or_eq|xor|xor_eq)\b/}),Prism.languages.insertBefore("cpp","keyword",{"class-name":{pattern:/(class\s+)\w+/i,lookbehind:!0}}),Prism.languages.insertBefore("cpp","string",{"raw-string":{pattern:/R"([^()\\ ]{0,16})\([\s\S]*?\)\1"/,alias:"string",greedy:!0}});
-Prism.languages.nasm={comment:/;.*$/m,string:/(["'`])(?:\\.|(?!\1)[^\\\r\n])*\1/,label:{pattern:/(^\s*)[A-Za-z._?$][\w.?$@~#]*:/m,lookbehind:!0,alias:"function"},keyword:[/\[?BITS (?:16|32|64)\]?/,{pattern:/(^\s*)section\s*[a-zA-Z.]+:?/im,lookbehind:!0},/(?:extern|global)[^;\r\n]*/i,/(?:CPU|FLOAT|DEFAULT).*$/m],register:{pattern:/\b(?:st\d|[xyz]mm\d\d?|[cdt]r\d|r\d\d?[bwd]?|[er]?[abcd]x|[abcd][hl]|[er]?(?:bp|sp|si|di)|[cdefgs]s)\b/i,alias:"variable"},number:/(?:\b|(?=\$))(?:0[hx][\da-f]*\.?[\da-f]+(?:p[+-]?\d+)?|\d[\da-f]+[hx]|\$\d[\da-f]*|0[oq][0-7]+|[0-7]+[oq]|0[by][01]+|[01]+[by]|0[dt]\d+|\d*\.?\d+(?:\.?e[+-]?\d+)?[dt]?)\b/i,operator:/[\[\]*+\-\/%<>=&|$!]/};
-Prism.languages.rust={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:[{pattern:/b?r(#*)"(?:\\.|(?!"\1)[^\\\r\n])*"\1/,greedy:!0},{pattern:/b?"(?:\\.|[^\\\r\n"])*"/,greedy:!0}],"char":{pattern:/b?'(?:\\(?:x[0-7][\da-fA-F]|u{(?:[\da-fA-F]_*){1,6}|.)|[^\\\r\n\t'])'/,alias:"string"},"lifetime-annotation":{pattern:/'[^\s>']+/,alias:"symbol"},keyword:/\b(?:abstract|alignof|as|be|box|break|const|continue|crate|do|else|enum|extern|false|final|fn|for|if|impl|in|let|loop|match|mod|move|mut|offsetof|once|override|priv|pub|pure|ref|return|sizeof|static|self|struct|super|true|trait|type|typeof|unsafe|unsized|use|virtual|where|while|yield)\b/,attribute:{pattern:/#!?\[.+?\]/,greedy:!0,alias:"attr-name"},"function":[/\w+(?=\s*\()/,/\w+!(?=\s*\(|\[)/],"macro-rules":{pattern:/\w+!/,alias:"function"},number:/\b(?:0x[\dA-Fa-f](?:_?[\dA-Fa-f])*|0o[0-7](?:_?[0-7])*|0b[01](?:_?[01])*|(\d(?:_?\d)*)?\.?\d(?:_?\d)*(?:[Ee][+-]?\d+)?)(?:_?(?:[iu](?:8|16|32|64)?|f32|f64))?\b/,"closure-params":{pattern:/\|[^|]*\|(?=\s*[{-])/,inside:{punctuation:/[|:,]/,operator:/[&*]/}},punctuation:/[{}[\];(),:]|\.+|->/,operator:/[-+*\/%!^]=?|=[=>]?|@|&[&=]?|\|[|=]?|<<?=?|>>?=?/};
-!function(){function e(e,t){return Array.prototype.slice.call((t||document).querySelectorAll(e))}function t(e,t){return t=" "+t+" ",(" "+e.className+" ").replace(/[\n\t]/g," ").indexOf(t)>-1}function n(e,n,i){n="string"==typeof n?n:e.getAttribute("data-line");for(var o,l=n.replace(/\s+/g,"").split(","),a=+e.getAttribute("data-line-offset")||0,s=r()?parseInt:parseFloat,d=s(getComputedStyle(e).lineHeight),u=t(e,"line-numbers"),c=0;o=l[c++];){var p=o.split("-"),m=+p[0],f=+p[1]||m,h=e.querySelector('.line-highlight[data-range="'+o+'"]')||document.createElement("div");if(h.setAttribute("aria-hidden","true"),h.setAttribute("data-range",o),h.className=(i||"")+" line-highlight",u&&Prism.plugins.lineNumbers){var g=Prism.plugins.lineNumbers.getLine(e,m),y=Prism.plugins.lineNumbers.getLine(e,f);g&&(h.style.top=g.offsetTop+"px"),y&&(h.style.height=y.offsetTop-g.offsetTop+y.offsetHeight+"px")}else h.setAttribute("data-start",m),f>m&&h.setAttribute("data-end",f),h.style.top=(m-a-1)*d+"px",h.textContent=new Array(f-m+2).join(" \n");u?e.appendChild(h):(e.querySelector("code")||e).appendChild(h)}}function i(){var t=location.hash.slice(1);e(".temporary.line-highlight").forEach(function(e){e.parentNode.removeChild(e)});var i=(t.match(/\.([\d,-]+)$/)||[,""])[1];if(i&&!document.getElementById(t)){var r=t.slice(0,t.lastIndexOf(".")),o=document.getElementById(r);o&&(o.hasAttribute("data-line")||o.setAttribute("data-line",""),n(o,i,"temporary "),document.querySelector(".temporary.line-highlight").scrollIntoView())}}if("undefined"!=typeof self&&self.Prism&&self.document&&document.querySelector){var r=function(){var e;return function(){if("undefined"==typeof e){var t=document.createElement("div");t.style.fontSize="13px",t.style.lineHeight="1.5",t.style.padding=0,t.style.border=0,t.innerHTML="&nbsp;<br />&nbsp;",document.body.appendChild(t),e=38===t.offsetHeight,document.body.removeChild(t)}return e}}(),o=0;Prism.hooks.add("before-sanity-check",function(t){var n=t.element.parentNode,i=n&&n.getAttribute("data-line");if(n&&i&&/pre/i.test(n.nodeName)){var r=0;e(".line-highlight",n).forEach(function(e){r+=e.textContent.length,e.parentNode.removeChild(e)}),r&&/^( \n)+$/.test(t.code.slice(-r))&&(t.code=t.code.slice(0,-r))}}),Prism.hooks.add("complete",function l(e){var r=e.element.parentNode,a=r&&r.getAttribute("data-line");if(r&&a&&/pre/i.test(r.nodeName)){clearTimeout(o);var s=Prism.plugins.lineNumbers,d=e.plugins&&e.plugins.lineNumbers;t(r,"line-numbers")&&s&&!d?Prism.hooks.add("line-numbers",l):(n(r,a),o=setTimeout(i,1))}}),window.addEventListener("hashchange",i),window.addEventListener("resize",function(){var e=document.querySelectorAll("pre[data-line]");Array.prototype.forEach.call(e,function(e){n(e)})})}}();
-</script>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
 
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
 </head>
 <body>
-<address align=right>
-Document Number: D1061R1 <br />
-Date: 2018-09-29 <br />
-Audience: EWG <br />
-Reply-To: Barry Revzin, barry dot revzin at gmail dot com<br />Jonathan Wakely, jonathan dot wakely at gmail dot com <br />
-</address>
-<hr /><h1 align=center><p>Structured Bindings can introduce a Pack</p></h1>
-<h2>Contents</h2>
-<div class="toc">
-<ol>
-<li><a href="#motivation">Motivation</a></li>
-<li><a href="#proposal">Proposal</a></li>
-<li><a href="#wording">Wording</a></li>
-<li><a href="#acknowledgements">Acknowledgements</a></li>
-<li><a href="#references">References</a></li>
-</ol>
-</div>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Structured Bindings can introduce a Pack</h1>
 
-<h2 id="motivation">1. Motivation<a class="self-link" href="#motivation"></a></h2>
-<p>Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a <code class="language-cpp">tuple</code>. Today, it's trivial to convert a pack to a <code class="language-cpp">tuple</code>, but it's somewhat more involved to convert a <code class="language-cpp">tuple</code> to a pack. You have to go through <a href="https://wg21.link/n3915" title="apply() call a function with arguments from a tuple (V3)"><code class="language-cpp">std::apply()</code></a>:</p>
-<pre class="codehilite"><code class="language-c++">std::tuple&lt;A, B, C&gt; tup = ...;
-std::apply([&amp;](auto&amp;&amp;... elems){
-    // now I have a pack
-}, tup);</code></pre>
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #: </td>
+    <td>D1061R1</td>
+  </tr>
+  <tr>
+    <td>Date: </td>
+    <td>2019-09-01</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project: </td>
+    <td>Programming Language C++<br>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to: </td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Jonathan Wakely<br>&lt;<a href="mailto:jonathan.wakely@gmail.com" class="email">jonathan.wakely@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
 
-
+</header>
+<div style="clear:both">
+<h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>R0 of this paper <span class="citation" data-cites="P1061R0">[<a href="#ref-P1061R0" role="doc-biblioref">P1061R0</a>]</span> was presented to EWGI in Kona 2019 <span class="citation" data-cites="P1061R0.Minutes">[<a href="#ref-P1061R0.Minutes" role="doc-biblioref">P1061R0.Minutes</a>]</span>, who reviewed it favorably and thought this was a good investment of our time (4-3-4-1-0). The consensus in the room was that the restriction that the introduced pack need not be the trailing identifier.</p>
+<h1 id="motivation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Motivation<a href="#motivation" class="self-link"></a></h1>
+<p>Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a <code class="sourceCode cpp">tuple</code>. Today, it’s trivial to convert a pack to a <code class="sourceCode cpp">tuple</code>, but it’s somewhat more involved to convert a <code class="sourceCode cpp">tuple</code> to a pack. You have to go through <code class="sourceCode cpp">std<span class="op">::</span>apply<span class="op">()</span></code> <span class="citation" data-cites="N3915">[<a href="#ref-N3915" role="doc-biblioref">N3915</a>]</span>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a>std<span class="op">::</span>tuple<span class="op">&lt;</span>A, B, C<span class="op">&gt;</span> tup <span class="op">=</span> <span class="op">...</span>;</span>
+<span id="cb1-2"><a href="#cb1-2"></a>std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;...</span> elems<span class="op">){</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="co">// now I have a pack</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="op">}</span>, tup<span class="op">)</span>;</span></code></pre></div>
 <p>This is great for cases where we just need to call a [non-overloaded] function or function object, but rapidly becomes much more awkward as we dial up the complexity. Not to mention if I want to return from the outer scope based on what these elements have to be.</p>
-<p>How do we compute the dot product of two <code class="language-cpp">tuple</code>s? It's a choose your own adventure of awkward choices:</p>
+<p>How do we compute the dot product of two <code class="sourceCode cpp">tuple</code>s? It’s a choose your own adventure of awkward choices:</p>
 <table style="width:100%">
 <tr>
 <th style="width:50%">
-<p>Nested <code class="language-cpp">apply()</code></p>
+Nested <code class="sourceCode cpp">apply<span class="op">()</span></code>
 </th>
 <th style="width:50%">
-<p>Using <code class="language-cpp">index_sequence</code></p>
+Using <code class="sourceCode cpp">index_sequence</code>
 </th>
 </tr>
 <tr>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    return std::apply([&amp;](auto... p_elems){
-        return std::apply([&amp;](auto... q_elems){
-            return (... + (p_elems * q_elems));
-        }, q)
-    }, p);
-}</code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="cf">return</span> std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">...</span> p_elems<span class="op">){</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        <span class="cf">return</span> std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">...</span> q_elems<span class="op">){</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>            <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>p_elems <span class="op">*</span> q_elems<span class="op">))</span>;</span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="op">}</span>, q<span class="op">)</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="op">}</span>, p<span class="op">)</span>;</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;size_t... Is, class P, class Q&gt;
-auto dot_product(std::index_sequence&lt;Is...&gt;, P p, Q, q) {
-    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
-}
-
-template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    return dot_product(
-        std::make_index_sequence&lt;std::tuple_size&lt;P&gt;::value&gt;{},
-        p, q);
-}</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span><span class="op">...</span> Is, <span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>std<span class="op">::</span>index_sequence<span class="op">&lt;</span>Is<span class="op">...&gt;</span>, P p, Q, q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>p<span class="op">)</span> <span class="op">*</span> std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>q<span class="op">)))</span>;</span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="op">}</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">return</span> dot_product<span class="op">(</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>        std<span class="op">::</span>make_index_sequence<span class="op">&lt;</span>std<span class="op">::</span>tuple_size<span class="op">&lt;</span>P<span class="op">&gt;::</span>value<span class="op">&gt;{}</span>,</span>
+<span id="cb3-10"><a href="#cb3-10"></a>        p, q<span class="op">)</span>;</span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="op">}</span></span></code></pre></div>
 </td>
 </tr>
 </table>
-
-<p>Regardless of which option you dislike the least, both are limited to only <code class="language-cpp">std::tuple</code>s. We don't have the ability to do this at all for any of the other kinds of types that can be used in a <a href="https://wg21.link/p0144" title="Structured Bindings">structured binding declaration</a> - because we need to explicit list the correct number of identifiers, and we might not know how many there are.</p>
-<h2 id="proposal">2. Proposal<a class="self-link" href="#proposal"></a></h2>
-<p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading <code class="language-cpp">...</code>):</p>
-<pre class="codehilite"><code class="language-c++">std::tuple&lt;X, Y, Z&gt; f();
-auto [x,y,z] = f();          // OK today
-auto [...xs] = f();          // proposed: xs is a pack of length three containing an X, Y, and a Z
-auto [x, ...rest] = f();     // proposed: x is an X, rest... is a pack of length two
-auto [x,y,z, ...rest] = f(); // proposed: rest... is an empty pack
-auto [x, ...rest, z] = f();  // ill-formed: non-trailing pack. This is for consistency with, for instance, function parameter packs</code></pre>
-
-
-<p>If we additionally add the structured binding customization machinery to <code class="language-cpp">std::integer_sequence</code>, this could greatly simplify generic code:</p>
+<p>Regardless of which option you dislike the least, both are limited to only <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>s. We don’t have the ability to do this at all for any of the other kinds of types that can be used in a structured binding declaration <span class="citation" data-cites="P0144R2">[<a href="#ref-P0144R2" role="doc-biblioref">P0144R2</a>]</span> - because we need to explicit list the correct number of identifiers, and we might not know how many there are.</p>
+<h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading <code class="sourceCode cpp"><span class="op">...</span></code>):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a>std<span class="op">::</span>tuple<span class="op">&lt;</span>X, Y, Z<span class="op">&gt;</span> f<span class="op">()</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// OK today</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// proposed: xs is a pack of length three containing an X, Y, and a Z</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// proposed: x is an X, rest is a pack of length two</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>; <span class="co">// proposed: rest is an empty pack</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest, z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;  <span class="co">// proposed: x is an X, rest is a pack of length one</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>                             <span class="co">//   consisting of the Y, z is a Z</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">auto</span> <span class="op">[...</span>a, <span class="op">...</span>b<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// ill-formed: multiple packs</span></span></code></pre></div>
+<p>If we additionally add the structured binding customization machinery to <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code>, this could greatly simplify generic code:</p>
 <table style="width:100%">
-<tr><th></th><th>Today</th><th>Proposed</th></tr>
 <tr>
-<td>
-<p>Implementing<br/><code class="language-cpp">std::apply()</code></p>
-</td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-c++">namespace detail {
-    template &lt;class F, class Tuple, std::size_t... I&gt;
-    constexpr decltype(auto) apply_impl(F &amp;&amp;f, Tuple &amp;&amp;t,
-        std::index_sequence&lt;I...&gt;) 
-    {
-        return std::invoke(std::forward&lt;F&gt;(f),
-            std::get&lt;I&gt;(std::forward&lt;Tuple&gt;(t))...);
-    }
-}
-
-template &lt;class F, class Tuple&gt;
-constexpr decltype(auto) apply(F &amp;&amp;f, Tuple &amp;&amp;t) 
-{
-    return detail::apply_impl(
-        std::forward&lt;F&gt;(f), std::forward&lt;Tuple&gt;(t),
-        std::make_index_sequence&lt;std::tuple_size_v&lt;
-            std::decay_t&lt;Tuple&gt;&gt;&gt;{});
-}</code></pre>
-</td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;class F, class Tuple&gt;
-constexpr decltype(auto) apply(F &amp;&amp;f, Tuple &amp;&amp;t)
-{
-    auto&amp;&amp; [...elems] = t;
-    return std::invoke(std::forward&lt;F&gt;(f),
-        forward_like&lt;Tuple, decltype(elems)&gt;(elems)...);
-}</code></pre>
+<th>
+Today
+</th>
+<th>
+Proposed
+</th>
+</tr>
+<tr>
+<td colspan="2">
+<center>
+Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<span class="op">()</span></code>
+</center>
 </td>
 </tr>
 <tr>
 <td>
-<p><code class="language-cpp">dot_product()</code>,<br/>nested</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">namespace</span> detail <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> Tuple, std<span class="op">::</span><span class="dt">size_t</span><span class="op">...</span> I<span class="op">&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> apply_impl<span class="op">(</span>F <span class="op">&amp;&amp;</span>f, Tuple <span class="op">&amp;&amp;</span>t,</span>
+<span id="cb5-4"><a href="#cb5-4"></a>        std<span class="op">::</span>index_sequence<span class="op">&lt;</span>I<span class="op">...&gt;)</span> </span>
+<span id="cb5-5"><a href="#cb5-5"></a>    <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>        <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)</span>,</span>
+<span id="cb5-7"><a href="#cb5-7"></a>            std<span class="op">::</span>get<span class="op">&lt;</span>I<span class="op">&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Tuple<span class="op">&gt;(</span>t<span class="op">))...)</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="op">}</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a> </span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> Tuple<span class="op">&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> apply<span class="op">(</span>F <span class="op">&amp;&amp;</span>f, Tuple <span class="op">&amp;&amp;</span>t<span class="op">)</span> </span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="op">{</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="cf">return</span> detail<span class="op">::</span>apply_impl<span class="op">(</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>Tuple<span class="op">&gt;(</span>t<span class="op">)</span>,</span>
+<span id="cb5-16"><a href="#cb5-16"></a>        std<span class="op">::</span>make_index_sequence<span class="op">&lt;</span>std<span class="op">::</span>tuple_size_v<span class="op">&lt;</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>            std<span class="op">::</span>decay_t<span class="op">&lt;</span>Tuple<span class="op">&gt;&gt;&gt;{})</span>;</span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    return std::apply([&amp;](auto... p_elems){
-        return std::apply([&amp;](auto... q_elems){
-            return (... + (p_elems * q_elems));
-        }, q)
-    }, p);
-}</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> Tuple<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> apply<span class="op">(</span>F <span class="op">&amp;&amp;</span>f, Tuple <span class="op">&amp;&amp;</span>t<span class="op">)</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[...</span>elems<span class="op">]</span> <span class="op">=</span> t;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)</span>,</span>
+<span id="cb6-6"><a href="#cb6-6"></a>        forward_like<span class="op">&lt;</span>Tuple, <span class="kw">decltype</span><span class="op">(</span>elems<span class="op">)&gt;(</span>elems<span class="op">)...)</span>;</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span></span></code></pre></div>
 </td>
-<td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    // no indirection!
-    auto&amp;&amp; [...p_elems] = p;
-    auto&amp;&amp; [...q_elems] = q;
-    return (... + (p_elems * q_elems));
-}</code></pre>
-</td></tr>
+</tr>
+<tr>
+<td colspan="2">
+<center>
+<code class="sourceCode cpp">dot_product<span class="op">()</span></code>, nested
+</center>
+</td>
+</tr>
 <tr>
 <td>
-<p><code class="language-cpp">dot_product()</code>,</br><code class="language-cpp">index_sequence</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="cf">return</span> std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">...</span> p_elems<span class="op">){</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>        <span class="cf">return</span> std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">...</span> q_elems<span class="op">){</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>            <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>p_elems <span class="op">*</span> q_elems<span class="op">))</span>;</span>
+<span id="cb7-6"><a href="#cb7-6"></a>        <span class="op">}</span>, q<span class="op">)</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="op">}</span>, p<span class="op">)</span>;</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;size_t... Is, class P, class Q&gt;
-auto dot_product(std::index_sequence&lt;Is...&gt;, P p, Q, q) {
-    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
-}
-
-template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    return dot_product(
-        std::make_index_sequence&lt;std::tuple_size_v&lt;P&gt;&gt;{},
-        p, q);
-}</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>    <span class="co">// no indirection!</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[...</span>p_elems<span class="op">]</span> <span class="op">=</span> p;</span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[...</span>q_elems<span class="op">]</span> <span class="op">=</span> q;</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>p_elems <span class="op">*</span> q_elems<span class="op">))</span>;</span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="op">}</span></span></code></pre></div>
+</td>
+</tr>
+<tr>
+<td colspan="2">
+<center>
+<code class="sourceCode cpp">dot_product<span class="op">()</span></code>, with <code class="sourceCode cpp">index_sequence</code>
+</center>
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span><span class="op">...</span> Is, <span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>std<span class="op">::</span>index_sequence<span class="op">&lt;</span>Is<span class="op">...&gt;</span>, P p, Q, q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>p<span class="op">)</span> <span class="op">*</span> std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>q<span class="op">)))</span>;</span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="op">}</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    <span class="cf">return</span> dot_product<span class="op">(</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>        std<span class="op">::</span>make_index_sequence<span class="op">&lt;</span>std<span class="op">::</span>tuple_size_v<span class="op">&lt;</span>P<span class="op">&gt;&gt;{}</span>,</span>
+<span id="cb9-10"><a href="#cb9-10"></a>        p, q<span class="op">)</span>;</span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
-<pre style="background:transparent;border:0px"><code class="language-c++">template &lt;class P, class Q&gt;
-auto dot_product(P p, Q q) {
-    // no helper function necessary!
-    auto [...Is] = std::make_index_sequence&lt;
-        std::tuple_size_v&lt;P&gt;&gt;{};
-    return (... + (std::get&lt;Is&gt;(p) * std::get&lt;Is&gt;(q)));
-}</code></pre>
-</td></tr>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> P, <span class="kw">class</span> Q<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">auto</span> dot_product<span class="op">(</span>P p, Q q<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="co">// no helper function necessary!</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="kw">auto</span> <span class="op">[...</span>Is<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>make_index_sequence<span class="op">&lt;</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>        std<span class="op">::</span>tuple_size_v<span class="op">&lt;</span>P<span class="op">&gt;&gt;{}</span>;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> <span class="op">(</span>std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>p<span class="op">)</span> <span class="op">*</span> std<span class="op">::</span>get<span class="op">&lt;</span>Is<span class="op">&gt;(</span>q<span class="op">)))</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="op">}</span></span></code></pre></div>
+</td>
+</tr>
 </table>
-
-<p>Not only are these implementations more concise, but they are also more functional. I can just as easily use <code class="language-cpp">apply()</code> with user-defined types as I can with <code class="language-cpp">std::tuple</code>:</p>
-<pre class="codehilite"><code class="language-c++">struct Point {
-    int x, y, z;
-};
-
-Point getPoint();
-double calc(int, int, int);
-
-double result = std::apply(calc, getPoint()); // ill-formed today, ok with proposed implementation</code></pre>
-
-
-<h2 id="wording">3. Wording<a class="self-link" href="#wording"></a></h2>
-<p>Add a new grammar option for <em>simple-declaration</em> to 10 [dcl.dcl]:</p>
+<p>Not only are these implementations more concise, but they are also more functional. I can just as easily use <code class="sourceCode cpp">apply<span class="op">()</span></code> with user-defined types as I can with <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">struct</span> Point <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="dt">int</span> x, y, z;</span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="op">}</span>;</span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a>Point getPoint<span class="op">()</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="dt">double</span> calc<span class="op">(</span><span class="dt">int</span>, <span class="dt">int</span>, <span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="dt">double</span> result <span class="op">=</span> std<span class="op">::</span>apply<span class="op">(</span>calc, getPoint<span class="op">())</span>; <span class="co">// ill-formed today, ok with proposed implementation</span></span></code></pre></div>
+<h2 id="other-languages"><span class="header-section-number">3.1</span> Other Languages<a href="#other-languages" class="self-link"></a></h2>
+<p>Python 2 had always allowed for a syntax similar to C++17 structured bindings, where you have to provide all the identifiers:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">&gt;&gt;&gt;</span> a, b, c, d, e <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>) <span class="co"># ok</span></span></code></pre></div>
+<p>But you could not do any more than that. Python 3 went one step further by way of PEP-3132 <span class="citation" data-cites="PEP.3132">[<a href="#ref-PEP.3132" role="doc-biblioref">PEP.3132</a>]</span>. That proposal allowed for a single starred identifier to be used, which would bind to all the elements as necessary:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="op">&gt;&gt;&gt;</span> a, <span class="op">*</span>b, c <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="dv">0</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="op">&gt;&gt;&gt;</span> c</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="dv">4</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="op">&gt;&gt;&gt;</span> b</span>
+<span id="cb2-7"><a href="#cb2-7"></a>[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span></code></pre></div>
+<p>The Python 3 behavior is synonymous with what is being proposed here. Notably, from that PEP:</p>
 <blockquote>
-<i>simple-declaration:</i><br />
-<div style="margin-left: 2em;"><i>decl-specifier-seq</i> <i>init-declarator-list<sub>opt</sub></i> ;<br /></div>
-<div style="margin-left: 2em;"><i>attribute-specifier-seq</i> <i>decl-specifier-seq</i> <i>init-declarator-list</i> ;</div>
-<div style="margin-left: 2em;"><i>attribute-specifier-seq<sub>opt</sub></i> <i>decl-specifier-seq</i> <i>ref-qualifier<sub>opt</sub></i> [ <i>identifier-list</i> ] <i>initializer</i> ;</div>
-<div style="margin-left: 2em;"><ins><i>attribute-specifier-seq<sub>opt</sub></i> <i>decl-specifier-seq</i> <i>ref-qualifier<sub>opt</sub></i> [ <i>identifier-list</i>,<sub>opt</sub> ...<i>identifier</i> ] <i>initializer</i> ;</ins></div>
+<p>Possible changes discussed were:</p>
+<ul>
+<li>Only allow a starred expression as the last item in the exprlist. This would simplify the unpacking code a bit and allow for the starred expression to be assigned an iterator. This behavior was rejected because it would be too surprising.</li>
+</ul>
 </blockquote>
-
-<p>Expand 10 [dcl.dcl] paragraph 8:</p>
+<p>R0 of this proposal only allowed a pack to be introduced as the last item, which was changed in R1.</p>
+<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Add a new grammar option for <em>simple-declaration</em> to 9 [dcl.dcl]:</p>
 <blockquote>
-<p>A <em>simple-declaration</em> with an <em>identifier-list</em> <ins>or an <em>identifier</em> with preceding ellipsis</ins> is called a structured binding declaration ([dcl.struct.bind]). The <em>decl-specifier-seq</em> shall contain only the <em>type-specifier</em> <code class="language-cpp">auto</code> and <em>cv-qualifiers</em>. The <em>initializer</em> shall be of the form "= <em>assignment-expression</em>", of the form "{ <em>assignment-expression</em> }", or of the form "( <em>assignment-expression</em> )", where the <em>assignment-expression</em> is of array or non-union class type.</p>
+<blockquote>
+<div class="line-block"><span class="addu"><em>sb-identifier</em>:</span><br />
+    <span class="addu"><code class="sourceCode cpp"><span class="op">...</span></code> <em>identifier</em></span></div>
 </blockquote>
-<p>Change 11.5 [dcl.struct.bind] paragraph 1:</p>
 <blockquote>
-A structured binding declaration introduces <del>the identifiers v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the <i>identifier-list</i> as</del> names ([basic.scope.declarative]) of <i>structured bindings</i>. <ins>If the declaration contains an <i>identifier-list</i>, the declaration introduces the identifiers v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the <i>identifier-list</i> as names. If the declaration contains an <i>identifier</i> with preceding ellipsis, the declaration introduces a <i>structured binding pack</i> ([temp.variadic]).</ins> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>. 
+<div class="line-block"><span class="addu"><em>sb-identifier-list</em>:</span><br />
+    <span class="addu"><em>identifier</em></span><br />
+    <span class="addu"><em>sb-identifier</em></span><br />
+    <span class="addu"><em>sb-identifier-list</em> <code class="sourceCode cpp">,</code> <em>identifier</em></span><br />
+    <span class="addu"><em>sb-identifier-list</em> <code class="sourceCode cpp">,</code> <em>sb-identifier</em></span><br />
+<br />
+<em>simple-declaration</em>:<br />
+    <em>decl-specifier-seq</em> <em>init-declarator-list</em><sub>opt</sub> <code class="sourceCode cpp">;</code><br />
+    <em>attribute-specifier-seq</em> <em>decl-specifier-seq</em> <em>init-declarator-list</em> <code class="sourceCode cpp">;</code><br />
+    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> <code class="sourceCode cpp"><span class="op">[</span></code> <span class="rm" style="color: #bf0303"><del><em>identifier-list</em></del></span> <span class="addu"><em>sb-identifier-list</em></span> <code class="sourceCode cpp"><span class="op">]</span></code> <em>initializer</em> <code class="sourceCode cpp">;</code></div>
 </blockquote>
-
-<p>Introduce a new paragraph after [dcl.struct.bind] paragraph 1, introducing the term "structured binding size":</p>
-<blockquote>
-<ins>The <i>structured binding size</i> of a type <code>E</code> is the required number of names that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <i>identifier-list</i> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of elements in the <i>identifier-list</i>.
 </blockquote>
-
-<p>Change [dcl.struct.bind] paragraph 2 to define a structured binding size:</p>
+<p>Change 9 [dcl.dcl] paragraph 8:</p>
 <blockquote>
-If <code>E</code> is an array type with element type <code>T</code>, <del>the number of elements in the <i>identifier-list</i></del> <ins>the structured binding size of <code>E</code></ins> shall be equal to the number of elements of <code>E</code>. <del>Each <i>v<sub>i</sub></i></del> <ins>The <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
+<p>A <em>simple-declaration</em> with an <span class="rm" style="color: #bf0303"><del><em>identifier-list</em></del></span> <span class="addu"><em>sb-identifier-list</em></span> is called a structured binding declaration ( [dcl.struct.bind]). The <em>decl-specifier-seq</em> shall contain only the <em>type-specifier</em> <code class="sourceCode cpp"><span class="kw">auto</span></code> and <em>cv-qualifiers</em>. The <em>initializer</em> shall be of the form “= <em>assignment-expression</em>”, of the form “{ <em>assignment-expression</em> }”, or of the form “( <em>assignment-expression</em> )”, where the <em>assignment-expression</em> is of array or non-union class type.</p>
 </blockquote>
-
-<p>Change [dcl.struct.bind] paragraph 3 to define a structured binding size:</p>
+<p>Change 9.5 [dcl.struct.bind] paragraph 1:</p>
 <blockquote>
-Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the <del>number of elements in the <i>identifier-list</i></del> <ins>structured binding size of <code>E</code></ins> shall be equal to the value of that expression. [...] <del>Each <i>v<sub>i</sub></i></del> <ins>The <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
+A structured binding declaration introduces the identifiers v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, … of the <span class="rm" style="color: #bf0303"><del><i>identifier-list</i></del></span> <span class="addu"><i>sb-identifier-list</i></span> as names ([basic.scope.declarative]) of <i>structured bindings</i>. <span class="addu">The declaration shall contain at most one <em>sb-identifier</em>. If the declaration contains an <em>sb-identifier</em>, the declaration introduces a <em>structured binding pack</em> ([temp.variadic]).</span> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.
 </blockquote>
-
-<p>Change [dcl.struct.bind] paragraph 4 to define a structured binding size:</p>
+<p>Introduce a new paragraph after 9.5 [dcl.struct.bind] paragraph 1, introducing the term “structured binding size”:</p>
 <blockquote>
-Otherwise, all of <code>E</code>'s non-static data members shall be direct members of <code>E</code> or of the same base class of <code>E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code>E</code> shall not have an anonymous union member, and the <del>number of elements in the <i>identifier-list</i></del> <ins>structured binding size of <code>E</code></ins> shall be equal to the number of non-static data members of <code>E</code>. Designating the non-static data members of <code>E</code> as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), <del>each <code class="">v<sub>i</i></code></del> <ins>the <i>i</i><sup>th</sup> <i>identifier</i></ins> is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of <code>e</code> and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+<div class="addu">
+<p>The <em>structured binding size</em> of a type <code class="sourceCode cpp">E</code> is the required number of names that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <em>sb-identifier-list</em> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of elements in the <em>sb-identifier-list</em>.</p>
+</div>
 </blockquote>
-
-<p>Add a new clause to 17.6.3 [temp.variadic], after paragraph 3:</p>
+<p>Change 9.5 [dcl.struct.bind] paragraph 3 to define a structured binding size:</p>
 <blockquote>
-<ins>A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i>
-
-```
-auto foo() -> int(&)[2];
-auto [...a] = foo();          // a is a structured binding pack containing 2 elements
-auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements
-auto [e, f, g, ...h] = foo(); // error: too many identifiers
-```
-
-<ins><i>-end example]</i></ins></blockquote>
-
-<p>In 17.6.3 [temp.variadic], change paragraph 4:</p>
-<blockquote>
-<p>A <em>pack</em> is a template parameter pack, a function parameter pack, <del>or</del> an <em>init-capture</em> pack<ins>, or a structured binding pack</ins>. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an <em>init-capture</em> pack is the number of elements in the pack expansion of its <em>initializer</em>.</p>
+If <code>E</code> is an array type with element type <code>T</code>, <span class="rm" style="color: #bf0303"><del>the number of elements in the <i>identifier-list</i></del></span> <span class="addu">the structured binding size of <code>E</code></span> shall be equal to the number of elements of <code>E</code>. <span class="rm" style="color: #bf0303"><del>Each <i>v<sub>i</sub></i></del></span> <span class="addu">The <i>i</i><sup>th</sup> <i>identifier</i></span> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
 </blockquote>
-<p>In 17.6.3 [temp.variadic], paragraph 5 (describing pack expansions) remains unchanged.</p>
-<p>In 17.6.3 [temp.variadic], add a bullet to paragraph 8:</p>
+<p>Change 9.5 [dcl.struct.bind] paragraph 3 to define a structured binding size:</p>
+<blockquote>
+Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E&gt;</code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E&gt;::value</code> shall be a well-formed integral constant expression and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i></del></span> <span class="addu">structured binding size of <code>E</code></span> shall be equal to the value of that expression. […] <span class="rm" style="color: #bf0303"><del>Each <i>v<sub>i</sub></i></del></span> <span class="addu">The <i>i</i><sup>th</sup> <i>identifier</i></span> is the name of an lvalue of type <code class>T<sub>i</sub></code> that refers to the object bound to <code class>r<sub>i</sub></code>; the referenced type is <code class>T<sub>i</sub></code>.
+</blockquote>
+<p>Change 9.5 [dcl.struct.bind] paragraph 5 to define a structured binding size:</p>
+<blockquote>
+Otherwise, all of <code>E</code>’s non-static data members shall be direct members of <code>E</code> or of the same base class of <code>E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code>E</code> shall not have an anonymous union member, and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i></del></span> <span class="addu">structured binding size of <code>E</code></span> shall be equal to the number of non-static data members of <code>E</code>. Designating the non-static data members of <code>E</code> as <code class>m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), <span class="rm" style="color: #bf0303"><del>each <code class>v<sub>i</i></code></del></span> <span class="addu">the <i>i</i><sup>th</sup> <i>identifier</i></span> is the name of an lvalue that refers to the member <code class>m<sub>i</sub></code> of <code>e</code> and whose type is <i>cv</i> <code class>T<sub>i</sub></code>, where <code class>T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class>T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+</blockquote>
+<p>Add a new clause to 13.6.3 [temp.variadic], after paragraph 3:</p>
+<blockquote>
+<div class="addu">
+<p>A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
+<span id="cb14-2"><a href="#cb14-2"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
+<span id="cb14-3"><a href="#cb14-3"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span>
+<span id="cb14-4"><a href="#cb14-4"></a>auto [e, f, g, ...h] = foo(); // error: too many identifiers</span></code></pre></div>
+<ul>
+<li><em>end example]</em></li>
+</ul>
+</div>
+</blockquote>
+<p>In 13.6.3 [temp.variadic], change paragraph 4:</p>
+<blockquote>
+<p>A <em>pack</em> is a template parameter pack, a function parameter pack, <span class="rm" style="color: #bf0303"><del>or</del></span> an <em>init-capture</em> pack<span class="addu">, or a structured binding pack</span>. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an <em>init-capture</em> pack is the number of elements in the pack expansion of its <em>initializer</em>.</p>
+</blockquote>
+<p>In 13.6.3 [temp.variadic], paragraph 5 (describing pack expansions) remains unchanged.</p>
+<p>In 13.6.3 [temp.variadic], add a bullet to paragraph 8:</p>
 <blockquote>
 Such an element, in the context of the instantiation, is interpreted as follows:
 <ul>
-<li> if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the 
-<i>i</i><sup>th</sup> corresponding type or value template argument;
-<li> if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; otherwise
-<li> if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack<del>.</del> <ins>; otherwise</ins>
-<li><ins> if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.</ins>
+<li>
+if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the <i>i</i><sup>th</sup> corresponding type or value template argument;
+<li>
+if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; <span class="rm" style="color: #bf0303"><del>otherwise</del></span>
+<li>
+if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">; otherwise</span>
+<li>
+<span class="addu">if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.</span>
 </ul>
 </blockquote>
-
-<h2 id="acknowledgements">4. Acknowledgements<a class="self-link" href="#acknowledgements"></a></h2>
+<h1 id="acknowledgements" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Michael Park and Tomasz Kamiński for their helpful feedback.</p>
-<h2 id="references">5. References<a class="self-link" href="#references"></a></h2><ul><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3915.pdf">[N3915]</a><span style="margin-left: 5px;">"apply() call a function with arguments from a tuple (V3)" by Peter Sommerlad, 2014-02-14</span></li><li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0144r2.pdf">[P0144]</a><span style="margin-left: 5px;">"Structured Bindings" by Herb Sutter, 2016-03-16</span></li></ul>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
+
+<div id="refs" role="doc-bibliography">
+<div id="ref-N3915">
+<p>[N3915] Peter Sommerlad. 2014. apply() call a function with arguments from a tuple (V3). <br />
+<a href="https://wg21.link/n3915">https://wg21.link/n3915</a></p>
+</div>
+<div id="ref-P0144R2">
+<p>[P0144R2] Herb Sutter. 2016. Structured Bindings. <br />
+<a href="https://wg21.link/p0144r2">https://wg21.link/p0144r2</a></p>
+</div>
+<div id="ref-P1061R0">
+<p>[P1061R0] Barry Revzin, Jonathan Wakely. 2018. Structured Bindings can introduce a Pack. <br />
+<a href="https://wg21.link/p1061r0">https://wg21.link/p1061r0</a></p>
+</div>
+<div id="ref-P1061R0.Minutes">
+<p>[P1061R0.Minutes] EWGI. 2019. Kona 2019 EWGI: P1061R0. <br />
+<a href="http://wiki.edg.com/bin/view/Wg21kona2019/P1061">http://wiki.edg.com/bin/view/Wg21kona2019/P1061</a></p>
+</div>
+<div id="ref-PEP.3132">
+<p>[PEP.3132] Georg Brandl. 2007. PEP 3132 – Extended Iterable Unpacking. <br />
+<a href="https://www.python.org/dev/peps/pep-3132/">https://www.python.org/dev/peps/pep-3132/</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
 </html>
