@@ -1037,6 +1037,36 @@ get_if(variant<Types...>* v) noexcept {
 Directly indexing into the union variant members makes the implementation much
 easier to write and read. Not needing a recursive union template is a nice bonus.
 
+## Enumerating over a pack
+
+As another example, let's say we want to take a parameter pack and print its
+contents along with an index. Here are some ways we could do that with this
+proposal (assuming expansion statements):
+
+```cpp
+// iterate over the indices, and indes into the pack
+template <typename... Ts>
+void enumerate1(Ts... ts)
+{
+    for ... (constexpr auto I : view::iota(0u, sizeof...(Ts))) {
+        cout << I << ' ' << ts...[I] << '\n';
+    }
+}
+
+// construct a new pack of tuples
+template <typename... Ts>
+void enumerate2(Ts... ts)
+{
+    constexpr auto indices = view::iota(0u, sizeof...(Ts));
+    auto enumerated = tuple{tuple{indices.[:], ts}...};
+    for ... (auto [i, t] : enumerated) {
+        cout << i << ' ' << t << '\n';
+    }
+}
+```
+
+
+
 ## What about Reflection?
 
 Two recent reflection papers ([@P1240R0] and [@P1717R0]) provide solutions for
