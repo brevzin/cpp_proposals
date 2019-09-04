@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-01" />
+  <meta name="dcterms.date" content="2019-09-03" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-01</td>
+    <td>2019-09-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -729,7 +729,12 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <span id="cb11-8"><a href="#cb11-8"></a><span class="dt">double</span> result <span class="op">=</span> std<span class="op">::</span>apply<span class="op">(</span>calc, getPoint<span class="op">())</span>; <span class="co">// ill-formed today, ok with proposed implementation</span></span></code></pre></div>
 <h2 id="other-languages"><span class="header-section-number">3.1</span> Other Languages<a href="#other-languages" class="self-link"></a></h2>
 <p>Python 2 had always allowed for a syntax similar to C++17 structured bindings, where you have to provide all the identifiers:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">&gt;&gt;&gt;</span> a, b, c, d, e <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>) <span class="co"># ok</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">&gt;&gt;&gt;</span> a, b, c, d, e <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>) <span class="co"># ok</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="op">&gt;&gt;&gt;</span> a, <span class="op">*</span>b <span class="op">=</span> <span class="bu">range</span>(<span class="dv">3</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  File <span class="st">&quot;&lt;stdin&gt;&quot;</span>, line <span class="dv">1</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    a, <span class="op">*</span>b <span class="op">=</span> <span class="bu">range</span>(<span class="dv">3</span>)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>       <span class="op">^</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="pp">SyntaxError</span>: invalid syntax       </span></code></pre></div>
 <p>But you could not do any more than that. Python 3 went one step further by way of PEP-3132 <span class="citation" data-cites="PEP.3132">[<a href="#ref-PEP.3132" role="doc-biblioref">PEP.3132</a>]</span>. That proposal allowed for a single starred identifier to be used, which would bind to all the elements as necessary:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="op">&gt;&gt;&gt;</span> a, <span class="op">*</span>b, c <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>)</span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="op">&gt;&gt;&gt;</span> a</span>

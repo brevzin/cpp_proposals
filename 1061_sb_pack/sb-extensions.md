@@ -218,6 +218,11 @@ where you have to provide all the identifiers:
 
 ```python
 >>> a, b, c, d, e = range(5) # ok
+>>> a, *b = range(3)
+  File "<stdin>", line 1
+    a, *b = range(3)
+       ^
+SyntaxError: invalid syntax       
 ```
 
 But you could not do any more than that. Python 3 went one step further by way
