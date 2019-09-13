@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-12" />
+  <meta name="dcterms.date" content="2019-09-13" />
   <title>forwarding-range&lt;T&gt; is too subtle</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-12</td>
+    <td>2019-09-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -590,7 +590,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-11"><a href="#cb1-11"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb1-12"><a href="#cb1-12"></a>  <span class="kw">concept</span> <em>forwarding-range</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
 <span id="cb1-13"><a href="#cb1-13"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <em>range-impl</em><span class="op">&lt;</span>T<span class="op">&gt;</span>;</span></code></pre></div>
-<h2 id="lvalues"><span class="header-section-number">2.1</span> Lvalues<a href="#lvalues" class="self-link"></a></h2>
+<h2 id="lvalues"><span class="header-section-number">2.1</span> lvalues<a href="#lvalues" class="self-link"></a></h2>
 <p>Let’s start with the lvalue case, since it’s easier.</p>
 <p>Consider <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>L<span class="op">&amp;&gt;</span></code>. This calls into <em><code class="sourceCode cpp">range<span class="op">-</span>impl</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>L<span class="op">&amp;&gt;</span></code> twice, and leads to us trying to invoke <code class="sourceCode cpp">ranges<span class="op">::</span>begin</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end</code> with an lvalue of type <code class="sourceCode cpp">L</code>. Ignoring arrays, <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code> on an lvalue can either be (from <a href="http://eel.is/c++draft/range.access.begin">[range.access.begin]</a>):</p>
 <ul>
@@ -599,7 +599,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>That’s basically what we would expect from our C++11 experience. Member or non-member <code class="sourceCode cpp">begin<span class="op">()</span></code>, either way works fine. Straightforward and unsurprising.</p>
 <p>The same process holds for <code class="sourceCode cpp">end<span class="op">()</span></code>, so I’ll just skip it for brevity here on out.</p>
-<h2 id="rvalues"><span class="header-section-number">2.2</span> Rvalues<a href="#rvalues" class="self-link"></a></h2>
+<h2 id="rvalues"><span class="header-section-number">2.2</span> rvalues<a href="#rvalues" class="self-link"></a></h2>
 <p>Alright, now what about rvalues? When does <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>R<span class="op">&gt;</span></code> hold? Now we check both <em><code class="sourceCode cpp">range<span class="op">-</span>impl</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>R<span class="op">&amp;&gt;</span></code> and <em><code class="sourceCode cpp">range<span class="op">-</span>impl</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>R<span class="op">&gt;</span></code>. The former we just went through - we either need a member or non-member <code class="sourceCode cpp">begin<span class="op">()</span></code>. But the rvalue case is a little different. The member <code class="sourceCode cpp">begin<span class="op">()</span></code> was <em>only</em> considered if our expression, <code class="sourceCode cpp">E</code>, was an lvalue. But now it’s an rvalue. Which means we <em>only</em> are looking for:</p>
 <ul>
 <li><em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>begin<span class="op">(</span>E<span class="op">))</span></code> if that is a valid expression (and an iterator) with some extra poison pill overloads so as to not match the preexisting <code class="sourceCode cpp">std<span class="op">::</span>begin</code>.</li>
@@ -610,16 +610,32 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>But let’s flip the causality.</p>
 <p>If your type, <code class="sourceCode cpp">R</code>, has non-member <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> (and assuming these return an iterator/sentinel), then <code class="sourceCode cpp">R</code> satisfies <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>. Which is to say, if at some point you decided that you wanted to opt in to being a range with non-member functions instead of member functions, you have just <em>also</em> opted in to stating that your iterators can safely outlive your range.</p>
 <p>I find this to be incredibly subtle and quite surprising. It’s imposing a lot of meaning onto a choice that up until now had no meaning associated with it at all.</p>
-<h2 id="history"><span class="header-section-number">2.4</span> History<a href="#history" class="self-link"></a></h2>
-<p>The origin of this design was <span class="citation" data-cites="P0970R1">[<a href="#ref-P0970R1" role="doc-biblioref">P0970R1</a>]</span>, which describes the earlier problems with <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> thusly:</p>
+<h2 id="doesnt-quite-sufficiently-restrict"><span class="header-section-number">2.4</span> Doesn’t quite sufficiently restrict<a href="#doesnt-quite-sufficiently-restrict" class="self-link"></a></h2>
+<p>Nominally, it might seem that the design requires rvalue reference overloads and you could say that - well, if the type added non-member <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> that took rvalue references, then surely that is some kind of opt-in to iterator validity outliving the range.</p>
+<p>But we don’t have the language facilities to really check that these functions take, specifically, rvalue references (or values). Consider:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">struct</span> my_vector <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>;</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">auto</span> begin<span class="op">(</span>my_vector<span class="op">&lt;</span>T<span class="op">&gt;&amp;)</span>       <span class="op">-&gt;</span> T<span class="op">*</span>;</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">auto</span> begin<span class="op">(</span>my_vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">*</span>;</span></code></pre></div>
+<p>This is a perfectly reasonable C++11 range, yet <code class="sourceCode cpp">my_vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> satisfies <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> because the rvalue invocation would happily match the <code class="sourceCode cpp"><span class="kw">const</span><span class="op">&amp;</span></code> overload.</p>
+<h2 id="history"><span class="header-section-number">2.5</span> History<a href="#history" class="self-link"></a></h2>
+<p>This design comes from <span class="citation" data-cites="stl2.547">[<a href="#ref-stl2.547" role="doc-biblioref">stl2.547</a>]</span>, with the expressed intent:</p>
+<blockquote>
+<p>Redesign begin/end CPOs to eliminate deprecated behavior and to force range types to opt in to working with rvalues, thereby giving users a way to detect that, for a particular range type, iterator validity does not depend on the range’s lifetime.</p>
+</blockquote>
+<p>which led to <span class="citation" data-cites="P0970R1">[<a href="#ref-P0970R1" role="doc-biblioref">P0970R1</a>]</span>, which describes the earlier problems with <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> thusly:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> For the sake of compatibility with <code class="sourceCode cpp">std<span class="op">::</span>begin</code> and ease of migration, <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>begin</code> accepted rvalues and treated them the same as <code class="sourceCode cpp"><span class="kw">const</span></code> lvalues. This behavior was deprecated because it is fundamentally unsound: any iterator returned by such an overload is highly likely to dangle after the full-expression that contained the invocation of <code class="sourceCode cpp">begin</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> Another problem, and one that until recently seemed unrelated to the design of <code class="sourceCode cpp">begin</code>, was that algorithms that return iterators will wrap those iterators in <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>dangling<span class="op">&lt;&gt;</span></code> if the range passed to them is an rvalue. This ignores the fact that for some range types — <code class="sourceCode cpp">std<span class="op">::</span>span</code>, <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>, and P0789’s <code class="sourceCode cpp">subrange</code>, in particular — the iterator’s validity does not depend on the range’s lifetime at all. In the case where an rvalue of one of the above types is passed to an algorithm, returning a wrapped iterator is totally unnecessary.</p>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> The author believed that to fix the problem with <code class="sourceCode cpp">subrange</code> and <code class="sourceCode cpp">dangling</code> would require the addition of a new trait to give the authors of range types a way to say whether its iterators can safely outlive the range. That felt like a hack.</p>
 </blockquote>
-<p>This paper was presented in Rapperswil 2018, partially jointly with <span class="citation" data-cites="P0896R1">[<a href="#ref-P0896R1" role="doc-biblioref">P0896R1</a>]</span>, and as far as I can tell from the minutes, this subtlety was no discussed.</p>
+<p>This paper was presented in Rapperswil 2018, partially jointly with <span class="citation" data-cites="P0896R1">[<a href="#ref-P0896R1" role="doc-biblioref">P0896R1</a>]</span>, and as far as I can tell from the minutes, this subtlety was not discussed.</p>
 <p>In my opinion, the addition of a new trait does not feel like a hack.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> On the contrary, I think it’s absolutely essential that functionality like this be explicitly opted into. Moreover, this particular functionality is very rare - so the amount of noise generated by this extra specializations is approximately zero.</p>
-<h2 id="and-also"><span class="header-section-number">2.5</span> And also…<a href="#and-also" class="self-link"></a></h2>
+<h2 id="why-rangesbegin-on-an-rvalue"><span class="header-section-number">2.6</span> Why <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> on an rvalue?<a href="#why-rangesbegin-on-an-rvalue" class="self-link"></a></h2>
+<p>The design of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is based on the ability to invoke <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> on an rvalue. But what is the actual motivation of doing such a thing? Why would I want to forward a range into <code class="sourceCode cpp">begin<span class="op">()</span></code>? Even in contexts of algorithms taking <code class="sourceCode cpp">range</code>s by forwarding reference, we could just call <code class="sourceCode cpp">begin<span class="op">()</span></code> on the lvalue range that we get passed in. It’s not like any iterator transformations are performed - we get the same iterator either way (and the cases in which we would <em>not</em> get the same iterator are part of the motivation for this paper).</p>
+<p>The machinery for <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range liftime.</p>
+<h2 id="and-also"><span class="header-section-number">2.7</span> And also…<a href="#and-also" class="self-link"></a></h2>
 <p>Moreover, the current definition doesn’t even work. The criteria laid out in <a href="http://eel.is/c++draft/range.range#5">[range.range]/5</a> are:</p>
 <blockquote>
 <p>Given an expression <code class="sourceCode cpp">E</code> such that <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code> is <code class="sourceCode cpp">T</code> and an lvalue <code class="sourceCode cpp">t</code> that denotes the same object as <code class="sourceCode cpp">E</code>, <code class="sourceCode cpp">T</code> models <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> only if</p>
@@ -631,34 +647,42 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Every type in the standard library that is intended to model <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> has both the required non-member <code class="sourceCode cpp">begin<span class="op">()</span></code>/<code class="sourceCode cpp">end<span class="op">()</span></code> and also has member <code class="sourceCode cpp">begin<span class="op">()</span></code>/<code class="sourceCode cpp">end<span class="op">()</span></code> (you can see the synposes for <a href="http://eel.is/c++draft/span.overview"><code class="sourceCode cpp">span</code></a>, <a href="http://eel.is/c++draft/string.view.template"><code class="sourceCode cpp">string_view</code></a>, and <a href="http://eel.is/c++draft/range.subrange"><code class="sourceCode cpp">subrange</code></a>). Which means that <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>t<span class="op">)</span></code> aren’t going to be expression-equivalent since they call different functions - the former calls the non-member <code class="sourceCode cpp">begin</code> and the latter calls the member <code class="sourceCode cpp">begin</code>.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h2 id="trait"><span class="header-section-number">3.1</span> Trait<a href="#trait" class="self-link"></a></h2>
 <p>Introduce a new trait, with some meaningful name:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">struct</span> iterators_can_outlive_range <span class="op">:</span> std<span class="op">::</span>false_type</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>  <span class="kw">struct</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span> <span class="op">:</span> std<span class="op">::</span>true_true</span>
-<span id="cb2-7"><a href="#cb2-7"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb2-8"><a href="#cb2-8"></a>  </span>
-<span id="cb2-9"><a href="#cb2-9"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a>  <span class="kw">struct</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&amp;&amp;&gt;</span> <span class="op">:</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
-<span id="cb2-11"><a href="#cb2-11"></a>  <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">struct</span> iterators_can_outlive_range <span class="op">:</span> std<span class="op">::</span>false_type</span>
+<span id="cb3-3"><a href="#cb3-3"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>  <span class="kw">struct</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span> <span class="op">:</span> std<span class="op">::</span>true_true</span>
+<span id="cb3-7"><a href="#cb3-7"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb3-8"><a href="#cb3-8"></a></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>  <span class="kw">struct</span> iterators_can_outlive_range<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&gt;</span> <span class="op">:</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb3-12"><a href="#cb3-12"></a></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>  <span class="kw">struct</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&amp;&amp;&gt;</span> <span class="op">:</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<h2 id="concept"><span class="header-section-number">3.2</span> Concept<a href="#concept" class="self-link"></a></h2>
 <p>Change the definition of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> to look at this type trait:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">concept</span> <em>forwarding-range</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&gt;::</span>value;</span></code></pre></div>
-<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> to be agnostic to value category for considering member and non-member functions. That is:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">concept</span> <em>forwarding-range</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> iterators_can_outlive_range<span class="op">&lt;</span>T<span class="op">&gt;::</span>value;</span></code></pre></div>
+<h2 id="cpo"><span class="header-section-number">3.3</span> CPO<a href="#cpo" class="self-link"></a></h2>
+<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The name <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code> denotes a customization point object. The expression <code class="sourceCode cpp">ranges​<span class="op">::</span>​​begin<span class="op">(</span>E<span class="op">)</span></code> for some subexpression <code class="sourceCode cpp">E</code> is expression-equivalent to:</p>
 <ul>
+<li><span class="marginalizedparent"><a class="marginalized">(1.0)</a></span> <span class="addu">If <code class="sourceCode cpp">E</code> is an rvalue, <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed.</span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span><code class="sourceCode cpp">E <span class="op">+</span> <span class="dv">0</span></code> if <code class="sourceCode cpp">E</code> is <span class="rm" style="color: #bf0303"><del>an lvalue</del></span> of array type ([basic.compound]).</li>
-<li>(1.2){.pnum} Otherwise, <span class="rm" style="color: #bf0303"><del>if E is an lvalue,</del></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>begin<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <span class="rm" style="color: #bf0303"><del>if E is an lvalue,</del></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>begin<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>begin<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that includes the declarations:</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span></code></pre></div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code>.</p>
 </div>
 <ul>
@@ -666,7 +690,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </blockquote>
 <p>And similarly for <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code>.</p>
-<p>And lastly, add specializations of <code class="sourceCode cpp">iterators_can_outlive_range</code> for <code class="sourceCode cpp">basic_string_view</code>, <code class="sourceCode cpp">span</code>, and <code class="sourceCode cpp">subrange</code>.</p>
+<h2 id="library-opt-in"><span class="header-section-number">3.4</span> Library opt-in<a href="#library-opt-in" class="self-link"></a></h2>
+<p>And lastly, add specializations of <code class="sourceCode cpp">iterators_can_outlive_range</code> for <code class="sourceCode cpp">basic_string_view</code>, <code class="sourceCode cpp">span</code>, <code class="sourceCode cpp">subrange</code>, and <code class="sourceCode cpp">iota_view</code>.</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
@@ -678,12 +703,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[P0970R1] Eric Niebler. 2018. Better, Safer Range Access Customization Points. <br />
 <a href="https://wg21.link/p0970r1">https://wg21.link/p0970r1</a></p>
 </div>
+<div id="ref-stl2.429">
+<p>[stl2.429] Casey Carter. 2018. Consider removing support for rvalue ranges from range access CPOs. <br />
+<a href="https://github.com/ericniebler/stl2/issues/429">https://github.com/ericniebler/stl2/issues/429</a></p>
+</div>
+<div id="ref-stl2.547">
+<p>[stl2.547] Eric Niebler. 2018. Redesign begin/end CPOs to eliminate deprecated behavior. <br />
+<a href="https://github.com/ericniebler/stl2/issues/547">https://github.com/ericniebler/stl2/issues/547</a></p>
+</div>
 </div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>There is a hypothetical kind of range where the range itself owns its data by <code class="sourceCode cpp">shared_ptr</code>, and the iterators <em>also</em> share ownership of the data. In this way, the iterators’ validity isn’t tied to the range’s lifetime not because the range doesn’t own the elements (as in the <code class="sourceCode cpp">span</code> case) but because the iterators <em>also</em> own the elements. I’m not sure if anybody has ever written such a thing.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>To the extent that it is a hack, it’s based on the limitation of the concepts language feature.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>To the extent that it is a hack, it’s based on the limitation of the concepts language feature: we lack any ability to be explicit.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 </div>
