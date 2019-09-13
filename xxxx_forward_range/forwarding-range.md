@@ -37,7 +37,7 @@ That is, _`forwarding-range`_ is a very important concept. It is used practicall
 
 # Opting into _`forwarding-range`_
 
-Since C++11, we're all generally familiar with ranges. They haven't changed _too_ much over the years. Ranges are either arrays, a type with member `begin()` and `end()`, nor a type with non-member `begin()` and `end()` that are in an associated namespace. Those functions have to return iterators. Up through C++20, all the algorithms required both iterators to have the same type - although in C++17, the range-based for statement was relaxed to allow for the new notion of a Sentinel, which could have a different type from the iterator.
+Since C++11, we're all generally familiar with ranges. They haven't changed _too_ much over the years. Ranges are either arrays, a type with member `begin()` and `end()`, or a type with non-member `begin()` and `end()` that are in an associated namespace. Those functions have to return iterators. Up through C++20, all the algorithms required both iterators to have the same type - although in C++17, the range-based for statement was relaxed to allow for the new notion of a Sentinel, which could have a different type from the iterator.
 
 I'm just repeating what everyone already knows, just so we're all on the same page. And I actually just want to repeat it one more time. Since C++11, we've had this language concept of a range that could _either_ have member _or_ non-member functions for `begin()` and `end()` and these have entirely the same semantics. If you're the kind of person that prefers to write `begin(c)` over `c.begin()`, you could go ahead and write your containers with _only_ non-member accessors and that would work without any issues.
 
@@ -70,7 +70,7 @@ Consider _`forwarding-range`_`<L&>`. This calls into _`range-impl`_`<L&>` twice,
 - _`decay-copy`_`(E.begin())` if that is a valid expression (and an iterator), or
 - _`decay-copy`_`(begin(E))` if that is a valid expression (and an iterator) with some extra poison pill overloads so as to not match the preexisting `std::begin`.
 
-That's basically what we would expect from our C++11 experience. Member or non-member `begin()`, either way works fine. Straightforward and expected.
+That's basically what we would expect from our C++11 experience. Member or non-member `begin()`, either way works fine. Straightforward and unsurprising.
 
 The same process holds for `end()`, so I'll just skip it for brevity here on out.
 
