@@ -25,7 +25,7 @@ The reason for the extra `!disable_sized_range<remove_cvref_t<T>>` check is that
 
 The existence of the type trait makes sense. However, why does it have to be a _negative_, that is then checked _against_? Double negatives are needlessly difficult to understand. Moreover, this type trait will be very rarely opted into.
 
-If we make it positive, that is `enable_sized_range`, and adopt [@P1870R0], then we well have three opt-in concepts which come with type traits named `enable_FOO`.
+If we make it positive, that is `enable_sized_range`, and adopt [@P1870R0], then we well have three opt-in concepts which come with type traits named `enable_${concept_name}`, which is pretty nice.
 
 # Proposal
 
