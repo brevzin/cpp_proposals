@@ -27,6 +27,8 @@ And even in the cases where C++17 could solve the problem just fine, writing con
 
 But there are many problems in the world of generic programming that are not simply constraining overload sets - and C++20 Concepts does not solve them. But they're such closely related problems, that perhaps a future incarnation of them should. I'm going to go through a few such problems: [associated types](#associated-types), [explicit opt-in/opt-out](#explicit-opt-inopt-out), [customization](#customization), and [type erasure](#type-erasure).
 
+I also want to make something clear up front. Many of the examples in this paper come from Ranges, so it might be easy to conclude from this that I consider Ranges to be some overly complex mess. This conclusion is the furthest thing from the truth. I use Ranges as examples precisely because I consider Ranges to be the most complete, well thought out, and generally best possible use of concepts there is. This paper exists because I do not know if it is possible to do better with the language tools that we have.
+
 # Associated Types
 
 A C++20 `concept` is a predicate on types (or values or templates, but let's just say types for simplicity). It simply provides a yes or no answer to a question. For many concepts, that is completely sufficient. Some type `T` either models `std::equality_comparable` or it does not - there's no other relevant information in that question. It's easy to come up with many examples like this.
