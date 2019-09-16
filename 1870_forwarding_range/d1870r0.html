@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-15" />
+  <meta name="dcterms.date" content="2019-09-16" />
   <title>forwarding-range&lt;T&gt; is too subtle</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-15</td>
+    <td>2019-09-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -573,7 +573,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>That is, <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is a very important concept. It is used practically everywhere. It also conveys a pretty subtle and very rare feature of a type: that its iterators can outlive it. Syntactically, there is no difference between a <code class="sourceCode cpp">range</code>, a <code class="sourceCode cpp">view</code>, and a <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>, so the question is - how does a type declare itself to have this feature?</p>
 <h1 id="naming" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Naming<a href="#naming" class="self-link"></a></h1>
-<p>The name <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is problematic. There is a concept <code class="sourceCode cpp">forward_range</code> which is completely unrelated. A fairly common first response is that it has something to do with forwarding iterators. Also the concept is still exposition-only, despite being a fairly important concept that people may want to use in their own code. This can be worked around:</p>
+<p>The name <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is problematic. There is a concept <code class="sourceCode cpp">std<span class="op">::</span>forward_range</code> which is completely unrelated. A fairly common first response is that it has something to do with forwarding iterators. But the name actually comes from the question of whether you can use a forwarding reference <code class="sourceCode cpp">range</code> safely.</p>
+<p>Also the concept is still exposition-only, despite being a fairly important concept that people may want to use in their own code. This can be worked around:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">concept</span> my_forwarding_range <span class="op">=</span> std<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a>    <span class="op">&amp;&amp;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, std<span class="op">::</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span></code></pre></div>
@@ -610,7 +611,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This paper was presented in Rapperswil 2018, partially jointly with <span class="citation" data-cites="P0896R1">[<a href="#ref-P0896R1" role="doc-biblioref">P0896R1</a>]</span>, and as far as I can tell from the minutes, this subtlety was not discussed.</p>
 <h2 id="why-rangesbegin-on-an-rvalue"><span class="header-section-number">3.2</span> Why <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> on an rvalue?<a href="#why-rangesbegin-on-an-rvalue" class="self-link"></a></h2>
 <p>The design of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is based on the ability to invoke <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> on an rvalue. But what is the actual motivation of doing such a thing? Why would I want to forward a range into <code class="sourceCode cpp">begin<span class="op">()</span></code>? Even in contexts of algorithms taking <code class="sourceCode cpp">range</code>s by forwarding reference, we could just call <code class="sourceCode cpp">begin<span class="op">()</span></code> on the lvalue range that we get passed in. It’s not like any iterator transformations are performed - we get the same iterator either way (and the cases in which we would <em>not</em> get the same iterator are part of the motivation for this paper).</p>
-<p>The machinery for <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range liftime.</p>
+<p>The machinery for <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range lifetime.</p>
 <h2 id="issues-with-overloading"><span class="header-section-number">3.3</span> Issues with overloading<a href="#issues-with-overloading" class="self-link"></a></h2>
 <p>In <span class="citation" data-cites="stl2.592">[<a href="#ref-stl2.592" role="doc-biblioref">stl2.592</a>]</span>, Eric Niebler points out that the current wording has the non-member <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> for <code class="sourceCode cpp">subrange</code> taking it by rvalue reference instead of by value, meaning that <code class="sourceCode cpp"><span class="kw">const</span> subrange</code> doesn’t count as a <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>. But there is a potentially broader problem, which is that overload resolution will consider the <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> functions for <code class="sourceCode cpp">subrange</code> even in contexts where they would be a worse match than the poison pill (i.e. they would involve conversions), and some of those contexts could lead to hard instantiation errors. So Eric suggests that the overload should be:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">friend</span> <span class="kw">constexpr</span> I begin<span class="op">(</span>same_as<span class="op">&lt;</span>subrange<span class="op">&gt;</span> <span class="kw">auto</span> r<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> r<span class="op">.</span>begin<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
@@ -636,26 +637,28 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-3"><a href="#cb5-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">(</span>is_lvalue_reference_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">||</span> enable_safe_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span>;</span></code></pre></div>
 <p>Replace all the uses of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code> with <code class="sourceCode cpp">safe_range<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <h2 id="cpo"><span class="header-section-number">4.3</span> CPO<a href="#cpo" class="self-link"></a></h2>
-<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is:</p>
+<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is (the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also <span class="citation" data-cites="LWG3247">[<a href="#ref-LWG3247" role="doc-biblioref">LWG3247</a>]</span>):</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The name <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code> denotes a customization point object. The expression <code class="sourceCode cpp">ranges​<span class="op">::</span>​​begin<span class="op">(</span>E<span class="op">)</span></code> for some subexpression <code class="sourceCode cpp">E</code> is expression-equivalent to:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(1.0)</a></span> <span class="addu">If <code class="sourceCode cpp">E</code> is an rvalue, <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed.</span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span><code class="sourceCode cpp">E <span class="op">+</span> <span class="dv">0</span></code> if <code class="sourceCode cpp">E</code> is <span class="rm" style="color: #bf0303"><del>an lvalue</del></span> of array type ([basic.compound]).</li>
 <li><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <span class="rm" style="color: #bf0303"><del>if <span><code class="sourceCode cpp">E</code></span> is an lvalue,</del></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>begin<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>begin<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that includes the declarations:</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>begin<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code> with overload resolution performed in a context that includes the declaration<span class="rm" style="color: #bf0303"><del>s</del></span>:</li>
 </ul>
-<div class="rm" style="color: #bf0303">
-
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span></code></pre></div>
-<p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code>.</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a><span class="st">- template&lt;class T&gt; void begin(T&amp;&amp;) = delete;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="st">- template&lt;class T&gt; void begin(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="va">+ void begin();</span></span></code></pre></div>
 </div>
+</blockquote>
+<p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code>.</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> Otherwise, <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed. [ Note: This case can result in substitution failure when <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> appears in the immediate context of a template instantiation. <em>— end note</em> ]</li>
 </ul>
 </blockquote>
-<p>And similarly for <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code>.</p>
+<p>And similarly for <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>c<span class="op">?</span>r<span class="op">?{</span>begin,end<span class="op">}</span></code>.</p>
 <h2 id="library-opt-in"><span class="header-section-number">4.4</span> Library opt-in<a href="#library-opt-in" class="self-link"></a></h2>
 <p>And lastly, add specializations of <code class="sourceCode cpp">enable_safe_range</code> for all specializations of <code class="sourceCode cpp">basic_string_view</code>, <code class="sourceCode cpp">span</code>, and <code class="sourceCode cpp">subrange</code>. Remove the non-member <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> functions for each of these.</p>
 <h1 id="acknowledgements" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
@@ -663,6 +666,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
+<div id="ref-LWG3247">
+<p>[LWG3247] Casey Carter. ranges::iter_move should perform ADL-only lookup of iter_move. <br />
+<a href="https://wg21.link/lwg3247">https://wg21.link/lwg3247</a></p>
+</div>
 <div id="ref-P0896R1">
 <p>[P0896R1] Eric Niebler, Casey Carter. 2018. Merging the Ranges TS. <br />
 <a href="https://wg21.link/p0896r1">https://wg21.link/p0896r1</a></p>

@@ -74,7 +74,7 @@ Because we don't have a way to express associated types, we have to solve this p
 
 C++20 concepts are completely implicit. But sometimes, implicit isn't really what we want. We have `explicit` for type conversions precisely because we understand that sometimes implicit conversions are good and safe and sometimes they are not. Type adherence to a concept is really no different. There are many cases where a type might fit the _syntactic_ requirements of a concept but we don't have a way of checking that it meets the _semantic_ requirements of a concept, and those semantics might be important enough to merit explicit action by the user.
 
-One way to allow explicit control in concept definitions is to defer to type traits. For instance, the `view` and `sized_range` concepts in the standard library come with type traits that allow for explicit tuning:
+One way to allow explicit control in concept definitions is to defer to type traits. For instance, the `view`, `sized_range`, and `sized_sentinel_for` concepts in the standard library come with type traits that allow for explicit tuning:
 
 ```cpp
 template<class T>
@@ -86,6 +86,15 @@ template<class T>
     range<T> &&
     !disable_sized_range<remove_cvref_t<T>> &&
     requires(T& t) { ranges::size(t); };
+    
+template<class S, class I>
+  concept sized_sentinel_for =
+    sentinel_for<S, I> &&
+    !disable_sized_sentinel<remove_cv_t<S>, remove_cv_t<I>> &&
+    requires(const I& i, const S& s) {
+      { s - i } -> same_as<iter_difference_t<I>>;
+      { i - s } -> same_as<iter_difference_t<I>>;
+    }
 ```
 
 Not all `semiregular` `range`s are `view`s, we need an extra knob to control. That's what `enable_view<T>` is for: it's a type trait to help opt types out of being `view`s. The specializations that come with the standard library help _exclude_ types that provide different deep `const` access (since deep `const`-ness implies ownership, e.g. `std::vector<T>`) and then other specific containers in the standard library that don't provide deep `const` because their only provide `const` access (e.g. `std::set<T>`), but also to _include_ types that can opt-in directly (i.e. by way of either inheriting from `view_base` or otherwise specializing `enable_view`).

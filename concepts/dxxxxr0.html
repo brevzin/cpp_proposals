@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-15" />
+  <meta name="dcterms.date" content="2019-09-16" />
   <title>Concepts-Adjacent Problems</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-15</td>
+    <td>2019-09-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -596,7 +596,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Because we don’t have a way to express associated types, we have to solve this problem with a proliferation of type traits. Which means a much larger surface area of things people have to know in order to write any kind of code. Or worse, instead of using the type traits, people resort to reimplementing them - possibly incorrectly.</p>
 <h1 id="explicit-opt-inopt-out" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Explicit opt-in/opt-out<a href="#explicit-opt-inopt-out" class="self-link"></a></h1>
 <p>C++20 concepts are completely implicit. But sometimes, implicit isn’t really what we want. We have <code class="sourceCode cpp"><span class="kw">explicit</span></code> for type conversions precisely because we understand that sometimes implicit conversions are good and safe and sometimes they are not. Type adherence to a concept is really no different. There are many cases where a type might fit the <em>syntactic</em> requirements of a concept but we don’t have a way of checking that it meets the <em>semantic</em> requirements of a concept, and those semantics might be important enough to merit explicit action by the user.</p>
-<p>One way to allow explicit control in concept definitions is to defer to type traits. For instance, the <code class="sourceCode cpp">view</code> and <code class="sourceCode cpp">sized_range</code> concepts in the standard library come with type traits that allow for explicit tuning:</p>
+<p>One way to allow explicit control in concept definitions is to defer to type traits. For instance, the <code class="sourceCode cpp">view</code>, <code class="sourceCode cpp">sized_range</code>, and <code class="sourceCode cpp">sized_sentinel_for</code> concepts in the standard library come with type traits that allow for explicit tuning:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">concept</span> view <span class="op">=</span></span>
 <span id="cb2-3"><a href="#cb2-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> semiregular<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span>
@@ -605,7 +605,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-6"><a href="#cb2-6"></a>  <span class="kw">concept</span> sized_range <span class="op">=</span></span>
 <span id="cb2-7"><a href="#cb2-7"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
 <span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">!</span>disable_sized_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">requires</span><span class="op">(</span>T<span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span> ranges<span class="op">::</span>size<span class="op">(</span>t<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">requires</span><span class="op">(</span>T<span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span> ranges<span class="op">::</span>size<span class="op">(</span>t<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    </span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> S, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>  <span class="kw">concept</span> sized_sentinel_for <span class="op">=</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>    sentinel_for<span class="op">&lt;</span>S, I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>    <span class="op">!</span>disable_sized_sentinel<span class="op">&lt;</span>remove_cv_t<span class="op">&lt;</span>S<span class="op">&gt;</span>, remove_cv_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a>    <span class="kw">requires</span><span class="op">(</span><span class="kw">const</span> I<span class="op">&amp;</span> i, <span class="kw">const</span> S<span class="op">&amp;</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>      <span class="op">{</span> s <span class="op">-</span> i <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb2-17"><a href="#cb2-17"></a>      <span class="op">{</span> i <span class="op">-</span> s <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb2-18"><a href="#cb2-18"></a>    <span class="op">}</span></span></code></pre></div>
 <p>Not all <code class="sourceCode cpp">semiregular</code> <code class="sourceCode cpp">range</code>s are <code class="sourceCode cpp">view</code>s, we need an extra knob to control. That’s what <code class="sourceCode cpp">enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is for: it’s a type trait to help opt types out of being <code class="sourceCode cpp">view</code>s. The specializations that come with the standard library help <em>exclude</em> types that provide different deep <code class="sourceCode cpp"><span class="kw">const</span></code> access (since deep <code class="sourceCode cpp"><span class="kw">const</span></code>-ness implies ownership, e.g. <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>) and then other specific containers in the standard library that don’t provide deep <code class="sourceCode cpp"><span class="kw">const</span></code> because their only provide <code class="sourceCode cpp"><span class="kw">const</span></code> access (e.g. <code class="sourceCode cpp">std<span class="op">::</span>set<span class="op">&lt;</span>T<span class="op">&gt;</span></code>), but also to <em>include</em> types that can opt-in directly (i.e. by way of either inheriting from <code class="sourceCode cpp">view_base</code> or otherwise specializing <code class="sourceCode cpp">enable_view</code>).</p>
 <p>This ability to explicitly state which <code class="sourceCode cpp">semiregular</code> <code class="sourceCode cpp">range</code>s are and are not <code class="sourceCode cpp">view</code>s seems fundamental, but we still need a type trait for that.</p>
 <p>The <code class="sourceCode cpp">sized_range</code> concept illustrates similar functionality. The semantics of <code class="sourceCode cpp">sized_range</code> are that <code class="sourceCode cpp">x<span class="op">.</span>size<span class="op">()</span></code> is <code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>. If a <code class="sourceCode cpp">range</code> has a <code class="sourceCode cpp">size<span class="op">()</span></code> member function that is <em>not</em> constant-time, then it should opt out of being a <code class="sourceCode cpp">sized_range</code>. Pre-C++11 <code class="sourceCode cpp">std<span class="op">::</span>list</code> is one such example container. But again, we don’t have this control through the <code class="sourceCode cpp"><span class="kw">concept</span></code>, we need to come up with some external mechanism, the easiest of which is a type trait.</p>

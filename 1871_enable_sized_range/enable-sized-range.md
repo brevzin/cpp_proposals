@@ -1,6 +1,6 @@
 ---
-title: Rename `disable_sized_range` to `enable_sized_range`
-document: D1871R1
+title: Rename `disable_` traits to `enable_`
+document: D1871R0
 date: today
 audience: LEWG
 author:
@@ -25,9 +25,85 @@ The reason for the extra `!disable_sized_range<remove_cvref_t<T>>` check is that
 
 The existence of the type trait makes sense. However, why does it have to be a _negative_, that is then checked _against_? Double negatives are needlessly difficult to understand. Moreover, this type trait will be very rarely opted into.
 
-If we make it positive, that is `enable_sized_range`, and adopt [@P1870R0], then we well have three opt-in concepts which come with type traits named `enable_${concept_name}`, which is pretty nice.
+The same argument can be made for the `disable_sized_sentinel` trait, currently used as:
+
+```cpp
+template<class S, class I>
+  concept sized_sentinel_for =
+    sentinel_for<S, I> &&
+    !disable_sized_sentinel<remove_cv_t<S>, remove_cv_t<I>> &&
+    requires(const I& i, const S& s) {
+      { s - i } -> same_as<iter_difference_t<I>>;
+      { i - s } -> same_as<iter_difference_t<I>>;
+    };
+```
+
+We already have `enable_view` as the type trait to opt into the `view` concept. If we rename `disable_sized_range` to `enable_sized_range` and `disable_sized_sentinel` to `enable_sized_sentinel_for`, then all of type traits spelled the same way: specifically `enable_concept_name`.
 
 # Proposal
+
+Change 23.2 [iterator.synopsis]:
+
+::: bq
+```diff
+  // [iterator.concept.sizedsentinel], concept sized_sentinel_for
+  template<class S, class I>
+-   inline constexpr bool disable_sized_sentinel = false;
++   inline constexpr bool enable_sized_sentinel_for = true;
+```
+:::
+
+and later:
+
+::: bq
+```diff
+  template<class Iterator1, class Iterator2>
+      requires (!sized_sentinel_for<Iterator1, Iterator2>)
+-   inline constexpr bool disable_sized_sentinel<reverse_iterator<Iterator1>,
+-                                                reverse_iterator<Iterator2>> = true;
++   inline constexpr bool enable_sized_sentinel_for<reverse_iterator<Iterator1>,
++                                                   reverse_iterator<Iterator2>> = false;
+```
+:::
+
+Change 23.3.4.8 [iterator.concept.sizedsentinel]:
+
+::: bq
+[1]{.pnum} The `sized_sentinel_for` concept specifies requirements on an `input_or_output_iterator` and a corresponding `sentinel_for` that allow the use of the `-` operator to compute the distance between them in constant time.
+
+```diff
+template<class S, class I>
+  concept sized_sentinel_for =
+    sentinel_for<S, I> &&
+-   !disable_sized_sentinel<remove_cv_t<S>, remove_cv_t<I>> &&
++   enable_sized_sentinel_for<remove_cv_t<S>, remove_cv_t<I>> &&
+    requires(const I& i, const S& s) {
+      { s - i } -> same_as<iter_difference_t<I>>;
+      { i - s } -> same_as<iter_difference_t<I>>;
+    };
+```
+
+[2]{.pnum} Let `i` be an iterator of type `I`, and `s` a sentinel of type `S` such that `[i, s)` denotes a range.
+Let `N` be the smallest number of applications of `++i` necessary to make `bool(i == s)` be `true`.
+`S` and `I` model `sized_sentinel_for<S, I>` only if
+
+    - [2.1]{.pnum} If `N` is representable by `iter_difference_t<I>`, then `s - i` is well-defined and equals `N`.
+    - [2.2]{.pnum} If `−N` is representable by `iter_difference_t<I>`, then `i - s` is well-defined and equals `−N`.
+
+
+```diff
+  template<class S, class I>
+-   inline constexpr bool disable_sized_sentinel = false;
++   inline constexpr bool enable_sized_sentinel_for = true;
+```
+
+[3]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize [`disable_sized_sentinel`]{.rm} [`enable_sized_sentinel_for`]{.addu} for *cv*-unqualified non-array object types `S` and `I` if `S` and/or `I` is a program-defined type.
+Such specializations shall be usable in constant expressions ([expr.const]) and have type `const bool`.
+
+[4]{.pnum} [ *Note*: [`disable_sized_sentinel`]{.rm} [`enable_sized_sentinel_for`]{.addu} allows use of sentinels and iterators with the library that satisfy but do not in fact model `sized_sentinel_for`. — *end note*  ]
+
+:::
+
 
 Change 24.2 [ranges.syn]:
 
@@ -85,12 +161,4 @@ Such specializations shall be usable in constant expressions ([expr.const]) and 
 
 ---
 references:
-    - id: P1870R0
-      citation-label: P1870R0
-      title: "_`forwarding-range`_`<T>` is too subtle"
-      author:
-        - family: Barry Revzin
-      issued:
-        - year: 2019
-      URL: https://wg21.link/p1870r0
 ---

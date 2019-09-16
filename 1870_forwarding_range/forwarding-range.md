@@ -97,7 +97,7 @@ This paper was presented in Rapperswil 2018, partially jointly with [@P0896R1], 
 
 The design of _`forwarding-range`_ is based on the ability to invoke `ranges::begin()` on an rvalue. But what is the actual motivation of doing such a thing? Why would I want to forward a range into `begin()`? Even in contexts of algorithms taking `range`s by forwarding reference, we could just call `begin()` on the lvalue range that we get passed in. It's not like any iterator transformations are performed - we get the same iterator either way (and the cases in which we would _not_ get the same iterator are part of the motivation for this paper).
 
-The machinery for `ranges::begin()` being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range liftime. 
+The machinery for `ranges::begin()` being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range lifetime. 
 
 ## Issues with overloading
 
@@ -146,7 +146,7 @@ Replace all the uses of _`forwarding-range`_`<T>` with `safe_range<T>`.
 
 ## CPO
 
-Change the definitions of `ranges::begin()` and `ranges::end()` to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is:
+Change the definitions of `ranges::begin()` and `ranges::end()` to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is (the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also [@LWG3247]):
 
 ::: bq
 [1]{.pnum} The name `ranges​::​begin` denotes a customization point object. The expression `ranges​::​​begin(E)` for some subexpression `E` is expression-equivalent to:
@@ -154,21 +154,22 @@ Change the definitions of `ranges::begin()` and `ranges::end()` to only allow lv
 - [1.0]{.pnum} [If `E` is an rvalue, `ranges::begin(E)` is ill-formed.]{.addu}
 - [1.1]{.pnum}`E + 0` if `E` is [an lvalue]{.rm} of array type ([basic.compound]).
 - [1.2]{.pnum} Otherwise, [if `E` is an lvalue,]{.rm} _`decay-copy`_`(E.begin())` if it is a valid expression and its type `I` models `input_or_output_iterator`.
-- [1.3]{.pnum} Otherwise, _`decay-copy`_`(begin(E))` if it is a valid expression and its type `I` models `input_or_output_iterator` [with overload resolution performed in a context that includes the declarations:]{.rm}
+- [1.3]{.pnum} Otherwise, _`decay-copy`_`(begin(E))` if it is a valid expression and its type `I` models `input_or_output_iterator` with overload resolution performed in a context that includes the declaration[s]{.rm}:
 
-::: rm
-```cpp
-template<class T> void begin(T&&) = delete;
-template<class T> void begin(initializer_list<T>&&) = delete;
+::: bq
+```diff
+- template<class T> void begin(T&&) = delete;
+- template<class T> void begin(initializer_list<T>&&) = delete;
++ void begin();
 ```
+:::
 
 and does not include a declaration of `ranges​::​begin`.
-:::
 
 - [1.4]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed. [ Note: This case can result in substitution failure when `ranges​::​begin(E)` appears in the immediate context of a template instantiation. *— end note* ]
 :::
 
-And similarly for `ranges::end()`.
+And similarly for `ranges::end()` and `ranges::c?r?{begin,end}`.
 
 ## Library opt-in
 
