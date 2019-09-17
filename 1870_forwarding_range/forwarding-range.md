@@ -144,7 +144,7 @@ Note that these overloads take their arguments by reference-to-`const`. But the 
 
 # Proposal
 
-The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. Having these three closely-related notions have closely-related names makes sense.
+The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. Having these three closely-related notions have closely-related names makes sense. The name of the trait to enable `safe_range` is `enable_safe_range`, following the naming convention proposed in [@P1871R0].
 
 ## Trait
 
