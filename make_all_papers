@@ -4,6 +4,7 @@ import os
 import re
 import collections
 from bs4 import BeautifulSoup
+from frontmatter import Frontmatter
 
 def get_title(filename):
     with open(filename) as f:
@@ -24,16 +25,30 @@ for filename in glob.glob(f'*/*.html'):
         pd, num, rev = m.groups()
         num = int(num)
         rev = int(rev)
-        papers[num].append((rev, pd, filename))
+        papers[num].append((rev, pd, path, filename))
     else:
         others.append((base, filename))
 
 print('# Papers with Numbers')
 for num in sorted(papers):
     vals = sorted(papers[num])
-    last = vals[-1][-1]
-    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, filename) in vals)
-    print(f'- {num} {get_title(vals[-1][-1])}: {all_revs}')
+    path = vals[-1][2]
+    markdown = glob.glob(f'{path}/*.md')
+    title = None
+    if markdown:
+        posts = map(Frontmatter.read_file, markdown)
+        for p in posts:
+            attrs = p.get('attributes')
+            if not attrs: continue
+            doc = attrs.get('document')
+            if not doc: continue
+            if int(doc[1:5]) == num:
+                title = attrs['title']
+                break
+    if title is None:
+        title = get_title(vals[-1][-1])
+    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, path, filename) in vals)
+    print(f'- {num} {title}: {all_revs}')
 
 print()
 print('# Other Papers')
