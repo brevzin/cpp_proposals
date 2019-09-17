@@ -1,3 +1,7 @@
+---
+title: All Papers
+---
+
 # Papers with Numbers
 - 312 Make Pointers to Members Callable: [p0312r1](0312_pointers_to_members/p0312r1.html)
 - 573 Abbreviated Lambdas for Fun and Profit: [p0573r2](0573_abbrev_lambdas/p0573r2.html)
