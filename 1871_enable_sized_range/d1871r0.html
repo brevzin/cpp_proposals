@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-16" />
-  <title>Rename disable_ traits to enable_</title>
+  <meta name="dcterms.date" content="2019-09-17" />
+  <title>Should concepts be enabled or disabled?</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -526,7 +526,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Rename <code class="sourceCode cpp">disable_</code> traits to <code class="sourceCode cpp">enable_</code></h1>
+<h1 class="title" style="text-align:center">Should concepts be enabled or disabled?</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-16</td>
+    <td>2019-09-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -561,8 +561,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-4"><a href="#cb1-4"></a>    <span class="op">!</span>disable_sized_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
 <span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">requires</span><span class="op">(</span>T<span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span> ranges<span class="op">::</span>size<span class="op">(</span>t<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
 <p>The reason for the extra <code class="sourceCode cpp"><span class="op">!</span>disable_sized_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> check is that some types can meet the syntactic requirements of <code class="sourceCode cpp">ranges<span class="op">::</span>size</code> without meeting the semantic requirement that this call must have constant time. For instance, a pre-C++11 <code class="sourceCode cpp">std<span class="op">::</span>list</code> had <code class="sourceCode cpp">O<span class="op">(</span>N<span class="op">)</span></code> <code class="sourceCode cpp">size<span class="op">()</span></code>, but this wouldn’t be detectable, so the type trait exists to allow for such containers to opt out of being considered <code class="sourceCode cpp">sized_range</code>s.</p>
-<p>The existence of the type trait makes sense. However, why does it have to be a <em>negative</em>, that is then checked <em>against</em>? Double negatives are needlessly difficult to understand. Moreover, this type trait will be very rarely opted into.</p>
-<p>The same argument can be made for the <code class="sourceCode cpp">disable_sized_sentinel</code> trait, currently used as:</p>
+<p>A similar observation can be made for the <code class="sourceCode cpp">sized_sentinel_for</code> concept, from <a href="http://eel.is/c++draft/iterator.concept.sizedsentinel">[iterator.concept.sizedsentinel]</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> S, <span class="kw">class</span> I<span class="op">&gt;</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">concept</span> sized_sentinel_for <span class="op">=</span></span>
 <span id="cb2-3"><a href="#cb2-3"></a>    sentinel_for<span class="op">&lt;</span>S, I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
@@ -571,49 +570,59 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-6"><a href="#cb2-6"></a>      <span class="op">{</span> s <span class="op">-</span> i <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
 <span id="cb2-7"><a href="#cb2-7"></a>      <span class="op">{</span> i <span class="op">-</span> s <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
 <span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">}</span>;</span></code></pre></div>
-<p>We already have <code class="sourceCode cpp">enable_view</code> as the type trait to opt into the <code class="sourceCode cpp">view</code> concept. If we rename <code class="sourceCode cpp">disable_sized_range</code> to <code class="sourceCode cpp">enable_sized_range</code> and <code class="sourceCode cpp">disable_sized_sentinel</code> to <code class="sourceCode cpp">enable_sized_sentinel_for</code>, then all of type traits spelled the same way: specifically <code class="sourceCode cpp">enable_concept_name</code>.</p>
+<p>On the flip side, we also have the <code class="sourceCode cpp">view</code> concept in <a href="http://eel.is/c++draft/range.view">[range.view]</a>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">concept</span> view <span class="op">=</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> semiregular<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span></code></pre></div>
+<p>Two negated type traits for disabling, one positive one to enable. Why both directions?</p>
+<h2 id="to-enable-or-not-to-disable-that-is-the-question"><span class="header-section-number">1.1</span> To enable or not to disable, that is the question<a href="#to-enable-or-not-to-disable-that-is-the-question" class="self-link"></a></h2>
+<p>One argument that you could make comes from usage. Pretty much all types that meet the syntactic requirements for <code class="sourceCode cpp">sized_range</code> and <code class="sourceCode cpp">sized_sentinel</code> do in fact model those concepts. It’s only a few oddballs that need to explicitly <em>opt-out</em> of those concepts. On the other hand, most types that meet the syntactic requirements for <code class="sourceCode cpp">view</code> aren’t actually <code class="sourceCode cpp">view</code>s - and those need to <em>opt-in</em>.</p>
+<p>A different argument can be: what does it mean to specialize these traits? If you specialize <code class="sourceCode cpp">disable_sized_sentinel</code> to be <code class="sourceCode cpp"><span class="kw">true</span></code>, that type is <em>definitely</em> not a <code class="sourceCode cpp">sized_sentinel</code>. But if you specialize <code class="sourceCode cpp">enable_view</code> to be <code class="sourceCode cpp"><span class="kw">true</span></code>, that type isn’t necessarily a <code class="sourceCode cpp">view</code> - it’s just that you checked that one box. It’s not as final a statement.</p>
+<p>But ultimately, double negatives are needlessly difficult to understand. We say a type models <code class="sourceCode cpp">sized_range</code> or it does not model <code class="sourceCode cpp">sized_range</code>. We do not say a type does not not model <code class="sourceCode cpp">sized_range</code>. We really should try to avoid double negatives whenever possible.</p>
+<p>The real problem is that we need this variable template to begin with - but that’s a separate, language problem. If we rename <code class="sourceCode cpp">disable_sized_range</code> to <code class="sourceCode cpp">enable_sized_range</code> and <code class="sourceCode cpp">disable_sized_sentinel</code> to <code class="sourceCode cpp">enable_sized_sentinel_for</code>, then all of our type trait variable templates are spelled the same way (<code class="sourceCode cpp">enable_concept_name</code>).</p>
+<p>The traits will have different defaults, but are defined such that they should rarely need to be touched anyway (<code class="sourceCode cpp">enable_view</code> has a heuristic trying to be right most of the time, and the other two in this new formulation would almost always be <code class="sourceCode cpp"><span class="kw">true</span></code>).</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Change 23.2 [iterator.synopsis]:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb3-1"><a href="#cb3-1"></a>  // [iterator.concept.sizedsentinel], concept sized_sentinel_for</span>
-<span id="cb3-2"><a href="#cb3-2"></a>  template&lt;class S, class I&gt;</span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="st">-   inline constexpr bool disable_sized_sentinel = false;</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for = true;</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>  // [iterator.concept.sizedsentinel], concept sized_sentinel_for</span>
+<span id="cb4-2"><a href="#cb4-2"></a>  template&lt;class S, class I&gt;</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="st">-   inline constexpr bool disable_sized_sentinel = false;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for = true;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>and later:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>  template&lt;class Iterator1, class Iterator2&gt;</span>
-<span id="cb4-2"><a href="#cb4-2"></a>      requires (!sized_sentinel_for&lt;Iterator1, Iterator2&gt;)</span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="st">-   inline constexpr bool disable_sized_sentinel&lt;reverse_iterator&lt;Iterator1&gt;,</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="st">-                                                reverse_iterator&lt;Iterator2&gt;&gt; = true;</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for&lt;reverse_iterator&lt;Iterator1&gt;,</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="va">+                                                   reverse_iterator&lt;Iterator2&gt;&gt; = false;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>  template&lt;class Iterator1, class Iterator2&gt;</span>
+<span id="cb5-2"><a href="#cb5-2"></a>      requires (!sized_sentinel_for&lt;Iterator1, Iterator2&gt;)</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="st">-   inline constexpr bool disable_sized_sentinel&lt;reverse_iterator&lt;Iterator1&gt;,</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">-                                                reverse_iterator&lt;Iterator2&gt;&gt; = true;</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for&lt;reverse_iterator&lt;Iterator1&gt;,</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="va">+                                                   reverse_iterator&lt;Iterator2&gt;&gt; = false;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Change 23.3.4.8 [iterator.concept.sizedsentinel]:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The <code class="sourceCode cpp">sized_sentinel_for</code> concept specifies requirements on an <code class="sourceCode cpp">input_or_output_iterator</code> and a corresponding <code class="sourceCode cpp">sentinel_for</code> that allow the use of the <code class="sourceCode cpp"><span class="op">-</span></code> operator to compute the distance between them in constant time.</p>
 <div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>template&lt;class S, class I&gt;</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  concept sized_sentinel_for =</span>
-<span id="cb5-3"><a href="#cb5-3"></a>    sentinel_for&lt;S, I&gt; &amp;&amp;</span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="st">-   !disable_sized_sentinel&lt;remove_cv_t&lt;S&gt;, remove_cv_t&lt;I&gt;&gt; &amp;&amp;</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="va">+   enable_sized_sentinel_for&lt;remove_cv_t&lt;S&gt;, remove_cv_t&lt;I&gt;&gt; &amp;&amp;</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    requires(const I&amp; i, const S&amp; s) {</span>
-<span id="cb5-7"><a href="#cb5-7"></a>      { s - i } -&gt; same_as&lt;iter_difference_t&lt;I&gt;&gt;;</span>
-<span id="cb5-8"><a href="#cb5-8"></a>      { i - s } -&gt; same_as&lt;iter_difference_t&lt;I&gt;&gt;;</span>
-<span id="cb5-9"><a href="#cb5-9"></a>    };</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>template&lt;class S, class I&gt;</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  concept sized_sentinel_for =</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    sentinel_for&lt;S, I&gt; &amp;&amp;</span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="st">-   !disable_sized_sentinel&lt;remove_cv_t&lt;S&gt;, remove_cv_t&lt;I&gt;&gt; &amp;&amp;</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="va">+   enable_sized_sentinel_for&lt;remove_cv_t&lt;S&gt;, remove_cv_t&lt;I&gt;&gt; &amp;&amp;</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>    requires(const I&amp; i, const S&amp; s) {</span>
+<span id="cb6-7"><a href="#cb6-7"></a>      { s - i } -&gt; same_as&lt;iter_difference_t&lt;I&gt;&gt;;</span>
+<span id="cb6-8"><a href="#cb6-8"></a>      { i - s } -&gt; same_as&lt;iter_difference_t&lt;I&gt;&gt;;</span>
+<span id="cb6-9"><a href="#cb6-9"></a>    };</span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> Let <code class="sourceCode cpp">i</code> be an iterator of type <code class="sourceCode cpp">I</code>, and <code class="sourceCode cpp">s</code> a sentinel of type <code class="sourceCode cpp">S</code> such that <code class="sourceCode cpp"><span class="op">[</span>i, s<span class="op">)</span></code> denotes a range. Let <code class="sourceCode cpp">N</code> be the smallest number of applications of <code class="sourceCode cpp"><span class="op">++</span>i</code> necessary to make <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>i <span class="op">==</span> s<span class="op">)</span></code> be <code class="sourceCode cpp"><span class="kw">true</span></code>. <code class="sourceCode cpp">S</code> and <code class="sourceCode cpp">I</code> model <code class="sourceCode cpp">sized_sentinel_for<span class="op">&lt;</span>S, I<span class="op">&gt;</span></code> only if</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1"></a>- [2.1]{.pnum} If `N` is representable by `iter_difference_t&lt;I&gt;`, then `s - i` is well-defined and equals `N`.</span>
-<span id="cb6-2"><a href="#cb6-2"></a>- [2.2]{.pnum} If `−N` is representable by `iter_difference_t&lt;I&gt;`, then `i - s` is well-defined and equals `−N`.</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>- [2.1]{.pnum} If `N` is representable by `iter_difference_t&lt;I&gt;`, then `s - i` is well-defined and equals `N`.</span>
+<span id="cb7-2"><a href="#cb7-2"></a>- [2.2]{.pnum} If `−N` is representable by `iter_difference_t&lt;I&gt;`, then `i - s` is well-defined and equals `−N`.</span></code></pre></div>
 <div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>  template&lt;class S, class I&gt;</span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="st">-   inline constexpr bool disable_sized_sentinel = false;</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for = true;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>  template&lt;class S, class I&gt;</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="st">-   inline constexpr bool disable_sized_sentinel = false;</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="va">+   inline constexpr bool enable_sized_sentinel_for = true;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Remarks</em>: Pursuant to [namespace.std], users may specialize <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">disable_sized_sentinel</code></span></del></span> <span class="addu"><code class="sourceCode cpp">enable_sized_sentinel_for</code></span> for <em>cv</em>-unqualified non-array object types <code class="sourceCode cpp">S</code> and <code class="sourceCode cpp">I</code> if <code class="sourceCode cpp">S</code> and/or <code class="sourceCode cpp">I</code> is a program-defined type. Such specializations shall be usable in constant expressions ([expr.const]) and have type <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">bool</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> [ <em>Note</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">disable_sized_sentinel</code></span></del></span> <span class="addu"><code class="sourceCode cpp">enable_sized_sentinel_for</code></span> allows use of sentinels and iterators with the library that satisfy but do not in fact model <code class="sourceCode cpp">sized_sentinel_for</code>. — <em>end note</em> ]</p>
@@ -621,10 +630,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change 24.2 [ranges.syn]:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>   // [range.sized], sized ranges</span>
-<span id="cb8-2"><a href="#cb8-2"></a>   template&lt;class&gt;</span>
-<span id="cb8-3"><a href="#cb8-3"></a><span class="st">-    inline constexpr bool disable_sized_range = false;</span></span>
-<span id="cb8-4"><a href="#cb8-4"></a><span class="va">+    inline constexpr bool enable_sized_range = true;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>   // [range.sized], sized ranges</span>
+<span id="cb9-2"><a href="#cb9-2"></a>   template&lt;class&gt;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="st">-    inline constexpr bool disable_sized_range = false;</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="va">+    inline constexpr bool enable_sized_range = true;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Change 24.3.9 [range.prim.size]:</p>
@@ -643,20 +652,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The <code class="sourceCode cpp">sized_range</code> concept specifies the requirements of a <code class="sourceCode cpp">range</code> type that knows its size in constant time with the <code class="sourceCode cpp">size</code> function.</p>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a> template&lt;class T&gt;</span>
-<span id="cb9-2"><a href="#cb9-2"></a>   concept sized_range =</span>
-<span id="cb9-3"><a href="#cb9-3"></a>     range&lt;T&gt; &amp;&amp;</span>
-<span id="cb9-4"><a href="#cb9-4"></a><span class="st">-    !disable_sized_range&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp;</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="va">+    enable_sized_range&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp;</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>     requires(T&amp; t) { ranges::size(t); };</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a> template&lt;class T&gt;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>   concept sized_range =</span>
+<span id="cb10-3"><a href="#cb10-3"></a>     range&lt;T&gt; &amp;&amp;</span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="st">-    !disable_sized_range&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp;</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="va">+    enable_sized_range&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp;</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>     requires(T&amp; t) { ranges::size(t); };</span></code></pre></div>
 </div>
 </blockquote>
 <p>and</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  template&lt;class&gt;</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="st">-   inline constexpr bool disable_sized_range = false;</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="va">+   inline constexpr bool enable_sized_range = true;</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>  template&lt;class&gt;</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="st">-   inline constexpr bool disable_sized_range = false;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="va">+   inline constexpr bool enable_sized_range = true;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Remarks</em>: Pursuant to [namespace.std], users may specialize <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">disable_sized_range</code></span></del></span> <span class="addu"><code class="sourceCode cpp">enable_sized_range</code></span> for <em>cv</em>-unqualified program-defined types. Such specializations shall be usable in constant expressions ([expr.const]) and have type <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">bool</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> [ <em>Note</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">disable_sized_range</code></span></del></span> <span class="addu"><code class="sourceCode cpp">enable_sized_range</code></span> allows use of range types with the library that satisfy but do not in fact model <code class="sourceCode cpp">sized_range</code>. — <em>end note</em> ]</p>

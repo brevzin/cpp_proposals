@@ -1,5 +1,5 @@
 ---
-title: Rename `disable_` traits to `enable_`
+title:  Should concepts be enabled or disabled? 
 document: D1871R0
 date: today
 audience: LEWG
@@ -23,9 +23,7 @@ template<class T>
 
 The reason for the extra `!disable_sized_range<remove_cvref_t<T>>` check is that some types can meet the syntactic requirements of `ranges::size` without meeting the semantic requirement that this call must have constant time. For instance, a pre-C++11 `std::list` had `O(N)` `size()`, but this wouldn't be detectable, so the type trait exists to allow for such containers to opt out of being considered `sized_range`s.
 
-The existence of the type trait makes sense. However, why does it have to be a _negative_, that is then checked _against_? Double negatives are needlessly difficult to understand. Moreover, this type trait will be very rarely opted into.
-
-The same argument can be made for the `disable_sized_sentinel` trait, currently used as:
+A similar observation can be made for the `sized_sentinel_for` concept, from [\[iterator.concept.sizedsentinel\]](http://eel.is/c++draft/iterator.concept.sizedsentinel):
 
 ```cpp
 template<class S, class I>
@@ -38,7 +36,27 @@ template<class S, class I>
     };
 ```
 
-We already have `enable_view` as the type trait to opt into the `view` concept. If we rename `disable_sized_range` to `enable_sized_range` and `disable_sized_sentinel` to `enable_sized_sentinel_for`, then all of type traits spelled the same way: specifically `enable_concept_name`.
+On the flip side, we also have the `view` concept in [\[range.view\]](http://eel.is/c++draft/range.view):
+
+```cpp
+template<class T>
+  concept view =
+    range<T> && semiregular<T> && enable_view<T>;
+```
+
+Two negated type traits for disabling, one positive one to enable. Why both directions?
+
+## To enable or not to disable, that is the question
+
+One argument that you could make comes from usage. Pretty much all types that meet the syntactic requirements for `sized_range` and `sized_sentinel` do in fact model those concepts. It's only a few oddballs that need to explicitly _opt-out_ of those concepts. On the other hand, most types that meet the syntactic requirements for `view` aren't actually `view`s - and those need to _opt-in_.
+
+A different argument can be: what does it mean to specialize these traits? If you specialize `disable_sized_sentinel` to be `true`, that type is _definitely_ not a `sized_sentinel`. But if you specialize `enable_view` to be `true`, that type isn't necessarily a `view` - it's just that you checked that one box. It's not as final a statement.
+
+But ultimately, double negatives are needlessly difficult to understand. We say a type models `sized_range` or it does not model `sized_range`. We do not say a type does not not model `sized_range`. We really should try to avoid double negatives whenever possible.
+
+The real problem is that we need this variable template to begin with - but that's a separate, language problem. If we rename `disable_sized_range` to `enable_sized_range` and `disable_sized_sentinel` to `enable_sized_sentinel_for`, then all of our type trait variable templates are spelled the same way (`enable_concept_name`).
+
+The traits will have different defaults, but are defined such that they should rarely need to be touched anyway (`enable_view` has a heuristic trying to be right most of the time, and the other two in this new formulation would almost always be `true`).
 
 # Proposal
 

@@ -39,6 +39,10 @@ That is, _`forwarding-range`_ is a very important concept. It is used practicall
 
 The name _`forwarding-range`_ is problematic. There is a concept `std::forward_range` which is completely unrelated. A fairly common first response is that it has something to do with forwarding iterators. But the name actually comes from the question of whether you can use a forwarding reference `range` safely.
 
+However, coming up with a good name for it is very difficult. The concept has to refer to the range, but the salient aspect really has more to do with the iterators. Words that seem relevant are detachable, untethered, unfettered, nondangling. But then applying them to the range ends up being a mouthful: `range_with_detachable_iterators`. Granted, this concept isn't _directly_ used in too many places so maybe a long name is fine.
+
+The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. It still doesn't seem like a great name though, but at least all the relevant library things are similarly named. 
+
 Also the concept is still exposition-only, despite being a fairly important concept that people may want to use in their own code. This can be worked around:
 
 ```cpp
@@ -115,9 +119,28 @@ At this point, we have three concepts in Ranges that have some sort of mechanism
 
 - _`forwarding-range`_: provide a non-member `begin()`/`end()` that take their argument by value or rvalue reference (but really probably a constrained function template)
 - `view`: opt-in via the `enable_view` type trait
-- `sized_range`: opt-out via the `disable_sized_range` trait (itself problematic due to the double negative)
+- `sized_range`: opt-out via the `disable_sized_range` trait (itself problematic due to the double negative, see [@P1871R0])
 
 I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a langauge mechanism to express opt-in. It's still the best hack we have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
+
+## Public shaming
+
+Now that MSVC's standard library implementation is open source, we can take a look at how they went about implementing the opt-in for _`forwarding-range`_ in their implementation of `basic_string_view` [@msvc.basic_string_view]:
+
+```cpp
+#ifdef __cpp_lib_concepts
+    _NODISCARD friend constexpr const_iterator begin(const basic_string_view& _Right) noexcept {
+        // non-member overload that accepts rvalues to model the exposition-only forwarding-range concept
+        return _Right.begin();
+    }
+    _NODISCARD friend constexpr const_iterator end(const basic_string_view& _Right) noexcept {
+        // Ditto modeling forwarding-range
+        return _Right.end();
+    }
+#endif // __cpp_lib_concepts
+```
+
+Note that these overloads take their arguments by reference-to-`const`. But the non-member overloads need to take their arguments by either value or rvalue reference, otherwise the poison pill is a better match, as described earlier. So at this moment, `std::string_view` fails to satisfy _`forwarding-range`_. If even Casey can make this mistake, how is anybody going to get it right?
 
 # Proposal
 
@@ -129,7 +152,7 @@ Introduce a new trait:
 
 ```cpp
 template <std::range T>
-    inline constexpr bool enable_safe_range = false;
+  inline constexpr bool enable_safe_range = false;
 ```
 
 ## Concept
@@ -146,7 +169,7 @@ Replace all the uses of _`forwarding-range`_`<T>` with `safe_range<T>`.
 
 ## CPO
 
-Change the definitions of `ranges::begin()` and `ranges::end()` to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is (the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also [@LWG3247]):
+Change the definitions of `ranges::begin()`, `ranges::end()`, and their `c` and `r` cousins, to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is, the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also [@LWG3247]):
 
 ::: bq
 [1]{.pnum} The name `ranges​::​begin` denotes a customization point object. The expression `ranges​::​​begin(E)` for some subexpression `E` is expression-equivalent to:
@@ -169,11 +192,31 @@ and does not include a declaration of `ranges​::​begin`.
 - [1.4]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed. [ Note: This case can result in substitution failure when `ranges​::​begin(E)` appears in the immediate context of a template instantiation. *— end note* ]
 :::
 
-And similarly for `ranges::end()` and `ranges::c?r?{begin,end}`.
-
 ## Library opt-in
 
 And lastly, add specializations of `enable_safe_range` for all specializations of `basic_string_view`, `span`, and `subrange`. Remove the non-member `begin()` and `end()` functions for each of these.
+
+For instance, for `span`, this means changing 22.7.3.1 [span.overview]:
+
+::: bq
+```diff
+namespace std {
+  template<class ElementType, size_t Extent = dynamic_extent>
+  class span {
+  public:
+  
+-   friend constexpr iterator begin(span s) noexcept { return s.begin(); }
+-   friend constexpr iterator end(span s) noexcept { return s.end(); }
+
+  private:
+    pointer data_;    // exposition only
+    index_type size_; // exposition only
+  }; 
+
++ template<class ElementType, size_t Extent>
++   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;  
+```
+:::
 
 [^1]: There is a hypothetical kind of range where the range itself owns its data by `shared_ptr`, and the iterators _also_ share ownership of the data. In this way, the iterators' validity isn't tied to the range's lifetime not because the range doesn't own the elements (as in the `span` case) but because the iterators _also_ own the elements. I'm not sure if anybody has ever written such a thing.
 [^2]: I intend this as a positive, not as being derogatory. 
@@ -208,4 +251,18 @@ references:
       issued:
         - year: 2018
       URL: https://github.com/ericniebler/stl2/issues/592
+    - id: P1871R0
+      citation-label: P1871R0
+      title: "Should concepts be enabled or disabled?"
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2019
+      URL: https://wg21.link/p1871r0
+    - id: msvc.basic_string_view
+      citation-label: msvc.basic_string_view
+      title: "non-member `begin()`/`end()` for `basic_string_view`"
+      issued:
+        -year: 2019
+      URL: https://github.com/microsoft/STL/blame/92508bed6387cbdae433fc86279bc446af6f1b1a/stl/inc/xstring#L1207-L1216
 ---

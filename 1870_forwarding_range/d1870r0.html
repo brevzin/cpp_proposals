@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-16" />
+  <meta name="dcterms.date" content="2019-09-17" />
   <title>forwarding-range&lt;T&gt; is too subtle</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-16</td>
+    <td>2019-09-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -574,6 +574,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>That is, <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is a very important concept. It is used practically everywhere. It also conveys a pretty subtle and very rare feature of a type: that its iterators can outlive it. Syntactically, there is no difference between a <code class="sourceCode cpp">range</code>, a <code class="sourceCode cpp">view</code>, and a <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>, so the question is - how does a type declare itself to have this feature?</p>
 <h1 id="naming" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Naming<a href="#naming" class="self-link"></a></h1>
 <p>The name <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> is problematic. There is a concept <code class="sourceCode cpp">std<span class="op">::</span>forward_range</code> which is completely unrelated. A fairly common first response is that it has something to do with forwarding iterators. But the name actually comes from the question of whether you can use a forwarding reference <code class="sourceCode cpp">range</code> safely.</p>
+<p>However, coming up with a good name for it is very difficult. The concept has to refer to the range, but the salient aspect really has more to do with the iterators. Words that seem relevant are detachable, untethered, unfettered, nondangling. But then applying them to the range ends up being a mouthful: <code class="sourceCode cpp">range_with_detachable_iterators</code>. Granted, this concept isn’t <em>directly</em> used in too many places so maybe a long name is fine.</p>
+<p>The naming direction this proposal takes is to use the name <code class="sourceCode cpp">safe_range</code>, based on the existence of <code class="sourceCode cpp">safe_iterator</code> and <code class="sourceCode cpp">safe_subrange</code>. It still doesn’t seem like a great name though, but at least all the relevant library things are similarly named.</p>
 <p>Also the concept is still exposition-only, despite being a fairly important concept that people may want to use in their own code. This can be worked around:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">concept</span> my_forwarding_range <span class="op">=</span> std<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
@@ -621,23 +623,36 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>: provide a non-member <code class="sourceCode cpp">begin<span class="op">()</span></code>/<code class="sourceCode cpp">end<span class="op">()</span></code> that take their argument by value or rvalue reference (but really probably a constrained function template)</li>
 <li><code class="sourceCode cpp">view</code>: opt-in via the <code class="sourceCode cpp">enable_view</code> type trait</li>
-<li><code class="sourceCode cpp">sized_range</code>: opt-out via the <code class="sourceCode cpp">disable_sized_range</code> trait (itself problematic due to the double negative)</li>
+<li><code class="sourceCode cpp">sized_range</code>: opt-out via the <code class="sourceCode cpp">disable_sized_range</code> trait (itself problematic due to the double negative, see <span class="citation" data-cites="P1871R0">[<a href="#ref-P1871R0" role="doc-biblioref">P1871R0</a>]</span>)</li>
 </ul>
 <p>I don’t think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it’s a hack around not having a langauge mechanism to express opt-in. It’s still the best hack we have, that’s the easiest to understand, that’s probably more compiler-efficient as well (overload resolution is expensive!)</p>
+<h2 id="public-shaming"><span class="header-section-number">3.5</span> Public shaming<a href="#public-shaming" class="self-link"></a></h2>
+<p>Now that MSVC’s standard library implementation is open source, we can take a look at how they went about implementing the opt-in for <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> in their implementation of <code class="sourceCode cpp">basic_string_view</code> <span class="citation" data-cites="msvc.basic_string_view">[<a href="#ref-msvc.basic_string_view" role="doc-biblioref">msvc.basic_string_view</a>]</span>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifdef __cpp_lib_concepts</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    _NODISCARD <span class="kw">friend</span> <span class="kw">constexpr</span> const_iterator begin<span class="op">(</span><span class="kw">const</span> basic_string_view<span class="op">&amp;</span> _Right<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>        <span class="co">// non-member overload that accepts rvalues to model the exposition-only forwarding-range concept</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        <span class="cf">return</span> _Right<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    _NODISCARD <span class="kw">friend</span> <span class="kw">constexpr</span> const_iterator end<span class="op">(</span><span class="kw">const</span> basic_string_view<span class="op">&amp;</span> _Right<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>        <span class="co">// Ditto modeling forwarding-range</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        <span class="cf">return</span> _Right<span class="op">.</span>end<span class="op">()</span>;</span>
+<span id="cb4-9"><a href="#cb4-9"></a>    <span class="op">}</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="pp">#endif </span><span class="co">// __cpp_lib_concepts</span></span></code></pre></div>
+<p>Note that these overloads take their arguments by reference-to-<code class="sourceCode cpp"><span class="kw">const</span></code>. But the non-member overloads need to take their arguments by either value or rvalue reference, otherwise the poison pill is a better match, as described earlier. So at this moment, <code class="sourceCode cpp">std<span class="op">::</span>string_view</code> fails to satisfy <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>. If even Casey can make this mistake, how is anybody going to get it right?</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The naming direction this proposal takes is to use the name <code class="sourceCode cpp">safe_range</code>, based on the existence of <code class="sourceCode cpp">safe_iterator</code> and <code class="sourceCode cpp">safe_subrange</code>. Having these three closely-related notions have closely-related names makes sense.</p>
 <h2 id="trait"><span class="header-section-number">4.1</span> Trait<a href="#trait" class="self-link"></a></h2>
 <p>Introduce a new trait:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> enable_safe_range <span class="op">=</span> <span class="kw">false</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range T<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> enable_safe_range <span class="op">=</span> <span class="kw">false</span>;</span></code></pre></div>
 <h2 id="concept"><span class="header-section-number">4.2</span> Concept<a href="#concept" class="self-link"></a></h2>
 <p>Rename <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> to <code class="sourceCode cpp">safe_range</code> and make it non-exposition only and have its definition use the type trait:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">concept</span> safe_range <span class="op">=</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">(</span>is_lvalue_reference_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">||</span> enable_safe_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="kw">concept</span> safe_range <span class="op">=</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">(</span>is_lvalue_reference_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">||</span> enable_safe_range<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span>;</span></code></pre></div>
 <p>Replace all the uses of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em><code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code> with <code class="sourceCode cpp">safe_range<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <h2 id="cpo"><span class="header-section-number">4.3</span> CPO<a href="#cpo" class="self-link"></a></h2>
-<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is (the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also <span class="citation" data-cites="LWG3247">[<a href="#ref-LWG3247" role="doc-biblioref">LWG3247</a>]</span>):</p>
+<p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code>, <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code>, and their <code class="sourceCode cpp">c</code> and <code class="sourceCode cpp">r</code> cousins, to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is, the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also <span class="citation" data-cites="LWG3247">[<a href="#ref-LWG3247" role="doc-biblioref">LWG3247</a>]</span>):</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The name <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code> denotes a customization point object. The expression <code class="sourceCode cpp">ranges​<span class="op">::</span>​​begin<span class="op">(</span>E<span class="op">)</span></code> for some subexpression <code class="sourceCode cpp">E</code> is expression-equivalent to:</p>
 <ul>
@@ -648,9 +663,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a><span class="st">- template&lt;class T&gt; void begin(T&amp;&amp;) = delete;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="st">- template&lt;class T&gt; void begin(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="va">+ void begin();</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a><span class="st">- template&lt;class T&gt; void begin(T&amp;&amp;) = delete;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="st">- template&lt;class T&gt; void begin(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="va">+ void begin();</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code>.</p>
@@ -658,9 +673,28 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> Otherwise, <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed. [ Note: This case can result in substitution failure when <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> appears in the immediate context of a template instantiation. <em>— end note</em> ]</li>
 </ul>
 </blockquote>
-<p>And similarly for <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>c<span class="op">?</span>r<span class="op">?{</span>begin,end<span class="op">}</span></code>.</p>
 <h2 id="library-opt-in"><span class="header-section-number">4.4</span> Library opt-in<a href="#library-opt-in" class="self-link"></a></h2>
 <p>And lastly, add specializations of <code class="sourceCode cpp">enable_safe_range</code> for all specializations of <code class="sourceCode cpp">basic_string_view</code>, <code class="sourceCode cpp">span</code>, and <code class="sourceCode cpp">subrange</code>. Remove the non-member <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> functions for each of these.</p>
+<p>For instance, for <code class="sourceCode cpp">span</code>, this means changing 22.7.3.1 [span.overview]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>namespace std {</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  template&lt;class ElementType, size_t Extent = dynamic_extent&gt;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>  class span {</span>
+<span id="cb8-4"><a href="#cb8-4"></a>  public:</span>
+<span id="cb8-5"><a href="#cb8-5"></a>  </span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="st">-   friend constexpr iterator begin(span s) noexcept { return s.begin(); }</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="st">-   friend constexpr iterator end(span s) noexcept { return s.end(); }</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a>  private:</span>
+<span id="cb8-10"><a href="#cb8-10"></a>    pointer data_;    // exposition only</span>
+<span id="cb8-11"><a href="#cb8-11"></a>    index_type size_; // exposition only</span>
+<span id="cb8-12"><a href="#cb8-12"></a>  }; </span>
+<span id="cb8-13"><a href="#cb8-13"></a></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="va">+ template&lt;class ElementType, size_t Extent&gt;</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;span&lt;ElementType, Extent&gt;&gt; = true;  </span></span></code></pre></div>
+</div>
+</blockquote>
 <h1 id="acknowledgements" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Eric Niebler and Casey Carter for going over this paper with me, and correcting some serious misconceptions earlier drafts had. Thanks to Tim Song and Agustín Bergé for going over the details.</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
@@ -670,6 +704,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[LWG3247] Casey Carter. ranges::iter_move should perform ADL-only lookup of iter_move. <br />
 <a href="https://wg21.link/lwg3247">https://wg21.link/lwg3247</a></p>
 </div>
+<div id="ref-msvc.basic_string_view">
+<p>[msvc.basic_string_view] non-member <code class="sourceCode cpp">begin<span class="op">()</span></code>/<code class="sourceCode cpp">end<span class="op">()</span></code> for <code class="sourceCode cpp">basic_string_view</code>. <br />
+<a href="https://github.com/microsoft/STL/blame/92508bed6387cbdae433fc86279bc446af6f1b1a/stl/inc/xstring#L1207-L1216">https://github.com/microsoft/STL/blame/92508bed6387cbdae433fc86279bc446af6f1b1a/stl/inc/xstring#L1207-L1216</a></p>
+</div>
 <div id="ref-P0896R1">
 <p>[P0896R1] Eric Niebler, Casey Carter. 2018. Merging the Ranges TS. <br />
 <a href="https://wg21.link/p0896r1">https://wg21.link/p0896r1</a></p>
@@ -677,6 +715,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0970R1">
 <p>[P0970R1] Eric Niebler. 2018. Better, Safer Range Access Customization Points. <br />
 <a href="https://wg21.link/p0970r1">https://wg21.link/p0970r1</a></p>
+</div>
+<div id="ref-P1871R0">
+<p>[P1871R0] Barry Revzin. 2019. Should concepts be enabled or disabled? <br />
+<a href="https://wg21.link/p1871r0">https://wg21.link/p1871r0</a></p>
 </div>
 <div id="ref-stl2.429">
 <p>[stl2.429] Casey Carter. 2018. Consider removing support for rvalue ranges from range access CPOs. <br />
