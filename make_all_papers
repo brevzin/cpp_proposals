@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import glob
+import os
+import re
+import collections
+from bs4 import BeautifulSoup
+
+def get_title(filename):
+    with open(filename) as f:
+        html = BeautifulSoup(f.read(), 'html.parser')
+        return html.title.text
+
+iso = re.compile('([pd])(\d{4})r(\d+).html')
+papers = collections.defaultdict(list)
+others = []
+
+for filename in glob.glob(f'*/*.html'):
+    path, base = os.path.split(filename)
+    if path in ('sd6', 'md'):
+        continue
+
+    m = iso.match(base)
+    if m:
+        pd, num, rev = m.groups()
+        num = int(num)
+        rev = int(rev)
+        papers[num].append((rev, pd, filename))
+    else:
+        others.append((base, filename))
+
+print('# Papers with Numbers')
+for num in sorted(papers):
+    vals = sorted(papers[num])
+    last = vals[-1][-1]
+    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, filename) in vals)
+    print(f'- {num} {get_title(vals[-1][-1])}: {all_revs}')
+
+print()
+print('# Other Papers')
+for (base, filename) in sorted(others):
+    print(f'- {get_title(filename)}: [{base}]({filename})')
