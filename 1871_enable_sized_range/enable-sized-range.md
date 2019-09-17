@@ -60,6 +60,8 @@ The traits will have different defaults, but are defined such that they should r
 
 # Proposal
 
+The proposal is to flip the two disabling variable templates to enabling variable templates: renaming `disable_sized_range` to `enable_sized_range` and `disable_sized_sentinel` to `enable_sized_sentinel_for` (note the extra `_for`). And then update all usage of them to be positive rather than negative.
+
 Change 23.2 [iterator.synopsis]:
 
 ::: bq
