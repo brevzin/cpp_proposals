@@ -4,7 +4,7 @@
 - 644 Forward without  <code>forward</code>: [p0644r1](0644_fwd/p0644r1.html)
 - 704 Fixing const-qualified pointers to members: [p0704r0](0704_const_qual_pmfs/p0704r0.html) [p0704r1](0704_const_qual_pmfs/p0704r1.html)
 - 780 Allow pack expansion in lambda init-capture: [p0780r0](0780_lambda_pack_capture/p0780r0.html) [p0780r1](0780_lambda_pack_capture/p0780r1.html) [p0780r2](0780_lambda_pack_capture/p0780r2.html)
-- 847 Deducing this: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [d0847r2](0847_deducing_this/d0847r2.html) [p0847r2](0847_deducing_this/p0847r2.html)
+- 847 P0847R2 <br/> Deducing this: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [d0847r2](0847_deducing_this/d0847r2.html) [p0847r2](0847_deducing_this/p0847r2.html)
 - 848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - 892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
@@ -22,7 +22,7 @@
 - 1630 Spaceship needs a tune-up: [p1630r0](118x_spaceship/p1630r0.html) [p1630r1](118x_spaceship/p1630r1.html)
 - 1858 Generalized pack declaration and usage: [d1858r0](1858_generalized_packs/d1858r0.html)
 - 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [d1870r0](1870_forwarding_range/d1870r0.html)
-- 1871 Rename  <code class="sourceCode cpp">disable_</code>  traits to  <code class="sourceCode cpp">enable_</code>: [d1871r0](1871_enable_sized_range/d1871r0.html)
+- 1871 Should concepts be enabled or disabled?: [d1871r0](1871_enable_sized_range/d1871r0.html)
 
 # Other Papers
 - Concepts-Adjacent Problems: [dxxxxr0.html](concepts/dxxxxr0.html)
