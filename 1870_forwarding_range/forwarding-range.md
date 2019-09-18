@@ -99,9 +99,9 @@ This paper was presented in Rapperswil 2018, partially jointly with [@P0896R1], 
 
 ## Why `ranges::begin()` on an rvalue?
 
-The design of _`forwarding-range`_ is based on the ability to invoke `ranges::begin()` on an rvalue. But what is the actual motivation of doing such a thing? Why would I want to forward a range into `begin()`? Even in contexts of algorithms taking `range`s by forwarding reference, we could just call `begin()` on the lvalue range that we get passed in. It's not like any iterator transformations are performed - we get the same iterator either way (and the cases in which we would _not_ get the same iterator are part of the motivation for this paper).
+The design of _`forwarding-range`_ is based on the ability to invoke `ranges::begin()` on an rvalue. But what is the actual motivation of doing such a thing? Why would I want to forward a range into `begin()`? Even in contexts of algorithms taking `range`s by forwarding reference, we could just call `begin()` on the lvalue range that we get passed in. It's not like any iterator transformations are performed - we get the same iterator either way (and the cases in which we would _not_ get the same iterator are errors, such types would fail the expression-equivalence requirement).
 
-The machinery for `ranges::begin()` being invocable on an rvalue seems entirely driven by the desire to detect iterator validity exceeding range lifetime. 
+The machinery for `ranges::begin()` being invocable on an rvalue is entirely driven by the desire to detect iterator validity exceeding range lifetime. 
 
 ## Issues with overloading
 
@@ -111,7 +111,7 @@ In [@stl2.592], Eric Niebler points out that the current wording has the non-mem
 friend constexpr I begin(same_as<subrange> auto r) { return r.begin(); }
 ```
 
-Of the types in the standard library that should model _`forwarding-range`_, three of the four should take the same treatment (only `iota_view` doesn't need to worry). That is, in order to really ensure correctness, we have to write non-member `begin()` and `end()` function templates that constrain their argument via `same_as<R>`?
+Of the types in the standard library that should model _`forwarding-range`_, three of the four should take the same treatment (only `iota_view` doesn't need to worry). That is, in order to really ensure correctness by avoiding any potential hard instantiation errors, we have to write non-member `begin()` and `end()` function templates that constrain their argument via `same_as<R>`?
 
 ## How many mechanisms do we need?
 
@@ -121,7 +121,7 @@ At this point, we have three concepts in Ranges that have some sort of mechanism
 - `view`: opt-in via the `enable_view` type trait
 - `sized_range`: opt-out via the `disable_sized_range` trait (itself problematic due to the double negative, see [@P1871R0])
 
-I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a langauge mechanism to express opt-in. It's still the best hack we have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
+I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a language mechanism to express opt-in. It's still the best hack we have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
 
 ## Public shaming
 
