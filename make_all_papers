@@ -30,10 +30,13 @@ for filename in glob.glob(f'*/*.html'):
         others.append((base, filename))
 
 print('# Papers with Numbers')
+titles = {847: "Deducing `this`"}
 for num in sorted(papers):
     vals = sorted(papers[num])
     path = vals[-1][2]
-    title = get_title(vals[-1][-1])
+    title = titles.get(num)
+    if title is None:
+        title = get_title(vals[-1][-1])
     all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, path, filename) in vals)
     print(f'- {num} {title}: {all_revs}')
 
