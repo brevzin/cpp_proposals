@@ -77,13 +77,14 @@ Regardless of which option you dislike the least, both are limited to only `std:
 
 # Proposal
 
-We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading `...`):
+We propose to extend the structured bindings syntax to allow the user to introduce a pack as (at most) one of the identifiers:
 
 ```c++
 std::tuple<X, Y, Z> f();
+
 auto [x,y,z] = f();          // OK today
 auto [...xs] = f();          // proposed: xs is a pack of length three containing an X, Y, and a Z
-auto [x, ...rest] = f();     // proposed: x is an X, rest is a pack of length two
+auto [x, ...rest] = f();     // proposed: x is an X, rest is a pack of length two (Y and Z)
 auto [x,y,z, ...rest] = f(); // proposed: rest is an empty pack
 auto [x, ...rest, z] = f();  // proposed: x is an X, rest is a pack of length one
                              //   consisting of the Y, z is a Z

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-03" />
+  <meta name="dcterms.date" content="2019-09-17" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-03</td>
+    <td>2019-09-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -601,15 +601,16 @@ Using <code class="sourceCode cpp">index_sequence</code>
 </table>
 <p>Regardless of which option you dislike the least, both are limited to only <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>s. We don’t have the ability to do this at all for any of the other kinds of types that can be used in a structured binding declaration <span class="citation" data-cites="P0144R2">[<a href="#ref-P0144R2" role="doc-biblioref">P0144R2</a>]</span> - because we need to explicit list the correct number of identifiers, and we might not know how many there are.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as the last identifier, following the usual rules of pack declarations (must be trailing, and packs are introduced with leading <code class="sourceCode cpp"><span class="op">...</span></code>):</p>
+<p>We propose to extend the structured bindings syntax to allow the user to introduce a pack as (at most) one of the identifiers:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a>std<span class="op">::</span>tuple<span class="op">&lt;</span>X, Y, Z<span class="op">&gt;</span> f<span class="op">()</span>;</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// OK today</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// proposed: xs is a pack of length three containing an X, Y, and a Z</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// proposed: x is an X, rest is a pack of length two</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>; <span class="co">// proposed: rest is an empty pack</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest, z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;  <span class="co">// proposed: x is an X, rest is a pack of length one</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>                             <span class="co">//   consisting of the Y, z is a Z</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">auto</span> <span class="op">[...</span>a, <span class="op">...</span>b<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// ill-formed: multiple packs</span></span></code></pre></div>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// OK today</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// proposed: xs is a pack of length three containing an X, Y, and a Z</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// proposed: x is an X, rest is a pack of length two (Y and Z)</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z, <span class="op">...</span>rest<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>; <span class="co">// proposed: rest is an empty pack</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest, z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;  <span class="co">// proposed: x is an X, rest is a pack of length one</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>                             <span class="co">//   consisting of the Y, z is a Z</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="kw">auto</span> <span class="op">[...</span>a, <span class="op">...</span>b<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// ill-formed: multiple packs</span></span></code></pre></div>
 <p>If we additionally add the structured binding customization machinery to <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code>, this could greatly simplify generic code:</p>
 <table style="width:100%">
 <tr>
