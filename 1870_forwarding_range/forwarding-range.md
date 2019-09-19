@@ -15,7 +15,7 @@ One of the concepts introduces by Ranges is _`forwarding-range`_. The salient as
 
 > the validity of iterators obtained from the object denoted by `E` is not tied to the lifetime of that object.
 
-clarified more more in the subsequent note:
+clarified more in the subsequent note:
 
 > *[ Note*: Since the validity of iterators is not tied to the lifetime of an object whose type models _`forwarding-range`_, a function can accept arguments of such a type by value and return iterators obtained from it without danger of dangling.
 *— end note ]*
