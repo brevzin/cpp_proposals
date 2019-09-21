@@ -337,7 +337,6 @@ This isn't going to work. From [@Smith.Pack]:
 
 As well as introducing ambiguities:
 
-::: bq
 ```cpp
 template <typename T, typename... U>
 void call_f(T t, U... us)
@@ -348,7 +347,6 @@ void call_f(T t, U... us)
     f((t + us)...);
 }
 ```
-:::
 
 We can't have _no_ syntactic mechanism (and note that this paper very much is
 introducing the possibility of pack expansions occurring outside templates).
@@ -691,26 +689,6 @@ namespace xstd {
 }
 ```
 
-But this situation is a little different. For comparisons, it really only makes
-sense to compare constant objects. But for unpacking, we do want to unpack
-const and non-const, lvalue and rvalue, differently. This paper suggests that
-defaulting can thus drop the type as well, all of it will be inferred:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        // same as above
-        using ... = default;
-        constexpr operator ...() = default;
-        
-    private:
-        Ts... elems;
-    };
-}
-```
-
 This paper suggests that this kind of default pack operator behave much like
 structured bindings do today: that these are are not references, just aliases,
 so that they can work with bitfields.
@@ -823,6 +801,95 @@ For instance:
 Vector<int, 2>  x('a', 2); // ok
 Vector2<int, 2> y('a', 2); // ill-formed, deduction failure
 ```
+
+## Declaring packs in other contexts
+
+[@P0780R2] allowed pack expansion in lambda init-capture:
+
+```cpp
+template <typename... T>
+void f(T... t)
+{
+    [...u=t]{};
+}
+```
+
+If you think of lambda init-capture as basically a variable declaration with implicit `auto`, then expanding out that capture gets us to a variable declaration pack:
+
+```cpp
+auto ...u = t;
+```
+
+This paper proposes actually allowing that declaration form.
+
+That is, a variable pack declaration takes as its initializer an unexpanded pack. Which could be a normal pack, or it could be a pack-like type with packness added to it:
+
+```cpp
+xstd::tuple x{1, 2, 3};
+
+// ill-formed, x is not an unexpanded pack
+auto ...bad = x;
+
+// proposed ok
+auto ...good = x.[:]; // a pack of {1, 2, 3}
+
+// proposed ok
+auto ...doubles = x.[:] * 2; // a pack of {2, 4, 6}
+```
+
+The same idea can be used for declaring a pack alias (as was already shown earlier in this paper):
+
+```cpp
+template <typename... T>
+struct X {
+    // proposed ok
+    using ...pointers = T*;
+};
+
+// ill-formed, not an unexpanded pack
+using ...bad = xstd::tuple<int, double>;
+
+// proposed ok
+using ...good = xstd::tuple<int, double>.[:]; // a pack of {int, double}
+```
+
+## Declaring packs from a _braced-init-list_
+
+It may be worth generalizing even further and allowing declarations not just from unexpanded pack expressions but also from a _braced-init-list_. [@P0341R0] presented something like this idea for variables, but instead used angle brackets for types. This paper proposed a _braced-init-list_ for both cases, but with a slightly different formulation:
+
+```cpp
+int ...squares = {1, 4, 9};
+using ...types = {int, char, double};
+```
+
+gcc already uses this notation in its compile errors:
+
+```
+In instantiation of 'void foo(T ...) [with T = {int, int, int}]':
+```
+
+Such declarations would lead to the ability to provide default arguments for template parameter packs:
+
+```cpp
+template <typename... Ts = {int}>
+void f();
+
+f(); // calls f<int>
+```
+
+And provides a direction for disambiguating expansion statements [@P1306R1] over a pack:
+
+```cpp
+template <typename... Ts>
+void f(Ts... ts)
+{
+    for ... (auto x : {ts...})
+    {
+    }
+}
+```
+
+The latter has some added wrinkles since you can already have a range-based for statement over a _braced-init-list_ if it can be deduced to some `std::initializer_list<T>`, and we'd need a different declaration for the range (`auto ... range = {ts...};` vs `auto range = {ts...};`), but we _already_ have a different declaration for the range in the `constexpr` case, so what's a third special case, really?
 
 ## Generalized Slicing and a simplified Boost.Mp11
 
@@ -1163,8 +1230,6 @@ void call_f(Tuple const& t) {
 template <typename... Types>
 struct tuple {
   operator Types const&...() const& { return elems; }
-  // or:
-  operator ...() = default;
   
   Types... elems;
 };
@@ -1339,7 +1404,8 @@ the important notions.
 ## Pack declarations
 
 You can declare member variable packs, namespace-scope variable packs, and
-block-scope variable packs. You can declare alias packs.
+block-scope variable packs. You can declare alias packs. The initializer for a
+pack declaration has to be either an unexpanded pack or a _braced-init-list_.
 
 These can be directly unpacked when in non-dependent contexts. 
 
@@ -1415,14 +1481,6 @@ references:
     issued:
       - year: 2017
     URL: https://www.boost.org/doc/libs/1_70_0/libs/mp11/doc/html/mp11.html
-  - id: Boost.Lambda
-    citation-label: Boost.Lambda
-    title: "Boost.Lambda"
-    author:
-      - family:  Jaakko Järvi
-    issued:
-      - year: 1999
-    URL: https://www.boost.org/doc/libs/1_70_0/doc/html/lambda.html
   - id: Smith.Pack
     citation-label: Smith.Pack
     title: "A problem with generalized lambda captures and pack expansion"
