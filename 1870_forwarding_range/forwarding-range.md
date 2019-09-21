@@ -144,78 +144,452 @@ Note that these overloads take their arguments by reference-to-`const`. But the 
 
 # Proposal
 
-The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. Having these three closely-related notions have closely-related names makes sense. The name of the trait to enable `safe_range` is `enable_safe_range`, following the naming convention proposed in [@P1871R0].
+The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. If a alternate name is preferred, the wording can simply be block replaced following the naming convention proposed in [@P1871R0]. The proposal has four parts:
 
-## Trait
+- Trait: introduce a new variable template `enable_safe_range`, with default value `false.`
+- Concept: rename the concept _`forwarding-range`_ to `safe_range`, make it non-exposition only, and have its definition be based on the type trait. Replace all uses of _`forwarding-range`_ with `safe_range` as appropriate.
+- CPO: Have `ranges::begin()` and `ranges::end()`, and their const and reverse cousins, _only_ allow lvalues. Some of the other CPOs that invoke `begin()` and `end()` have to be adjusted to ensure that they only propagate lvalues too.
+- Library opt-in: Have the library types which currently opt-in to _`forwarding-range`_ by providing non-member `begin` and `end` instead specialize `enable_safe_range`, and remove those overloads non-member overloads.
 
-Introduce a new trait:
+## Wording
 
-```cpp
-template <std::range T>
-  inline constexpr bool enable_safe_range = false;
-```
-
-## Concept
-
-Rename _`forwarding-range`_ to `safe_range` and make it non-exposition only and have its definition use the type trait:
-
-```cpp
-template<class T>
-  concept safe_range =
-    range<T> && (is_lvalue_reference_v<T> || enable_safe_range<remove_cvref_t<T>>);
-```
-
-Replace all the uses of _`forwarding-range`_`<T>` with `safe_range<T>`.
-
-## CPO
-
-Change the definitions of `ranges::begin()`, `ranges::end()`, and their `c` and `r` cousins, to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is, the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also [@LWG3247]):
-
-::: bq
-[1]{.pnum} The name `ranges​::​begin` denotes a customization point object. The expression `ranges​::​​begin(E)` for some subexpression `E` is expression-equivalent to:
-
-- [1.0]{.pnum} [If `E` is an rvalue, `ranges::begin(E)` is ill-formed.]{.addu}
-- [1.1]{.pnum}`E + 0` if `E` is [an lvalue]{.rm} of array type ([basic.compound]).
-- [1.2]{.pnum} Otherwise, [if `E` is an lvalue,]{.rm} _`decay-copy`_`(E.begin())` if it is a valid expression and its type `I` models `input_or_output_iterator`.
-- [1.3]{.pnum} Otherwise, _`decay-copy`_`(begin(E))` if it is a valid expression and its type `I` models `input_or_output_iterator` with overload resolution performed in a context that includes the declaration[s]{.rm}:
+Change 21.4.1 [string.view.synop] to add the new specialization to opt-in to `safe_range`:
 
 ::: bq
 ```diff
-- template<class T> void begin(T&&) = delete;
-- template<class T> void begin(initializer_list<T>&&) = delete;
-+ void begin();
+namespace std {
+  // [string.view.template], class template basic_string_view
+  template<class charT, class traits = char_traits<charT>>
+  class basic_string_view;
+
++ template<class charT, class traits>
++   inline constexpr bool enable_safe_range<basic_string_view<charT, traits>> = true; 
+}
 ```
 :::
 
-and does not include a declaration of `ranges​::​begin`.
+Change 21.4.2 [string.view.template] to remove the non-member `begin`/`end` overloads that were the old opt-in:
 
-- [1.4]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed. [ Note: This case can result in substitution failure when `ranges​::​begin(E)` appears in the immediate context of a template instantiation. *— end note* ]
+::: bq
+```diff
+template<class charT, class traits = char_traits<charT>>
+class basic_string_view {
+
+
+- friend constexpr const_iterator begin(basic_string_view sv) noexcept { return sv.begin(); }
+- friend constexpr const_iterator end(basic_string_view sv) noexcept { return sv.end(); }
+
+};
+```
 :::
 
-## Library opt-in
-
-And lastly, add specializations of `enable_safe_range` for all specializations of `basic_string_view`, `span`, and `subrange`. Remove the non-member `begin()` and `end()` functions for each of these.
-
-For instance, for `span`, this means changing 22.7.3.1 [span.overview]:
+Change 22.7.3.1 [span.overview] to remove the non-member `begin`/`end` overloads that were the old opt-in and add the new specialization to opt-in:
 
 ::: bq
 ```diff
 namespace std {
   template<class ElementType, size_t Extent = dynamic_extent>
   class span {
-  public:
-  
+    [...]
+    
 -   friend constexpr iterator begin(span s) noexcept { return s.begin(); }
 -   friend constexpr iterator end(span s) noexcept { return s.end(); }
 
   private:
     pointer data_;    // exposition only
     index_type size_; // exposition only
-  }; 
-
+  };
+  
+  template<class Container>
+    span(const Container&) -> span<const typename Container::value_type>;
+    
 + template<class ElementType, size_t Extent>
-+   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;  
++   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;
+}  
 ```
+:::
+
+Change 24.2 [ranges.syn] to introduce the new trait and the new non-exposition-only concept:
+
+::: bq
+```diff
+#include <initializer_list>
+#include <iterator>
+
+namespace std::ranges {
+  [ ... ]
+
+  // [range.range], ranges  
+  template<class T>
+    concept range = @_see below_@;
+
++ template <std::range T>
++   inline constexpr bool enable_safe_range = false;
++
++ template<class T>
++   concept safe_range = @_see below_@;
+
+  [ ... ]    
+  
+  // [range.dangling], dangling iterator handling
+  struct dangling;
+
+  template<range R>
+-   using safe_iterator_t = conditional_t<@[_forwarding-range_]{.diffdel}@<R>, iterator_t<R>, dangling>;
++   using safe_iterator_t = conditional_t<@[safe_range]{.diffins}@<R>, iterator_t<R>, dangling>;
+
+  template<range R>
+    using safe_subrange_t =
+-     conditional_t<@[_forwarding-range_]{.diffdel}@<R>, subrange<iterator_t<R>>, dangling>;
++     conditional_t<@[safe_range]{.diffins}@<R>, subrange<iterator_t<R>>, dangling>;
+      
+  [...]
+}
+```
+:::
+
+Change the definitions of `ranges::begin()`, `ranges::end()`, and their `c` and `r` cousins, to only allow lvalues, and then be indifferent to member vs non-member (see also [@stl2.429]). That is, the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also [@LWG3247]). Some of these changes aren't strictly necessary (e.g. the changes to `ranges::cbegin` explicitly call out being ill-formed for rvalues, but this could've been inherited from `ranges::begin`), they are made simply to make the specification easier to read. 
+
+Change. 24.3.1 [range.access.begin]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​begin` denotes a customization point object. The expression `ranges​::​​begin(E)` for some subexpression `E` is expression-equivalent to:
+
+- [1.0]{.pnum} [If `E` is an rvalue, `ranges::begin(E)` is ill-formed.]{.addu}
+- [1.1]{.pnum} [Otherwise, ]{.addu} `E + 0` if `E` is [an lvalue]{.rm} of array type ([basic.compound]).
+- [1.2]{.pnum} Otherwise, [if `E` is an lvalue,]{.rm} _`decay-copy`_`(E.begin())` if it is a valid expression and its type `I` models `input_or_output_iterator`.
+- [1.3]{.pnum} Otherwise, _`decay-copy`_`(begin(E))` if it is a valid expression and its type `I` models `input_or_output_iterator` with overload resolution performed in a context that includes the declaration[s]{.rm}:
+
+    ```
+    template<class T> void begin(T&&) = delete;
+    template<class T> void begin(initializer_list<T>&&) = delete;
+    ```
+    and does not include a declaration of `ranges​::​begin`.
+
+- [1.4]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed. [ Note: This case can result in substitution failure when `ranges​::​begin(E)` appears in the immediate context of a template instantiation. *— end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​begin(E)` is a valid expression, its type models `input_or_output_iterator`. — *end note* ]
+:::
+
+Change 24.3.2 [range.access.end] similarly:
+
+::: bq
+[1]{.pnum} The name `ranges​::​end` denotes a customization point object. The expression `ranges​::​end(E)` for some subexpression `E` is expression-equivalent to:
+
+- [1.0]{.pnum} [If `E` is an rvalue, `ranges::end(E)` is ill-formed.]{.addu}
+- [1.1]{.pnum} [Otherwise, ]{.addu} `E + extent_v<T>` if E is [an lvalue]{.rm} of array type ([basic.compound]) `T`.
+- [1.2]{.pnum} Otherwise, [if E is an lvalue,]{.rm} _`decay-copy`_`(E.end())` if it is a valid expression and its type `S` models `sentinel_for<decltype(ranges::begin(E))>`.
+- [1.3]{.pnum} Otherwise, _`decay-copy`_`(end(E))` if it is a valid expression and its type `S` models `sentinel_for<decltype(ranges::begin(E))>` with overload resolution performed in a context that includes the declaration[s]{.rm}:
+
+    ```
+    template<class T> void end(T&&) = delete;
+    template<class T> void end(initializer_list<T>&&) = delete;
+    ```
+    and does not include a declaration of `ranges​::​end`.
+
+- [1.4]{.pnum} Otherwise, `ranges​::​end(E)` is ill-formed. [ *Note*: This case can result in substitution failure when `ranges​::​end(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​end(E)` is a valid expression, the types `S` and `I` of `ranges​::​end(E)` and `ranges​::​begin(E)` model `sentinel_for<S, I>`. — *end note* ]
+:::
+
+Change 24.3.3 [ranges.access.cbegin]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​cbegin` denotes a customization point object.
+The expression `ranges​::​​cbegin(E)` for some subexpression `E` of type `T` is expression-equivalent to:
+
+- [1.1]{.pnum} `ranges​::​begin(static_cast<const T&>(E))` if `E` is an lvalue.
+- [1.2]{.pnum} Otherwise, [`ranges​::​begin(static_cast<const T&&>(E))`]{.rm} [`ranges::cbegin(E)` is ill-formed]{.addu}.
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​cbegin(E)` is a valid expression, its type models `input_or_output_iterator`. - *end note* ]
+:::
+
+Change 24.3.4 [ranges.access.cend]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​cend` denotes a customization point object.
+The expression `ranges​::​​cend(E)` for some subexpression `E` of type `T` is expression-equivalent to:
+
+- [1.1]{.pnum} `ranges​::​end(static_cast<const T&>(E))` if `E` is an lvalue.
+- [1.2]{.pnum} Otherwise, [`ranges​::end(static_cast<const T&&>(E))`]{.rm} [`ranges::cend(E)` is ill-formed]{.addu}.
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of `ranges​::​cend(E)` and `ranges​::​cbegin(E)` model `sentinel_for<S, I>`. - *end note* ]
+:::
+
+Change 24.3.5 [ranges.access.rbegin]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​rbegin` denotes a customization point object. The expression `ranges​::​​rbegin(E)` for some subexpression `E` is expression-equivalent to:
+
+- [1.0]{.pnum} [If `E` is an rvalue, `ranges::rbegin(E)` is ill-formed.`]{.addu}
+- [1.1]{.pnum} [Otherwise]{.addu} [If `E` is an lvalue]{.rm}, _`decay-copy`_`(E.rbegin())` if it is a valid expression and its type `I` models `input_or_output_iterator`.
+- [1.2]{.pnum} Otherwise, _`decay-copy`_`(rbegin(E))` if it is a valid expression and its type `I` models `input_or_output_iterator` with overload resolution performed in a context that includes the declaration:
+
+    ```
+    template<class T> void rbegin(T&&) = delete;
+    ```
+    and does not include a declaration of `ranges​::​rbegin`.
+
+- [1.3]{.pnum} Otherwise, `make_reverse_iterator(ranges​::​end(E))` if `both ranges​::​begin(E)` and `ranges​::​end(​E)` are valid expressions of the same type `I` which models `bidirectional_iterator` ([iterator.concept.bidir]).
+- [1.4]{.pnum} Otherwise, `ranges​::​rbegin(E)` is ill-formed. [ Note: This case can result in substitution failure when `ranges​::​rbegin(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​rbegin(E)` is a valid expression, its type models `input_or_output_iterator`. — *end note* ]
+:::
+ 
+Change 24.3.6 [range.access.rend]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​rend` denotes a customization point object. The expression `ranges​::​rend(E)` for some subexpression `E` is expression-equivalent to:
+
+- [1.0]{.pnum} [If `E` is an rvalue, `ranges::rend(E)` is ill-formed.`]{.addu}
+- [1.1]{.pnum} [Otherwise]{.addu} [If `E` is an lvalue]{.rm}, _`decay-copy`_`(E.rend())` if it is a valid expression and its type `S` models
+`sentinel_for<decltype(ranges::rbegin(E))>`.
+- [1.2]{.pnum} Otherwise, _`decay-copy`_`(rend(E))` if it is a valid expression and its type `S` models `sentinel_for<decltype(ranges::rbegin(E))>`.
+with overload resolution performed in a context that includes the declaration:
+
+    ```diff
+    template<class T> void rend(T&&) = delete;
+    ```
+    and does not include a declaration of `ranges​::​rend`.
+
+- [1.3]{.pnum} Otherwise, `make_reverse_iterator(ranges​::​begin(E))` if both `ranges​::​begin(E)` and `ranges​::​​end(E)` are valid expressions of the same type `I` which models `bidirectional_iterator` ([iterator.concept.bidir]).
+- [1.4]{.pnum} Otherwise, `ranges​::​rend(E)` is ill-formed. [ *Note*: This case can result in substitution failure when `ranges​::​rend(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​rend(E)` is a valid expression, the types `S` and `I` of `ranges​::​rend(E)` and `ranges​::​rbegin(E)` model `sentinel_for<S, I>`. — *end note* ]
+:::
+
+Change 24.3.7 [ranges.access.crbegin]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​crbegin` denotes a customization point object.
+The expression `ranges​::​​crbegin(E)` for some subexpression `E` of type `T` is expression-equivalent to:
+
+- [1.1]{.pnum} `ranges​::​rbegin(static_cast<const T&>(E))` if `E` is an lvalue.
+- [1.2]{.pnum} Otherwise, [`ranges​::​rbegin(static_cast<const T&&>(E))`]{.rm} [`ranges::crbegin(E)` is ill-formed]{.addu}.
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​crbegin(E)` is a valid expression, its type models `input_or_output_iterator`. - *end note* ]
+:::
+
+Change 24.3.8 [ranges.access.crend]:
+
+::: bq
+[1]{.pnum} The name `ranges​::​crend` denotes a customization point object.
+The expression `ranges​::​​crend(E)` for some subexpression `E` of type `T` is expression-equivalent to:
+
+- [1.1]{.pnum} `ranges​::​rend(static_cast<const T&>(E))` if `E` is an lvalue.
+- [1.2]{.pnum} Otherwise, [`ranges​::rend(static_cast<const T&&>(E))`]{.rm} [`ranges::crend(E)` is ill-formed]{.addu}.
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​crend(E)` is a valid expression, the types `S` and `I` of `ranges​::​crend(E)` and `ranges​::​crbegin(E)` model `sentinel_for<S, I>`. - *end note* ]
+:::
+
+For `ranges::size`, `ranges::empty`, and `ranges::data`, we want to allow them to be invoked on rvalues that satisfy `safe_range`. The specification this needs to ensure that `ranges::begin` and `ranges::end` are still only called on lvalues. `ranges::cdata` requires no changes.
+
+Change 24.3.9 [range.prim.size]:
+
+::: bq
+[1]{.pnum} The name `size` denotes a customization point object.
+[The expression `ranges​::​size(E)` for some subexpression `E` with type `T`]{.rm} [Given a subexpression `E` with type `T` and an lvalue `t` that denotes the same object as `E`, the expression `ranges::size(E)`]{.addu} is expression-equivalent to:
+
+- [1.1]{.pnum} _`decay-copy`_`(extent_v<T>)` if `T` is an array type ([basic.compound]).
+- [1.2]{.pnum} Otherwise, if `disable_sized_range<remove_cv_t<T>>` ([range.sized]) is `false`:
+
+    - [1.2.1]{.pnum} _`decay-copy`_`(E.size())` if it is a valid expression and its type `I` is integer-like ([iterator.concept.winc]).
+    - [1.2.2]{.pnum} Otherwise, _`decay-copy`_`(size(E))` if it is a valid expression and its type `I` is integer-like with overload resolution performed in a context that includes the declaration:
+
+        ```
+        template<class T> void size(T&&) = delete;
+        ```
+            
+
+        and does not include a declaration of `ranges​::​size`.
+- [1.3]{.pnum} Otherwise, [if `decltype((E))` models `safe_range` ([range.range]),]{.addu} <code><em>make-unsigned-like</em>(ranges::end([E]{.rm} [t]{.addu}) - ranges::begin([E]{.rm} [t]{.addu}))</code> ([range.subrange]) if it is a valid expression and the types `I` and `S` of <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> and <code>ranges​::​end([E]{.rm} [t]{.addu})</code> (respectively) model both `sized_sentinel_for<S, I>` ([iterator.concept.sizedsentinel]) and `forward_iterator<I>`. [However, `E` is evaluated only once.]{.rm}
+- [1.4]{.pnum} Otherwise, `ranges​::​size(E)` is ill-formed. [ *Note*: This case can result in substitution failure when `ranges​::​size(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​size(E)` is a valid expression, its type is integer-like. - *end note* ]
+:::
+
+Change 24.3.10 [range.prim.empty]:
+
+::: bq
+[1]{.pnum} The name `empty` denotes a customization point object.
+[The expression `ranges​::​empty(E)` for some subexpression `E`]{.rm} [Given a subexpression `E` and an lvalue `t` that denotes the same object as `E`, the expression ``ranges::empty(E)`]{.addu} is expression-equivalent to:
+
+- [1.1]{.pnum} `bool((E).empty())` if it is a valid expression.
+- [1.2]{.pnum} Otherwise, `(ranges​::​size(E) == 0)` if it is a valid expression.
+- [1.3]{.pnum} Otherwise, [if `decltype((E))` models `safe_range` ([range.range]),]{.addu} [`EQ`, where `EQ` is]{.rm} <code>[bool]{.dt}(ranges​::​begin([E]{.rm} [t]{.addu}) == ranges​::​end([E]{.rm} [t]{.addu}))</code> [except that `E` is only evaluated once, if `EQ`]{.rm} [if it]{.addu} is a valid expression and the type of <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> models `forward_iterator`.
+- [1.4]{.pnum} Otherwise, `ranges​::​empty(E)` is ill-formed. [ *Note*: This case can result in substitution failure when `ranges​::​empty(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​empty(E)` is a valid expression, it has type `bool`. - *end note*  ]
+:::
+
+Change 24.3.11 [range.prim.data]:
+[In this wording, in order for `decltype((E))` to model `safe_range`, it must necessarily follow that `ranges::begin(t)` is valid so we don't need extra wording to check it again.]{.ednote}
+
+::: bq
+[1]{.pnum} The name `data` denotes a customization point object.
+[The expression `ranges​::​data(E)` for some subexpression `E`]{.rm} [Given a subexpression `E` and an lvalue `t` that denotes the same object as `E`, the expression `ranges::data(E)`]{.addu} is expression-equivalent to:
+
+- [1.1]{.pnum} If `E` is an lvalue, _`decay-copy`_`(E.data())` if it is a valid expression of pointer to object type.
+- [1.2]{.pnum} Otherwise, [if `decltype((E))` models `safe_range` ([range.range]) and the type of]{.addu} [if]{.rm} <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> [is a valid expression whose type]{.rm} models `contiguous_iterator`, <code>to_address(ranges​::​begin([E]{.rm} [t]{.addu}))</code>.
+- [1.3]{.pnum} Otherwise, `ranges​::​data(E)` is ill-formed. [ *Note*: This case can result in substitution failure when `ranges​::​data(E)` appears in the immediate context of a template instantiation. — *end note* ]
+
+[2]{.pnum} [ *Note*: Whenever `ranges​::​data(E)` is a valid expression, it has pointer to object type. — *end note* ]
+:::
+
+Change 24.4.2 [range.range]:
+
+::: bq
+[1]{.pnum} The `range` concept defines the requirements of a type that allows iteration over its elements by providing an iterator and sentinel that denote the elements of the range.
+
+```diff
+- template<class T>
+-   concept range-impl =          // exposition only
+-     requires(T&& t) {
+-       ranges::begin(std::forward<T>(t));        // sometimes equality-preserving (see below)
+-       ranges::end(std::forward<T>(t));
+-     };
+- 
+- template<class T>
+-   concept range = range-impl<T&>;
+- 
+- template<class T>
+-   concept forwarding-range =    // exposition only
+-     range<T> && range-impl<T>;
+
++ template<class T>
++   concept range =
++     requires(T& t) {
++       ranges::begin(t);                         // sometimes equality-preserving (see below)
++       ranges::end(t);
++     }; 
++
++ template<class T>
++   concept safe_range =
++     range<T> && (is_lvalue_reference_v<T> || enable_safe_range<remove_cvref_t<T>>);
+```
+
+[2]{.pnum} The required expressions [`ranges​::​begin(std​::​forward<T>(t))` and `ranges​::​end(std​::​forward<​T>(t))` of the _`range-impl`_ concept]{.rm} [`ranges::begin(t)` and `ranges::end(t)` of the `range` concept]{.addu} do not require implicit expression variations ([concepts.equality]).
+
+
+[3]{.pnum} Given an expression `E` such that `decltype((E))` is `T` [and an lvalue `t` that denotes the same object as `E`]{.addu}, `T` models [_`range-impl`_]{.rm} [`range`]{.addu} only if
+
+- [3.1]{.pnum} <code>[ranges​::​begin([E]{.rm} [t]{.addu}), ranges​::​end([E]{.rm} [t]{.addu}))</code> denotes a range ([iterator.requirements.general]),
+- [3.2]{.pnum} both <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> and <code>ranges​::​end([E]{.rm} [t]{.addu})</code> are amortized constant time and non-modifying, and
+- [3.3]{.pnum} if the type of <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> models `forward_iterator`, <code>ranges​::​begin([E]{.rm} [t]{.addu})</code> is equality-preserving.
+
+[4]{.pnum} [ *Note*: Equality preservation of both `ranges​::​begin` and `ranges​::​end` enables passing a range whose iterator type models `forward_iterator` to multiple algorithms and making multiple passes over the range by repeated calls to `ranges​::​begin` and `ranges​::​end`.
+Since `ranges​::​begin` is not required to be equality-preserving when the return type does not model `forward_iterator`, repeated calls might not return equal values or might not be well-defined; `ranges​::​begin` should be called at most once for such a range. - *end note* ]
+
+
+[5]{.pnum} Given an expression `E` such that `decltype((E))` is `T` and an lvalue `t` that denotes the same object as `E`, `T` models [_`forwarding-range`_]{.rm} [`safe_range`]{.addu} only if [the validity of iterators obtained from the object denoted by `t` is not tied to the lifetime of that object.]{.addu}
+
+::: rm
+- [5.1]{.pnum} `ranges​::​begin(E)` and `ranges​::​begin(t)` are expression-equivalent,
+- [5.2]{.pnum} `ranges​::​end(E)` and `ranges​::​end(t)` are expression-equivalent, and
+- [5.3]{.pnum} the validity of iterators obtained from the object denoted by `E` is not tied to the lifetime of that object.
+:::
+
+[6]{.pnum} [ *Note*: Since the validity of iterators is not tied to the lifetime of an object whose type models [_`forwarding-range`_]{.rm} [`safe_range`]{.addu}, a function can accept arguments of such a type by value and return iterators obtained from it without danger of dangling. — *end note* ]
+
+```diff
++ template<class>
++   inline constexpr bool enable_safe_range = true;
+```
+
+[6*]{.pnum} [*Remarks*: Pursuant to [namespace.std], users may specialize `enable_safe_range` for *cv*-unqualified program-defined types.
+Such specializations shall be usable in constant expressions ([expr.const]) and have type `const bool`.]{.addu}
+
+[7]{.pnum} [ Example: Specializations of class template `subrange` model [_`forwarding-range`_]{.rm} [`safe_range`]{.addu}. `subrange` [provides non-member rvalue overloads of `begin` and `end` with the same semantics as its member lvalue overloads]{.rm} [specializes `enable_safe_range` to `true`]{.addu}, and `subrange`'s iterators - since they are “borrowed” from some other range - do not have validity tied to the lifetime of a subrange object. — *end example*  ]
+:::
+
+Change 24.4.5 [range.refinements], the definition of the `viewable_range` concept:
+
+::: bq
+[4]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
+
+```diff
+  template<class T>
+    concept viewable_range =
+-     range<T> && (@[_forwarding-range_]{.diffdel}@<T> || view<decay_t<T>>);
++     range<T> && (@[safe_range]{.diffins}@<T> || view<decay_t<T>>);
+```
+:::
+
+Change 24.5.3 [range.subrange], to use `safe_range` instead of _`forwarding-range`_, to remove the non-member `begin`/`end` overloads that were the old opt-in, and to add a specialization for `enable_safe_range` which is the new opt-in:
+
+::: bq
+[1]{.pnum} The `subrange` class template combines together an iterator and a sentinel into a single object that models the `view` concept.
+Additionally, it models the `sized_range` concept when the final template parameter is `subrange_kind​::​sized`.
+
+```diff
+namespace std::ranges {
+
+  template<input_or_output_iterator I, sentinel_for<I> S = I, subrange_kind K =
+      sized_sentinel_for<S, I> ? subrange_kind::sized : subrange_kind::unsized>
+    requires (K == subrange_kind::sized || !sized_sentinel_for<S, I>)
+  class subrange : public view_interface<subrange<I, S, K>> {
+  
+    template<@_not-same-as_@<subrange> R>
+-     requires @[_forwarding-range_]{.diffdel}@<R> &&
++     requires @[safe_range]{.diffins}@<R> &&
+        convertible_to<iterator_t<R>, I> && convertible_to<sentinel_t<R>, S>
+    constexpr subrange(R&& r) requires (!StoreSize || sized_range<R>);
+
+-   template<@[_forwarding-range_]{.diffdel}@ R>
++   template<@[safe_range]{.diffins}@ R>
+      requires convertible_to<iterator_t<R>, I> && convertible_to<sentinel_t<R>, S>
+    constexpr subrange(R&& r, @_make-unsigned-like-t_@(iter_difference_t<I>) n)
+      requires (K == subrange_kind::sized)
+        : subrange{ranges::begin(r), ranges::end(r), n}
+    {}  
+  
+-   friend constexpr I begin(subrange&& r) { return r.begin(); }
+-   friend constexpr S end(subrange&& r) { return r.end(); }
+  };
+
+
+- template<@[_forwarding-range_]{.diffdel}@ R>
++ template<@[safe_range]{.diffins}@ R>
+    subrange(R&&) ->
+      subrange<iterator_t<R>, sentinel_t<R>,
+               (sized_range<R> || sized_sentinel_for<sentinel_t<R>, iterator_t<R>>)
+                 ? subrange_kind::sized : subrange_kind::unsized>;
+
+- template<@[_forwarding-range_]{.diffdel}@ R>
++ template<@[safe_range]{.diffins}@ R>
+    subrange(R&&, @_make-unsigned-like-t_@(range_difference_t<R>)) ->
+      subrange<iterator_t<R>, sentinel_t<R>, subrange_kind::sized>;
+      
+  template<size_t N, class I, class S, subrange_kind K>
+    requires (N < 2)
+  constexpr auto get(const subrange<I, S, K>& r);
+  
++ template<input_or_output_iterator I, sentinel_for<I> S, subrange_kind K>
++   inline constexpr bool enable_sized_range<subrange<I, S, K>> = true;
+}
+```
+:::
+
+Change the name of the concept in 24.5.3.1 [range.subrange.ctor]:
+
+::: bq
+```diff
+  template<@_not-same-as_@<subrange> R>
+-   requires @[_forwarding-range_]{.diffdel}@<R> &&
++   requires @[safe_range]{.diffins}@<R> &&
+             convertible_to<iterator_t<R>, I> && convertible_to<sentinel_t<R>, S>
+  constexpr subrange(R&& r) requires (!StoreSize || sized_range<R>);
+```
+:::
+
+Change the name of the concept in 24.5.4 [range.dangling]:
+
+::: bq
+[1]{.pnum} The tag type `dangling` is used together with the template aliases `safe_iterator_t` and `safe_subrange_t` to indicate that an algorithm that typically returns an iterator into or subrange of a `range` argument does not return an iterator or subrange which could potentially reference a range whose lifetime has ended for a particular rvalue `range` argument which does not model [_`forwarding-range`_]{.rm} [`safe_range`]{.addu} ([range.range]).
+
+[2]{.pnum} [ *Example*: [...] 
+
+The call to `ranges​::​find` at `#1` returns `ranges​::​dangling` since `f()` is an rvalue `vector`; the `vector` could potentially be destroyed before a returned iterator is dereferenced. However, the calls at `#2` and `#3` both return iterators since the lvalue vec and specializations of `subrange` model [_`forwarding-range`_]{.rm} [`safe_range`]{.addu}. — *end example* ]
 :::
 
 [^1]: There is a hypothetical kind of range where the range itself owns its data by `shared_ptr`, and the iterators _also_ share ownership of the data. In this way, the iterators' validity isn't tied to the range's lifetime not because the range doesn't own the elements (as in the `span` case) but because the iterators _also_ own the elements. I'm not sure if anybody has ever written such a thing.
