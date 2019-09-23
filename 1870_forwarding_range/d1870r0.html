@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-21" />
+  <meta name="dcterms.date" content="2019-09-22" />
   <title>forwarding-range&lt;T&gt; is too subtle</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-21</td>
+    <td>2019-09-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -648,91 +648,79 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Library opt-in: Have the library types which currently opt-in to <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> by providing non-member <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> instead specialize <code class="sourceCode cpp">enable_safe_range</code>, and remove those overloads non-member overloads.</li>
 </ul>
 <h2 id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>Change 21.4.1 [string.view.synop] to add the new specialization to opt-in to <code class="sourceCode cpp">safe_range</code>:</p>
+<p>Change 21.4.2 [string.view.template] to remove the non-member <code class="sourceCode cpp">begin</code>/<code class="sourceCode cpp">end</code> overloads that were the old opt-in and opt-in to <code class="sourceCode cpp">safe_range</code> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: Can’t just provide a specialization for <code class="sourceCode cpp">enable_safe_range</code> since we cannot forward-declare it ]</span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>namespace std {</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  // [string.view.template], class template basic_string_view</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;</span>
-<span id="cb5-4"><a href="#cb5-4"></a>  class basic_string_view;</span>
-<span id="cb5-5"><a href="#cb5-5"></a></span>
-<span id="cb5-6"><a href="#cb5-6"></a><span class="va">+ template&lt;class charT, class traits&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;basic_string_view&lt;charT, traits&gt;&gt; = true; </span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;</span>
+<span id="cb5-2"><a href="#cb5-2"></a>class basic_string_view {</span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">- friend constexpr const_iterator begin(basic_string_view sv) noexcept { return sv.begin(); }</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="st">- friend constexpr const_iterator end(basic_string_view sv) noexcept { return sv.end(); }</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a>};</span></code></pre></div>
 </div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> In every specialization <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span></code>, the type <code class="sourceCode cpp">traits</code> shall meet the character traits requirements ([char.traits]). [ <em>Note</em>: The program is ill-formed if <code class="sourceCode cpp">traits​<span class="op">::</span>​char_type</code> is not the same type as <code class="sourceCode cpp">charT</code>. — <em>end note</em> ]</p>
+<p><span class="marginalizedparent"><a class="marginalized">1*</a></span> <span class="addu">All specializations of <code class="sourceCode cpp">basic_string_view</code> model <code class="sourceCode cpp">safe_range</code> ([range.range])</span></p>
 </blockquote>
-<p>Change 21.4.2 [string.view.template] to remove the non-member <code class="sourceCode cpp">begin</code>/<code class="sourceCode cpp">end</code> overloads that were the old opt-in:</p>
+<p>Change 22.7.3.1 [span.overview] to remove the non-member <code class="sourceCode cpp">begin</code>/<code class="sourceCode cpp">end</code> overloads that were the old opt-in and add the new specialization to opt-in <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: Can’t just provide a specialization for <code class="sourceCode cpp">enable_safe_range</code> since we cannot forward-declare it ]</span>:</p>
 <blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <code class="sourceCode cpp">span</code> is a view over a contiguous sequence of objects, the storage of which is owned by some other object.</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> All member functions of <code class="sourceCode cpp">span</code> have constant time complexity.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <span class="addu">All specializations of <code class="sourceCode cpp">span</code> model <code class="sourceCode cpp">safe_range</code> ([range.range])</span></p>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;</span>
-<span id="cb6-2"><a href="#cb6-2"></a>class basic_string_view {</span>
-<span id="cb6-3"><a href="#cb6-3"></a></span>
-<span id="cb6-4"><a href="#cb6-4"></a></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="st">- friend constexpr const_iterator begin(basic_string_view sv) noexcept { return sv.begin(); }</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="st">- friend constexpr const_iterator end(basic_string_view sv) noexcept { return sv.end(); }</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a></span>
-<span id="cb6-8"><a href="#cb6-8"></a>};</span></code></pre></div>
-</div>
-</blockquote>
-<p>Change 22.7.3.1 [span.overview] to remove the non-member <code class="sourceCode cpp">begin</code>/<code class="sourceCode cpp">end</code> overloads that were the old opt-in and add the new specialization to opt-in:</p>
-<blockquote>
-<div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>namespace std {</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  template&lt;class ElementType, size_t Extent = dynamic_extent&gt;</span>
-<span id="cb7-3"><a href="#cb7-3"></a>  class span {</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    [...]</span>
-<span id="cb7-5"><a href="#cb7-5"></a>    </span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="st">-   friend constexpr iterator begin(span s) noexcept { return s.begin(); }</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="st">-   friend constexpr iterator end(span s) noexcept { return s.end(); }</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a></span>
-<span id="cb7-9"><a href="#cb7-9"></a>  private:</span>
-<span id="cb7-10"><a href="#cb7-10"></a>    pointer data_;    // exposition only</span>
-<span id="cb7-11"><a href="#cb7-11"></a>    index_type size_; // exposition only</span>
-<span id="cb7-12"><a href="#cb7-12"></a>  };</span>
-<span id="cb7-13"><a href="#cb7-13"></a>  </span>
-<span id="cb7-14"><a href="#cb7-14"></a>  template&lt;class Container&gt;</span>
-<span id="cb7-15"><a href="#cb7-15"></a>    span(const Container&amp;) -&gt; span&lt;const typename Container::value_type&gt;;</span>
-<span id="cb7-16"><a href="#cb7-16"></a>    </span>
-<span id="cb7-17"><a href="#cb7-17"></a><span class="va">+ template&lt;class ElementType, size_t Extent&gt;</span></span>
-<span id="cb7-18"><a href="#cb7-18"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;span&lt;ElementType, Extent&gt;&gt; = true;</span></span>
-<span id="cb7-19"><a href="#cb7-19"></a>}  </span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>namespace std {</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  template&lt;class ElementType, size_t Extent = dynamic_extent&gt;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>  class span {</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    [...]</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    </span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="st">-   friend constexpr iterator begin(span s) noexcept { return s.begin(); }</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="st">-   friend constexpr iterator end(span s) noexcept { return s.end(); }</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a>  private:</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    pointer data_;    // exposition only</span>
+<span id="cb6-11"><a href="#cb6-11"></a>    index_type size_; // exposition only</span>
+<span id="cb6-12"><a href="#cb6-12"></a>  };</span>
+<span id="cb6-13"><a href="#cb6-13"></a>  </span>
+<span id="cb6-14"><a href="#cb6-14"></a>  template&lt;class Container&gt;</span>
+<span id="cb6-15"><a href="#cb6-15"></a>    span(const Container&amp;) -&gt; span&lt;const typename Container::value_type&gt;;</span>
+<span id="cb6-16"><a href="#cb6-16"></a>}  </span></code></pre></div>
 </div>
 </blockquote>
 <p>Change 24.2 [ranges.syn] to introduce the new trait and the new non-exposition-only concept:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>#include &lt;initializer_list&gt;</span>
-<span id="cb8-2"><a href="#cb8-2"></a>#include &lt;iterator&gt;</span>
-<span id="cb8-3"><a href="#cb8-3"></a></span>
-<span id="cb8-4"><a href="#cb8-4"></a>namespace std::ranges {</span>
-<span id="cb8-5"><a href="#cb8-5"></a>  [ ... ]</span>
-<span id="cb8-6"><a href="#cb8-6"></a></span>
-<span id="cb8-7"><a href="#cb8-7"></a>  // [range.range], ranges  </span>
-<span id="cb8-8"><a href="#cb8-8"></a>  template&lt;class T&gt;</span>
-<span id="cb8-9"><a href="#cb8-9"></a>    concept range = <em>see below</em>;</span>
-<span id="cb8-10"><a href="#cb8-10"></a></span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="va">+ template &lt;std::range T&gt;</span></span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="va">+   inline constexpr bool enable_safe_range = false;</span></span>
-<span id="cb8-13"><a href="#cb8-13"></a><span class="va">+</span></span>
-<span id="cb8-14"><a href="#cb8-14"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a><span class="va">+   concept safe_range = <em>see below</em>;</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a></span>
-<span id="cb8-17"><a href="#cb8-17"></a>  [ ... ]    </span>
-<span id="cb8-18"><a href="#cb8-18"></a>  </span>
-<span id="cb8-19"><a href="#cb8-19"></a>  // [range.dangling], dangling iterator handling</span>
-<span id="cb8-20"><a href="#cb8-20"></a>  struct dangling;</span>
-<span id="cb8-21"><a href="#cb8-21"></a></span>
-<span id="cb8-22"><a href="#cb8-22"></a>  template&lt;range R&gt;</span>
-<span id="cb8-23"><a href="#cb8-23"></a><span class="st">-   using safe_iterator_t = conditional_t&lt;<span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt;, iterator_t&lt;R&gt;, dangling&gt;;</span></span>
-<span id="cb8-24"><a href="#cb8-24"></a><span class="va">+   using safe_iterator_t = conditional_t&lt;<span class="diffins">safe_range</span>&lt;R&gt;, iterator_t&lt;R&gt;, dangling&gt;;</span></span>
-<span id="cb8-25"><a href="#cb8-25"></a></span>
-<span id="cb8-26"><a href="#cb8-26"></a>  template&lt;range R&gt;</span>
-<span id="cb8-27"><a href="#cb8-27"></a>    using safe_subrange_t =</span>
-<span id="cb8-28"><a href="#cb8-28"></a><span class="st">-     conditional_t&lt;<span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt;, subrange&lt;iterator_t&lt;R&gt;&gt;, dangling&gt;;</span></span>
-<span id="cb8-29"><a href="#cb8-29"></a><span class="va">+     conditional_t&lt;<span class="diffins">safe_range</span>&lt;R&gt;, subrange&lt;iterator_t&lt;R&gt;&gt;, dangling&gt;;</span></span>
-<span id="cb8-30"><a href="#cb8-30"></a>      </span>
-<span id="cb8-31"><a href="#cb8-31"></a>  [...]</span>
-<span id="cb8-32"><a href="#cb8-32"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb7-2"><a href="#cb7-2"></a>#include &lt;iterator&gt;</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a>namespace std::ranges {</span>
+<span id="cb7-5"><a href="#cb7-5"></a>  [ ... ]</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>  // [range.range], ranges  </span>
+<span id="cb7-8"><a href="#cb7-8"></a>  template&lt;class T&gt;</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    concept range = <em>see below</em>;</span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="va">+ template &lt;std::range T&gt;</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="va">+   inline constexpr bool enable_safe_range = false;</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="va">+</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="va">+   concept safe_range = <em>see below</em>;</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a></span>
+<span id="cb7-17"><a href="#cb7-17"></a>  [ ... ]    </span>
+<span id="cb7-18"><a href="#cb7-18"></a>  </span>
+<span id="cb7-19"><a href="#cb7-19"></a>  // [range.dangling], dangling iterator handling</span>
+<span id="cb7-20"><a href="#cb7-20"></a>  struct dangling;</span>
+<span id="cb7-21"><a href="#cb7-21"></a></span>
+<span id="cb7-22"><a href="#cb7-22"></a>  template&lt;range R&gt;</span>
+<span id="cb7-23"><a href="#cb7-23"></a><span class="st">-   using safe_iterator_t = conditional_t&lt;<span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt;, iterator_t&lt;R&gt;, dangling&gt;;</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="va">+   using safe_iterator_t = conditional_t&lt;<span class="diffins">safe_range</span>&lt;R&gt;, iterator_t&lt;R&gt;, dangling&gt;;</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a></span>
+<span id="cb7-26"><a href="#cb7-26"></a>  template&lt;range R&gt;</span>
+<span id="cb7-27"><a href="#cb7-27"></a>    using safe_subrange_t =</span>
+<span id="cb7-28"><a href="#cb7-28"></a><span class="st">-     conditional_t&lt;<span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt;, subrange&lt;iterator_t&lt;R&gt;&gt;, dangling&gt;;</span></span>
+<span id="cb7-29"><a href="#cb7-29"></a><span class="va">+     conditional_t&lt;<span class="diffins">safe_range</span>&lt;R&gt;, subrange&lt;iterator_t&lt;R&gt;&gt;, dangling&gt;;</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a>      </span>
+<span id="cb7-31"><a href="#cb7-31"></a>  [...]</span>
+<span id="cb7-32"><a href="#cb7-32"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Change the definitions of <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">()</span></code>, <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">()</span></code>, and their <code class="sourceCode cpp">c</code> and <code class="sourceCode cpp">r</code> cousins, to only allow lvalues, and then be indifferent to member vs non-member (see also <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>). That is, the poison pill no longer needs to force an overload taking a value or rvalue reference, it now only needs to force ADL - see also <span class="citation" data-cites="LWG3247">[<a href="#ref-LWG3247" role="doc-biblioref">LWG3247</a>]</span>). Some of these changes aren’t strictly necessary (e.g. the changes to <code class="sourceCode cpp">ranges<span class="op">::</span>cbegin</code> explicitly call out being ill-formed for rvalues, but this could’ve been inherited from <code class="sourceCode cpp">ranges<span class="op">::</span>begin</code>), they are made simply to make the specification easier to read.</p>
@@ -744,8 +732,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <span class="addu">Otherwise,</span> <code class="sourceCode cpp">E <span class="op">+</span> <span class="dv">0</span></code> if <code class="sourceCode cpp">E</code> is <span class="rm" style="color: #bf0303"><del>an lvalue</del></span> of array type ([basic.compound]).</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <span class="rm" style="color: #bf0303"><del>if <span><code class="sourceCode cpp">E</code></span> is an lvalue,</del></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>begin<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>begin<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code> with overload resolution performed in a context that includes the declaration<span class="rm" style="color: #bf0303"><del>s</del></span>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>template&lt;class T&gt; void begin(T&amp;&amp;) = delete;</span>
-<span id="cb9-2"><a href="#cb9-2"></a>template&lt;class T&gt; void begin(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>template&lt;class T&gt; void begin(T&amp;&amp;) = delete;</span>
+<span id="cb8-2"><a href="#cb8-2"></a>template&lt;class T&gt; void begin(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></code></pre></div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> Otherwise, <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed. [ Note: This case can result in substitution failure when <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> appears in the immediate context of a template instantiation. <em>— end note</em> ]</p></li>
 </ul>
@@ -759,8 +747,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <span class="addu">Otherwise,</span> <code class="sourceCode cpp">E <span class="op">+</span> extent_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> if E is <span class="rm" style="color: #bf0303"><del>an lvalue</del></span> of array type ([basic.compound]) <code class="sourceCode cpp">T</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <span class="rm" style="color: #bf0303"><del>if E is an lvalue,</del></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>end<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">S</code> models <code class="sourceCode cpp">sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">))&gt;</span></code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>end<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">S</code> models <code class="sourceCode cpp">sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">))&gt;</span></code> with overload resolution performed in a context that includes the declaration<span class="rm" style="color: #bf0303"><del>s</del></span>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>template&lt;class T&gt; void end(T&amp;&amp;) = delete;</span>
-<span id="cb10-2"><a href="#cb10-2"></a>template&lt;class T&gt; void end(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>template&lt;class T&gt; void end(T&amp;&amp;) = delete;</span>
+<span id="cb9-2"><a href="#cb9-2"></a>template&lt;class T&gt; void end(initializer_list&lt;T&gt;&amp;&amp;) = delete;</span></code></pre></div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​end</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> Otherwise, <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>E<span class="op">)</span></code> is ill-formed. [ <em>Note</em>: This case can result in substitution failure when <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>E<span class="op">)</span></code> appears in the immediate context of a template instantiation. — <em>end note</em> ]</p></li>
 </ul>
@@ -791,7 +779,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.0)</a></span> <span class="addu">If <code class="sourceCode cpp">E</code> is an rvalue, <code class="sourceCode cpp">ranges<span class="op">::</span>rbegin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed.`</span></p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <span class="addu">Otherwise</span> <span class="rm" style="color: #bf0303"><del>If <span><code class="sourceCode cpp">E</code></span> is an lvalue</del></span>, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>rbegin<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>rbegin<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> models <code class="sourceCode cpp">input_or_output_iterator</code> with overload resolution performed in a context that includes the declaration:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>template&lt;class T&gt; void rbegin(T&amp;&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>template&lt;class T&gt; void rbegin(T&amp;&amp;) = delete;</span></code></pre></div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​rbegin</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <code class="sourceCode cpp">make_reverse_iterator<span class="op">(</span>ranges​<span class="op">::</span>​end<span class="op">(</span>E<span class="op">))</span></code> if <code class="sourceCode cpp">both ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> and <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>​E<span class="op">)</span></code> are valid expressions of the same type <code class="sourceCode cpp">I</code> which models <code class="sourceCode cpp">bidirectional_iterator</code> ([iterator.concept.bidir]).</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> Otherwise, <code class="sourceCode cpp">ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">)</span></code> is ill-formed. [ Note: This case can result in substitution failure when <code class="sourceCode cpp">ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">)</span></code> appears in the immediate context of a template instantiation. — <em>end note</em> ]</p></li>
@@ -806,7 +794,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <span class="addu">Otherwise</span> <span class="rm" style="color: #bf0303"><del>If <span><code class="sourceCode cpp">E</code></span> is an lvalue</del></span>, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>rend<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">S</code> models <code class="sourceCode cpp">sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>rend<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">S</code> models <code class="sourceCode cpp">sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code>. with overload resolution performed in a context that includes the declaration:</p>
 <div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>template&lt;class T&gt; void rend(T&amp;&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>template&lt;class T&gt; void rend(T&amp;&amp;) = delete;</span></code></pre></div>
 </div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​rend</code>.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <code class="sourceCode cpp">make_reverse_iterator<span class="op">(</span>ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">))</span></code> if both <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> and <code class="sourceCode cpp">ranges​<span class="op">::</span>​​end<span class="op">(</span>E<span class="op">)</span></code> are valid expressions of the same type <code class="sourceCode cpp">I</code> which models <code class="sourceCode cpp">bidirectional_iterator</code> ([iterator.concept.bidir]).</p></li>
@@ -842,7 +830,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2.1)</a></span> <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>E<span class="op">.</span>size<span class="op">())</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> is integer-like ([iterator.concept.winc]).</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.2.2)</a></span> Otherwise, <em><code class="sourceCode cpp">decay<span class="op">-</span>copy</code></em><code class="sourceCode cpp"><span class="op">(</span>size<span class="op">(</span>E<span class="op">))</span></code> if it is a valid expression and its type <code class="sourceCode cpp">I</code> is integer-like with overload resolution performed in a context that includes the declaration:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>template&lt;class T&gt; void size(T&amp;&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>template&lt;class T&gt; void size(T&amp;&amp;) = delete;</span></code></pre></div>
 <p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​size</code>.</p></li>
 </ul></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> Otherwise, <span class="addu">if <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code> models <code class="sourceCode cpp">safe_range</code> ([range.range]),</span> <code><em>make-unsigned-like</em>(ranges::end(<span class="rm" style="color: #bf0303"><del>E</del></span> <span class="addu">t</span>) - ranges::begin(<span class="rm" style="color: #bf0303"><del>E</del></span> <span class="addu">t</span>))</code> ([range.subrange]) if it is a valid expression and the types <code class="sourceCode cpp">I</code> and <code class="sourceCode cpp">S</code> of <code>ranges​::​begin(<span class="rm" style="color: #bf0303"><del>E</del></span> <span class="addu">t</span>)</code> and <code>ranges​::​end(<span class="rm" style="color: #bf0303"><del>E</del></span> <span class="addu">t</span>)</code> (respectively) model both <code class="sourceCode cpp">sized_sentinel_for<span class="op">&lt;</span>S, I<span class="op">&gt;</span></code> ([iterator.concept.sizedsentinel]) and <code class="sourceCode cpp">forward_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code>. <span class="rm" style="color: #bf0303"><del>However, <span><code class="sourceCode cpp">E</code></span> is evaluated only once.</del></span></p></li>
@@ -875,30 +863,30 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The <code class="sourceCode cpp">range</code> concept defines the requirements of a type that allows iteration over its elements by providing an iterator and sentinel that denote the elements of the range.</p>
 <div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="st">-   concept range-impl =          // exposition only</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a><span class="st">-     requires(T&amp;&amp; t) {</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a><span class="st">-       ranges::begin(std::forward&lt;T&gt;(t));        // sometimes equality-preserving (see below)</span></span>
-<span id="cb14-5"><a href="#cb14-5"></a><span class="st">-       ranges::end(std::forward&lt;T&gt;(t));</span></span>
-<span id="cb14-6"><a href="#cb14-6"></a><span class="st">-     };</span></span>
-<span id="cb14-7"><a href="#cb14-7"></a><span class="st">- </span></span>
-<span id="cb14-8"><a href="#cb14-8"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb14-9"><a href="#cb14-9"></a><span class="st">-   concept range = range-impl&lt;T&amp;&gt;;</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a><span class="st">- </span></span>
-<span id="cb14-11"><a href="#cb14-11"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb14-12"><a href="#cb14-12"></a><span class="st">-   concept forwarding-range =    // exposition only</span></span>
-<span id="cb14-13"><a href="#cb14-13"></a><span class="st">-     range&lt;T&gt; &amp;&amp; range-impl&lt;T&gt;;</span></span>
-<span id="cb14-14"><a href="#cb14-14"></a></span>
-<span id="cb14-15"><a href="#cb14-15"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb14-16"><a href="#cb14-16"></a><span class="va">+   concept range =</span></span>
-<span id="cb14-17"><a href="#cb14-17"></a><span class="va">+     requires(T&amp; t) {</span></span>
-<span id="cb14-18"><a href="#cb14-18"></a><span class="va">+       ranges::begin(t);                         // sometimes equality-preserving (see below)</span></span>
-<span id="cb14-19"><a href="#cb14-19"></a><span class="va">+       ranges::end(t);</span></span>
-<span id="cb14-20"><a href="#cb14-20"></a><span class="va">+     }; </span></span>
-<span id="cb14-21"><a href="#cb14-21"></a><span class="va">+</span></span>
-<span id="cb14-22"><a href="#cb14-22"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb14-23"><a href="#cb14-23"></a><span class="va">+   concept safe_range =</span></span>
-<span id="cb14-24"><a href="#cb14-24"></a><span class="va">+     range&lt;T&gt; &amp;&amp; (is_lvalue_reference_v&lt;T&gt; || enable_safe_range&lt;remove_cvref_t&lt;T&gt;&gt;);</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="st">-   concept range-impl =          // exposition only</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="st">-     requires(T&amp;&amp; t) {</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="st">-       ranges::begin(std::forward&lt;T&gt;(t));        // sometimes equality-preserving (see below)</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="st">-       ranges::end(std::forward&lt;T&gt;(t));</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="st">-     };</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="st">- </span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="st">-   concept range = range-impl&lt;T&amp;&gt;;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="st">- </span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="st">-   concept forwarding-range =    // exposition only</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a><span class="st">-     range&lt;T&gt; &amp;&amp; range-impl&lt;T&gt;;</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a></span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="va">+   concept range =</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="va">+     requires(T&amp; t) {</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="va">+       ranges::begin(t);                         // sometimes equality-preserving (see below)</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="va">+       ranges::end(t);</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a><span class="va">+     }; </span></span>
+<span id="cb13-21"><a href="#cb13-21"></a><span class="va">+</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="va">+   concept safe_range =</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+     range&lt;T&gt; &amp;&amp; (is_lvalue_reference_v&lt;T&gt; || enable_safe_range&lt;remove_cvref_t&lt;T&gt;&gt;);</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> The required expressions <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>std​<span class="op">::</span>​forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">))</span></code></span> and <span><code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>std​<span class="op">::</span>​forward<span class="op">&lt;</span>​T<span class="op">&gt;(</span>t<span class="op">))</span></code></span> of the <em><span><code class="sourceCode cpp">range<span class="op">-</span>impl</code></span></em> concept</del></span> <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>t<span class="op">)</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>end<span class="op">(</span>t<span class="op">)</span></code> of the <code class="sourceCode cpp">range</code> concept</span> do not require implicit expression variations ([concepts.equality]).</p>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> Given an expression <code class="sourceCode cpp">E</code> such that <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code> is <code class="sourceCode cpp">T</code> <span class="addu">and an lvalue <code class="sourceCode cpp">t</code> that denotes the same object as <code class="sourceCode cpp">E</code></span>, <code class="sourceCode cpp">T</code> models <span class="rm" style="color: #bf0303"><del><em><span><code class="sourceCode cpp">range<span class="op">-</span>impl</code></span></em></del></span> <span class="addu"><code class="sourceCode cpp">range</code></span> only if</p>
@@ -920,8 +908,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">6</a></span> [ <em>Note</em>: Since the validity of iterators is not tied to the lifetime of an object whose type models <span class="rm" style="color: #bf0303"><del><em><span><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></span></em></del></span> <span class="addu"><code class="sourceCode cpp">safe_range</code></span>, a function can accept arguments of such a type by value and return iterators obtained from it without danger of dangling. — <em>end note</em> ]</p>
 <div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a><span class="va">+ template&lt;class&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2"></a><span class="va">+   inline constexpr bool enable_safe_range = true;</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a><span class="va">+ template&lt;class&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="va">+   inline constexpr bool enable_safe_range = true;</span></span></code></pre></div>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">6*</a></span> <span class="addu"><em>Remarks</em>: Pursuant to [namespace.std], users may specialize <code class="sourceCode cpp">enable_safe_range</code> for <em>cv</em>-unqualified program-defined types. Such specializations shall be usable in constant expressions ([expr.const]) and have type <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">bool</span></code>.</span></p>
 <p><span class="marginalizedparent"><a class="marginalized">7</a></span> [ Example: Specializations of class template <code class="sourceCode cpp">subrange</code> model <span class="rm" style="color: #bf0303"><del><em><span><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></span></em></del></span> <span class="addu"><code class="sourceCode cpp">safe_range</code></span>. <code class="sourceCode cpp">subrange</code> <span class="rm" style="color: #bf0303"><del>provides non-member rvalue overloads of <span><code class="sourceCode cpp">begin</code></span> and <span><code class="sourceCode cpp">end</code></span> with the same semantics as its member lvalue overloads</del></span> <span class="addu">specializes <code class="sourceCode cpp">enable_safe_range</code> to <code class="sourceCode cpp"><span class="kw">true</span></code></span>, and <code class="sourceCode cpp">subrange</code>’s iterators - since they are “borrowed” from some other range - do not have validity tied to the lifetime of a subrange object. — <em>end example</em> ]</p>
@@ -930,71 +918,71 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> The <code class="sourceCode cpp">viewable_range</code> concept specifies the requirements of a <code class="sourceCode cpp">range</code> type that can be converted to a <code class="sourceCode cpp">view</code> safely.</p>
 <div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a>  template&lt;class T&gt;</span>
-<span id="cb16-2"><a href="#cb16-2"></a>    concept viewable_range =</span>
-<span id="cb16-3"><a href="#cb16-3"></a><span class="st">-     range&lt;T&gt; &amp;&amp; (<span class="diffdel"><em>forwarding-range</em></span>&lt;T&gt; || view&lt;decay_t&lt;T&gt;&gt;);</span></span>
-<span id="cb16-4"><a href="#cb16-4"></a><span class="va">+     range&lt;T&gt; &amp;&amp; (<span class="diffins">safe_range</span>&lt;T&gt; || view&lt;decay_t&lt;T&gt;&gt;);</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>  template&lt;class T&gt;</span>
+<span id="cb15-2"><a href="#cb15-2"></a>    concept viewable_range =</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="st">-     range&lt;T&gt; &amp;&amp; (<span class="diffdel"><em>forwarding-range</em></span>&lt;T&gt; || view&lt;decay_t&lt;T&gt;&gt;);</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="va">+     range&lt;T&gt; &amp;&amp; (<span class="diffins">safe_range</span>&lt;T&gt; || view&lt;decay_t&lt;T&gt;&gt;);</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Change 24.5.3 [range.subrange], to use <code class="sourceCode cpp">safe_range</code> instead of <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>, to remove the non-member <code class="sourceCode cpp">begin</code>/<code class="sourceCode cpp">end</code> overloads that were the old opt-in, and to add a specialization for <code class="sourceCode cpp">enable_safe_range</code> which is the new opt-in:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> The <code class="sourceCode cpp">subrange</code> class template combines together an iterator and a sentinel into a single object that models the <code class="sourceCode cpp">view</code> concept. Additionally, it models the <code class="sourceCode cpp">sized_range</code> concept when the final template parameter is <code class="sourceCode cpp">subrange_kind​<span class="op">::</span>​sized</code>.</p>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a>namespace std::ranges {</span>
-<span id="cb17-2"><a href="#cb17-2"></a></span>
-<span id="cb17-3"><a href="#cb17-3"></a>  template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S = I, subrange_kind K =</span>
-<span id="cb17-4"><a href="#cb17-4"></a>      sized_sentinel_for&lt;S, I&gt; ? subrange_kind::sized : subrange_kind::unsized&gt;</span>
-<span id="cb17-5"><a href="#cb17-5"></a>    requires (K == subrange_kind::sized || !sized_sentinel_for&lt;S, I&gt;)</span>
-<span id="cb17-6"><a href="#cb17-6"></a>  class subrange : public view_interface&lt;subrange&lt;I, S, K&gt;&gt; {</span>
-<span id="cb17-7"><a href="#cb17-7"></a>  </span>
-<span id="cb17-8"><a href="#cb17-8"></a>    template&lt;<em>not-same-as</em>&lt;subrange&gt; R&gt;</span>
-<span id="cb17-9"><a href="#cb17-9"></a><span class="st">-     requires <span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt; &amp;&amp;</span></span>
-<span id="cb17-10"><a href="#cb17-10"></a><span class="va">+     requires <span class="diffins">safe_range</span>&lt;R&gt; &amp;&amp;</span></span>
-<span id="cb17-11"><a href="#cb17-11"></a>        convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
-<span id="cb17-12"><a href="#cb17-12"></a>    constexpr subrange(R&amp;&amp; r) requires (!StoreSize || sized_range&lt;R&gt;);</span>
-<span id="cb17-13"><a href="#cb17-13"></a></span>
-<span id="cb17-14"><a href="#cb17-14"></a><span class="st">-   template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
-<span id="cb17-15"><a href="#cb17-15"></a><span class="va">+   template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
-<span id="cb17-16"><a href="#cb17-16"></a>      requires convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
-<span id="cb17-17"><a href="#cb17-17"></a>    constexpr subrange(R&amp;&amp; r, <em>make-unsigned-like-t</em>(iter_difference_t&lt;I&gt;) n)</span>
-<span id="cb17-18"><a href="#cb17-18"></a>      requires (K == subrange_kind::sized)</span>
-<span id="cb17-19"><a href="#cb17-19"></a>        : subrange{ranges::begin(r), ranges::end(r), n}</span>
-<span id="cb17-20"><a href="#cb17-20"></a>    {}  </span>
-<span id="cb17-21"><a href="#cb17-21"></a>  </span>
-<span id="cb17-22"><a href="#cb17-22"></a><span class="st">-   friend constexpr I begin(subrange&amp;&amp; r) { return r.begin(); }</span></span>
-<span id="cb17-23"><a href="#cb17-23"></a><span class="st">-   friend constexpr S end(subrange&amp;&amp; r) { return r.end(); }</span></span>
-<span id="cb17-24"><a href="#cb17-24"></a>  };</span>
-<span id="cb17-25"><a href="#cb17-25"></a></span>
-<span id="cb17-26"><a href="#cb17-26"></a></span>
-<span id="cb17-27"><a href="#cb17-27"></a><span class="st">- template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
-<span id="cb17-28"><a href="#cb17-28"></a><span class="va">+ template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
-<span id="cb17-29"><a href="#cb17-29"></a>    subrange(R&amp;&amp;) -&gt;</span>
-<span id="cb17-30"><a href="#cb17-30"></a>      subrange&lt;iterator_t&lt;R&gt;, sentinel_t&lt;R&gt;,</span>
-<span id="cb17-31"><a href="#cb17-31"></a>               (sized_range&lt;R&gt; || sized_sentinel_for&lt;sentinel_t&lt;R&gt;, iterator_t&lt;R&gt;&gt;)</span>
-<span id="cb17-32"><a href="#cb17-32"></a>                 ? subrange_kind::sized : subrange_kind::unsized&gt;;</span>
-<span id="cb17-33"><a href="#cb17-33"></a></span>
-<span id="cb17-34"><a href="#cb17-34"></a><span class="st">- template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
-<span id="cb17-35"><a href="#cb17-35"></a><span class="va">+ template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
-<span id="cb17-36"><a href="#cb17-36"></a>    subrange(R&amp;&amp;, <em>make-unsigned-like-t</em>(range_difference_t&lt;R&gt;)) -&gt;</span>
-<span id="cb17-37"><a href="#cb17-37"></a>      subrange&lt;iterator_t&lt;R&gt;, sentinel_t&lt;R&gt;, subrange_kind::sized&gt;;</span>
-<span id="cb17-38"><a href="#cb17-38"></a>      </span>
-<span id="cb17-39"><a href="#cb17-39"></a>  template&lt;size_t N, class I, class S, subrange_kind K&gt;</span>
-<span id="cb17-40"><a href="#cb17-40"></a>    requires (N &lt; 2)</span>
-<span id="cb17-41"><a href="#cb17-41"></a>  constexpr auto get(const subrange&lt;I, S, K&gt;&amp; r);</span>
-<span id="cb17-42"><a href="#cb17-42"></a>  </span>
-<span id="cb17-43"><a href="#cb17-43"></a><span class="va">+ template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S, subrange_kind K&gt;</span></span>
-<span id="cb17-44"><a href="#cb17-44"></a><span class="va">+   inline constexpr bool enable_sized_range&lt;subrange&lt;I, S, K&gt;&gt; = true;</span></span>
-<span id="cb17-45"><a href="#cb17-45"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a>namespace std::ranges {</span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a>  template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S = I, subrange_kind K =</span>
+<span id="cb16-4"><a href="#cb16-4"></a>      sized_sentinel_for&lt;S, I&gt; ? subrange_kind::sized : subrange_kind::unsized&gt;</span>
+<span id="cb16-5"><a href="#cb16-5"></a>    requires (K == subrange_kind::sized || !sized_sentinel_for&lt;S, I&gt;)</span>
+<span id="cb16-6"><a href="#cb16-6"></a>  class subrange : public view_interface&lt;subrange&lt;I, S, K&gt;&gt; {</span>
+<span id="cb16-7"><a href="#cb16-7"></a>  </span>
+<span id="cb16-8"><a href="#cb16-8"></a>    template&lt;<em>not-same-as</em>&lt;subrange&gt; R&gt;</span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="st">-     requires <span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt; &amp;&amp;</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="va">+     requires <span class="diffins">safe_range</span>&lt;R&gt; &amp;&amp;</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>        convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
+<span id="cb16-12"><a href="#cb16-12"></a>    constexpr subrange(R&amp;&amp; r) requires (!StoreSize || sized_range&lt;R&gt;);</span>
+<span id="cb16-13"><a href="#cb16-13"></a></span>
+<span id="cb16-14"><a href="#cb16-14"></a><span class="st">-   template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
+<span id="cb16-15"><a href="#cb16-15"></a><span class="va">+   template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
+<span id="cb16-16"><a href="#cb16-16"></a>      requires convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
+<span id="cb16-17"><a href="#cb16-17"></a>    constexpr subrange(R&amp;&amp; r, <em>make-unsigned-like-t</em>(iter_difference_t&lt;I&gt;) n)</span>
+<span id="cb16-18"><a href="#cb16-18"></a>      requires (K == subrange_kind::sized)</span>
+<span id="cb16-19"><a href="#cb16-19"></a>        : subrange{ranges::begin(r), ranges::end(r), n}</span>
+<span id="cb16-20"><a href="#cb16-20"></a>    {}  </span>
+<span id="cb16-21"><a href="#cb16-21"></a>  </span>
+<span id="cb16-22"><a href="#cb16-22"></a><span class="st">-   friend constexpr I begin(subrange&amp;&amp; r) { return r.begin(); }</span></span>
+<span id="cb16-23"><a href="#cb16-23"></a><span class="st">-   friend constexpr S end(subrange&amp;&amp; r) { return r.end(); }</span></span>
+<span id="cb16-24"><a href="#cb16-24"></a>  };</span>
+<span id="cb16-25"><a href="#cb16-25"></a></span>
+<span id="cb16-26"><a href="#cb16-26"></a></span>
+<span id="cb16-27"><a href="#cb16-27"></a><span class="st">- template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
+<span id="cb16-28"><a href="#cb16-28"></a><span class="va">+ template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
+<span id="cb16-29"><a href="#cb16-29"></a>    subrange(R&amp;&amp;) -&gt;</span>
+<span id="cb16-30"><a href="#cb16-30"></a>      subrange&lt;iterator_t&lt;R&gt;, sentinel_t&lt;R&gt;,</span>
+<span id="cb16-31"><a href="#cb16-31"></a>               (sized_range&lt;R&gt; || sized_sentinel_for&lt;sentinel_t&lt;R&gt;, iterator_t&lt;R&gt;&gt;)</span>
+<span id="cb16-32"><a href="#cb16-32"></a>                 ? subrange_kind::sized : subrange_kind::unsized&gt;;</span>
+<span id="cb16-33"><a href="#cb16-33"></a></span>
+<span id="cb16-34"><a href="#cb16-34"></a><span class="st">- template&lt;<span class="diffdel"><em>forwarding-range</em></span> R&gt;</span></span>
+<span id="cb16-35"><a href="#cb16-35"></a><span class="va">+ template&lt;<span class="diffins">safe_range</span> R&gt;</span></span>
+<span id="cb16-36"><a href="#cb16-36"></a>    subrange(R&amp;&amp;, <em>make-unsigned-like-t</em>(range_difference_t&lt;R&gt;)) -&gt;</span>
+<span id="cb16-37"><a href="#cb16-37"></a>      subrange&lt;iterator_t&lt;R&gt;, sentinel_t&lt;R&gt;, subrange_kind::sized&gt;;</span>
+<span id="cb16-38"><a href="#cb16-38"></a>      </span>
+<span id="cb16-39"><a href="#cb16-39"></a>  template&lt;size_t N, class I, class S, subrange_kind K&gt;</span>
+<span id="cb16-40"><a href="#cb16-40"></a>    requires (N &lt; 2)</span>
+<span id="cb16-41"><a href="#cb16-41"></a>  constexpr auto get(const subrange&lt;I, S, K&gt;&amp; r);</span>
+<span id="cb16-42"><a href="#cb16-42"></a>  </span>
+<span id="cb16-43"><a href="#cb16-43"></a><span class="va">+ template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S, subrange_kind K&gt;</span></span>
+<span id="cb16-44"><a href="#cb16-44"></a><span class="va">+   inline constexpr bool enable_sized_range&lt;subrange&lt;I, S, K&gt;&gt; = true;</span></span>
+<span id="cb16-45"><a href="#cb16-45"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Change the name of the concept in 24.5.3.1 [range.subrange.ctor]:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1"></a>  template&lt;<em>not-same-as</em>&lt;subrange&gt; R&gt;</span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="st">-   requires <span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt; &amp;&amp;</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="va">+   requires <span class="diffins">safe_range</span>&lt;R&gt; &amp;&amp;</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a>             convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
-<span id="cb18-5"><a href="#cb18-5"></a>  constexpr subrange(R&amp;&amp; r) requires (!StoreSize || sized_range&lt;R&gt;);</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a>  template&lt;<em>not-same-as</em>&lt;subrange&gt; R&gt;</span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="st">-   requires <span class="diffdel"><em>forwarding-range</em></span>&lt;R&gt; &amp;&amp;</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="va">+   requires <span class="diffins">safe_range</span>&lt;R&gt; &amp;&amp;</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>             convertible_to&lt;iterator_t&lt;R&gt;, I&gt; &amp;&amp; convertible_to&lt;sentinel_t&lt;R&gt;, S&gt;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>  constexpr subrange(R&amp;&amp; r) requires (!StoreSize || sized_range&lt;R&gt;);</span></code></pre></div>
 </div>
 </blockquote>
 <p>Change the name of the concept in 24.5.4 [range.dangling]:</p>

@@ -153,39 +153,36 @@ The naming direction this proposal takes is to use the name `safe_range`, based 
 
 ## Wording
 
-Change 21.4.1 [string.view.synop] to add the new specialization to opt-in to `safe_range`:
-
-::: bq
-```diff
-namespace std {
-  // [string.view.template], class template basic_string_view
-  template<class charT, class traits = char_traits<charT>>
-  class basic_string_view;
-
-+ template<class charT, class traits>
-+   inline constexpr bool enable_safe_range<basic_string_view<charT, traits>> = true; 
-}
-```
-:::
-
-Change 21.4.2 [string.view.template] to remove the non-member `begin`/`end` overloads that were the old opt-in:
+Change 21.4.2 [string.view.template] to remove the non-member `begin`/`end` overloads that were the old opt-in and opt-in to `safe_range` [Can't just provide a specialization for `enable_safe_range` since we cannot forward-declare it]{.ednote}:
 
 ::: bq
 ```diff
 template<class charT, class traits = char_traits<charT>>
 class basic_string_view {
 
-
 - friend constexpr const_iterator begin(basic_string_view sv) noexcept { return sv.begin(); }
 - friend constexpr const_iterator end(basic_string_view sv) noexcept { return sv.end(); }
 
 };
 ```
+
+[1]{.pnum} In every specialization `basic_string_view<charT, traits>`, the type `traits` shall meet the character traits requirements ([char.traits]).
+[ *Note*: The program is ill-formed if `traits​::​char_type` is not the same type as `charT`.
+— *end note*
+ ]
+ 
+[1*]{.pnum} [All specializations of `basic_string_view` model `safe_range` ([range.range])]{.addu}
 :::
 
-Change 22.7.3.1 [span.overview] to remove the non-member `begin`/`end` overloads that were the old opt-in and add the new specialization to opt-in:
+Change 22.7.3.1 [span.overview] to remove the non-member `begin`/`end` overloads that were the old opt-in and add the new specialization to opt-in [Can't just provide a specialization for `enable_safe_range` since we cannot forward-declare it]{.ednote}:
 
 ::: bq
+[1]{.pnum} A `span` is a view over a contiguous sequence of objects, the storage of which is owned by some other object.
+
+[2]{.pnum} All member functions of `span` have constant time complexity.
+
+[3]{.pnum} [All specializations of `span` model `safe_range` ([range.range])]{.addu}
+
 ```diff
 namespace std {
   template<class ElementType, size_t Extent = dynamic_extent>
@@ -202,9 +199,6 @@ namespace std {
   
   template<class Container>
     span(const Container&) -> span<const typename Container::value_type>;
-    
-+ template<class ElementType, size_t Extent>
-+   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;
 }  
 ```
 :::
