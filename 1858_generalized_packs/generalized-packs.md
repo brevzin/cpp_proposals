@@ -662,36 +662,6 @@ constexpr decltype(auto) apply(F&& f, Tuples&&... tuples) {
 Admitedly, six `.`s is a little cryptic. But is it any worse than the current
 implementation?
 
-## Default unpacking
-
-If all we want to do is unpack a type into its subobjects, it seems annoyingly
-wasteful to require _four_ overloads of `operator...()` to get that done. C++20
-already introduces two operators that implicitly iterate over all subobjects
-(`<=>` from [@P0515R3] and `==` from [@P1185R2]), this paper proposes that both
-the pack alias and the pack operator be defaultable.
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        using ... = default; // same as Ts
-        
-        // same as elems for the first two and move(*this).elems for the next two
-        constexpr Ts&        operator ...() &       = default;
-        constexpr Ts const&  operator ...() const&  = default;
-        constexpr Ts&&       operator ...() &&      = default;
-        constexpr Ts const&& operator ...() const&& = default;
-        
-    private:
-        Ts... elems;
-    };
-}
-```
-
-This paper suggests that this kind of default pack operator behave much like
-structured bindings do today: that these are are not references, just aliases,
-so that they can work with bitfields.
 
 ## Structured bindings for pack-expandable types
 
@@ -714,7 +684,7 @@ namespace xstd {
 #ifdef ADD_ALIAS
         using ... = Ts;
 #endif
-        operator Ts& ...() & { return elems; }
+        Ts& operator ...() & { return elems; }
     private:
         Ts... elems;
     };
