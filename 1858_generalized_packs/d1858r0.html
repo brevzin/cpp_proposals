@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-22" />
+  <meta name="dcterms.date" content="2019-09-26" />
   <title>Generalized pack declaration and usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-22</td>
+    <td>2019-09-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -554,7 +554,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </header>
 <div style="clear:both">
 <h1 id="introduction-and-motivation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction and Motivation<a href="#introduction-and-motivation" class="self-link"></a></h1>
-<p>C++11 introduced variadic templates, one of the truly transformational language features introduced that standard. Despite pretty tight restrictions on where packs could be declared and how they could be used, this feature has proven incredibly successful. Three standards later, there hasn’t even been much change. C++17 added a couple new ways to use packs (fold expressions <span class="citation" data-cites="N4191">[<a href="#ref-N4191" role="doc-biblioref">N4191</a>]</span> and using-declarations <span class="citation" data-cites="P0195R2">[<a href="#ref-P0195R2" role="doc-biblioref">P0195R2</a>]</span>), C++20 will add a new way to introduce them (in lambda capture <span class="citation" data-cites="P0780R2">[<a href="#ref-P0780R2" role="doc-biblioref">P0780R2</a>]</span>) and iterate over them (expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>). That’s it.</p>
+<p>C++11 introduced variadic templates, one of the truly transformational language features introduced that standard. Despite pretty tight restrictions on where packs could be declared and how they could be used, this feature has proven incredibly successful. Three standards later, there hasn’t even been much change. C++17 added a couple new ways to use packs (fold expressions <span class="citation" data-cites="N4191">[<a href="#ref-N4191" role="doc-biblioref">N4191</a>]</span> and using-declarations <span class="citation" data-cites="P0195R2">[<a href="#ref-P0195R2" role="doc-biblioref">P0195R2</a>]</span>), and C++20 will add a new way to introduce them (in lambda capture <span class="citation" data-cites="P0780R2">[<a href="#ref-P0780R2" role="doc-biblioref">P0780R2</a>]</span>). A proposal to iterate over them (expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>) didn’t quite make it. That’s it.</p>
 <p>There have been many papers in the interlude about trying to enhance pack functionality: a language typelist <span class="citation" data-cites="N3728">[<a href="#ref-N3728" role="doc-biblioref">N3728</a>]</span>, fixed size and homogeneous packs <span class="citation" data-cites="N4072">[<a href="#ref-N4072" role="doc-biblioref">N4072</a>]</span> (and later <span class="citation" data-cites="P1219R1">[<a href="#ref-P1219R1" role="doc-biblioref">P1219R1</a>]</span>), indexing and slicing into packs <span class="citation" data-cites="N4235">[<a href="#ref-N4235" role="doc-biblioref">N4235</a>]</span> and <span class="citation" data-cites="P0535R0">[<a href="#ref-P0535R0" role="doc-biblioref">P0535R0</a>]</span>, being able to declare packs in more places <span class="citation" data-cites="P0341R0">[<a href="#ref-P0341R0" role="doc-biblioref">P0341R0</a>]</span> and other places <span class="citation" data-cites="P1061R0">[<a href="#ref-P1061R0" role="doc-biblioref">P1061R0</a>]</span>.</p>
 <p>In short, there’s been work in this space, although not all of these papers have been discussed by Evolution. Although, many of these have been received favorably and then never followed up on.</p>
 <p>Yet the features that keep getting hinted at and requested again and again are still missing from our feature set:</p>
@@ -652,7 +652,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-11"><a href="#cb8-11"></a><span class="op">}</span></span></code></pre></div>
 <p>This is nicer than status quo, but I think we can do better in this regard with a little bit more help.</p>
 <h2 id="pack-aliases-and-generalized-indexing"><span class="header-section-number">2.4</span> Pack aliases and generalized indexing<a href="#pack-aliases-and-generalized-indexing" class="self-link"></a></h2>
-<p>The previous section defines the syntax <code class="sourceCode cpp">T<span class="op">...[</span>I<span class="op">]</span></code> to be indexing into a pack, <code class="sourceCode cpp">T</code>. Let’s immediately generalize this. Let’s also say that a <em>type</em> can be pack-indexed into is the type provides an alias named <code class="sourceCode cpp"><span class="op">...</span></code></p>
+<p>The previous section defines the syntax <code class="sourceCode cpp">T<span class="op">...[</span>I<span class="op">]</span></code> to be indexing into a pack, <code class="sourceCode cpp">T</code>. Let’s immediately generalize this. Let’s also say that a <em>type</em> can be pack-indexed into if the type provides an alias named <code class="sourceCode cpp"><span class="op">...</span></code></p>
 <p>That is:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">namespace</span> xstd <span class="op">{</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
@@ -747,7 +747,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-2"><a href="#cb18-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> MyX<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb18-3"><a href="#cb18-3"></a>  <span class="kw">using</span> Fn <span class="op">=</span> <span class="dt">void</span><span class="op">(</span><span class="kw">typename</span> MyX<span class="op">::</span>pack types <span class="op">...)</span>;</span>
 <span id="cb18-4"><a href="#cb18-4"></a><span class="op">}</span></span></code></pre></div>
-<p>We would need a new keyword to make this happen, and <code class="sourceCode cpp">pack</code> seems entirely too pretty to make this work. As a placeholder, this paper suggests using <em>preceding</em> ellipses (which still need to be separated by a space). That is:</p>
+<p>Today that’s declaring a function type that takes one argument of type <code class="sourceCode cpp"><span class="kw">typename</span> MyX<span class="op">::</span>pack</code> named <code class="sourceCode cpp">types</code> and then varargs with the comma elided. If we make the comma mandatory (as <span class="citation" data-cites="P1219R1">[<a href="#ref-P1219R1" role="doc-biblioref">P1219R1</a>]</span> proposes to do), then that would open up our ability to use a context-sensitive <code class="sourceCode cpp">pack</code> here.</p>
+<p>Otherwise, we would need a new keyword to make this happen, and <code class="sourceCode cpp">pack</code> seems entirely too pretty to make this work. As a placeholder, this paper suggests using <em>preceding</em> ellipses (which still need to be separated by a space). That is:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
 <span id="cb19-2"><a href="#cb19-2"></a><span class="dt">int</span> tuple_sum<span class="op">(</span>Tuple t<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb19-3"><a href="#cb19-3"></a>    <span class="cf">return</span> sum<span class="op">(</span>t<span class="op">.</span> <span class="op">...</span>elems<span class="op">...)</span>;</span>
@@ -808,9 +809,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a>foo<span class="op">(</span>x<span class="op">...)</span>; <span class="co">// implicitly add packness to x and unpack it</span></span></code></pre></div>
 <p>I’m not sure it’s worth it to pursue.</p>
 <h2 id="disambiguating-packs-of-tuples"><span class="header-section-number">2.9</span> Disambiguating packs of tuples<a href="#disambiguating-packs-of-tuples" class="self-link"></a></h2>
-<p>The previous section showed how to write <code class="sourceCode cpp">apply</code> taking a single function and a single tuple. What if we generalized it it taking multiple tuples? How do we handle a pack of tuples?</p>
+<p>The previous section showed how to write <code class="sourceCode cpp">apply</code> taking a single function and a single tuple. What if we generalized it to taking multiple tuples? How do we handle a pack of tuples?</p>
 <p>It’s at this point that it’s worth taking a step back and talking about disambiguation and why this paper makes the syntax choices that it makes. We need to be able to differentiate between packs and tuples. The two concepts are very similar, and this paper seeks to make them much more similar, but we still need to differentiate between them. It’s the pack of tuples case that really brings the ambiguity to light.</p>
-<p>The rules this paper, which have all been introduced at this point, are:</p>
+<p>The rules this paper proposes, which have all been introduced at this point, are:</p>
 <ul>
 <li><p><code class="sourceCode cpp">e<span class="op">.[:]</span></code> takes a <a href="#pack-like-type"><em>pack-like type</em></a> (or object of such) and adds a layer of packness to it, by way of either <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">...()</span></code> or <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">...</span></code>. It never is applied to an existing pack, and it is never used to disambiguate dependent member access.</p></li>
 <li><p><code class="sourceCode cpp">e<span class="op">.[</span>I<span class="op">]</span></code> never removes a layer of packness. It is picking the <code class="sourceCode cpp">I</code>th element of a pack-like type.</p></li>
@@ -1206,7 +1207,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Directly indexing into the union variant members makes the implementation much easier to write and read. Not needing a recursive union template is a nice bonus.</p>
 <h2 id="enumerating-over-a-pack"><span class="header-section-number">2.17</span> Enumerating over a pack<a href="#enumerating-over-a-pack" class="self-link"></a></h2>
 <p>As another example, let’s say we want to take a parameter pack and print its contents along with an index. Here are some ways we could do that with this proposal (assuming expansion statements):</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1"></a><span class="co">// iterate over the indices, and indes into the pack</span></span>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1"></a><span class="co">// iterate over the indices, and index into the pack</span></span>
 <span id="cb57-2"><a href="#cb57-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb57-3"><a href="#cb57-3"></a><span class="dt">void</span> enumerate1<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span></span>
 <span id="cb57-4"><a href="#cb57-4"></a><span class="op">{</span></span>
@@ -1378,7 +1379,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb70-4"><a href="#cb70-4"></a>        <span class="cf">return</span> <span class="op">{}</span>;</span>
 <span id="cb70-5"><a href="#cb70-5"></a>    <span class="op">}</span></span>
 <span id="cb70-6"><a href="#cb70-6"></a><span class="op">}</span>;</span></code></pre></div>
-<p>One of the cool things we will be able to do in C++20 is implement tuple swap like so <span class="citation" data-cites="Stone.Swap">[<a href="#ref-Stone.Swap" role="doc-biblioref">Stone.Swap</a>]</span>:</p>
+<p>One of the things we could have built on top of expansion statements was to implement tuple swap like so <span class="citation" data-cites="Stone.Swap">[<a href="#ref-Stone.Swap" role="doc-biblioref">Stone.Swap</a>]</span>:</p>
 <div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> TYPES<span class="op">&gt;</span></span>
 <span id="cb71-2"><a href="#cb71-2"></a><span class="kw">constexpr</span></span>
 <span id="cb71-3"><a href="#cb71-3"></a><span class="dt">void</span> tuple<span class="op">&lt;</span>TYPES<span class="op">...&gt;::</span>swap<span class="op">(</span>tuple<span class="op">&amp;</span> other<span class="op">)</span></span>
@@ -1425,6 +1426,7 @@ If any of these new special named members yields a reflection range, that range 
 <p>In dependent contexts, anything that is not a pack must be explicitly identified as a pack in order to be treated as one. Similar to how we need the <code class="sourceCode cpp"><span class="kw">typename</span></code> and <code class="sourceCode cpp"><span class="kw">template</span></code> keyword in many places to identify that such and such an expression is a type or a template, a preceding <code class="sourceCode cpp"><span class="op">...</span></code> (or whatever alternate spelling) will identify the expression that follows it as a pack. If that entity is <em>not</em> a pack, then the indexing or unpacking expression is ill-formed.</p>
 <h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>This paper would not exist without many thorough conversations with Agustín Bergé, Matt Calabrese, and Richard Smith. Thank you.</p>
+<p>Thank you to David Stone for pointing out many issues.</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">

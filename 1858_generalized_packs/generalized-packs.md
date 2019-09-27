@@ -16,9 +16,9 @@ features introduced that standard. Despite pretty tight restrictions on where
 packs could be declared and how they could be used, this feature has proven
 incredibly successful. Three standards later, there hasn't even been much change.
 C++17 added a couple new ways to use packs (fold expressions [@N4191] and
-using-declarations [@P0195R2]), C++20 will add a new way to introduce them
-(in lambda capture [@P0780R2]) and iterate over them (expansion statements 
-[@P1306R1]). That's it.
+using-declarations [@P0195R2]), and C++20 will add a new way to introduce them
+(in lambda capture [@P0780R2]). A proposal to iterate over them (expansion statements 
+[@P1306R1]) didn't quite make it. That's it.
 
 There have been many papers in the interlude about trying to enhance pack
 functionality: a language typelist [@N3728], fixed size and homogeneous packs
@@ -208,7 +208,7 @@ a little bit more help.
 
 The previous section defines the syntax `T...[I]` to be indexing into a pack, `T`.
 Let's immediately generalize this. Let's also say that a _type_ can be pack-indexed
-into is the type provides an alias named `...`
+into if the type provides an alias named `...`
 
 That is:
 
@@ -370,7 +370,12 @@ template<typename MyX> void f() {
 }
 ```
 
-We would need a new keyword to make this happen, and `pack` seems entirely too
+Today that's declaring a function type that takes one argument of type
+`typename MyX::pack` named `types` and then varargs with the comma elided. If
+we make the comma mandatory (as [@P1219R1] proposes to do), then that would open
+up our ability to use a context-sensitive `pack` here. 
+
+Otherwise, we would need a new keyword to make this happen, and `pack` seems entirely too
 pretty to make this work. As a placeholder, this paper suggests using _preceding_
 ellipses (which still need to be separated by a space). That is:
 
@@ -490,7 +495,7 @@ I'm not sure it's worth it to pursue.
 ## Disambiguating packs of tuples
 
 The previous section showed how to write `apply` taking a single function and a
-single tuple. What if we generalized it it taking multiple tuples? How do we
+single tuple. What if we generalized it to taking multiple tuples? How do we
 handle a pack of tuples?
 
 It's at this point that it's worth taking a step back and talking about
@@ -500,7 +505,8 @@ similar, and this paper seeks to make them much more similar, but we still need
 to differentiate between them. It's the pack of tuples case that really brings
 the ambiguity to light. 
 
-The rules this paper, which have all been introduced at this point, are:
+The rules this paper proposes, which have all been introduced at this point, 
+are:
 
 - `e.[:]` takes a [_pack-like type_](#pack-like-type)
 (or object of such) and adds a layer of packness
@@ -1081,7 +1087,7 @@ contents along with an index. Here are some ways we could do that with this
 proposal (assuming expansion statements):
 
 ```cpp
-// iterate over the indices, and indes into the pack
+// iterate over the indices, and index into the pack
 template <typename... Ts>
 void enumerate1(Ts... ts)
 {
@@ -1339,8 +1345,8 @@ struct integer_sequence {
 };
 ```
 
-One of the cool things we will be able to do in C++20 is implement tuple swap
-like so [@Stone.Swap]:
+One of the things we could have built on top of expansion statements was to
+implement tuple swap like so [@Stone.Swap]:
 
 ```cpp
 template <class... TYPES>
@@ -1440,6 +1446,8 @@ the indexing or unpacking expression is ill-formed.
 
 This paper would not exist without many thorough conversations with
 Agustín Bergé, Matt Calabrese, and Richard Smith. Thank you.
+
+Thank you to David Stone for pointing out many issues.
 
 ---
 references:
