@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-16" />
+  <meta name="dcterms.date" content="2019-10-03" />
   <title>Concepts-Adjacent Problems</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-16</td>
+    <td>2019-10-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -764,8 +764,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-3"><a href="#cb11-3"></a>    <span class="kw">requires</span> <span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v, ostream<span class="op">&amp;</span> os, <span class="dt">size_t</span> pos<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb11-4"><a href="#cb11-4"></a>        parent<span class="op">::</span>draw<span class="op">(</span>v, os, pos<span class="op">)</span>; <span class="co">// a CPO for member or non-member draw</span></span>
 <span id="cb11-5"><a href="#cb11-5"></a>    <span class="op">}</span>;</span></code></pre></div>
-<p>How do we produce a type out of this <code class="sourceCode cpp"><span class="kw">concept</span></code> which can hold any <code class="sourceCode cpp">drawable</code> that is also itself <code class="sourceCode cpp">drawable</code>? Even with full reflection facilities, this seems like an overwhelmingly difficult problem. It’s telling that all the reflection-based type erasure work has not been based on <code class="sourceCode cpp"><span class="kw">concept</span></code>s but has been instead based on simple class definitions with member functions (Louis Dionne presented such an idea at CppCon 2017 <span class="citation" data-cites="Dionne">[<a href="#ref-Dionne" role="doc-biblioref">Dionne</a>]</span>, and Sy Brand implemented this recently using metaclasses <span class="citation" data-cites="Brand">[<a href="#ref-Brand" role="doc-biblioref">Brand</a>]</span>).</p>
-<p>Such a generalized facility, to take one or more <code class="sourceCode cpp"><span class="kw">concept</span></code>s and synthesized a type erased object out of them so that they do not need to hand-written, would be incredibly useful. We even have a ready-made case study. C++11 added <code class="sourceCode cpp">std<span class="op">::</span>function</code>, a type erased, copyable, owning callable. This type has proven very useful. But for C++20, we tried to add two more very similar types:</p>
+<p>How do we produce a type out of this <code class="sourceCode cpp"><span class="kw">concept</span></code> which can hold any <code class="sourceCode cpp">drawable</code> that is also itself <code class="sourceCode cpp">drawable</code>? Even with full reflection facilities, this seems like an overwhelmingly difficult problem. It’s telling that all the reflection-based type erasure work has not been based on <code class="sourceCode cpp"><span class="kw">concept</span></code>s but has been instead based on simple class definitions with member functions (Louis Dionne presented such an idea at CppCon 2017 <span class="citation" data-cites="Dionne">[<a href="#ref-Dionne" role="doc-biblioref">Dionne</a>]</span>, Sy Brand implemented this recently using metaclasses <span class="citation" data-cites="Brand">[<a href="#ref-Brand" role="doc-biblioref">Brand</a>]</span> <span class="citation" data-cites="Brand.Github">[<a href="#ref-Brand.Github" role="doc-biblioref">Brand.Github</a>]</span>, and Andrew Sutton discussed and heavily praised Sy’s implementation at CppCon 2019 <span class="citation" data-cites="Sutton">[<a href="#ref-Sutton" role="doc-biblioref">Sutton</a>]</span>).</p>
+<p>Such a generalized facility, to take one or more <code class="sourceCode cpp"><span class="kw">concept</span></code>s and synthesized a type erased object out of them so that they do not need to be hand-written, would be incredibly useful. We even have a ready-made case study. C++11 added <code class="sourceCode cpp">std<span class="op">::</span>function</code>, a type erased, copyable, owning callable. This type has proven very useful. But for C++20, we tried to add two more very similar types:</p>
 <ul>
 <li>A type-erased, move-only, owning callable: <code class="sourceCode cpp">std<span class="op">::</span>any_invocable</code> <span class="citation" data-cites="P0288R4">[<a href="#ref-P0288R4" role="doc-biblioref">P0288R4</a>]</span></li>
 <li>A type-erased, non-owning callable: <code class="sourceCode cpp">std<span class="op">::</span>function_ref</code> <span class="citation" data-cites="P0792R4">[<a href="#ref-P0792R4" role="doc-biblioref">P0792R4</a>]</span></li>
@@ -774,16 +774,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>  namespace std {</span>
 <span id="cb12-2"><a href="#cb12-2"></a>    template &lt;typename Sig&gt;</span>
-<span id="cb12-3"><a href="#cb12-3"></a>    using function = type_erase&lt;invocable&lt;Sig&gt;, sbo_storage&lt;<em>implementation-defined</em>&gt;&gt;;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    using function = any_concept&lt;invocable&lt;Sig&gt;, sbo_storage&lt;<em>implementation-defined</em>&gt;&gt;;</span>
 <span id="cb12-4"><a href="#cb12-4"></a></span>
 <span id="cb12-5"><a href="#cb12-5"></a><span class="va">+   template &lt;typename Sig&gt;</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a><span class="va">+   using any_invocable = type_erase&lt;invocable&lt;Sig&gt;, move_only_storage&gt;;</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="va">+   using any_invocable = any_concept&lt;invocable&lt;Sig&gt;, move_only_storage&gt;;</span></span>
 <span id="cb12-7"><a href="#cb12-7"></a><span class="va">+      </span></span>
 <span id="cb12-8"><a href="#cb12-8"></a><span class="va">+   template &lt;typename Sig&gt;</span></span>
-<span id="cb12-9"><a href="#cb12-9"></a><span class="va">+   using function_ref = type_erase&lt;invocable&lt;Sig&gt;, non_owning_storage&gt;;</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="va">+   using function_ref = any_concept&lt;invocable&lt;Sig&gt;, non_owning_storage&gt;;</span></span>
 <span id="cb12-10"><a href="#cb12-10"></a>  }</span></code></pre></div>
 </div>
 <p>Concept-driven type erasure is an important use case of <code class="sourceCode cpp"><span class="kw">concept</span></code>s, one which isn’t solved by the language feature we have today. Instead, we have to solve this with a proliferation of types which hand-implement the specific type erasure with the specific storage choice on a case-by-case basis. Because these types are so difficult to write, yet so useful, there is a push to add them to the standard library – and each such type is an independent, slow process.</p>
+<p>Potentially, with a future generative metaprogramming language feature, built on <span class="citation" data-cites="P0707R4">[<a href="#ref-P0707R4" role="doc-biblioref">P0707R4</a>]</span> and <span class="citation" data-cites="P1717R0">[<a href="#ref-P1717R0" role="doc-biblioref">P1717R0</a>]</span>, we could write a library to avoid hand-implementing type erased objects (as in Sy’s example <span class="citation" data-cites="Brand.Github">[<a href="#ref-Brand.Github" role="doc-biblioref">Brand.Github</a>]</span>). It’s just that such a library would not be based on <code class="sourceCode cpp"><span class="kw">concept</span></code>s, and would either lead to a bifurcation of the contraint system or we would have such a library would inject a <code class="sourceCode cpp"><span class="kw">concept</span></code>s for us. Either of which seems like an inadequacy of <code class="sourceCode cpp"><span class="kw">concept</span></code>s.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>As I said in the very beginning of this paper, this paper is not a proposal. I do not have concrete suggestions for how to solve any of these problems (or even vaguely amorphous suggestions). The goal of this paper is instead to present the problems that the concepts language feature could solve, and should solve, but at the moment does not.</p>
 <p>But because these problems have to be solved, we end up with proliferations of type traits, bespoke opt-in solutions, customization point objects, and whole classes. The surface area that a programmer needs to know to write good generic code is enormous.</p>
@@ -794,6 +795,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-Brand">
 <p>[Brand] Sy Brand. 2019. I’ve written a proof-of-concept implementation of Rust-style trait objects in C++ using the experimental metaclasses compiler. <br />
 <a href="https://twitter.com/tartanllama/status/1159445548417634324?lang=en">https://twitter.com/tartanllama/status/1159445548417634324?lang=en</a></p>
+</div>
+<div id="ref-Brand.Github">
+<p>[Brand.Github] Sy Brand. 2019. Typeclasses in C++. <br />
+<a href="https://github.com/tartanllama/typeclasses/">https://github.com/tartanllama/typeclasses/</a></p>
 </div>
 <div id="ref-cmcstl2">
 <p>[cmcstl2] Casey Carter. 2019. An implementation of C++ Extensions for Ranges. <br />
@@ -811,6 +816,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[P0288R4] Ryan McDougall, Matt Calabrese. 2019. any_invocable. <br />
 <a href="https://wg21.link/p0288r4">https://wg21.link/p0288r4</a></p>
 </div>
+<div id="ref-P0707R4">
+<p>[P0707R4] Herb Sutter. 2019. Metaclasses: Generative C++. <br />
+<a href="https://wg21.link/p0707r4">https://wg21.link/p0707r4</a></p>
+</div>
 <div id="ref-P0792R4">
 <p>[P0792R4] Vittorio Romeo. 2019. function_ref: a non-owning reference to a Callable. <br />
 <a href="https://wg21.link/p0792r4">https://wg21.link/p0792r4</a></p>
@@ -819,9 +828,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[P1292R0] Matt Calabrese. 2018. Customization Point Functions. <br />
 <a href="https://wg21.link/p1292r0">https://wg21.link/p1292r0</a></p>
 </div>
+<div id="ref-P1717R0">
+<p>[P1717R0] Andrew Sutton, Wyatt Childers. 2019. Compile-time Metaprogramming in C++. <br />
+<a href="https://wg21.link/p1717r0">https://wg21.link/p1717r0</a></p>
+</div>
 <div id="ref-Parent">
 <p>[Parent] Sean Parent. 2013. GoingNative 2013: Inheritance Is The Base Class of Evil. <br />
 <a href="https://www.youtube.com/watch?v=2bLkxj6EVoM">https://www.youtube.com/watch?v=2bLkxj6EVoM</a></p>
+</div>
+<div id="ref-Sutton">
+<p>[Sutton] Andrew Sutton. 2019. Meta++: Language Support for Advanced Generative Programming. <br />
+<a href="https://youtu.be/kjQXhuPX-Ac?t=2057">https://youtu.be/kjQXhuPX-Ac?t=2057</a></p>
 </div>
 </div>
 <section class="footnotes" role="doc-endnotes">

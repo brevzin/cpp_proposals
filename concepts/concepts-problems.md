@@ -291,9 +291,9 @@ concept drawable =
     };
 ```
 
-How do we produce a type out of this `concept` which can hold any `drawable` that is also itself `drawable`? Even with full reflection facilities, this seems like an overwhelmingly difficult problem. It's telling that all the reflection-based type erasure work has not been based on `concept`s but has been instead based on simple class definitions with member functions (Louis Dionne presented such an idea at CppCon 2017 [@Dionne], and Sy Brand implemented this recently using metaclasses [@Brand]).
+How do we produce a type out of this `concept` which can hold any `drawable` that is also itself `drawable`? Even with full reflection facilities, this seems like an overwhelmingly difficult problem. It's telling that all the reflection-based type erasure work has not been based on `concept`s but has been instead based on simple class definitions with member functions (Louis Dionne presented such an idea at CppCon 2017 [@Dionne], Sy Brand implemented this recently using metaclasses [@Brand] [@Brand.Github], and Andrew Sutton discussed and heavily praised Sy's implementation at CppCon 2019 [@Sutton]).
 
-Such a generalized facility, to take one or more `concept`s and synthesized a type erased object out of them so that they do not need to hand-written, would be incredibly useful. We even have a ready-made case study. C++11 added `std::function`, a type erased, copyable, owning callable. This type has proven very useful. But for C++20, we tried to add two more very similar types:
+Such a generalized facility, to take one or more `concept`s and synthesized a type erased object out of them so that they do not need to be hand-written, would be incredibly useful. We even have a ready-made case study. C++11 added `std::function`, a type erased, copyable, owning callable. This type has proven very useful. But for C++20, we tried to add two more very similar types:
 
 * A type-erased, move-only, owning callable: `std::any_invocable` [@P0288R4]
 * A type-erased, non-owning callable: `std::function_ref` [@P0792R4]
@@ -303,17 +303,19 @@ If we had the ability to take a `concept` and create a type erased type out of i
 ```diff
   namespace std {
     template <typename Sig>
-    using function = type_erase<invocable<Sig>, sbo_storage<@_implementation-defined_@>>;
+    using function = any_concept<invocable<Sig>, sbo_storage<@_implementation-defined_@>>;
 
 +   template <typename Sig>
-+   using any_invocable = type_erase<invocable<Sig>, move_only_storage>;
++   using any_invocable = any_concept<invocable<Sig>, move_only_storage>;
 +      
 +   template <typename Sig>
-+   using function_ref = type_erase<invocable<Sig>, non_owning_storage>;
++   using function_ref = any_concept<invocable<Sig>, non_owning_storage>;
   }
 ```
 
-Concept-driven type erasure is an important use case of `concept`s, one which isn't solved by the language feature we have today. Instead, we have to solve this with a proliferation of types which hand-implement the specific type erasure with the specific storage choice on a case-by-case basis. Because these types are so difficult to write, yet so useful, there is a push to add them to the standard library -- and each such type is an independent, slow process. 
+Concept-driven type erasure is an important use case of `concept`s, one which isn't solved by the language feature we have today. Instead, we have to solve this with a proliferation of types which hand-implement the specific type erasure with the specific storage choice on a case-by-case basis. Because these types are so difficult to write, yet so useful, there is a push to add them to the standard library -- and each such type is an independent, slow process.
+
+Potentially, with a future generative metaprogramming language feature, built on [@P0707R4] and [@P1717R0], we could write a library to avoid hand-implementing type erased objects (as in Sy's example [@Brand.Github]). It's just that such a library would not be based on `concept`s, and would either lead to a bifurcation of the contraint system or we would have such a library would inject a `concept`s for us. Either of which seems like an inadequacy of `concept`s. 
 
 # Proposal
 
@@ -393,4 +395,20 @@ references:
     issued:
         - year: 2019
     URL: https://twitter.com/tartanllama/status/1159445548417634324?lang=en
+  - id: Brand.Github
+    citation-label: Brand.Github
+    title: "Typeclasses in C++"
+    author:
+        - family: Sy Brand
+    issued:
+        - year: 2019    
+    URL: https://github.com/tartanllama/typeclasses/
+  - id: Sutton
+    citation-label: Sutton
+    title: "Meta++: Language Support for Advanced Generative Programming"
+    author:
+        - family: Andrew Sutton
+    issued:
+        - year: 2019    
+    URL: https://youtu.be/kjQXhuPX-Ac?t=2057
 ---
