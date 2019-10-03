@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-09-22" />
+  <meta name="dcterms.date" content="2019-10-03" />
   <title>forwarding-range&lt;T&gt; is too subtle</title>
   <style>
       code{white-space: pre-wrap;}
@@ -535,7 +535,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-09-22</td>
+    <td>2019-10-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -626,7 +626,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp">sized_range</code>: opt-out via the <code class="sourceCode cpp">disable_sized_range</code> trait (itself problematic due to the double negative, see <span class="citation" data-cites="P1871R0">[<a href="#ref-P1871R0" role="doc-biblioref">P1871R0</a>]</span>)</li>
 </ul>
 <p>I don’t think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it’s a hack around not having a language mechanism to express opt-in. It’s still the best hack we have, that’s the easiest to understand, that’s probably more compiler-efficient as well (overload resolution is expensive!)</p>
-<h2 id="public-shaming"><span class="header-section-number">3.5</span> Public shaming<a href="#public-shaming" class="self-link"></a></h2>
+<h2 id="hard-to-get-correct"><span class="header-section-number">3.5</span> Hard to get correct<a href="#hard-to-get-correct" class="self-link"></a></h2>
 <p>Now that MSVC’s standard library implementation is open source, we can take a look at how they went about implementing the opt-in for <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> in their implementation of <code class="sourceCode cpp">basic_string_view</code> <span class="citation" data-cites="msvc.basic_string_view">[<a href="#ref-msvc.basic_string_view" role="doc-biblioref">msvc.basic_string_view</a>]</span>:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="pp">#ifdef __cpp_lib_concepts</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a>    _NODISCARD <span class="kw">friend</span> <span class="kw">constexpr</span> const_iterator begin<span class="op">(</span><span class="kw">const</span> basic_string_view<span class="op">&amp;</span> _Right<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>

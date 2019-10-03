@@ -123,7 +123,7 @@ At this point, we have three concepts in Ranges that have some sort of mechanism
 
 I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a language mechanism to express opt-in. It's still the best hack we have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
 
-## Public shaming
+## Hard to get correct
 
 Now that MSVC's standard library implementation is open source, we can take a look at how they went about implementing the opt-in for _`forwarding-range`_ in their implementation of `basic_string_view` [@msvc.basic_string_view]:
 
