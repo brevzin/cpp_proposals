@@ -23,7 +23,7 @@
 - 1858 Generalized pack declaration and usage: [d1858r0](1858_generalized_packs/d1858r0.html)
 - 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [d1870r0](1870_forwarding_range/d1870r0.html)
 - 1871 Should concepts be enabled or disabled?: [d1871r0](1871_enable_sized_range/d1871r0.html)
+- 1900 Concepts-Adjacent Problems: [d1900r0](1900_concepts/d1900r0.html)
 
 # Other Papers
-- Concepts-Adjacent Problems: [dxxxxr0.html](concepts/dxxxxr0.html)
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
