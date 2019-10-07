@@ -1,6 +1,6 @@
 ---
 title:  Should concepts be enabled or disabled? 
-document: D1871R0
+document: P1871R0
 date: today
 audience: LEWG
 author:
