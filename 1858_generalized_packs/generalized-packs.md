@@ -1,6 +1,6 @@
 ---
 title: Generalized pack declaration and usage
-document: D1858R0
+document: P1858R0
 date: today
 audience: EWG
 author:
@@ -867,6 +867,18 @@ void f(Ts... ts)
 
 The latter has some added wrinkles since you can already have a range-based for statement over a _braced-init-list_ if it can be deduced to some `std::initializer_list<T>`, and we'd need a different declaration for the range (`auto ... range = {ts...};` vs `auto range = {ts...};`), but we _already_ have a different declaration for the range in the `constexpr` case, so what's a third special case, really?
 
+This does introduce some more added subtletly with initialization:
+
+```cpp
+auto    a = {1, 2, 3}; // a is a std::initializer_list<int>
+auto... b = {1, 2, 3}; // b is a pack of int's
+```
+
+Those two declarations are very different. But also, they look very different -
+one has `...` and the other does not. One looks like it is declaring an object
+and the other looks like it is declaring a pack. This doesn't seem inherently
+problematic.
+
 ## Generalized Slicing and a simplified Boost.Mp11
 
 This paper proposes `T.[:]` to be a sigil to add packness. This also allows
@@ -918,6 +930,50 @@ constexpr Z fold(F f, Z z, Ts... rest)
     }
 }
 ```
+
+### Min
+
+Andrew Sutton in a CppCon 2019 talk [@Sutton] showed an example using an
+expansion statement to find the mininum of a pack. This paper allows for
+a more direct implementation:
+
+::: tonytable
+
+### Sutton
+```cpp
+template <typename... Ts>
+auto min_arg(Ts... args) {
+    auto min = head(args...);
+    template for (auto x : tail(args...)) {
+        if (x < min) {
+            min = x;
+        }
+    }
+    return min;
+}
+```
+
+### This proposal
+```cpp
+template <typename... Ts>
+auto min_arg(Ts... args) {
+    auto min = args...[0];
+    template for (auto x : {args.[1:]...}) {
+        if (x < min) {
+            min = x;
+        }
+    }
+    return min;
+}
+```
+:::
+
+Looks basically the same. It's just that there are no added `head` and `tail`
+function templates to instantiate, the latter of which has to return some kind
+of `tuple`.
+
+
+### Boost.Mp11
 
 Boost.Mp11 works by treating any variadic class template as a type list and
 providing operations that just work. A common pattern in the implementation
@@ -1483,4 +1539,12 @@ references:
     issued:
       - year: 2019
     URL: http://lists.isocpp.org/lib-ext/2019/06/11932.php
+  - id: Sutton
+    citation-label: Sutton
+    title: "Meta++: Language Support for Advanced Generative Programming"
+    author:
+        - family: Andrew Sutton
+    issued:
+        - year: 2019
+    URL: https://youtu.be/kjQXhuPX-Ac?t=389
 ---
