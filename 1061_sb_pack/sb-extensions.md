@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R1
+document: P1061R1
 date: today
 audience: EWG
 author:
