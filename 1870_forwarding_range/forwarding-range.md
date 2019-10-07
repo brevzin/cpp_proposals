@@ -1,6 +1,6 @@
 ---
 title: _`forwarding-range`_`<T>` is too subtle
-document: D1870R0
+document: P1870R0
 date: today
 audience: LEWG
 author:
@@ -113,6 +113,22 @@ friend constexpr I begin(same_as<subrange> auto r) { return r.begin(); }
 
 Of the types in the standard library that should model _`forwarding-range`_, three of the four should take the same treatment (only `iota_view` doesn't need to worry). That is, in order to really ensure correctness by avoiding any potential hard instantiation errors, we have to write non-member `begin()` and `end()` function templates that constrain their argument via `same_as<R>`?
 
+The issue goes on to further suggest that perhaps the currect overload is really:
+
+```cpp
+friend constexpr I begin(@_same-ish_@<subrange> auto&& r) { return r.begin(); }
+```
+
+And there is an NB comment that suggests the _`same-ish`_`<T> auto&&`
+spelling for some times and `same_as<T> auto` spelling for others. What's the
+distinction? To be honest, I do not understand.
+
+Now we've started from needing a non-member `begin()`/`end()` that take an
+argument by value or rvalue reference -- not necessarily to actually be invoked
+on an rvalue -- but that runs into potential problems, that need to be solved
+by making that non-member a constrained template that either
+takes by value or forwarding reference, but constrained to a single type?
+
 ## How many mechanisms do we need?
 
 At this point, we have three concepts in Ranges that have some sort of mechanism to opt-in/opt-out:
@@ -121,7 +137,8 @@ At this point, we have three concepts in Ranges that have some sort of mechanism
 - `view`: opt-in via the `enable_view` type trait
 - `sized_range`: opt-out via the `disable_sized_range` trait (itself problematic due to the double negative, see [@P1871R0])
 
-I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a language mechanism to express opt-in. It's still the best hack we have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
+I don't think we need different mechanisms for each trait. I know Eric and Casey viewed having to have a type trait as a hack, but it's a hack around not having a language mechanism to express opt-in (see also [@P1900R0]). It's still the best hack we
+have, that's the easiest to understand, that's probably more compiler-efficient as well (overload resolution is expensive!)
 
 ## Hard to get correct
 
@@ -591,7 +608,7 @@ The call to `ranges​::​find` at `#1` returns `ranges​::​dangling` since 
 
 # Acknowledgements
 
-Thanks to Eric Niebler and Casey Carter for going over this paper with me, and correcting some serious misconceptions earlier drafts had. Thanks to Tim Song and Agustín Bergé for going over the details. 
+Thanks to Eric Niebler and Casey Carter for going over this paper with me, and correcting some serious misconceptions earlier drafts had. Thanks to Tim Song and Agustín Bergé for going over the details. Thanks to Tony van Eerd for helping with naming.
 
 ---
 references:
@@ -627,6 +644,14 @@ references:
       issued:
         - year: 2019
       URL: https://wg21.link/p1871r0
+    - id: P1900R0
+      citation-label: P1900R0
+      title: "Concepts-adjacent problems"
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2019
+      URL: https://wg21.link/p1900r0
     - id: msvc.basic_string_view
       citation-label: msvc.basic_string_view
       title: "non-member `begin()`/`end()` for `basic_string_view`"
