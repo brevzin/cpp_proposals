@@ -29,7 +29,8 @@ for filename in glob.glob(f'*/*.html'):
     else:
         others.append((base, filename))
 
-print('# Papers with Numbers')
+out = open('all_papers.md', 'w')
+print('# Papers with Numbers', file=out)
 titles = {847: "Deducing `this`"}
 for num in sorted(papers):
     vals = sorted(papers[num])
@@ -38,9 +39,9 @@ for num in sorted(papers):
     if title is None:
         title = get_title(vals[-1][-1])
     all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, path, filename) in vals)
-    print(f'- {num} {title}: {all_revs}')
+    print(f'- {num} {title}: {all_revs}', file=out)
 
-print()
-print('# Other Papers')
+print(file=out)
+print('# Other Papers', file=out)
 for (base, filename) in sorted(others):
-    print(f'- {get_title(filename)}: [{base}]({filename})')
+    print(f'- {get_title(filename)}: [{base}]({filename})', file=out)
