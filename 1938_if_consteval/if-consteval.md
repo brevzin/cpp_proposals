@@ -23,7 +23,7 @@ C++20 will have several new features to aid programmers in writing code during
 constant evaluation. Two of these are `std::is_constant_evaluated()` [@P0595R2]
 and `consteval` [@P1073R3], both adopted in San Diego 2018. `consteval` is for
 functions that can only be invoked during constant evaluation.
-`is_constant_evaluated()` is a magic library functions to check if the current
+`is_constant_evaluated()` is a magic library function to check if the current
 evaluation is constant evaluation to provide, for instance, a valid implementation
 of an algorithm for constant evaluation time and a better implementation for runtime.
 
@@ -57,7 +57,7 @@ constexpr double power(double b, int x) {
 }
 ```
 
-This example is borrowed from P0595, except it has a bug: it uses `if constepxr`
+This example is borrowed from P0595, except it has a bug: it uses `if constexpr`
 to check the conditional `is_constant_evaluated()` rather than a simple `if`.
 You have to really deeply understand a lot about how constant evaluation works
 in C++ to understand that this is in fact not only _not_ "obviously correct" but
@@ -140,7 +140,7 @@ the syntax.
 2. We can use `if consteval` to allow invoking immediate functions.
 
 To explain the latter a bit more, the current language rules allow you to invoke
-a `consteval` function from inside of another `consteval function`
+a `consteval` function from inside of another `consteval` function
 ([\[expr.const\]/12](http://eel.is/c++draft/expr.const#12)) - we can do this by
 construction. By extending the term _immediate function context_ to also include
 an `if consteval` block, we can allow the second example to work:
@@ -174,7 +174,7 @@ constexpr bool is_constant_evaluated() {
 }
 ```
 
-Which in itself suggests that this is the more fundamental language feature. As
+Which in itself suggests that this is the more fundamental feature. As
 such, `std::is_constant_evaluated()` may itself no longer be necessary. However,
 given the very late date of this proposal, we would more than happily keep it
 if it allows us this new language feature.
