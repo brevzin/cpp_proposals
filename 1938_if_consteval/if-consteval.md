@@ -145,10 +145,22 @@ proper way to check if we're in constant evaluation. You simply cannot misuse
 the syntax. 
 3. We can use `if consteval` to allow invoking immediate functions.
 
-To explain the latter a bit more, the current language rules allow you to invoke
+To explain the last point a bit more, the current language rules allow you to invoke
 a `consteval` function from inside of another `consteval` function
 ([\[expr.const\]/12](http://eel.is/c++draft/expr.const#12)) - we can do this by
-construction. By extending the term _immediate function context_ to also include
+construction:
+
+::: bq
+An expression or conversion is in an _immediate function context_ if it is
+potentially evaluated and its innermost non-block scope is a function parameter
+scope of an immediate function. An expression or conversion is an
+_immediate invocation_ if it is an explicit or implicit invocation of an
+immediate function and is not in an immediate function context.
+An immediate invocation shall be a constant expression.
+:::
+
+
+By extending the term _immediate function context_ to also include
 an `if consteval` block, we can allow the second example to work:
 
 ```cpp
