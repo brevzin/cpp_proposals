@@ -8,6 +8,8 @@ author:
       email: <barry.revzin@gmail.com>
     - name: Richard Smith
       email: <richard@metafoo.co.uk>
+    - name: Andrew Sutton
+      email: <asutton@lock3software.com>
     - name: Daveed Vandevoorde
       email: <daveed@edg.com>
 toc: true
@@ -38,26 +40,20 @@ The first is specific to `is_constant_evaluated`. Once you learn what this
 magic function is for, the obvious usage of it is:
 
 ```cpp
-constexpr double power(double b, int x) {
-  if constexpr (std::is_constant_evaluated() && x >= 0) {
-    // A constant-evaluation context: Use a
-    // constexpr-friendly algorithm.
-    double r = 1.0, p = b;
-    unsigned u = (unsigned)x;
-    while (u != 0) {
-      if (u & 1) r *= p;
-      u /= 2;
-      p *= p;
+size_t strlen(char const* s) {
+    if constexpr (std::is_constant_evaluated()) {
+        for (const char *p = s; ; ++p) {
+            if (*p == '\0') {
+                return static_cast<std::size_t>(p - s);
+            }
+        }    
+    } else {
+        __asm__("SSE 4.2 insanity");        
     }
-    return r;
-  } else {
-    // Let the code generator figure it out.
-    return std::pow(b, (double)x);
-  }
 }
 ```
 
-This example is borrowed from P0595, except it has a bug: it uses `if constexpr`
+This example is borrowed from [@P1045R0], except it has a bug: it uses `if constexpr`
 to check the conditional `is_constant_evaluated()` rather than a simple `if`.
 You have to really deeply understand a lot about how constant evaluation works
 in C++ to understand that this is in fact not only _not_ "obviously correct" but

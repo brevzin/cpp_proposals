@@ -548,6 +548,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
     <td>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
       Richard Smith<br>&lt;<a href="mailto:richard@metafoo.co.uk" class="email">richard@metafoo.co.uk</a>&gt;<br>
+      Andrew Sutton<br>&lt;<a href="mailto:asutton@lock3software.com" class="email">asutton@lock3software.com</a>&gt;<br>
       Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
     </td>
   </tr>
@@ -573,24 +574,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="problems-with-status-quo" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Problems with Status Quo<a href="#problems-with-status-quo" class="self-link"></a></h1>
 <p>There are two problems this paper wishes to address.</p>
 <p>The first is specific to <code class="sourceCode cpp">is_constant_evaluated</code>. Once you learn what this magic function is for, the obvious usage of it is:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">constexpr</span> <span class="dt">double</span> power<span class="op">(</span><span class="dt">double</span> b, <span class="dt">int</span> x<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> x <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="co">// A constant-evaluation context: Use a</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="co">// constexpr-friendly algorithm.</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    <span class="dt">double</span> r <span class="op">=</span> <span class="fl">1.0</span>, p <span class="op">=</span> b;</span>
-<span id="cb1-6"><a href="#cb1-6"></a>    <span class="dt">unsigned</span> u <span class="op">=</span> <span class="op">(</span><span class="dt">unsigned</span><span class="op">)</span>x;</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="cf">while</span> <span class="op">(</span>u <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>      <span class="cf">if</span> <span class="op">(</span>u <span class="op">&amp;</span> <span class="dv">1</span><span class="op">)</span> r <span class="op">*=</span> p;</span>
-<span id="cb1-9"><a href="#cb1-9"></a>      u <span class="op">/=</span> <span class="dv">2</span>;</span>
-<span id="cb1-10"><a href="#cb1-10"></a>      p <span class="op">*=</span> p;</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    <span class="op">}</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>    <span class="cf">return</span> r;</span>
-<span id="cb1-13"><a href="#cb1-13"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>    <span class="co">// Let the code generator figure it out.</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a>    <span class="cf">return</span> std<span class="op">::</span>pow<span class="op">(</span>b, <span class="op">(</span><span class="dt">double</span><span class="op">)</span>x<span class="op">)</span>;</span>
-<span id="cb1-16"><a href="#cb1-16"></a>  <span class="op">}</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a><span class="op">}</span></span></code></pre></div>
-<p>This example is borrowed from P0595, except it has a bug: it uses <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> to check the conditional <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> rather than a simple <code class="sourceCode cpp"><span class="cf">if</span></code>. You have to really deeply understand a lot about how constant evaluation works in C++ to understand that this is in fact not only <em>not</em> “obviously correct” but is in fact “obviously incorrect,” for some definition of obvious. This is such a likely source of error that Barry submitted bugs to both <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428">gcc</a> and <a href="https://bugs.llvm.org/show_bug.cgi?id=42977">clang</a> to encourage the compilers to warn on such improper usage. gcc 10.1 will provide a warning for the <a href="https://godbolt.org/z/LiiZoW">simple case</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">size_t</span> strlen<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> s; ; <span class="op">++</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>            <span class="cf">if</span> <span class="op">(*</span>p <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>                <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span><span class="dt">size_t</span><span class="op">&gt;(</span>p <span class="op">-</span> s<span class="op">)</span>;</span>
+<span id="cb1-6"><a href="#cb1-6"></a>            <span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>        <span class="op">}</span>    </span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>        <span class="ex">__asm__</span><span class="op">(</span><span class="st">&quot;SSE 4.2 insanity&quot;</span><span class="op">)</span>;        </span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="op">}</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="op">}</span></span></code></pre></div>
+<p>This example is borrowed from <span class="citation" data-cites="P1045R0">[<a href="#ref-P1045R0" role="doc-biblioref">P1045R0</a>]</span>, except it has a bug: it uses <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> to check the conditional <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> rather than a simple <code class="sourceCode cpp"><span class="cf">if</span></code>. You have to really deeply understand a lot about how constant evaluation works in C++ to understand that this is in fact not only <em>not</em> “obviously correct” but is in fact “obviously incorrect,” for some definition of obvious. This is such a likely source of error that Barry submitted bugs to both <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428">gcc</a> and <a href="https://bugs.llvm.org/show_bug.cgi?id=42977">clang</a> to encourage the compilers to warn on such improper usage. gcc 10.1 will provide a warning for the <a href="https://godbolt.org/z/LiiZoW">simple case</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1"></a>&lt;source&gt;: In function &#39;constexpr int f(int)&#39;:</span>
 <span id="cb2-2"><a href="#cb2-2"></a>&lt;source&gt;:4:45: warning: &#39;std::is_constant_evaluated&#39; always evaluates to true in &#39;if constexpr&#39; [-Wtautological-compare]</span>
 <span id="cb2-3"><a href="#cb2-3"></a>    4 |     if constexpr (std::is_constant_evaluated()) {</span>
@@ -663,6 +658,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0595R2">
 <p>[P0595R2] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018. <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated</code>. <br />
 <a href="https://wg21.link/p0595r2">https://wg21.link/p0595r2</a></p>
+</div>
+<div id="ref-P1045R0">
+<p>[P1045R0] David Stone. 2018. constexpr Function Parameters. <br />
+<a href="https://wg21.link/p1045r0">https://wg21.link/p1045r0</a></p>
 </div>
 <div id="ref-P1073R3">
 <p>[P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018. Immediate functions. <br />
