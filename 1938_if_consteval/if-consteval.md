@@ -64,11 +64,20 @@ in C++ to understand that this is in fact not only _not_ "obviously correct" but
 is in fact "obviously incorrect," for some definition of obvious. This is such
 a likely source of error that Barry submitted bugs to both [gcc](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428)
 and [clang](https://bugs.llvm.org/show_bug.cgi?id=42977) to encourage the
-compilers to warn on such improper usage. 
+compilers to warn on such improper usage. gcc 10.1 will provide a warning
+for the [simple case](https://godbolt.org/z/LiiZoW):
 
-A compiler warning is better than nothing, but it is problematic to have an API
-in which many users are drawn to a usage that is tautologically incorrect.
+```
+<source>: In function 'constexpr int f(int)':
+<source>:4:45: warning: 'std::is_constant_evaluated' always evaluates to true in 'if constexpr' [-Wtautological-compare]
+    4 |     if constexpr (std::is_constant_evaluated()) {
+      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+```
 
+But then people have to understand why this is a warning, and what this even
+means. Nevertheless, a compiler warning is substantially better than silently
+wrong code, but it is problematic to have an API in which many users are drawn
+to a usage that is tautologically incorrect.
 
 A second problem is the interplay between this magic library function and the
 new `consteval`. Consider the example:
