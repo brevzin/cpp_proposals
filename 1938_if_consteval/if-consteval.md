@@ -137,12 +137,13 @@ This behaves exactly as today's:
 if (std::is_constant_evaluated()) { }
 ```
 
-except with two differences:
+except with three differences:
 
-1. The syntax is different, which completely sidesteps the confusion over the
+1. No header include is necessary.
+2. The syntax is different, which completely sidesteps the confusion over the
 proper way to check if we're in constant evaluation. You simply cannot misuse
 the syntax. 
-2. We can use `if consteval` to allow invoking immediate functions.
+3. We can use `if consteval` to allow invoking immediate functions.
 
 To explain the latter a bit more, the current language rules allow you to invoke
 a `consteval` function from inside of another `consteval` function
