@@ -18,8 +18,8 @@ toc: true
 # Introduction
 
 Despite this paper missing both our respective NB comment deadlines and the mailing
-deadline, we still believe this paper provides a significant enough improvement
-to the status quo that it should be considered.
+deadline, we still believe it provides a significant enough improvement
+to the status quo that it should be considered for C++20.
 
 C++20 will have several new features to aid programmers in writing code during
 constant evaluation. Two of these are `std::is_constant_evaluated()` [@P0595R2]
@@ -29,53 +29,14 @@ functions that can only be invoked during constant evaluation.
 evaluation is constant evaluation to provide, for instance, a valid implementation
 of an algorithm for constant evaluation time and a better implementation for runtime.
 
-However, despite being adopted together, these features interact poorly with
+However, despite being adopted at the same meeting, these features interact poorly with
 each other and have other issues that make them ripe for confusion.
 
 # Problems with Status Quo
 
 There are two problems this paper wishes to address.
 
-The first is specific to `is_constant_evaluated`. Once you learn what this
-magic function is for, the obvious usage of it is:
-
-```cpp
-size_t strlen(char const* s) {
-    if constexpr (std::is_constant_evaluated()) {
-        for (const char *p = s; ; ++p) {
-            if (*p == '\0') {
-                return static_cast<std::size_t>(p - s);
-            }
-        }    
-    } else {
-        __asm__("SSE 4.2 insanity");        
-    }
-}
-```
-
-This example is borrowed from [@P1045R0], except it has a bug: it uses `if constexpr`
-to check the conditional `is_constant_evaluated()` rather than a simple `if`.
-You have to really deeply understand a lot about how constant evaluation works
-in C++ to understand that this is in fact not only _not_ "obviously correct" but
-is in fact "obviously incorrect," for some definition of obvious. This is such
-a likely source of error that Barry submitted bugs to both [gcc](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428)
-and [clang](https://bugs.llvm.org/show_bug.cgi?id=42977) to encourage the
-compilers to warn on such improper usage. gcc 10.1 will provide a warning
-for the [simple case](https://godbolt.org/z/LiiZoW):
-
-```
-<source>: In function 'constexpr int f(int)':
-<source>:4:45: warning: 'std::is_constant_evaluated' always evaluates to true in 'if constexpr' [-Wtautological-compare]
-    4 |     if constexpr (std::is_constant_evaluated()) {
-      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~
-```
-
-But then people have to understand why this is a warning, and what this even
-means. Nevertheless, a compiler warning is substantially better than silently
-wrong code, but it is problematic to have an API in which many users are drawn
-to a usage that is tautologically incorrect.
-
-A second problem is the interplay between this magic library function and the
+The first problem is the interplay between this magic library function and the
 new `consteval`. Consider the example:
 
 ```cpp
@@ -119,6 +80,45 @@ the really trivial cases - one could call `f(42)` for instance, just never
 We find this lack of composability of features to be problematic and think it
 can be improved.
 
+The second problem is specific to `is_constant_evaluated`. Once you learn what this
+magic function is for, the obvious usage of it is:
+
+```cpp
+size_t strlen(char const* s) {
+    if constexpr (std::is_constant_evaluated()) {
+        for (const char *p = s; ; ++p) {
+            if (*p == '\0') {
+                return static_cast<std::size_t>(p - s);
+            }
+        }    
+    } else {
+        __asm__("SSE 4.2 insanity");        
+    }
+}
+```
+
+This example, inspired by [@P1045R0], has a bug: it uses `if constexpr`
+to check the conditional `is_constant_evaluated()` rather than a simple `if`.
+You have to really deeply understand a lot about how constant evaluation works
+in C++ to understand that this is in fact not only _not_ "obviously correct" but
+is in fact "obviously incorrect," for some definition of obvious. This is such
+a likely source of error that Barry submitted bugs to both [gcc](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428)
+and [clang](https://bugs.llvm.org/show_bug.cgi?id=42977) to encourage the
+compilers to warn on such improper usage. gcc 10.1 will provide a warning
+for the [simple case](https://godbolt.org/z/LiiZoW):
+
+```
+<source>: In function 'constexpr int f(int)':
+<source>:4:45: warning: 'std::is_constant_evaluated' always evaluates to true in 'if constexpr' [-Wtautological-compare]
+    4 |     if constexpr (std::is_constant_evaluated()) {
+      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+```
+
+But then people have to understand why this is a warning, and what this even
+means. Nevertheless, a compiler warning is substantially better than silently
+wrong code, but it is problematic to have an API in which many users are drawn
+to a usage that is tautologically incorrect.
+
 # Proposal
 
 We propose a new form of `if` statement which is spelled:
@@ -127,9 +127,10 @@ We propose a new form of `if` statement which is spelled:
 if consteval { }
 ```
 
-The braces are mandatory and there is no condition. If evaluation of this
+The braces (in both the `if` and the optional `else`) are mandatory and there
+is no condition. If evaluation of this
 statement occurs during constant evaluation, the first substatement is executed.
-Otherwise, the second substatement (if there is one) is executed. 
+Otherwise, the second substatement (if there is one) is executed.
 
 This behaves exactly as today's:
 
@@ -207,6 +208,66 @@ to consider a magic library alternative was only marginally more preferred (17-3
 We believe that in the two years since these polls were taken, having a dedicated
 language feature with an impossible-to-misuse API, that can coexist with the rest
 of the constant ecosystem, is the right direction.
+
+# Wording
+
+Extend the definition of immediate function context in 7.7 [expr.const] (and use
+bullet points):
+
+::: bq
+An expression or conversion is in an _immediate function context_ if it is
+potentially evaluated and either:
+
+- [12.1]{.pnum} its innermost non-block scope is a function parameter scope of an
+immediate function[.]{.rm} [, or]{.addu}
+- [12.2]{.pnum} [it appears in the first _compound-statement_ of an `if consteval`
+statement ([stmt.if]).]{.addu}
+:::
+
+Change 8.5 [stmt.select] to add the new grammar:
+
+```diff
+  @_selection-statement_@:
+     if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
+     if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@ else @_statement_@
++    if consteval @_compound-statement_@
++    if consteval @_compound-statement_@ else @_compound-statement_@
+     switch ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
+```
+
+Add a new clause to 8.5.1 [stmt.if]
+
+::: bq
+::: addu
+If the `if` statement is of the form `if consteval` and evaluation occurs in
+a context that is manifestly constant-evaluated ([expr.const]), the first
+substatement is executed. Otherwise, if the `else` part of the selection statement
+is present, then the second substatement is executed.
+:::
+:::
+
+Change 20.15.10 [meta.const.eval] to use this new functionality:
+
+::: bq
+```
+constexpr bool is_constant_evaluated() noexcept;
+```
+::: rm
+[1]{.pnum} *Returns*: `true` if and only if evaluation of the call occurs within
+the evaluation of an expression or conversion that is
+manifestly constant-evaluated ([expr.const]).
+::: 
+::: addu
+[1]{.pnum} *Effects*: Equivalent to: 
+```
+if consteval {
+    return true;
+} else {
+    return false;
+}
+```
+:::
+:::
 
 # Acknowledgments
 

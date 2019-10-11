@@ -563,57 +563,58 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#problems-with-status-quo"><span class="toc-section-number">2</span> Problems with Status Quo<span></span></a></li>
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
 <li><a href="#history"><span class="toc-section-number">4</span> History<span></span></a></li>
-<li><a href="#acknowledgments"><span class="toc-section-number">5</span> Acknowledgments<span></span></a></li>
-<li><a href="#references"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">5</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">6</span> Acknowledgments<span></span></a></li>
+<li><a href="#references"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>Despite this paper missing both our respective NB comment deadlines and the mailing deadline, we still believe this paper provides a significant enough improvement to the status quo that it should be considered.</p>
+<p>Despite this paper missing both our respective NB comment deadlines and the mailing deadline, we still believe it provides a significant enough improvement to the status quo that it should be considered for C++20.</p>
 <p>C++20 will have several new features to aid programmers in writing code during constant evaluation. Two of these are <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> <span class="citation" data-cites="P0595R2">[<a href="#ref-P0595R2" role="doc-biblioref">P0595R2</a>]</span> and <code class="sourceCode cpp"><span class="kw">consteval</span></code> <span class="citation" data-cites="P1073R3">[<a href="#ref-P1073R3" role="doc-biblioref">P1073R3</a>]</span>, both adopted in San Diego 2018. <code class="sourceCode cpp"><span class="kw">consteval</span></code> is for functions that can only be invoked during constant evaluation. <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> is a magic library function to check if the current evaluation is constant evaluation to provide, for instance, a valid implementation of an algorithm for constant evaluation time and a better implementation for runtime.</p>
-<p>However, despite being adopted together, these features interact poorly with each other and have other issues that make them ripe for confusion.</p>
+<p>However, despite being adopted at the same meeting, these features interact poorly with each other and have other issues that make them ripe for confusion.</p>
 <h1 id="problems-with-status-quo" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Problems with Status Quo<a href="#problems-with-status-quo" class="self-link"></a></h1>
 <p>There are two problems this paper wishes to address.</p>
-<p>The first is specific to <code class="sourceCode cpp">is_constant_evaluated</code>. Once you learn what this magic function is for, the obvious usage of it is:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">size_t</span> strlen<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> s<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> s; ; <span class="op">++</span>p<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>            <span class="cf">if</span> <span class="op">(*</span>p <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>                <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span><span class="dt">size_t</span><span class="op">&gt;(</span>p <span class="op">-</span> s<span class="op">)</span>;</span>
-<span id="cb1-6"><a href="#cb1-6"></a>            <span class="op">}</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>        <span class="op">}</span>    </span>
-<span id="cb1-8"><a href="#cb1-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>        <span class="ex">__asm__</span><span class="op">(</span><span class="st">&quot;SSE 4.2 insanity&quot;</span><span class="op">)</span>;        </span>
-<span id="cb1-10"><a href="#cb1-10"></a>    <span class="op">}</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="op">}</span></span></code></pre></div>
-<p>This example is borrowed from <span class="citation" data-cites="P1045R0">[<a href="#ref-P1045R0" role="doc-biblioref">P1045R0</a>]</span>, except it has a bug: it uses <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> to check the conditional <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> rather than a simple <code class="sourceCode cpp"><span class="cf">if</span></code>. You have to really deeply understand a lot about how constant evaluation works in C++ to understand that this is in fact not only <em>not</em> “obviously correct” but is in fact “obviously incorrect,” for some definition of obvious. This is such a likely source of error that Barry submitted bugs to both <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428">gcc</a> and <a href="https://bugs.llvm.org/show_bug.cgi?id=42977">clang</a> to encourage the compilers to warn on such improper usage. gcc 10.1 will provide a warning for the <a href="https://godbolt.org/z/LiiZoW">simple case</a>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1"></a>&lt;source&gt;: In function &#39;constexpr int f(int)&#39;:</span>
-<span id="cb2-2"><a href="#cb2-2"></a>&lt;source&gt;:4:45: warning: &#39;std::is_constant_evaluated&#39; always evaluates to true in &#39;if constexpr&#39; [-Wtautological-compare]</span>
-<span id="cb2-3"><a href="#cb2-3"></a>    4 |     if constexpr (std::is_constant_evaluated()) {</span>
-<span id="cb2-4"><a href="#cb2-4"></a>      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span></code></pre></div>
-<p>But then people have to understand why this is a warning, and what this even means. Nevertheless, a compiler warning is substantially better than silently wrong code, but it is problematic to have an API in which many users are drawn to a usage that is tautologically incorrect.</p>
-<p>A second problem is the interplay between this magic library function and the new <code class="sourceCode cpp"><span class="kw">consteval</span></code>. Consider the example:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>        <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="co">// &lt;==</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a>        <span class="cf">return</span> <span class="dv">42</span>;</span>
-<span id="cb3-8"><a href="#cb3-8"></a>    <span class="op">}</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a><span class="op">}</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a></span>
-<span id="cb3-11"><a href="#cb3-11"></a><span class="kw">consteval</span> <span class="dt">int</span> h<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a>    <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>;</span>
-<span id="cb3-13"><a href="#cb3-13"></a><span class="op">}</span></span></code></pre></div>
+<p>The first problem is the interplay between this magic library function and the new <code class="sourceCode cpp"><span class="kw">consteval</span></code>. Consider the example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="co">// &lt;==</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>        <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="op">}</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="kw">consteval</span> <span class="dt">int</span> h<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>;</span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="op">}</span></span></code></pre></div>
 <p>The function <code class="sourceCode cpp">h</code> here is basically a lifted, constant-evaluation-only version of the function <code class="sourceCode cpp">g</code>. At constant evaluation time, they do the same thing, except that during runtime, you cannot call <code class="sourceCode cpp">h</code>, and <code class="sourceCode cpp">g</code> has this extra path. Maybe this code started with just <code class="sourceCode cpp">h</code> and someone decided a runtime version would also be useful and turned it into <code class="sourceCode cpp">g</code>.</p>
 <p>Unfortunately, <code class="sourceCode cpp">h</code> is well-formed while <code class="sourceCode cpp">g</code> is ill-formed. You cannot make that call to <code class="sourceCode cpp">f</code> (that is ominously marked with an arrow) in that location. Even though that call will <em>only</em> happen during constant evaluation, that’s still not enough.</p>
 <p>With specific terms, the call to <code class="sourceCode cpp">f<span class="op">()</span></code> inside of <code class="sourceCode cpp">g<span class="op">()</span></code> is an <em>immediate invocation</em> and needs to be a constant expression and it is not. Whereas the call to <code class="sourceCode cpp">f<span class="op">()</span></code> inside of <code class="sourceCode cpp">h<span class="op">()</span></code> is <em>not</em> considered an <em>immediate invocation</em> because it is in an <em>immediate function context</em> (i.e. it’s invoked from another immediate function), so it has a weaker set of restrictions that it needs to follow.</p>
 <p>In other words, this kind of construction of conditionally invoking a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function from a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function just Does Not Work (modulo the really trivial cases - one could call <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">42</span><span class="op">)</span></code> for instance, just never <code class="sourceCode cpp">f<span class="op">(</span>i<span class="op">)</span></code>).</p>
 <p>We find this lack of composability of features to be problematic and think it can be improved.</p>
+<p>The second problem is specific to <code class="sourceCode cpp">is_constant_evaluated</code>. Once you learn what this magic function is for, the obvious usage of it is:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">size_t</span> strlen<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> s; ; <span class="op">++</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>            <span class="cf">if</span> <span class="op">(*</span>p <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>                <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span><span class="dt">size_t</span><span class="op">&gt;(</span>p <span class="op">-</span> s<span class="op">)</span>;</span>
+<span id="cb2-6"><a href="#cb2-6"></a>            <span class="op">}</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>        <span class="op">}</span>    </span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>        <span class="ex">__asm__</span><span class="op">(</span><span class="st">&quot;SSE 4.2 insanity&quot;</span><span class="op">)</span>;        </span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="op">}</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="op">}</span></span></code></pre></div>
+<p>This example, inspired by <span class="citation" data-cites="P1045R0">[<a href="#ref-P1045R0" role="doc-biblioref">P1045R0</a>]</span>, has a bug: it uses <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> to check the conditional <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> rather than a simple <code class="sourceCode cpp"><span class="cf">if</span></code>. You have to really deeply understand a lot about how constant evaluation works in C++ to understand that this is in fact not only <em>not</em> “obviously correct” but is in fact “obviously incorrect,” for some definition of obvious. This is such a likely source of error that Barry submitted bugs to both <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428">gcc</a> and <a href="https://bugs.llvm.org/show_bug.cgi?id=42977">clang</a> to encourage the compilers to warn on such improper usage. gcc 10.1 will provide a warning for the <a href="https://godbolt.org/z/LiiZoW">simple case</a>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1"></a>&lt;source&gt;: In function &#39;constexpr int f(int)&#39;:</span>
+<span id="cb3-2"><a href="#cb3-2"></a>&lt;source&gt;:4:45: warning: &#39;std::is_constant_evaluated&#39; always evaluates to true in &#39;if constexpr&#39; [-Wtautological-compare]</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    4 |     if constexpr (std::is_constant_evaluated()) {</span>
+<span id="cb3-4"><a href="#cb3-4"></a>      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span></code></pre></div>
+<p>But then people have to understand why this is a warning, and what this even means. Nevertheless, a compiler warning is substantially better than silently wrong code, but it is problematic to have an API in which many users are drawn to a usage that is tautologically incorrect.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>We propose a new form of <code class="sourceCode cpp"><span class="cf">if</span></code> statement which is spelled:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
-<p>The braces are mandatory and there is no condition. If evaluation of this statement occurs during constant evaluation, the first substatement is executed. Otherwise, the second substatement (if there is one) is executed.</p>
+<p>The braces (in both the <code class="sourceCode cpp"><span class="cf">if</span></code> and the optional <code class="sourceCode cpp"><span class="cf">else</span></code>) are mandatory and there is no condition. If evaluation of this statement occurs during constant evaluation, the first substatement is executed. Otherwise, the second substatement (if there is one) is executed.</p>
 <p>This behaves exactly as today’s:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
 <p>except with three differences:</p>
@@ -622,7 +623,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>The syntax is different, which completely sidesteps the confusion over the proper way to check if we’re in constant evaluation. You simply cannot misuse the syntax.</li>
 <li>We can use <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> to allow invoking immediate functions.</li>
 </ol>
-<p>To explain the latter a bit more, the current language rules allow you to invoke a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function from inside of another <code class="sourceCode cpp"><span class="kw">consteval</span></code> function (<a href="http://eel.is/c++draft/expr.const#12">[expr.const]/12</a>) - we can do this by construction. By extending the term <em>immediate function context</em> to also include an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> block, we can allow the second example to work:</p>
+<p>To explain the last point a bit more, the current language rules allow you to invoke a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function from inside of another <code class="sourceCode cpp"><span class="kw">consteval</span></code> function (<a href="http://eel.is/c++draft/expr.const#12">[expr.const]/12</a>) - we can do this by construction:</p>
+<blockquote>
+<p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and its innermost non-block scope is a function parameter scope of an immediate function. An expression or conversion is an <em>immediate invocation</em> if it is an explicit or implicit invocation of an immediate function and is not in an immediate function context. An immediate invocation shall be a constant expression.</p>
+</blockquote>
+<p>By extending the term <em>immediate function context</em> to also include an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> block, we can allow the second example to work:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
 <span id="cb6-2"><a href="#cb6-2"></a></span>
 <span id="cb6-3"><a href="#cb6-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
@@ -647,9 +652,48 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Which in itself suggests that this is the more fundamental feature. As such, <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> may itself no longer be necessary. However, given the very late date of this proposal, we would more than happily keep it if it allows us this new language feature.</p>
 <h1 id="history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> History<a href="#history" class="self-link"></a></h1>
 <p>The initial revision of the <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> proposal <span class="citation" data-cites="P0595R0">[<a href="#ref-P0595R0" role="doc-biblioref">P0595R0</a>]</span> was actually targeted as a language feature rather than a library feature. The original spelling was <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">constexpr</span><span class="op">())</span></code>. The paper was presented in Kona 2017 and was received very favorably in the form it was presented (17-4). The poll to consider a magic library alternative was only marginally more preferred (17-3). We believe that in the two years since these polls were taken, having a dedicated language feature with an impossible-to-misuse API, that can coexist with the rest of the constant ecosystem, is the right direction.</p>
-<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Extend the definition of immediate function context in 7.7 [expr.const] (and use bullet points):</p>
+<blockquote>
+<p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(12.1)</a></span> its innermost non-block scope is a function parameter scope of an immediate function<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(12.2)</a></span> <span class="addu">it appears in the first <em>compound-statement</em> of an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> statement ([stmt.if]).</span></li>
+</ul>
+</blockquote>
+<p>Change 8.5 [stmt.select] to add the new grammar:</p>
+<div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>  <em>selection-statement</em>:</span>
+<span id="cb8-2"><a href="#cb8-2"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span>
+<span id="cb8-3"><a href="#cb8-3"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em> else <em>statement</em></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="va">+    if consteval <em>compound-statement</em></span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="va">+    if consteval <em>compound-statement</em> else <em>compound-statement</em></span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>     switch ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span></code></pre></div>
+</div>
+<p>Add a new clause to 8.5.1 [stmt.if]</p>
+<blockquote>
+<div class="addu">
+<p>If the <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and evaluation occurs in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed. Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed.</p>
+</div>
+</blockquote>
+<p>Change 20.15.10 [meta.const.eval] to use this new functionality:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if evaluation of the call occurs within the evaluation of an expression or conversion that is manifestly constant-evaluated ([expr.const]).</p>
+</div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>if consteval {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>    return true;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>} else {</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    return false;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thank you to David Stone and Tim Song for working through these examples.</p>
-<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
 <div id="ref-P0595R0">
