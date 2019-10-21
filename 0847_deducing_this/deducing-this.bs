@@ -1,16 +1,16 @@
 <pre class='metadata'>
 Title: Deducing this
-Status: P
+Status: D
 ED: http://wg21.link/P0847
 Shortname: P0847
-Level: 2
-Date: 2019-01-15
+Level: 3
+Date: 2019-10-18
 Editor: Gašper Ažman, gasper dot azman at gmail dot com
 Editor: Simon Brand, simon dot brand at microsoft dot com
 Editor: Ben Deane, ben at elbeno dot com
 Editor: Barry Revzin, barry dot revzin at gmail dot com
 Group: wg21
-Audience: EWG, SG7
+Audience: EWG
 Markup Shorthands: markdown yes
 Default Highlight: C++
 Abstract: We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
@@ -44,20 +44,29 @@ Abstract: We propose a new mechanism for specifying or deducing the value catego
 
 # Revision History # {#revision-history}
 
+## Changes since r2 ## {#changes-since-r2}
+
+[[P0847R2]] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
+
+This version adds:
+- An FAQ entry for [[#faq-demand|library implementor feedback]]
+- An FAQ entry for [[#faq-rec-lambda-impl|implementability]].
+- An FAQ entry for [[#faq-computed-deduction]], an orthogonal feature that EWGI asked for in Kona.
+
 ## Changes since r1 ## {#changes-since-r1}
 
-[[P0847R1]] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases. 
+[[P0847R1]] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
 
 ## Changes since r0 ## {#changes-since-r0}
 
-[[P0847R0]] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper. 
+[[P0847R0]] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
 
 EWG strongly encouraged us to look in two new directions:
 
 - a different syntax, placing the object parameter's type after the member function's parameter declarations (where the *cv-ref* qualifiers are today)
 - a different name lookup scheme, which could prevent implicit/unqualified access from within new-style member functions that have an explicit self-type annotation, regardless of syntax.
 
-This revision carefully explores both of these directions, presents different syntaxes and lookup schemes, and discusses in depth multiple use cases and how each syntax can or cannot address them. 
+This revision carefully explores both of these directions, presents different syntaxes and lookup schemes, and discusses in depth multiple use cases and how each syntax can or cannot address them.
 
 # Motivation # {#motivation}
 
@@ -237,7 +246,7 @@ There are many cases where we need two or four overloads of the same member func
 
 We propose a new way of declaring non-static member functions that will allow for deducing the type and value category of the class instance parameter while still being invocable with regular member function syntax. This is a strict extension to the language.
 
-We believe that the ability to write *cv-ref qualifier*-aware member function templates without duplication will improve code maintainability, decrease the likelihood of bugs, and make fast, correct code easier to write. 
+We believe that the ability to write *cv-ref qualifier*-aware member function templates without duplication will improve code maintainability, decrease the likelihood of bugs, and make fast, correct code easier to write.
 
 The proposal is sufficiently general and orthogonal to allow for several new exciting features and design patterns for C++:
 
@@ -263,7 +272,7 @@ A non-static member function can be declared to take as its first parameter an *
 ```cpp
 struct X {
     void foo(this X const& self, int i);
-    
+
     template <typename Self>
     void bar(this Self&& self);
 };
@@ -274,15 +283,15 @@ void ex(X& x, D const& d) {
     x.foo(42);      // 'self' is bound to 'x', 'i' is 42
     x.bar();        // deduces Self as X&, calls X::bar<X&>
     move(x).bar();  // deduces Self as X, calls X::bar<X>
-    
+
     d.foo(17);      // 'self' is bound to 'd'
     d.bar();        // deduces Self as D const&, calls X::bar<D const&>
 }
 ```
 
-Member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers. 
+Member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers.
 
-A call to a member function will interpret the object argument as the first (`this`-annotated) parameter to it; the first argument in the parenthesized expression list is then interpreted as the second parameter, and so forth. 
+A call to a member function will interpret the object argument as the first (`this`-annotated) parameter to it; the first argument in the parenthesized expression list is then interpreted as the second parameter, and so forth.
 
 Following normal deduction rules, the template parameter corresponding to the explicit object parameter can deduce to a type derived from the class in which the member function is declared, as in the example above for `d.bar()`).
 
@@ -296,10 +305,10 @@ struct optional {
     if (!self.has_value()) {
       throw bad_optional_access();
     }
-        
+
     return forward<Self>(self).m_value;
   }
-    
+
   template <typename Self>
   constexpr auto operator->(this Self&& self) {
     return addressof(self.m_value);
@@ -311,7 +320,7 @@ This syntax can be used in lambdas as well, with the `this`-annotated parameter 
 
 ```cpp
 vector captured = {1, 2, 3, 4};
-[captured](this auto&& self) -> decltype(auto) { 
+[captured](this auto&& self) -> decltype(auto) {
   return forward_like<decltype(self)>(captured);
 }
 
@@ -324,12 +333,12 @@ The lambdas can either move or copy from the capture, depending on whether the l
 
 ## Proposed semantics ## {#proposed-semantics}
 
-What follows is a description of how deducing `this` affects all important language constructs &mdash; name lookup, type deduction, overload resolution, and so forth. 
+What follows is a description of how deducing `this` affects all important language constructs &mdash; name lookup, type deduction, overload resolution, and so forth.
 
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
 
-**In C++17**, name lookup includes both static and non-static member functions found by regular class lookup when invoking a named function or an operator, including the call operator, on an object of class type. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's own qualifiers) which binds to the object on which the function was invoked. 
+**In C++17**, name lookup includes both static and non-static member functions found by regular class lookup when invoking a named function or an operator, including the call operator, on an object of class type. Non-static member functions are treated as if there were an implicit object parameter whose type is an lvalue or rvalue reference to *cv* `X` (where the reference and *cv* qualifiers are determined based on the function's own qualifiers) which binds to the object on which the function was invoked.
 
 For non-static member functions using an explicit object parameter, lookup will work the same way as other member functions in C++17, with one exception: rather than implicitly determining the type of the object parameter based on the *cv*- and *ref*-qualifiers of the member function, these are now explicitly determined by the provided type of the explicit object parameter. The following examples illustrate this concept.
 
@@ -358,10 +367,10 @@ struct X {
 struct X {
   // explicit object has type X&
   void foo(this X&);
-  
+
   // explicit object has type X const&
   void foo(this X const&);
-  
+
   // explicit object has type X&&
   void bar(this X&&);
 };
@@ -404,7 +413,7 @@ void ex(X& x, D& d) {
 }
 ```
 
-It's important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and leads to a potential [template deduction extension](#potential-extensions).
+It's important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and leads to a potential [[#faq-computed-deduction|template deduction extension]].
 
 ### By value `this` ### {#by-value-this}
 
@@ -436,9 +445,9 @@ struct B {
     int i = 0;
 
     template <typename Self> auto&& f1(this Self&&) { return i;  }
-    template <typename Self> auto&& f2(this Self&&) { return this->i; }    
-    template <typename Self> auto&& f3(this Self&&) { return forward_like<Self>(*this).i; }    
-    template <typename Self> auto&& f4(this Self&&) { return forward<Self>(*this).i; }        
+    template <typename Self> auto&& f2(this Self&&) { return this->i; }
+    template <typename Self> auto&& f3(this Self&&) { return forward_like<Self>(*this).i; }
+    template <typename Self> auto&& f4(this Self&&) { return forward<Self>(*this).i; }
     template <typename Self> auto&& f5(this Self&& self) { return forward<Self>(self).i; }
 };
 
@@ -458,13 +467,13 @@ We believe that there are three approaches to choose from:
 
 3. `this` is always accessible and points to the base subobject; we allow implicit lookup as in C++17. This is mostly the same as the previous choice, except that now `f1` is well-formed and exactly equivalent to `f2`.
 
-Following discussion in San Diego, the option we are proposing is #1. This allows for the clearest model of what a `this`-annotated function is: it is a `static` member function that offers a more convenient function call syntax. There is no implicit `this` in such functions, the only mention of `this` would be the annotation on the object parameter. All member access must be done directly through the object parameter. 
+Following discussion in San Diego, the option we are proposing is #1. This allows for the clearest model of what a `this`-annotated function is: it is a `static` member function that offers a more convenient function call syntax. There is no implicit `this` in such functions, the only mention of `this` would be the annotation on the object parameter. All member access must be done directly through the object parameter.
 
 The consequence of such a choice is that we will need to defend against the object parameter being deduced to a derived type. To ensure that `f5()` above is always returning a reference to `B::i`, we would need to write one of the following:
 
 ```cpp
 template <typename Self>
-auto&& f5(this Self&& self) { 
+auto&& f5(this Self&& self) {
     // explicitly cast self to the appropriately qualified B
     // note that we have to cast self, not self.i
     return static_cast<like_t<Self, B>&&>(self).i;
@@ -521,7 +530,13 @@ struct B {
 struct D : B { };
 ```
 
-The type of `&B::foo<B>` is `void(*)(B&&)` and the type of `&B::foo<B const&>` is `void(*)(B const&)`. The type of `&D::foo<B>` is also `void(*)(B&&)`. This is effectively the same thing that would happen if `foo` were a normal C++17 member function. The type of `&B::foo<D>` is `void(*)(D&&)`.
+Types are as follows:
+- Type of `&B::foo<B>` is `void(*)(B&&)`
+- Type of `&B::foo<B const&>` is `void(*)(B const&)`
+- Type of `&D::foo<B>` is `void(*)(B&&)`
+- Type of `&B::foo<D>` is `void(*)(D&&)`
+
+This is exactly what happens if `foo` is a normal function.
 
 By-value object parameters give you pointers to function in just the same way, the only difference being that the first parameter being a value parameter instead of a reference parameter:
 
@@ -568,7 +583,7 @@ struct B {
 };
 ```
 
-The declaration can be immediately diagnosed as ill-formed. 
+The declaration can be immediately diagnosed as ill-formed.
 
 Another interesting case, courtesy of Jens Maurer:
 
@@ -587,8 +602,8 @@ auto z = &B::f1;   // ok
 z(D());            // ok
 ```
 
-Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [[#by-value-this]]). 
-                
+Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [[#by-value-this]]).
+
 ### Teachability Implications ### {#teachability-implications}
 
 Explicitly naming the object as the `this`-designated first parameter fits within many programmers' mental models of the `this` pointer being the first parameter to member functions "under the hood" and is comparable to its usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how `std::bind`, `std::thread`, `std::function`, and others work with a member function pointer by making the pointer explicit.
@@ -618,42 +633,9 @@ There are two programmatic issues with this proposal that we are aware of:
 
 2. Because there is no way to _just_ deduce `const` vs non-`const`, the only way to deduce the value category would be to take a forwarding reference. This means that potentially we create four instantiations when only two would be minimally necessary to solve the problem. But deferring to a templated implementation is an acceptable option and has been improved by no longer requiring casts. We believe that the problem is minimal.
 
-## Potential Extension ## {#potential-extensions}
-
-This extension is not explicitly proposed proposed by our paper, since it has not yet been completely explored. Nevertheless, the authors believe that certain concerns raised by the proposed feature may be alleviated by discussing the following possible solution to those issues.
-
-One of the pitfalls of having a deduced object parameter is when the intent is solely to deduce the *cv*-qualifiers and value category of the object parameter, but a derived type is deduced as well &mdash; any access through an object that might have a derived type could inadvertently refer to a shadowed member in the derived class. While this is desirable and very powerful in the case of mixins, it is not always desirable in other situations. Superfluous template instantiations are also unwelcome side effects.
-
-One family of possible solutions could be summarized as **make it easy to get the base class pointer**. However, all of these solutions still require extra instantiations. For `optional::value()`, we really only want four instantiations: `&`, `const&`, `&&`, and `const&&`. If something inherits from `optional`, we don't want additional instantiations of those functions for the derived types, which won't do anything new, anyway. This is code bloat.
-
-C++ already has this long-recognised problem for free function templates. The authors have heard many a complaint about it from library vendors, even before this paper was introduced, as it is desirable to only deduce the ref-qualifier in many contexts. Therefore, it might make sense to tackle this issue in a more general way. A complementary feature could be proposed to constrain *type deduction* as opposed to removing candidates once they are deduced (as accomplished by `requires`), with the following straw-man syntax:
-
-```cpp
-struct Base {
-    template <typename Self : Base>
-    auto front(this Self&& self);
-};
-struct Derived : Base { };
-
-// also works for free functions
-template <typename T : Base>
-void foo(T&& x) {
-   static_assert(is_same_v<Base, remove_reference_t<T>>);
-}
-
-Base{}.front(); // calls Base::front<Base>
-Derived{}.front(); // also calls Base::front<Base>
-
-foo(Base{}); // calls foo<Base>
-foo(Derived{}); // also calls foo<Base>
-```
-
-This would create a function template that only generates functions taking a `Base`, ensuring that we don't generate additional instantiations when those functions participate in overload resolution. Such a proposal would also change how templates participate in overload resolution, however, and is not to be attempted haphazardly.
-
-
 # Real-World Examples # {#real-world-examples}
 
-What follows are several examples of the kinds of problems that can be solved using this proposal. 
+What follows are several examples of the kinds of problems that can be solved using this proposal.
 
 ## Deduplicating Code ## {#deduplicating-code}
 
@@ -968,7 +950,7 @@ struct Builder {
   Builder& c() { /* ... */; return *this; }
 };
 
-Builder().a().b().a().b().c();    
+Builder().a().b().a().b().c();
 ```
 
 But now we want to create a specialized builder with new operations `d()` and `e()`. This specialized builder needs new member functions, and we don't want to burden existing users with them. We also want `Special().a().d()` to work, so we need to use CRTP to *conditionally* return either a `Builder&` or a `Special&`:
@@ -987,7 +969,7 @@ class Builder {
   Derived& self() {
     return *static_cast<Derived*>(this);
   }
-  
+
 public:
   Derived& a() { /* ... */; return self(); }
   Derived& b() { /* ... */; return self(); }
@@ -1008,10 +990,10 @@ Special().a().d().e().a();
 struct Builder {
     template <typename Self>
     Self& a(this Self&& self) { /* ... */; return self; }
-    
+
     template <typename Self>
     Self& b(this Self&& self) { /* ... */; return self; }
-    
+
     template <typename Self>
     Self& c(this Self&& self) { /* ... */; return self; }
 };
@@ -1033,7 +1015,7 @@ The code on the right is dramatically easier to understand and therefore more ac
 But wait! There's more!
 
 What if we added a *super*-specialized builder, a more special form of `Special`? Now we need `Special` to opt-in to CRTP so that it knows which type to pass to `Builder`, ensuring that everything in the hierarchy returns the correct type. It's about this point that most programmers would give up. But with this proposal, there's no problem!
-    
+
 <table style="width:100%">
 <tr>
 <th style="width:50%">C++17</th>
@@ -1049,7 +1031,7 @@ protected:
   Derived& self() {
     return *static_cast<Derived*>(this);
   }
-  
+
 public:
   Derived& a() { /* ... */; return self(); }
   Derived& b() { /* ... */; return self(); }
@@ -1080,18 +1062,18 @@ Super().a().d().f().e();
 struct Builder {
     template <typename Self>
     Self& a(this Self&& self) { /* ... */; return self; }
-    
+
     template <typename Self>
-    Self& b(this Self&& self) { /* ... */; return self; }        
-    
+    Self& b(this Self&& self) { /* ... */; return self; }
+
     template <typename Self>
-    Self& c(this Self&& self) { /* ... */; return self; }        
+    Self& c(this Self&& self) { /* ... */; return self; }
 };
 
 struct Special : Builder {
     template <typename Self>
     Self& d(this Self&& self) { /* ... */; return self; }
-    
+
     template <typename Self>
     Self& e(this Self&& self) { /* ... */; return self; }
 };
@@ -1107,7 +1089,7 @@ Super().a().d().f().e();
 ```
 </td>
 </tr>
-</table>  
+</table>
 
 The code on the right is much easier in all contexts. There are so many situations where this idiom, if available, would give programmers a better solution for problems that they cannot easily solve today.
 
@@ -1115,7 +1097,7 @@ Note that the `Super` implementations with this proposal opt-in to further deriv
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
-The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda. 
+The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda.
 
 ```cpp
 // as proposed in P0839
@@ -1133,7 +1115,7 @@ auto fib = [](this auto const& self, int n) {
 
 This works by following the established rules. The call operator of the closure object can also have an explicit object parameter, so in this example, `self` is the closure object.
 
-There was some concern in San Diego about the implementability of this aspect of the proposal. But any issues would come from having a non-dependent way to identify the lambda object itself - any such uses, even `sizeof()`, would be problematic because the lambda is not yet complete. But because the `self` parameter of the call operator is deduced, and that is the only way this proposal is offering to access the lambda itself, there are no problems. The lambda will be complete by instantiation time, so everything works. 
+In San Diego, issues of implementability were raised. The proposal ends up being implementable. See [[#faq-rec-lambda-impl]] for details.
 
 Combine this with the new style of mixins allowing us to automatically deduce the most derived object, and you get the following example &mdash; a simple recursive lambda that counts the number of leaves in a tree.
 
@@ -1149,7 +1131,7 @@ int num_leaves(Tree const& tree) {
     return visit(overload(        // <-----------------------------------+
         [](Leaf const&) { return 1; },                           //      |
         [](this auto const& self, Node* n) -> int {              //      |
-            return visit(self, n->left) + visit(self, n->right); // <----+    
+            return visit(self, n->left) + visit(self, n->right); // <----+
         }
     ), tree);
 }
@@ -1181,7 +1163,7 @@ It's been established that if you want the best performance, you should pass sma
 
 > Unlike other string types, you should pass `string_view` by value just like you would an `int` or a `double` because `string_view` is a small value.
 
-There is, however, one place today where you simply *cannot* pass types like `string_view` by value: to their own member functions. The implicit object parameter is always a reference, so any such member functions that do not get inlined incur a double indirection. 
+There is, however, one place today where you simply *cannot* pass types like `string_view` by value: to their own member functions. The implicit object parameter is always a reference, so any such member functions that do not get inlined incur a double indirection.
 
 As an easy performance optimization, any member function of small types that does not perform any modifications can take the object parameter by value. Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
 
@@ -1195,15 +1177,15 @@ public:
     constexpr const_iterator begin(this basic_string_view self) {
         return self.data_;
     }
-    
+
     constexpr const_iterator end(this basic_string_view self) {
         return self.data_ + self.size_;
     }
-    
+
     constexpr size_t size(this basic_string_view self) {
         return self.size_;
     }
-    
+
     constexpr const_reference operator[](this basic_string_view self, size_type pos) {
         return self.data_[pos];
     }
@@ -1342,7 +1324,7 @@ not_fn(fun{})();         // error
 
 Here, there is only one overload with everything deduced together. The first example now works correctly. `Self` gets deduced as `call_wrapper<unfriendly>`, and the one `operator()` will only consider `unfriendly`'s non-`const` call operator. The `const` one is never even considered, so it does not have an opportunity to cause problems.
 
-The second example now also fails correctly. Previously, we had four candidates. The two non-`const` options were removed from the overload set due to `fun`'s non-`const` call operator being `delete`d, and the two `const` ones which were viable. But now, we only have one candidate. `Self` is deduced as `call_wrapper<fun>`, which requires `fun`'s non-`const` call operator to be well-formed. Since it is not, the call results in an error. There is no opportunity for fallback since only one overload is ever considered. 
+The second example now also fails correctly. Previously, we had four candidates. The two non-`const` options were removed from the overload set due to `fun`'s non-`const` call operator being `delete`d, and the two `const` ones which were viable. But now, we only have one candidate. `Self` is deduced as `call_wrapper<fun>`, which requires `fun`'s non-`const` call operator to be well-formed. Since it is not, the call results in an error. There is no opportunity for fallback since only one overload is ever considered.
 
 This singular overload has precisely the desired behavior: working for `unfriendly`, and not working for `fun`.
 
@@ -1360,6 +1342,77 @@ auto not_fn(F&& f) {
 }
 ```
 
+# Frequently Asked Questions # {#faq}
+
+## On the implementability of recursive lambdas ## {#faq-rec-lambda-impl}
+
+In San Diego, 2018, there was a question of whether recursive lambdas are implementable. They are, details follow.
+
+The specific issue is the way lambdas are parsed. When parsing a *non-generic* lambda function body with a default capture, the type of `this_lambda` would not be dependent, because the body is *not a template*. This leads to `sizeof(this_lambda)` not being dependent either, and must therefore have an answer - and yet, it cannot, as the lambda capture is not complete, and therefore, the type of `this_lambda` is not complete.
+
+This is a huge issue for any proposal of recursive lambdas that includes non-generic lambdas.
+
+Notice, however, that the syntax this paper proposes is the following:
+
+```cpp
+auto fib = [](this auto&& self, int n) {
+  if (n < 2) return n;
+  return self(n-1) + self(n-2);
+}
+```
+
+There is, quite obviously, no way to spell a non-generic lambda, because the lambda type is unutterable. `self`'s type is always dependent.
+
+This makes expressions depending on `self` to be parsed using the regular rules of the language. Expressions involving `self` become dependent, and the existing language rules apply, which means both nothing new to implement, and nothing new to teach.
+
+This proposal is therefore implementable, unlike any other we've seen to date. We would really like to thank Daveed Vandevoorde for thinking through this one with us in Aspen 2019.
+
+## Would library implementers use this ## {#faq-demand}
+
+In Kona, EWGI asked us to see whether library implementors would use this. The answer seems to be a resounding yes.
+
+We have heard from Casey Carter and Jonathan Wakely that they are interested in this feature. Also, on the ewg/lewg mailing lists, this paper comes up as a solution to a surprising number of questions, and gets referenced in many papers-in-flight. A sampling of papers:
+
+- [[P0798R3]]
+- [[P1221R1]]
+
+In Herb Sutter's "Name 5 most important papers for C++", 10 out of 289 respondents chose it. Given that the cutoff was 5, and that modules, throwing values, contracts, reflection, coroutines, linear algebra, and pattern matching were all in that list, I find the result a strong indication that it is wanted.
+
+I have to also say that Gašper is dearly missing this feature in [libciabatta](https://github.com/atomgalaxy/libciabatta) mixin support library, as well as his regular work writing libraries.
+
+On the question of whether this would get used in the standard library interfaces, the answer was "not without the ability to constrain the deduced type", which is a feature C++ needs even without this paper, and is an orthogonal feature. The same authors were generally very enthusiastic about using this feature in their implementations.
+
+## Function Pointer Types ## {#faq-function-ptr-type}
+
+A valid question to ask is what should be the type of this-annotated functions that have a member function equivalent? There are only two options, each with a trade-off. Please assume the existence of these three functions:
+
+```cpp
+struct Y {
+    int f(int, int) const&;         // exists
+    int g(this Y const&, int, int); // this paper
+    int h(this Y, int, int);        // this paper, by value
+};
+```
+
+`g` has a current equivalent (`f`), while `h` does not. `&Y::h`'s type *must* be a regular function pointer.
+
+If we allow `g`'s type to be a pointer-to-member-function, we get non-uniformity between the types of `h` and `g`. We also get implementation issues because the types a template can result in are non-uniform (is this a template for a member function or a free function? Surprise, it's both!).
+
+We also get forward compatibility with any concievable proposal for extension methods - those will *also* have to be free functions by necessity, for roughly the same reasons.
+
+The paper originally proposed it the other way, but this was changed to the current wording through EWG input in Cologne, 2018.
+
+## Deducing to Base-Class Pointer ## {#faq-computed-deduction}
+
+One of the pitfalls of having a deduced object parameter is when the intent is solely to deduce the *cv*-qualifiers and value category of the object parameter, but a derived type is deduced as well &mdash; any access through an object that might have a derived type could inadvertently refer to a shadowed member in the derived class. While this is desirable and very powerful in the case of mixins, it is not always desirable in other situations. Superfluous template instantiations are also unwelcome side effects.
+
+One family of possible solutions could be summarized as **make it easy to get the base class pointer**. However, all of these solutions still require extra instantiations. For `optional::value()`, we really only want four instantiations: `&`, `const&`, `&&`, and `const&&`. If something inherits from `optional`, we don't want additional instantiations of those functions for the derived types, which won't do anything new, anyway. This is code bloat.
+
+*This is already a problem for free-function templates*: The authors have heard many a complaint about it from library vendors, even before this paper was introduced, as it is desirable to only deduce the ref-qualifier in many contexts. Therefore, it might make sense to tackle this issue in a more general way. A complementary feature could be proposed to constrain *type deduction*.
+
+The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
+
+
 # Acknowledgements # {#acknowledgements}
 
 The authors would like to thank:
@@ -1372,6 +1425,7 @@ The authors would like to thank:
 - Richard Smith, Jens Maurer, and Hubert Tong for help with wording
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
+- Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
 
 <!--
  vim: ft=markdown wrap linebreak nolist textwidth=0 wrapmargin=0

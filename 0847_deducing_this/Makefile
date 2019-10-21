@@ -1,2 +1,2 @@
-p0847r2.html: deducing-this.bs
+d0847r3.html: deducing-this.bs
 	bikeshed spec $< $@ 
