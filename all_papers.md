@@ -25,6 +25,7 @@
 - 1871 Should concepts be enabled or disabled?: [p1871r0](1871_enable_sized_range/p1871r0.html)
 - 1900 Concepts-Adjacent Problems: [p1900r0](1900_concepts/p1900r0.html)
 - 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html)
+- 1946 Allow defaulting by-value comparisons: [d1946r0](1946_dflt_value_comparisons/d1946r0.html)
 
 # Other Papers
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
