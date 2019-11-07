@@ -1,6 +1,6 @@
 ---
 title: Concept traits should be named after concepts
-document: D1871R1
+document: P1871R1
 date: today
 audience: LEWG
 author:
