@@ -42,7 +42,7 @@ for Ranges things, and I can say that it's jarring to implement a class
 that's passed by value everywhere *except* for defaulted `==` and/or `<=>`.
 I'd like to see [class.compare.default]/1.1 changed as well to allow "a
 non-static const member of `C` having one parameter of type `const C&` [or
-C]{.addu}, or". I can't see any particular reason to forbid pass-by-value for
+`C`]{.addu}, or". I can't see any particular reason to forbid pass-by-value for
 member or non-member defaulted comparison operators. 
 :::
 
