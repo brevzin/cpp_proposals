@@ -1,6 +1,6 @@
 ---
 title: "`if consteval`"
-document: P1938R0
+document: D1938R1
 date: today
 audience: EWG
 author:
@@ -14,6 +14,10 @@ author:
       email: <daveed@edg.com>
 toc: true
 ---
+
+# Revision history
+
+R0 [@P1938R0] of this paper initially contained only a positive form: `if consteval`. This paper additionally adds a negated form, `if not consteval`.
 
 # Introduction
 
@@ -198,6 +202,21 @@ such, `std::is_constant_evaluated()` may itself no longer be necessary. However,
 given the very late date of this proposal, we would more than happily keep it
 if it allows us this new language feature.
 
+## Negated form
+
+Many people have expressed the view that a negated form is also useful. That form is also proposed here, spelled:
+
+```cpp
+if not consteval { }
+```
+or
+```cpp
+if ! consteval { }
+```
+
+With the semantics that the first substatement is executed if the context is _not_ manifestly constant evaluated, otherwise the second substatement (if any) is executed. 
+
+
 # History
 
 The initial revision of the `std::is_constant_evaluated()` proposal [@P0595R0]
@@ -230,8 +249,8 @@ Change 8.5 [stmt.select] to add the new grammar:
   @_selection-statement_@:
      if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
      if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@ else @_statement_@
-+    if consteval @_compound-statement_@
-+    if consteval @_compound-statement_@ else @_compound-statement_@
++    if !@~opt~@ consteval @_compound-statement_@
++    if !@~opt~@ consteval @_compound-statement_@ else @_compound-statement_@
      switch ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
 ```
 
