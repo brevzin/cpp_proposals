@@ -1,6 +1,6 @@
 ---
-title: "Allow defaulting by-value comparisons"
-document: D1946R0
+title: "Allow defaulting comparisons by value"
+document: P1946R0
 date: today
 audience: EWG
 author:
@@ -55,18 +55,33 @@ There is a certain class of type that should be taken by value instead of by
 reference to const - and those situations surely include that type's own
 comparison operators.
 
+# Evolution Direction
+
+A draft of this paper was presented to Evolution in Belfast, which decided that they wanted to allow the friend by-value case but none of the mixed-const cases. In other words, allow `A` but disallow `B` and `C` below:
+
+```cpp
+struct A {
+    friend bool operator==(A, A) = default;
+};
+
+struct B {
+    bool operator==(B) const = default;
+};
+
+struct C {
+    friend bool operator==(C, C const&) = default;
+};
+```
+
 # Wording
 
-Change 11.1.1 [class.compare.default]:
+Change 11.1.1 [class.compare.default], paragraph 1:
 
 ::: bq
-A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq])
+[1]{.pnum} A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq])
 for some class `C` shall be a non-template function declared in the
 _member-specification_ of `C` that is
 
 - [1.1]{.pnum} a non-static const member of `C` having one parameter of type `const C&`, or
-- [1.2]{.pnum} a friend of `C` having two parameters of type `const C&` [or `C`]{.addu}.
+- [1.2]{.pnum} a friend of `C` having [either]{.addu} two parameters of type `const C&` [or two parameters of type `C`]{.addu}.
 :::
-
-[We cannot make the same change for member functions because we cannot write
-by-value member functions]{.ednote}
