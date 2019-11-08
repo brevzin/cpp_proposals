@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-11-04" />
+  <meta name="dcterms.date" content="2019-11-07" />
   <title>Remove std::weak_equality and std::strong_equality</title>
   <style>
       code{white-space: pre-wrap;}
@@ -531,11 +531,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D1959R0</td>
+    <td>P1959R0</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-11-04</td>
+    <td>2019-11-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -554,7 +554,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </header>
 <div style="clear:both">
 <h1 id="introduction" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>This paper resolves NB comments <a href="https://github.com/cplusplus/nbballot/issues/168">DE 170</a>:</p>
+<p>This paper resolves NB comments <a href="https://github.com/cplusplus/nbballot/issues/168">US 170</a>:</p>
 <blockquote>
 <p>The <code class="sourceCode cpp">strong_equality</code> and <code class="sourceCode cpp">weak_equality</code> comparison categories don’t make sense now that we split equality from ordering. It doesn’t make sense to declare an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> that returns one of these – they just add needless complexity.</p>
 </blockquote>
@@ -609,23 +609,40 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(4.6)</a></span> Otherwise, <code class="sourceCode cpp">U</code> is <code class="sourceCode cpp">std​<span class="op">::</span>​strong_ordering</code> ([cmp.strongord]).</li>
 </ul>
 </blockquote>
-<p>Change the example in 11.11.4 [class.rel], paragraph 3, to just remove the <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> (since the <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;</span></code> would be deleted just the same).</p>
+<p>Change the example in 11.11.4 [class.rel], paragraph 3, to use a different type that has no <code class="sourceCode cpp"><span class="op">&lt;</span></code>:</p>
+<blockquote>
 <div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1"></a>  struct C {</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="st">-   friend std::strong_equality operator&lt;=&gt;(const C&amp;, const C&amp;);</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>    bool operator&lt;(const C&amp;) const = default;             // OK, function is deleted</span>
-<span id="cb2-4"><a href="#cb2-4"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1"></a><span class="va">+ struct HasNoLessThan { };</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>  struct C {</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="st">-   friend std::strong_equality operator&lt;=&gt;(const C&amp;, const C&amp;);</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="va">+   friend HasNoLessThan operator&lt;=&gt;(const C&amp;, const C&amp;);</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    bool operator&lt;(const C&amp;) const = default;             // OK, function is deleted</span>
+<span id="cb2-7"><a href="#cb2-7"></a>  };</span></code></pre></div>
 </div>
-<p>Or, if Core prefers, something like:</p>
+</blockquote>
+<p>Remove <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> from 12.7 [over.built], paragraph 19:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">19</a></span> For every <code class="sourceCode cpp">T</code>, where <code class="sourceCode cpp">T</code> is a pointer-to-member type or <code class="sourceCode cpp">std​<span class="op">::</span>​nullptr_t</code>, there exist candidate operator functions of the form:</p>
 <div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb3-1"><a href="#cb3-1"></a><span class="va">+ struct A { };</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a>  struct C {</span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="st">-   friend std::strong_equality operator&lt;=&gt;(const C&amp;, const C&amp;);</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="va">+   friend A operator&lt;=&gt;(const C&amp;, const C&amp;);</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>    bool operator&lt;(const C&amp;) const = default;             // OK, function is deleted</span>
-<span id="cb3-7"><a href="#cb3-7"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb3-1"><a href="#cb3-1"></a>  bool                 operator==(T, T);</span>
+<span id="cb3-2"><a href="#cb3-2"></a>  bool                 operator!=(T, T);</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="st">- std::strong_equality operator&lt;=&gt;(T, T);</span></span></code></pre></div>
 </div>
+</blockquote>
+<p>Change 13.2 [temp.param]/4 to add back the bullets that <span class="citation" data-cites="P0732R2">[<a href="#ref-P0732R2" role="doc-biblioref">P0732R2</a>]</span> removed, now that these other types no longer have strong structural equality:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> A non-type template-parameter shall have one of the following (optionally cv-qualified) types:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> a literal type that has strong structural equality ([class.compare.default]),</li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> an lvalue reference type,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.3)</a></span> a type that contains a placeholder type ([dcl.spec.auto]), <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.4)</a></span> a placeholder for a deduced class type ([dcl.type.class.deduct])<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.5)</a></span> <span class="addu">pointer to object or pointer to function,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.6)</a></span> <span class="addu">pointer to member, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.7)</a></span> <span class="addu"><code class="sourceCode cpp">std<span class="op">::</span>nullptr_t</code>.</span></li>
+</ul>
+</blockquote>
 <p>Remove the <code class="sourceCode cpp">XXX_equality</code> types from the compare synopsis in 17.11.1 [compare.syn]:</p>
 <div>
 <div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>namespace std {</span>
@@ -656,8 +673,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-4"><a href="#cb5-4"></a>enum class ncmp { unordered = -127 };                       // exposition only</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> [ Note: The type<span class="rm" style="color: #bf0303"><del>s</del></span> <code class="sourceCode cpp">strong_ordering</code> <span class="rm" style="color: #bf0303"><del>and weak_equality</del></span> correspond<span class="addu">s</span><span class="rm" style="color: #bf0303"><del>, respectively,</del></span> to the term<span class="rm" style="color: #bf0303"><del>s</del></span> total ordering <span class="rm" style="color: #bf0303"><del>and equivalence</del></span> in mathematics. — end note ]</p>
 </blockquote>
-<p>Remove 17.11.2.2 [cmp.weakeq] (the subclause that defines <code class="sourceCode cpp">std<span class="op">::</span>weak_equlity</code>).</p>
-<p>Remove 17.11.2.3 [cmp.strongeq] (the subclause that defines <code class="sourceCode cpp">std<span class="op">::</span>strong_equlity</code>).</p>
+<p>Remove 17.11.2.2 [cmp.weakeq] (the subclause that defines <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>).</p>
+<p>Remove 17.11.2.3 [cmp.strongeq] (the subclause that defines <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>).</p>
 <p>Remove the conversion operator to <code class="sourceCode cpp">weak_equality</code> from 17.11.2.4 [cmp.partialord]:</p>
 <blockquote>
 <div>
@@ -834,6 +851,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">13</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>base<span class="op">()</span> <span class="op">&lt;=&gt;</span> y<span class="op">.</span>base<span class="op">()</span></code>.</p>
 </blockquote>
+<h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> References<a href="#references" class="self-link"></a></h1>
+
+<div id="refs" role="doc-bibliography">
+<div id="ref-P0732R2">
+<p>[P0732R2] Jeff Snyder, Louis Dionne. 2018. Class Types in Non-Type Template Parameters. <br />
+<a href="https://wg21.link/p0732r2">https://wg21.link/p0732r2</a></p>
+</div>
+</div>
 </div>
 </div>
 </body>

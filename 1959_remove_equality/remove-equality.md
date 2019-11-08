@@ -1,6 +1,6 @@
 ---
 title: "Remove `std::weak_equality` and `std::strong_equality`"
-document: D1959R0
+document: P1959R0
 date: today
 audience: EWG, LEWG
 author:
@@ -11,7 +11,7 @@ toc: false
 
 # Introduction
 
-This paper resolves NB comments [DE 170](https://github.com/cplusplus/nbballot/issues/168):
+This paper resolves NB comments [US 170](https://github.com/cplusplus/nbballot/issues/168):
 
 ::: bq
 The `strong_equality` and `weak_equality` comparison categories don’t make sense now
@@ -96,27 +96,45 @@ The _common comparison type_ `U` of a possibly-empty list of `n` types `T0`, `T1
 - [4.6]{.pnum} Otherwise, `U` is `std​::​strong_ordering` ([cmp.strongord]).
 :::
 
-Change the example in 11.11.4 [class.rel], paragraph 3, to just remove the
-`operator<=>` (since the `operator<` would be deleted just the same).
+Change the example in 11.11.4 [class.rel], paragraph 3, to use a different type that has no `<`:
 
+::: bq
 ```diff
-  struct C {
--   friend std::strong_equality operator<=>(const C&, const C&);
-    bool operator<(const C&) const = default;             // OK, function is deleted
-  };
-```
-
-Or, if Core prefers, something like:
-
-```diff
-+ struct A { };
++ struct HasNoLessThan { };
 
   struct C {
 -   friend std::strong_equality operator<=>(const C&, const C&);
-+   friend A operator<=>(const C&, const C&);
++   friend HasNoLessThan operator<=>(const C&, const C&);
     bool operator<(const C&) const = default;             // OK, function is deleted
   };
 ```
+:::
+
+Remove `<=>` from 12.7 [over.built], paragraph 19:
+
+::: bq
+[19]{.pnum} For every `T`, where `T` is a pointer-to-member type or `std​::​nullptr_t`, there exist candidate operator functions of the form:
+
+```diff
+  bool                 operator==(T, T);
+  bool                 operator!=(T, T);
+- std::strong_equality operator<=>(T, T);
+```
+:::
+
+Change 13.2 [temp.param]/4 to add back the bullets that [@P0732R2] removed, now that these other types no longer have strong structural equality:
+
+::: bq
+[4]{.pnum} A non-type template-parameter shall have one of the following (optionally cv-qualified) types:
+
+- [4.1]{.pnum} a literal type that has strong structural equality ([class.compare.default]),
+- [4.2]{.pnum} an lvalue reference type,
+- [4.3]{.pnum} a type that contains a placeholder type ([dcl.spec.auto]), [or]{.rm}
+- [4.4]{.pnum} a placeholder for a deduced class type ([dcl.type.class.deduct])[.]{.rm} [,]{.addu}
+- [4.5]{.pnum} [pointer to object or pointer to function,]{.addu}
+- [4.6]{.pnum} [pointer to member, or]{.addu}
+- [4.7]{.pnum} [`std::nullptr_t`.]{.addu}
+:::
 
 Remove the `XXX_equality` types from the compare synopsis in 17.11.1 [compare.syn]:
 
@@ -160,9 +178,9 @@ enum class ncmp { unordered = -127 };                       // exposition only
 
 :::
 
-Remove 17.11.2.2 [cmp.weakeq] (the subclause that defines `std::weak_equlity`).
+Remove 17.11.2.2 [cmp.weakeq] (the subclause that defines `std::weak_equality`).
 
-Remove 17.11.2.3 [cmp.strongeq] (the subclause that defines `std::strong_equlity`).
+Remove 17.11.2.3 [cmp.strongeq] (the subclause that defines `std::strong_equality`).
 
 Remove the conversion operator to `weak_equality` from 17.11.2.4 [cmp.partialord]:
 
