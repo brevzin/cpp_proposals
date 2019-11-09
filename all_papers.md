@@ -20,13 +20,14 @@
 - 1500 Deduplicating Forwarding Overloads: [d1500r0](forward_ref/d1500r0.html)
 - 1614 The Mothership has Landed: [p1614r0](118x_spaceship/p1614r0.html) [p1614r1](118x_spaceship/p1614r1.html) [p1614r2](118x_spaceship/p1614r2.html)
 - 1630 Spaceship needs a tune-up: [p1630r0](118x_spaceship/p1630r0.html) [p1630r1](118x_spaceship/p1630r1.html)
+- 1645 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  for  <code class="sourceCode cpp"><span class="op">&lt;</span>numeric<span class="op">&gt;</span></code>  algorithms: [d1645r1](1645_constexpr_numeric/d1645r1.html)
 - 1858 Generalized pack declaration and usage: [p1858r0](1858_generalized_packs/p1858r0.html)
-- 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [p1870r0](1870_forwarding_range/p1870r0.html) [d1870r1](1870_forwarding_range/d1870r1.html)
-- 1871 Concept traits should be named after concepts: [p1871r0](1871_enable_sized_range/p1871r0.html) [d1871r1](1871_enable_sized_range/d1871r1.html)
+- 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [p1870r0](1870_forwarding_range/p1870r0.html) [p1870r1](1870_forwarding_range/p1870r1.html)
+- 1871 Concept traits should be named after concepts: [p1871r0](1871_enable_sized_range/p1871r0.html) [p1871r1](1871_enable_sized_range/p1871r1.html)
 - 1900 Concepts-Adjacent Problems: [p1900r0](1900_concepts/p1900r0.html)
 - 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html) [d1938r1](1938_if_consteval/d1938r1.html)
-- 1946 Allow defaulting by-value comparisons: [d1946r0](1946_dflt_value_comparisons/d1946r0.html)
-- 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [d1959r0](1959_remove_equality/d1959r0.html)
+- 1946 Allow defaulting comparisons by value: [p1946r0](1946_dflt_value_comparisons/p1946r0.html)
+- 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 
 # Other Papers
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
