@@ -1236,7 +1236,7 @@ much more expansive than just range adapters. And if we think it's a valuable
 things for range adapters, maybe we should find a way to make it work for all
 other C++ applications?
 
-# Other Concerns and Direction
+# Other Concerns
 
 Some C++20 code could break. In the same way that the introduction of
 `operator<=>` introduced a `<=>` token that would break code that passed the
@@ -1251,19 +1251,6 @@ There may be a concern that this would lead to yet another conflict
 in the C++ community as to whether the proper way to invoke functions is
 spelled `west(invocable)` or `invocable |> east`. We're not too concerned about
 this potential conflict. Just wanted to be thorough.
-
-One question for the future is: 
-
-Do we want to pursue a language feature, similar to what Hack has, for putting
-the left-hand side not necessarily as the first argument but also anywhere? This
-would allow, from Herb's paper, `file |> fputs("Hello world", $$)`. It could
-also be an interesting extension to the _type-constraint_ syntax from concepts
-where you could omit a type parameter other than the first in still somewhat
-terse notation. 
-
-We do not want to do so for this paper - as the proposal at hand is small, simple,
-and provides an enormous amount of utility in its own right without adding
-extra complication. But this might be a future direction to consider. 
 
 # Wording
 
