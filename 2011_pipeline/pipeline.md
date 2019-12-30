@@ -1333,7 +1333,7 @@ Add a new Annex C entry, mirroring the one that exists for `<=>` in [diff.cpp17.
 
 **Rationale**: Necessary for new functionality.
 
-**Effect on original feature**: Valid C++ 2017 code that contains a `|` token
+**Effect on original feature**: Valid C++ 2020 code that contains a `|` token
 immediately followed by a `>` token may be ill-formed or have different
 semantics in this International Standard:
 
