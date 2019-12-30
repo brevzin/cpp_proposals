@@ -20,6 +20,10 @@ make all of my papers.
   are not mine).
 - [p1630r1 - Spaceship needs a tuneup](118x_spaceship/p1630r1.html). A paper addressing several `<=>`-
   related issues that have come up.
+- [p1870r1 - `forwarding-range<T>` is too subtle](1870_forwarding_range/p1870r1.html).
+- [p1871r1 - Concept traits should be named after concepts](1871_enable_sized_range/p1871r1.html).
+- [p1946r0 - Allow defaulting comparisons by value](1946_dflt_value_comparisons/p1946r0.html).
+- [p1959r0 - Remove `std::weak_equality` and `std::strong_equality`](1959_remove_equality/p1959r0.html).
 
 ### Rejected
 
@@ -34,5 +38,7 @@ make all of my papers.
 - [p0847r2 - Deducing this](0847_deducing_this/p0847r2.html), with Simon Brand,
   Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. R1 was
   discussed in San Diego. 
-- [p1061r0 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r0.html), with Jonathan Wakely.
+- [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
+- [p1858r0 - Generalized pack declarations and usage](1858_generalized_packs/p1858r0.html).
+- [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
