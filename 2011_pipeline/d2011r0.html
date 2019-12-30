@@ -572,7 +572,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#proposal-rewriting-pipelines-with-a-operator"><span class="toc-section-number">3</span> Proposal: Rewriting Pipelines with a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> Operator<span></span></a><ul>
 <li><a href="#specific-proposal-details"><span class="toc-section-number">3.1</span> Specific Proposal Details<span></span></a></li>
 <li><a href="#further-examples"><span class="toc-section-number">3.2</span> Further examples<span></span></a></li>
-<li><a href="#precedence-in-c-and-elsewhere"><span class="toc-section-number">3.3</span> Precedence (in C++ and elsewhere)<span></span></a></li>
+<li><a href="#prior-art-in-c-and-elsewhere"><span class="toc-section-number">3.3</span> Prior Art (in C++ and elsewhere)<span></span></a></li>
 </ul></li>
 <li><a href="#what-about-unified-function-call-syntax"><span class="toc-section-number">4</span> What about Unified Function Call Syntax?<span></span></a><ul>
 <li><a href="#ufcs-does-not-enable-more-generic-code"><span class="toc-section-number">4.1</span> UFCS does not enable more-generic code<span></span></a></li>
@@ -771,10 +771,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 id="specific-proposal-details"><span class="header-section-number">3.1</span> Specific Proposal Details<a href="#specific-proposal-details" class="self-link"></a></h2>
 <p>The description above is roughly the entirety of the proposal. We introduce two new forms of <a href="http://eel.is/c++draft/expr#nt:postfix-expression"><em>postfix-expression</em></a>, which have the grammar:</p>
 <blockquote>
-<p><em>postfix-expression</em> <code class="sourceCode cpp"><span class="op">|&gt;</span></code> <em>primary-expression</em> <code class="sourceCode cpp"><span class="op">(</span></code> <em>expression-list</em> <sub>opt</sub> <code class="sourceCode cpp"><span class="op">)</span></code><br />
-<em>postfix-expression</em> <code class="sourceCode cpp"><span class="op">|&gt;</span></code> <em>primary-expression</em></p>
+<p><em>postfix-expression</em> <code class="sourceCode cpp"><span class="op">|&gt;</span></code> <em>primary-expression</em> <code class="sourceCode cpp"><span class="op">(</span></code> <em>expression-list</em> <sub>opt</sub> <code class="sourceCode cpp"><span class="op">)</span></code></p>
 </blockquote>
-<p>And evaluate directly as function calls as a result of moving the left-hand-side as the first argument of the call expression. For those cases where the left-hand-side is the sole argument, the empty parentheses may be omitted (this is the second grammar form above).</p>
+<p>And evaluate directly as function calls as a result of moving the left-hand-side as the first argument of the call expression.</p>
 <p>Some examples:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a>   <span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> i; <span class="op">}</span>;</span>
@@ -785,33 +784,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-7"><a href="#cb15-7"></a><span class="dt">void</span> f<span class="op">(</span>T<span class="op">)</span>;</span>
 <span id="cb15-8"><a href="#cb15-8"></a></span>
 <span id="cb15-9"><a href="#cb15-9"></a>N<span class="op">::</span>X<span class="op">{</span><span class="dv">1</span><span class="op">}</span> <span class="op">|&gt;</span> f<span class="op">()</span>; <span class="co">// ADL finds N::f, is 1</span></span>
-<span id="cb15-10"><a href="#cb15-10"></a>N<span class="op">::</span>X<span class="op">{</span><span class="dv">1</span><span class="op">}</span> <span class="op">|&gt;</span> f;   <span class="co">// as above, parens optional</span></span>
-<span id="cb15-11"><a href="#cb15-11"></a>N<span class="op">::</span>X<span class="op">{</span><span class="dv">1</span><span class="op">}</span> <span class="op">|&gt;</span> <span class="op">(</span>f<span class="op">)</span>; <span class="co">// parens inhibit ADL, so this calls `::f`, is a void</span></span>
-<span id="cb15-12"><a href="#cb15-12"></a></span>
-<span id="cb15-13"><a href="#cb15-13"></a><span class="co">// immediately invokes the lambda with arguments 1 and 2</span></span>
-<span id="cb15-14"><a href="#cb15-14"></a><span class="dv">1</span> <span class="op">|&gt;</span> <span class="op">[](</span><span class="dt">int</span> i, <span class="dt">int</span> j<span class="op">){</span> <span class="cf">return</span> i <span class="op">+</span> j; <span class="op">}(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb15-15"><a href="#cb15-15"></a></span>
-<span id="cb15-16"><a href="#cb15-16"></a><span class="co">// immediately invokes the lambda with the argument 1</span></span>
-<span id="cb15-17"><a href="#cb15-17"></a><span class="dv">1</span> <span class="op">|&gt;</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i; <span class="op">}</span>;</span>
-<span id="cb15-18"><a href="#cb15-18"></a></span>
-<span id="cb15-19"><a href="#cb15-19"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb15-20"><a href="#cb15-20"></a><span class="dt">int</span> g<span class="op">(</span>T<span class="op">)</span>;</span>
-<span id="cb15-21"><a href="#cb15-21"></a></span>
-<span id="cb15-22"><a href="#cb15-22"></a><span class="dv">2</span> <span class="op">|&gt;</span> g<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>; <span class="co">// equivalent to g&lt;int&gt;(2)</span></span>
-<span id="cb15-23"><a href="#cb15-23"></a></span>
-<span id="cb15-24"><a href="#cb15-24"></a><span class="co">// arbitrary expressions can be composed in parens</span></span>
-<span id="cb15-25"><a href="#cb15-25"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span> G<span class="op">&gt;</span></span>
-<span id="cb15-26"><a href="#cb15-26"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">&gt;&gt;(</span>F f, G g<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb15-27"><a href="#cb15-27"></a>    <span class="cf">return</span> <span class="op">[=](</span><span class="kw">auto</span> arg<span class="op">){</span></span>
-<span id="cb15-28"><a href="#cb15-28"></a>        <span class="cf">return</span> g<span class="op">(</span>f<span class="op">(</span>arg<span class="op">))</span>;</span>
-<span id="cb15-29"><a href="#cb15-29"></a>    <span class="op">}</span>;</span>
-<span id="cb15-30"><a href="#cb15-30"></a><span class="op">}</span></span>
-<span id="cb15-31"><a href="#cb15-31"></a></span>
-<span id="cb15-32"><a href="#cb15-32"></a><span class="co">// evaluates as dbl(add1(4))</span></span>
-<span id="cb15-33"><a href="#cb15-33"></a><span class="kw">auto</span> add1 <span class="op">=</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i<span class="op">+</span><span class="dv">1</span>; <span class="op">}</span>;</span>
-<span id="cb15-34"><a href="#cb15-34"></a><span class="kw">auto</span> dbl <span class="op">=</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i<span class="op">*</span><span class="dv">2</span>; <span class="op">}</span>;</span>
-<span id="cb15-35"><a href="#cb15-35"></a><span class="dv">4</span> <span class="op">|&gt;</span> <span class="op">(</span>add1 <span class="op">&gt;&gt;</span> dbl<span class="op">)()</span>;</span>
-<span id="cb15-36"><a href="#cb15-36"></a><span class="dv">4</span> <span class="op">|&gt;</span> <span class="op">(</span>add1 <span class="op">&gt;&gt;</span> dbl<span class="op">)</span></span></code></pre></div>
+<span id="cb15-10"><a href="#cb15-10"></a>N<span class="op">::</span>X<span class="op">{</span><span class="dv">1</span><span class="op">}</span> <span class="op">|&gt;</span> <span class="op">(</span>f<span class="op">)</span>; <span class="co">// parens inhibit ADL, so this calls `::f`, is a void</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="co">// immediately invokes the lambda with arguments 1 and 2</span></span>
+<span id="cb15-13"><a href="#cb15-13"></a><span class="dv">1</span> <span class="op">|&gt;</span> <span class="op">[](</span><span class="dt">int</span> i, <span class="dt">int</span> j<span class="op">){</span> <span class="cf">return</span> i <span class="op">+</span> j; <span class="op">}(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb15-14"><a href="#cb15-14"></a></span>
+<span id="cb15-15"><a href="#cb15-15"></a><span class="co">// immediately invokes the lambda with the argument 1</span></span>
+<span id="cb15-16"><a href="#cb15-16"></a><span class="dv">1</span> <span class="op">|&gt;</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i; <span class="op">}()</span>;</span>
+<span id="cb15-17"><a href="#cb15-17"></a></span>
+<span id="cb15-18"><a href="#cb15-18"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb15-19"><a href="#cb15-19"></a><span class="dt">int</span> g<span class="op">(</span>T<span class="op">)</span>;</span>
+<span id="cb15-20"><a href="#cb15-20"></a></span>
+<span id="cb15-21"><a href="#cb15-21"></a><span class="dv">2</span> <span class="op">|&gt;</span> g<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>; <span class="co">// equivalent to g&lt;int&gt;(2)</span></span>
+<span id="cb15-22"><a href="#cb15-22"></a></span>
+<span id="cb15-23"><a href="#cb15-23"></a><span class="co">// arbitrary expressions can be composed in parens</span></span>
+<span id="cb15-24"><a href="#cb15-24"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span> G<span class="op">&gt;</span></span>
+<span id="cb15-25"><a href="#cb15-25"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">&gt;&gt;(</span>F f, G g<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-26"><a href="#cb15-26"></a>    <span class="cf">return</span> <span class="op">[=](</span><span class="kw">auto</span> arg<span class="op">){</span></span>
+<span id="cb15-27"><a href="#cb15-27"></a>        <span class="cf">return</span> g<span class="op">(</span>f<span class="op">(</span>arg<span class="op">))</span>;</span>
+<span id="cb15-28"><a href="#cb15-28"></a>    <span class="op">}</span>;</span>
+<span id="cb15-29"><a href="#cb15-29"></a><span class="op">}</span></span>
+<span id="cb15-30"><a href="#cb15-30"></a></span>
+<span id="cb15-31"><a href="#cb15-31"></a><span class="co">// evaluates as dbl(add1(4))</span></span>
+<span id="cb15-32"><a href="#cb15-32"></a><span class="kw">auto</span> add1 <span class="op">=</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i<span class="op">+</span><span class="dv">1</span>; <span class="op">}</span>;</span>
+<span id="cb15-33"><a href="#cb15-33"></a><span class="kw">auto</span> dbl <span class="op">=</span> <span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i<span class="op">*</span><span class="dv">2</span>; <span class="op">}</span>;</span>
+<span id="cb15-34"><a href="#cb15-34"></a><span class="dv">4</span> <span class="op">|&gt;</span> <span class="op">(</span>add1 <span class="op">&gt;&gt;</span> dbl<span class="op">)()</span>;</span></code></pre></div>
 <p>Note that <em>postfix-expression</em> s can chain after each other too, so these also work:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb16-2"><a href="#cb16-2"></a><span class="kw">auto</span> always<span class="op">(</span>T val<span class="op">)</span> <span class="op">{</span></span>
@@ -975,22 +972,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb37-2"><a href="#cb37-2"></a>    <span class="kw">auto</span> result <span class="op">=</span></span>
 <span id="cb37-3"><a href="#cb37-3"></a>        new_thread<span class="op">()</span></span>
-<span id="cb37-4"><a href="#cb37-4"></a>        <span class="op">|&gt;</span> async_algo</span>
+<span id="cb37-4"><a href="#cb37-4"></a>        <span class="op">|&gt;</span> async_algo<span class="op">()</span></span>
 <span id="cb37-5"><a href="#cb37-5"></a>        <span class="op">|&gt;</span> then<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">+</span> rand<span class="op">()</span>; <span class="op">})</span></span>
-<span id="cb37-6"><a href="#cb37-6"></a>        <span class="op">|&gt;</span> sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>;</span>
+<span id="cb37-6"><a href="#cb37-6"></a>        <span class="op">|&gt;</span> sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
 <span id="cb37-7"><a href="#cb37-7"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, result<span class="op">)</span>;</span>
 <span id="cb37-8"><a href="#cb37-8"></a><span class="op">}</span></span></code></pre></div>
 <p>Which demonstrates the linear flow of execution quite well.</p>
-<h2 id="precedence-in-c-and-elsewhere"><span class="header-section-number">3.3</span> Precedence (in C++ and elsewhere)<a href="#precedence-in-c-and-elsewhere" class="self-link"></a></h2>
+<h2 id="prior-art-in-c-and-elsewhere"><span class="header-section-number">3.3</span> Prior Art (in C++ and elsewhere)<a href="#prior-art-in-c-and-elsewhere" class="self-link"></a></h2>
 <p>It’s important to point out that the notion of a pipeline rewrite operator is not novel across programming languages, and it isn’t even novel in C++.</p>
-<p>The particular form of the operator this paper is proposing comes from the Elixir programming language, where it is known as the pipe operator <span class="citation" data-cites="Elixir.Pipe">[<a href="#ref-Elixir.Pipe" role="doc-biblioref">Elixir.Pipe</a>]</span>. Its semantics are most the same as are being proposed here, except that the parentheses are mandatory. From the docs:</p>
+<p>The particular form of the operator this paper is proposing comes from the Elixir programming language, where it is known as the pipe operator <span class="citation" data-cites="Elixir.Pipe">[<a href="#ref-Elixir.Pipe" role="doc-biblioref">Elixir.Pipe</a>]</span>. Its semantics are the same as are being proposed here. From the docs:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode elixir"><code class="sourceCode elixir"><span id="cb2-1"><a href="#cb2-1"></a>iex<span class="op">&gt;</span> <span class="st">&quot;Elixir rocks&quot;</span> <span class="op">|&gt;</span> <span class="cn">String</span><span class="op">.</span>upcase() <span class="op">|&gt;</span> <span class="cn">String</span><span class="op">.</span>split()</span>
 <span id="cb2-2"><a href="#cb2-2"></a>[<span class="st">&quot;ELIXIR&quot;</span>, <span class="st">&quot;ROCKS&quot;</span>]</span></code></pre></div>
 <p>Another language with the same operator is Hack, except its usage is slightly more generalized than either Elixir’s or what is being proposed here <span class="citation" data-cites="Hack.Pipe">[<a href="#ref-Hack.Pipe" role="doc-biblioref">Hack.Pipe</a>]</span>. While the underlying idea is the same - a function call is split such that one argument is on the left of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> and the rest of the call is on the right - Hack instead stores the left-hand operand in a variable named <code class="x">$$</code> which then must appear on the right-hand side (but doesn’t necessarily have to be the first argument):</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode php"><code class="sourceCode php"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">$x</span> = vec<span class="ot">[</span><span class="dv">2</span><span class="ot">,</span><span class="dv">1</span><span class="ot">,</span><span class="dv">3</span><span class="ot">]</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a>  |&gt; Vec\map<span class="ot">(</span>$$<span class="ot">,</span> <span class="kw">$a</span> ==&gt; <span class="kw">$a</span> * <span class="kw">$a</span><span class="ot">)</span></span>
 <span id="cb3-3"><a href="#cb3-3"></a>  |&gt; Vec\<span class="fu">sort</span><span class="ot">(</span>$$<span class="ot">);</span></span></code></pre></div>
-<p>F#, Julia, and OCaml also have an operator named <code class="sourceCode cpp"><span class="op">|&gt;</span></code> which all do the same thing: they invoke the right-hand side with the left-hand side as its sole argument: rather than <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> meaning <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code> as is being proposed here and as it means in Elixir, it instead means <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)(</span>x<span class="op">)</span></code>. In other words, given a binary operator as proposed in <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, these languages’ version of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> could be implemented as a global:</p>
+<p>F#, Julia, and OCaml also have an operator named <code class="sourceCode cpp"><span class="op">|&gt;</span></code> - but theirs is slightly different. Theirs all invoke the right-hand side with the left-hand side as its sole argument: rather than <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> meaning <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code> as is being proposed here and as it means in Elixir, it instead means <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)(</span>x<span class="op">)</span></code>. In other words, given a binary operator as proposed in <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, these languages’ version of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> could be implemented as a global:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Arg, std<span class="op">::</span>invocable<span class="op">&lt;</span>Arg<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
 <span id="cb40-2"><a href="#cb40-2"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">|&gt;(</span>Arg<span class="op">&amp;&amp;</span> a, F<span class="op">&amp;&amp;</span> f<span class="op">)</span></span>
 <span id="cb40-3"><a href="#cb40-3"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F, Arg<span class="op">&gt;</span></span>
@@ -1091,7 +1088,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb45-4"><a href="#cb45-4"></a>    fseek<span class="op">(</span>file, <span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
 <span id="cb45-5"><a href="#cb45-5"></a>    fclose<span class="op">(</span>file<span class="op">)</span>;</span>
 <span id="cb45-6"><a href="#cb45-6"></a><span class="op">}</span></span></code></pre></div>
-<p>This proposal wouldn’t allow for any help on <code class="sourceCode cpp">fputs</code> (would need something like Hack’s explicit <code class="x">$$</code> token) but the rest could be written as:</p>
+<p>This proposal wouldn’t allow for any help on <code class="sourceCode cpp">fputs</code> (would need something like Hack’s explicit <code class="x">$$</code> token to allow for <code class="sourceCode cpp">file <span class="op">|&gt;</span> fputs<span class="op">(</span><span class="st">&quot;Hello world&quot;</span>, <span class="er">$$</span><span class="op">)</span></code> ) but the rest could be written as:</p>
 <div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a><span class="dt">FILE</span><span class="op">*</span> file <span class="op">=</span> fopen<span class="op">(</span> “a<span class="op">.</span>txt”, “wb” <span class="op">)</span>;</span>
 <span id="cb46-2"><a href="#cb46-2"></a><span class="cf">if</span> <span class="op">(</span>file<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb46-3"><a href="#cb46-3"></a>    fputs<span class="op">(</span>“Hello world”, file<span class="op">)</span>;</span>
@@ -1155,7 +1152,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb50-14"><a href="#cb50-14"></a>        <span class="co">// Transpose the rows and columns of the size-by-side months:</span></span>
 <span id="cb50-15"><a href="#cb50-15"></a>      <span class="op">|&gt;</span> transpose_months<span class="op">()</span></span>
 <span id="cb50-16"><a href="#cb50-16"></a>        <span class="co">// Ungroup the side-by-side months:</span></span>
-<span id="cb50-17"><a href="#cb50-17"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>join</span>
+<span id="cb50-17"><a href="#cb50-17"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>join<span class="op">()</span></span>
 <span id="cb50-18"><a href="#cb50-18"></a>        <span class="co">// Join the strings of the transposed months:</span></span>
 <span id="cb50-19"><a href="#cb50-19"></a>      <span class="op">|&gt;</span> join_months<span class="op">()</span>;</span>
 <span id="cb50-20"><a href="#cb50-20"></a><span class="op">}</span></span></code></pre></div>
@@ -1164,7 +1161,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>However, the utility of partial function application and composition is much, much more expansive than just range adapters. And if we think it’s a valuable things for range adapters, maybe we should find a way to make it work for all other C++ applications?</p>
 <h1 id="other-concerns" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Other Concerns<a href="#other-concerns" class="self-link"></a></h1>
 <p>Some C++20 code could break. In the same way that the introduction of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> introduced a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> token that would break code that passed the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=</span></code> as a template argument (<code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=</span> <span class="op">&gt;()</span></code>), a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> token would break code that passes the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code> as a template argument (<code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|</span> <span class="op">&gt;()</span></code>). This wasn’t a huge concern with the spaceship operator, and it isn’t a huge concern with the pipeline rewrite operator.</p>
-<p>There may be a concern that this would lead to yet another conflict in the C++ community as to whether the proper way to invoke functions is spelled <code class="sourceCode cpp">west<span class="op">(</span>invocable<span class="op">)</span></code> or <code class="sourceCode cpp">invocable <span class="op">|&gt;</span> east</code>. We’re not too concerned about this potential conflict. Just wanted to be thorough.</p>
+<p>There may be a concern that this would lead to yet another conflict in the C++ community as to whether the proper way to invoke functions is spelled <code class="sourceCode cpp">west<span class="op">(</span>invocable<span class="op">)</span></code> or <code class="sourceCode cpp">invocable <span class="op">|&gt;</span> east<span class="op">()</span></code>. We’re not too concerned about this potential conflict. Just wanted to be thorough.</p>
 <h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> as a token to <span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span>.</p>
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the <em>postfix-expression</em> grammar in <span>7.6.1 <a href="https://wg21.link/expr.post">[expr.post]</a></span>:</p>
@@ -1181,23 +1178,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb51-9"><a href="#cb51-9"></a>    <em>postfix-expression</em> . template<sub>opt</sub> <em>id-expression</em></span>
 <span id="cb51-10"><a href="#cb51-10"></a>    <em>postfix-expression</em> -&gt; template<sub>opt</sub> <em>id-expression</em></span>
 <span id="cb51-11"><a href="#cb51-11"></a><span class="va">+   <em>postfix-expression</em> |&gt; <em>primary-expression</em> ( <em>expression-list</em><sub>opt</sub> ) </span></span>
-<span id="cb51-12"><a href="#cb51-12"></a><span class="va">+   <em>postfix-expression</em> |&gt; <em>primary-expression</em></span></span>
-<span id="cb51-13"><a href="#cb51-13"></a>    <em>postfix-expression</em> ++</span>
-<span id="cb51-14"><a href="#cb51-14"></a>    <em>postfix-expression</em> --</span>
-<span id="cb51-15"><a href="#cb51-15"></a>    dynamic_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-16"><a href="#cb51-16"></a>    static_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-17"><a href="#cb51-17"></a>    reinterpret_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-18"><a href="#cb51-18"></a>    const_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-19"><a href="#cb51-19"></a>    typeid ( <em>expression</em> )</span>
-<span id="cb51-20"><a href="#cb51-20"></a>    typeid ( <em>type-id</em> )</span></code></pre></div>
+<span id="cb51-12"><a href="#cb51-12"></a>    <em>postfix-expression</em> ++</span>
+<span id="cb51-13"><a href="#cb51-13"></a>    <em>postfix-expression</em> --</span>
+<span id="cb51-14"><a href="#cb51-14"></a>    dynamic_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb51-15"><a href="#cb51-15"></a>    static_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb51-16"><a href="#cb51-16"></a>    reinterpret_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb51-17"><a href="#cb51-17"></a>    const_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb51-18"><a href="#cb51-18"></a>    typeid ( <em>expression</em> )</span>
+<span id="cb51-19"><a href="#cb51-19"></a>    typeid ( <em>type-id</em> )</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new section immediately after <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span> named “Pipeline rewrite” [expr.pizza]:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A postfix expression followed by a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> token is a postfix expression. The <code class="sourceCode cpp"><span class="op">|&gt;</span></code> shall be followed by a <em>primary-expression</em>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> If the <em>primary-expression</em> is followed by parentheses, then the expression <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> E2<span class="op">(</span>args<span class="op">)</span></code>, were <code class="sourceCode cpp">args</code> is a possibly empty, comma-separated list of <em>initializer-clauses</em>, is identical (by definition) to <code class="sourceCode cpp">E2<span class="op">(</span>E1, args<span class="op">)</span></code> ([expr.call]), except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E2</code>. <em>[Note:</em> <code class="sourceCode cpp">E2</code> is still sequenced before the rest of the function arguments <em>-end note ]</em></p>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> If the <em>primary-expression</em> is not followed by parentheses, the expression <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> E2</code> is identical (by definition) to <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> E2<span class="op">()</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A postfix expression followed by a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> token is a postfix expression. The <code class="sourceCode cpp"><span class="op">|&gt;</span></code> shall be followed by a <em>primary-expression</em> and parentheses.</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> The expression <code>E1 |&gt; E2(E<sub>args</sub>)</code>, were <code>E<sub>args</sub></code> is a possibly empty, comma-separated list of <em>initializer-clauses</em>, is identical (by definition) to <code>E2(E1, E<sub>args</sub>)</code> ([expr.call]), except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E2</code>. <em>[Note:</em> <code class="sourceCode cpp">E2</code> is still sequenced before the rest of the function arguments. <em>-end note ]</em></p>
 </div>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the list of non-overloadable operators in <span>12.6 <a href="https://wg21.link/over.oper">[over.oper]</a></span>/3:</p>
@@ -1221,7 +1216,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h1 id="implementation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> Implementation<a href="#implementation" class="self-link"></a></h1>
-<p>An implementation in Clang can be found <a href="https://github.com/BRevzin/llvm-project/tree/operator-pizza">here</a>. At the moment, the implementation is a direct translations of how we think about this operator: it actually creates a regular function call expression by prepending the left-hand side of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the argument list for function calls rather than introducing a new AST node for a pipeline rewrite expression.</p>
+<p>An implementation in Clang can be found <a href="https://github.com/BRevzin/llvm-project/tree/85bc4172cd9df0f9419fa20ae3b9400906656501">here</a>. At the moment, the implementation is a direct translations of how we think about this operator: it actually creates a regular function call expression by prepending the left-hand side of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the argument list for function calls rather than introducing a new AST node for a pipeline rewrite expression. The implemenation also allows omitting parens in in the empty argument case (that is <code class="sourceCode cpp">x <span class="op">|&gt;</span> f</code> is a valid expression that evaluates as <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>).</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">9</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">

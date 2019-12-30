@@ -451,13 +451,10 @@ which have the grammar:
 
 ::: bq
 _postfix-expression_ `|>` _primary-expression_ `(` _expression-list_ ~opt~ `)`  
-_postfix-expression_ `|>` _primary-expression_
 :::
 
 And evaluate directly as function calls as a result of moving the left-hand-side
-as the first argument of the call expression. For those cases where the
-left-hand-side is the sole argument, the empty parentheses may be omitted (this
-is the second grammar form above).
+as the first argument of the call expression. 
 
 Some examples:
 
@@ -471,19 +468,18 @@ template <typename T>
 void f(T);
 
 N::X{1} |> f(); // ADL finds N::f, is 1
-N::X{1} |> f;   // as above, parens optional
 N::X{1} |> (f); // parens inhibit ADL, so this calls `::f`, is a void
 
 // immediately invokes the lambda with arguments 1 and 2
 1 |> [](int i, int j){ return i + j; }(2);
 
 // immediately invokes the lambda with the argument 1
-1 |> [](int i){ return i; };
+1 |> [](int i){ return i; }();
 
 template <typename T>
 int g(T);
 
-2 |> g<int>; // equivalent to g<int>(2)
+2 |> g<int>(); // equivalent to g<int>(2)
 
 // arbitrary expressions can be composed in parens
 template <typename F, typename G>
@@ -497,7 +493,6 @@ auto operator>>(F f, G g) {
 auto add1 = [](int i){ return i+1; };
 auto dbl = [](int i) { return i*2; };
 4 |> (add1 >> dbl)();
-4 |> (add1 >> dbl)
 ```
 
 Note that _postfix-expression_ s can chain after each other too, so these
@@ -802,24 +797,23 @@ on anyone's part) as:
 int main() {
     auto result =
         new_thread()
-        |> async_algo
+        |> async_algo()
         |> then([](int i){ return i + rand(); })
-        |> sync_wait<int>;
+        |> sync_wait<int>();
     printf("%d\n", result);
 }
 ```
 
 Which demonstrates the linear flow of execution quite well. 
 
-## Precedence (in C++ and elsewhere)
+## Prior Art (in C++ and elsewhere)
 
 It's important to point out that the notion of a pipeline rewrite operator is
 not novel across programming languages, and it isn't even novel in C++.
 
 The particular form of the operator this paper is proposing comes from the
 Elixir programming language, where it is known as the pipe operator [@Elixir.Pipe].
-Its semantics are most the same as are being proposed here, except that the
-parentheses are mandatory. From the docs:
+Its semantics are the same as are being proposed here. From the docs:
 
 ```elixir
 iex> "Elixir rocks" |> String.upcase() |> String.split()
@@ -840,8 +834,9 @@ $x = vec[2,1,3]
   |> Vec\sort($$);
 ```
 
-F#, Julia, and OCaml also have an operator named `|>` which all do the same thing:
-they invoke the right-hand side with the left-hand side as its sole argument:
+F#, Julia, and OCaml also have an operator named `|>` - but theirs is slightly
+different. Theirs all invoke the right-hand side with the left-hand side as its
+sole argument:
 rather than `x |> f(y)` meaning `f(x, y)` as is being proposed here and as it
 means in Elixir, it instead means `f(y)(x)`. In other words, given a binary
 operator as proposed in [@P1282R0], these languages' version of `|>` could be
@@ -1105,7 +1100,8 @@ if (file) {
 ```
 
 This proposal wouldn't allow for any help on `fputs` (would need something like
-Hack's explicit `$$`{.x} token) but the rest could be written as:
+Hack's explicit `$$`{.x} token to allow for `file |> fputs("Hello world", $$)`
+) but the rest could be written as:
 
 ```cpp
 FILE* file = fopen( “a.txt”, “wb” );
@@ -1214,7 +1210,7 @@ format_calendar(Range&& rng, std::size_t months_per_line)
         // Transpose the rows and columns of the size-by-side months:
       |> transpose_months()
         // Ungroup the side-by-side months:
-      |> views::join
+      |> views::join()
         // Join the strings of the transposed months:
       |> join_months();
 }
@@ -1249,7 +1245,7 @@ pipeline rewrite operator.
 
 There may be a concern that this would lead to yet another conflict
 in the C++ community as to whether the proper way to invoke functions is
-spelled `west(invocable)` or `invocable |> east`. We're not too concerned about
+spelled `west(invocable)` or `invocable |> east()`. We're not too concerned about
 this potential conflict. Just wanted to be thorough.
 
 # Wording
@@ -1271,7 +1267,6 @@ Add `|>` to the _postfix-expression_ grammar in [expr.post]{.sref}:
 	@_postfix-expression_@ . template@~opt~ _id-expression_@
 	@_postfix-expression_@ -> template@~opt~ _id-expression_@
 +   @_postfix-expression_@ |> @_primary-expression_@ ( @_expression-list_~opt~@ ) 
-+   @_postfix-expression_@ |> @_primary-expression_@
 	@_postfix-expression_@ ++
 	@_postfix-expression_@ --
 	dynamic_cast < @_type-id_@ > ( @_expression_@ )
@@ -1288,16 +1283,15 @@ Add a new section immediately after [expr.call]{.sref} named "Pipeline rewrite" 
 ::: bq
 ::: addu
 [1]{.pnum} A postfix expression followed by a `|>` token is a postfix expression.
-The `|>` shall be followed by a _primary-expression_.
+The `|>` shall be followed by a _primary-expression_ and parentheses. 
 
-[2]{.pnum} If the _primary-expression_ is followed by parentheses, then the
-expression `E1 |> E2(args)`, were `args` is a possibly empty, comma-separated
-list of _initializer-clauses_, is identical (by definition) to `E2(E1, args)`
+[2]{.pnum} The
+expression <code>E1 |> E2(E~args~)</code>, were <code>E~args~</code>
+ is a possibly empty, comma-separated
+list of _initializer-clauses_, is identical (by definition) to 
+<code>E2(E1, E~args~)</code>
 ([expr.call]), except that `E1` is sequenced before `E2`. _\[Note:_ `E2` is
-still sequenced before the rest of the function arguments _-end note ]_
-
-[3]{.pnum} If the _primary-expression_ is not followed by parentheses, the
-expression `E1 |> E2` is identical (by definition) to `E1 |> E2()`.
+still sequenced before the rest of the function arguments.   _-end note ]_
 :::
 :::
 
@@ -1339,11 +1333,13 @@ namespace N {
 # Implementation
 
 An implementation in Clang can be found
-[here](https://github.com/BRevzin/llvm-project/tree/operator-pizza).
+[here](https://github.com/BRevzin/llvm-project/tree/85bc4172cd9df0f9419fa20ae3b9400906656501).
 At the moment, the implementation is a direct translations of how we think about
 this operator: it actually creates a regular function call expression by
 prepending the left-hand side of `|>` to the argument list for function calls
-rather than introducing a new AST node for a pipeline rewrite expression.
+rather than introducing a new AST node for a pipeline rewrite expression. The
+implemenation also allows omitting parens in in the empty argument case (that is
+`x |> f` is a valid expression that evaluates as `f(x)`).
 
 ---
 references:
