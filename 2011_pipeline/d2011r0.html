@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2019-12-30" />
+  <meta name="dcterms.date" content="2020-01-01" />
   <title>A pipeline-rewrite operator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -515,7 +515,7 @@ div.addu blockquote code.sourceCode { text-decoration: none; }
 div.addu blockquote pre { text-decoration: none; }
 div.addu blockquote pre code { text-decoration: none; }
 div.quote {
-border-left: 10px solid #ccc;
+border-left: 7px solid #ccc;
 background: #f9f9f9;
 margin: 1.5em 10px;
 padding-left: 20px;
@@ -541,7 +541,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2019-12-30</td>
+    <td>2020-01-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -600,8 +600,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The goal of the “pipeline-rewrite” operator proposed herein is to solve all of the above issues, as well as generalize the concept of “pipeline” code to work with arbitrary functions and types, and not just those that must specifically request it.</p>
 <p>The addition of a “pipeline-rewrite” operator requires no API adjustments to any existing or proposed libraries in order to support such an operator.</p>
 <h2 id="pipeline-style"><span class="header-section-number">2.1</span> Pipeline Style<a href="#pipeline-style" class="self-link"></a></h2>
-<p>C++ has object-oriented <em>features</em>, but it is not itself an object-oriented <em>language</em>. This author attributes much of C++’s success to its ability to support multiple paradigms simultaneously, lending the benefits of each domain to developers when appropriate.</p>
-<p>Not being solely object-oriented, and with the benefits of generic programming, we have seen the proliferations of generic algorithms being implemented as free functions. For example, where many languages have a single type to represent a “sequence” of values, C++ permits an unlimited number of “sequence” types tailored to the needs of their respective domain, and the generic algorithms that operate on them work identically (provided the underlying type meets the appropriate guarantees). In classical object-oriented languages, the algorithms are attached to the objects themselves. For example:</p>
+<p>We have seen the proliferations of generic algorithms being implemented as free functions. For example, where many languages have a single type to represent a “sequence” of values, C++ permits an unlimited number of “sequence” types tailored to the needs of their respective domain, and the generic algorithms that operate on them work identically (provided the underlying type meets the appropriate guarantees). In classical object-oriented languages, the algorithms are attached to the objects themselves. For example:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">// Some JavaScript</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">const</span> seq <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">;</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">const</span> twice <span class="op">=</span> <span class="va">seq</span>.<span class="at">map</span>(i <span class="kw">=&gt;</span> i <span class="op">*</span> <span class="dv">2</span>)<span class="op">;</span></span></code></pre></div>
@@ -832,151 +831,167 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb16-20"><a href="#cb16-20"></a><span class="dt">int</span> i <span class="op">=</span> N<span class="op">::</span>X<span class="op">{</span><span class="dv">2</span><span class="op">}</span> <span class="op">|&gt;</span> add<span class="op">(</span>N<span class="op">::</span>X<span class="op">{</span><span class="dv">3</span><span class="op">})</span> <span class="op">.</span> i;</span></code></pre></div>
 <p>All of the above works directly out of the box with this proposal.</p>
 <h2 id="further-examples"><span class="header-section-number">3.2</span> Further examples<a href="#further-examples" class="self-link"></a></h2>
-<h3 id="using-copy"><span class="header-section-number">3.2.1</span> Using <code class="sourceCode cpp">copy</code><a href="#using-copy" class="self-link"></a></h3>
+<h3 id="inside-out-vs-left-to-right"><span class="header-section-number">3.2.1</span> Inside out vs left-to-right<a href="#inside-out-vs-left-to-right" class="self-link"></a></h3>
+<p>Consider trying to trim a <code class="sourceCode cpp">std<span class="op">::</span>string</code>. We could write it this way:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">auto</span> trim<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> str<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>string</span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="kw">auto</span> b <span class="op">=</span> ranges<span class="op">::</span>find_if<span class="op">(</span>str, isalpha<span class="op">)</span>;</span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="kw">auto</span> e <span class="op">=</span> ranges<span class="op">::</span>find_if<span class="op">(</span>str <span class="op">|</span> views<span class="op">::</span>reverse, isalpha<span class="op">).</span>base<span class="op">()</span>;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="cf">return</span> std<span class="op">::</span>string<span class="op">(</span>b, e<span class="op">)</span>;</span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="op">}</span></span></code></pre></div>
+<p>The reversed lookup doesn’t compile due to <a href="https://github.com/ericniebler/stl2/issues/640">stl2 #640</a> but let’s ignore that part for now. It’s hard to interpret what’s going on in that second line due to the inside-out reading that is necessary - there’s a lot of back and forth. With the pipeline rewrite operator, we could rewrite this function to be entirely left-to-right:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">auto</span> trim<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> str<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>string</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>    <span class="kw">auto</span> b <span class="op">=</span> str <span class="op">|&gt;</span> ranges<span class="op">::</span>find_if<span class="op">(</span>isalpha<span class="op">)</span>;</span>
+<span id="cb18-4"><a href="#cb18-4"></a>    <span class="kw">auto</span> e <span class="op">=</span> str <span class="op">|&gt;</span> views<span class="op">::</span>reverse<span class="op">()</span> <span class="op">|&gt;</span> ranges<span class="op">::</span>find_if<span class="op">(</span>isalpha<span class="op">)</span> <span class="op">.</span> base<span class="op">()</span>;</span>
+<span id="cb18-5"><a href="#cb18-5"></a>    <span class="cf">return</span> std<span class="op">::</span>string<span class="op">(</span>b, e<span class="op">)</span>;</span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="op">}</span></span></code></pre></div>
+<p>This ordering is a more direct translation of the original thought process: we take our <code class="sourceCode cpp">string</code>, reverse it, find the first alpha character, then get the base iterator out of it.</p>
+<h3 id="using-copy"><span class="header-section-number">3.2.2</span> Using <code class="sourceCode cpp">copy</code><a href="#using-copy" class="self-link"></a></h3>
 <p>Let’s look at a non-lazy <code class="sourceCode cpp">copy</code> function:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Output<span class="op">&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">auto</span> copy<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Output out<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> item <span class="op">:</span> std<span class="op">::</span>forward<span class="op">&lt;</span>Range<span class="op">&gt;(</span>rng<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb17-4"><a href="#cb17-4"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> item;</span>
-<span id="cb17-5"><a href="#cb17-5"></a>    <span class="op">}</span></span>
-<span id="cb17-6"><a href="#cb17-6"></a>    <span class="cf">return</span> out;</span>
-<span id="cb17-7"><a href="#cb17-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Output<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">auto</span> copy<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Output out<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> item <span class="op">:</span> std<span class="op">::</span>forward<span class="op">&lt;</span>Range<span class="op">&gt;(</span>rng<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> item;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>    <span class="op">}</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>    <span class="cf">return</span> out;</span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="op">}</span></span></code></pre></div>
 <p>This function operates on a range as its first argument, and an output iterator as its second argument. Usage is very simple:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> copies;</span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">auto</span> integers <span class="op">=</span> get_integers<span class="op">()</span>;</span>
-<span id="cb18-3"><a href="#cb18-3"></a>copy<span class="op">(</span>integers, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
-<p>We can elide the extraneous <code class="sourceCode cpp">integers</code> variable to shrink the code:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> copies;</span>
-<span id="cb19-2"><a href="#cb19-2"></a>copy<span class="op">(</span>get_integers<span class="op">()</span>, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
-<p>We may want to use pipeline syntax to perform the copy. Instead of using <code class="sourceCode cpp"><span class="op">|</span></code> for the pipeline style, we just use <code class="sourceCode cpp"><span class="op">|&gt;</span></code>. That would look like this:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> copies;</span>
-<span id="cb20-2"><a href="#cb20-2"></a>get_integers<span class="op">()</span> <span class="op">|&gt;</span> copy<span class="op">(</span>back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">auto</span> integers <span class="op">=</span> get_integers<span class="op">()</span>;</span>
+<span id="cb20-3"><a href="#cb20-3"></a>copy<span class="op">(</span>integers, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
+<p>We can elide the extraneous <code class="sourceCode cpp">integers</code> variable to shrink the code:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> copies;</span>
+<span id="cb21-2"><a href="#cb21-2"></a>copy<span class="op">(</span>get_integers<span class="op">()</span>, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
+<p>We may want to use pipeline syntax to perform the copy. Instead of using <code class="sourceCode cpp"><span class="op">|</span></code> for the pipeline style, we just use <code class="sourceCode cpp"><span class="op">|&gt;</span></code>. That would look like this:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> copies;</span>
+<span id="cb22-2"><a href="#cb22-2"></a>get_integers<span class="op">()</span> <span class="op">|&gt;</span> copy<span class="op">(</span>back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
 <p>To make our <code class="sourceCode cpp">copy</code> algorithm work with the <code class="sourceCode cpp"><span class="op">|&gt;</span></code> operator, we need to write this additional code:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">// (This space intentionally left blank)</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="co">// (This space intentionally left blank)</span></span></code></pre></div>
 <p>That’s right! Nothing at all!</p>
 <p>Remember that the semantics of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> will <em>rewrite</em> the code:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">// This:</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a>get_integers<span class="op">()</span> <span class="op">|&gt;</span> copy<span class="op">(</span>back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span>
-<span id="cb22-3"><a href="#cb22-3"></a><span class="co">// becomes this:</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a>copy<span class="op">(</span>get_integers<span class="op">()</span>, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">// This:</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a>get_integers<span class="op">()</span> <span class="op">|&gt;</span> copy<span class="op">(</span>back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="co">// becomes this:</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>copy<span class="op">(</span>get_integers<span class="op">()</span>, back_inserter<span class="op">(</span>copies<span class="op">))</span>;</span></code></pre></div>
 <p>That is, using <code class="sourceCode cpp"><span class="op">|&gt;</span></code> is equivalent to the code not using the pipeline style.</p>
-<h3 id="transform"><span class="header-section-number">3.2.2</span> <code class="sourceCode cpp">transform</code><a href="#transform" class="self-link"></a></h3>
+<h3 id="transform"><span class="header-section-number">3.2.3</span> <code class="sourceCode cpp">transform</code><a href="#transform" class="self-link"></a></h3>
 <p>One of the most fundamental algorithms is <code class="sourceCode cpp">transform</code>. It applies a projection function to each element of the input range and yields the result of that projection.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Proj<span class="op">&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">struct</span> __transform_view <span class="op">{</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a>    <span class="co">// ...</span></span>
-<span id="cb23-4"><a href="#cb23-4"></a><span class="op">}</span>;</span>
-<span id="cb23-5"><a href="#cb23-5"></a></span>
-<span id="cb23-6"><a href="#cb23-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Proj, <span class="kw">typename</span> Out<span class="op">&gt;</span></span>
-<span id="cb23-7"><a href="#cb23-7"></a><span class="kw">auto</span> transform<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Proj<span class="op">&amp;&amp;</span> fn<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a>    <span class="cf">return</span> __transform_view<span class="op">(</span>rng, fn<span class="op">)</span>;</span>
-<span id="cb23-9"><a href="#cb23-9"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Proj<span class="op">&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">struct</span> __transform_view <span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a>    <span class="co">// ...</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="op">}</span>;</span>
+<span id="cb25-5"><a href="#cb25-5"></a></span>
+<span id="cb25-6"><a href="#cb25-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Proj, <span class="kw">typename</span> Out<span class="op">&gt;</span></span>
+<span id="cb25-7"><a href="#cb25-7"></a><span class="kw">auto</span> transform<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Proj<span class="op">&amp;&amp;</span> fn<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-8"><a href="#cb25-8"></a>    <span class="cf">return</span> __transform_view<span class="op">(</span>rng, fn<span class="op">)</span>;</span>
+<span id="cb25-9"><a href="#cb25-9"></a><span class="op">}</span></span></code></pre></div>
 <p>This algorithm is a <em>lazy</em> version of <code class="sourceCode cpp">transform</code>. It will apply the projection function to elements of <code class="sourceCode cpp">rng</code> as iterators on the <code class="sourceCode cpp">__transform_view</code> object are advanced.</p>
 <p>Range algorithms compose. We can use this with <code class="sourceCode cpp">copy</code> to make a meaningful program:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a>copy<span class="op">(</span>transform<span class="op">(</span>get_words<span class="op">()</span>, make_uppercase<span class="op">)</span>, ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a>copy<span class="op">(</span>transform<span class="op">(</span>get_words<span class="op">()</span>, make_uppercase<span class="op">)</span>, ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
 <p>This code, of course, is inside-out from how evaluation is ordered. We can feed the result of <code class="sourceCode cpp">transform</code> into <code class="sourceCode cpp">copy</code> using <code class="sourceCode cpp"><span class="op">|&gt;</span></code>:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a>transform<span class="op">(</span>get_words<span class="op">()</span>, make_uppercase<span class="op">)</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a>  <span class="op">|&gt;</span> copy<span class="op">(</span>ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a>transform<span class="op">(</span>get_words<span class="op">()</span>, make_uppercase<span class="op">)</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a>  <span class="op">|&gt;</span> copy<span class="op">(</span>ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
 <p>And, without writing any additional support code, we can use <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to feed <code class="sourceCode cpp">get_words</code> into <code class="sourceCode cpp">transform</code>:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a>get_words<span class="op">()</span></span>
-<span id="cb26-2"><a href="#cb26-2"></a>  <span class="op">|&gt;</span> transform<span class="op">(</span>make_uppercase<span class="op">)</span></span>
-<span id="cb26-3"><a href="#cb26-3"></a>  <span class="op">|&gt;</span> copy<span class="op">(</span>ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
-<h3 id="a-new-algorithm-each_as"><span class="header-section-number">3.2.3</span> A New Algorithm: <code class="sourceCode cpp">each_as</code><a href="#a-new-algorithm-each_as" class="self-link"></a></h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a>get_words<span class="op">()</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>  <span class="op">|&gt;</span> transform<span class="op">(</span>make_uppercase<span class="op">)</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>  <span class="op">|&gt;</span> copy<span class="op">(</span>ostream_iterator<span class="op">&lt;</span>string<span class="op">&gt;{</span>cout, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">})</span>;</span></code></pre></div>
+<h3 id="a-new-algorithm-each_as"><span class="header-section-number">3.2.4</span> A New Algorithm: <code class="sourceCode cpp">each_as</code><a href="#a-new-algorithm-each_as" class="self-link"></a></h3>
 <p>Ranges will be receiving a function template <code class="sourceCode cpp">to</code> that creates a concrete range from another range. A very primitive implementation of one overload might look like this:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Container, <span class="kw">typename</span> Range<span class="op">&gt;</span></span>
-<span id="cb27-2"><a href="#cb27-2"></a>Container to<span class="op">(</span><span class="kw">const</span> Range<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb27-3"><a href="#cb27-3"></a>    Container ret<span class="op">(</span>rng<span class="op">.</span>begin<span class="op">()</span>, rng<span class="op">.</span>end<span class="op">())</span>;</span>
-<span id="cb27-4"><a href="#cb27-4"></a>    <span class="cf">return</span> ret;</span>
-<span id="cb27-5"><a href="#cb27-5"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Container, <span class="kw">typename</span> Range<span class="op">&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a>Container to<span class="op">(</span><span class="kw">const</span> Range<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a>    Container ret<span class="op">(</span>rng<span class="op">.</span>begin<span class="op">()</span>, rng<span class="op">.</span>end<span class="op">())</span>;</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    <span class="cf">return</span> ret;</span>
+<span id="cb29-5"><a href="#cb29-5"></a><span class="op">}</span></span></code></pre></div>
 <p>This simply takes a range and uses it to fill a container with the iterator-pair constructor present on many container types. Usage looks like this:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">auto</span> filenames <span class="op">=</span> get_strings<span class="op">()</span></span>
-<span id="cb28-2"><a href="#cb28-2"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;&gt;()</span></span>
-<span id="cb28-3"><a href="#cb28-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
-<span id="cb28-4"><a href="#cb28-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">auto</span> filenames <span class="op">=</span> get_strings<span class="op">()</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;&gt;()</span></span>
+<span id="cb30-3"><a href="#cb30-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
+<span id="cb30-4"><a href="#cb30-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
 <p>However: The <code class="sourceCode cpp">to</code> algorithm, unlike <code class="sourceCode cpp">transform</code>, is <em>eager</em>. It consumes each element of the input immediately. This requires a concrete new container type that will eagerly allocate a buffer to hold the new objects. In the above snippet, all we are doing is obtaining the filenames of each file, and we do not actually care about the intermediate <code class="sourceCode cpp">std<span class="op">::</span>vector</code>.</p>
 <p>Note: The above example is illustrative. There are other ways to perform the necessary transform.</p>
 <p>What we may want it a new lazy algorithm that simply converts each range element to a new type as they pass through. How could we define such an algorithm?</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Range<span class="op">&gt;</span></span>
-<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">auto</span> each_as<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb29-3"><a href="#cb29-3"></a>    <span class="cf">return</span> rng <span class="op">|&gt;</span> transform<span class="op">([](</span><span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> item<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> T<span class="op">(</span>item<span class="op">)</span>; <span class="op">})</span>;</span>
-<span id="cb29-4"><a href="#cb29-4"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> Range<span class="op">&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">auto</span> each_as<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-3"><a href="#cb31-3"></a>    <span class="cf">return</span> rng <span class="op">|&gt;</span> transform<span class="op">([](</span><span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> item<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> T<span class="op">(</span>item<span class="op">)</span>; <span class="op">})</span>;</span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="op">}</span></span></code></pre></div>
 <p>With <code class="sourceCode cpp"><span class="op">|&gt;</span></code> at our disposal, there is no need to offer two overloads of <code class="sourceCode cpp">each_as</code> for the two styles. The above overload happily works with <code class="sourceCode cpp"><span class="op">|&gt;</span></code> pipeline style:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">auto</span> filenames <span class="op">=</span> get_strings<span class="op">()</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a>    <span class="op">|&gt;</span> each_as<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;()</span></span>
-<span id="cb30-3"><a href="#cb30-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
-<span id="cb30-4"><a href="#cb30-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">auto</span> filenames <span class="op">=</span> get_strings<span class="op">()</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a>    <span class="op">|&gt;</span> each_as<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;()</span></span>
+<span id="cb32-3"><a href="#cb32-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
 <p>Or non-pipeline style:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">auto</span> filenames <span class="op">=</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a>    each_as<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;(</span>get_strings<span class="op">())</span></span>
-<span id="cb31-3"><a href="#cb31-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
-<span id="cb31-4"><a href="#cb31-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
-<h3 id="a-new-algorithm-copy_insertcopy_extend"><span class="header-section-number">3.2.4</span> A New Algorithm: <code class="sourceCode cpp">copy_insert</code>/<code class="sourceCode cpp">copy_extend</code><a href="#a-new-algorithm-copy_insertcopy_extend" class="self-link"></a></h3>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">auto</span> filenames <span class="op">=</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a>    each_as<span class="op">&lt;</span>filesystem<span class="op">::</span>path<span class="op">&gt;(</span>get_strings<span class="op">())</span></span>
+<span id="cb33-3"><a href="#cb33-3"></a>    <span class="op">|&gt;</span> transform<span class="op">(</span>get_filename<span class="op">)</span></span>
+<span id="cb33-4"><a href="#cb33-4"></a>    <span class="op">|&gt;</span> to<span class="op">&lt;</span>vector<span class="op">&lt;</span>string<span class="op">&gt;&gt;()</span>;</span></code></pre></div>
+<h3 id="a-new-algorithm-copy_insertcopy_extend"><span class="header-section-number">3.2.5</span> A New Algorithm: <code class="sourceCode cpp">copy_insert</code>/<code class="sourceCode cpp">copy_extend</code><a href="#a-new-algorithm-copy_insertcopy_extend" class="self-link"></a></h3>
 <p>A common operation is to collect the results of multiple computations into a single container. We can define two new algorithms:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Container, <span class="kw">typename</span> Iter<span class="op">&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2"></a><span class="dt">void</span> copy_insert<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Container<span class="op">&amp;</span> c, Iter it<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-3"><a href="#cb32-3"></a>    rng <span class="op">|&gt;</span> copy<span class="op">(</span>inserter<span class="op">(</span>c, it<span class="op">))</span>;</span>
-<span id="cb32-4"><a href="#cb32-4"></a><span class="op">}</span></span>
-<span id="cb32-5"><a href="#cb32-5"></a></span>
-<span id="cb32-6"><a href="#cb32-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Container<span class="op">&gt;</span></span>
-<span id="cb32-7"><a href="#cb32-7"></a><span class="dt">void</span> copy_extend<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Container<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-8"><a href="#cb32-8"></a>    rng <span class="op">|&gt;</span> copy_insert<span class="op">(</span>c, c<span class="op">.</span>end<span class="op">())</span>;</span>
-<span id="cb32-9"><a href="#cb32-9"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Container, <span class="kw">typename</span> Iter<span class="op">&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a><span class="dt">void</span> copy_insert<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Container<span class="op">&amp;</span> c, Iter it<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-3"><a href="#cb34-3"></a>    rng <span class="op">|&gt;</span> copy<span class="op">(</span>inserter<span class="op">(</span>c, it<span class="op">))</span>;</span>
+<span id="cb34-4"><a href="#cb34-4"></a><span class="op">}</span></span>
+<span id="cb34-5"><a href="#cb34-5"></a></span>
+<span id="cb34-6"><a href="#cb34-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range, <span class="kw">typename</span> Container<span class="op">&gt;</span></span>
+<span id="cb34-7"><a href="#cb34-7"></a><span class="dt">void</span> copy_extend<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, Container<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-8"><a href="#cb34-8"></a>    rng <span class="op">|&gt;</span> copy_insert<span class="op">(</span>c, c<span class="op">.</span>end<span class="op">())</span>;</span>
+<span id="cb34-9"><a href="#cb34-9"></a><span class="op">}</span></span></code></pre></div>
 <p>Again, we have <code class="sourceCode cpp"><span class="op">|&gt;</span></code> syntax using normal functions and no special return types or expression templates.</p>
 <p>Using them is very simple:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="co">// We may use pipeline style:</span></span>
-<span id="cb33-2"><a href="#cb33-2"></a><span class="dt">void</span> collect_filenames<span class="op">(</span>filesystem<span class="op">::</span>path dirpath, vector<span class="op">&lt;</span>string<span class="op">&gt;&amp;</span> fnames<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-3"><a href="#cb33-3"></a>    filesystem<span class="op">::</span>directory_iterator<span class="op">{</span>dirpath<span class="op">}</span></span>
-<span id="cb33-4"><a href="#cb33-4"></a>        <span class="op">|&gt;</span> copy_extend<span class="op">(</span>fnames<span class="op">)</span>;</span>
-<span id="cb33-5"><a href="#cb33-5"></a><span class="op">}</span></span>
-<span id="cb33-6"><a href="#cb33-6"></a></span>
-<span id="cb33-7"><a href="#cb33-7"></a><span class="co">// Or we may use classical style:</span></span>
-<span id="cb33-8"><a href="#cb33-8"></a><span class="dt">void</span> collect_filenames<span class="op">(</span>filesystem<span class="op">::</span>path dirpath, vector<span class="op">&lt;</span>string<span class="op">&gt;&amp;</span> fnames<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-9"><a href="#cb33-9"></a>    copy_extend<span class="op">(</span></span>
-<span id="cb33-10"><a href="#cb33-10"></a>      filesystem<span class="op">::</span>directory_iterator<span class="op">{</span>dirpath<span class="op">}</span>,</span>
-<span id="cb33-11"><a href="#cb33-11"></a>      fnames</span>
-<span id="cb33-12"><a href="#cb33-12"></a>    <span class="op">)</span>;</span>
-<span id="cb33-13"><a href="#cb33-13"></a><span class="op">}</span></span></code></pre></div>
-<h3 id="not-a-new-algorithm-any_of"><span class="header-section-number">3.2.5</span> Not A New Algorithm: <code class="sourceCode cpp">any_of</code><a href="#not-a-new-algorithm-any_of" class="self-link"></a></h3>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="co">// We may use pipeline style:</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a><span class="dt">void</span> collect_filenames<span class="op">(</span>filesystem<span class="op">::</span>path dirpath, vector<span class="op">&lt;</span>string<span class="op">&gt;&amp;</span> fnames<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-3"><a href="#cb35-3"></a>    filesystem<span class="op">::</span>directory_iterator<span class="op">{</span>dirpath<span class="op">}</span></span>
+<span id="cb35-4"><a href="#cb35-4"></a>        <span class="op">|&gt;</span> copy_extend<span class="op">(</span>fnames<span class="op">)</span>;</span>
+<span id="cb35-5"><a href="#cb35-5"></a><span class="op">}</span></span>
+<span id="cb35-6"><a href="#cb35-6"></a></span>
+<span id="cb35-7"><a href="#cb35-7"></a><span class="co">// Or we may use classical style:</span></span>
+<span id="cb35-8"><a href="#cb35-8"></a><span class="dt">void</span> collect_filenames<span class="op">(</span>filesystem<span class="op">::</span>path dirpath, vector<span class="op">&lt;</span>string<span class="op">&gt;&amp;</span> fnames<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-9"><a href="#cb35-9"></a>    copy_extend<span class="op">(</span></span>
+<span id="cb35-10"><a href="#cb35-10"></a>      filesystem<span class="op">::</span>directory_iterator<span class="op">{</span>dirpath<span class="op">}</span>,</span>
+<span id="cb35-11"><a href="#cb35-11"></a>      fnames</span>
+<span id="cb35-12"><a href="#cb35-12"></a>    <span class="op">)</span>;</span>
+<span id="cb35-13"><a href="#cb35-13"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="not-a-new-algorithm-any_of"><span class="header-section-number">3.2.6</span> Not A New Algorithm: <code class="sourceCode cpp">any_of</code><a href="#not-a-new-algorithm-any_of" class="self-link"></a></h3>
 <p>Of course, we can go back to Conor’s example and provide a complete implementation of it:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">auto</span> dangerous_teams<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb34-2"><a href="#cb34-2"></a>    <span class="cf">return</span> s</span>
-<span id="cb34-3"><a href="#cb34-3"></a>         <span class="op">|&gt;</span> views<span class="op">::</span>group_by<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">{})</span></span>
-<span id="cb34-4"><a href="#cb34-4"></a>         <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">)</span></span>
-<span id="cb34-5"><a href="#cb34-5"></a>         <span class="op">|&gt;</span> ranges<span class="op">::</span>any_of<span class="op">([](</span>std<span class="op">::</span><span class="dt">size_t</span> s<span class="op">){</span></span>
-<span id="cb34-6"><a href="#cb34-6"></a>                <span class="cf">return</span> s <span class="op">&gt;=</span> <span class="dv">7</span>;</span>
-<span id="cb34-7"><a href="#cb34-7"></a>            <span class="op">})</span>;</span>
-<span id="cb34-8"><a href="#cb34-8"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a><span class="kw">auto</span> dangerous_teams<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a>    <span class="cf">return</span> s</span>
+<span id="cb36-3"><a href="#cb36-3"></a>         <span class="op">|&gt;</span> views<span class="op">::</span>group_by<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">{})</span></span>
+<span id="cb36-4"><a href="#cb36-4"></a>         <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">)</span></span>
+<span id="cb36-5"><a href="#cb36-5"></a>         <span class="op">|&gt;</span> ranges<span class="op">::</span>any_of<span class="op">([](</span>std<span class="op">::</span><span class="dt">size_t</span> s<span class="op">){</span></span>
+<span id="cb36-6"><a href="#cb36-6"></a>                <span class="cf">return</span> s <span class="op">&gt;=</span> <span class="dv">7</span>;</span>
+<span id="cb36-7"><a href="#cb36-7"></a>            <span class="op">})</span>;</span>
+<span id="cb36-8"><a href="#cb36-8"></a><span class="op">}</span></span></code></pre></div>
 <p>It is worth repeatedly stressing that this does <em>not</em> require any new overloads of <code class="sourceCode cpp">any_of</code> to allow this usage. The above function evaluates exactly as:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">auto</span> dangerous_teams_rewritten<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a>    <span class="cf">return</span> ranges<span class="op">::</span>any_of<span class="op">(</span></span>
-<span id="cb35-3"><a href="#cb35-3"></a>        ranges<span class="op">::</span>transform<span class="op">(</span></span>
-<span id="cb35-4"><a href="#cb35-4"></a>            ranges<span class="op">::</span>group_by<span class="op">(</span></span>
-<span id="cb35-5"><a href="#cb35-5"></a>                s,</span>
-<span id="cb35-6"><a href="#cb35-6"></a>                std<span class="op">::</span>equal_to<span class="op">{})</span>,</span>
-<span id="cb35-7"><a href="#cb35-7"></a>            ranges<span class="op">::</span>distance<span class="op">)</span>,</span>
-<span id="cb35-8"><a href="#cb35-8"></a>        <span class="op">[](</span>std<span class="op">::</span><span class="dt">size_t</span> s<span class="op">){</span></span>
-<span id="cb35-9"><a href="#cb35-9"></a>            <span class="cf">return</span> s <span class="op">&gt;=</span> <span class="dv">7</span>;</span>
-<span id="cb35-10"><a href="#cb35-10"></a>        <span class="op">})</span>;</span>
-<span id="cb35-11"><a href="#cb35-11"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="kw">auto</span> dangerous_teams_rewritten<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb37-2"><a href="#cb37-2"></a>    <span class="cf">return</span> ranges<span class="op">::</span>any_of<span class="op">(</span></span>
+<span id="cb37-3"><a href="#cb37-3"></a>        ranges<span class="op">::</span>transform<span class="op">(</span></span>
+<span id="cb37-4"><a href="#cb37-4"></a>            ranges<span class="op">::</span>group_by<span class="op">(</span></span>
+<span id="cb37-5"><a href="#cb37-5"></a>                s,</span>
+<span id="cb37-6"><a href="#cb37-6"></a>                std<span class="op">::</span>equal_to<span class="op">{})</span>,</span>
+<span id="cb37-7"><a href="#cb37-7"></a>            ranges<span class="op">::</span>distance<span class="op">)</span>,</span>
+<span id="cb37-8"><a href="#cb37-8"></a>        <span class="op">[](</span>std<span class="op">::</span><span class="dt">size_t</span> s<span class="op">){</span></span>
+<span id="cb37-9"><a href="#cb37-9"></a>            <span class="cf">return</span> s <span class="op">&gt;=</span> <span class="dv">7</span>;</span>
+<span id="cb37-10"><a href="#cb37-10"></a>        <span class="op">})</span>;</span>
+<span id="cb37-11"><a href="#cb37-11"></a><span class="op">}</span></span></code></pre></div>
 <p>This rewrite isn’t exactly readable, but that’s not the point - nobody has to read it. Only the compiler has to know how to evaluate these calls, and it has no problem at all figuring out the right thing to do.</p>
-<h3 id="async-examples"><span class="header-section-number">3.2.6</span> Async Examples<a href="#async-examples" class="self-link"></a></h3>
+<h3 id="async-examples"><span class="header-section-number">3.2.7</span> Async Examples<a href="#async-examples" class="self-link"></a></h3>
 <p>Ranges isn’t the only subset of C++ that would benefit from the existence of a pipeline rewrite operator. At CppCon 2019, Eric Niebler and David Hollman presented <a href="https://www.youtube.com/watch?v=tF-Nz4aRWAM">A Unifying Abstraction for Async in C++</a>, illustrating the executors work that’s been ongoing for a few years now. They build up to the following example:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb36-2"><a href="#cb36-2"></a>    <span class="kw">auto</span> f <span class="op">=</span> async_algo<span class="op">(</span>new_thread<span class="op">())</span>;</span>
-<span id="cb36-3"><a href="#cb36-3"></a>    <span class="kw">auto</span> f2 <span class="op">=</span> then<span class="op">(</span>f, <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span></span>
-<span id="cb36-4"><a href="#cb36-4"></a>        <span class="cf">return</span> i <span class="op">+</span> rand<span class="op">()</span>;</span>
-<span id="cb36-5"><a href="#cb36-5"></a>    <span class="op">})</span>;</span>
-<span id="cb36-6"><a href="#cb36-6"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>f2<span class="op">))</span>;</span>
-<span id="cb36-7"><a href="#cb36-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a>    <span class="kw">auto</span> f <span class="op">=</span> async_algo<span class="op">(</span>new_thread<span class="op">())</span>;</span>
+<span id="cb38-3"><a href="#cb38-3"></a>    <span class="kw">auto</span> f2 <span class="op">=</span> then<span class="op">(</span>f, <span class="op">[](</span><span class="dt">int</span> i<span class="op">){</span></span>
+<span id="cb38-4"><a href="#cb38-4"></a>        <span class="cf">return</span> i <span class="op">+</span> rand<span class="op">()</span>;</span>
+<span id="cb38-5"><a href="#cb38-5"></a>    <span class="op">})</span>;</span>
+<span id="cb38-6"><a href="#cb38-6"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>f2<span class="op">))</span>;</span>
+<span id="cb38-7"><a href="#cb38-7"></a><span class="op">}</span></span></code></pre></div>
 <p>With this proposal, this could be written (with zero additional library work on anyone’s part) as:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb37-2"><a href="#cb37-2"></a>    <span class="kw">auto</span> result <span class="op">=</span></span>
-<span id="cb37-3"><a href="#cb37-3"></a>        new_thread<span class="op">()</span></span>
-<span id="cb37-4"><a href="#cb37-4"></a>        <span class="op">|&gt;</span> async_algo<span class="op">()</span></span>
-<span id="cb37-5"><a href="#cb37-5"></a>        <span class="op">|&gt;</span> then<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">+</span> rand<span class="op">()</span>; <span class="op">})</span></span>
-<span id="cb37-6"><a href="#cb37-6"></a>        <span class="op">|&gt;</span> sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
-<span id="cb37-7"><a href="#cb37-7"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, result<span class="op">)</span>;</span>
-<span id="cb37-8"><a href="#cb37-8"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb39-2"><a href="#cb39-2"></a>    <span class="kw">auto</span> result <span class="op">=</span></span>
+<span id="cb39-3"><a href="#cb39-3"></a>        new_thread<span class="op">()</span></span>
+<span id="cb39-4"><a href="#cb39-4"></a>        <span class="op">|&gt;</span> async_algo<span class="op">()</span></span>
+<span id="cb39-5"><a href="#cb39-5"></a>        <span class="op">|&gt;</span> then<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">+</span> rand<span class="op">()</span>; <span class="op">})</span></span>
+<span id="cb39-6"><a href="#cb39-6"></a>        <span class="op">|&gt;</span> sync_wait<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
+<span id="cb39-7"><a href="#cb39-7"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, result<span class="op">)</span>;</span>
+<span id="cb39-8"><a href="#cb39-8"></a><span class="op">}</span></span></code></pre></div>
 <p>Which demonstrates the linear flow of execution quite well.</p>
 <h2 id="prior-art-in-c-and-elsewhere"><span class="header-section-number">3.3</span> Prior Art (in C++ and elsewhere)<a href="#prior-art-in-c-and-elsewhere" class="self-link"></a></h2>
 <p>It’s important to point out that the notion of a pipeline rewrite operator is not novel across programming languages, and it isn’t even novel in C++.</p>
@@ -988,17 +1003,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-2"><a href="#cb3-2"></a>  |&gt; Vec\map<span class="ot">(</span>$$<span class="ot">,</span> <span class="kw">$a</span> ==&gt; <span class="kw">$a</span> * <span class="kw">$a</span><span class="ot">)</span></span>
 <span id="cb3-3"><a href="#cb3-3"></a>  |&gt; Vec\<span class="fu">sort</span><span class="ot">(</span>$$<span class="ot">);</span></span></code></pre></div>
 <p>F#, Julia, and OCaml also have an operator named <code class="sourceCode cpp"><span class="op">|&gt;</span></code> - but theirs is slightly different. Theirs all invoke the right-hand side with the left-hand side as its sole argument: rather than <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> meaning <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code> as is being proposed here and as it means in Elixir, it instead means <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)(</span>x<span class="op">)</span></code>. In other words, given a binary operator as proposed in <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, these languages’ version of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> could be implemented as a global:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Arg, std<span class="op">::</span>invocable<span class="op">&lt;</span>Arg<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">|&gt;(</span>Arg<span class="op">&amp;&amp;</span> a, F<span class="op">&amp;&amp;</span> f<span class="op">)</span></span>
-<span id="cb40-3"><a href="#cb40-3"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F, Arg<span class="op">&gt;</span></span>
-<span id="cb40-4"><a href="#cb40-4"></a><span class="op">{</span></span>
-<span id="cb40-5"><a href="#cb40-5"></a>    <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">(</span>FWD<span class="op">(</span>f<span class="op">)</span>, FWD<span class="op">(</span>a<span class="op">))</span>;</span>
-<span id="cb40-6"><a href="#cb40-6"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Arg, std<span class="op">::</span>invocable<span class="op">&lt;</span>Arg<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">|&gt;(</span>Arg<span class="op">&amp;&amp;</span> a, F<span class="op">&amp;&amp;</span> f<span class="op">)</span></span>
+<span id="cb42-3"><a href="#cb42-3"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F, Arg<span class="op">&gt;</span></span>
+<span id="cb42-4"><a href="#cb42-4"></a><span class="op">{</span></span>
+<span id="cb42-5"><a href="#cb42-5"></a>    <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">(</span>FWD<span class="op">(</span>f<span class="op">)</span>, FWD<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb42-6"><a href="#cb42-6"></a><span class="op">}</span></span></code></pre></div>
 <p>This may be more in line with how most operators in C++ work, but it’s also not especially useful. It would make it marginally easier to implement partial calls - you could just return a lambda from those partial calls instead of having to have this left-pipeable type - but it’s still a lot of work on everyone’s behalf to get there.</p>
 <p>As far as C++ is concerned, it would be a third in a set of operators that have special semantics as far as function lookup is concerned:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>x<span class="op">-&gt;</span>f<span class="op">(</span>y<span class="op">)</span></span>
-<span id="cb41-2"><a href="#cb41-2"></a>x <span class="op">.</span>f<span class="op">(</span>y<span class="op">)</span></span>
-<span id="cb41-3"><a href="#cb41-3"></a>x<span class="op">|&gt;</span>f<span class="op">(</span>y<span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a>x<span class="op">-&gt;</span>f<span class="op">(</span>y<span class="op">)</span></span>
+<span id="cb43-2"><a href="#cb43-2"></a>x <span class="op">.</span>f<span class="op">(</span>y<span class="op">)</span></span>
+<span id="cb43-3"><a href="#cb43-3"></a>x<span class="op">|&gt;</span>f<span class="op">(</span>y<span class="op">)</span></span></code></pre></div>
 <p>None of the first two operators evaluate <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)</span></code> by itself and then evaluate something else joining that result with <code class="sourceCode cpp">x</code>. <code class="sourceCode cpp">x<span class="op">-&gt;</span>f<span class="op">(</span>y<span class="op">)</span></code> might invoke something named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code>, but once it finds a pointer, we do a single function call to something named <code class="sourceCode cpp">f</code> using both arguments. It’s just that while the first two always invoke a member function, the last would always invoke a non-member function.</p>
 <h1 id="what-about-unified-function-call-syntax" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> What about Unified Function Call Syntax?<a href="#what-about-unified-function-call-syntax" class="self-link"></a></h1>
 <p>Any discussion regarding pipeline rewrites, or even the pipeline syntax in C++20 ranges, will eventually hit on Unified Function Call Syntax (UFCS). As previously described in a blog post <span class="citation" data-cites="Revzin">[<a href="#ref-Revzin" role="doc-biblioref">Revzin</a>]</span>, UFCS means different things to different people: there were quite a few proposals under this banner that had a variety of different semantics and different applicability to this problem space.</p>
@@ -1019,47 +1034,47 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This is a very real problem in writing generic code in C++, one which UFCS set out to solve. Since a lot of the examples in this paper deal with Ranges already, let’s stick to Ranges.</p>
 <h3 id="fails-for-fundamental-types"><span class="header-section-number">4.1.1</span> Fails for fundamental types<a href="#fails-for-fundamental-types" class="self-link"></a></h3>
 <p>The fundamental concept in C++20 Ranges is the <code class="sourceCode cpp">std<span class="op">::</span>range</code> concept. With a version of UFCS in which member function call syntax could find non-member functions (notably, not the version that was voted on in plenary - that one allowed non-member call syntax to find member functions only), we might expect to be able to define that concept this way:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
-<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">concept</span> ufcs_range <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>R<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb42-3"><a href="#cb42-3"></a>    <span class="op">{</span> rng<span class="op">.</span>begin<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span>  input_or_output_iterator;</span>
-<span id="cb42-4"><a href="#cb42-4"></a>    <span class="op">{</span> rng<span class="op">.</span>end<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span> sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>rng<span class="op">.</span>begin<span class="op">())&gt;</span>;</span>
-<span id="cb42-5"><a href="#cb42-5"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a><span class="kw">concept</span> ufcs_range <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>R<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb44-3"><a href="#cb44-3"></a>    <span class="op">{</span> rng<span class="op">.</span>begin<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span>  input_or_output_iterator;</span>
+<span id="cb44-4"><a href="#cb44-4"></a>    <span class="op">{</span> rng<span class="op">.</span>end<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span> sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>rng<span class="op">.</span>begin<span class="op">())&gt;</span>;</span>
+<span id="cb44-5"><a href="#cb44-5"></a><span class="op">}</span></span></code></pre></div>
 <p>You don’t even need any language changes for this to work with all the standard library containers - those just have member <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> directly. <code class="sourceCode cpp">ufcs_range<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code> is satisfies without much fuss.</p>
 <p>For a type that looks like:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a><span class="kw">namespace</span> lib <span class="op">{</span></span>
-<span id="cb43-2"><a href="#cb43-2"></a>    <span class="kw">struct</span> some_container <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>;</span>
-<span id="cb43-3"><a href="#cb43-3"></a>    <span class="kw">struct</span> some_iterator <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>;</span>
-<span id="cb43-4"><a href="#cb43-4"></a>    </span>
-<span id="cb43-5"><a href="#cb43-5"></a>    <span class="kw">auto</span> begin<span class="op">(</span>some_container<span class="op">&amp;)</span> <span class="op">-&gt;</span> some_iterator;</span>
-<span id="cb43-6"><a href="#cb43-6"></a>    <span class="kw">auto</span> end<span class="op">(</span>some_container<span class="op">&amp;)</span> <span class="op">-&gt;</span> some_iterator;</span>
-<span id="cb43-7"><a href="#cb43-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a><span class="kw">namespace</span> lib <span class="op">{</span></span>
+<span id="cb45-2"><a href="#cb45-2"></a>    <span class="kw">struct</span> some_container <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>;</span>
+<span id="cb45-3"><a href="#cb45-3"></a>    <span class="kw">struct</span> some_iterator <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>;</span>
+<span id="cb45-4"><a href="#cb45-4"></a>    </span>
+<span id="cb45-5"><a href="#cb45-5"></a>    <span class="kw">auto</span> begin<span class="op">(</span>some_container<span class="op">&amp;)</span> <span class="op">-&gt;</span> some_iterator;</span>
+<span id="cb45-6"><a href="#cb45-6"></a>    <span class="kw">auto</span> end<span class="op">(</span>some_container<span class="op">&amp;)</span> <span class="op">-&gt;</span> some_iterator;</span>
+<span id="cb45-7"><a href="#cb45-7"></a><span class="op">}</span></span></code></pre></div>
 <p><code class="sourceCode cpp">ufcs_range<span class="op">&lt;</span>lib<span class="op">::</span>some_container<span class="op">&gt;</span></code> would be satisfied by saying that lookup for <code class="sourceCode cpp">rng<span class="op">.</span>begin<span class="op">()</span></code> would find the free function <code class="sourceCode cpp">lib<span class="op">::</span>begin<span class="op">()</span></code> (let’s assume for simplicity that <code class="sourceCode cpp">some_container</code> has no members named <code class="sourceCode cpp">begin</code> or <code class="sourceCode cpp">end</code>) and likewise for <code class="sourceCode cpp">rng<span class="op">.</span>end<span class="op">()</span></code>.</p>
 <p>This seems to work, what’s the problem?</p>
 <p>Consider <code class="sourceCode cpp">ufcs_range<span class="op">&lt;</span>lib<span class="op">::</span>some_container<span class="op">[</span><span class="dv">10</span><span class="op">]&gt;</span></code>. Is this satisfied? C arrays have no member functions, so the member lookup trivially fails. But the only candidate we find with ADL for <code class="sourceCode cpp">begin</code> isn’t viable - we don’t have a candidate that can take a C array. Consider what we have to do in order to make this work. The way we make <code class="sourceCode cpp">begin<span class="op">()</span></code> and <code class="sourceCode cpp">end<span class="op">()</span></code> work for C arrays is completely agnostic to the type that the array is of. It shouldn’t be <code class="sourceCode cpp">lib</code>’s responsibility to provide this function.</p>
 <p>And even if it did, consider <code class="sourceCode cpp">ufcs_range<span class="op">&lt;</span><span class="dt">int</span><span class="op">[</span><span class="dv">10</span><span class="op">]&gt;</span></code>. Here, not only do we have no member functions but we also have no associated namespaces in which to look for what we need! Do we conclude that <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">10</span><span class="op">]</span></code> is not a range? The only way for <code class="sourceCode cpp">rng<span class="op">.</span>begin<span class="op">()</span></code> to work on a simple array of <code class="sourceCode cpp"><span class="dt">int</span></code>s with UFCS is to have <code class="sourceCode cpp">begin</code> in scope - which means either that it has to be a global function with no intervening declarations of <code class="sourceCode cpp">begin</code> (not going to happen) or it’s up to every algorithm to bring them into scope. Something like:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb44-2"><a href="#cb44-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
-<span id="cb44-3"><a href="#cb44-3"></a>    <span class="kw">auto</span> begin<span class="op">(</span>T <span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> arr; <span class="op">}</span></span>
-<span id="cb44-4"><a href="#cb44-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
-<span id="cb44-5"><a href="#cb44-5"></a>    <span class="kw">auto</span> end<span class="op">(</span>T <span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span>   <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> arr<span class="op">+</span>N; <span class="op">}</span></span>
-<span id="cb44-6"><a href="#cb44-6"></a>    </span>
-<span id="cb44-7"><a href="#cb44-7"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
-<span id="cb44-8"><a href="#cb44-8"></a>    <span class="kw">concept</span> ufcs_range <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>R<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb44-9"><a href="#cb44-9"></a>        <span class="op">{</span> rng<span class="op">.</span>begin<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span>  input_or_output_iterator;</span>
-<span id="cb44-10"><a href="#cb44-10"></a>        <span class="op">{</span> rng<span class="op">.</span>end<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span> sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>rng<span class="op">.</span>begin<span class="op">())&gt;</span>;</span>
-<span id="cb44-11"><a href="#cb44-11"></a>    <span class="op">}</span>    </span>
-<span id="cb44-12"><a href="#cb44-12"></a><span class="op">}</span></span>
-<span id="cb44-13"><a href="#cb44-13"></a></span>
-<span id="cb44-14"><a href="#cb44-14"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range R, <span class="kw">typename</span> Value<span class="op">&gt;</span></span>
-<span id="cb44-15"><a href="#cb44-15"></a><span class="kw">auto</span> find<span class="op">(</span>R<span class="op">&amp;</span> r, Value <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span></span>
-<span id="cb44-16"><a href="#cb44-16"></a><span class="op">{</span></span>
-<span id="cb44-17"><a href="#cb44-17"></a>    <span class="kw">using</span> std<span class="op">::</span>begin, std<span class="op">::</span>end;</span>
-<span id="cb44-18"><a href="#cb44-18"></a>    <span class="co">// UFCS logic here, regular lookup will find the</span></span>
-<span id="cb44-19"><a href="#cb44-19"></a>    <span class="co">// begin/end brought in with the using-declarations</span></span>
-<span id="cb44-20"><a href="#cb44-20"></a>    <span class="kw">auto</span> first <span class="op">=</span> r<span class="op">.</span>begin<span class="op">()</span>;</span>
-<span id="cb44-21"><a href="#cb44-21"></a>    <span class="kw">auto</span> last <span class="op">=</span> r<span class="op">.</span>end<span class="op">()</span>;</span>
-<span id="cb44-22"><a href="#cb44-22"></a>    <span class="co">// ...</span></span>
-<span id="cb44-23"><a href="#cb44-23"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb46-2"><a href="#cb46-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb46-3"><a href="#cb46-3"></a>    <span class="kw">auto</span> begin<span class="op">(</span>T <span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> arr; <span class="op">}</span></span>
+<span id="cb46-4"><a href="#cb46-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb46-5"><a href="#cb46-5"></a>    <span class="kw">auto</span> end<span class="op">(</span>T <span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span>   <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> arr<span class="op">+</span>N; <span class="op">}</span></span>
+<span id="cb46-6"><a href="#cb46-6"></a>    </span>
+<span id="cb46-7"><a href="#cb46-7"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb46-8"><a href="#cb46-8"></a>    <span class="kw">concept</span> ufcs_range <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>R<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb46-9"><a href="#cb46-9"></a>        <span class="op">{</span> rng<span class="op">.</span>begin<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span>  input_or_output_iterator;</span>
+<span id="cb46-10"><a href="#cb46-10"></a>        <span class="op">{</span> rng<span class="op">.</span>end<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span> sentinel_for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>rng<span class="op">.</span>begin<span class="op">())&gt;</span>;</span>
+<span id="cb46-11"><a href="#cb46-11"></a>    <span class="op">}</span>    </span>
+<span id="cb46-12"><a href="#cb46-12"></a><span class="op">}</span></span>
+<span id="cb46-13"><a href="#cb46-13"></a></span>
+<span id="cb46-14"><a href="#cb46-14"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range R, <span class="kw">typename</span> Value<span class="op">&gt;</span></span>
+<span id="cb46-15"><a href="#cb46-15"></a><span class="kw">auto</span> find<span class="op">(</span>R<span class="op">&amp;</span> r, Value <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span></span>
+<span id="cb46-16"><a href="#cb46-16"></a><span class="op">{</span></span>
+<span id="cb46-17"><a href="#cb46-17"></a>    <span class="kw">using</span> std<span class="op">::</span>begin, std<span class="op">::</span>end;</span>
+<span id="cb46-18"><a href="#cb46-18"></a>    <span class="co">// UFCS logic here, regular lookup will find the</span></span>
+<span id="cb46-19"><a href="#cb46-19"></a>    <span class="co">// begin/end brought in with the using-declarations</span></span>
+<span id="cb46-20"><a href="#cb46-20"></a>    <span class="kw">auto</span> first <span class="op">=</span> r<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb46-21"><a href="#cb46-21"></a>    <span class="kw">auto</span> last <span class="op">=</span> r<span class="op">.</span>end<span class="op">()</span>;</span>
+<span id="cb46-22"><a href="#cb46-22"></a>    <span class="co">// ...</span></span>
+<span id="cb46-23"><a href="#cb46-23"></a><span class="op">}</span></span></code></pre></div>
 <p>But if we have to do this dance <em>anyway</em>, we didn’t gain anything from UFCS at all. We can do the exact same thing already, at the cost of a few more lines of code (adding declarations of <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> that invoke member functions) and using non-member syntax instead.</p>
 <p>And if we don’t have a generic solution that works for the fundamental types (this example fails for raw arrays, but the general solution will fail if you want to provide implementations for a generic algorithm for types like <code class="sourceCode cpp"><span class="dt">int</span></code> or <code class="sourceCode cpp"><span class="dt">char</span></code> or pointers), then we don’t have a generic solution.</p>
 <h3 id="too-greedy-on-names"><span class="header-section-number">4.1.2</span> Too greedy on names<a href="#too-greedy-on-names" class="self-link"></a></h3>
@@ -1082,19 +1097,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Herb also makes the argument that allow member call syntax to lookup non-member functions is friendlier to developers and tools as it allows things like autocomplete to work.</p>
 <p>But the question we have is: why does this feature <em>need</em> to be spelled <code class="sourceCode cpp"><span class="op">.</span></code>? There are many problems with that specific choice that completely evaporate if we simply choose an alternate spelling. There is no question about how the candidate set should be considered, or how overload resolution should work, nor is there any concern about long term library work and accidentally breaking user code by adding a private member function. The alternate spelling this paper is proposing is <code class="sourceCode cpp"><span class="op">|&gt;</span></code>.</p>
 <p>One example from that document is:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a><span class="dt">FILE</span><span class="op">*</span> file <span class="op">=</span> fopen<span class="op">(</span> “a<span class="op">.</span>txt”, “wb” <span class="op">)</span>;</span>
-<span id="cb45-2"><a href="#cb45-2"></a><span class="cf">if</span> <span class="op">(</span>file<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb45-3"><a href="#cb45-3"></a>    fputs<span class="op">(</span>“Hello world”, file<span class="op">)</span>;</span>
-<span id="cb45-4"><a href="#cb45-4"></a>    fseek<span class="op">(</span>file, <span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
-<span id="cb45-5"><a href="#cb45-5"></a>    fclose<span class="op">(</span>file<span class="op">)</span>;</span>
-<span id="cb45-6"><a href="#cb45-6"></a><span class="op">}</span></span></code></pre></div>
-<p>This proposal wouldn’t allow for any help on <code class="sourceCode cpp">fputs</code> (would need something like Hack’s explicit <code class="x">$$</code> token to allow for <code class="sourceCode cpp">file <span class="op">|&gt;</span> fputs<span class="op">(</span><span class="st">&quot;Hello world&quot;</span>, <span class="er">$$</span><span class="op">)</span></code> ) but the rest could be written as:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a><span class="dt">FILE</span><span class="op">*</span> file <span class="op">=</span> fopen<span class="op">(</span> “a<span class="op">.</span>txt”, “wb” <span class="op">)</span>;</span>
-<span id="cb46-2"><a href="#cb46-2"></a><span class="cf">if</span> <span class="op">(</span>file<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb46-3"><a href="#cb46-3"></a>    fputs<span class="op">(</span>“Hello world”, file<span class="op">)</span>;</span>
-<span id="cb46-4"><a href="#cb46-4"></a>    file <span class="op">|&gt;</span> fseek<span class="op">(</span><span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
-<span id="cb46-5"><a href="#cb46-5"></a>    file <span class="op">|&gt;</span> fclose<span class="op">()</span>;</span>
-<span id="cb46-6"><a href="#cb46-6"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a><span class="dt">FILE</span><span class="op">*</span> file <span class="op">=</span> fopen<span class="op">(</span> “a<span class="op">.</span>txt”, “wb” <span class="op">)</span>;</span>
+<span id="cb47-2"><a href="#cb47-2"></a><span class="cf">if</span> <span class="op">(</span>file<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb47-3"><a href="#cb47-3"></a>    fputs<span class="op">(</span>“Hello world”, file<span class="op">)</span>;</span>
+<span id="cb47-4"><a href="#cb47-4"></a>    fseek<span class="op">(</span>file, <span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
+<span id="cb47-5"><a href="#cb47-5"></a>    fclose<span class="op">(</span>file<span class="op">)</span>;</span>
+<span id="cb47-6"><a href="#cb47-6"></a><span class="op">}</span></span></code></pre></div>
+<p>This proposal wouldn’t allow for any help on <code class="sourceCode cpp">fputs</code>. To do that, we would need something like Hack’s explicit <code class="x">$$</code> token to allow for <code class="sourceCode cpp">file <span class="op">|&gt;</span> fputs<span class="op">(</span><span class="st">&quot;Hello world&quot;</span>, <span class="er">$$</span><span class="op">)</span></code> . But the rest could be written as:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a><span class="dt">FILE</span><span class="op">*</span> file <span class="op">=</span> fopen<span class="op">(</span> “a<span class="op">.</span>txt”, “wb” <span class="op">)</span>;</span>
+<span id="cb48-2"><a href="#cb48-2"></a><span class="cf">if</span> <span class="op">(</span>file<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb48-3"><a href="#cb48-3"></a>    fputs<span class="op">(</span>“Hello world”, file<span class="op">)</span>;</span>
+<span id="cb48-4"><a href="#cb48-4"></a>    file <span class="op">|&gt;</span> fseek<span class="op">(</span><span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
+<span id="cb48-5"><a href="#cb48-5"></a>    file <span class="op">|&gt;</span> fclose<span class="op">()</span>;</span>
+<span id="cb48-6"><a href="#cb48-6"></a><span class="op">}</span></span></code></pre></div>
 <h2 id="syntax-2-meanings"><span class="header-section-number">4.3</span> 1 Syntax, 2 Meanings<a href="#syntax-2-meanings" class="self-link"></a></h2>
 <p>Fundamentally, a problem with UFCS is that it would be yet another example in C++ where a single syntax has two potential meanings: <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">()</span></code> would either be a member function call or a non-member function call, it simply depends.</p>
 <p>We already have several examples of this kind of thing in the language, and they are very frequent sources of complaint by beginners and experts alike:</p>
@@ -1105,59 +1120,43 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Name lookup and overload resolution are two of the most complex aspects of a very complex language. Instead of pursuing UFCS, we are proposing a second syntax that actually has the same meaning as an already existing syntax: <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span></code> has the exact same meaning as <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>. But both of these syntaxes always mean invoking the free function <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">()</span></code> always means invoking the member function <code class="sourceCode cpp">f</code>, and having that differentiation seems like a positive thing rather than a negative thing.</p>
 <h1 id="what-about-pipeline-composition" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> What about pipeline composition?<a href="#what-about-pipeline-composition" class="self-link"></a></h1>
 <p>This paper largely focuses on the idea from Ranges that you can have a total function call and a partial function call:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a><span class="co">// total call</span></span>
-<span id="cb47-2"><a href="#cb47-2"></a>views<span class="op">::</span>filter<span class="op">(</span>ints, is_even<span class="op">)</span>;</span>
-<span id="cb47-3"><a href="#cb47-3"></a></span>
-<span id="cb47-4"><a href="#cb47-4"></a><span class="co">// partial call</span></span>
-<span id="cb47-5"><a href="#cb47-5"></a>ints <span class="op">|</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a><span class="co">// total call</span></span>
+<span id="cb49-2"><a href="#cb49-2"></a>views<span class="op">::</span>filter<span class="op">(</span>ints, is_even<span class="op">)</span>;</span>
+<span id="cb49-3"><a href="#cb49-3"></a></span>
+<span id="cb49-4"><a href="#cb49-4"></a><span class="co">// partial call</span></span>
+<span id="cb49-5"><a href="#cb49-5"></a>ints <span class="op">|</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
 <p>But there’s another important aspect of the Ranges desing that it’s important to discuss: you can build pipelines even without the function call part. That is, We can just write:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a><span class="kw">auto</span> even <span class="op">=</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
-<p>We don’t need to “immediately invoke” this filter on a range, we can hold onto it. We can have a function that returns that filter. And we can build a pipeline from a large number of range adapters without even having an input range.</p>
-<p>The main function from the calendar example <span class="citation" data-cites="range.calendar">[<a href="#ref-range.calendar" role="doc-biblioref">range.calendar</a>]</span> is this one:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a><span class="co">// In:  range&lt;date&gt;</span></span>
-<span id="cb49-2"><a href="#cb49-2"></a><span class="co">// Out: range&lt;string&gt;, lines of formatted output</span></span>
-<span id="cb49-3"><a href="#cb49-3"></a><span class="kw">auto</span></span>
-<span id="cb49-4"><a href="#cb49-4"></a>format_calendar<span class="op">(</span>std<span class="op">::</span><span class="dt">size_t</span> months_per_line<span class="op">)</span></span>
-<span id="cb49-5"><a href="#cb49-5"></a><span class="op">{</span></span>
-<span id="cb49-6"><a href="#cb49-6"></a>    <span class="cf">return</span></span>
-<span id="cb49-7"><a href="#cb49-7"></a>        <span class="co">// Group the dates by month:</span></span>
-<span id="cb49-8"><a href="#cb49-8"></a>        by_month<span class="op">()</span></span>
-<span id="cb49-9"><a href="#cb49-9"></a>        <span class="co">// Format the month into a range of strings:</span></span>
-<span id="cb49-10"><a href="#cb49-10"></a>      <span class="op">|</span> layout_months<span class="op">()</span></span>
-<span id="cb49-11"><a href="#cb49-11"></a>        <span class="co">// Group the months that belong side-by-side:</span></span>
-<span id="cb49-12"><a href="#cb49-12"></a>      <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span>months_per_line<span class="op">)</span></span>
-<span id="cb49-13"><a href="#cb49-13"></a>        <span class="co">// Transpose the rows and columns of the size-by-side months:</span></span>
-<span id="cb49-14"><a href="#cb49-14"></a>      <span class="op">|</span> transpose_months<span class="op">()</span></span>
-<span id="cb49-15"><a href="#cb49-15"></a>        <span class="co">// Ungroup the side-by-side months:</span></span>
-<span id="cb49-16"><a href="#cb49-16"></a>      <span class="op">|</span> views<span class="op">::</span>join</span>
-<span id="cb49-17"><a href="#cb49-17"></a>        <span class="co">// Join the strings of the transposed months:</span></span>
-<span id="cb49-18"><a href="#cb49-18"></a>      <span class="op">|</span> join_months<span class="op">()</span>;</span>
-<span id="cb49-19"><a href="#cb49-19"></a><span class="op">}</span></span></code></pre></div>
-<p>Note the comments: it says that the input is a <code class="sourceCode cpp">range<span class="op">&lt;</span>date<span class="op">&gt;</span></code>. Where is it? It’s nowhere.</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a><span class="kw">auto</span> even <span class="op">=</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
+<p>We don’t need to “immediately invoke” this filter on a range, we can hold onto it. We can have a function that returns that filter. And we can build a pipeline from a large number of range adapters without even having an input range:</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1"></a><span class="co">// In: range&lt;Session&gt;</span></span>
+<span id="cb51-2"><a href="#cb51-2"></a><span class="co">// Out: range&lt;int&gt; for the logged in sessions</span></span>
+<span id="cb51-3"><a href="#cb51-3"></a><span class="kw">auto</span> session_traffic<span class="op">()</span></span>
+<span id="cb51-4"><a href="#cb51-4"></a><span class="op">{</span></span>
+<span id="cb51-5"><a href="#cb51-5"></a>    <span class="cf">return</span> views<span class="op">::</span>filter<span class="op">(&amp;</span>Session<span class="op">::</span>is_logged_on<span class="op">)</span></span>
+<span id="cb51-6"><a href="#cb51-6"></a>         <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(&amp;</span>Session<span class="op">::</span>num_messages<span class="op">)</span>;</span>
+<span id="cb51-7"><a href="#cb51-7"></a><span class="op">}</span></span>
+<span id="cb51-8"><a href="#cb51-8"></a></span>
+<span id="cb51-9"><a href="#cb51-9"></a><span class="kw">auto</span> traffic <span class="op">=</span> accumulate<span class="op">(</span>my_sessions <span class="op">|</span> session_traffic<span class="op">())</span>;</span></code></pre></div>
+<p>Note the comments: it says that the input is a <code class="sourceCode cpp">range<span class="op">&lt;</span>Session<span class="op">&gt;</span></code>. Where is it? It’s nowhere.</p>
 <p>What’s actually going on here is, effectively, a big foray by C++ into the world of partial function composition. Now we are become Haskell. This is a very cool, very useful, bit of functionality that the range adapters provide.</p>
-<p>The pipeline rewrite operator we are proposing does not do this. You would have to write it this way:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a><span class="co">// In:  range&lt;date&gt;</span></span>
-<span id="cb50-2"><a href="#cb50-2"></a><span class="co">// Out: range&lt;string&gt;, lines of formatted output</span></span>
-<span id="cb50-3"><a href="#cb50-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range<span class="op">&gt;</span></span>
-<span id="cb50-4"><a href="#cb50-4"></a><span class="kw">auto</span></span>
-<span id="cb50-5"><a href="#cb50-5"></a>format_calendar<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng, std<span class="op">::</span><span class="dt">size_t</span> months_per_line<span class="op">)</span></span>
-<span id="cb50-6"><a href="#cb50-6"></a><span class="op">{</span></span>
-<span id="cb50-7"><a href="#cb50-7"></a>    <span class="cf">return</span> FWD<span class="op">(</span>rng<span class="op">)</span></span>
-<span id="cb50-8"><a href="#cb50-8"></a>        <span class="co">// Group the dates by month:</span></span>
-<span id="cb50-9"><a href="#cb50-9"></a>      <span class="op">|&gt;</span> by_month<span class="op">()</span></span>
-<span id="cb50-10"><a href="#cb50-10"></a>        <span class="co">// Format the month into a range of strings:</span></span>
-<span id="cb50-11"><a href="#cb50-11"></a>      <span class="op">|&gt;</span> layout_months<span class="op">()</span></span>
-<span id="cb50-12"><a href="#cb50-12"></a>        <span class="co">// Group the months that belong side-by-side:</span></span>
-<span id="cb50-13"><a href="#cb50-13"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>chunk<span class="op">(</span>months_per_line<span class="op">)</span></span>
-<span id="cb50-14"><a href="#cb50-14"></a>        <span class="co">// Transpose the rows and columns of the size-by-side months:</span></span>
-<span id="cb50-15"><a href="#cb50-15"></a>      <span class="op">|&gt;</span> transpose_months<span class="op">()</span></span>
-<span id="cb50-16"><a href="#cb50-16"></a>        <span class="co">// Ungroup the side-by-side months:</span></span>
-<span id="cb50-17"><a href="#cb50-17"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>join<span class="op">()</span></span>
-<span id="cb50-18"><a href="#cb50-18"></a>        <span class="co">// Join the strings of the transposed months:</span></span>
-<span id="cb50-19"><a href="#cb50-19"></a>      <span class="op">|&gt;</span> join_months<span class="op">()</span>;</span>
-<span id="cb50-20"><a href="#cb50-20"></a><span class="op">}</span></span></code></pre></div>
-<p>Notably, the formatter becomes a function template since now we actually need to express the input argument directly.</p>
-<p>This would certainly open up questions about how we want to handle range adapters in the future if we choose to adopt this proposal. The above code cannot work without the input range (you cannot write <code class="sourceCode cpp">by_month<span class="op">()</span> <span class="op">|&gt;</span> layout_months<span class="op">()</span></code> to start with since <code class="sourceCode cpp">by_month<span class="op">()</span></code> would already be ill-formed - in this new world it would take a range). The only way to preserve the composition of range adapters as separate from the range input would be to preserve the current implementation of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>.</p>
+<p>The pipeline rewrite operator we are proposing does not do this. You would have to write the simple evens-filter as a lambda:</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">auto</span> even <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> rng<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> rng <span class="op">|&gt;</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+<p>And you would have to write the <code class="sourceCode cpp">session_traffic</code> example this way:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a><span class="co">// In:  range&lt;Session&gt;</span></span>
+<span id="cb53-2"><a href="#cb53-2"></a><span class="co">// Out: range&lt;int&gt; for the logged in sessions</span></span>
+<span id="cb53-3"><a href="#cb53-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Range<span class="op">&gt;</span></span>
+<span id="cb53-4"><a href="#cb53-4"></a><span class="kw">auto</span> session_traffic<span class="op">(</span>Range<span class="op">&amp;&amp;</span> rng<span class="op">)</span></span>
+<span id="cb53-5"><a href="#cb53-5"></a><span class="op">{</span></span>
+<span id="cb53-6"><a href="#cb53-6"></a>    <span class="cf">return</span> FWD<span class="op">(</span>rng<span class="op">)</span></span>
+<span id="cb53-7"><a href="#cb53-7"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>filter<span class="op">(&amp;</span>Session<span class="op">::</span>is_logged_on<span class="op">)</span></span>
+<span id="cb53-8"><a href="#cb53-8"></a>      <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(&amp;</span>Session<span class="op">::</span>num_messages<span class="op">)</span>;</span>
+<span id="cb53-9"><a href="#cb53-9"></a><span class="op">}</span></span></code></pre></div>
+<p>Notably, the formatter becomes a function template since now we actually need to express the input argument directly. This actually allows us to add a constraint on <code class="sourceCode cpp">session_traffic</code> that the parameter <code class="sourceCode cpp">rng</code> is actually a <code class="sourceCode cpp">range<span class="op">&lt;</span>Session<span class="op">&gt;</span></code>, as the comment indicates it must be:</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>range R<span class="op">&gt;</span></span>
+<span id="cb54-2"><a href="#cb54-2"></a>    <span class="kw">requires</span> std<span class="op">::</span>is_same_v<span class="op">&lt;</span>std<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Session<span class="op">&gt;</span></span>
+<span id="cb54-3"><a href="#cb54-3"></a><span class="kw">auto</span> session_traffic<span class="op">(</span>R<span class="op">&amp;&amp;)</span>;</span></code></pre></div>
+<p>On the other hand, this is more that we have to write every time.</p>
+<p>This would certainly open up questions about how we want to handle range adapters in the future if we choose to adopt this proposal. The above code cannot work without the input range (<code class="sourceCode cpp">views<span class="op">::</span>filter<span class="op">(</span>f<span class="op">)</span> <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span></code> would not work). The only way to preserve the composition of range adapters as separate from the range input would be to preserve the current implementation of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>.</p>
 <p>However, the utility of partial function application and composition is much, much more expansive than just range adapters. And if we think it’s a valuable things for range adapters, maybe we should find a way to make it work for all other C++ applications?</p>
 <h1 id="other-concerns" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Other Concerns<a href="#other-concerns" class="self-link"></a></h1>
 <p>Some C++20 code could break. In the same way that the introduction of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> introduced a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> token that would break code that passed the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=</span></code> as a template argument (<code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=</span> <span class="op">&gt;()</span></code>), a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> token would break code that passes the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code> as a template argument (<code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|</span> <span class="op">&gt;()</span></code>). This wasn’t a huge concern with the spaceship operator, and it isn’t a huge concern with the pipeline rewrite operator.</p>
@@ -1167,25 +1166,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the <em>postfix-expression</em> grammar in <span>7.6.1 <a href="https://wg21.link/expr.post">[expr.post]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb51"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb51-1"><a href="#cb51-1"></a><em>postfix-expression</em>:</span>
-<span id="cb51-2"><a href="#cb51-2"></a>    <em>primary-expression</em></span>
-<span id="cb51-3"><a href="#cb51-3"></a>    <em>postfix-expression</em> [ <em>expr-or-braced-init-list</em> ]</span>
-<span id="cb51-4"><a href="#cb51-4"></a>    <em>postfix-expression</em> ( <em>expression-list</em><sub>opt</sub> )</span>
-<span id="cb51-5"><a href="#cb51-5"></a>    <em>simple-type-specifier</em> ( <em>expression-list</em><sub>opt</sub> )</span>
-<span id="cb51-6"><a href="#cb51-6"></a>    <em>typename-specifier</em> ( <em>expression-list</em><sub>opt</sub> )</span>
-<span id="cb51-7"><a href="#cb51-7"></a>    <em>simple-type-specifier braced-init-list</em></span>
-<span id="cb51-8"><a href="#cb51-8"></a>    <em>typename-specifier braced-init-list</em></span>
-<span id="cb51-9"><a href="#cb51-9"></a>    <em>postfix-expression</em> . template<sub>opt</sub> <em>id-expression</em></span>
-<span id="cb51-10"><a href="#cb51-10"></a>    <em>postfix-expression</em> -&gt; template<sub>opt</sub> <em>id-expression</em></span>
-<span id="cb51-11"><a href="#cb51-11"></a><span class="va">+   <em>postfix-expression</em> |&gt; <em>primary-expression</em> ( <em>expression-list</em><sub>opt</sub> ) </span></span>
-<span id="cb51-12"><a href="#cb51-12"></a>    <em>postfix-expression</em> ++</span>
-<span id="cb51-13"><a href="#cb51-13"></a>    <em>postfix-expression</em> --</span>
-<span id="cb51-14"><a href="#cb51-14"></a>    dynamic_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-15"><a href="#cb51-15"></a>    static_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-16"><a href="#cb51-16"></a>    reinterpret_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-17"><a href="#cb51-17"></a>    const_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
-<span id="cb51-18"><a href="#cb51-18"></a>    typeid ( <em>expression</em> )</span>
-<span id="cb51-19"><a href="#cb51-19"></a>    typeid ( <em>type-id</em> )</span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb55-1"><a href="#cb55-1"></a><em>postfix-expression</em>:</span>
+<span id="cb55-2"><a href="#cb55-2"></a>    <em>primary-expression</em></span>
+<span id="cb55-3"><a href="#cb55-3"></a>    <em>postfix-expression</em> [ <em>expr-or-braced-init-list</em> ]</span>
+<span id="cb55-4"><a href="#cb55-4"></a>    <em>postfix-expression</em> ( <em>expression-list</em><sub>opt</sub> )</span>
+<span id="cb55-5"><a href="#cb55-5"></a>    <em>simple-type-specifier</em> ( <em>expression-list</em><sub>opt</sub> )</span>
+<span id="cb55-6"><a href="#cb55-6"></a>    <em>typename-specifier</em> ( <em>expression-list</em><sub>opt</sub> )</span>
+<span id="cb55-7"><a href="#cb55-7"></a>    <em>simple-type-specifier braced-init-list</em></span>
+<span id="cb55-8"><a href="#cb55-8"></a>    <em>typename-specifier braced-init-list</em></span>
+<span id="cb55-9"><a href="#cb55-9"></a>    <em>postfix-expression</em> . template<sub>opt</sub> <em>id-expression</em></span>
+<span id="cb55-10"><a href="#cb55-10"></a>    <em>postfix-expression</em> -&gt; template<sub>opt</sub> <em>id-expression</em></span>
+<span id="cb55-11"><a href="#cb55-11"></a><span class="va">+   <em>postfix-expression</em> |&gt; <em>primary-expression</em> ( <em>expression-list</em><sub>opt</sub> ) </span></span>
+<span id="cb55-12"><a href="#cb55-12"></a>    <em>postfix-expression</em> ++</span>
+<span id="cb55-13"><a href="#cb55-13"></a>    <em>postfix-expression</em> --</span>
+<span id="cb55-14"><a href="#cb55-14"></a>    dynamic_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb55-15"><a href="#cb55-15"></a>    static_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb55-16"><a href="#cb55-16"></a>    reinterpret_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb55-17"><a href="#cb55-17"></a>    const_cast &lt; <em>type-id</em> &gt; ( <em>expression</em> )</span>
+<span id="cb55-18"><a href="#cb55-18"></a>    typeid ( <em>expression</em> )</span>
+<span id="cb55-19"><a href="#cb55-19"></a>    typeid ( <em>type-id</em> )</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new section immediately after <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span> named “Pipeline rewrite” [expr.pizza]:</p>
@@ -1207,12 +1206,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><strong>Affected subclause</strong>: <span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span> <strong>Change</strong>: New operator <code class="sourceCode cpp"><span class="op">|&gt;</span></code>.</p>
 <p><strong>Rationale</strong>: Necessary for new functionality.</p>
 <p><strong>Effect on original feature</strong>: Valid C++ 2020 code that contains a <code class="sourceCode cpp"><span class="op">|</span></code> token immediately followed by a <code class="sourceCode cpp"><span class="op">&gt;</span></code> token may be ill-formed or have different semantics in this International Standard:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb52-1"><a href="#cb52-1"></a>namespace N {</span>
-<span id="cb52-2"><a href="#cb52-2"></a>  struct X {};</span>
-<span id="cb52-3"><a href="#cb52-3"></a>  bool operator|(X, X);</span>
-<span id="cb52-4"><a href="#cb52-4"></a>  template&lt;bool(X, X)&gt; struct Y {};</span>
-<span id="cb52-5"><a href="#cb52-5"></a>  Y&lt;operator|&gt; y;              // ill-formed; previously well-formed</span>
-<span id="cb52-6"><a href="#cb52-6"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb56-1"><a href="#cb56-1"></a>namespace N {</span>
+<span id="cb56-2"><a href="#cb56-2"></a>  struct X {};</span>
+<span id="cb56-3"><a href="#cb56-3"></a>  bool operator|(X, X);</span>
+<span id="cb56-4"><a href="#cb56-4"></a>  template&lt;bool(X, X)&gt; struct Y {};</span>
+<span id="cb56-5"><a href="#cb56-5"></a>  Y&lt;operator|&gt; y;              // ill-formed; previously well-formed</span>
+<span id="cb56-6"><a href="#cb56-6"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <h1 id="implementation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> Implementation<a href="#implementation" class="self-link"></a></h1>
@@ -1258,7 +1257,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <div id="ref-range.calendar">
 <p>[range.calendar] Eric Niebler. 2015. range-v3 calendar example. <br />
-<a href="https://github.com/ericniebler/range-v3/blob/master/example/calendar.cpp">https://github.com/ericniebler/range-v3/blob/master/example/calendar.cpp</a></p>
+<a href="https://github.com/ericniebler/range-v3/blob/9221d364a82450873d49d302d475ce22110f0a9d/example/calendar.cpp">https://github.com/ericniebler/range-v3/blob/9221d364a82450873d49d302d475ce22110f0a9d/example/calendar.cpp</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2013. Range library for C++14/17/20, basis for C++20’s std::ranges. <br />

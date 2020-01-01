@@ -48,13 +48,7 @@ any existing or proposed libraries in order to support such an operator.
 
 ## Pipeline Style
 
-C++ has object-oriented *features*, but it is not itself an object-oriented
-*language*. This author attributes much of C++'s success to its ability to
-support multiple paradigms simultaneously, lending the benefits of each domain
-to developers when appropriate.
-
-Not being solely object-oriented, and with the benefits of generic programming,
-we have seen the proliferations of generic algorithms being implemented as
+We have seen the proliferations of generic algorithms being implemented as
 free functions. For example, where many languages have a single type to
 represent a "sequence" of values, C++ permits an unlimited number of "sequence"
 types tailored to the needs of their respective domain, and the generic
@@ -525,6 +519,38 @@ int i = N::X{2} |> add(N::X{3}) . i;
 All of the above works directly out of the box with this proposal.
 
 ## Further examples
+
+### Inside out vs left-to-right
+
+Consider trying to trim a `std::string`. We could write it this way:
+
+```c++
+auto trim(std::string const& str) -> std::string
+{
+    auto b = ranges::find_if(str, isalpha);
+    auto e = ranges::find_if(str | views::reverse, isalpha).base();
+    return std::string(b, e);
+}
+```
+
+The reversed lookup doesn't compile due to [stl2 #640](https://github.com/ericniebler/stl2/issues/640)
+but let's ignore that part for now. It's hard to interpret what's going on in
+that second line due to the inside-out reading that is necessary - there's a lot
+of back and forth. With the pipeline rewrite operator, we could rewrite this
+function to be entirely left-to-right:
+
+```c++
+auto trim(std::string const& str) -> std::string
+{
+    auto b = str |> ranges::find_if(isalpha);
+    auto e = str |> views::reverse() |> ranges::find_if(isalpha) . base();
+    return std::string(b, e);
+}
+```
+
+This ordering is a more direct translation of the original thought process: we
+take our `string`, reverse it, find the first alpha character, then get the base
+iterator out of it. 
 
 ### Using ``copy``
 
@@ -1099,9 +1125,10 @@ if (file) {
 }
 ```
 
-This proposal wouldn't allow for any help on `fputs` (would need something like
+This proposal wouldn't allow for any help on `fputs`. To do that, we would need
+something like
 Hack's explicit `$$`{.x} token to allow for `file |> fputs("Hello world", $$)`
-) but the rest could be written as:
+. But the rest could be written as:
 
 ```cpp
 FILE* file = fopen( “a.txt”, “wb” );
@@ -1157,73 +1184,66 @@ auto even = views::filter(is_even);
 
 We don't need to "immediately invoke" this filter on a range, we can hold onto it.
 We can have a function that returns that filter. And we can build a pipeline
-from a large number of range adapters without even having an input range. 
-
-The main function from the calendar example [@range.calendar] is this one:
+from a large number of range adapters without even having an input range:
 
 ```cpp
-// In:  range<date>
-// Out: range<string>, lines of formatted output
-auto
-format_calendar(std::size_t months_per_line)
+// In: range<Session>
+// Out: range<int> for the logged in sessions
+auto session_traffic()
 {
-    return
-        // Group the dates by month:
-        by_month()
-        // Format the month into a range of strings:
-      | layout_months()
-        // Group the months that belong side-by-side:
-      | views::chunk(months_per_line)
-        // Transpose the rows and columns of the size-by-side months:
-      | transpose_months()
-        // Ungroup the side-by-side months:
-      | views::join
-        // Join the strings of the transposed months:
-      | join_months();
+    return views::filter(&Session::is_logged_on)
+         | views::transform(&Session::num_messages);
 }
+
+auto traffic = accumulate(my_sessions | session_traffic());
 ```
 
-Note the comments: it says that the input is a `range<date>`. Where is it? It's
+
+Note the comments: it says that the input is a `range<Session>`. Where is it? It's
 nowhere. 
 
 What's actually going on here is, effectively, a big foray by C++ into the
 world of partial function composition. Now we are become Haskell. This is a very
 cool, very useful, bit of functionality that the range adapters provide.
 
-The pipeline rewrite operator we are proposing does not do this. You would
-have to write it this way:
+The pipeline rewrite operator we are proposing does not do this. You would have
+to write the simple evens-filter as a lambda:
 
 ```cpp
-// In:  range<date>
-// Out: range<string>, lines of formatted output
+auto even = [](auto&& rng) { return rng |> views::filter(is_even); };
+```
+
+And you would have to write the `session_traffic` example this way:
+
+```cpp
+// In:  range<Session>
+// Out: range<int> for the logged in sessions
 template <typename Range>
-auto
-format_calendar(Range&& rng, std::size_t months_per_line)
+auto session_traffic(Range&& rng)
 {
     return FWD(rng)
-        // Group the dates by month:
-      |> by_month()
-        // Format the month into a range of strings:
-      |> layout_months()
-        // Group the months that belong side-by-side:
-      |> views::chunk(months_per_line)
-        // Transpose the rows and columns of the size-by-side months:
-      |> transpose_months()
-        // Ungroup the side-by-side months:
-      |> views::join()
-        // Join the strings of the transposed months:
-      |> join_months();
+      |> views::filter(&Session::is_logged_on)
+      |> views::transform(&Session::num_messages);
 }
 ```
 
 Notably, the formatter becomes a function template since now we actually need
-to express the input argument directly. 
+to express the input argument directly. This actually allows us to add a
+constraint on `session_traffic` that the parameter `rng` is actually a
+`range<Session>`, as the comment indicates it must be:
+
+```cpp
+template <std::range R>
+    requires std::is_same_v<std::range_value_t<R>, Session>
+auto session_traffic(R&&);
+```
+
+On the other hand, this is more that we have to write every time. 
 
 This would certainly open up questions about how we want to handle range
 adapters in the future if we choose to adopt this proposal. The above code
-cannot work without the input range (you cannot write `by_month() |> layout_months()`
-to start with since `by_month()` would already be ill-formed - in this new world
-it would take a range). The only way to preserve the composition of range
+cannot work without the input range (`views::filter(f) |> views::transform(g)`
+would not work). The only way to preserve the composition of range
 adapters as separate from the range input would be to preserve the current
 implementation of `operator|`. 
 
@@ -1382,7 +1402,7 @@ references:
         - family: Eric Niebler
     issued:
         - year: 2015
-    URL: https://github.com/ericniebler/range-v3/blob/master/example/calendar.cpp
+    URL: https://github.com/ericniebler/range-v3/blob/9221d364a82450873d49d302d475ce22110f0a9d/example/calendar.cpp
   - id: Revzin
     citation-label: Revzin
     title: "What is unified function call syntax anyway?"
