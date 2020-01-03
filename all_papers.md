@@ -28,6 +28,7 @@
 - 1946 Allow defaulting comparisons by value: [p1946r0](1946_dflt_value_comparisons/p1946r0.html)
 - 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 - 2011 A pipeline-rewrite operator: [d2011r0](2011_pipeline/d2011r0.html)
+- 2017 Conditionally safe ranges: [d2017r0](2017_safe_range/d2017r0.html)
 
 # Other Papers
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
