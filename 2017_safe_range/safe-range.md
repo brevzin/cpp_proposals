@@ -116,7 +116,7 @@ draft, what their current `safe_range` status is, and what this paper proposes.
 <tr><td>`take`</td><td>Unsafe</td><td>[Conditionally safe, based on the underlying view. The iterators are just iterators into the underlying view (or thin wrappers thereof).]{.addu}.</td></tr>
 <tr><td>`take_while`</td><td>Unsafe</td><td>No change, same as `filter`.</td></tr>
 <tr><td>`drop`</td><td>Unsafe</td><td>[Conditionally safe, same as `take`]{.addu}</td></tr>
-<tr><td>`drop_while`</td><td>Unsafe</td><td>No change, same as `filter`.</td></tr>
+<tr><td>`drop_while`</td><td>Unsafe</td><td>[Conditionally safe. Unlike `take_while` or `filter`, we only need the predicate to find the new begin. Once we found it, it's just transparent.]{.addu}</td></tr>
 <tr><td>`join`</td><td>Unsafe</td><td>No change. This one is quite complex and iterators need to refer the `join_view`.</td></tr>
 <tr><td>`split`</td><td>Unsafe</td><td>No change, as with `join`.</td></tr>
 <tr><td>`counted`</td><td colspan="2">Not actually its own view, `counted(r, n)` is actually either some `subrange` or ill-formed, so it's already safe.</td></tr>
@@ -129,7 +129,7 @@ held onto by the view itself.]{.addu}</td></tr>
 
 # Wording
 
-Add five variable template specializations to [range.syn]{.sref}:
+Add six variable template specializations to [ranges.syn]{.sref}:
 
 ```diff
 #include <initializer_list>
@@ -158,7 +158,19 @@ namespace std::ranges {
 
   namespace views { inline constexpr @_unspecified_@ drop = @_unspecified_@; }  
   
-  // [...]
+  // [range.drop.while], drop while view
+  template<view V, class Pred>
+    requires input_range<V> && is_object_v<Pred> &&
+      indirect_unary_predicate<const Pred, iterator_t<V>>
+    class drop_while_view;
+
++ template<class T, class Pred>
++   inline constexpr bool enable_safe_range<drop_while_view<T, Pred>> = enable_safe_range<T>; 
+
+  namespace views { inline constexpr @_unspecified_@ drop_while = @_unspecified_@; }
+
+  // [...]  
+  
   // [range.common], common view
   template<view V>
     requires (!common_range<V> && copyable<iterator_t<V>>)
@@ -203,11 +215,15 @@ namespace std::ranges {
 
 # Implementation
 
-This has been implemented in range-v3 [@range-v3.1405]. The PR includes the five
+This has been implemented in range-v3 [@range-v3.1405]. The PR includes the six
 range adapters in this paper, along with a smattering of other range adapters
 from range-v3 that can also be made conditionally safe in this manner (`const`,
-`delimit`, `drop_exactly`, `indirect`, `move`, `slice`, `tail`, `trim`,
-and `unbounded`).
+`chunk`, `delimit`, `drop_exactly`, `indirect`, `intersperse`, `move`, `slice`,
+`sliding`, `tail`, `trim`, `unbounded`, and `zip`) as well as a bunch of other
+range adapters that can be additionally made conditionally safe based on both
+the underlying range and the shape of invocables that they rely on (`group_by`,
+all the `set_algorithm_view` adapters, `split_when`, `take_while`/`iter_take_while`,
+`transform`, and `zip_view`/`iter_zip_view`).
 
 ---
 references:

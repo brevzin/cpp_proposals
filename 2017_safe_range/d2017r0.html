@@ -741,7 +741,7 @@ Unsafe
 Unsafe
 </td>
 <td>
-No change, same as <code class="sourceCode cpp">filter</code>.
+<span class="addu">Conditionally safe. Unlike <code class="sourceCode cpp">take_while</code> or <code class="sourceCode cpp">filter</code>, we only need the predicate to find the new begin. Once we found it, it’s just transparent.</span>
 </td>
 </tr>
 <tr>
@@ -809,7 +809,7 @@ Unsafe
 </tr>
 </table>
 <h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>Add five variable template specializations to <a href="https://wg21.link/range.syn">[range.syn]</a>:</p>
+<p>Add six variable template specializations to <span>24.2 <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
 <div>
 <div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>#include &lt;initializer_list&gt;</span>
 <span id="cb4-2"><a href="#cb4-2"></a>#include &lt;iterator&gt;</span>
@@ -837,50 +837,62 @@ Unsafe
 <span id="cb4-24"><a href="#cb4-24"></a></span>
 <span id="cb4-25"><a href="#cb4-25"></a>  namespace views { inline constexpr <em>unspecified</em> drop = <em>unspecified</em>; }  </span>
 <span id="cb4-26"><a href="#cb4-26"></a>  </span>
-<span id="cb4-27"><a href="#cb4-27"></a>  // [...]</span>
-<span id="cb4-28"><a href="#cb4-28"></a>  // [range.common], common view</span>
-<span id="cb4-29"><a href="#cb4-29"></a>  template&lt;view V&gt;</span>
-<span id="cb4-30"><a href="#cb4-30"></a>    requires (!common_range&lt;V&gt; &amp;&amp; copyable&lt;iterator_t&lt;V&gt;&gt;)</span>
-<span id="cb4-31"><a href="#cb4-31"></a>  class common_view;</span>
-<span id="cb4-32"><a href="#cb4-32"></a>  </span>
-<span id="cb4-33"><a href="#cb4-33"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb4-34"><a href="#cb4-34"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;common_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;   </span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>  // [range.drop.while], drop while view</span>
+<span id="cb4-28"><a href="#cb4-28"></a>  template&lt;view V, class Pred&gt;</span>
+<span id="cb4-29"><a href="#cb4-29"></a>    requires input_range&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt; &amp;&amp;</span>
+<span id="cb4-30"><a href="#cb4-30"></a>      indirect_unary_predicate&lt;const Pred, iterator_t&lt;V&gt;&gt;</span>
+<span id="cb4-31"><a href="#cb4-31"></a>    class drop_while_view;</span>
+<span id="cb4-32"><a href="#cb4-32"></a></span>
+<span id="cb4-33"><a href="#cb4-33"></a><span class="va">+ template&lt;class T, class Pred&gt;</span></span>
+<span id="cb4-34"><a href="#cb4-34"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;drop_while_view&lt;T, Pred&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
 <span id="cb4-35"><a href="#cb4-35"></a></span>
-<span id="cb4-36"><a href="#cb4-36"></a>  namespace views { inline constexpr <em>unspecified</em> common = <em>unspecified</em>; }</span>
+<span id="cb4-36"><a href="#cb4-36"></a>  namespace views { inline constexpr <em>unspecified</em> drop_while = <em>unspecified</em>; }</span>
 <span id="cb4-37"><a href="#cb4-37"></a></span>
-<span id="cb4-38"><a href="#cb4-38"></a>  // [range.reverse], reverse view</span>
-<span id="cb4-39"><a href="#cb4-39"></a>  template&lt;view V&gt;</span>
-<span id="cb4-40"><a href="#cb4-40"></a>    requires bidirectional_range&lt;V&gt;</span>
-<span id="cb4-41"><a href="#cb4-41"></a>  class reverse_view;</span>
-<span id="cb4-42"><a href="#cb4-42"></a>  </span>
-<span id="cb4-43"><a href="#cb4-43"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb4-44"><a href="#cb4-44"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;reverse_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;    </span></span>
-<span id="cb4-45"><a href="#cb4-45"></a></span>
-<span id="cb4-46"><a href="#cb4-46"></a>  namespace views { inline constexpr <em>unspecified</em> reverse = <em>unspecified</em>; }</span>
+<span id="cb4-38"><a href="#cb4-38"></a>  // [...]  </span>
+<span id="cb4-39"><a href="#cb4-39"></a>  </span>
+<span id="cb4-40"><a href="#cb4-40"></a>  // [range.common], common view</span>
+<span id="cb4-41"><a href="#cb4-41"></a>  template&lt;view V&gt;</span>
+<span id="cb4-42"><a href="#cb4-42"></a>    requires (!common_range&lt;V&gt; &amp;&amp; copyable&lt;iterator_t&lt;V&gt;&gt;)</span>
+<span id="cb4-43"><a href="#cb4-43"></a>  class common_view;</span>
+<span id="cb4-44"><a href="#cb4-44"></a>  </span>
+<span id="cb4-45"><a href="#cb4-45"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb4-46"><a href="#cb4-46"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;common_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;   </span></span>
 <span id="cb4-47"><a href="#cb4-47"></a></span>
-<span id="cb4-48"><a href="#cb4-48"></a>  // [range.elements], elements view</span>
-<span id="cb4-49"><a href="#cb4-49"></a>  template&lt;input_range V, size_t N&gt;</span>
-<span id="cb4-50"><a href="#cb4-50"></a>    requires <em>see below</em>;</span>
-<span id="cb4-51"><a href="#cb4-51"></a>  class elements_view;</span>
-<span id="cb4-52"><a href="#cb4-52"></a>  </span>
-<span id="cb4-53"><a href="#cb4-53"></a><span class="va">+ template&lt;class T, size_t N&gt;</span></span>
-<span id="cb4-54"><a href="#cb4-54"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;elements_view&lt;T, N&gt;&gt; = enable_safe_range&lt;T&gt;;  </span></span>
-<span id="cb4-55"><a href="#cb4-55"></a></span>
-<span id="cb4-56"><a href="#cb4-56"></a>  template&lt;class R&gt;</span>
-<span id="cb4-57"><a href="#cb4-57"></a>    using keys_view = elements_view&lt;all_view&lt;R&gt;, 0&gt;;</span>
-<span id="cb4-58"><a href="#cb4-58"></a>  template&lt;class R&gt;</span>
-<span id="cb4-59"><a href="#cb4-59"></a>    using values_view = elements_view&lt;all_view&lt;R&gt;, 1&gt;;</span>
-<span id="cb4-60"><a href="#cb4-60"></a></span>
-<span id="cb4-61"><a href="#cb4-61"></a>  namespace views {</span>
-<span id="cb4-62"><a href="#cb4-62"></a>    template&lt;size_t N&gt;</span>
-<span id="cb4-63"><a href="#cb4-63"></a>      inline constexpr <em>unspecified</em> elements = <em>unspecified</em> ;</span>
-<span id="cb4-64"><a href="#cb4-64"></a>    inline constexpr <em>unspecified</em> keys = <em>unspecified</em> ;</span>
-<span id="cb4-65"><a href="#cb4-65"></a>    inline constexpr <em>unspecified</em> values = <em>unspecified</em> ;</span>
-<span id="cb4-66"><a href="#cb4-66"></a>  }</span>
-<span id="cb4-67"><a href="#cb4-67"></a>}</span></code></pre></div>
+<span id="cb4-48"><a href="#cb4-48"></a>  namespace views { inline constexpr <em>unspecified</em> common = <em>unspecified</em>; }</span>
+<span id="cb4-49"><a href="#cb4-49"></a></span>
+<span id="cb4-50"><a href="#cb4-50"></a>  // [range.reverse], reverse view</span>
+<span id="cb4-51"><a href="#cb4-51"></a>  template&lt;view V&gt;</span>
+<span id="cb4-52"><a href="#cb4-52"></a>    requires bidirectional_range&lt;V&gt;</span>
+<span id="cb4-53"><a href="#cb4-53"></a>  class reverse_view;</span>
+<span id="cb4-54"><a href="#cb4-54"></a>  </span>
+<span id="cb4-55"><a href="#cb4-55"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb4-56"><a href="#cb4-56"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;reverse_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;    </span></span>
+<span id="cb4-57"><a href="#cb4-57"></a></span>
+<span id="cb4-58"><a href="#cb4-58"></a>  namespace views { inline constexpr <em>unspecified</em> reverse = <em>unspecified</em>; }</span>
+<span id="cb4-59"><a href="#cb4-59"></a></span>
+<span id="cb4-60"><a href="#cb4-60"></a>  // [range.elements], elements view</span>
+<span id="cb4-61"><a href="#cb4-61"></a>  template&lt;input_range V, size_t N&gt;</span>
+<span id="cb4-62"><a href="#cb4-62"></a>    requires <em>see below</em>;</span>
+<span id="cb4-63"><a href="#cb4-63"></a>  class elements_view;</span>
+<span id="cb4-64"><a href="#cb4-64"></a>  </span>
+<span id="cb4-65"><a href="#cb4-65"></a><span class="va">+ template&lt;class T, size_t N&gt;</span></span>
+<span id="cb4-66"><a href="#cb4-66"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;elements_view&lt;T, N&gt;&gt; = enable_safe_range&lt;T&gt;;  </span></span>
+<span id="cb4-67"><a href="#cb4-67"></a></span>
+<span id="cb4-68"><a href="#cb4-68"></a>  template&lt;class R&gt;</span>
+<span id="cb4-69"><a href="#cb4-69"></a>    using keys_view = elements_view&lt;all_view&lt;R&gt;, 0&gt;;</span>
+<span id="cb4-70"><a href="#cb4-70"></a>  template&lt;class R&gt;</span>
+<span id="cb4-71"><a href="#cb4-71"></a>    using values_view = elements_view&lt;all_view&lt;R&gt;, 1&gt;;</span>
+<span id="cb4-72"><a href="#cb4-72"></a></span>
+<span id="cb4-73"><a href="#cb4-73"></a>  namespace views {</span>
+<span id="cb4-74"><a href="#cb4-74"></a>    template&lt;size_t N&gt;</span>
+<span id="cb4-75"><a href="#cb4-75"></a>      inline constexpr <em>unspecified</em> elements = <em>unspecified</em> ;</span>
+<span id="cb4-76"><a href="#cb4-76"></a>    inline constexpr <em>unspecified</em> keys = <em>unspecified</em> ;</span>
+<span id="cb4-77"><a href="#cb4-77"></a>    inline constexpr <em>unspecified</em> values = <em>unspecified</em> ;</span>
+<span id="cb4-78"><a href="#cb4-78"></a>  }</span>
+<span id="cb4-79"><a href="#cb4-79"></a>}</span></code></pre></div>
 </div>
 <h1 id="implementation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Implementation<a href="#implementation" class="self-link"></a></h1>
-<p>This has been implemented in range-v3 <span class="citation" data-cites="range-v3.1405">[<a href="#ref-range-v3.1405" role="doc-biblioref">range-v3.1405</a>]</span>. The PR includes the five range adapters in this paper, along with a smattering of other range adapters from range-v3 that can also be made conditionally safe in this manner (<code class="sourceCode cpp"><span class="kw">const</span></code>, <code class="sourceCode cpp">delimit</code>, <code class="sourceCode cpp">drop_exactly</code>, <code class="sourceCode cpp">indirect</code>, <code class="sourceCode cpp">move</code>, <code class="sourceCode cpp">slice</code>, <code class="sourceCode cpp">tail</code>, <code class="sourceCode cpp">trim</code>, and <code class="sourceCode cpp">unbounded</code>).</p>
+<p>This has been implemented in range-v3 <span class="citation" data-cites="range-v3.1405">[<a href="#ref-range-v3.1405" role="doc-biblioref">range-v3.1405</a>]</span>. The PR includes the six range adapters in this paper, along with a smattering of other range adapters from range-v3 that can also be made conditionally safe in this manner (<code class="sourceCode cpp"><span class="kw">const</span></code>, <code class="sourceCode cpp">chunk</code>, <code class="sourceCode cpp">delimit</code>, <code class="sourceCode cpp">drop_exactly</code>, <code class="sourceCode cpp">indirect</code>, <code class="sourceCode cpp">intersperse</code>, <code class="sourceCode cpp">move</code>, <code class="sourceCode cpp">slice</code>, <code class="sourceCode cpp">sliding</code>, <code class="sourceCode cpp">tail</code>, <code class="sourceCode cpp">trim</code>, <code class="sourceCode cpp">unbounded</code>, and <code class="sourceCode cpp">zip</code>) as well as a bunch of other range adapters that can be additionally made conditionally safe based on both the underlying range and the shape of invocables that they rely on (<code class="sourceCode cpp">group_by</code>, all the <code class="sourceCode cpp">set_algorithm_view</code> adapters, <code class="sourceCode cpp">split_when</code>, <code class="sourceCode cpp">take_while</code>/<code class="sourceCode cpp">iter_take_while</code>, <code class="sourceCode cpp">transform</code>, and <code class="sourceCode cpp">zip_view</code>/<code class="sourceCode cpp">iter_zip_view</code>).</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#references" class="self-link"></a></h1>
 
 <div id="refs" role="doc-bibliography">
