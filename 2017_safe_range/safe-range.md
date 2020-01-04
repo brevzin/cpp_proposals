@@ -27,7 +27,7 @@ iterators `b` and `e` returned from `find_if` will not dangle, since they point
 into the string `s` whose lifetime outlives the function. 
 
 Except this code will not compile at the moment, either in C++20 or in
-range-v3, failing on the declaration of `b`. The algorithm `find_if` is in
+range-v3, failing on the declaration of `e`. The algorithm `find_if` is in
 [alg.find]{.sref} is declared as:
 
 ```cpp
@@ -38,8 +38,8 @@ template<input_range R, class Proj = identity,
 ```
 
 `R` will deduce as `reverse_view<ref_view<std::string const>>`, which does
-_not_ satisfy `safe_range` (it is neither an lvalue reference, and
-`reverse_view` does not currently opts in to being a `safe_range`) hence the
+_not_ satisfy `safe_range` (it is neither an lvalue reference, nor does
+`reverse_view` currently opt-in to being a `safe_range`) hence the
 return type `safe_iterator_t<R>` is the type `dangling` rather than being the
 type `iterator_t<R>`. Instead of getting the reverse iterator we might have
 expected, that we need to call `.base()` on, we get effectively nothing. We
@@ -56,7 +56,7 @@ auto trim(std::string const& s) {
 ```
 
 Which is an unnecessary code indirection. The goal of this paper is to make the
-initial example just work. We clearly a clearly safe range that is not marked
+initial example just work. We clearly have a safe range that is not marked
 as such, so I consider this to be a library defect. 
 
 # History and Status Quo
@@ -101,14 +101,16 @@ because `ref_view<string const>` is a `safe_range`. Likewise,
 `s | views::reverse | views::take(3)` can also be a `safe_range` by extending
 this logic further. 
 
-Here is a table of all the range adapters in the current working draft, what
-their current `safe_range` status is, and what this paper proposes:
+Here is a table of all the range adapters and factories in the current working
+draft, what their current `safe_range` status is, and what this paper proposes.
 
 <table>
-<tr><th>Adapter</th><th>Current Status</th><th>Proposed</th></tr>
+<tr><th>Name</th><th>Current Status</th><th>Proposed</th></tr>
 <tr><td>`empty`</td><td>Safe</td><td>No change</td></tr>
 <tr><td>`single`</td><td>Unsafe</td><td>No change. It's the view which holds the element, not the iterators.</th></tr>
 <tr><td>`iota`</td><td>Safe</td><td>No change.</td></tr>
+<tr><td>`istream`</td><td>Unsafe</td><td>No change. The iterators need to refer to parent view, which holds onto the element.</td></tr>
+<tr><td>`ref`</td><td>Safe</td><td>No change.</td></tr>
 <tr><td>`filter`</td><td>Unsafe</td><td>No change. The view needs to own the predicate.</td></tr>
 <tr><td>`transform`</td><td>Unsafe</td><td>No change, as above.</td></tr>
 <tr><td>`take`</td><td>Unsafe</td><td>[Conditionally safe, based on the underlying view. The iterators are just iterators into the underlying view (or thin wrappers thereof).]{.addu}.</td></tr>
@@ -219,7 +221,7 @@ references:
     URL: https://github.com/ericniebler/stl2/issues/640
   - id: range-v3.1405
     citation-label: range-v3.1405
-    title: "Unsafe views that are actually safe"
+    title: "Making more range adapters safe"
     author:
       - family: Barry Revzin
     issued:

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-01-02" />
+  <meta name="dcterms.date" content="2020-01-03" />
   <title>Conditionally safe ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -541,7 +541,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2020-01-02</td>
+    <td>2020-01-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -579,12 +579,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-5"><a href="#cb1-5"></a>    <span class="cf">return</span> subrange<span class="op">(</span>b, e<span class="op">)</span>;</span>
 <span id="cb1-6"><a href="#cb1-6"></a><span class="op">}</span></span></code></pre></div>
 <p>This is a fairly nice and, importantly, safe way to implement <code class="sourceCode cpp">trim</code>. The iterators <code class="sourceCode cpp">b</code> and <code class="sourceCode cpp">e</code> returned from <code class="sourceCode cpp">find_if</code> will not dangle, since they point into the string <code class="sourceCode cpp">s</code> whose lifetime outlives the function.</p>
-<p>Except this code will not compile at the moment, either in C++20 or in range-v3, failing on the declaration of <code class="sourceCode cpp">b</code>. The algorithm <code class="sourceCode cpp">find_if</code> is in <span>25.5.5 <a href="https://wg21.link/alg.find">[alg.find]</a></span> is declared as:</p>
+<p>Except this code will not compile at the moment, either in C++20 or in range-v3, failing on the declaration of <code class="sourceCode cpp">e</code>. The algorithm <code class="sourceCode cpp">find_if</code> is in <span>25.5.5 <a href="https://wg21.link/alg.find">[alg.find]</a></span> is declared as:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
 <span id="cb2-2"><a href="#cb2-2"></a>         indirect_unary_predicate<span class="op">&lt;</span>projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> Pred<span class="op">&gt;</span></span>
 <span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">constexpr</span> safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
 <span id="cb2-4"><a href="#cb2-4"></a>    ranges<span class="op">::</span>find_if<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Pred pred, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
-<p><code class="sourceCode cpp">R</code> will deduce as <code class="sourceCode cpp">reverse_view<span class="op">&lt;</span>ref_view<span class="op">&lt;</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&gt;&gt;</span></code>, which does <em>not</em> satisfy <code class="sourceCode cpp">safe_range</code> (it is neither an lvalue reference, and <code class="sourceCode cpp">reverse_view</code> does not currently opts in to being a <code class="sourceCode cpp">safe_range</code>) hence the return type <code class="sourceCode cpp">safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is the type <code class="sourceCode cpp">dangling</code> rather than being the type <code class="sourceCode cpp">iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>. Instead of getting the reverse iterator we might have expected, that we need to call <code class="sourceCode cpp"><span class="op">.</span>base<span class="op">()</span></code> on, we get effectively nothing. We are forced to rewrite the above as:</p>
+<p><code class="sourceCode cpp">R</code> will deduce as <code class="sourceCode cpp">reverse_view<span class="op">&lt;</span>ref_view<span class="op">&lt;</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&gt;&gt;</span></code>, which does <em>not</em> satisfy <code class="sourceCode cpp">safe_range</code> (it is neither an lvalue reference, nor does <code class="sourceCode cpp">reverse_view</code> currently opt-in to being a <code class="sourceCode cpp">safe_range</code>) hence the return type <code class="sourceCode cpp">safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is the type <code class="sourceCode cpp">dangling</code> rather than being the type <code class="sourceCode cpp">iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>. Instead of getting the reverse iterator we might have expected, that we need to call <code class="sourceCode cpp"><span class="op">.</span>base<span class="op">()</span></code> on, we get effectively nothing. We are forced to rewrite the above as:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">auto</span> trim<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">auto</span> isalpha <span class="op">=</span> <span class="op">[](</span><span class="dt">unsigned</span> <span class="dt">char</span> c<span class="op">){</span> <span class="cf">return</span> std<span class="op">::</span>isalpha<span class="op">(</span>c<span class="op">)</span>; <span class="op">}</span>;</span>
 <span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">auto</span> b <span class="op">=</span> ranges<span class="op">::</span>find_if<span class="op">(</span>s, isalpha<span class="op">)</span>;</span>
@@ -592,7 +592,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-5"><a href="#cb3-5"></a>    <span class="kw">auto</span> e <span class="op">=</span> ranges<span class="op">::</span>find_if<span class="op">(</span>reversed, isalpha<span class="op">).</span>base<span class="op">()</span>;</span>
 <span id="cb3-6"><a href="#cb3-6"></a>    <span class="cf">return</span> subrange<span class="op">(</span>b, e<span class="op">)</span>;</span>
 <span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span></span></code></pre></div>
-<p>Which is an unnecessary code indirection. The goal of this paper is to make the initial example just work. We clearly a clearly safe range that is not marked as such, so I consider this to be a library defect.</p>
+<p>Which is an unnecessary code indirection. The goal of this paper is to make the initial example just work. We clearly have a safe range that is not marked as such, so I consider this to be a library defect.</p>
 <h1 id="history-and-status-quo" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> History and Status Quo<a href="#history-and-status-quo" class="self-link"></a></h1>
 <p>Ranges introduced with it the concept <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em>. This was then renamed to <code class="sourceCode cpp">safe_range</code> by <span class="citation" data-cites="P1870R1">[<a href="#ref-P1870R1" role="doc-biblioref">P1870R1</a>]</span> in Belfast, but the core concept remains the same. A range is a <code class="sourceCode cpp">safe_range</code> when you can safely hold onto its iterators after the range goes out of scope. There are two kinds of safe ranges:</p>
 <ul>
@@ -610,11 +610,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This issue was first pointed out by Johel Ernesto Guerrero Peña in <span class="citation" data-cites="stl2.640">[<a href="#ref-stl2.640" role="doc-biblioref">stl2.640</a>]</span>.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Several range adapters semantically behave as if they have a single member of some templated view type. If that underlying view type is a <code class="sourceCode cpp">safe_range</code>, the range adapter itself can be transitively safe. For example, <code class="sourceCode cpp">s <span class="op">|</span> views<span class="op">::</span>reverse</code> has the type <code class="sourceCode cpp">reverse_view<span class="op">&lt;</span>ref_view<span class="op">&lt;</span>string <span class="kw">const</span><span class="op">&gt;&gt;</span></code>. This can be a <code class="sourceCode cpp">safe_range</code> because <code class="sourceCode cpp">ref_view<span class="op">&lt;</span>string <span class="kw">const</span><span class="op">&gt;</span></code> is a <code class="sourceCode cpp">safe_range</code>. Likewise, <code class="sourceCode cpp">s <span class="op">|</span> views<span class="op">::</span>reverse <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span><span class="dv">3</span><span class="op">)</span></code> can also be a <code class="sourceCode cpp">safe_range</code> by extending this logic further.</p>
-<p>Here is a table of all the range adapters in the current working draft, what their current <code class="sourceCode cpp">safe_range</code> status is, and what this paper proposes:</p>
+<p>Here is a table of all the range adapters and factories in the current working draft, what their current <code class="sourceCode cpp">safe_range</code> status is, and what this paper proposes.</p>
 <table>
 <tr>
 <th>
-Adapter
+Name
 </th>
 <th>
 Current Status
@@ -648,6 +648,28 @@ No change. It’s the view which holds the element, not the iterators.
 <tr>
 <td>
 <code class="sourceCode cpp">iota</code>
+</td>
+<td>
+Safe
+</td>
+<td>
+No change.
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">istream</code>
+</td>
+<td>
+Unsafe
+</td>
+<td>
+No change. The iterators need to refer to parent view, which holds onto the element.
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">ref</code>
 </td>
 <td>
 Safe
@@ -867,7 +889,7 @@ Unsafe
 <a href="https://wg21.link/p1870r1">https://wg21.link/p1870r1</a></p>
 </div>
 <div id="ref-range-v3.1405">
-<p>[range-v3.1405] Barry Revzin. 2020. Unsafe views that are actually safe. <br />
+<p>[range-v3.1405] Barry Revzin. 2020. Making more range adapters safe. <br />
 <a href="https://github.com/ericniebler/range-v3/pull/1405">https://github.com/ericniebler/range-v3/pull/1405</a></p>
 </div>
 <div id="ref-stl2.640">
