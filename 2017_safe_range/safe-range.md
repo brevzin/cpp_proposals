@@ -138,21 +138,30 @@ semiregular_box_ref_or_val_t<Fun, IsConst> fun_;
 
 `semiregular_box<T>` is basically an `optional<T>` that is invokable.
 
-What this means is that if `T` neither `semiregular`  nor empty, and the
-`transform_view` is not `const`, then the iterator stores a `reference_wrapper<Fun>`.
-If that happens, then the transform view isn't safe. Otherwise, it is. We could
-then write:
+What this means is that:
+
+- if `T` is not `semiregular`, the `transform_view` stores some kind of
+`reference_wrapper` (to possibly-`const` `semiregular_box<T>`). This would
+not be a safe range.
+- if `T` is `semiregular`, but either `T` is not an empty type or the
+`transform_view` is non-`const`, then the `transform_view` stores a
+`reference_wrapper<T>`. This would not be a safe range either.
+- if `T` is `semiregular` and either `T` is empty or the `transform_view` is
+`const`, then we directly store a `T`. Such a range is safe.
+
+
+We could then write:
 
 ```cpp
 template <typename Rng, typename Fun>
 inline constexpr bool enable_safe_range<transform_view<Rng, Fun>> =
     enable_safe_range<Rng> &&
-    !same_as<semiregular_box_ref_or_val_t<Fun>, reference_wrapper<T>>;
+    same_as<semiregular_box_ref_or_val_t<Fun>, T>;
 ```
 
 Note that the template parameter of `enable_safe_range` has its cv qualifiers
-stripped. In the range-v3 implementation, a `transform_view<Rng, Fun> const` would
-be a safe range if `Rng` were a safe range, regardless of `Fun`.
+stripped. In the range-v3 implementation, a `transform_view<Rng, Fun> const` could
+be a safe range even if `Fun` were non-empty as long as it was `semiregular`.
 
 But would we want to go this route? To do so, we would have to decide to either:
 
@@ -161,7 +170,18 @@ But would we want to go this route? To do so, we would have to decide to either:
 2. Allow implementations to give different answers to the question of which
 ranges are safe.
 
-Both are large design questions that are outside the scope of this paper - whose
+And then also decide if we want to allow `enable_safe_range<T>` and
+`enable_safe_range<T const>` to give different results. In which we case, we
+could add the following specialization:
+
+```cpp
+template <typename Rng, typename Fun>
+inline constexpr bool enable_safe_range<transform_view<Rng, Fun> const> =
+    enable_safe_range<Rng> &&
+    same_as<semiregular_box_ref_or_val_t<Fun, true>, T>;
+```
+
+These are large design questions that are outside the scope of this paper - whose
 goal is merely to identify those ranges that can be made conditionally safe
 without having to delve into these questions. 
 
