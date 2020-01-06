@@ -650,15 +650,40 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Note that the template parameter of <code class="sourceCode cpp">enable_safe_range</code> has its cv qualifiers stripped. In the range-v3 implementation, a <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>Rng, Fun<span class="op">&gt;</span> <span class="kw">const</span></code> could be a safe range even if <code class="sourceCode cpp">Fun</code> were non-empty as long as it was <code class="sourceCode cpp">semiregular</code>.</p>
 <p>But would we want to go this route? To do so, we would have to decide to either:</p>
 <ol type="1">
-<li>Mandate that <code class="sourceCode cpp">transform_view<span class="op">::</span>iterator</code> stores a <code class="sourceCode cpp">semiregular_box_ref_or_val_t<span class="op">&lt;</span>Fun, IsConst<span class="op">&gt;</span></code> - which we currently do not specify.</li>
-<li>Allow implementations to give different answers to the question of which ranges are safe.</li>
+<li>Mandate that <code class="sourceCode cpp">transform_view<span class="op">::</span>iterator</code> stores a <code class="sourceCode cpp">semiregular_box_ref_or_val_t<span class="op">&lt;</span>Fun, IsConst<span class="op">&gt;</span></code> - which we currently do not specify. The current description of in <span>24.7.5 <a href="https://wg21.link/range.transform">[range.transform]</a></span> is this:</li>
 </ol>
-<p>And then also decide if we want to allow <code class="sourceCode cpp">enable_safe_range<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">enable_safe_range<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&gt;</span></code> to give different results. In which we case, we could add the following specialization:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Rng, <span class="kw">typename</span> Fun<span class="op">&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> enable_safe_range<span class="op">&lt;</span>transform_view<span class="op">&lt;</span>Rng, Fun<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> <span class="op">=</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a>    enable_safe_range<span class="op">&lt;</span>Rng<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb8-4"><a href="#cb8-4"></a>    same_as<span class="op">&lt;</span>semiregular_box_ref_or_val_t<span class="op">&lt;</span>Fun, <span class="kw">true</span><span class="op">&gt;</span>, T<span class="op">&gt;</span>;</span></code></pre></div>
-<p>These are large design questions that are outside the scope of this paper - whose goal is merely to identify those ranges that can be made conditionally safe without having to delve into these questions.</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> V, <span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">bool</span> Const<span class="op">&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">class</span> transform_view<span class="op">&lt;</span>V, F<span class="op">&gt;::</span>iterator <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="kw">using</span> <em>Parent</em> <span class="op">=</span>                             <span class="co">// exposition only</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>      conditional_t<span class="op">&lt;</span>Const, <span class="kw">const</span> transform_view, transform_view<span class="op">&gt;</span>;</span>
+<span id="cb8-7"><a href="#cb8-7"></a>    <span class="kw">using</span> <em>Base</em>   <span class="op">=</span>                             <span class="co">// exposition only</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>      conditional_t<span class="op">&lt;</span>Const, <span class="kw">const</span> V, V<span class="op">&gt;</span>;</span>
+<span id="cb8-9"><a href="#cb8-9"></a>    iterator_t<span class="op">&lt;</span><em>Base</em><span class="op">&gt;</span> <em>current_</em><span class="op">=</span>                 <span class="co">// exposition only</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>      iterator_t<span class="op">&lt;</span><em>Base</em><span class="op">&gt;()</span>;</span>
+<span id="cb8-11"><a href="#cb8-11"></a>    <em>Parent</em><span class="op">*</span> <em>parent_</em> <span class="op">=</span> <span class="kw">nullptr</span>;                 <span class="co">// exposition only</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>    <span class="co">// ...</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a>    </span>
+<span id="cb8-15"><a href="#cb8-15"></a>    <span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a>    <span class="op">{</span> <span class="cf">return</span> invoke<span class="op">(*</span><em>parent_</em><span class="op">-&gt;</span><em>fun_</em>, <span class="op">*</span><em>current_</em><span class="op">)</span>; <span class="op">}</span>    </span>
+<span id="cb8-17"><a href="#cb8-17"></a>    </span>
+<span id="cb8-18"><a href="#cb8-18"></a>    <span class="co">// ...</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>That is, everything is exposition only and based on keeping a pointer into the parent. The range-v3 implementation is a valid implementation strategy with this specification - but not the only one.</p>
+<ol start="2" type="1">
+<li><p>Allow implementations to give different answers to the question of which ranges are safe. That is, allow one vendor to ship range-v3 (in which some <code class="sourceCode cpp">transform_view</code>s are safe ranges) and another to ship a direct translation of the specification (in which no <code class="sourceCode cpp">transform_view</code>s are safe ranges).</p></li>
+<li><p>Pick the most conservative option, and only mark those ranges as conditionally safe for which there isn’t much implementation freedom anyway.</p></li>
+</ol>
+<p>And then we also need to decide if we want to allow <code class="sourceCode cpp">enable_safe_range<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">enable_safe_range<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&gt;</span></code> to give different results. In which we case, we could add the following specialization:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Rng, <span class="kw">typename</span> Fun<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> enable_safe_range<span class="op">&lt;</span>transform_view<span class="op">&lt;</span>Rng, Fun<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> <span class="op">=</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    enable_safe_range<span class="op">&lt;</span>Rng<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    same_as<span class="op">&lt;</span>semiregular_box_ref_or_val_t<span class="op">&lt;</span>Fun, <span class="kw">true</span><span class="op">&gt;</span>, T<span class="op">&gt;</span>;</span></code></pre></div>
+<p>These are large design questions that are outside the scope of this paper - whose goal is merely to identify those ranges that can be made conditionally safe without having to delve into these questions. Thus, this paper by default picks option #3.</p>
 <h1 id="proposal" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Several range adapters semantically behave as if they have a single member of some templated view type. If that underlying view type is a <code class="sourceCode cpp">safe_range</code>, the range adapter itself can be transitively safe. For example, <code class="sourceCode cpp">s <span class="op">|</span> views<span class="op">::</span>reverse</code> has the type <code class="sourceCode cpp">reverse_view<span class="op">&lt;</span>ref_view<span class="op">&lt;</span>string <span class="kw">const</span><span class="op">&gt;&gt;</span></code>. This can be a <code class="sourceCode cpp">safe_range</code> because <code class="sourceCode cpp">ref_view<span class="op">&lt;</span>string <span class="kw">const</span><span class="op">&gt;</span></code> is a <code class="sourceCode cpp">safe_range</code>. Likewise, <code class="sourceCode cpp">s <span class="op">|</span> views<span class="op">::</span>reverse <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span><span class="dv">3</span><span class="op">)</span></code> can also be a <code class="sourceCode cpp">safe_range</code> by extending this logic further.</p>
 <p>Here is a table of all the range adapters and factories in the current working draft, what their current <code class="sourceCode cpp">safe_range</code> status is, and what this paper proposes.</p>
@@ -862,85 +887,85 @@ Unsafe
 <h1 id="wording" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add six variable template specializations to <span>24.2 <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>#include &lt;initializer_list&gt;</span>
-<span id="cb9-2"><a href="#cb9-2"></a>#include &lt;iterator&gt;</span>
-<span id="cb9-3"><a href="#cb9-3"></a></span>
-<span id="cb9-4"><a href="#cb9-4"></a>namespace std::ranges {</span>
-<span id="cb9-5"><a href="#cb9-5"></a>  // [...]</span>
-<span id="cb9-6"><a href="#cb9-6"></a>  </span>
-<span id="cb9-7"><a href="#cb9-7"></a></span>
-<span id="cb9-8"><a href="#cb9-8"></a>  // [range.take], take view</span>
-<span id="cb9-9"><a href="#cb9-9"></a>  template&lt;view&gt; class take_view;</span>
-<span id="cb9-10"><a href="#cb9-10"></a>  </span>
-<span id="cb9-11"><a href="#cb9-11"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb9-12"><a href="#cb9-12"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;take_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
-<span id="cb9-13"><a href="#cb9-13"></a></span>
-<span id="cb9-14"><a href="#cb9-14"></a>  namespace views { inline constexpr <em>unspecified</em> take = <em>unspecified</em>; }  </span>
-<span id="cb9-15"><a href="#cb9-15"></a>  </span>
-<span id="cb9-16"><a href="#cb9-16"></a>  // [...]</span>
-<span id="cb9-17"><a href="#cb9-17"></a>  </span>
-<span id="cb9-18"><a href="#cb9-18"></a>  // [range.drop], drop view</span>
-<span id="cb9-19"><a href="#cb9-19"></a>  template&lt;view V&gt;</span>
-<span id="cb9-20"><a href="#cb9-20"></a>    class drop_view;</span>
-<span id="cb9-21"><a href="#cb9-21"></a>    </span>
-<span id="cb9-22"><a href="#cb9-22"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb9-23"><a href="#cb9-23"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;drop_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
-<span id="cb9-24"><a href="#cb9-24"></a></span>
-<span id="cb9-25"><a href="#cb9-25"></a>  namespace views { inline constexpr <em>unspecified</em> drop = <em>unspecified</em>; }  </span>
-<span id="cb9-26"><a href="#cb9-26"></a>  </span>
-<span id="cb9-27"><a href="#cb9-27"></a>  // [range.drop.while], drop while view</span>
-<span id="cb9-28"><a href="#cb9-28"></a>  template&lt;view V, class Pred&gt;</span>
-<span id="cb9-29"><a href="#cb9-29"></a>    requires input_range&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt; &amp;&amp;</span>
-<span id="cb9-30"><a href="#cb9-30"></a>      indirect_unary_predicate&lt;const Pred, iterator_t&lt;V&gt;&gt;</span>
-<span id="cb9-31"><a href="#cb9-31"></a>    class drop_while_view;</span>
-<span id="cb9-32"><a href="#cb9-32"></a></span>
-<span id="cb9-33"><a href="#cb9-33"></a><span class="va">+ template&lt;class T, class Pred&gt;</span></span>
-<span id="cb9-34"><a href="#cb9-34"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;drop_while_view&lt;T, Pred&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
-<span id="cb9-35"><a href="#cb9-35"></a></span>
-<span id="cb9-36"><a href="#cb9-36"></a>  namespace views { inline constexpr <em>unspecified</em> drop_while = <em>unspecified</em>; }</span>
-<span id="cb9-37"><a href="#cb9-37"></a></span>
-<span id="cb9-38"><a href="#cb9-38"></a>  // [...]  </span>
-<span id="cb9-39"><a href="#cb9-39"></a>  </span>
-<span id="cb9-40"><a href="#cb9-40"></a>  // [range.common], common view</span>
-<span id="cb9-41"><a href="#cb9-41"></a>  template&lt;view V&gt;</span>
-<span id="cb9-42"><a href="#cb9-42"></a>    requires (!common_range&lt;V&gt; &amp;&amp; copyable&lt;iterator_t&lt;V&gt;&gt;)</span>
-<span id="cb9-43"><a href="#cb9-43"></a>  class common_view;</span>
-<span id="cb9-44"><a href="#cb9-44"></a>  </span>
-<span id="cb9-45"><a href="#cb9-45"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb9-46"><a href="#cb9-46"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;common_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;   </span></span>
-<span id="cb9-47"><a href="#cb9-47"></a></span>
-<span id="cb9-48"><a href="#cb9-48"></a>  namespace views { inline constexpr <em>unspecified</em> common = <em>unspecified</em>; }</span>
-<span id="cb9-49"><a href="#cb9-49"></a></span>
-<span id="cb9-50"><a href="#cb9-50"></a>  // [range.reverse], reverse view</span>
-<span id="cb9-51"><a href="#cb9-51"></a>  template&lt;view V&gt;</span>
-<span id="cb9-52"><a href="#cb9-52"></a>    requires bidirectional_range&lt;V&gt;</span>
-<span id="cb9-53"><a href="#cb9-53"></a>  class reverse_view;</span>
-<span id="cb9-54"><a href="#cb9-54"></a>  </span>
-<span id="cb9-55"><a href="#cb9-55"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb9-56"><a href="#cb9-56"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;reverse_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;    </span></span>
-<span id="cb9-57"><a href="#cb9-57"></a></span>
-<span id="cb9-58"><a href="#cb9-58"></a>  namespace views { inline constexpr <em>unspecified</em> reverse = <em>unspecified</em>; }</span>
-<span id="cb9-59"><a href="#cb9-59"></a></span>
-<span id="cb9-60"><a href="#cb9-60"></a>  // [range.elements], elements view</span>
-<span id="cb9-61"><a href="#cb9-61"></a>  template&lt;input_range V, size_t N&gt;</span>
-<span id="cb9-62"><a href="#cb9-62"></a>    requires <em>see below</em>;</span>
-<span id="cb9-63"><a href="#cb9-63"></a>  class elements_view;</span>
-<span id="cb9-64"><a href="#cb9-64"></a>  </span>
-<span id="cb9-65"><a href="#cb9-65"></a><span class="va">+ template&lt;class T, size_t N&gt;</span></span>
-<span id="cb9-66"><a href="#cb9-66"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;elements_view&lt;T, N&gt;&gt; = enable_safe_range&lt;T&gt;;  </span></span>
-<span id="cb9-67"><a href="#cb9-67"></a></span>
-<span id="cb9-68"><a href="#cb9-68"></a>  template&lt;class R&gt;</span>
-<span id="cb9-69"><a href="#cb9-69"></a>    using keys_view = elements_view&lt;all_view&lt;R&gt;, 0&gt;;</span>
-<span id="cb9-70"><a href="#cb9-70"></a>  template&lt;class R&gt;</span>
-<span id="cb9-71"><a href="#cb9-71"></a>    using values_view = elements_view&lt;all_view&lt;R&gt;, 1&gt;;</span>
-<span id="cb9-72"><a href="#cb9-72"></a></span>
-<span id="cb9-73"><a href="#cb9-73"></a>  namespace views {</span>
-<span id="cb9-74"><a href="#cb9-74"></a>    template&lt;size_t N&gt;</span>
-<span id="cb9-75"><a href="#cb9-75"></a>      inline constexpr <em>unspecified</em> elements = <em>unspecified</em> ;</span>
-<span id="cb9-76"><a href="#cb9-76"></a>    inline constexpr <em>unspecified</em> keys = <em>unspecified</em> ;</span>
-<span id="cb9-77"><a href="#cb9-77"></a>    inline constexpr <em>unspecified</em> values = <em>unspecified</em> ;</span>
-<span id="cb9-78"><a href="#cb9-78"></a>  }</span>
-<span id="cb9-79"><a href="#cb9-79"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>#include &lt;iterator&gt;</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a>namespace std::ranges {</span>
+<span id="cb10-5"><a href="#cb10-5"></a>  // [...]</span>
+<span id="cb10-6"><a href="#cb10-6"></a>  </span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a>  // [range.take], take view</span>
+<span id="cb10-9"><a href="#cb10-9"></a>  template&lt;view&gt; class take_view;</span>
+<span id="cb10-10"><a href="#cb10-10"></a>  </span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;take_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>  namespace views { inline constexpr <em>unspecified</em> take = <em>unspecified</em>; }  </span>
+<span id="cb10-15"><a href="#cb10-15"></a>  </span>
+<span id="cb10-16"><a href="#cb10-16"></a>  // [...]</span>
+<span id="cb10-17"><a href="#cb10-17"></a>  </span>
+<span id="cb10-18"><a href="#cb10-18"></a>  // [range.drop], drop view</span>
+<span id="cb10-19"><a href="#cb10-19"></a>  template&lt;view V&gt;</span>
+<span id="cb10-20"><a href="#cb10-20"></a>    class drop_view;</span>
+<span id="cb10-21"><a href="#cb10-21"></a>    </span>
+<span id="cb10-22"><a href="#cb10-22"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb10-23"><a href="#cb10-23"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;drop_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
+<span id="cb10-24"><a href="#cb10-24"></a></span>
+<span id="cb10-25"><a href="#cb10-25"></a>  namespace views { inline constexpr <em>unspecified</em> drop = <em>unspecified</em>; }  </span>
+<span id="cb10-26"><a href="#cb10-26"></a>  </span>
+<span id="cb10-27"><a href="#cb10-27"></a>  // [range.drop.while], drop while view</span>
+<span id="cb10-28"><a href="#cb10-28"></a>  template&lt;view V, class Pred&gt;</span>
+<span id="cb10-29"><a href="#cb10-29"></a>    requires input_range&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt; &amp;&amp;</span>
+<span id="cb10-30"><a href="#cb10-30"></a>      indirect_unary_predicate&lt;const Pred, iterator_t&lt;V&gt;&gt;</span>
+<span id="cb10-31"><a href="#cb10-31"></a>    class drop_while_view;</span>
+<span id="cb10-32"><a href="#cb10-32"></a></span>
+<span id="cb10-33"><a href="#cb10-33"></a><span class="va">+ template&lt;class T, class Pred&gt;</span></span>
+<span id="cb10-34"><a href="#cb10-34"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;drop_while_view&lt;T, Pred&gt;&gt; = enable_safe_range&lt;T&gt;; </span></span>
+<span id="cb10-35"><a href="#cb10-35"></a></span>
+<span id="cb10-36"><a href="#cb10-36"></a>  namespace views { inline constexpr <em>unspecified</em> drop_while = <em>unspecified</em>; }</span>
+<span id="cb10-37"><a href="#cb10-37"></a></span>
+<span id="cb10-38"><a href="#cb10-38"></a>  // [...]  </span>
+<span id="cb10-39"><a href="#cb10-39"></a>  </span>
+<span id="cb10-40"><a href="#cb10-40"></a>  // [range.common], common view</span>
+<span id="cb10-41"><a href="#cb10-41"></a>  template&lt;view V&gt;</span>
+<span id="cb10-42"><a href="#cb10-42"></a>    requires (!common_range&lt;V&gt; &amp;&amp; copyable&lt;iterator_t&lt;V&gt;&gt;)</span>
+<span id="cb10-43"><a href="#cb10-43"></a>  class common_view;</span>
+<span id="cb10-44"><a href="#cb10-44"></a>  </span>
+<span id="cb10-45"><a href="#cb10-45"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb10-46"><a href="#cb10-46"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;common_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;   </span></span>
+<span id="cb10-47"><a href="#cb10-47"></a></span>
+<span id="cb10-48"><a href="#cb10-48"></a>  namespace views { inline constexpr <em>unspecified</em> common = <em>unspecified</em>; }</span>
+<span id="cb10-49"><a href="#cb10-49"></a></span>
+<span id="cb10-50"><a href="#cb10-50"></a>  // [range.reverse], reverse view</span>
+<span id="cb10-51"><a href="#cb10-51"></a>  template&lt;view V&gt;</span>
+<span id="cb10-52"><a href="#cb10-52"></a>    requires bidirectional_range&lt;V&gt;</span>
+<span id="cb10-53"><a href="#cb10-53"></a>  class reverse_view;</span>
+<span id="cb10-54"><a href="#cb10-54"></a>  </span>
+<span id="cb10-55"><a href="#cb10-55"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb10-56"><a href="#cb10-56"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;reverse_view&lt;T&gt;&gt; = enable_safe_range&lt;T&gt;;    </span></span>
+<span id="cb10-57"><a href="#cb10-57"></a></span>
+<span id="cb10-58"><a href="#cb10-58"></a>  namespace views { inline constexpr <em>unspecified</em> reverse = <em>unspecified</em>; }</span>
+<span id="cb10-59"><a href="#cb10-59"></a></span>
+<span id="cb10-60"><a href="#cb10-60"></a>  // [range.elements], elements view</span>
+<span id="cb10-61"><a href="#cb10-61"></a>  template&lt;input_range V, size_t N&gt;</span>
+<span id="cb10-62"><a href="#cb10-62"></a>    requires <em>see below</em>;</span>
+<span id="cb10-63"><a href="#cb10-63"></a>  class elements_view;</span>
+<span id="cb10-64"><a href="#cb10-64"></a>  </span>
+<span id="cb10-65"><a href="#cb10-65"></a><span class="va">+ template&lt;class T, size_t N&gt;</span></span>
+<span id="cb10-66"><a href="#cb10-66"></a><span class="va">+   inline constexpr bool enable_safe_range&lt;elements_view&lt;T, N&gt;&gt; = enable_safe_range&lt;T&gt;;  </span></span>
+<span id="cb10-67"><a href="#cb10-67"></a></span>
+<span id="cb10-68"><a href="#cb10-68"></a>  template&lt;class R&gt;</span>
+<span id="cb10-69"><a href="#cb10-69"></a>    using keys_view = elements_view&lt;all_view&lt;R&gt;, 0&gt;;</span>
+<span id="cb10-70"><a href="#cb10-70"></a>  template&lt;class R&gt;</span>
+<span id="cb10-71"><a href="#cb10-71"></a>    using values_view = elements_view&lt;all_view&lt;R&gt;, 1&gt;;</span>
+<span id="cb10-72"><a href="#cb10-72"></a></span>
+<span id="cb10-73"><a href="#cb10-73"></a>  namespace views {</span>
+<span id="cb10-74"><a href="#cb10-74"></a>    template&lt;size_t N&gt;</span>
+<span id="cb10-75"><a href="#cb10-75"></a>      inline constexpr <em>unspecified</em> elements = <em>unspecified</em> ;</span>
+<span id="cb10-76"><a href="#cb10-76"></a>    inline constexpr <em>unspecified</em> keys = <em>unspecified</em> ;</span>
+<span id="cb10-77"><a href="#cb10-77"></a>    inline constexpr <em>unspecified</em> values = <em>unspecified</em> ;</span>
+<span id="cb10-78"><a href="#cb10-78"></a>  }</span>
+<span id="cb10-79"><a href="#cb10-79"></a>}</span></code></pre></div>
 </div>
 <h1 id="implementation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Implementation<a href="#implementation" class="self-link"></a></h1>
 <p>This has been implemented in range-v3 <span class="citation" data-cites="range-v3.1405">[<a href="#ref-range-v3.1405" role="doc-biblioref">range-v3.1405</a>]</span>. The PR includes the six range adapters in this paper, along with a smattering of other range adapters from range-v3 that can also be made conditionally safe in this manner (<code class="sourceCode cpp"><span class="kw">const</span></code>, <code class="sourceCode cpp">chunk</code>, <code class="sourceCode cpp">delimit</code>, <code class="sourceCode cpp">drop_exactly</code>, <code class="sourceCode cpp">indirect</code>, <code class="sourceCode cpp">intersperse</code>, <code class="sourceCode cpp">move</code>, <code class="sourceCode cpp">slice</code>, <code class="sourceCode cpp">sliding</code>, <code class="sourceCode cpp">tail</code>, <code class="sourceCode cpp">trim</code>, <code class="sourceCode cpp">unbounded</code>, and <code class="sourceCode cpp">zip</code>) as well as a bunch of other range adapters that can be additionally made conditionally safe based on both the underlying range and the shape of invocables that they rely on (<code class="sourceCode cpp">group_by</code>, all the <code class="sourceCode cpp">set_algorithm_view</code> adapters, <code class="sourceCode cpp">split_when</code>, <code class="sourceCode cpp">take_while</code>/<code class="sourceCode cpp">iter_take_while</code>, <code class="sourceCode cpp">transform</code>, and <code class="sourceCode cpp">zip_view</code>/<code class="sourceCode cpp">iter_zip_view</code>).</p>

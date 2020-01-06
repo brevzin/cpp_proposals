@@ -167,10 +167,45 @@ But would we want to go this route? To do so, we would have to decide to either:
 
 1. Mandate that `transform_view::iterator` stores a
 `semiregular_box_ref_or_val_t<Fun, IsConst>` - which we currently do not specify.
-2. Allow implementations to give different answers to the question of which
-ranges are safe.
+The current description of in [range.transform]{.sref} is this:
 
-And then also decide if we want to allow `enable_safe_range<T>` and
+::: bq
+```cpp
+template<class V, class F>
+template<bool Const>
+class transform_view<V, F>::iterator {
+private:
+    using @_Parent_@ =                             // exposition only
+      conditional_t<Const, const transform_view, transform_view>;
+    using @_Base_@   =                             // exposition only
+      conditional_t<Const, const V, V>;
+    iterator_t<@_Base_@> @*current_*@=                 // exposition only
+      iterator_t<@_Base_@>();
+    @_Parent_@* @*parent_*@ = nullptr;                 // exposition only
+public:
+    // ...
+    
+    constexpr decltype(auto) operator*() const
+    { return invoke(*@*parent_*@->@*fun_*@, *@*current_*@); }    
+    
+    // ...
+};
+```
+:::
+
+That is, everything is exposition only and based on keeping a pointer into
+the parent. The range-v3 implementation is a valid implementation strategy with
+this specification - but not the only one.
+
+2. Allow implementations to give different answers to the question of which
+ranges are safe. That is, allow one vendor to ship range-v3 (in which some
+`transform_view`s are safe ranges) and another to ship a direct translation of
+the specification (in which no `transform_view`s are safe ranges).
+
+3. Pick the most conservative option, and only mark those ranges as conditionally
+safe for which there isn't much implementation freedom anyway.
+
+And then we also need to decide if we want to allow `enable_safe_range<T>` and
 `enable_safe_range<T const>` to give different results. In which we case, we
 could add the following specialization:
 
@@ -183,7 +218,8 @@ inline constexpr bool enable_safe_range<transform_view<Rng, Fun> const> =
 
 These are large design questions that are outside the scope of this paper - whose
 goal is merely to identify those ranges that can be made conditionally safe
-without having to delve into these questions. 
+without having to delve into these questions. Thus, this paper by default picks
+option #3.
 
 # Proposal
 
