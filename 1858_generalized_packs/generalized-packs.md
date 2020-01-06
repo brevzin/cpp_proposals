@@ -1,13 +1,26 @@
 ---
 title: Generalized pack declaration and usage
-document: P1858R0
+document: D1858R1
 date: today
 audience: EWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
-toc: false
+toc: true
 ---
+
+# Revision History
+
+R0 [@P1858R0] was presented in EWGI in Belfast [@EWGI.Belfast], where further
+work was encouraged (9-4-1-0-0). Since then, several substantial changes have
+been made to this paper.
+
+- The overloadable `operator...()` and `using ...` were removed. Pack expansion
+is now driven through structured bindings, which are extended on the library
+side, rather than introducing an extra language feature.
+- Introduction of pack literals for types and values.
+- Discussion of functions returning packs - no longer being proposed due to
+ambiguity of what it actually could mean.
 
 # Introduction and Motivation
 
@@ -141,7 +154,7 @@ introduced in
 [@N4235] (and favorably received in Urbana 2014): `T...[I]` is the `I`th element
 of the pack `T`, which is a type or value or template based on what kind of pack
 `T` is.
-[Later sections](#disambiguating-packs-of-tuples)
+[Later sections](#disambiguating-packs)
  of this paper will discuss why this paper diverges from that
 original proposal in choice of syntax.
 
@@ -164,6 +177,9 @@ namespace xstd {
     };
 }
 ```
+
+Notably, in an earlier example we constructed the pack as a single entity and
+here we are constructing each element of the pack separately. Both are fine.
 
 A properly constrained converting constructor from a pack:
 
@@ -188,105 +204,21 @@ namespace xstd {
 As well as implementing `tuple_element`:
 
 ```cpp
-namespace xstd {
-    template <typename... > class tuple;
-    
-    template <size_t I, typename>
-    struct tuple_element;
+namespace std {
     template <size_t I, typename... Ts>
-    struct tuple_element<I, tuple<Ts...>> requires (I < sizeof...(Ts))
+    struct tuple_element<I, xstd::tuple<Ts...>>
+        requires (I < sizeof...(Ts))
     {
         using type = Ts...[I];
     };
 }
 ```
 
-This is nicer than status quo, but I think we can do better in this regard with
-a little bit more help.
+This is a lot nicer than status quo.
 
-## Pack aliases and generalized indexing
+## Extending Structured Bindings
 
-The previous section defines the syntax `T...[I]` to be indexing into a pack, `T`.
-Let's immediately generalize this. Let's also say that a _type_ can be pack-indexed
-into if the type provides an alias named `...`
-
-That is:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        using ... = Ts; // declares that tuple<Ts...> can be indexed just like Ts...
-                        // note that the Ts on the right-hand-side is not expanded
-    };
-    
-    template <size_t I, typename Tuple>
-    struct tuple_element {
-        using type = Tuple.[I]; // indexes via the pack Tuple::...
-    };
-}
-```
-
-The above is not a typo: while we index into a _pack_ by way of `x...[I]`, we
-index into a specific type or object via `x.[I]`. A proper discussion of the
-motivation for the differing syntax will follow.
-
-This isn't quite right though, since we want to constrain `tuple_element` here.
-We have the operator `sizeof...`, which takes a pack. We just need a way of
-passing the pack itself. To do that, this paper proposes the syntax `T.[:]`. You
-can think of this as the "add a layer of packness" operator:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        using ... = Ts;
-    };
-    
-    template <size_t I, typename Tuple>
-    struct tuple_element;
-
-    template <size_t I, typename Tuple>
-        requires (I < sizeof...(Tuple.[:]))
-    struct tuple_element<I, Tuple>
-    {
-        using type = Tuple.[I];
-    };
-}
-```
-
-In the wild, we could use `Tuple.[I]` directly. It is SFINAE-friendly (simply
-discard the overload if the type either does not provide a pack template or
-the _constant-expression_ `I` is out of bounds for the size of the pack).
-
-## Named pack aliases
-
-Pack aliases can be named as well, it's just that the unnamed pack alias gets
-special treatment as far as the language is concerned:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        using ... = Ts;
-        using ...refs = Ts&;
-    };
-    
-    using Record = tuple<int, double, std::string>;
-    static_assert(std::is_same_v<Record.[0], int>);
-    static_assert(std::is_same_v<Record::refs...[1], double&>);
-}
-```
-
-Note the differing access syntax: `Record` is a type that we're treating as a 
-pack, whereas `Record::refs` is a pack.
-
-## Unpacking
-
-Let's go back to our initial sketch, where `xstd::tuple` was an aggregate:
+If we implement `tuple` as:
 
 ```cpp
 namespace xstd {
@@ -297,45 +229,324 @@ namespace xstd {
 }
 ```
 
-Since we know `elems` is a pack, we can directly access and unpack it into
-a function:
+then structured bindings [@P0144R2] works out of the box. And maybe there's an argument to
+be made that with this proposal, `tuple`'s members _should_ be public in the 
+same way that `pair`'s are. But how do we opt in to structured bindings if
+`elems` were private? We need three things: `tuple_size`, `tuple_element`, and
+`get`. `tuple_element` was just presented, `tuple_size` is straightforward,
+and we could add `get` as a member:
 
 ```cpp
-int sum(int x, int y, int z) { return x + y + z; }
-
-xstd::tuple<int, int, int> point{1, 2, 3};
-int s = sum(point.elems...); // ok, 6
-```
-
-This can work since the compiler knows that `point.elems` is a pack, and unpacking
-that is reasonable following the rules of the language. 
-
-However, we quickly run into a problem as soon as we add more templates into
-the mix:
-
-```cpp
-template <typename Tuple>
-int tuple_sum(Tuple t) {
-    return sum(t.elems...); // ??
+namespace xstd {
+    template <typename... Ts>
+    class tuple {
+        Ts... elems;
+    public:
+        template <size_t I> requires I < sizeof...(Ts)
+        auto get() & -> Ts...[I]& { return elems...[I]; }
+        
+        // + overloads for const&, &&, const&&
+    };
 }
 ```
 
-This isn't going to work. From [@Smith.Pack]:
+From here on out, I will only provide the `const&` overload of `get()` in all
+examples.
 
-> ```cpp
-> template<typename T> void call_f(T t) {
->   f(t.x ...)
-> }
-> ```
-> Right now, this is ill-formed (no diagnostic required) because "t.x" does not 
-> contain an unexpanded parameter pack. But if we allow class members to be pack 
-> expansions, this code could be valid -- we'd lose any syntactic mechanism to 
-> determine whether an expression contains an unexpanded pack. This is fatal to at 
-> least one implementation strategy for variadic templates. It also admits the 
-> possibility of pack expansions occurring outside templates, which current 
-> implementations are not well-suited to handle.
+## Pack aliases and a smaller opt-in to structured bindings
 
-As well as introducing ambiguities:
+Currently, there are three kinds of types that can be used with structured
+bindings:
+
+1. Arrays (specifically `T[N]` and not `std::array<T, N>`). Note that here we
+have `arr[i]` and `arr.[i]` mean the same thing, except that the latter requires
+`i` to be a constant expression.
+
+2. Tuple-like: those tupes that specialize `std::tuple_size`, `std::tuple_element`,
+and either provide a member or non-member `get()`. This paper already suggests
+extending the two type traits to look for member pack alias named `tuple_element`.
+
+3. Types where all of there members are public members of the same class
+(approximately).
+
+The problem with the tuple-like protocol here is that we need to instantiate
+a lot of templates. Assuming [@P1061R1] gets approved, a declaration like:
+
+```cpp
+auto [...elems] = tuple;
+```
+
+requires `2N+1` template instantiations: one for `std::tuple_size`, `N` for
+`std::tuple_element`, and another `N` for all the `get`s). That seems wasteful, especially when the
+structured binding rules already tie into these library type traits.
+
+There was a proposal to reduce the customization mechanism by
+dropping `std::tuple_element` [@P1096R0], which was... close. 13-7 in San Diego.
+
+This proposal reduces the customization surface in a different way
+that does not even require including `<tuple>` for user-defined types.
+In the same way that this paper proposes defining member variable packs, it also
+allows member type alias packs. We can have our `tuple` declare a pack of its
+element types:
+
+```cpp
+namespace xstd {
+    template <typename... Ts>
+    struct tuple {
+        using ...tuple_element = Ts;
+    };
+}
+```
+
+The advantage here is that the `tuple_element` pack provides both the size
+_and_ all the types. We can change add specializations to `std::tuple_size` and
+`std::tuple_element` to understand this:
+
+```cpp
+template <typename T>
+    requires (sizeof...(T::...tuple_element))
+struct tuple_size<T>
+    : integral_constant<size_t, sizeof...(T::...tuple_element)>
+{ };
+
+template <size_t I, typename T>
+    requires (sizeof...(T::...tuple_element))
+struct tuple_element<I, T>
+{
+    using type = T::...tuple_element...[I];
+};
+```
+
+The extra preceding `...`s in the above code block are not typos, and will be
+explained in a [later section](#disambiguating-dependent).
+
+At this point, we've reduced the structured bindings protocol surface (`xstd::tuple`
+did not have to specialize anything), but we still require all those extra
+instantiations. A better way would be to have the language rules for structured
+bindings themselves look directly for a member pack alias `tuple_element`.
+That is, a type now is tuple-like if it _either_:
+
+a. Has member pack alias `tuple_element`, which case its size is the size of that
+pack and the element types are the constituents of that pack.
+b. Has specialized `std::tuple_size` and `std::tuple_element`, as status quo.
+
+This library API change would allow for a complete structured bindings opt-in
+for our new `tuple` to be:
+
+```cpp
+namespace xstd {
+    template <typename... Ts>
+    class tuple {
+        Ts... elems;
+    public:
+        using ...tuple_element = Ts;
+    
+        template <size_t I> requires I < sizeof...(Ts)
+        auto get() const& -> Ts...[I] const& {
+            return elems...[I];
+        }
+    };
+}
+```
+
+Which now requires `N+1` fewer template instantiations to unpack.
+
+
+# Expanding a type into a pack
+
+At this point, this paper has introduced:
+
+* the ability to declare a member variable pack and a member alias pack
+* the ability to index into a pack
+* an extension of structured bindings to look for a specific member alias pack
+named `tuple_element`
+
+This paper defines the syntax `T...[I]` to be indexing into a pack, `T`.
+But there's a lot of similarity between a pack of types and a tuple - which is
+a pack of types in single type form. And while we can index into a tuple (that's
+what `tuple_element` does), the syntax difference between the two is rather large:
+
+<table>
+<tr><th></th><th>Pack</th><th>Tuple</th></tr>
+<tr><td style="vertical-align:middle">
+Types
+</td><td>
+```cpp
+Types...[I]
+```
+</td>
+<td>
+```cpp
+tuple_element_t<I, Tuple>
+```
+</td>
+</tr>
+<tr><td style="vertical-align:middle">Values</td><td>
+```cpp
+vals...[I]
+```
+</td>
+<td>
+```cpp
+std::get<I>(tuple)
+```
+</td>
+</tr>
+</table>
+
+The problem is that we're used to having the thing we're indexing on the left
+and the index on the right, and in the tuple case - this is inverted. If we
+could turn the `tuple` into a pack of its constituents, we could use the pack
+indexing operation. [@P1061R1], coupled with this paper thus far, would allow:
+
+```cpp
+// structured bindings can now introduce a pack, so this is a
+// tuple --> pack conversion
+auto [...elems] = tuple;
+
+// pack indexing as usual
+auto first = elems...[0];
+```
+
+This paper proposes a more direct mechanism to accomplish this.
+
+## Generalized unpacking with `[:]`
+
+This paper proposes a non-overloadable `[:]` operator which can be
+thought of as the "add a layer of packness" operator. The semantics of this
+operator are to unpack an object into the elements that would make up its
+respective structured binding declaration. For a `std::tuple`, this would mean 
+calls to `std::get<0>`, `std::get<1>`, ... For an aggregate, this would mean
+aliases into its members. For the `xstd::tuple` we defined earlier, this would
+be calls into the members `get<0>()`, `get<1>(), ...`. For arrays, this would
+be the elements of the array.
+
+Once we add a layer of
+packness, the entity becomes a pack - and so all the usual
+rules around interacting with packs apply. 
+
+
+<table>
+<tr><th></th><th>Pack</th><th>Tuple</th></tr>
+<tr><td style="vertical-align:middle">
+Types
+</td><td>
+```cpp
+Types...[I]
+```
+</td>
+<td>
+```cpp
+Tuple::[:]...[I]
+```
+</td>
+</tr>
+<tr><td style="vertical-align:middle">Values</td><td>
+```cpp
+vals...[I]
+```
+</td>
+<td>
+```cpp
+tuple.[:]...[I]
+```
+</td>
+</tr>
+</table>
+
+That's a fairly involved syntax for a simple and common operation, so this
+paper proposes the shorthand `Tuple::[I]` for that syntax. This is not a typo.
+The syntax for indexing into a pack (`Ts...[I]`) and the syntax for indexing
+into a type (`Ts::[I]`) are different and it's important that they are different.
+A proper discussion of the motivation for the differing syntax will
+[follow](#disambiguating-packs), but the key is that these syntaxes be unambiguous.
+
+<table>
+<tr><th></th><th>Pack</th><th>Tuple</th><th>Tuple, sugared</th></tr>
+<tr><td style="vertical-align:middle">
+Types
+</td><td>
+```cpp
+Types...[I]
+```
+</td>
+<td>
+```cpp
+Tuple::[:]...[I]
+```
+</td>
+<td>
+```cpp
+Tuple::[I]
+```
+</td>
+</tr>
+<tr><td style="vertical-align:middle">Values</td><td>
+```cpp
+vals...[I]
+```
+</td>
+<td>
+```cpp
+tuple.[:]...[I]
+```
+</td>
+<td>
+```cpp
+tuple.[I]
+```
+</td>
+</tr>
+</table>
+
+This means we can take our tuple implementation from the previous section (with
+an added constructor):
+
+```cpp
+namespace xstd {
+    template <typename... Ts>
+    class tuple {
+        Ts... elems;
+    public:
+        tuple(Ts... ts) : elems(ts)... { }
+    
+        using ...tuple_element = Ts;
+    
+        template <size_t I> requires I < sizeof...(Ts)
+        auto get() const& -> Ts...[I]& { return elems...[I]; }
+    };
+}
+```
+
+And that is already sufficient to write:
+
+```cpp
+xstd::tuple vals(1, 2, 3);
+// direct indexing
+assert(vals.[0] + vals.[1] + vals.[2] == 6);
+
+// direct unpacking
+auto sum = (vals.[:] + ...);
+assert(sum == 6);
+```
+
+Here `vals.[0]` is the first structured binding, which for a tuple-like type
+means `vals.get<0>()`. `vals.[:]` is the pack consisting of all of the
+structured bindings, which means the pack `{vals.get<0>(), vals.get<1>(), vals.get<2>()}`.
+
+## Syntax-free unpacking?
+
+The last example demonstrates the ability to turn the tuple `vals` into a pack
+by way of `vals.[:]`, at which point we can do any of the nice pack things with
+that entity (e.g. use a _fold-expression_, invoke a function, etc). Why do we
+need that though? Can't we just have:
+
+```cpp
+auto sum = (vals + ...);
+```
+
+The problem is this direction would lead to ambiguities (as almost everything
+in this space inherently does):
 
 ```cpp
 template <typename T, typename... U>
@@ -348,20 +559,383 @@ void call_f(T t, U... us)
 }
 ```
 
-We can't have _no_ syntactic mechanism (and note that this paper very much is
-introducing the possibility of pack expansions occurring outside templates).
-In order to make the dependent `tuple_sum` case work, we need one. One such
-could be a context-sensitive keyword like `pack`:
+Both meanings are reasonable - so it's left up to the programmer to express
+their intent:
 
 ```cpp
-template <typename Tuple>
-int tuple_sum(Tuple t) {
-    return sum(t.pack elems...);
+// This adds 't' to each element in 'us'
+f((t + us)...);
+
+// This adds each element in 't' to each element in 'us',
+// if the two packs have different sizes, ill-formed
+f((t.[:] + us)...);
+```
+
+## Other examples of unpacking
+
+Arrays are the easiest kind of structured binding. With `[:]`, they would unpack
+into all of their elements - which have the same type. Note that `arr[i]` and
+`arr.[i]` mean the same thing, except that in the latter case the index must
+be a constant expression.
+
+```cpp
+void bar(int, int);
+
+int values[] = {42, 17};
+bar(values.[:]...); // equivalent to bar(42, 17)
+```
+
+This directly allows unpacking types with all-public members as well:
+
+```cpp
+struct X { int i, j; };
+struct Y { int k, m; };
+
+int sum(X x, Y y) {
+    // equivalent to: return x.i + x.j + y.k * y.k + y.m * y.m
+    return (x.[:] + ...) + ((y.[:] * y.[:]) + ...);
 }
 ```
 
-However, having a context-sensitive keyword isn't going to cut it... because of
-the possibility of writing code like this:
+And because for such types, structured binding calls the bindings themselves
+aliases rather than new variables, this works with bitfields:
+
+```cpp
+struct B {
+    uint8_t i : 4;
+    uint8_t j: 4;
+};
+B b{.i = 2, .j = 4};
+assert(b.[0] + b.[1] == 6);
+```
+
+This also provides a direct solution to the fixed-size pack problem [@N4072]:
+
+```cpp
+template <typename T, int N>
+class Vector {
+public:
+    // I want this to be constructible from exactly N T's. The type T[N]
+    // expands directly into that
+    Vector(T[N].[:]... vals);
+    
+    // ... which possibly reads better if you take an alias first
+    using D = T[N];
+    Vector(D.[:]... vals);
+};
+```
+
+Note that this behaves differently from the homogenous variadic function packs
+paper [@P1219R1]:
+
+```cpp
+template <typename T, int N>
+class Vector2 {
+public:
+    // independently deduces each ts and requires that
+    // they all deduce to T. As opposed to the previous
+    // implementation which behaves as if the constructor
+    // were not a template, just that it took N T's.
+    Vector2(T... ts) requires (sizeof...(ts) == N);
+};
+```
+
+For instance:
+
+```cpp
+Vector<int, 2>  x('a', 2); // ok
+Vector2<int, 2> y('a', 2); // ill-formed, deduction failure
+```
+
+## Generalizing slicing further
+
+The reason the syntax `[:]` is chosen as the "add a layer of packness" operator
+is because it allows a further generlization. Similar to Python's syntax for
+slicing, this paper proposes to provide indexes on one side or the other of
+the `:` to take just sections of the pack. 
+
+For instance, `T::[1:]` is all but the first element of the type. `T::[:-1]`
+is all but the last element of the type. `T::[2:3]` is a pack consisting of
+only the third element.
+
+Such a feature would provide an easy way to write a `std::visit` that takes
+the variants first and the function last:
+
+```cpp
+template <typename... Args>
+constexpr decltype(auto) better_visit(Args&&... args) {
+    return std::visit(
+        // the function first
+        std::forward<Args...[-1]>(args...[-1]),
+        // all the variants next
+        // note that both slices on both Args and args are necessary, otherwise
+        // we end up with two packs of different sizes that need to get expanded
+        std::forward<Args...[:-1]>(args...[:-1])...);
+}
+```
+
+It would also allow for a single-overload variadic fold:
+
+```cpp
+template <typename F, typename Z, typename... Ts>
+constexpr Z fold(F f, Z z, Ts... rest)
+{
+    if constexpr (sizeof...(rest) == 0) {
+        return z;
+    } else {
+        // we need to invoke f on z and the first elem in rest...
+        // and recurse, passing the rest of rest...
+        return fold(f,
+            f(z, rest...[0]),
+            rest...[1:]...);
+
+        // alternate formulation
+        auto head = rest...[0];
+        auto ...tail = rest...[1:];
+        return fold(f, f(z, head), tail...);
+    }
+}
+```
+
+## Examples with Boost.Mp11
+
+Boost.Mp11 works by treating any variadic class template as a type list and
+providing operations that just work. A common pattern in the implementation
+of many of the metafunctions is to indirect to a class template specialization
+to do the pattern matching on the pack. This paper provides a more direct
+way to implement many of the facilities.
+
+We just need one helper that we will reuse every time (as opposed to each
+metafunction needing its own helper):
+
+```cpp
+template <class L> struct pack_impl;
+template <template <class...> class L, class... Ts>
+struct pack_impl<L<Ts...>> {
+    // a pack alias for the template arguments
+    using ...tuple_element = Ts;
+    
+    // an alias template for the class template itself
+    template <typename... Us> using apply = L<Us...>;
+};
+
+template <class L, class... Us>
+using apply_pack_impl = typename pack_impl<L>::template apply<Us...>;
+```
+
+::: tonytable
+
+### Boost.Mp11 
+```cpp
+template <class L> struct mp_front_impl;
+template <template <class...> class L, class T, class... Ts>
+struct mp_front_impl<L<T, Ts...>> {
+    using type = T;
+};
+
+template <class L>
+using mp_front = typename mp_front_impl<L>::type;
+```
+
+### This proposal
+```cpp
+template <class L>
+using mp_front = pack_impl<L>::[0];
+```
+
+---
+
+```cpp
+template <class L> struct mp_pop_front_impl;
+template <template <class...> class L, class T, class... Ts>
+struct mp_pop_front_impl<L<T, Ts...>> {
+    using type = T;
+};
+
+template <class L>
+using mp_pop_front = typename mp_pop_front_impl<L>::type;
+```
+
+```cpp
+template <class L>
+using mp_pop_front = apply_pack_impl<
+    L, pack_impl<L>::[1:]...>;
+```
+
+---
+
+```cpp
+// you get the idea
+template <class L>
+using mp_second = /* ... */;
+
+template <class L>
+using mp_third = /* ... */;
+
+template <class L, class... Ts>
+using mp_push_front = /* ... */;
+
+template <class L, class... Ts>
+using mp_push_back = /* ... */;
+
+template <class L, class T>
+using mp_replace_front = /* ... */;
+
+// ...
+```
+
+```cpp
+template <class L>
+using mp_second = pack_impl<L>::[1];
+
+template <class L>
+using mp_third = pack_impl<L>::[2];
+
+template <class L, class... Ts>
+using mp_push_front = apply_pack_impl<
+    L, Ts..., pack_impl<L>::[:]...>;
+
+template <class L, class... Ts>
+using mp_push_back = apply_pack_impl<
+    L, pack_impl<L>::[:]..., Ts...>;
+
+template <class L, class T>
+using mp_replace_front = apply_pack_impl<
+    L, T, pack_impl<L>::[1:]...>;
+```
+:::
+
+# Can functions return a pack?
+
+The previous draft of this paper [@P1858R0] also proposed the ability to have
+a function return a pack. This revision removes that part of the proposal. 
+Consider:
+
+```cpp
+void observe();
+void consume(auto...);
+
+template <typename... Ts>
+struct copy_tuple {
+    Ts... elems;
+    
+    Ts... get() const {
+        observe();
+        return elems;
+    }
+};
+
+copy_tuple<X, Y, Z> tuple(x, y, z);
+
+// #1
+consume(tuple.get()...);
+
+// #2
+consume(tuple.get()...[0]);
+
+// #3
+consume(tuple.get()...[0], tuple.get()...[1]);
+```
+
+There are two questions we have to answer for each call to `consume` there:
+
+1. How many times is `observe()` invoked?
+2. How many times are the `X`, `Y`, and `Z` copied?
+
+There are two models we can think about for how the `get()` function might work:
+
+### Language Tuple {-}
+
+`get()` behaves as if it returns a language tuple. That is, it's syntax sugar
+for:
+
+```cpp
+tuple<Ts...> get() const {
+    observe();
+    return {elems...};
+}
+```
+
+Except that it's already a pack. With this model, every call to `get()` calls
+`observe()` a single time and copies every element.
+
+### Pack of functions {-}
+
+`get()` behaves as if it declares a pack of functions. That is, it's syntax sugar
+for:
+
+```cpp
+Ts...[0] get<0>() const {
+    observe();
+    return elems...[0];
+}
+
+Ts...[1] get<1>() const {
+    observe();
+    return elems...[1];
+}
+
+// etc.
+```
+
+With this model, each individual element access incurs a call to `observe()`,
+but only the desired element is copied.
+
+### Which is better? {-}
+
+The problem is, both models are reasonable mental models and yet both models
+lead to some jarringly strange results:
+
+- If we consider the language tuple model, then the example `#3` -
+`consume(tuple.get()...[0], tuple.get()...[1])` - would end up copying every
+element in the tuple, twice. Six copies, to get two elements?
+
+- If we consider the pack of functions mode, then the example `#1` - 
+`consume(tuple.get()...)` - would end up calling `observe()` three times. But
+it only looks like we're invoking a single function?
+
+I don't think either model is better than the other, so this paper punts on
+this problem entirely. There is no longer a proposal to allow functions returning
+packs.
+
+# Disambiguation
+
+There are many aspects of this proposal that require careful disambiguation.
+This section goes through those cases in turn. 
+
+## Disambiguating Dependent Packs {#disambiguating-dependent}
+
+If we have a dependnet name that's a pack, we need a way to disambiguate that
+it's actually a pack. From [@Smith.Pack]:
+
+::: quote
+```cpp
+template<typename T> void call_f(T t) {
+  f(t.x ...)
+}
+```
+Right now, this is ill-formed (no diagnostic required) because "t.x" does not 
+contain an unexpanded parameter pack. But if we allow class members to be pack 
+expansions, this code could be valid -- we'd lose any syntactic mechanism to 
+determine whether an expression contains an unexpanded pack. This is fatal to at 
+least one implementation strategy for variadic templates.
+:::
+
+We need some kind of disambiguation. Perhaps some sort of
+context-sensitive keyword like `pack`?
+
+```cpp
+template <typename T>
+    requires (sizeof...(T::pack tuple_element))
+//                      ~~~^^^^^~~~~~~~~~~~~~
+struct tuple_size<T>
+    : integral_constant<size_t, sizeof...(T::pack tuple_element)>
+    //                                    ~~~^^^^^~~~~~~~~~~~~~
+{ };
+```
+
+Unfortunately that doesn't work because of the possibility of something
+like:
 
 ```cpp
 template<typename ...Ts> struct X { using ...types = Ts; };
@@ -376,123 +950,66 @@ we make the comma mandatory (as [@P1219R1] proposes to do), then that would open
 up our ability to use a context-sensitive `pack` here. 
 
 Otherwise, we would need a new keyword to make this happen, and `pack` seems entirely too
-pretty to make this work. As a placeholder, this paper suggests using _preceding_
-ellipses (which still need to be separated by a space). That is:
+pretty to make this work. One thing we could consider is <code>[packname]{.kw}</code> - which
+has the pleasant feature of having the same number of letters in it as both
+`template` and `typename`. But this paper suggests going a different direction
+instead.
+
+### Pack introducers {#introducers}
+
+As a brief aside, it's worth enumerating the places in the language where we
+can introduce a pack today - because they all have an important feature in common:
 
 ```cpp
-template <typename Tuple>
-int tuple_sum(Tuple t) {
-    return sum(t. ...elems...);
+template <typename ...T> // template parameter pack
+void f(T ...t)           // function parameter pack
+{
+   [...u=t]{};           // init-capture pack
 }
 ```
 
-Class access wouldn't need a leading dot (e.g. `Tuple::...elems`), but either way
-that's a lot of dots. Don't worry too much about the above syntax, it's not
-intended to be the commonly used approach - simply something that would be
-necessary to have. And such a marker would necessarily be an incomplete 
-solution anyway. With the earlier examples of implementing `tuple` having 
-constructors, `elems` was private. How would we access it?
+What these have in common is that is that the `...` always _precedes_ the name
+that it introduces as a pack. 
 
-## Generalized unpacking and `operator...`
+### Proposed disambigutation
 
-In the same way that we let `xstd::tuple<Ts...>` be directly indexed into, we
-can also let it be directly unpacked. We do that with the help of `operator...()`:
+To that end, an appropriate and consistent mechanism to disambiguate a dependent
+member pack might also be to use _preceding_ ellipses (which still need to be
+separated by a space). That is:
 
 ```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        Ts&        operator ...() &       { return elems; }
-        Ts const&  operator ...() const&  { return elems; }
-        Ts&&       operator ...() &&      { return std::move(*this).elems; }
-        Ts const&& operator ...() const&& { return std::move(*this).elems; }
-    private:
-        Ts... elems;
-    };
-}
+template <typename T>
+    requires (sizeof...(T::...tuple_element))
+struct tuple_size<T>
+    : integral_constant<size_t, sizeof...(T::...tuple_element)>
+{ };
 ```
 
-We do not need to dismabiguate `elems` here because we know `elems` is a pack, it's
-declared as such. Were we to retrieve `elems` from a dependent base class though,
-we would need some form of disambiguation as described above
-(i.e. `this->...elems`).
+And once we disambiguated that `T::tuple_element` is a pack, we still need
+to expand it - which may also require trailing ellipses:
 
-Note that this form of the declaration uses an unexpanded pack
-on the left (the `...` does not expand the `Ts const&`, not really anyway) and
-in the body. Later sections in the paper will show other forms. 
-
-Also, from here on out, this paper will only use the `const&`
-overloads of relevant functions for general sanity (see also [@P0847R2]).
-
-The above declarations allow for:
-
-```cpp
-template <typename Tuple>
-constexpr auto tuple_sum(Tuple const& tuple) {
-    return (tuple.[:] + ...);
-}
-
-static_assert(tuple_sum(xstd::tuple(1, 2, 3)) == 6);
+```
+template <size_t I, typename T>
+    requires (sizeof...(T::...tuple_element))
+struct tuple_element<I, T>
+{
+    using type = T::...tuple_element...[I];
+};
 ```
 
-`tuple.[:]` works by adding a layer of packness on top of `tuple` - it does this
-by creating a pack by way of `operator...()` and using that pack as an unexpanded
-pack expression. That unexpanded pack is then expanded with the _fold-expression_
-as if it were a normal pack.
+That's admittedly a lot of dots fairly close together. If that isn't acceptable,
+then we can introduce a new disambiguating keyword:
 
-Or more generally:
-
-```cpp
-template <typename F, typename Tuple>
-constexpr decltype(auto) apply(F&& f, Tuple&& tuple) {
-    return std::invoke(std::forward<F>(f), std::forward<Tuple>(tuple).[:]...);
-}
+```
+template <size_t I, typename T>
+    requires (sizeof...(T::packname tuple_element))
+struct tuple_element<I, T>
+{
+    using type = T::packname tuple_element...[I];
+};
 ```
 
-As well as writing our `get` function template:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-        using ... = Ts;
-        Ts const& operator ...() const& { return elems; }
-    private:
-        Ts... elems;
-    };
-    
-    template <size_t I, typename... Ts>
-    constexpr auto const& get(tuple<Ts...> const& v) noexcept {
-        return v.[I];
-    }
-}
-```
-
-Although since the syntax directly allows for `v.[0]`, why would anyone write
-`xstd::get<0>(v)`? And if you could write `f(t.[:]...)`,
-why would anyone call `std::apply()`?
-
-## Syntax-free unpacking?
-
-The above allows us to write:
-
-```cpp
-xstd::tuple x{1, 2, 3};
-foo(x.[:]...); // calls foo(1, 2, 3)
-```
-
-But do we explicitly need to add a layer of packness to `x` when we already know
-that `x` is a `tuple` and nothing is dependent? Could we simply allow:
-
-```cpp
-foo(x...); // implicitly add packness to x and unpack it
-```
-
-I'm not sure it's worth it to pursue.
-
-## Disambiguating packs of tuples
+## Disambiguating packs of tuples {#disambiguating-packs}
 
 The previous section showed how to write `apply` taking a single function and a
 single tuple. What if we generalized it to taking multiple tuples? How do we
@@ -665,120 +1182,11 @@ constexpr decltype(auto) apply(F&& f, Tuples&&... tuples) {
 }
 ```
 
-Admitedly, six `.`s is a little cryptic. But is it any worse than the current
+Admittedly, six `.`s is a little cryptic. But is it any worse than the current
 implementation?
 
 
-## Structured bindings for pack-expandable types
-
-Structured bindings [@P0144R2] were a great usability feature introduced in
-C++17, but it's quite cumbersome to opt-in to the customization mechanism: you
-need to specialize `std::tuple_size`, `std::tuple_element`, and provide a `get()`
-of some sort. There was a proposal to reduce the customization mechanism by
-dropping `std::tuple_element` [@P1096R0], which was... close. 13-7 in San Diego.
-
-But the mechanisms presented in this paper provide a better customization point
-for structured bindings: `operator...`! This is a single function that the language
-can examine to determine the arity, the types, and the values. All without even
-having to include `<tuple>`:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-    public:
-#ifdef ADD_ALIAS
-        using ... = Ts;
-#endif
-        Ts& operator ...() & { return elems; }
-    private:
-        Ts... elems;
-    };
-}
-
-int n = 0;
-
-xstd::tuple<int, int&> tref{n, n};
-auto& [i, iref] = tref;
-```
-
-This paper proposes that the above is well-formed, with or without `ADD_ALIAS`
-defined. And either way, `decltype(i)` is `int`. If there is no pack alias
-declared, then the type will be determined from the `operator...` result (similar
-to what [@P1096R0] proposed). If there is a pack alias declared, then the type will
-be determined from that pack alias. That is, `decltype(iref)` is `int&` if
-`ADD_ALIAS` is defined and `int` otherwise. 
-
-More specifically, the type of the `i`th binding is `E.[I]` if that is a valid
-expression (i.e. if `using ...` is declared),
-otherwise `std::remove_reference_t<decltype(e.[I])>`.
-
-## Language arrays and types with all-public members
-
-Structured bindings works by default with language arrays and types with all-
-public members. This paper proposes that such types also have an
-implicitly-defaulted pack alias and pack operator. This allows for the same
-kind seamless unpacking this paper demonstrates for `xstd::tuple`:
-
-```cpp
-void bar(int, int);
-
-int values[] = {42, 17};
-bar(values.[:]...); // equivalent to bar(42, 17)
-```
-
-And likewise for those other types that we can already use with structured
-bindings:
-
-```cpp
-struct X { int i, j; };
-struct Y { int k, m; };
-
-int sum(X x, Y y) {
-    // equivalent to: return x.i + x.j + y.k * y.k + y.m * y.m
-    return (x.[:] + ...) + ((y.[:] * y.[:]) + ...);
-}
-```
-
-But also provides a direct solution to the fixed-size pack problem [@N4072]:
-
-```cpp
-template <typename T, int N>
-class Vector {
-public:
-    // I want this to be constructible from exactly N T's. The type T[N]
-    // expands directly into that
-    Vector(T[N].[:]... vals);
-    
-    // ... which possibly reads better if you take an alias first
-    using D = T[N];
-    Vector(D.[:]... vals);
-};
-```
-
-Note that this behaves differently from the homogenous variadic function packs
-paper [@P1219R1]:
-
-```cpp
-template <typename T, int N>
-class Vector2 {
-public:
-    // independently deduces each ts and requires that
-    // they all deduce to T. As opposed to the previous
-    // implementation which behaves as if the constructor
-    // were not a template, just that it took N T's.
-    Vector2(T... ts) requires (sizeof...(ts) == N);
-};
-```
-
-For instance:
-
-```cpp
-Vector<int, 2>  x('a', 2); // ok
-Vector2<int, 2> y('a', 2); // ill-formed, deduction failure
-```
-
-## Declaring packs in other contexts
+# Introducing packs in more contexts
 
 [@P0780R2] allowed pack expansion in lambda init-capture:
 
@@ -790,7 +1198,9 @@ void f(T... t)
 }
 ```
 
-If you think of lambda init-capture as basically a variable declaration with implicit `auto`, then expanding out that capture gets us to a variable declaration pack:
+If you think of lambda init-capture as basically a variable declaration with
+implicit `auto`, then expanding out that capture gets us to a variable
+declaration pack:
 
 ```cpp
 auto ...u = t;
@@ -798,7 +1208,8 @@ auto ...u = t;
 
 This paper proposes actually allowing that declaration form.
 
-That is, a variable pack declaration takes as its initializer an unexpanded pack. Which could be a normal pack, or it could be a pack-like type with packness added to it:
+That is, a variable pack declaration takes as its initializer an unexpanded pack.
+Which could be a normal pack, or it could be a pack-like type with packness added to it:
 
 ```cpp
 xstd::tuple x{1, 2, 3};
@@ -826,46 +1237,102 @@ struct X {
 using ...bad = xstd::tuple<int, double>;
 
 // proposed ok
-using ...good = xstd::tuple<int, double>.[:]; // a pack of {int, double}
+using ...good = xstd::tuple<int, double>::[:]; // a pack of {int, double}
 ```
 
-## Declaring packs from a _braced-init-list_
+## Pack literals with types
 
-It may be worth generalizing even further and allowing declarations not just from unexpanded pack expressions but also from a _braced-init-list_. [@P0341R0] presented something like this idea for variables, but instead used angle brackets for types. This paper proposed a _braced-init-list_ for both cases, but with a slightly different formulation:
+As shocking as it might be to hear, there are in fact other types in the standard
+library that are not `std::tuple<Ts...>`. We should probably consider how to fit
+those other types into this new world.
+
+It might seem strange, in a paper proposing language features to make it easier
+to manipulate packs, to start with `tuple` (the quintessential pack example) and
+then transition to `pair` (a type that has no packs). But `pair` is in many
+ways just another `tuple`, so it should be usable in the same ways. If we will
+be able to inline unpack a tuple and call a function with its arguments, it would
+be somewhat jarring if we couldn't do the same thing with a `pair`. So how do we?
+
+The previous sections built up how we can implement `tuple` and opt it into
+structured bindings with less code and more efficiently. We could do that with
+`pair` as well, on top of `tuple`:
 
 ```cpp
-int ...squares = {1, 4, 9};
-using ...types = {int, char, double};
-```
-
-gcc already uses this notation in its compile errors:
-
-```
-In instantiation of 'void foo(T ...) [with T = {int, int, int}]':
-```
-
-Such declarations would lead to the ability to provide default arguments for template parameter packs:
-
-```cpp
-template <typename... Ts = {int}>
-void f();
-
-f(); // calls f<int>
-```
-
-And provides a direction for disambiguating expansion statements [@P1306R1] over a pack:
-
-```cpp
-template <typename... Ts>
-void f(Ts... ts)
-{
-    for ... (auto x : {ts...})
-    {
-    }
+namespace xstd {
+    template <typename T, typename U>
+    struct pair {
+        T first;
+        U second;
+        
+        using ...tuple_element = tuple<T, U>::[:];
+        
+        template <size_t I>
+        auto get() const& -> tuple_element...[I] const&
+        {
+            if constexpr (I == 0) return first;
+            else if constepxr (I == 1) return second;
+        }
+    };
 }
 ```
 
-The latter has some added wrinkles since you can already have a range-based for statement over a _braced-init-list_ if it can be deduced to some `std::initializer_list<T>`, and we'd need a different declaration for the range (`auto ... range = {ts...};` vs `auto range = {ts...};`), but we _already_ have a different declaration for the range in the `constexpr` case, so what's a third special case, really?
+The `get` implementation is a little awkward, but the way we're declaring
+`tuple_element` is even more awkward. We have to instantiate a tuple just
+to unpack it to get a type? Well, we don't need full blown tuple, we just
+need a type list:
+
+```cpp
+template <typename... Ts>
+struct typelist {
+    using ...types = Ts;
+};
+
+namespace xstd {
+    template <typename T, typename U>
+    struct pair {
+        using ...tuple_element = typelist<T, U>::...types;
+    };
+}
+```
+
+Is that better? I don't think so. Really, we just want to be able to introduce
+a pack on the fly. A pack consisting of specific types.
+
+Following the insight into how [pack introducers](#introducers) are used in
+the language, this paper proposes allowing the introduction of a pack of types
+as:
+
+```cpp
+namespace xstd {
+    template <typename T, typename U>
+    struct pair {
+        using ...tuple_element = ...<T, U>;
+    };
+}
+```
+
+[@P0341R0] used the same syntax. 
+
+Such a pack literal could also be used to provide a default template argument
+for a template type parameter pack.
+
+```cpp
+template <typename... Ts = ...<int>>
+struct foo();
+
+foo(); // calls foo<int>.
+```
+
+## Pack literals with values
+
+Where types use `<>`s, it makes sense for values to use `{}`s. That is:
+
+```cpp
+int... squares = ...{1, 4, 9};
+```
+
+Note that there is no `std::initializer_list<int>` here, the expression on the
+right is much closer to a `tuple<int, int, int>` than a `std::initializer_list`.
 
 This does introduce some more added subtletly with initialization:
 
@@ -874,218 +1341,17 @@ auto    a = {1, 2, 3}; // a is a std::initializer_list<int>
 auto... b = {1, 2, 3}; // b is a pack of int's
 ```
 
-Those two declarations are very different. But also, they look very different -
+Those two declarations are very different. But also, they look different -
 one has `...` and the other does not. One looks like it is declaring an object
 and the other looks like it is declaring a pack. This doesn't seem inherently
 problematic.
 
-## Generalized Slicing and a simplified Boost.Mp11
-
-This paper proposes `T.[:]` to be a sigil to add packness. This also allows
-for more fine-grained control over which part of the pack is referenced. 
-
-Similar to Python's syntax for slicing, this paper proposes to provide indexes
-on one side or the other of the `:` to take just parts of the pack. For instance,
-`T.[1:]` is all but the first element of the pack. `T.[:-1]` is all but the
-last element of the pack. `T.[2:3]` is a pack consisting only of the third element.
-
-Such a feature would provide an easy way to write a `std::visit` that takes
-the variants first and the function last:
-
-```cpp
-template <typename... Args>
-constexpr decltype(auto) better_visit(Args&&... args) {
-    return std::visit(
-        // the function first
-        std::forward<Args...[-1]>(args...[-1]),
-        // all the variants next
-        // note that both slices on both Args and args are necessary, otherwise
-        // we end up with two packs of different sizes that need to get expanded
-        std::forward<Args...[:-1]>(args...[:-1])...);
-}
-```
-
-Recall that since `Args` is a pack already, we index into it with `Args...[I]`
-rather than `Args.[I]` (which would index into each pack-like type of `Args`).
-
-It would also allow for a single-overload variadic fold:
-
-```cpp
-template <typename F, typename Z, typename... Ts>
-constexpr Z fold(F f, Z z, Ts... rest)
-{
-    if constexpr (sizeof...(rest) == 0) {
-        return z;
-    } else {
-        // we need to invoke f on z and the first elem in rest...
-        // and recurse, passing the rest of rest...
-        return fold(f,
-            f(z, rest...[0]),
-            rest...[1:]...);
-
-        // alternate formulation
-        auto head = rest...[0];
-        auto ...tail = rest...[1:];
-        return fold(f, f(z, head), tail...);
-    }
-}
-```
-
-### Min
-
-Andrew Sutton in a CppCon 2019 talk [@Sutton] showed an example using an
-expansion statement to find the mininum of a pack. This paper allows for
-a more direct implementation:
-
-::: tonytable
-
-### Sutton
-```cpp
-template <typename... Ts>
-auto min_arg(Ts... args) {
-    auto min = head(args...);
-    template for (auto x : tail(args...)) {
-        if (x < min) {
-            min = x;
-        }
-    }
-    return min;
-}
-```
-
-### This proposal
-```cpp
-template <typename... Ts>
-auto min_arg(Ts... args) {
-    auto min = args...[0];
-    template for (auto x : {args.[1:]...}) {
-        if (x < min) {
-            min = x;
-        }
-    }
-    return min;
-}
-```
-:::
-
-Looks basically the same. It's just that there are no added `head` and `tail`
-function templates to instantiate, the latter of which has to return some kind
-of `tuple`.
-
-
-### Boost.Mp11
-
-Boost.Mp11 works by treating any variadic class template as a type list and
-providing operations that just work. A common pattern in the implementation
-of many of the metafunctions is to indirect to a class template specialization
-to do the pattern matching on the pack. This paper provides a more direct
-way to implement many of the facilities.
-
-We just need one helper that we will reuse every time (as opposed to each
-metafunction needing its own helper):
-
-```cpp
-template <class L> struct pack_impl;
-template <template <class...> class L, class... Ts>
-struct pack_impl<L<Ts...>> {
-    // a pack alias for the template arguments
-    using ... = Ts;
-    
-    // an alias template for the class template itself
-    template <typename... Us> using apply = L<Us...>;
-};
-
-template <class L, class... Us>
-using apply_pack_impl = typename pack_impl<L>::template apply<Us...>;
-```
-
-::: tonytable
-
-### Boost.Mp11 
-```cpp
-template <class L> struct mp_front_impl;
-template <template <class...> class L, class T, class... Ts>
-struct mp_front_impl<L<T, Ts...>> {
-    using type = T;
-};
-
-template <class L>
-using mp_front = typename mp_front_impl<L>::type;
-```
-
-### This proposal
-```cpp
-template <class L>
-using mp_front = pack_impl<L>.[0];
-```
-
----
-
-```cpp
-template <class L> struct mp_pop_front_impl;
-template <template <class...> class L, class T, class... Ts>
-struct mp_pop_front_impl<L<T, Ts...>> {
-    using type = T;
-};
-
-template <class L>
-using mp_pop_front = typename mp_pop_front_impl<L>::type;
-```
-
-```cpp
-template <class L>
-using mp_pop_front = apply_pack_impl<
-    L, pack_impl<L>.[1:]...>;
-```
-
----
-
-```cpp
-// you get the idea
-template <class L>
-using mp_second = /* ... */;
-
-template <class L>
-using mp_third = /* ... */;
-
-template <class L, class... Ts>
-using mp_push_front = /* ... */;
-
-template <class L, class... Ts>
-using mp_push_back = /* ... */;
-
-template <class L, class T>
-using mp_replace_front = /* ... */;
-
-// ...
-```
-
-```cpp
-template <class L>
-using mp_second = pack_impl<L>.[1];
-
-template <class L>
-using mp_third = pack_impl<L>.[2];
-
-template <class L, class... Ts>
-using mp_push_front = apply_pack_impl<
-    L, Ts..., pack_impl<L>.[:]...>;
-
-template <class L, class... Ts>
-using mp_push_back = apply_pack_impl<
-    L, pack_impl<L>.[:]..., Ts...>;
-
-template <class L, class T>
-using mp_replace_front = apply_pack_impl<
-    L, T, pack_impl<L>.[1:]...>;
-```
-:::
 
 ## Implementing variant
 
 While most of this paper has dealt specifically with making a better `tuple`,
 the features proposed in this paper would also make it much easier to implement
-`variant` as well. One of the difficulties with `variant` implementions is that
+`variant` as well. One of the difficulties with `variant` implementations is that
 you need to have a `union`. With this proposal, we can declare a variant pack
 too. 
 
@@ -1547,4 +1813,12 @@ references:
     issued:
         - year: 2019
     URL: https://youtu.be/kjQXhuPX-Ac?t=389
+  - id: EWGI.Belfast
+    citation-label: EWGI.Belfast
+    title: "EWGI Discussion of P1858R0"
+    author:
+        - family: EWGI
+    issued:
+        - year: 2019
+    URL: http://wiki.edg.com/bin/view/Wg21belfast/P1858
 ---
