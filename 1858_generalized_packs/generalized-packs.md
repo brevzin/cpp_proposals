@@ -18,7 +18,6 @@ been made to this paper.
 - The overloadable `operator...()` and `using ...` were removed. Pack expansion
 is now driven through structured bindings, which are extended on the library
 side, rather than introducing an extra language feature.
-- Introduction of pack literals for types and values.
 - Discussion of functions returning packs - no longer being proposed due to
 ambiguity of what it actually could mean.
 
@@ -71,11 +70,22 @@ here [@Calabrese.Argot].
 
 This paper attempts to provide a solution to these problems, building on the work
 of prior paper authors. The goal of this paper is to provide a better
-implementation for a library `tuple`, one that ends up being much easier to
+implementations for a library `tuple` and `variant`, ones that ends up being
+much easier to
 implement, more compiler friendly, and more ergonomic. The paper will piecewise
-introduce the necessary langauge features, increasing in complexity as it goes. 
+introduce the necessary language features, increasing in complexity as it goes,
+and is divided into two broad sections:
 
-# The Tuple Example
+- introducing the ability to declare packs in more places and to index into them
+- introducing the ability to convert types to packs and to index into them
+
+# Packs, packs, packs
+
+This section will propose several new language features, with the motivating
+example being a far simpler implementation of `tuple`, but which are generally
+applicable to all uses of variadic templates in C++ today.
+
+## Member packs
 
 This paper proposes the ability to declare a variable pack wherever we can declare
 a variable today:
@@ -106,12 +116,12 @@ xstd::tuple y{1, 2, 3};
 
 ## Empty variable pack
 
-One question right off the back: what does `xstd::tuple<> t;` mean? The same way 
+What does `xstd::tuple<> t;` mean here? The same way 
 that an empty function parameter pack means a function taking no arguments, an
 empty member variable pack means no member variables. `xstd::tuple<>` is an empty 
 type. 
 
-## Constructors
+## Constructor and initializer packs
 
 But `tuple` has constructors. `tuple` has _lots_ of constructors. We're not going
 to go through all of them in this paper, just the interesting ones. But let's 
@@ -214,73 +224,193 @@ namespace std {
 }
 ```
 
-This is a lot nicer than status quo.
-
-## Extending Structured Bindings
-
-If we implement `tuple` as:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    struct tuple {
-        Ts... elems;
-    };
-}
-```
-
-then structured bindings [@P0144R2] works out of the box. And maybe there's an argument to
-be made that with this proposal, `tuple`'s members _should_ be public in the 
-same way that `pair`'s are. But how do we opt in to structured bindings if
-`elems` were private? We need three things: `tuple_size`, `tuple_element`, and
-`get`. `tuple_element` was just presented, `tuple_size` is straightforward,
-and we could add `get` as a member:
+And a member `get`:
 
 ```cpp
 namespace xstd {
     template <typename... Ts>
     class tuple {
-        Ts... elems;
     public:
-        template <size_t I> requires I < sizeof...(Ts)
-        auto get() & -> Ts...[I]& { return elems...[I]; }
-        
-        // + overloads for const&, &&, const&&
+        template <size_t I>
+        auto get() const& -> Ts...[I] const& {
+            return elems...[I];
+        }
+    
+    private:
+        Ts... elems;
     };
 }
 ```
 
-From here on out, I will only provide the `const&` overload of `get()` in all
-examples.
+This is a lot nicer than status quo. Consider just the implementation complexity
+difference between these two versions (where the status quo is taken from the
+libc++ implementation). I'm including just the pieces I've shown up 'til now:
+the default constructor, n-ary converting constructor, `pair` converting
+constructor, and the structured bindings opt-in as a member.
 
-## Pack aliases and a smaller opt-in to structured bindings
+When considering the differences below, don't just look at the difference
+in number of lines. Consider also the difference in complexity. You almost don't
+even really have to think about how to implement the "proposed" version, whereas
+the status quo, you really have to plan quite carefully and think a lot at
+every step of the way.
+
+Also I'm cheating a little and using Boost.Mp11 for pack indexing. 
+
+::: tonytable
+
+### Status Quo
+```cpp
+template <typename...> class tuple;
+
+template <typename... Ts>
+struct std::tuple_size<tuple<Ts...>>
+    : integral_constant<size_t, sizeof...(Ts)>
+{ };
+
+template <size_t, typename... Ts>
+struct std::tuple_element<I, tuple<Ts...>>
+    requires (I < sizeof...(Ts))
+{
+    using type = mp_at_c<I, mp_list<Ts...>>;
+};
+
+template <size_t Idx, typename T>
+class tuple_leaf {
+    [[no_unique_address]] T value;
+    template <typename...> friend class tuple;
+    
+public:
+    constexpr tuple_leaf()
+        requires std::is_default_constructible<T>
+      : value()
+    { }
+    
+    template <typename U>
+    constexpr tuple_leaf(std::in_place_t, U&& u)
+        : value(std::forward<U>(u))
+    { }
+};
+
+template <typename Indices, typename... Ts>
+class tuple_impl;
+
+template <size_t... Is, typename... Ts>
+class tuple_impl<index_sequence<Is...>, Ts...>
+    : public tuple_leaf<Is, Ts>...
+{
+public:
+    tuple_impl() = default;
+    
+    template <std::constructible<Ts>... Us>
+        requires (sizeof...(Us) > 1 ||
+                !std::derived_from<
+                    std::remove_cvref_t<Us...[0]>, 
+                    tuple_impl>)
+    constexpr tuple_impl(Us&&... us)
+        : tuple_leaf<Is, Ts>(
+            std::in_place, std::forward<Us>(us))...
+    { }
+    
+    template <std::convertible_to<
+                mp_at_c<0, mp_list<Ts...>> T,
+              std::convertible_to<
+                mp_at_c<1, mp_list<Ts...>> U>
+        requires (sizeof...(Ts) == 2)
+    constexpr tuple_impl(std::pair<T, U> const& p)
+        : tuple_impl(p.first, p.second)
+    { }
+};
+
+template <typename... Ts>
+class tuple : public tuple_impl<
+    make_index_sequence<sizeof...(Ts)>, Ts...>
+{   
+public:
+    using tuple::tuple_impl::tuple_impl;
+
+    template <size_t I>
+    constexpr auto get() -> tuple_element_t<I, tuple> const&  {
+        using leaf = tuple_leaf<I, tuple_element_t<I, tuple>>;
+        return static_cast<leaf const&>(*this).value;
+    }
+};
+```
+
+### Proposed
+```cpp
+template <typename...> class tuple;
+
+template <typename... Ts>
+struct tuple_size<tuple<Ts...>>
+    : integral_constant<size_t, sizeof...(Ts)>
+{ };
+
+template <size_t I, typename... Ts>
+struct tuple_element<I, tuple<Ts...>>
+    requires (I < sizeof...(Ts))
+{
+    using type = Ts...[I];
+};
+
+template <typename... Ts>
+class tuple {
+    [[no_unique_address]] Ts... elems;
+
+public:
+    constexpr tuple()
+        requires (std::default_constructible<Ts> && ...)
+      : elems()...
+    { }
+
+    template <std::constructible<Ts>... Us>
+        requires (sizeof...(Us) > 1 ||
+                !std::derived_from<
+                    std::remove_cvref_t<Us...[0]>, 
+                    tuple>)
+    constexpr tuple(Us&&... us)
+        : elems(std::forward<Us>(us))...
+    { }
+
+    template <std::convertible_to<Ts...[0]> T,
+              std::convertible_to<Ts...[1]> U>
+        requires (sizeof...(Ts) == 2)
+    constexpr tuple(std::pair<T, U> const& p)
+        : elems...[0](p.first)
+        , elems...[1](p.second)
+    { }
+    
+    template <size_t I>
+    constexpr auto get() const& -> Ts...[I] const& {
+        return elems...[I];
+    }    
+};
+```
+:::
+
+## Extending Structured Bindings
 
 Currently, there are three kinds of types that can be used with structured
-bindings:
+bindings [@P0144R2]:
 
-1. Arrays (specifically `T[N]` and not `std::array<T, N>`). Note that here we
-have `arr[i]` and `arr.[i]` mean the same thing, except that the latter requires
-`i` to be a constant expression.
+1. Arrays (specifically `T[N]` and not `std::array<T, N>`).
 
 2. Tuple-like: those tupes that specialize `std::tuple_size`, `std::tuple_element`,
-and either provide a member or non-member `get()`. This paper already suggests
-extending the two type traits to look for member pack alias named `tuple_element`.
+and either provide a member or non-member `get()`.
 
 3. Types where all of there members are public members of the same class
 (approximately).
 
 The problem with the tuple-like protocol here is that we need to instantiate
-a lot of templates. Assuming [@P1061R1] gets approved, a declaration like:
+a lot of templates. A declaration like:
 
 ```cpp
-auto [...elems] = tuple;
+auto [v@~1~@, v@~2~@, ..., v@~N~@] = tuple;
 ```
 
 requires `2N+1` template instantiations: one for `std::tuple_size`, `N` for
-`std::tuple_element`, and another `N` for all the `get`s). That seems wasteful, especially when the
-structured binding rules already tie into these library type traits.
-
-There was a proposal to reduce the customization mechanism by
+`std::tuple_element`, and another `N` for all the `get`s). That's pretty
+wasteful. Additionally, the tuple-like protocol is tedious for users to
+implement.  There was a proposal to reduce the customization mechanism by
 dropping `std::tuple_element` [@P1096R0], which was... close. 13-7 in San Diego.
 
 This proposal reduces the customization surface in a different way
@@ -299,8 +429,8 @@ namespace xstd {
 ```
 
 The advantage here is that the `tuple_element` pack provides both the size
-_and_ all the types. We can change add specializations to `std::tuple_size` and
-`std::tuple_element` to understand this:
+_and_ all the types. We could then change add specializations to `std::tuple_size`
+and `std::tuple_element` to understand this:
 
 ```cpp
 template <typename T>
@@ -320,14 +450,17 @@ struct tuple_element<I, T>
 The extra preceding `...`s in the above code block are not typos, and will be
 explained in a [later section](#disambiguating-dependent).
 
-At this point, we've reduced the structured bindings protocol surface (`xstd::tuple`
-did not have to specialize anything), but we still require all those extra
-instantiations. A better way would be to have the language rules for structured
-bindings themselves look directly for a member pack alias `tuple_element`.
-That is, a type now is tuple-like if it _either_:
+At this point, we'd reduce the structured bindings protocol surface
+(`xstd::tuple` did not have to specialize anything), so this is arguably better.
+You don't have to leave your own namespace at all. But we still require all
+those extra instantiations. 
 
-a. Has member pack alias `tuple_element`, which case its size is the size of that
-pack and the element types are the constituents of that pack.
+What this paper proposes instead is to extend the language rules for structured
+bindings themselves to look directly for a member pack alias named
+`tuple_element`. That is, a type now is tuple-like if it _either_:
+
+a. Has member pack alias `tuple_element`, in which case its size is the size of
+that pack and the element types are the constituents of that pack.
 b. Has specialized `std::tuple_size` and `std::tuple_element`, as status quo.
 
 This library API change would allow for a complete structured bindings opt-in
@@ -342,29 +475,251 @@ namespace xstd {
         using ...tuple_element = Ts;
     
         template <size_t I> requires I < sizeof...(Ts)
-        auto get() const& -> Ts...[I] const& {
+        auto get() & -> Ts...[I] & {
             return elems...[I];
         }
+        
+        // + other overloads of get()
     };
+}    
+
+int i = 42;
+tuple<int, int&> t(4, i);
+
+// proposed okay with only the library code shown above
+// no further specializations necessary
+// decltype(val) is int
+// decltype(ref) is int&
+auto&& [val, ref] = t;
+```
+
+Structured binding declarations for this new kind of tuple would only require
+`N` template instantiations (the `N` invocations to the member or non-member
+`get`), saving us a full `N+1` instantiations (the ones for `std::tuple_size`
+and `std::tuple_element`).
+
+## Packs at block scope
+
+This section has thus far proposed the ability to declare member variable packs
+and member alias packs, which can greatly help implementing a type like `tuple`.
+For thoroughness, this paper also proposes the ability to declare variable
+packs and alias packs at block scope. That is:
+
+```cpp
+template <typename... Ts>
+void foo(Ts&&... ts) {
+    using ...decayed = std::decay_t<Ts>;
+    auto... copies = std::forward<Ts>(ts);
 }
 ```
 
-Which now requires `N+1` fewer template instantiations to unpack.
+## Implementing variant
+
+The ability to declare a member pack and index into packs would also make it
+substantially easier to implement `variant`. In the same way that this paper
+is proposing allowing a member pack of a class type:
+
+```cpp
+template <typename... Ts>
+struct tuple {
+    Ts... vals;
+};
+```
+
+This paper also proposes allowing a member pack of a union type:
+
+```cpp
+template <typename... Ts>
+union variant {
+    Ts... alts;
+};
+```
+
+This doesn't just fall out naturally in the same way the class type case does.
+Packs behave as a single entity in the language today, and yet here we would
+need to have a part of an entity - we wouldn't initialize the pack `alts...`, 
+we would necessarily only have to initialize exactly one of element of that
+pack. But I don't think that's a huge stretch. And it makes for a substantial
+improvement in how user-friendly the implementation is. 
+
+As with the earlier tuple example, with the proposed language changes, this is
+something you can just sit down and implement. It practically rolls off the
+page, because the language would let you express your intent better. With the
+status quo, this is just a lot more design work in order to eventually produce
+a lot more code that is harder to understand and takes longer to compile.
+
+The following is an implementation solely of the default
+constructor, the destructor, and `get_if`:
+
+::: tonytable
+### Status Quo
+```cpp
+template <size_t I, typename... Ts>
+union impl { };
+
+template <size_t I, typename T, typename... Ts>
+union impl<I, T, Ts...>
+{
+public:
+    template <typename... Args>
+    constexpr impl(in_place_index_t<0>, Args&&... args)
+        : head(std::forward<Args>(args)...)
+    { }
+    
+    template <size_t J, typename... Args>
+    constexpr impl(in_place_index_t<J>,
+            Args&&... args)
+        : tail(in_place_index<J-1>,
+            std::forward<Args>(args)...)
+    { }
+    
+    ~impl()
+        requires std::is_trivially_destructible_v<T>
+        = default;
+    ~impl() { }
+    
+    auto get(in_place_index_t<0>) -> T& {
+        return head;
+    }
+    template <size_t J>
+    auto get(in_place_index_t<J>) -> auto& {
+        return tail.get(in_place_index<J-1>);
+    }
+private:
+    char _;
+    T head;
+    impl<I+1, Ts...> tail;
+};
+
+template <typename... Ts>
+class variant {
+    int index_;
+    impl impl_;
+
+public:
+    constexpr variant()
+        requires std::default_constructible<
+            mp_at_c<0, mp_list<Ts...>>
+        : index_(0)
+        , impl_(in_place_index<0>)
+    { }
+    
+    ~variant()
+      requires (std::is_trivially_destructible_v<Ts> && ...)
+      = default;
+    ~variant() {
+        mp_with_index<sizeof...(Ts)>(index_,
+            [](auto I) {
+                auto& alt = impl.get(in_place_index<I>);
+                std::destroy_at(&alt);
+            });
+    }
+};
+
+template <size_t I, typename... Types>
+constexpr variant_alternative_t<I, variant<Types...>>*
+get_if(variant<Types...>* v) noexcept {
+    if (v->index_ == I) {
+        return &v->impl.get(in_place_index<I>);
+    } else {
+        return nullptr;
+    }
+}
+
+```
+
+### Proposed
+```cpp
+template <typename... Ts>
+class variant {
+    int index_;
+    union {
+        Ts... alts_;
+    };
+public:
+    constexpr variant()
+      requires std::default_constructible<Ts...[0]>
+      : index_(0)
+      , alts_...[0]()
+    { }
+
+    ~variant()
+      requires (std::is_trivially_destructible_v<Ts> && ...)
+      = default;
+    ~variant() {
+        mp_with_index<sizeof...(Ts)>(index_,
+            [](auto I){
+                std::destroy_at(&alts_...[I]);
+            });
+    }
+};
+
+template <size_t I, typename... Types>
+constexpr variant_alternative_t<I, variant<Types...>>*
+get_if(variant<Types...>* v) noexcept {
+    if (v->index_ == I) {
+        return &v->alts_...[I];
+    } else {
+        return nullptr;
+    }
+}
+```
+:::
+
+## Other Examples
+
+### Enumerating over a pack
+
+Pack indexing would also allow for the ability to enumerate over a pack, by
+iterating over the indices:
+
+```cpp
+template <typename... Ts>
+void enumerate(Ts... ts)
+{
+    template for (constexpr auto I : views::iota(0u, sizeof...(Ts))) {
+        cout << I << ' ' << ts...[I] << '\n';
+    }
+}
+```
+
+### `std::integer_sequence` and structured bindings
+
+There is a paper in the pre-Cologne mailing specifially wanting to opt
+`std::integer_sequence` into expansion statements [@P1789R0]. We could instead
+be able to opt it into structured bindings:
+
+```cpp
+template <typename T, T... Values>
+struct integer_sequence {
+    using ...tuple_element = integral_constant<T, Values>;
+    
+    template <size_t I>
+        requires (I < sizeof...(Values))
+    constexpr auto get() const -> integral_constant<T, Values...[I]> {
+        return {};
+    }
+};
+```
 
 
 # Expanding a type into a pack
 
 At this point, this paper has introduced:
 
-* the ability to declare a member variable pack and a member alias pack
-* the ability to index into a pack
+* the ability to declare a packs in more places (member variable and member 
+alias packs as well as block scope variable and alias packs)
+* the ability to index into a pack using the `pack...[I]` syntax
 * an extension of structured bindings to look for a specific member alias pack
-named `tuple_element`
+named `tuple_element`, to reduce the API footprint.
 
-This paper defines the syntax `T...[I]` to be indexing into a pack, `T`.
+These, in of themselves, provide a lot of value. But I think there's another
+big step that we could take that could provide a lot of value. This paper
+has proposed the syntax `T...[I]` to be indexing into a pack, `T`.
 But there's a lot of similarity between a pack of types and a tuple - which is
-a pack of types in single type form. And while we can index into a tuple (that's
-what `tuple_element` does), the syntax difference between the two is rather large:
+basically a pack of types in single type form. And while we can index into a tuple
+(that's what `tuple_element` does), the syntax difference between the two is
+rather large:
 
 <table>
 <tr><th></th><th>Pack</th><th>Tuple</th></tr>
@@ -407,6 +762,9 @@ auto [...elems] = tuple;
 // pack indexing as usual
 auto first = elems...[0];
 ```
+
+Note also that [@P1045R1] would allow adding an `operator[]` to `tuple` such
+that `tuple[0]` actually works. 
 
 This paper proposes a more direct mechanism to accomplish this.
 
@@ -499,8 +857,7 @@ tuple.[I]
 </tr>
 </table>
 
-This means we can take our tuple implementation from the previous section (with
-an added constructor):
+This means we can take our tuple implementation from the previous section:
 
 ```cpp
 namespace xstd {
@@ -530,9 +887,10 @@ auto sum = (vals.[:] + ...);
 assert(sum == 6);
 ```
 
-Here `vals.[0]` is the first structured binding, which for a tuple-like type
+Here `vals.[0]` is the first structured binding, which for this tuple-like type
 means `vals.get<0>()`. `vals.[:]` is the pack consisting of all of the
-structured bindings, which means the pack `{vals.get<0>(), vals.get<1>(), vals.get<2>()}`.
+structured bindings, which means the pack
+`{vals.get<0>(), vals.get<1>(), vals.get<2>()}`.
 
 ## Syntax-free unpacking?
 
@@ -617,16 +975,19 @@ class Vector {
 public:
     // I want this to be constructible from exactly N T's. The type T[N]
     // expands directly into that
-    Vector(T[N].[:]... vals);
-    
-    // ... which possibly reads better if you take an alias first
-    using D = T[N];
-    Vector(D.[:]... vals);
+    Vector(T[N]::[:]... vals);
 };
 ```
 
+The type `Vector<int, 3>` will have a _non-template_ constructor that takes
+three `int`s. This works because `int[3]` is a type that can be used with
+structured bindings (being an array), so `int[3]::[:]` is the pack of types 
+that would be the types of the bindings (i.e. `{int, int, int}`). Which then
+expands into three `int`s. 
+
 Note that this behaves differently from the homogenous variadic function packs
-paper [@P1219R1]:
+paper [@P1219R1] (I'm not claiming one behavior is better than the other -
+just noting the difference):
 
 ```cpp
 template <typename T, int N>
@@ -673,6 +1034,12 @@ constexpr decltype(auto) better_visit(Args&&... args) {
         std::forward<Args...[:-1]>(args...[:-1])...);
 }
 ```
+
+The seemingly excessive amount of dots is actually necessary. `args` is a pack,
+`args...` unpacks it, `args...[:-1]` adds a layer of pack on it again - so it
+again needs to be expanded. Hence, `args...[:-1]...` is a pack expansion
+consisting of all but the last element of the pack (which would be ill-formed
+for an empty pack). 
 
 It would also allow for a single-overload variadic fold:
 
@@ -1186,253 +1553,7 @@ Admittedly, six `.`s is a little cryptic. But is it any worse than the current
 implementation?
 
 
-# Introducing packs in more contexts
-
-[@P0780R2] allowed pack expansion in lambda init-capture:
-
-```cpp
-template <typename... T>
-void f(T... t)
-{
-    [...u=t]{};
-}
-```
-
-If you think of lambda init-capture as basically a variable declaration with
-implicit `auto`, then expanding out that capture gets us to a variable
-declaration pack:
-
-```cpp
-auto ...u = t;
-```
-
-This paper proposes actually allowing that declaration form.
-
-That is, a variable pack declaration takes as its initializer an unexpanded pack.
-Which could be a normal pack, or it could be a pack-like type with packness added to it:
-
-```cpp
-xstd::tuple x{1, 2, 3};
-
-// ill-formed, x is not an unexpanded pack
-auto ...bad = x;
-
-// proposed ok
-auto ...good = x.[:]; // a pack of {1, 2, 3}
-
-// proposed ok
-auto ...doubles = x.[:] * 2; // a pack of {2, 4, 6}
-```
-
-The same idea can be used for declaring a pack alias (as was already shown earlier in this paper):
-
-```cpp
-template <typename... T>
-struct X {
-    // proposed ok
-    using ...pointers = T*;
-};
-
-// ill-formed, not an unexpanded pack
-using ...bad = xstd::tuple<int, double>;
-
-// proposed ok
-using ...good = xstd::tuple<int, double>::[:]; // a pack of {int, double}
-```
-
-## Pack literals with types
-
-As shocking as it might be to hear, there are in fact other types in the standard
-library that are not `std::tuple<Ts...>`. We should probably consider how to fit
-those other types into this new world.
-
-It might seem strange, in a paper proposing language features to make it easier
-to manipulate packs, to start with `tuple` (the quintessential pack example) and
-then transition to `pair` (a type that has no packs). But `pair` is in many
-ways just another `tuple`, so it should be usable in the same ways. If we will
-be able to inline unpack a tuple and call a function with its arguments, it would
-be somewhat jarring if we couldn't do the same thing with a `pair`. So how do we?
-
-The previous sections built up how we can implement `tuple` and opt it into
-structured bindings with less code and more efficiently. We could do that with
-`pair` as well, on top of `tuple`:
-
-```cpp
-namespace xstd {
-    template <typename T, typename U>
-    struct pair {
-        T first;
-        U second;
-        
-        using ...tuple_element = tuple<T, U>::[:];
-        
-        template <size_t I>
-        auto get() const& -> tuple_element...[I] const&
-        {
-            if constexpr (I == 0) return first;
-            else if constepxr (I == 1) return second;
-        }
-    };
-}
-```
-
-The `get` implementation is a little awkward, but the way we're declaring
-`tuple_element` is even more awkward. We have to instantiate a tuple just
-to unpack it to get a type? Well, we don't need full blown tuple, we just
-need a type list:
-
-```cpp
-template <typename... Ts>
-struct typelist {
-    using ...types = Ts;
-};
-
-namespace xstd {
-    template <typename T, typename U>
-    struct pair {
-        using ...tuple_element = typelist<T, U>::...types;
-    };
-}
-```
-
-Is that better? I don't think so. Really, we just want to be able to introduce
-a pack on the fly. A pack consisting of specific types.
-
-Following the insight into how [pack introducers](#introducers) are used in
-the language, this paper proposes allowing the introduction of a pack of types
-as:
-
-```cpp
-namespace xstd {
-    template <typename T, typename U>
-    struct pair {
-        using ...tuple_element = ...<T, U>;
-    };
-}
-```
-
-[@P0341R0] used the same syntax. 
-
-Such a pack literal could also be used to provide a default template argument
-for a template type parameter pack.
-
-```cpp
-template <typename... Ts = ...<int>>
-struct foo();
-
-foo(); // calls foo<int>.
-```
-
-## Pack literals with values
-
-Where types use `<>`s, it makes sense for values to use `{}`s. That is:
-
-```cpp
-int... squares = ...{1, 4, 9};
-```
-
-Note that there is no `std::initializer_list<int>` here, the expression on the
-right is much closer to a `tuple<int, int, int>` than a `std::initializer_list`.
-
-This does introduce some more added subtletly with initialization:
-
-```cpp
-auto    a = {1, 2, 3}; // a is a std::initializer_list<int>
-auto... b = {1, 2, 3}; // b is a pack of int's
-```
-
-Those two declarations are very different. But also, they look different -
-one has `...` and the other does not. One looks like it is declaring an object
-and the other looks like it is declaring a pack. This doesn't seem inherently
-problematic.
-
-
-## Implementing variant
-
-While most of this paper has dealt specifically with making a better `tuple`,
-the features proposed in this paper would also make it much easier to implement
-`variant` as well. One of the difficulties with `variant` implementations is that
-you need to have a `union`. With this proposal, we can declare a variant pack
-too. 
-
-Here are some parts of a variant implementation, to demonstrate what that might
-look like. Still need _some_ metaprogramming facilities, but it's certainly a
-a lot easier.
-
-```cpp
-template <typename... Ts>
-class variant {
-    int index_;
-    union {
-        Ts... alts_;
-    };
-public:
-    constexpr variant() requires std::default_constructible<Ts...[0]>
-      : index_(0)
-      , alts_...[0]()
-    { }
-
-    ~variant() requires (std::is_trivially_destructible<Ts> && ...) = default;
-    ~variant() {
-        mp_with_index<sizeof...(Ts)>(index_,
-            [](auto I){ destroy_at(&alts_...[I]); });
-    }
-};
-
-template <size_t I, typename T>
-struct variant_alternative;
-
-template <size_t I, typename... Ts>
-    requires (I < sizeof...(Ts))
-struct variant_alternative<I, variant<Ts...>> {
-    using type = Ts...[I];
-};
-
-template <size_t I, typename... Types>
-constexpr variant_alternative_t<I, variant<Types...>>*
-get_if(variant<Types...>* v) noexcept {
-    if (v.index_ == I) {
-        return &v.alts_...[I];
-    } else {
-        return nullptr;
-    }
-}
-```
-
-Directly indexing into the union variant members makes the implementation much
-easier to write and read. Not needing a recursive union template is a nice bonus.
-
-## Enumerating over a pack
-
-As another example, let's say we want to take a parameter pack and print its
-contents along with an index. Here are some ways we could do that with this
-proposal (assuming expansion statements):
-
-```cpp
-// iterate over the indices, and index into the pack
-template <typename... Ts>
-void enumerate1(Ts... ts)
-{
-    for ... (constexpr auto I : view::iota(0u, sizeof...(Ts))) {
-        cout << I << ' ' << ts...[I] << '\n';
-    }
-}
-
-// construct a new pack of tuples
-template <typename... Ts>
-void enumerate2(Ts... ts)
-{
-    constexpr auto indices = view::iota(0u, sizeof...(Ts));
-    auto enumerated = tuple{tuple{indices.[:], ts}...};
-    for ... (auto [i, t] : enumerated) {
-        cout << i << ' ' << t << '\n';
-    }
-}
-```
-
-
-
-## What about Reflection?
+# What about Reflection?
 
 Two recent reflection papers ([@P1240R0] and [@P1717R0]) provide solutions for
 some of the problems this paper is attempting to solve. What follows is my best
@@ -1440,6 +1561,9 @@ attempt to compare the reflection solutions to the generalized pack solutions
 presented here. I am not entirely sure about the examples on the left, but
 hopefully they are at least close enough to correct to be able to evaluate the
 differences.
+
+Note that one notable example missing here is a constructor for `tuple` - I
+really don't know how to implement any of those constructors on top of reflection.
 
 ::: tonytable
 ### Reflection
@@ -1541,30 +1665,26 @@ void call_f(Tuple const& t) {
 :::
 
 It's not that I think that the reflection direction is bad, or isn't useful. Far
-from. Indeed, this paper will build on it shortly. It's just that dealing with
-`tuple` is, in no small part, and ergonomics problem and I don't think any
-reflection proposal that I've seen so far can adequately address that. This is
-fine - sometimes we need a specific language feature for a specific use-case.
+from. It's just that dealing with `tuple` is, in no small part, and ergonomics
+problem and I don't think any reflection proposal that I've seen so far can
+adequately address that: neither from the perspective of declaring a pack (as
+in for `tuple` or `variant`) nor from the perspective of unpacking a tuple
+into a function or other expression.
 
-# The Pair Example and others
+If reflection can produce something much closer to what is being proposed here,
+I would happily table this proposal. But it seems to me that it's fairly far
+off, and the functionality presented herein would be very useful. 
 
-As shocking as it might be to hear, there are in fact other types in the standard
-library that are not `std::tuple<Ts...>`. We should probably consider how to fit
-those other types into this new world.
+# What about `std:pair`?
 
-## `std::pair`
+As shocking as it might be to hear, there are in fact other types in the
+standard library that are neither `std::tuple<Ts...>` nor `std::variant<Ts...>`.
+We should probably consider how to fit those other types into this new world.
 
-It might seem strange, in a paper proposing language features to make it easier
-to manipulate packs, to start with `tuple` (the quintessential pack example) and
-then transition to `pair` (a type that has no packs). But `pair` is in many
-ways just another `tuple`, so it should be usable in the same ways. If we will
-be able to inline unpack a tuple and call a function with its arguments, it would
-be somewhat jarring if we couldn't do the same thing with a `pair`. So how do we?
-
-In the previous section, this paper laid out proposals to declare a variable pack,
-to provide for an alias pack and `operator...`, to index into each, and connect
-all of this into structured bindings. How would this work if we do _not_ have
-a pack anywhere?
+The nice thing about implementing `tuple` with the new structured bindings
+direction is that because everything `tuple` is already a pack, staying in the
+pack world remains very easy. But `pair` doesn't have any packs, so it is
+missing out:
 
 ```cpp
 namespace xstd {
@@ -1573,125 +1693,54 @@ namespace xstd {
         T first;
         U second;
         
-        using ... = ???;
-        operator ??? ... () { return ???; }
-    };
-}
-```
-
-The direction this paper proposes is a recursive one. I'm taking two ideas that
-are already present in the language and merging them:
-
-- `operator->()` recurses down until it finds a pointer
-- Expansion statements [@P1306R1] can take either an unexpanded pack, a type
-that adheres to the structured bindings protocol, or a constexpr range .
-
-In the same vein, this paper proposes that both the pack operator and pack
-aliases can be defined in terms of an unexpanded pack or a type that defines
-one of these aliases:
-
-
-```cpp
-namespace xstd {
-    template <typename T, typename U>
-    struct pair {
-        T first;
-        U second;
+        using ...tuple_element = ????;
         
-        using ... = tuple<T, U>;
-        tuple<T&, U&> operator ... () & { return {first, second}; }
-    };
-}
-```
-
-With the definition of `xstd::tuple` presented in this paper, this is now a light
-type to instantiate (or at least, as light as possible), so the extra overhead
-might not be a concern.
-
-In the following example:
-
-```cpp
-void f(int&, char&);
-xstd::pair<int, char> p{1, 'x'};
-f(p.[:]..);
-```
-
-`p.[:]...` will invoke `p.operator...()`, which gives a `tuple<int&, char&>`. That
-is not a pack, so we invoke its `operator...()`, which gives us a pack of `int&`
-and `char&`. 
-
-A different, non-recursive approach would be to use the reflection facilities
-introduced in [@P1240R0] and allow the returning of a consteval range:
-
-```cpp
-namepsace xstd {
-    template <typename T, typename U>
-    struct pair {
-        T first;
-        U second;
-        
-        using ... = typename(std::vector{reflexpr(T), reflexpr(U)});
-        
-        consteval auto operator...() const {
-            return std::vector{
-                reflexpr(first),
-                reflexpr(second)
-            };
+        template <size_t I>
+        auto get() const& -> tuple_element...[I] const&
+        {
+            if constexpr (I == 0) return first;
+            else if constepxr (I == 1) return second;
         }
+    };
 }
 ```
 
-In the above example, `f(p.[:]...)` would evaluate as 
-`f(p.unreflexpr(p.operator...())...)`.
+How would we fill in the `????`s here? We need a pack there.
 
-It's not clear if this direction will actually work, since you would have to
-disambiguate between the case where you want the identifiers and the case where
-actually you want the `meta::info` objects themselves. Let's call it an open
-question.
+We could implement this in terms of tuple. `tuple<T, U>::[:]` is a pack of
+two types, `T` and `U`. This works directly with the proposal as presented. It's
+also a little odd, and indirect. But it works.
 
-Of course, for this particular example, both the pack alias and operator could be
-defaulted.
+We could also come up with a way to introduce the pack we need directly, in-line,
+by way of a pack literal. Borrowing from the insight about how
+[pack introducers](#introducers) work, this would either be `...<T, U>` (using
+the syntax from [@P0341R0] with the extra preceding ellipsis) or `...{T, U}`
+(which would be in line with how gcc reports template errors when packs are
+involved).
 
-## `std::integer_sequence` and Ranges
-
-There is a paper in the pre-Cologne mailing specifially wanting to opt
-`std::integer_sequence` into expansion statements [@P1789R0]. We could instead
-be able to opt it into the new pack protocol:
-
-```cpp
-template <class T, T... Ints>
-struct integer_sequence {
-    std::integral_constant<T, Ints> operator ...() const {
-        return {};
-    }
-};
-```
-
-One of the things we could have built on top of expansion statements was to
-implement tuple swap like so [@Stone.Swap]:
+A pack literal direction would also lead to a pack literal of values, which
+would add more fun with initialization:
 
 ```cpp
-template <class... TYPES>
-constexpr
-void tuple<TYPES...>::swap(tuple& other)
-   noexcept((is_nothrow_swappable_v<TYPES> and ...))
-{
-   for...(constexpr size_t N : view::iota(0u, sizeof...(TYPES))) {
-      swap(get<N>(*this), get<N>(other));
-   }
-}
+auto    a = {1, 2, 3}; // a is a std::initializer_list<int>
+auto... b = {1, 2, 3}; // b is a pack of int's
 ```
 
-But what if I wanted to unpack a range into a function? It's doesn't seem so far 
-fetched that if you can use an expansion statement over a range (which requires
-a known fixed size) that you should be able to use other language constructs that
-also require a known fixed size: structured bindings and tuple unpacking:
+Those two declarations are very different. But also, they look different - one
+has `...` and the other does not. One looks like it is declaring an object and
+the other looks like it is declaring a pack. 
 
+Pack literals would also allow for adding default arguments to packs:
 
 ```cpp
-auto [a, b, c] = view::iota(0, 3); // maybe this should work
-foo(view::iota(0, 3).[:]...);      // ... and this too
+template <typename... Ts = ...<int>>
+void foo(Ts... ts = ...{0});
+
+foo(); // calls foo<int>(0);
 ```
+
+I'm not sure if this is sufficiently motivated to pursue, but would be curious
+to hear what people think about this matter. 
 
 # Proposal
 
@@ -1703,7 +1752,7 @@ the important notions.
 
 You can declare member variable packs, namespace-scope variable packs, and
 block-scope variable packs. You can declare alias packs. The initializer for a
-pack declaration has to be either an unexpanded pack or a _braced-init-list_.
+pack declaration has to be an unexpanded pack - which would then be expanded.
 
 These can be directly unpacked when in non-dependent contexts. 
 
