@@ -91,6 +91,80 @@ of safe ranges you can construct than _just_ the chosen six.
 
 This issue was first pointed out by Johel Ernesto Guerrero Peña in [@stl2.640].
 
+## Implementation Strategy
+
+A range is going to be safe if its iterators do not in any way refer to it. For
+the ranges in the working draft which are unconditionally safe, this follows
+directly from how they actually work. But for some other ranges, it might
+depend on implementation strategy. 
+
+Consider `transform_view`. What it has to do is apply some unary function to
+each element of the base view. Where does the function object live? It would
+refer to the parent:
+
+```cpp
+struct transform_view<View, Fun>::iterator {
+    iterator_t<View> base;
+    Fun& projection;
+};
+```
+
+or it could be owned by the iterator:
+
+```cpp
+struct transform_view<View, Fun>::iterator {
+    iterator_t<View> base;
+    Fun projection;
+};
+```
+
+The former implementation strategy would not be safe, but the latter would. Which
+to choose? The range-v3 implementation picks one or the other conditionally:
+
+```cpp
+template<typename T>
+using semiregular_box_t = meta::if_c<(bool)semiregular<T>, T, semiregular_box<T>>;
+
+template<typename T, bool IsConst = false>
+using semiregular_box_ref_or_val_t = meta::if_c<
+    (bool)semiregular<T>,
+    meta::if_c<IsConst || std::is_empty<T>::value, T, reference_wrapper<T>>,
+    reference_wrapper<
+        meta::if_c<IsConst, semiregular_box<T> const, semiregular_box<T>>>>;
+
+// in transform_view::iterator
+semiregular_box_ref_or_val_t<Fun, IsConst> fun_;
+```
+
+`semiregular_box<T>` is basically an `optional<T>` that is invokable.
+
+What this means is that if `T` neither `semiregular`  nor empty, and the
+`transform_view` is not `const`, then the iterator stores a `reference_wrapper<Fun>`.
+If that happens, then the transform view isn't safe. Otherwise, it is. We could
+then write:
+
+```cpp
+template <typename Rng, typename Fun>
+inline constexpr bool enable_safe_range<transform_view<Rng, Fun>> =
+    enable_safe_range<Rng> &&
+    !same_as<semiregular_box_ref_or_val_t<Fun>, reference_wrapper<T>>;
+```
+
+Note that the template parameter of `enable_safe_range` has its cv qualifiers
+stripped. In the range-v3 implementation, a `transform_view<Rng, Fun> const` would
+be a safe range if `Rng` were a safe range, regardless of `Fun`.
+
+But would we want to go this route? To do so, we would have to decide to either:
+
+1. Mandate that `transform_view::iterator` stores a
+`semiregular_box_ref_or_val_t<Fun, IsConst>` - which we currently do not specify.
+2. Allow implementations to give different answers to the question of which
+ranges are safe.
+
+Both are large design questions that are outside the scope of this paper - whose
+goal is merely to identify those ranges that can be made conditionally safe
+without having to delve into these questions. 
+
 # Proposal
 
 Several range adapters semantically behave as if they have a single member of
