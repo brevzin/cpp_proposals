@@ -1,6 +1,6 @@
 ---
 title: "A pipeline-rewrite operator"
-document: D2011R0
+document: P2011R0
 date: today
 audience: EWG
 author:
@@ -75,7 +75,8 @@ great benefits, including supporting containers of disparate types:
 ```c++
 QList<int> integers = get_integers();
 std::vector<int> twice;
-std::transform(begin(integers), end(integers), back_inserter(twice), double_values);
+std::transform(begin(integers), end(integers), back_inserter(twice),
+    [](int i){ return i*2; });
 ```
 
 Much of the standard library accepts "iterator pairs" as their representation of
@@ -96,7 +97,8 @@ an iterator and a sentinel, but that isn't relevant).
 ```c++
 QList<int> integers = get_integers();
 std::vector<int> twice;
-ranges::transform(integers, back_inserter(twice), double_values);
+ranges::transform(integers, back_inserter(twice),
+    [](int i){ return i*2; });
 ```
 
 Another idea introduced by Ranges is the composition of algorithms.
@@ -375,7 +377,9 @@ is a range that happens to be addable, that's ambiguous. One such type is
 it a partial call simply providing the initial value to the accumulator. You
 could work around this - either by not providing a default value for the initial
 value, or not providing a default value for the binary operator (or both). But
-either way, you need _some_ workaround.
+either way, you need _some_ workaround. range-v3 does not have a pipeable
+`accumulate`, but it only defaults the binary op and not the initial value -
+which itself prevents you from writing `accumulate(some_ints)`.
 
 Rather than committing to:
 
@@ -534,7 +538,8 @@ auto trim(std::string const& str) -> std::string
 ```
 
 The reversed lookup doesn't compile due to [stl2 #640](https://github.com/ericniebler/stl2/issues/640)
-but let's ignore that part for now. It's hard to interpret what's going on in
+(but will if [@P2017R0] is adopted), but let's ignore that part for now.
+It's hard to interpret what's going on in
 that second line due to the inside-out reading that is necessary - there's a lot
 of back and forth. With the pipeline rewrite operator, we could rewrite this
 function to be entirely left-to-right:
@@ -550,7 +555,28 @@ auto trim(std::string const& str) -> std::string
 
 This ordering is a more direct translation of the original thought process: we
 take our `string`, reverse it, find the first alpha character, then get the base
-iterator out of it. 
+iterator out of it.  In the above, `.` and `|>` have the same "precedence" - 
+the `.base()` bind to the entire expression to its left.
+
+To make the `ranges::find_if` algorithm work with the `|>` operator, we need
+to write this additional code:
+
+```c++
+// (This space intentionally left blank)
+```
+
+That's right! Nothing at all!
+
+Remember that the semantics of ``|>`` will *rewrite* the code:
+
+```c++
+// This:
+auto e = str |> views::reverse() |> ranges::find_if(isalpha) . base();
+// becomes this:
+auto e = ranges::find_if(views::reverse(str), isalpha).base();
+```
+
+That is, using ``|>`` is equivalent to the code not using the pipeline style.
 
 ### Using ``copy``
 
@@ -589,26 +615,6 @@ for the pipeline style, we just use ``|>``. That would look like this:
 std::vector<int> copies;
 get_integers() |> copy(back_inserter(copies));
 ```
-
-To make our ``copy`` algorithm work with the ``|>`` operator, we need to write
-this additional code:
-
-```c++
-// (This space intentionally left blank)
-```
-
-That's right! Nothing at all!
-
-Remember that the semantics of ``|>`` will *rewrite* the code:
-
-```c++
-// This:
-get_integers() |> copy(back_inserter(copies));
-// becomes this:
-copy(get_integers(), back_inserter(copies));
-```
-
-That is, using ``|>`` is equivalent to the code not using the pipeline style.
 
 ### ``transform``
 
@@ -1419,4 +1425,12 @@ references:
     issued:
         - year: 2016
     URL: https://isocpp.org/blog/2016/02/a-bit-of-background-for-the-unified-call-proposal
+  - id: P2017R0
+    citation-label: P2017R0
+    title: "Conditionally safe ranges"
+    author:
+        - family: Barry Revzin
+    issued:
+        - year: 2020
+    URL: https://wg21.link/p2017r0
 ---
