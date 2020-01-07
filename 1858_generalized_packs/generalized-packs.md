@@ -1,6 +1,6 @@
 ---
 title: Generalized pack declaration and usage
-document: D1858R1
+document: P1858R1
 date: today
 audience: EWG
 author:
@@ -15,11 +15,14 @@ R0 [@P1858R0] was presented in EWGI in Belfast [@EWGI.Belfast], where further
 work was encouraged (9-4-1-0-0). Since then, several substantial changes have
 been made to this paper.
 
-- The overloadable `operator...()` and `using ...` were removed. Pack expansion
-is now driven through structured bindings, which are extended on the library
-side, rather than introducing an extra language feature.
+- The overloadable `operator...()` and `using ...` were removed. 
+- Pack expansion is now driven through structured bindings, which are extended
+on the library side as well.
+- `constexpr` ranges removed from this paper, should be handled by expansion
+statements.
 - Discussion of functions returning packs - no longer being proposed due to
 ambiguity of what it actually could mean.
+- Discussion of pack literals.
 
 # Introduction and Motivation
 
@@ -1754,52 +1757,6 @@ You can declare member variable packs, namespace-scope variable packs, and
 block-scope variable packs. You can declare alias packs. The initializer for a
 pack declaration has to be an unexpanded pack - which would then be expanded.
 
-These can be directly unpacked when in non-dependent contexts. 
-
-You can declare packs within structured binding declarations (this paper may
-we well just subsume [@P1061R0]). 
-
-## Pack-like type
-
-To start with, structured bindings today works on three kinds of types:
-
-1. Arrays
-2. Tuple-Like types -- defined as types that satisfy `std::tuple_size<E>`,
-`std::tuple_element<i, E>`, and `get<i>()`. Note that this is a language feature
-that nevertheless has a library hook.
-3. Types that have all of their non-static data members in the same class. This
-one is a little fuzzy because it's based on accessibility.
-
-This paper proposes the notion of a _pack-like type_. A pack-like type:
-
-1. Is an array type
-2. Has one of:
-    a. an unnamed pack alias type that names a pack-like type or a pack
-    b. a pack operator that returns a pack-like type or a pack
-    
-   If any of these new special named members yields a reflection range, that range
-will be reified as appropriate before further consideration. If a type provides
-only a pack alias, it can be indexed into/unpacked as a type but not as a value.
- If a type provides only a pack operator, it can be indexed/unpacked as a value
-but not as a type.
-3. Is a Tuple-Like type (as per structured bindings)
-4. Is a constexpr range (the constexpr-ness is important because of the fixed
-size)
-5. Is a type that has all of its non-static data members in the same class (as
-per structured bindings)
-
-This paper proposes to redefine both structured bindings and expansion statements
-in terms of the pack-like type concept, unifying the two ideas. Any pack-like
-type can be expanded over or used as the right-hand side of a structured binding
-declaration.
-
-Any pack-like type can be indexed into, `T.[i]` will yield the `i`th type (if `T`
-is a type) or `i`th value (if `T` is a variable) of the type. Any pack like type
-can be sliced and unpacked via `T.[:]...` or with specific indices. 
-
-This also unifies the special unpacking rules in [@P1240R0]:
-a reflection range is a pack-like type, therefore it can be unpacked.
-
 ## Dependent packs
 
 Member packs and block scope packs can be directly unpacked
@@ -1812,6 +1769,85 @@ is a type or a template, a preceding `...` (or whatever alternate spelling)
 will identify the expression that
 follows it as a pack. If that entity is _not_ a pack, then
 the indexing or unpacking expression is ill-formed.
+
+Non-dependent packs do not need any disambiguation (the disambiguation is
+allowed, but unnecessary).
+
+## Structured Bindings
+
+This paper proposes both that:
+
+1. `std::tuple_size` and `std::tuple_element` add specializations that look
+for a member pack named `tuple_element`, and drive their answers from that.
+
+2. The tuple-like protocol for structured bindings itself directly first looks
+for a member pack named `tuple_element` before looking for specializations of
+the two `tuple` traits.
+
+## Pack Indexing
+
+A pack can be indexed by expanding it and applying `[I]` to the result.
+`p...[0]` is the first element of the pack `p` (which can be a value, type, or
+template based on the kind of pack that `p` is).
+
+This is a "sfinae-friendly" operation, so given:
+
+```cpp
+template <typenae... Ts>
+auto first(Ts... ts) -> Ts...[0] {
+    return ts...[0];
+}
+```
+
+`first()` triggers a substitution failure, rather than a hard error.
+
+## Adding a layer of packness
+
+Given a value of a type that can be used on the right-hand side of a structured
+binding declaration, the `.[:]` operator may be applied to "add a layer of
+packness" - turning it into a pack of values consisting of what the structured
+bindings would have been.
+
+A type that can be used in structured bindings can have the `::[:]` operator
+applied to it to likewise turn it into a pack of types.
+
+```cpp
+void f(std::tuple<int, char, double> t) {
+    // equivalent to g(std::get<0>(t), std::get<1>(t), std::get<2>(t))
+    // or, possibly, std::apply(g, t)
+    g(t.[:]...);
+    
+    // decltype(u) is the same as T - just a really complex way to
+    // get there
+    using T = decltype(t);
+    std::tuple<T::[:]...> u = t;
+}
+```
+
+The syntaxes `v.[I]` and `T::[I]` are shorthand for the syntaxes
+`v.[:]...[I]` and `T::[:]...[I]`, respectively.
+
+## Pack slicing
+
+While `.[:]` and `::[:]` add a layer of packness, turning the expression into
+a pack consisting of all of the underlying elements, the slice notation can
+also include either a start or end index, or both, to get just part of the pack.
+
+```cpp
+void h(std::tuple<int, char, double> t) {
+    // a is a tuple<int, char, double>
+    auto a = std::tuple(t.[:]...);
+    
+    // b is a tuple<char, double>
+    auto b = std::tuple(t.[1:]...);
+    
+    // c is a tuple<int, char>
+    auto c = std::tuple(t.[:-1]...);
+    
+    // d is a tuple<char>
+    auto d = std::tuple(t.[1:2]...);
+}
+```
 
 # Acknowledgments
 

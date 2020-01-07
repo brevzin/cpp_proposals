@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-01-06" />
+  <meta name="dcterms.date" content="2020-01-07" />
   <title>Generalized pack declaration and usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -523,7 +523,7 @@ padding-left: 20px;
 code.diff span.va { color: #000000; background-color: var(--diff-ins); }
 code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </style>
-<!--    <link rel="icon" href="https://isocpp.org/favicon.ico" /> -->
+  <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -537,11 +537,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #: </td>
-    <td>D1858R1</td>
+    <td>P1858R1</td>
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2020-01-06</td>
+    <td>2020-01-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -591,8 +591,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#what-about-stdpair"><span class="toc-section-number">8</span> What about <code class="sourceCode cpp">std<span class="op">:</span>pair</code>?<span></span></a></li>
 <li><a href="#proposal"><span class="toc-section-number">9</span> Proposal<span></span></a><ul>
 <li><a href="#pack-declarations"><span class="toc-section-number">9.1</span> Pack declarations<span></span></a></li>
-<li><a href="#pack-like-type"><span class="toc-section-number">9.2</span> Pack-like type<span></span></a></li>
-<li><a href="#dependent-packs"><span class="toc-section-number">9.3</span> Dependent packs<span></span></a></li>
+<li><a href="#dependent-packs"><span class="toc-section-number">9.2</span> Dependent packs<span></span></a></li>
+<li><a href="#structured-bindings"><span class="toc-section-number">9.3</span> Structured Bindings<span></span></a></li>
+<li><a href="#pack-indexing-1"><span class="toc-section-number">9.4</span> Pack Indexing<span></span></a></li>
+<li><a href="#adding-a-layer-of-packness"><span class="toc-section-number">9.5</span> Adding a layer of packness<span></span></a></li>
+<li><a href="#pack-slicing"><span class="toc-section-number">9.6</span> Pack slicing<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgments"><span class="toc-section-number">10</span> Acknowledgments<span></span></a></li>
 <li><a href="#references"><span class="toc-section-number">11</span> References<span></span></a></li>
@@ -601,8 +604,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="revision-history" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>R0 <span class="citation" data-cites="P1858R0">[<a href="#ref-P1858R0" role="doc-biblioref">P1858R0</a>]</span> was presented in EWGI in Belfast <span class="citation" data-cites="EWGI.Belfast">[<a href="#ref-EWGI.Belfast" role="doc-biblioref">EWGI.Belfast</a>]</span>, where further work was encouraged (9-4-1-0-0). Since then, several substantial changes have been made to this paper.</p>
 <ul>
-<li>The overloadable <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">...()</span></code> and <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">...</span></code> were removed. Pack expansion is now driven through structured bindings, which are extended on the library side, rather than introducing an extra language feature.</li>
+<li>The overloadable <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">...()</span></code> and <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">...</span></code> were removed.</li>
+<li>Pack expansion is now driven through structured bindings, which are extended on the library side as well.</li>
+<li><code class="sourceCode cpp"><span class="kw">constexpr</span></code> ranges removed from this paper, should be handled by expansion statements.</li>
 <li>Discussion of functions returning packs - no longer being proposed due to ambiguity of what it actually could mean.</li>
+<li>Discussion of pack literals.</li>
 </ul>
 <h1 id="introduction-and-motivation" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Introduction and Motivation<a href="#introduction-and-motivation" class="self-link"></a></h1>
 <p>C++11 introduced variadic templates, one of the truly transformational language features introduced that standard. Despite pretty tight restrictions on where packs could be declared and how they could be used, this feature has proven incredibly successful. Three standards later, there hasn’t even been much change. C++17 added a couple new ways to use packs (fold expressions <span class="citation" data-cites="N4191">[<a href="#ref-N4191" role="doc-biblioref">N4191</a>]</span> and using-declarations <span class="citation" data-cites="P0195R2">[<a href="#ref-P0195R2" role="doc-biblioref">P0195R2</a>]</span>), and C++20 will add a new way to introduce them (in lambda capture <span class="citation" data-cites="P0780R2">[<a href="#ref-P0780R2" role="doc-biblioref">P0780R2</a>]</span>). A proposal to iterate over them (expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>) didn’t quite make it. That’s it.</p>
@@ -1784,34 +1790,53 @@ Values
 <p>All the separate bits and pieces of this proposal have been presented one step at a time during the course of this paper. This section will formalize all the important notions.</p>
 <h2 id="pack-declarations"><span class="header-section-number">9.1</span> Pack declarations<a href="#pack-declarations" class="self-link"></a></h2>
 <p>You can declare member variable packs, namespace-scope variable packs, and block-scope variable packs. You can declare alias packs. The initializer for a pack declaration has to be an unexpanded pack - which would then be expanded.</p>
-<p>These can be directly unpacked when in non-dependent contexts.</p>
-<p>You can declare packs within structured binding declarations (this paper may we well just subsume <span class="citation" data-cites="P1061R0">[<a href="#ref-P1061R0" role="doc-biblioref">P1061R0</a>]</span>).</p>
-<h2 id="pack-like-type"><span class="header-section-number">9.2</span> Pack-like type<a href="#pack-like-type" class="self-link"></a></h2>
-<p>To start with, structured bindings today works on three kinds of types:</p>
-<ol type="1">
-<li>Arrays</li>
-<li>Tuple-Like types – defined as types that satisfy <code class="sourceCode cpp">std<span class="op">::</span>tuple_size<span class="op">&lt;</span>E<span class="op">&gt;</span></code>, <code class="sourceCode cpp">std<span class="op">::</span>tuple_element<span class="op">&lt;</span>i, E<span class="op">&gt;</span></code>, and <code class="sourceCode cpp">get<span class="op">&lt;</span>i<span class="op">&gt;()</span></code>. Note that this is a language feature that nevertheless has a library hook.</li>
-<li>Types that have all of their non-static data members in the same class. This one is a little fuzzy because it’s based on accessibility.</li>
-</ol>
-<p>This paper proposes the notion of a <em>pack-like type</em>. A pack-like type:</p>
-<ol type="1">
-<li>Is an array type</li>
-<li>Has one of:
-<ol type="a">
-<li>an unnamed pack alias type that names a pack-like type or a pack</li>
-<li>a pack operator that returns a pack-like type or a pack</li>
-</ol>
-If any of these new special named members yields a reflection range, that range will be reified as appropriate before further consideration. If a type provides only a pack alias, it can be indexed into/unpacked as a type but not as a value. If a type provides only a pack operator, it can be indexed/unpacked as a value but not as a type.</li>
-<li>Is a Tuple-Like type (as per structured bindings)</li>
-<li>Is a constexpr range (the constexpr-ness is important because of the fixed size)</li>
-<li>Is a type that has all of its non-static data members in the same class (as per structured bindings)</li>
-</ol>
-<p>This paper proposes to redefine both structured bindings and expansion statements in terms of the pack-like type concept, unifying the two ideas. Any pack-like type can be expanded over or used as the right-hand side of a structured binding declaration.</p>
-<p>Any pack-like type can be indexed into, <code class="sourceCode cpp">T<span class="op">.[</span>i<span class="op">]</span></code> will yield the <code class="sourceCode cpp">i</code>th type (if <code class="sourceCode cpp">T</code> is a type) or <code class="sourceCode cpp">i</code>th value (if <code class="sourceCode cpp">T</code> is a variable) of the type. Any pack like type can be sliced and unpacked via <code class="sourceCode cpp">T<span class="op">.[:]...</span></code> or with specific indices.</p>
-<p>This also unifies the special unpacking rules in <span class="citation" data-cites="P1240R0">[<a href="#ref-P1240R0" role="doc-biblioref">P1240R0</a>]</span>: a reflection range is a pack-like type, therefore it can be unpacked.</p>
-<h2 id="dependent-packs"><span class="header-section-number">9.3</span> Dependent packs<a href="#dependent-packs" class="self-link"></a></h2>
+<h2 id="dependent-packs"><span class="header-section-number">9.2</span> Dependent packs<a href="#dependent-packs" class="self-link"></a></h2>
 <p>Member packs and block scope packs can be directly unpacked when in non-dependent contexts. We know what they are.</p>
 <p>In dependent contexts, anything that is not a pack must be explicitly identified as a pack in order to be treated as one. Similar to how we need the <code class="sourceCode cpp"><span class="kw">typename</span></code> and <code class="sourceCode cpp"><span class="kw">template</span></code> keyword in many places to identify that such and such an expression is a type or a template, a preceding <code class="sourceCode cpp"><span class="op">...</span></code> (or whatever alternate spelling) will identify the expression that follows it as a pack. If that entity is <em>not</em> a pack, then the indexing or unpacking expression is ill-formed.</p>
+<p>Non-dependent packs do not need any disambiguation (the disambiguation is allowed, but unnecessary).</p>
+<h2 id="structured-bindings"><span class="header-section-number">9.3</span> Structured Bindings<a href="#structured-bindings" class="self-link"></a></h2>
+<p>This paper proposes both that:</p>
+<ol type="1">
+<li><p><code class="sourceCode cpp">std<span class="op">::</span>tuple_size</code> and <code class="sourceCode cpp">std<span class="op">::</span>tuple_element</code> add specializations that look for a member pack named <code class="sourceCode cpp">tuple_element</code>, and drive their answers from that.</p></li>
+<li><p>The tuple-like protocol for structured bindings itself directly first looks for a member pack named <code class="sourceCode cpp">tuple_element</code> before looking for specializations of the two <code class="sourceCode cpp">tuple</code> traits.</p></li>
+</ol>
+<h2 id="pack-indexing-1"><span class="header-section-number">9.4</span> Pack Indexing<a href="#pack-indexing-1" class="self-link"></a></h2>
+<p>A pack can be indexed by expanding it and applying <code class="sourceCode cpp"><span class="op">[</span>I<span class="op">]</span></code> to the result. <code class="sourceCode cpp">p<span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> is the first element of the pack <code class="sourceCode cpp">p</code> (which can be a value, type, or template based on the kind of pack that <code class="sourceCode cpp">p</code> is).</p>
+<p>This is a “sfinae-friendly” operation, so given:</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb86-1"><a href="#cb86-1"></a><span class="kw">template</span> <span class="op">&lt;</span>typenae<span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb86-2"><a href="#cb86-2"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">{</span></span>
+<span id="cb86-3"><a href="#cb86-3"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb86-4"><a href="#cb86-4"></a><span class="op">}</span></span></code></pre></div>
+<p><code class="sourceCode cpp">first<span class="op">()</span></code> triggers a substitution failure, rather than a hard error.</p>
+<h2 id="adding-a-layer-of-packness"><span class="header-section-number">9.5</span> Adding a layer of packness<a href="#adding-a-layer-of-packness" class="self-link"></a></h2>
+<p>Given a value of a type that can be used on the right-hand side of a structured binding declaration, the <code class="sourceCode cpp"><span class="op">.[:]</span></code> operator may be applied to “add a layer of packness” - turning it into a pack of values consisting of what the structured bindings would have been.</p>
+<p>A type that can be used in structured bindings can have the <code class="sourceCode cpp"><span class="op">::[:]</span></code> operator applied to it to likewise turn it into a pack of types.</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb87-1"><a href="#cb87-1"></a><span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span>, <span class="dt">double</span><span class="op">&gt;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb87-2"><a href="#cb87-2"></a>    <span class="co">// equivalent to g(std::get&lt;0&gt;(t), std::get&lt;1&gt;(t), std::get&lt;2&gt;(t))</span></span>
+<span id="cb87-3"><a href="#cb87-3"></a>    <span class="co">// or, possibly, std::apply(g, t)</span></span>
+<span id="cb87-4"><a href="#cb87-4"></a>    g<span class="op">(</span>t<span class="op">.[:]...)</span>;</span>
+<span id="cb87-5"><a href="#cb87-5"></a>    </span>
+<span id="cb87-6"><a href="#cb87-6"></a>    <span class="co">// decltype(u) is the same as T - just a really complex way to</span></span>
+<span id="cb87-7"><a href="#cb87-7"></a>    <span class="co">// get there</span></span>
+<span id="cb87-8"><a href="#cb87-8"></a>    <span class="kw">using</span> T <span class="op">=</span> <span class="kw">decltype</span><span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb87-9"><a href="#cb87-9"></a>    std<span class="op">::</span>tuple<span class="op">&lt;</span>T<span class="op">::[:]...&gt;</span> u <span class="op">=</span> t;</span>
+<span id="cb87-10"><a href="#cb87-10"></a><span class="op">}</span></span></code></pre></div>
+<p>The syntaxes <code class="sourceCode cpp">v<span class="op">.[</span>I<span class="op">]</span></code> and <code class="sourceCode cpp">T<span class="op">::[</span>I<span class="op">]</span></code> are shorthand for the syntaxes <code class="sourceCode cpp">v<span class="op">.[:]...[</span>I<span class="op">]</span></code> and <code class="sourceCode cpp">T<span class="op">::[:]...[</span>I<span class="op">]</span></code>, respectively.</p>
+<h2 id="pack-slicing"><span class="header-section-number">9.6</span> Pack slicing<a href="#pack-slicing" class="self-link"></a></h2>
+<p>While <code class="sourceCode cpp"><span class="op">.[:]</span></code> and <code class="sourceCode cpp"><span class="op">::[:]</span></code> add a layer of packness, turning the expression into a pack consisting of all of the underlying elements, the slice notation can also include either a start or end index, or both, to get just part of the pack.</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb88-1"><a href="#cb88-1"></a><span class="dt">void</span> h<span class="op">(</span>std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span>, <span class="dt">double</span><span class="op">&gt;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb88-2"><a href="#cb88-2"></a>    <span class="co">// a is a tuple&lt;int, char, double&gt;</span></span>
+<span id="cb88-3"><a href="#cb88-3"></a>    <span class="kw">auto</span> a <span class="op">=</span> std<span class="op">::</span>tuple<span class="op">(</span>t<span class="op">.[:]...)</span>;</span>
+<span id="cb88-4"><a href="#cb88-4"></a>    </span>
+<span id="cb88-5"><a href="#cb88-5"></a>    <span class="co">// b is a tuple&lt;char, double&gt;</span></span>
+<span id="cb88-6"><a href="#cb88-6"></a>    <span class="kw">auto</span> b <span class="op">=</span> std<span class="op">::</span>tuple<span class="op">(</span>t<span class="op">.[</span><span class="dv">1</span><span class="op">:]...)</span>;</span>
+<span id="cb88-7"><a href="#cb88-7"></a>    </span>
+<span id="cb88-8"><a href="#cb88-8"></a>    <span class="co">// c is a tuple&lt;int, char&gt;</span></span>
+<span id="cb88-9"><a href="#cb88-9"></a>    <span class="kw">auto</span> c <span class="op">=</span> std<span class="op">::</span>tuple<span class="op">(</span>t<span class="op">.[:-</span><span class="dv">1</span><span class="op">]...)</span>;</span>
+<span id="cb88-10"><a href="#cb88-10"></a>    </span>
+<span id="cb88-11"><a href="#cb88-11"></a>    <span class="co">// d is a tuple&lt;char&gt;</span></span>
+<span id="cb88-12"><a href="#cb88-12"></a>    <span class="kw">auto</span> d <span class="op">=</span> std<span class="op">::</span>tuple<span class="op">(</span>t<span class="op">.[</span><span class="dv">1</span><span class="op">:</span><span class="dv">2</span><span class="op">]...)</span>;</span>
+<span id="cb88-13"><a href="#cb88-13"></a><span class="op">}</span></span></code></pre></div>
 <h1 id="acknowledgments" style="border-bottom:1px solid #cccccc"><span class="header-section-number">10</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>This paper would not exist without many thorough conversations with Agustín Bergé, Matt Calabrese, and Richard Smith. Thank you.</p>
 <p>Thank you to David Stone for pointing out many issues.</p>
