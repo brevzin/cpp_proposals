@@ -150,11 +150,6 @@ namespace xstd {
 }
 ```
 
-Note the new pack expansion in the _mem-initializer_. This is a new ability this
-paper is proposing. It wouldn't have made sense to have 
-if you could not declare a member
-variable pack.
-
 Let's pick a more complex constructor. A `std::tuple<Ts...>` can be constructed
 from a `std::pair<T, U>` if `sizeof...(Ts) == 2` and the two corresponding types
 are convertible. How would we implement that? To do that check, we need to get
@@ -193,6 +188,7 @@ namespace xstd {
 
 Notably, in an earlier example we constructed the pack as a single entity and
 here we are constructing each element of the pack separately. Both are fine.
+We'll see a simpler way to do this [later](#tuple-pair).
 
 A properly constrained converting constructor from a pack:
 
@@ -220,7 +216,6 @@ As well as implementing `tuple_element`:
 namespace std {
     template <size_t I, typename... Ts>
     struct tuple_element<I, xstd::tuple<Ts...>>
-        requires (I < sizeof...(Ts))
     {
         using type = Ts...[I];
     };
@@ -272,7 +267,6 @@ struct std::tuple_size<tuple<Ts...>>
 
 template <size_t, typename... Ts>
 struct std::tuple_element<I, tuple<Ts...>>
-    requires (I < sizeof...(Ts))
 {
     using type = mp_at_c<I, mp_list<Ts...>>;
 };
@@ -350,7 +344,6 @@ struct tuple_size<tuple<Ts...>>
 
 template <size_t I, typename... Ts>
 struct tuple_element<I, tuple<Ts...>>
-    requires (I < sizeof...(Ts))
 {
     using type = Ts...[I];
 };
@@ -400,7 +393,7 @@ bindings [@P0144R2]:
 2. Tuple-like: those tupes that specialize `std::tuple_size`, `std::tuple_element`,
 and either provide a member or non-member `get()`.
 
-3. Types where all of there members are public members of the same class
+3. Types where all of their members are public members of the same class
 (approximately).
 
 The problem with the tuple-like protocol here is that we need to instantiate
@@ -622,7 +615,7 @@ public:
 template <size_t I, typename... Types>
 constexpr variant_alternative_t<I, variant<Types...>>*
 get_if(variant<Types...>* v) noexcept {
-    if (v->index_ == I) {
+    if (v && v->index_ == I) {
         return &v->impl.get(in_place_index<I>);
     } else {
         return nullptr;
@@ -660,7 +653,7 @@ public:
 template <size_t I, typename... Types>
 constexpr variant_alternative_t<I, variant<Types...>>*
 get_if(variant<Types...>* v) noexcept {
-    if (v->index_ == I) {
+    if (v && v->index_ == I) {
         return &v->alts_...[I];
     } else {
         return nullptr;
@@ -704,6 +697,9 @@ struct integer_sequence {
     }
 };
 ```
+
+We'll see an even more interesting use of this proposal's interaction with
+`index_sequence` in a [later section](#mp-with-index).
 
 
 # Expanding a type into a pack
@@ -970,6 +966,8 @@ B b{.i = 2, .j = 4};
 assert(b.[0] + b.[1] == 6);
 ```
 
+### Fixed-size homogeneous pack
+
 This also provides a direct solution to the fixed-size pack problem [@N4072]:
 
 ```cpp
@@ -1009,6 +1007,79 @@ For instance:
 ```cpp
 Vector<int, 2>  x('a', 2); // ok
 Vector2<int, 2> y('a', 2); // ill-formed, deduction failure
+```
+
+### Construct a `tuple` from a `pair` {#tuple-pair}
+
+We can also simplify the example we saw earlier where we were constructing
+a `tuple` from a `pair`:
+
+```cpp
+namespace xstd {
+    template <typename... Ts>
+    class tuple {
+    public:
+        template <std::convertible_to<Ts>... Us>
+        constexpr tuple(std::pair<Us...> const& p)
+            : elems(p.[:])...
+        { }
+    private:
+        Ts... elems;
+    };
+}
+```
+
+### Implementing `make_index_sequence` without a compiler builtin {#mp-with-index}
+
+You have always been able to implement a version of `make_index_sequence` that
+would decompose into a sequence of integral constants:
+
+```cpp
+template <size_t N>
+struct index_seq {
+    template <size_t I>
+    constexpr auto get() const -> std::integral_constant<size_t, I> {
+        return {};
+    }
+};
+
+namespace std {
+    template <size_t N>
+    struct tuple_size<index_seq<N>>
+        : integral_constant<size_t, N>
+    { };
+    
+    template <size_t I, size_t N>
+    struct tuple_element<I, index_seq<N>> {
+        using type = integral_constant<size_t, I>;
+    };
+}
+
+// a is an integral_constant<size_t, 0>
+// b is an integral_constant<size_t, 1>
+auto [a, b] = index_seq<2>();
+```
+
+But this is actually totally useless because you need to know the number of
+identifiers to declare. With [@P1061R1], this becomes useful since you can write
+
+```cpp
+auto [...Is] = index_seq<N>();
+```
+
+and now you don't need to indirect through a lambda. With this proposal, it
+becomes more useful still since you don't even need the extra declaration. 
+You can implement Boost.Mp11's [`mp_with_index`](https://www.boost.org/doc/libs/develop/libs/mp11/doc/html/mp11.html#mp_with_indexni_f)
+in a one liner:
+
+```cpp
+template <size_t N, typename F>
+decltype(auto) with_index(size_t i, F fn)
+{	
+	return array{
+        +[](F& f) -> decltype(auto) { return f(index_seq<N>{}.[:]); }...
+    }[i](fn);
+}
 ```
 
 ## Generalizing slicing further
