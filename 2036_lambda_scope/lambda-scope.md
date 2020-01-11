@@ -68,6 +68,23 @@ call operator is implicitly `const`). Hence the _trailing-return-type_ gets
 deduced as `int` (via `#1`) while the expression in the body has type `void`
 (via `#2`). This doesn't compile.
 
+Another example arises from trying to write a SFINAE-friendly function composer:
+
+```cpp
+template <typename F, typename G>
+auto compose(F f, G g) {
+    return [=](auto... args) -> decltype(f(g(args...))) {
+        return f(g(args...));
+    }
+}
+```
+
+This implementation is buggy. The problem is the `f` and `g` from the body of
+the lambda are accessed as `const`, but from the _trailing-return-type_ are not.
+Pass in a callable that's intended to be non-`const`-invocable (like, say, a
+`mutable` lambda), and we end up with a hard error when we finally instantiate
+the body.
+
 For the _trailing-return-type_ case, this problem only surfaces with
 _init-capture_ (which can introduce new names) and any kind of copy capture
 (which may change the const qualification on some names). With reference
@@ -108,89 +125,145 @@ compile, flipped over a table, and then wrote it the long way.
 This is one of those incredibly subtle aspects of the language today that are
 just needlessly confounding. It seems to me that whenever the meaning of an
 _id-expression_ differs between the two contexts, it's a bug. I think we should
-just remove this corner case. 
+just remove this corner case. It's also blocking reasonable future language
+evolution, and is likely a source of subtle bugs and preexisting user
+frustration.  
 
-# Lookahead
+# Potential Impact
 
-One of the problems with trying to change these rules and say that the
-_trailing-return-type_ refers to the capture, is that we might not necessarily know
-what all of its captures are and know what the types might refer to.
+Let's go through the various types of capture and see what the impact of this
+proposed change would be on usage and implementation.
 
-Consider something related to the motivating case:
+### No capture: `[]` {-}
+
+There is no capture, so there is no new thing to find. No change.
+
+### _init-capture_: `[a=expr]` or `[&a=expr]` {-}
+
+By the time we get to the _trailing-return-type_, we know the types of all the
+_init-capture_ and we know whether the lambda is `mutable` or not, which means
+that we will know how to correctly interpret uses of `a` in the
+_trailing-return-type_. This will likely change the meaning of such code, if
+such code exists today. But note that such code seems fundamentally questionable
+so it's unlikely that much such code exists today.
+
+### _simple-capture_: `[b]`, `[&b]`, `[this]`, or `[*this]` {-}
+
+This is basically the same result as the _init-capture_ case: we know the types
+by the time we get to the beginning of the _trailing-return-type_, so there are
+no issues determining what it should be. 
+
+With the reference capture cases (as well the _init-capture_ spelling `[&a=a]`),
+there is actually no difference in interpretation anyway. 
+
+### _capture-default_ with `[&]` {-}
+
+With reference captures, there is no difference in interpretation between
+considered the capture and considering the outer scope variable. This paper
+would change nothing.
+
+### _capture-default_ with `[=]` {-}
+
+This is the sad case. Specifically, in the case where:
+
+1. We have a _capture-default_ of `=`, and
+2. We have a _trailing-return-type_, and
+3. That _trailing-return-type_ has an _id-expression_ which is not otherwise
+covered by any other kind of capture, and
+4. The use of that _id-expression_, if it appeared in the body, would be
+affected by the rule in [expr.prim.id.unqual]{.sref}/2 (that is, it's not just
+`decltype(x)` but has to be either `decltype((x))` or something like
+`decltype(f(x))`), and
+5. The lambda is not `mutable`, and
+6. The variable is not `const`
+
+Then we have a problem. First, let's go over the cases that are not problematic.
+
+
+3. Eliminates cases like `[=, a]() -> decltype(f(a))`, which we know captures
+`a` by copy so we can figure out what the type of `a` would be when nominated
+in the body.
+4. Eliminates cases like `[=]() -> X<decltype(a)>`, which actually have the
+same meaning in the body already. 
+5. Eliminates cases like `[=]() mutable -> decltype(f(a))`. Whether or not we
+end up having to capture `a`, the meaning of `f(a)` is the same in the body
+as it is in the _trailing-return-type_.
+6. Eliminates cases like `[=]() -> decltype(g(c))` where `c` is, say, an
+`int const&`. Whether or not we end up having to capture `c`, the meaning of
+`g(c)` is the same in the body as it is in the _trailing-return-type_.
+
+We're left with this pathological case:
 
 ```cpp
 int i;
-auto f = [=](auto&& x) -> decltype(bar(i, x)) {
+[=]() -> decltype(f(i))
 ```
 
-At this point, we do not yet know if `i` is captured or not, so we do not yet
-know if the expression `i` is `const` or not. But parsing the _trailing-return-type_
-isn't something we necessarily need up front. Is delaying parsing this until
-we know a problem? 
+At this point, we do not know if we're capturing `i` or not. Today, this
+treats `i` as an lvalue of type `int` here. But with the proposed rule change,
+this _might_ have to treat `i` as a `const` access, but only _if_ we end
+up having to capture `i`:
 
-This particular issue surface _only_ with the _default-capture_ `=`. In all other
-cases we either know that we're capturing something already (both the 
-_simple-capture_ and _init-capture_ cases are clear by this point) or we may
-not be capturing but there's no difference (as with the _default-capture_ `&` case).
+```cpp
+auto f(int&)       -> int;
+auto f(int const&) -> double;
 
-With the rest of the _lambda-declarator_, there's really no difference:
+int i;
+
+auto should_capture = [=]() -> decltype(f(i)) {
+    return f(i);
+};
+auto should_not_capture = [=]() -> decltype(f(i)) {
+    return 42;
+};
+```
+
+Today, both lambdas return `int`. With the suggested change, the
+_trailing-return-type_ needs to consider the capture, so we need to delay
+parsing it until we see what the lambda bodies actually look like. And then,
+we might determine that the lambda `should_capture` actually returns a `double`.
+
+How can we handle this case?
+
+1. We can, in this specific scenario (capture has an `=` and the lambda is
+`const`) just treat the _trailing-return-type_ as token soup. The simplified
+rules for capture aren't based on return type [@P0588R1] in any way, so this
+can work.
+2. We can, in this specific scenario, just say that `i` is captured when used
+this way and that if it would not have been captured following the usual rules
+that the lambda is ill-formed.
+
+This paper suggests the latter. As with the rest of this paper, it is easy
+to come up with examples where the rules would change. Lambdas like the following
+would become ill-formed:
 
 ```cpp
 int i;
-auto f = [=](decltype(i) a, decltype((i)) b)
+auto f = [=]() -> decltype(i+1) { // previously well-formed
+    return 42;                    // proposed ill-formed
+};
 ```
 
-This is a lambda that takes an `int` and an `int&`, regardless of whether it's
-const or mutable, regardless of whether `i` is captured. This would be consistent
-with class types. 
-
+But it is difficult to come up with actual real-world examples that would break.
+And easy to come up with real-world examples that would be fixed by this change.
+The lambda `should_capture` would change to return a `double`, which seems
+more likely to be correct, and much more realistic an example than `f`.
 
 # Proposal
 
-Effectively, the model we have today is that the lambda `f` behaves as if it
-were this type:
+This paper proposes that name lookup in the _trailing-return-type_ of a lambda
+first consider that lambda's captures before looking further outward.
 
-```cpp
-int i;
-struct F {
-	// lambda-declarator, then lambda body
-    auto operator()(auto&& x) const -> decltype(bar(i, x)) {
-		return bar(i, x);
-	}
-	
-	// ... then captures
-	int i;
-};
-```
-
-I propose that this should behave as if it were this type:
-
-```cpp
-int i;
-struct F2 {
-	// captures, then...
-	int i;
-
-	// lambda-declarator, then lambda body
-    auto operator()(auto&& x) const -> decltype(bar(i, x)) {
-		return bar(i, x);
-	}
-};
-```
-
-That is, the captures are themselves in scope for all name lookup in the rest
-of the lambda. Note that this applies for the parameters as well, following the
-principle of least surprise.
-
-```cpp
-double j = 42.0;
-
-// Today: 'x' is a double
-// Proposed: 'x' is an int
-auto g = [j=0](decltype(j) x) { /* ... */ };
-```
+That is, treat the _trailing-return-type_ like the function body rather than
+treating it like a function parameter.
 
 Such a change fixes the lambda in a way that almost certainly matches user
-intent, fixes the `counter` lambdas presented earlier, and fixes all current
-and future lambdas that use a macro to de-duplicate the _trailing-return-type_
-from the body.
+intent, fixes the `counter` and `compose` lambdas presented earlier, and fixes
+all current and future lambdas that use a macro to de-duplicate the
+_trailing-return-type_ from the body.
+
+The paper proposes for the one pathologically bad case (the use of a name in
+a _trailing-return-type_ of a `const` lambda that nominates a non-`const`
+variable not otherwise accounted for in other lambda capture) that we assume
+that the body will capture it and consider the lambda ill-formed if this
+assumption ends up being mistaken.
