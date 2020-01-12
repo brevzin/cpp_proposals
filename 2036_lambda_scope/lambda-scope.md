@@ -232,15 +232,20 @@ can work.
 2. We can, in this specific scenario, just say that `i` is captured when used
 this way and that if it would not have been captured following the usual rules
 that the lambda is ill-formed.
+3. We can say generally that any capturable entity in the _trailing-return-type_
+will behave as if it's captured (regardless of if it ends up being captured
+or not).
 
-This paper suggests the latter. As with the rest of this paper, it is easy
+This paper suggests option 3. As with the rest of this paper, it is easy
 to come up with examples where the rules would change. Lambdas like the following
 would become ill-formed:
 
 ```cpp
 int i;
-auto f = [=]() -> decltype(i+1) { // previously well-formed
-    return 42;                    // proposed ill-formed
+// previously returned int&, proposed returns int const&
+// even though i is not actually captured in this lambda
+auto f = [=](int& j) -> decltype((i)) {
+    return j;
 };
 ```
 
@@ -252,7 +257,9 @@ more likely to be correct, and much more realistic an example than `f`.
 # Proposal
 
 This paper proposes that name lookup in the _trailing-return-type_ of a lambda
-first consider that lambda's captures before looking further outward.
+first consider that lambda's captures before looking further outward. We may not
+know at the time of parsing the return type which names actually are captured,
+so this paper proposes to treat all capturable entities as if they were captured.
 
 That is, treat the _trailing-return-type_ like the function body rather than
 treating it like a function parameter.
@@ -262,8 +269,12 @@ intent, fixes the `counter` and `compose` lambdas presented earlier, and fixes
 all current and future lambdas that use a macro to de-duplicate the
 _trailing-return-type_ from the body.
 
-The paper proposes for the one pathologically bad case (the use of a name in
+For the pathologically bad case (the use of a name in
 a _trailing-return-type_ of a `const` lambda that nominates a non-`const`
-variable not otherwise accounted for in other lambda capture) that we assume
-that the body will capture it and consider the lambda ill-formed if this
-assumption ends up being mistaken.
+variable not otherwise accounted for in other lambda capture) that means we
+might have a lambda where we treat a name as captured when it might end up not
+actually having been captured - which would be a mistreatment in the opposite
+direction of the problem that this paper has been describing. This is
+unfortunate, but it's an especially strange corner case - one that's much
+more unlikely to appear in real code than the cases that this paper is trying
+to resolve.
