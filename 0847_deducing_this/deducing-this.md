@@ -1393,10 +1393,21 @@ One family of possible solutions could be summarized as **make it easy to get th
 
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
 
-
 # Proposed Wording # {#wording}
 
-In [dcl.fct][3]{.pnum}, change insert the `this`-annotated parameter into the syntax for the _parameter-declaration-clause_:
+The wording direction chosen was to make the minimal changes possible.
+
+To that end:
+
+  - we must define what the explicit object parameter is (in a new [dcl.fct]p8).
+  - we must insert it into the syntax of the function declarations ([dcl.fct]p3).
+  - we must limit it to member functions ([dcl.fct]p8).
+  - we must specify the behaviour of the bodies of such functions; since the body behaves identically to static member functions, we will just define them as such ([dcl.fct]p8).
+  - we must specify the matching behaviour of such a parameter; we do it for any function with such a parameter in [over.match.funcs]p3. We do not want to break lookup, so we leave the implicit object parameter alone -- we merely add an additional argument where the declaration requested it. We cannot say that it's the first parameter, since that place is already taken by the implicit object parameter.
+
+## Changes to [dcl.fct]
+
+In paragraph 3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
 
 >| _parameter-declaration-clause_:
 >|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_~opt~ `...`~_opt_~
@@ -1409,7 +1420,69 @@ In [dcl.fct][3]{.pnum}, change insert the `this`-annotated parameter into the sy
 
 :::
 
+After paragraph 7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.
 
+::: add
+
+[8]{.pnum} A function type with an _explicit-object-parameter-declaration_ shall appear only as the function type for a member function. Such a declarator declares a static member function. Such a function shall not be explicitly declared static. Such a declarator shall not include a _ref-qualifier_. The parameter declared with the _explicit-object-parameter-declaration_ is the _explicit object parameter_.
+
+:::
+
+Note: the exclusion of the _cv-qualifier-seq_ is accomplished by [class.static.mfct]p2, so we don't do it here redundantly.
+
+## Changes to [over.match.funcs]
+
+[3]{.pnum} Similarly, when appropriate, the context can construct an argument list that contains an implied object argument as the first argument in the list to denote the object to be operated on.
+
+::: add
+
+In addition, for functions declared with an explicit object parameter, the implied object argument (if any) shall be inserted in the appropriate position to correspond to the explicit object parameter. [ Example:
+```cpp
+struct A {
+  int x;
+  int f(this A self, int y) { return self.x + y; }
+  int f(long y) { return x - y; }
+};
+A{1}.f(2);     // returns 3
+A{1}.f(1l);    // returns 0
+A::f(A{1}, 2); // returns 3
+```
+-- end example ]
+
+:::
+
+## Changes to [over.call.object]
+
+[4]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument (E).
+[ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator[.]{.del}[, unless the function call operator has been declared with an _explicit-object-parameter-declarator_, in which case the implied object argument is compared against the parameter declared with the _explicit-object-parameter-declarator_.]{.add}
+When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
+The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
+— end note ]
+
+## Changes to [class.conv.fct]
+
+Add to p1:
+
+[1]{.pnum} A member function of a class `X` having no parameters or an explicit object parameter of the form [...]
+The type of the conversion function (9.3.3.5) is “function taking no parameter returning _conversion-type-id_”[ or function taking one explicit object parameter returning _conversion-type-id_]{.add}.
+
+## Changes to [over.oper]
+
+Add to p7:
+
+[7]{.pnum} An operator function shall either be a non-static member function[, a function taking an explicit object parameter,]{.add} or be a non-member function that has at least one parameter [...]
+
+## Changes to [over.call]
+
+[1]{.pnum} `operator()` shall be a non-static member function [or a function taking an explicit object parameter]{.add} with an arbitrary number of parameters. [...]
+
+## Changes to [over.sub]
+
+[1]{.pnum} `operator[]` shall be a non-static member function with exactly one parameter[ or a function taking an explicit object parameter with exactly two parameters]{.add}. [...]
+
+## Changes to [over.ref]
+
+[1]{.pnum} `operator->` shall be a non-static member function taking no parameters[ or a function taking an explicit object parameter with exactly that parameter]{.add}. [...]
 
 # Acknowledgements # {#acknowledgements}
 

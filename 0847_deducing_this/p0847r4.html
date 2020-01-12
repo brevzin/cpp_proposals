@@ -593,7 +593,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#faq-function-ptr-type"><span class="toc-section-number">6.3</span> Function Pointer Types<span></span></a></li>
 <li><a href="#faq-computed-deduction"><span class="toc-section-number">6.4</span> Deducing to Base-Class Pointer<span></span></a></li>
 </ul></li>
-<li><a href="#wording"><span class="toc-section-number">7</span> Proposed Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">7</span> Proposed Wording<span></span></a>
+<ul>
+<li><a href="#changes-to-dcl.fct"><span class="toc-section-number">7.1</span> Changes to [dcl.fct]<span></span></a></li>
+<li><a href="#changes-to-over.match.funcs"><span class="toc-section-number">7.2</span> Changes to [over.match.funcs]<span></span></a></li>
+<li><a href="#changes-to-over.call.object"><span class="toc-section-number">7.3</span> Changes to [over.call.object]<span></span></a></li>
+<li><a href="#changes-to-class.conv.fct"><span class="toc-section-number">7.4</span> Changes to [class.conv.fct]<span></span></a></li>
+<li><a href="#changes-to-over.oper"><span class="toc-section-number">7.5</span> Changes to [over.oper]<span></span></a></li>
+<li><a href="#changes-to-over.call"><span class="toc-section-number">7.6</span> Changes to [over.call]<span></span></a></li>
+<li><a href="#changes-to-over.sub"><span class="toc-section-number">7.7</span> Changes to [over.sub]<span></span></a></li>
+<li><a href="#changes-to-over.ref"><span class="toc-section-number">7.8</span> Changes to [over.ref]<span></span></a></li>
+</ul></li>
 <li><a href="#acknowledgements"><span class="toc-section-number">8</span> Acknowledgements<span></span></a></li>
 <li><a href="#references"><span class="toc-section-number">9</span> References<span></span></a></li>
 </ul>
@@ -1691,7 +1701,17 @@ Proposed
 <p><em>This is already a problem for free-function templates</em>: The authors have heard many a complaint about it from library vendors, even before this paper was introduced, as it is desirable to only deduce the ref-qualifier in many contexts. Therefore, it might make sense to tackle this issue in a more general way. A complementary feature could be proposed to constrain <em>type deduction</em>.</p>
 <p>The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: <a href="https://atomgalaxy.github.io/isocpp-1107/D1107.html">computed deduction</a></p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">7</span> Proposed Wording<a href="#wording" class="self-link"></a></h1>
-<p>In [dcl.fct][3]{.pnum}, change insert the <code class="sourceCode cpp"><span class="kw">this</span></code>-annotated parameter into the syntax for the <em>parameter-declaration-clause</em>:</p>
+<p>The wording direction chosen was to make the minimal changes possible.</p>
+<p>To that end:</p>
+<ul>
+<li>we must define what the explicit object parameter is (in a new [dcl.fct]p8).</li>
+<li>we must insert it into the syntax of the function declarations ([dcl.fct]p3).</li>
+<li>we must limit it to member functions ([dcl.fct]p8).</li>
+<li>we must specify the behaviour of the bodies of such functions; since the body behaves identically to static member functions, we will just define them as such ([dcl.fct]p8).</li>
+<li>we must specify the matching behaviour of such a parameter; we do it for any function with such a parameter in [over.match.funcs]p3. We do not want to break lookup, so we leave the implicit object parameter alone – we merely add an additional argument where the declaration requested it. We cannot say that it’s the first parameter, since that place is already taken by the implicit object parameter.</li>
+</ul>
+<h2 data-number="7.1" id="changes-to-dcl.fct"><span class="header-section-number">7.1</span> Changes to [dcl.fct]<a href="#changes-to-dcl.fct" class="self-link"></a></h2>
+<p>In paragraph 3, insert the <em>explicit-object-parameter-declaration</em> into the syntax for the <em>parameter-declaration-clause</em>:</p>
 <blockquote>
 <div class="line-block"><em>parameter-declaration-clause</em>:<br />
    <span class="add" style="color: #006e28"><ins><em>explicit-object-parameter-declaration</em> <span><code class="sourceCode cpp">,</code></span><sub><em>opt</em></sub></ins></span> <em>parameter-declaration-list</em><sub>opt</sub> <code class="sourceCode cpp"><span class="op">...</span></code><sub><em>opt</em></sub><br />
@@ -1705,6 +1725,39 @@ Proposed
 </blockquote>
 
 </div>
+<p>After paragraph 7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.</p>
+<div class="add" style="color: #006e28">
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> A function type with an <em>explicit-object-parameter-declaration</em> shall appear only as the function type for a member function. Such a declarator declares a static member function. Such a function shall not be explicitly declared static. Such a declarator shall not include a <em>ref-qualifier</em>. The parameter declared with the <em>explicit-object-parameter-declaration</em> is the <em>explicit object parameter</em>.</p>
+</div>
+<p>Note: the exclusion of the <em>cv-qualifier-seq</em> is accomplished by [class.static.mfct]p2, so we don’t do it here redundantly.</p>
+<h2 data-number="7.2" id="changes-to-over.match.funcs"><span class="header-section-number">7.2</span> Changes to [over.match.funcs]<a href="#changes-to-over.match.funcs" class="self-link"></a></h2>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> Similarly, when appropriate, the context can construct an argument list that contains an implied object argument as the first argument in the list to denote the object to be operated on.</p>
+<div class="add" style="color: #006e28">
+<p>In addition, for functions declared with an explicit object parameter, the implied object argument (if any) shall be inserted in the appropriate position to correspond to the explicit object parameter. [ Example:</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
+<span id="cb51-2"><a href="#cb51-2"></a>  <span class="dt">int</span> x;</span>
+<span id="cb51-3"><a href="#cb51-3"></a>  <span class="dt">int</span> f<span class="op">(</span><span class="kw">this</span> A self, <span class="dt">int</span> y<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> self<span class="op">.</span>x <span class="op">+</span> y; <span class="op">}</span></span>
+<span id="cb51-4"><a href="#cb51-4"></a>  <span class="dt">int</span> f<span class="op">(</span><span class="dt">long</span> y<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">-</span> y; <span class="op">}</span></span>
+<span id="cb51-5"><a href="#cb51-5"></a><span class="op">}</span>;</span>
+<span id="cb51-6"><a href="#cb51-6"></a>A<span class="op">{</span><span class="dv">1</span><span class="op">}.</span>f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;     <span class="co">// returns 3</span></span>
+<span id="cb51-7"><a href="#cb51-7"></a>A<span class="op">{</span><span class="dv">1</span><span class="op">}.</span>f<span class="op">(</span><span class="dv">1</span><span class="bu">l</span><span class="op">)</span>;    <span class="co">// returns 0</span></span>
+<span id="cb51-8"><a href="#cb51-8"></a>A<span class="op">::</span>f<span class="op">(</span>A<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span><span class="op">)</span>; <span class="co">// returns 3</span></span></code></pre></div>
+<p>– end example ]</p>
+</div>
+<h2 data-number="7.3" id="changes-to-over.call.object"><span class="header-section-number">7.3</span> Changes to [over.call.object]<a href="#changes-to-over.call.object" class="self-link"></a></h2>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument (E). [ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator<span class="del">.</span><span class="add" style="color: #006e28"><ins>, unless the function call operator has been declared with an <em>explicit-object-parameter-declarator</em>, in which case the implied object argument is compared against the parameter declared with the <em>explicit-object-parameter-declarator</em>.</ins></span> When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function. The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter. — end note ]</p>
+<h2 data-number="7.4" id="changes-to-class.conv.fct"><span class="header-section-number">7.4</span> Changes to [class.conv.fct]<a href="#changes-to-class.conv.fct" class="self-link"></a></h2>
+<p>Add to p1:</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A member function of a class <code class="sourceCode cpp">X</code> having no parameters or an explicit object parameter of the form […] The type of the conversion function (9.3.3.5) is “function taking no parameter returning <em>conversion-type-id</em>”<span class="add" style="color: #006e28"><ins>or function taking one explicit object parameter returning <em>conversion-type-id</em></ins></span>.</p>
+<h2 data-number="7.5" id="changes-to-over.oper"><span class="header-section-number">7.5</span> Changes to [over.oper]<a href="#changes-to-over.oper" class="self-link"></a></h2>
+<p>Add to p7:</p>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> An operator function shall either be a non-static member function<span class="add" style="color: #006e28"><ins>, a function taking an explicit object parameter,</ins></span> or be a non-member function that has at least one parameter […]</p>
+<h2 data-number="7.6" id="changes-to-over.call"><span class="header-section-number">7.6</span> Changes to [over.call]<a href="#changes-to-over.call" class="self-link"></a></h2>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code> shall be a non-static member function <span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter</ins></span> with an arbitrary number of parameters. […]</p>
+<h2 data-number="7.7" id="changes-to-over.sub"><span class="header-section-number">7.7</span> Changes to [over.sub]<a href="#changes-to-over.sub" class="self-link"></a></h2>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">[]</span></code> shall be a non-static member function with exactly one parameter<span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly two parameters</ins></span>. […]</p>
+<h2 data-number="7.8" id="changes-to-over.ref"><span class="header-section-number">7.8</span> Changes to [over.ref]<a href="#changes-to-over.ref" class="self-link"></a></h2>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code> shall be a non-static member function taking no parameters<span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly that parameter</ins></span>. […]</p>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">8</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>The authors would like to thank:</p>
 <ul>
