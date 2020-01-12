@@ -1,52 +1,33 @@
-<pre class='metadata'>
-Title: Deducing this
-Status: D
-ED: http://wg21.link/P0847
-Shortname: P0847
-Level: 3
-Date: 2019-10-18
-Editor: Gašper Ažman, gasper dot azman at gmail dot com
-Editor: Simon Brand, simon dot brand at microsoft dot com
-Editor: Ben Deane, ben at elbeno dot com
-Editor: Barry Revzin, barry dot revzin at gmail dot com
-Group: wg21
-Audience: EWG
-Markup Shorthands: markdown yes
-Default Highlight: C++
-Abstract: We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
-</pre>
+---
+title: Deducing this
+document: P0847R4
+date: today
+audience: EWG => CWG
+author:
+  - name: Gašper Ažman
+    email: <gasper.azman@gmail.com>
+  - name: Simon Brand
+    email: <simon.brand@microsoft.com>
+  - name: Ben Deane, ben at elbeno dot com
+    email: <ben@elbeno.com>
+  - name: Barry Revzin
+    email: <barry.revzin@gmail.com>
+toc: true
+---
 
-<pre class="biblio">
-{
-    "Effective": {
-        "authors": ["Scott Meyers"],
-        "title": "Effective C++, Third Edition",
-        "href": "https://www.aristeia.com/books.html",
-        "date": "2005"
-    }
-}
-</pre>
+# Abstract
 
-<style>
-.ins, ins, ins *, span.ins, span.ins * {
-  background-color: rgb(200, 250, 200);
-  color: rgb(0, 136, 0);
-  text-decoration: none;
-}
-
-.del, del, del *, span.del, span.del * {
-  background-color: rgb(250, 200, 200);
-  color: rgb(255, 0, 0);
-  text-decoration: line-through;
-  text-decoration-color: rgb(255, 0, 0);
-}
-</style>
+We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
 
 # Revision History # {#revision-history}
 
+## Changes since r3 ## {#changes-since-r3}
+
+The feedback from Belfast in EWG was "This looks good, come back with wording and implementation". This version adds wording, the implementation is in the works.
+
 ## Changes since r2 ## {#changes-since-r2}
 
-[[P0847R2]] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
+[@P0847R2] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
 
 This version adds:
 - An FAQ entry for [[#faq-demand|library implementor feedback]]
@@ -55,11 +36,11 @@ This version adds:
 
 ## Changes since r1 ## {#changes-since-r1}
 
-[[P0847R1]] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
+[@P0847R1] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
 
 ## Changes since r0 ## {#changes-since-r0}
 
-[[P0847R0]] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
+[@P0847R0] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
 
 EWG strongly encouraged us to look in two new directions:
 
@@ -70,7 +51,7 @@ This revision carefully explores both of these directions, presents different sy
 
 # Motivation # {#motivation}
 
-In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member. (Note that it was also possible to want `volatile` overloads, but those are less common and thus are not examined here.) In these cases, both overloads do the same thing &mdash; the only difference is in the types being accessed and used. This was handled by either duplicating the function while adjusting types and qualifications as necessary, or having one overload delegate to the other. An example of the latter can be found in Scott Meyers's "Effective C++" [[Effective]], Item 3:
+In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member. (Note that it was also possible to want `volatile` overloads, but those are less common and thus are not examined here.) In these cases, both overloads do the same thing &mdash; the only difference is in the types being accessed and used. This was handled by either duplicating the function while adjusting types and qualifications as necessary, or having one overload delegate to the other. An example of the latter can be found in Scott Meyers's "Effective C++" [@Effective], Item 3:
 
 ```c++
 class TextBlock {
@@ -571,7 +552,7 @@ struct B {
 struct D : B { };
 ```
 
-Following the precedent of [[P0929R2]], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
+Following the precedent of [@P0929R2], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
 
 For unrelated complete classes or non-classes:
 
@@ -641,7 +622,7 @@ What follows are several examples of the kinds of problems that can be solved us
 
 This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of ways to reduce repeated code.
 
-This particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional). It includes some functions proposed in [[P0798R0]], with minor changes to better suit this format:
+This particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional). It includes some functions proposed in [@P0798R0], with minor changes to better suit this format:
 
 <table style="width:100%">
 <tr>
@@ -1097,7 +1078,7 @@ Note that the `Super` implementations with this proposal opt-in to further deriv
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
-The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda.
+The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [@P0839R0], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda.
 
 ```cpp
 // as proposed in P0839
@@ -1167,7 +1148,7 @@ There is, however, one place today where you simply *cannot* pass types like `st
 
 As an easy performance optimization, any member function of small types that does not perform any modifications can take the object parameter by value. Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
 
-<xmp highlight="c++">
+```cpp
 template <class charT, class traits = char_traits<charT>>
 class basic_string_view {
 private:
@@ -1190,7 +1171,7 @@ public:
         return self.data_[pos];
     }
 };
-</xmp>
+```
 
 Most of the member functions can be rewritten this way for a free performance boost.
 
@@ -1226,11 +1207,11 @@ struct less_than {
 </tr>
 </table>
 
-In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object &mdash; completely unnecessary work when copying it is free. The compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
+In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object &mdash; completely unnecessary work when copying it is free. The compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [@P1169R0].
 
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
-A seemingly unrelated problem to the question of code quadruplication is that of writing numerous overloads for function wrappers, as demonstrated in [[P0826R0]]. Consider what happens if we implement `std::not_fn()` as currently specified:
+A seemingly unrelated problem to the question of code quadruplication is that of writing numerous overloads for function wrappers, as demonstrated in [@P0826R0]. Consider what happens if we implement `std::not_fn()` as currently specified:
 
 ```cpp
 template <typename F>
@@ -1373,8 +1354,8 @@ In Kona, EWGI asked us to see whether library implementors would use this. The a
 
 We have heard from Casey Carter and Jonathan Wakely that they are interested in this feature. Also, on the ewg/lewg mailing lists, this paper comes up as a solution to a surprising number of questions, and gets referenced in many papers-in-flight. A sampling of papers:
 
-- [[P0798R3]]
-- [[P1221R1]]
+- [@P0798R3]
+- [@P1221R1]
 
 In Herb Sutter's "Name 5 most important papers for C++", 10 out of 289 respondents chose it. Given that the cutoff was 5, and that modules, throwing values, contracts, reflection, coroutines, linear algebra, and pattern matching were all in that list, I find the result a strong indication that it is wanted.
 
@@ -1413,6 +1394,23 @@ One family of possible solutions could be summarized as **make it easy to get th
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
 
 
+# Proposed Wording # {#wording}
+
+In [dcl.fct][3]{.pnum}, change insert the `this`-annotated parameter into the syntax for the _parameter-declaration-clause_:
+
+>| _parameter-declaration-clause_:
+>|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_~opt~ `...`~_opt_~
+>|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_ `,` `...`
+
+::: add
+
+>| _explicit-object-parameter-declaration_:
+>|    `this` _parameter-declaration_
+
+:::
+
+
+
 # Acknowledgements # {#acknowledgements}
 
 The authors would like to thank:
@@ -1427,6 +1425,17 @@ The authors would like to thank:
 - Eva Conti for furious copy editing, patience, and moral support
 - Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
 
+---
+references:
+    - id: Effective
+      citation-label: EffCpp
+      title: Effective C++, Third Edition
+      author:
+        - family: Scott Meyers
+      issued: 2005
+      URL: "https://www.aristeia.com/books.html"
+
+---
 <!--
  vim: ft=markdown wrap linebreak nolist textwidth=0 wrapmargin=0
 -->

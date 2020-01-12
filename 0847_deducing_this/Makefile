@@ -1,2 +1,4 @@
-d0847r3.html: deducing-this.bs
-	bikeshed spec $< $@ 
+include ../md/mpark-wg21.mk
+
+p0847r4.html : deducing-this.md
+	$(PANDOC) --toc-depth=2
