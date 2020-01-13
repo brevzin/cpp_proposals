@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-01-12" />
+  <meta name="dcterms.date" content="2020-01-13" />
   <title>Deducing this</title>
   <style>
       code{white-space: pre-wrap;}
@@ -540,7 +540,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2020-01-12</td>
+    <td>2020-01-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -603,6 +603,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#changes-to-over.call"><span class="toc-section-number">7.6</span> Changes to [over.call]<span></span></a></li>
 <li><a href="#changes-to-over.sub"><span class="toc-section-number">7.7</span> Changes to [over.sub]<span></span></a></li>
 <li><a href="#changes-to-over.ref"><span class="toc-section-number">7.8</span> Changes to [over.ref]<span></span></a></li>
+<li><a href="#feature-test-macro-tabcpp.predefined.ft"><span class="toc-section-number">7.9</span> Feature-test macro [tab:cpp.predefined.ft]<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgements"><span class="toc-section-number">8</span> Acknowledgements<span></span></a></li>
 <li><a href="#references"><span class="toc-section-number">9</span> References<span></span></a></li>
@@ -615,7 +616,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The feedback from Belfast in EWG was “This looks good, come back with wording and implementation”. This version adds wording, the implementation is in the works.</p>
 <h2 data-number="2.2" id="changes-since-r2"><span class="header-section-number">2.2</span> Changes since r2<a href="#changes-since-r2" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P0847R2">[<a href="#ref-P0847R2" role="doc-biblioref">P0847R2</a>]</span> was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.</p>
-<p>This version adds: - An FAQ entry for [[#faq-demand|library implementor feedback]] - An FAQ entry for [[#faq-rec-lambda-impl|implementability]]. - An FAQ entry for [[#faq-computed-deduction]], an orthogonal feature that EWGI asked for in Kona.</p>
+<p>This version adds:</p>
+<ul>
+<li>An FAQ entry for <a href="#faq-demand">library implementor feedback</a></li>
+<li>An FAQ entry for <a href="#faq-rec-lambda-impl">implementability</a></li>
+<li>An FAQ entry for <a href="#faq-computed-deduction">computed deduction</a>, an orthogonal feature that EWGI asked for in Kona.</li>
+</ul>
 <h2 data-number="2.3" id="changes-since-r1"><span class="header-section-number">2.3</span> Changes since r1<a href="#changes-since-r1" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P0847R1">[<a href="#ref-P0847R1" role="doc-biblioref">P0847R1</a>]</span> was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.</p>
 <h2 data-number="2.4" id="changes-since-r0"><span class="header-section-number">2.4</span> Changes since r0<a href="#changes-since-r0" class="self-link"></a></h2>
@@ -908,7 +914,7 @@ Proposed
 <span id="cb11-10"><a href="#cb11-10"></a>    move<span class="op">(</span>x<span class="op">).</span>foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// Self=X</span></span>
 <span id="cb11-11"><a href="#cb11-11"></a>    d<span class="op">.</span>foo<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;       <span class="co">// Self=D&amp;</span></span>
 <span id="cb11-12"><a href="#cb11-12"></a><span class="op">}</span></span></code></pre></div>
-<p>It’s important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, <code class="sourceCode cpp">Self</code> deduces as <code class="sourceCode cpp">D<span class="op">&amp;</span></code>. This has implications for [[#name-lookup-within-member-functions]], and leads to a potential [[#faq-computed-deduction|template deduction extension]].</p>
+<p>It’s important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, <code class="sourceCode cpp">Self</code> deduces as <code class="sourceCode cpp">D<span class="op">&amp;</span></code>. This has implications for <a href="#name-lookup-within-member-functions">name lookup within member functions</a>, and leads to a potential <a href="#faq-computed-deduction">template argument deduction extension</a>.</p>
 <h3 data-number="4.2.3" id="by-value-this"><span class="header-section-number">4.2.3</span> By value <code class="sourceCode cpp"><span class="kw">this</span></code><a href="#by-value-this" class="self-link"></a></h3>
 <p>But what if the explicit type does not have reference type? What should this mean?</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">struct</span> less_than <span class="op">{</span></span>
@@ -920,7 +926,7 @@ Proposed
 <span id="cb12-7"><a href="#cb12-7"></a></span>
 <span id="cb12-8"><a href="#cb12-8"></a>less_than<span class="op">{}(</span><span class="dv">4</span>, <span class="dv">5</span><span class="op">)</span>;</span></code></pre></div>
 <p>Clearly, the parameter specification should not lie, and the first parameter (<code class="sourceCode cpp">less_than<span class="op">{}</span></code>) is passed by value.</p>
-<p>Following the proposed rules for candidate lookup, the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all — it has a clear and obvious meaning, but we’ve never been able to take an object parameter by value before. For cases in which this might be desirable, see [[#by-value-member-functions]].</p>
+<p>Following the proposed rules for candidate lookup, the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all — it has a clear and obvious meaning, but we’ve never been able to take an object parameter by value before. For cases in which this might be desirable, see <a href="#by-value-member-functions">by-value member functions</a>.</p>
 <h3 data-number="4.2.4" id="name-lookup-within-member-functions"><span class="header-section-number">4.2.4</span> Name lookup: within member functions<a href="#name-lookup-within-member-functions" class="self-link"></a></h3>
 <p>So far, we’ve only considered how member functions with explicit object parameters are found with name lookup and how they deduce that parameter. Now we move on to how the bodies of these functions actually behave.</p>
 <p>Since the explicit object parameter is deduced from the object on which the function is called, this has the possible effect of deducing <em>derived</em> types. We must carefully consider how name lookup works in this context.</p>
@@ -1031,7 +1037,7 @@ Proposed
 <span id="cb22-10"><a href="#cb22-10"></a><span class="dt">int</span> y <span class="op">=</span> B<span class="op">().</span>f1<span class="op">()</span>;  <span class="co">// error: B is not implicitly convertible to D</span></span>
 <span id="cb22-11"><a href="#cb22-11"></a><span class="kw">auto</span> z <span class="op">=</span> <span class="op">&amp;</span>B<span class="op">::</span>f1;   <span class="co">// ok</span></span>
 <span id="cb22-12"><a href="#cb22-12"></a>z<span class="op">(</span>D<span class="op">())</span>;            <span class="co">// ok</span></span></code></pre></div>
-<p>Even though both <code class="sourceCode cpp">D<span class="op">().</span>f1<span class="op">()</span></code> and <code class="sourceCode cpp">B<span class="op">().</span>f1<span class="op">()</span></code> are ill-formed, for entirely different reasons, taking a pointer to <code class="sourceCode cpp"><span class="op">&amp;</span>B<span class="op">::</span>f1</code> is acceptable — its type is <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span>D<span class="op">)</span></code> — and that function pointer can be invoked with a <code class="sourceCode cpp">D</code>. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [[#by-value-this]]).</p>
+<p>Even though both <code class="sourceCode cpp">D<span class="op">().</span>f1<span class="op">()</span></code> and <code class="sourceCode cpp">B<span class="op">().</span>f1<span class="op">()</span></code> are ill-formed, for entirely different reasons, taking a pointer to <code class="sourceCode cpp"><span class="op">&amp;</span>B<span class="op">::</span>f1</code> is acceptable — its type is <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span>D<span class="op">)</span></code> — and that function pointer can be invoked with a <code class="sourceCode cpp">D</code>. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [#by-value-this]).</p>
 <h3 data-number="4.2.7" id="teachability-implications"><span class="header-section-number">4.2.7</span> Teachability Implications<a href="#teachability-implications" class="self-link"></a></h3>
 <p>Explicitly naming the object as the <code class="sourceCode cpp"><span class="kw">this</span></code>-designated first parameter fits within many programmers’ mental models of the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer being the first parameter to member functions “under the hood” and is comparable to its usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how <code class="sourceCode cpp">std<span class="op">::</span>bind</code>, <code class="sourceCode cpp">std<span class="op">::</span>thread</code>, <code class="sourceCode cpp">std<span class="op">::</span>function</code>, and others work with a member function pointer by making the pointer explicit.</p>
 <p>As such, we do not believe there to be any teachability problems.</p>
@@ -1044,7 +1050,7 @@ Proposed
 <h3 data-number="4.2.11" id="code-issues"><span class="header-section-number">4.2.11</span> Code issues<a href="#code-issues" class="self-link"></a></h3>
 <p>There are two programmatic issues with this proposal that we are aware of:</p>
 <ol type="1">
-<li><p>Inadvertently referencing a shadowing member of a derived object in a base class <code class="sourceCode cpp"><span class="kw">this</span></code>-annotated member function. There are some use cases where we would want to do this on purposes (see [[#crtp]]), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.</p></li>
+<li><p>Inadvertently referencing a shadowing member of a derived object in a base class <code class="sourceCode cpp"><span class="kw">this</span></code>-annotated member function. There are some use cases where we would want to do this on purposes (see <a href="#crtp">crtp</a>), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.</p></li>
 <li><p>Because there is no way to <em>just</em> deduce <code class="sourceCode cpp"><span class="kw">const</span></code> vs non-<code class="sourceCode cpp"><span class="kw">const</span></code>, the only way to deduce the value category would be to take a forwarding reference. This means that potentially we create four instantiations when only two would be minimally necessary to solve the problem. But deferring to a templated implementation is an acceptable option and has been improved by no longer requiring casts. We believe that the problem is minimal.</p></li>
 </ol>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="real-world-examples"><span class="header-section-number">5</span> Real-World Examples<a href="#real-world-examples" class="self-link"></a></h1>
@@ -1276,7 +1282,7 @@ Proposed
 </td>
 </tr>
 </table>
-<p>There are a few more functions in P0798 responsible for this explosion of overloads, so the difference in both code and clarity is dramatic.</p>
+<p>There are a few more functions in <span class="citation" data-cites="P0798R0">[<a href="#ref-P0798R0" role="doc-biblioref">P0798R0</a>]</span> responsible for this explosion of overloads, so the difference in both code and clarity is dramatic.</p>
 <p>For those that dislike returning auto in these cases, it is easy to write a metafunction matching the appropriate qualifiers from a type. It is certainly a better option than blindly copying and pasting code, hoping that the minor changes were made correctly in each case.</p>
 <h2 data-number="5.2" id="crtp"><span class="header-section-number">5.2</span> CRTP, without the C, R, or even T<a href="#crtp" class="self-link"></a></h2>
 <p>Today, a common design pattern is the Curiously Recurring Template Pattern. This implies passing the derived type as a template parameter to a base class template as a way of achieving static polymorphism. If we wanted to simply outsource implementing postfix incrementation to a base, we could use CRTP for that. But with explicit objects that already deduce to the derived objects, we don’t need any curious recurrence — we can use standard inheritance and let deduction do its thing. The base class doesn’t even need to be a template:</p>
@@ -1483,7 +1489,7 @@ Proposed
 <span id="cb38-10"><a href="#cb38-10"></a>    <span class="cf">return</span> self<span class="op">(</span>n<span class="op">-</span><span class="dv">1</span><span class="op">)</span> <span class="op">+</span> self<span class="op">(</span>n<span class="op">-</span><span class="dv">2</span><span class="op">)</span>;</span>
 <span id="cb38-11"><a href="#cb38-11"></a><span class="op">}</span>;</span></code></pre></div>
 <p>This works by following the established rules. The call operator of the closure object can also have an explicit object parameter, so in this example, <code class="sourceCode cpp">self</code> is the closure object.</p>
-<p>In San Diego, issues of implementability were raised. The proposal ends up being implementable. See [[#faq-rec-lambda-impl]] for details.</p>
+<p>In San Diego, issues of implementability were raised. The proposal ends up being implementable. See <a href="#faq-rec-lambda-impl">the lambda FAQ entry</a> for details.</p>
 <p>Combine this with the new style of mixins allowing us to automatically deduce the most derived object, and you get the following example — a simple recursive lambda that counts the number of leaves in a tree.</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">struct</span> Node;</span>
 <span id="cb39-2"><a href="#cb39-2"></a><span class="kw">using</span> Tree <span class="op">=</span> variant<span class="op">&lt;</span>Leaf, Node<span class="op">*&gt;</span>;</span>
@@ -1682,7 +1688,7 @@ Proposed
 <li><span class="citation" data-cites="P1221R1">[<a href="#ref-P1221R1" role="doc-biblioref">P1221R1</a>]</span></li>
 </ul>
 <p>In Herb Sutter’s “Name 5 most important papers for C++”, 10 out of 289 respondents chose it. Given that the cutoff was 5, and that modules, throwing values, contracts, reflection, coroutines, linear algebra, and pattern matching were all in that list, I find the result a strong indication that it is wanted.</p>
-<p>I have to also say that Gašper is dearly missing this feature in <a href="https://github.com/atomgalaxy/libciabatta">libciabatta</a> mixin support library, as well as his regular work writing libraries.</p>
+<p>We can also report that Gašper is dearly missing this feature in <a href="https://github.com/atomgalaxy/libciabatta">libciabatta</a>, a mixin support library, as well as his regular work writing libraries.</p>
 <p>On the question of whether this would get used in the standard library interfaces, the answer was “not without the ability to constrain the deduced type”, which is a feature C++ needs even without this paper, and is an orthogonal feature. The same authors were generally very enthusiastic about using this feature in their implementations.</p>
 <h2 data-number="6.3" id="faq-function-ptr-type"><span class="header-section-number">6.3</span> Function Pointer Types<a href="#faq-function-ptr-type" class="self-link"></a></h2>
 <p>A valid question to ask is what should be the type of this-annotated functions that have a member function equivalent? There are only two options, each with a trade-off. Please assume the existence of these three functions:</p>
@@ -1702,16 +1708,17 @@ Proposed
 <p>The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: <a href="https://atomgalaxy.github.io/isocpp-1107/D1107.html">computed deduction</a></p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">7</span> Proposed Wording<a href="#wording" class="self-link"></a></h1>
 <p>The wording direction chosen was to make the minimal changes possible.</p>
-<p>To that end:</p>
+<p>To that end, we must:</p>
 <ul>
-<li>we must define what the explicit object parameter is (in a new [dcl.fct]p8).</li>
-<li>we must insert it into the syntax of the function declarations ([dcl.fct]p3).</li>
-<li>we must limit it to member functions ([dcl.fct]p8).</li>
-<li>we must specify the behaviour of the bodies of such functions; since the body behaves identically to static member functions, we will just define them as such ([dcl.fct]p8).</li>
-<li>we must specify the matching behaviour of such a parameter; we do it for any function with such a parameter in [over.match.funcs]p3. We do not want to break lookup, so we leave the implicit object parameter alone – we merely add an additional argument where the declaration requested it. We cannot say that it’s the first parameter, since that place is already taken by the implicit object parameter.</li>
+<li><strong>define</strong> what the explicit object parameter is (in a new <span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/8).</li>
+<li>insert it into the <strong>syntax</strong> of the function declarations (<span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/3).</li>
+<li><strong>limit</strong> it to member functions (<span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/8).</li>
+<li>specify the <strong>behaviour</strong> of the bodies of such functions; since the body behaves identically to static member functions, we define them as such (<span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/8).</li>
+<li>specify the <strong>matching</strong> and <strong>call behaviour</strong> of such a parameter; we do it for any function with such a parameter in <span>12.4.1 <a href="https://wg21.link/over.match.funcs">[over.match.funcs]</a></span>/3. We do not want to break lookup, so we leave the implicit object parameter alone – we merely add an additional argument where the declaration requested it. We cannot say that it’s the first parameter, since that place is already taken by the implicit object parameter.</li>
+<li>Since certain <strong>operators</strong> currently cannot be declared as static functions, we add the ability to declare them static in this particular way, and leave the current prohibition against directly declaring them static alone.</li>
 </ul>
 <h2 data-number="7.1" id="changes-to-dcl.fct"><span class="header-section-number">7.1</span> Changes to [dcl.fct]<a href="#changes-to-dcl.fct" class="self-link"></a></h2>
-<p>In paragraph 3, insert the <em>explicit-object-parameter-declaration</em> into the syntax for the <em>parameter-declaration-clause</em>:</p>
+<p>In <span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/3, insert the <em>explicit-object-parameter-declaration</em> into the syntax for the <em>parameter-declaration-clause</em>:</p>
 <blockquote>
 <div class="line-block"><em>parameter-declaration-clause</em>:<br />
    <span class="add" style="color: #006e28"><ins><em>explicit-object-parameter-declaration</em> <span><code class="sourceCode cpp">,</code></span><sub><em>opt</em></sub></ins></span> <em>parameter-declaration-list</em><sub>opt</sub> <code class="sourceCode cpp"><span class="op">...</span></code><sub><em>opt</em></sub><br />
@@ -1725,11 +1732,11 @@ Proposed
 </blockquote>
 
 </div>
-<p>After paragraph 7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.</p>
+<p>After <span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.</p>
 <div class="add" style="color: #006e28">
 <p><span class="marginalizedparent"><a class="marginalized">8</a></span> A function type with an <em>explicit-object-parameter-declaration</em> shall appear only as the function type for a member function. Such a declarator declares a static member function. Such a function shall not be explicitly declared static. Such a declarator shall not include a <em>ref-qualifier</em>. The parameter declared with the <em>explicit-object-parameter-declaration</em> is the <em>explicit object parameter</em>.</p>
 </div>
-<p>Note: the exclusion of the <em>cv-qualifier-seq</em> is accomplished by [class.static.mfct]p2, so we don’t do it here redundantly.</p>
+<p>Note: the exclusion of the <em>cv-qualifier-seq</em> is accomplished by <span>11.4.8.1 <a href="https://wg21.link/class.static.mfct">[class.static.mfct]</a></span>/2, so we don’t do it here redundantly.</p>
 <h2 data-number="7.2" id="changes-to-over.match.funcs"><span class="header-section-number">7.2</span> Changes to [over.match.funcs]<a href="#changes-to-over.match.funcs" class="self-link"></a></h2>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> Similarly, when appropriate, the context can construct an argument list that contains an implied object argument as the first argument in the list to denote the object to be operated on.</p>
 <div class="add" style="color: #006e28">
@@ -1745,19 +1752,26 @@ Proposed
 <p>– end example ]</p>
 </div>
 <h2 data-number="7.3" id="changes-to-over.call.object"><span class="header-section-number">7.3</span> Changes to [over.call.object]<a href="#changes-to-over.call.object" class="self-link"></a></h2>
+<p>Add to <span>12.4.1.1.2 <a href="https://wg21.link/over.call.object">[over.call.object]</a></span>/4:</p>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument (E). [ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator<span class="del">.</span><span class="add" style="color: #006e28"><ins>, unless the function call operator has been declared with an <em>explicit-object-parameter-declarator</em>, in which case the implied object argument is compared against the parameter declared with the <em>explicit-object-parameter-declarator</em>.</ins></span> When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function. The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter. — end note ]</p>
 <h2 data-number="7.4" id="changes-to-class.conv.fct"><span class="header-section-number">7.4</span> Changes to [class.conv.fct]<a href="#changes-to-class.conv.fct" class="self-link"></a></h2>
-<p>Add to p1:</p>
+<p>Add to <span>11.4.7.2 <a href="https://wg21.link/class.conv.fct">[class.conv.fct]</a></span>/1:</p>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> A member function of a class <code class="sourceCode cpp">X</code> having no parameters or an explicit object parameter of the form […] The type of the conversion function (9.3.3.5) is “function taking no parameter returning <em>conversion-type-id</em>”<span class="add" style="color: #006e28"><ins>or function taking one explicit object parameter returning <em>conversion-type-id</em></ins></span>.</p>
 <h2 data-number="7.5" id="changes-to-over.oper"><span class="header-section-number">7.5</span> Changes to [over.oper]<a href="#changes-to-over.oper" class="self-link"></a></h2>
-<p>Add to p7:</p>
+<p>Add to <span>12.6 <a href="https://wg21.link/over.oper">[over.oper]</a></span>/7:</p>
 <p><span class="marginalizedparent"><a class="marginalized">7</a></span> An operator function shall either be a non-static member function<span class="add" style="color: #006e28"><ins>, a function taking an explicit object parameter,</ins></span> or be a non-member function that has at least one parameter […]</p>
 <h2 data-number="7.6" id="changes-to-over.call"><span class="header-section-number">7.6</span> Changes to [over.call]<a href="#changes-to-over.call" class="self-link"></a></h2>
+<p>Add to <span>12.6.4 <a href="https://wg21.link/over.call">[over.call]</a></span>/1:</p>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code> shall be a non-static member function <span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter</ins></span> with an arbitrary number of parameters. […]</p>
 <h2 data-number="7.7" id="changes-to-over.sub"><span class="header-section-number">7.7</span> Changes to [over.sub]<a href="#changes-to-over.sub" class="self-link"></a></h2>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">[]</span></code> shall be a non-static member function with exactly one parameter<span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly two parameters</ins></span>. […]</p>
+<p>Add to <span>12.6.5 <a href="https://wg21.link/over.sub">[over.sub]</a></span>/1:</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">[]</span></code> shall be a non-static member function with exactly one parameter <span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly two parameters</ins></span>. […]</p>
 <h2 data-number="7.8" id="changes-to-over.ref"><span class="header-section-number">7.8</span> Changes to [over.ref]<a href="#changes-to-over.ref" class="self-link"></a></h2>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code> shall be a non-static member function taking no parameters<span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly that parameter</ins></span>. […]</p>
+<p>Add to <span>12.6.6 <a href="https://wg21.link/over.ref">[over.ref]</a></span>/1:</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code> shall be a non-static member function taking no parameters <span class="add" style="color: #006e28"><ins>or a function taking an explicit object parameter with exactly that parameter</ins></span>. […]</p>
+<h2 data-number="7.9" id="feature-test-macro-tabcpp.predefined.ft"><span class="header-section-number">7.9</span> Feature-test macro [tab:cpp.predefined.ft]<a href="#feature-test-macro-tabcpp.predefined.ft" class="self-link"></a></h2>
+<p>Add to <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>/table 17 ([tab:cpp.predefined.ft]):</p>
+<p><span class="add" style="color: #006e28"><ins><span><code class="sourceCode cpp">__cpp_explicit_object_parameter</code></span></ins></span> with the appropriate constant (possibly <code class="sourceCode cpp"><span class="dv">202007</span><span class="bu">L</span></code>).</p>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">8</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>The authors would like to thank:</p>
 <ul>
