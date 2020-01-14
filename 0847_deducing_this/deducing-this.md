@@ -1407,13 +1407,14 @@ To that end, we must:
   - specify the **matching** and **call behaviour** of such a parameter; we do it for any function with such a parameter in [over.match.funcs]{.sref}/3. We do not want to break lookup, so we leave the implicit object parameter alone -- we merely add an additional argument where the declaration requested it. We cannot say that it's the first parameter, since that place is already taken by the implicit object parameter.
   - Since certain **operators** currently cannot be declared as static functions, we add the ability to declare them static in this particular way, and leave the current prohibition against directly declaring them static alone.
 
-## Changes to [dcl.fct]
-
 In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
 
->| _parameter-declaration-clause_:
->|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_~opt~ `...`~_opt_~
->|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_ `,` `...`
+::: bq
+
+>| _parameter-declaration-list_:
+>|    _parameter-declaration_
+>|    [_explicit-object-parameter-declaration_]{.addu}
+>|    _parameter-declaration-list_ `,` _parameter-declaration_
 
 ::: add
 
@@ -1421,18 +1422,25 @@ In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into t
 >|    `this` _parameter-declaration_
 
 :::
+:::
 
 After [dcl.fct]{.sref}/7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.
 
+::: bq
 ::: add
 
-[8]{.pnum} A function type with an _explicit-object-parameter-declaration_ shall appear only as the function type for a member function. Such a declarator declares a static member function. Such a function shall not be explicitly declared static. Such a declarator shall not include a _ref-qualifier_. The parameter declared with the _explicit-object-parameter-declaration_ is the _explicit object parameter_.
+[7a]{.pnum} An _explicit-object-parameter-declaration_ shall only appear in a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a declaration declares a static member function. Such a function shall not be explicitly declared `static` or `virtual`. Such a declarator shall not include a _ref-qualifier_.
 
+[7b]{.pnum} The parameter declared with the _explicit-object-parameter-declaration_ is the _explicit object parameter_. The explicit object parameter shall not be a function parameter pack ([temp.variadic]).
+
+:::
 :::
 
 Note: the exclusion of the _cv-qualifier-seq_ is accomplished by [class.static.mfct]{.sref}/2, so we don't do it here redundantly.
 
-## Changes to [over.match.funcs]
+Change [over.match.funcs]{.sref}:
+
+::: bq
 
 [3]{.pnum} Similarly, when appropriate, the context can construct an argument list that contains an implied object argument as the first argument in the list to denote the object to be operated on.
 
@@ -1452,53 +1460,57 @@ A::f(A{1}, 2); // returns 3
 -- end example ]
 
 :::
-
-## Changes to [over.call.object]
+:::
 
 Add to [over.call.object]{.sref}/4:
 
+::: bq
+
 [4]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument (E).
-[ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator[.]{.del}[, unless the function call operator has been declared with an _explicit-object-parameter-declarator_, in which case the implied object argument is compared against the parameter declared with the _explicit-object-parameter-declarator_.]{.add}
+[ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator[.]{.rm}[, unless the function call operator has been declared with an _explicit-object-parameter-declarator_, in which case the implied object argument is compared against the parameter declared with the _explicit-object-parameter-declarator_.]{.addu}
 When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
 The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
 — end note ]
 
-## Changes to [class.conv.fct]
+::: 
 
 Add to [class.conv.fct]{.sref}/1:
 
-[1]{.pnum} A member function of a class `X` having no parameters or an explicit object parameter of the form [...]
-The type of the conversion function (9.3.3.5) is “function taking no parameter returning _conversion-type-id_”[ or function taking one explicit object parameter returning _conversion-type-id_]{.add}.
+::: bq
 
-## Changes to [over.oper]
+[1]{.pnum} A member function of a class `X` having no parameters or an explicit object parameter of the form [...]
+The type of the conversion function (9.3.3.5) is "function taking no parameter returning _conversion-type-id_" [or "function taking an explicit object parameter returning _conversion-type-id_"]{.addu}.
+:::
 
 Add to [over.oper]{.sref}/7:
 
-[7]{.pnum} An operator function shall either be a non-static member function[, a function taking an explicit object parameter,]{.add} or be a non-member function that has at least one parameter [...]
-
-## Changes to [over.call]
+::: bq
+[7]{.pnum} An operator function shall either be a non-static member function[, a function taking an explicit object parameter,]{.addu} or be a non-member function that has at least one parameter [...]
+:::
 
 Add to [over.call]{.sref}/1:
 
-[1]{.pnum} `operator()` shall be a non-static member function [or a function taking an explicit object parameter]{.add} with an arbitrary number of parameters. [...]
-
-## Changes to [over.sub]
+::: bq
+[1]{.pnum} `operator()` shall be a non-static member function [or a function taking an explicit object parameter]{.addu} with an arbitrary number of parameters. [...]
+::: 
 
 Add to [over.sub]{.sref}/1:
 
-[1]{.pnum} `operator[]` shall be a non-static member function with exactly one parameter [or a function taking an explicit object parameter with exactly two parameters]{.add}. [...]
-
-## Changes to [over.ref]
+::: bq
+[1]{.pnum} `operator[]` shall be a non-static member function with exactly one parameter [or a function taking an explicit object parameter with exactly two parameters]{.addu}. [...]
+::: 
 
 Add to [over.ref]{.sref}/1:
 
-[1]{.pnum} `operator->` shall be a non-static member function taking no parameters [or a function taking an explicit object parameter with exactly that parameter]{.add}. [...]
+::: bq
+[1]{.pnum} `operator->` shall be a non-static member function taking no parameters [or a function taking an explicit object parameter with exactly that parameter]{.addu}. [...]
+:::
 
 ## Feature-test macro [tab:cpp.predefined.ft]
 
 Add to [cpp.predefined]{.sref}/table 17 ([tab:cpp.predefined.ft]):
 
-[`__cpp_explicit_object_parameter`]{.add} with the appropriate constant (possibly `202007L`).
+[`__cpp_explicit_object_parameter`]{.addu} with the appropriate constant (possibly `202007L`).
 
 # Acknowledgements # {#acknowledgements}
 
