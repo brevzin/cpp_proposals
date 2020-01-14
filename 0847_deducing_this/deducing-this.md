@@ -1,65 +1,47 @@
-<pre class='metadata'>
-Title: Deducing this
-Status: D
-ED: http://wg21.link/P0847
-Shortname: P0847
-Level: 3
-Date: 2019-10-18
-Editor: Gašper Ažman, gasper dot azman at gmail dot com
-Editor: Simon Brand, simon dot brand at microsoft dot com
-Editor: Ben Deane, ben at elbeno dot com
-Editor: Barry Revzin, barry dot revzin at gmail dot com
-Group: wg21
-Audience: EWG
-Markup Shorthands: markdown yes
-Default Highlight: C++
-Abstract: We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
-</pre>
+---
+title: Deducing this
+document: P0847R4
+date: today
+audience: EWG => CWG
+author:
+  - name: Gašper Ažman
+    email: <gasper.azman@gmail.com>
+  - name: Simon Brand
+    email: <simon.brand@microsoft.com>
+  - name: Ben Deane, ben at elbeno dot com
+    email: <ben@elbeno.com>
+  - name: Barry Revzin
+    email: <barry.revzin@gmail.com>
+toc: true
+---
 
-<pre class="biblio">
-{
-    "Effective": {
-        "authors": ["Scott Meyers"],
-        "title": "Effective C++, Third Edition",
-        "href": "https://www.aristeia.com/books.html",
-        "date": "2005"
-    }
-}
-</pre>
+# Abstract
 
-<style>
-.ins, ins, ins *, span.ins, span.ins * {
-  background-color: rgb(200, 250, 200);
-  color: rgb(0, 136, 0);
-  text-decoration: none;
-}
-
-.del, del, del *, span.del, span.del * {
-  background-color: rgb(250, 200, 200);
-  color: rgb(255, 0, 0);
-  text-decoration: line-through;
-  text-decoration-color: rgb(255, 0, 0);
-}
-</style>
+We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
 
 # Revision History # {#revision-history}
 
+## Changes since r3 ## {#changes-since-r3}
+
+The feedback from Belfast in EWG was "This looks good, come back with wording and implementation". This version adds wording, the implementation is in the works.
+
 ## Changes since r2 ## {#changes-since-r2}
 
-[[P0847R2]] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
+[@P0847R2] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
 
 This version adds:
-- An FAQ entry for [[#faq-demand|library implementor feedback]]
-- An FAQ entry for [[#faq-rec-lambda-impl|implementability]].
-- An FAQ entry for [[#faq-computed-deduction]], an orthogonal feature that EWGI asked for in Kona.
+
+  - An FAQ entry for [library implementor feedback](#faq-demand)
+  - An FAQ entry for [implementability](#faq-rec-lambda-impl)
+  - An FAQ entry for [computed deduction](#faq-computed-deduction), an orthogonal feature that EWGI asked for in Kona.
 
 ## Changes since r1 ## {#changes-since-r1}
 
-[[P0847R1]] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
+[@P0847R1] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
 
 ## Changes since r0 ## {#changes-since-r0}
 
-[[P0847R0]] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
+[@P0847R0] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
 
 EWG strongly encouraged us to look in two new directions:
 
@@ -70,7 +52,7 @@ This revision carefully explores both of these directions, presents different sy
 
 # Motivation # {#motivation}
 
-In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member. (Note that it was also possible to want `volatile` overloads, but those are less common and thus are not examined here.) In these cases, both overloads do the same thing &mdash; the only difference is in the types being accessed and used. This was handled by either duplicating the function while adjusting types and qualifications as necessary, or having one overload delegate to the other. An example of the latter can be found in Scott Meyers's "Effective C++" [[Effective]], Item 3:
+In C++03, member functions could have *cv*-qualifications, so it was possible to have scenarios where a particular class would want both a `const` and non-`const` overload of a particular member. (Note that it was also possible to want `volatile` overloads, but those are less common and thus are not examined here.) In these cases, both overloads do the same thing &mdash; the only difference is in the types being accessed and used. This was handled by either duplicating the function while adjusting types and qualifications as necessary, or having one overload delegate to the other. An example of the latter can be found in Scott Meyers's "Effective C++" [@Effective], Item 3:
 
 ```c++
 class TextBlock {
@@ -413,7 +395,7 @@ void ex(X& x, D& d) {
 }
 ```
 
-It's important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [[#name-lookup-within-member-functions]], and leads to a potential [[#faq-computed-deduction|template deduction extension]].
+It's important to stress that deduction is able to deduce a derived type, which is extremely powerful. In the last line, regardless of syntax, `Self` deduces as `D&`. This has implications for [name lookup within member functions](#name-lookup-within-member-functions), and leads to a potential [template argument deduction extension](#faq-computed-deduction).
 
 ### By value `this` ### {#by-value-this}
 
@@ -432,7 +414,7 @@ less_than{}(4, 5);
 
 Clearly, the parameter specification should not lie, and the first parameter (`less_than{}`) is passed by value.
 
-Following the proposed rules for candidate lookup, the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all &mdash; it has a clear and obvious meaning, but we've never been able to take an object parameter by value before. For cases in which this might be desirable, see [[#by-value-member-functions]].
+Following the proposed rules for candidate lookup, the call operator here would be a candidate, with the object parameter binding to the (empty) object and the other two parameters binding to the arguments. Having a value parameter is nothing new in the language at all &mdash; it has a clear and obvious meaning, but we've never been able to take an object parameter by value before. For cases in which this might be desirable, see [by-value member functions](#by-value-member-functions).
 
 ### Name lookup: within member functions ### {#name-lookup-within-member-functions}
 
@@ -571,7 +553,7 @@ struct B {
 struct D : B { };
 ```
 
-Following the precedent of [[P0929R2]], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
+Following the precedent of [@P0929R2], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
 
 For unrelated complete classes or non-classes:
 
@@ -602,7 +584,7 @@ auto z = &B::f1;   // ok
 z(D());            // ok
 ```
 
-Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [[#by-value-this]]).
+Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [by-value `this`](#by-value-this).
 
 ### Teachability Implications ### {#teachability-implications}
 
@@ -629,7 +611,7 @@ The proposed syntax has no parsings issue that we are aware of.
 
 There are two programmatic issues with this proposal that we are aware of:
 
-1. Inadvertently referencing a shadowing member of a derived object in a base class `this`-annotated member function. There are some use cases where we would want to do this on purposes (see [[#crtp]]), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.
+1. Inadvertently referencing a shadowing member of a derived object in a base class `this`-annotated member function. There are some use cases where we would want to do this on purposes (see [crtp](#crtp)), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.
 
 2. Because there is no way to _just_ deduce `const` vs non-`const`, the only way to deduce the value category would be to take a forwarding reference. This means that potentially we create four instantiations when only two would be minimally necessary to solve the problem. But deferring to a templated implementation is an acceptable option and has been improved by no longer requiring casts. We believe that the problem is minimal.
 
@@ -641,7 +623,7 @@ What follows are several examples of the kinds of problems that can be solved us
 
 This proposal can de-duplicate and de-quadruplicate a large amount of code. In each case, the single function is only slightly more complex than the initial two or four, which makes for a huge win. What follows are a few examples of ways to reduce repeated code.
 
-This particular implementation of optional is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional). It includes some functions proposed in [[P0798R0]], with minor changes to better suit this format:
+This particular implementation of `optional` is Simon's, and can be viewed on [GitHub](https://github.com/TartanLlama/optional). It includes some functions proposed in [@P0798R0], with minor changes to better suit this format:
 
 <table style="width:100%">
 <tr>
@@ -880,7 +862,7 @@ class optional {
 </tr>
 </table>
 
-There are a few more functions in P0798 responsible for this explosion of overloads, so the difference in both code and clarity is dramatic.
+There are a few more functions in [@P0798R0] responsible for this explosion of overloads, so the difference in both code and clarity is dramatic.
 
 For those that dislike returning auto in these cases, it is easy to write a metafunction matching the appropriate qualifiers from a type. It is certainly a better option than blindly copying and pasting code, hoping that the minor changes were made correctly in each case.
 
@@ -1097,7 +1079,7 @@ Note that the `Super` implementations with this proposal opt-in to further deriv
 
 ## Recursive Lambdas ## {#recursive-lambdas}
 
-The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [[P0839R0]], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda.
+The explicit object parameter syntax offers an alternative solution to implementing a recursive lambda as compared to [@P0839R0], since now we've opened up the possibility of allowing a lambda to reference itself. To do this, we need a way to *name* the lambda.
 
 ```cpp
 // as proposed in P0839
@@ -1115,7 +1097,7 @@ auto fib = [](this auto const& self, int n) {
 
 This works by following the established rules. The call operator of the closure object can also have an explicit object parameter, so in this example, `self` is the closure object.
 
-In San Diego, issues of implementability were raised. The proposal ends up being implementable. See [[#faq-rec-lambda-impl]] for details.
+In San Diego, issues of implementability were raised. The proposal ends up being implementable. See [the lambda FAQ entry](#faq-rec-lambda-impl) for details.
 
 Combine this with the new style of mixins allowing us to automatically deduce the most derived object, and you get the following example &mdash; a simple recursive lambda that counts the number of leaves in a tree.
 
@@ -1167,7 +1149,7 @@ There is, however, one place today where you simply *cannot* pass types like `st
 
 As an easy performance optimization, any member function of small types that does not perform any modifications can take the object parameter by value. Here is an example of some member functions of `basic_string_view` assuming that we are just using `charT const*` as `iterator`:
 
-<xmp highlight="c++">
+```cpp
 template <class charT, class traits = char_traits<charT>>
 class basic_string_view {
 private:
@@ -1190,7 +1172,7 @@ public:
         return self.data_[pos];
     }
 };
-</xmp>
+```
 
 Most of the member functions can be rewritten this way for a free performance boost.
 
@@ -1226,11 +1208,11 @@ struct less_than {
 </tr>
 </table>
 
-In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object &mdash; completely unnecessary work when copying it is free. The compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [[P1169R0]].
+In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object &mdash; completely unnecessary work when copying it is free. The compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [@P1169R0].
 
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
-A seemingly unrelated problem to the question of code quadruplication is that of writing numerous overloads for function wrappers, as demonstrated in [[P0826R0]]. Consider what happens if we implement `std::not_fn()` as currently specified:
+A seemingly unrelated problem to the question of code quadruplication is that of writing numerous overloads for function wrappers, as demonstrated in [@P0826R0]. Consider what happens if we implement `std::not_fn()` as currently specified:
 
 ```cpp
 template <typename F>
@@ -1373,12 +1355,12 @@ In Kona, EWGI asked us to see whether library implementors would use this. The a
 
 We have heard from Casey Carter and Jonathan Wakely that they are interested in this feature. Also, on the ewg/lewg mailing lists, this paper comes up as a solution to a surprising number of questions, and gets referenced in many papers-in-flight. A sampling of papers:
 
-- [[P0798R3]]
-- [[P1221R1]]
+- [@P0798R3]
+- [@P1221R1]
 
 In Herb Sutter's "Name 5 most important papers for C++", 10 out of 289 respondents chose it. Given that the cutoff was 5, and that modules, throwing values, contracts, reflection, coroutines, linear algebra, and pattern matching were all in that list, I find the result a strong indication that it is wanted.
 
-I have to also say that Gašper is dearly missing this feature in [libciabatta](https://github.com/atomgalaxy/libciabatta) mixin support library, as well as his regular work writing libraries.
+We can also report that Gašper is dearly missing this feature in [libciabatta](https://github.com/atomgalaxy/libciabatta), a mixin support library, as well as his regular work writing libraries.
 
 On the question of whether this would get used in the standard library interfaces, the answer was "not without the ability to constrain the deduced type", which is a feature C++ needs even without this paper, and is an orthogonal feature. The same authors were generally very enthusiastic about using this feature in their implementations.
 
@@ -1412,6 +1394,111 @@ One family of possible solutions could be summarized as **make it easy to get th
 
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
 
+# Proposed Wording # {#wording}
+
+The wording direction chosen was to make the minimal changes possible.
+
+To that end, we must:
+
+  - **define** what the explicit object parameter is (in a new [dcl.fct]{.sref}/8).
+  - insert it into the **syntax** of the function declarations ([dcl.fct]{.sref}/3).
+  - **limit** it to member functions ([dcl.fct]{.sref}/8).
+  - specify the **behaviour** of the bodies of such functions; since the body behaves identically to static member functions, we define them as such ([dcl.fct]{.sref}/8).
+  - specify the **matching** and **call behaviour** of such a parameter; we do it for any function with such a parameter in [over.match.funcs]{.sref}/3. We do not want to break lookup, so we leave the implicit object parameter alone -- we merely add an additional argument where the declaration requested it. We cannot say that it's the first parameter, since that place is already taken by the implicit object parameter.
+  - Since certain **operators** currently cannot be declared as static functions, we add the ability to declare them static in this particular way, and leave the current prohibition against directly declaring them static alone.
+
+## Changes to [dcl.fct]
+
+In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
+
+>| _parameter-declaration-clause_:
+>|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_~opt~ `...`~_opt_~
+>|    [_explicit-object-parameter-declaration_ `,`~_opt_~]{.add} _parameter-declaration-list_ `,` `...`
+
+::: add
+
+>| _explicit-object-parameter-declaration_:
+>|    `this` _parameter-declaration_
+
+:::
+
+After [dcl.fct]{.sref}/7, insert paragraph describing where a function declaration with an explicit object parameter may appear, and renumber section.
+
+::: add
+
+[8]{.pnum} A function type with an _explicit-object-parameter-declaration_ shall appear only as the function type for a member function. Such a declarator declares a static member function. Such a function shall not be explicitly declared static. Such a declarator shall not include a _ref-qualifier_. The parameter declared with the _explicit-object-parameter-declaration_ is the _explicit object parameter_.
+
+:::
+
+Note: the exclusion of the _cv-qualifier-seq_ is accomplished by [class.static.mfct]{.sref}/2, so we don't do it here redundantly.
+
+## Changes to [over.match.funcs]
+
+[3]{.pnum} Similarly, when appropriate, the context can construct an argument list that contains an implied object argument as the first argument in the list to denote the object to be operated on.
+
+::: add
+
+In addition, for functions declared with an explicit object parameter, the implied object argument (if any) shall be inserted in the appropriate position to correspond to the explicit object parameter. [ Example:
+```cpp
+struct A {
+  int x;
+  int f(this A self, int y) { return self.x + y; }
+  int f(long y) { return x - y; }
+};
+A{1}.f(2);     // returns 3
+A{1}.f(1l);    // returns 0
+A::f(A{1}, 2); // returns 3
+```
+-- end example ]
+
+:::
+
+## Changes to [over.call.object]
+
+Add to [over.call.object]{.sref}/4:
+
+[4]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument (E).
+[ Note: When comparing the call against the function call operators, the implied object argument is compared against the implicit object parameter of the function call operator[.]{.del}[, unless the function call operator has been declared with an _explicit-object-parameter-declarator_, in which case the implied object argument is compared against the parameter declared with the _explicit-object-parameter-declarator_.]{.add}
+When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
+The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
+— end note ]
+
+## Changes to [class.conv.fct]
+
+Add to [class.conv.fct]{.sref}/1:
+
+[1]{.pnum} A member function of a class `X` having no parameters or an explicit object parameter of the form [...]
+The type of the conversion function (9.3.3.5) is “function taking no parameter returning _conversion-type-id_”[ or function taking one explicit object parameter returning _conversion-type-id_]{.add}.
+
+## Changes to [over.oper]
+
+Add to [over.oper]{.sref}/7:
+
+[7]{.pnum} An operator function shall either be a non-static member function[, a function taking an explicit object parameter,]{.add} or be a non-member function that has at least one parameter [...]
+
+## Changes to [over.call]
+
+Add to [over.call]{.sref}/1:
+
+[1]{.pnum} `operator()` shall be a non-static member function [or a function taking an explicit object parameter]{.add} with an arbitrary number of parameters. [...]
+
+## Changes to [over.sub]
+
+Add to [over.sub]{.sref}/1:
+
+[1]{.pnum} `operator[]` shall be a non-static member function with exactly one parameter [or a function taking an explicit object parameter with exactly two parameters]{.add}. [...]
+
+## Changes to [over.ref]
+
+Add to [over.ref]{.sref}/1:
+
+[1]{.pnum} `operator->` shall be a non-static member function taking no parameters [or a function taking an explicit object parameter with exactly that parameter]{.add}. [...]
+
+## Feature-test macro [tab:cpp.predefined.ft]
+
+Add to [cpp.predefined]{.sref}/table 17 ([tab:cpp.predefined.ft]):
+
+[`__cpp_explicit_object_parameter`]{.add} with the appropriate constant (possibly `202007L`).
 
 # Acknowledgements # {#acknowledgements}
 
@@ -1427,6 +1514,17 @@ The authors would like to thank:
 - Eva Conti for furious copy editing, patience, and moral support
 - Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
 
+---
+references:
+    - id: Effective
+      citation-label: EffCpp
+      title: Effective C++, Third Edition
+      author:
+        - family: Scott Meyers
+      issued: 2005
+      URL: "https://www.aristeia.com/books.html"
+
+---
 <!--
  vim: ft=markdown wrap linebreak nolist textwidth=0 wrapmargin=0
 -->
