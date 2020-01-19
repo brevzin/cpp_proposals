@@ -588,7 +588,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 id="problems" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Problems<a href="#problems" class="self-link"></a></h1>
-<p>I have some serious concerns that this direction is viable, that I would like to express here.</p>
+<p>I think this proposal has a few problems.</p>
 <h2 id="ephemerality"><span class="header-section-number">2.1</span> Ephemerality<a href="#ephemerality" class="self-link"></a></h2>
 <p>The fundamental problem is that whether or not an expression is a <em>constant expression</em> is an ephemeral property of an expression. It has a tendency to not last as long as you want it to. Relying on an expression being a constant expression is going to prevent a whole class of abstractions using normal programming models.</p>
 <p>Let’s just start with the <code class="sourceCode default">pow</code> example. We had:</p>
@@ -602,7 +602,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-2"><a href="#cb5-2"></a></span>
 <span id="cb5-3"><a href="#cb5-3"></a>powp1<span class="op">(</span><span class="dv">3</span>, <span class="dv">3</span><span class="op">)</span>; <span class="co">// calls #1</span></span>
 <span id="cb5-4"><a href="#cb5-4"></a>powp1<span class="op">(</span><span class="dv">3</span>, <span class="dv">2</span><span class="op">)</span>; <span class="co">// also calls #1</span></span></code></pre></div>
-<p>Right, we can’t wrap, because once we get to the body we can’t do constant evaluation anymore. Likewise, we cannot even name the other <code class="sourceCode default">pow</code>:</p>
+<p>Right, we can’t wrap, because once we get to the body we don’t have constant expressions anymore. Likewise, we cannot even name the other <code class="sourceCode default">pow</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">auto</span> p <span class="op">=</span> pow; <span class="co">// always #1, no way to take a pointer to #2</span></span></code></pre></div>
 <p>And the <em>only</em> way to properly wrap <code class="sourceCode default">pow</code> is to actually manually write:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="dt">double</span> powp1<span class="op">(</span><span class="dt">double</span> base, <span class="dt">int</span> exp<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> pow<span class="op">(</span>base, exp<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="op">}</span></span>
@@ -621,33 +621,41 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-2"><a href="#cb11-2"></a>classes<span class="op">.</span>push_back<span class="op">(</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">))</span>;    <span class="co">// ok</span></span>
 <span id="cb11-3"><a href="#cb11-3"></a>classes<span class="op">.</span>emplace_back<span class="op">(</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">))</span>; <span class="co">// error</span></span></code></pre></div>
 <p><code class="sourceCode default">push_back</code> succeeds because it takes a <code class="sourceCode default">class_info&amp;&amp;</code>, so the conversion happens while our expression is still a constant expression. But <code class="sourceCode default">emplace_back</code> fails because it deduces its parameter to <code class="sourceCode default">info&amp;&amp;</code> and has to perform the construction of <code class="sourceCode default">class_info</code> internally, at which point our object is no longer a constant expression.</p>
-<p>The general problem here is that the conversion has to happen <em>right away</em>.</p>
+<p>The general problem here is that the conversion has to happen <em>right away</em>, before we pass any function boundaries. If we stay as an <code class="sourceCode default">info</code> for too long, we lose all ability to make these conversions:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">consteval</span> <span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>class_info c <span class="op">=</span> i; <span class="co">// ill-formed</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="op">}</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a></span>
+<span id="cb12-5"><a href="#cb12-5"></a>f<span class="op">(</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">))</span>;</span></code></pre></div>
 <h2 id="type-based-overload-resolution"><span class="header-section-number">2.2</span> Type-based overload resolution<a href="#type-based-overload-resolution" class="self-link"></a></h2>
 <p>The proposal at hand introduces the notion of value-based overloading, but everything else in the language and library only ever deal with type-based overloading.</p>
 <p>What would <code class="sourceCode default">constructible_from&lt;meta::class_info, meta::info&gt;</code> yield? By the rules laid out in these papers, it would yield <code class="sourceCode default">false</code>. Except sometimes, it actually is constructible - but only from specific values, and only in specific situations.</p>
 <p>Consider:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>class_info C<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> I<span class="op">&gt;</span> <span class="kw">requires</span> is_class<span class="op">(</span>C<span class="op">)</span> <span class="kw">struct</span> Y <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb12-3"><a href="#cb12-3"></a><span class="kw">template</span> <span class="op">&lt;</span>convertible_to<span class="op">&lt;</span>meta<span class="op">::</span>class_info<span class="op">&gt;</span> <span class="kw">auto</span> I<span class="op">&gt;</span> <span class="kw">struct</span> Z <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb12-4"><a href="#cb12-4"></a></span>
-<span id="cb12-5"><a href="#cb12-5"></a>X<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> x; <span class="co">// ok</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a>Y<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> y; <span class="co">// ok</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a>Z<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> z; <span class="co">// error, probably?</span></span></code></pre></div>
-<p>Dealing with these properly types would end up requiring their own little shadow library.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>class_info C<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> I<span class="op">&gt;</span> <span class="kw">requires</span> is_class<span class="op">(</span>I<span class="op">)</span> <span class="kw">struct</span> Y <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="kw">template</span> <span class="op">&lt;</span>convertible_to<span class="op">&lt;</span>meta<span class="op">::</span>class_info<span class="op">&gt;</span> <span class="kw">auto</span> I<span class="op">&gt;</span> <span class="kw">struct</span> Z <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb13-4"><a href="#cb13-4"></a></span>
+<span id="cb13-5"><a href="#cb13-5"></a>X<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> x; <span class="co">// ok</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>Y<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> y; <span class="co">// ok</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>Z<span class="op">&lt;</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)&gt;</span> z; <span class="co">// error, probably?</span></span></code></pre></div>
+<p>Dealing with these types properly ends up requiring their own little shadow library; we’d have our normal concepts for types and then our function concepts for reflection.</p>
+<p>Also, what would this mean:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span>is_class <span class="kw">auto</span> I<span class="op">&gt;</span> <span class="kw">struct</span> Q <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<p>For normal (type-based) concepts, this means <code class="sourceCode default">requires is_class&lt;decltype(I)&gt;</code>. But that’s ill-formed for these new function concepts, it would have to mean <code class="sourceCode default">requires is_class(I)</code>, if anything. Which means we’d have to make a choice of either not having a terse syntax for this case or having a terse syntax have different semantics from other, similar-looking terse syntax.</p>
 <h2 id="function-parameters-arent-constant-expressions-except-when-they-are"><span class="header-section-number">2.3</span> Function parameters aren’t constant expressions except when they are<a href="#function-parameters-arent-constant-expressions-except-when-they-are" class="self-link"></a></h2>
 <p>Everyone trying to do something during constant evaluation will eventually try to do something to the effect of:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>    <span class="co">// or any other code which requires i to</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>    <span class="co">// be a constant expression</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a>    <span class="kw">static_assert</span><span class="op">(</span>i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span>;</span>
-<span id="cb13-5"><a href="#cb13-5"></a>    <span class="co">// ...</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a><span class="op">}</span></span>
-<span id="cb13-7"><a href="#cb13-7"></a></span>
-<span id="cb13-8"><a href="#cb13-8"></a>foo<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>    <span class="co">// or any other code which requires i to</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>    <span class="co">// be a constant expression</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>    <span class="kw">static_assert</span><span class="op">(</span>i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>    <span class="co">// ...</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="op">}</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a></span>
+<span id="cb15-8"><a href="#cb15-8"></a>foo<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;</span></code></pre></div>
 <p>And be surprised that this fails, even though the function is <code class="sourceCode default">constexpr</code>, even though the argument is a constant expression. And so we have to repeat the mantra over and over that function parameters are never constant expressions. Function parameters are never constant expressions.</p>
 <p>Except, suddenly, with this paper, they can be. But only in a <code class="sourceCode default">requires</code> clause. This adds more wrinkles into an already very-complex model that just makes it harder to understand.</p>
 <h1 id="conclusion" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Conclusion<a href="#conclusion" class="self-link"></a></h1>
-<p>While function parameter constraints is a creative and interesting compromise to trying to have both a monotype and a rich class hierarchy, I think it has serious problems. I think the programming model that it ends up introducing isn’t well supported in C++ and would just lead to a ton more confusion.</p>
+<p>Function parameter constraints is a creative and interesting compromise to trying to have both a monotype and a rich class hierarchy, but I think it presents its own problems that neither of the original choices had - and I think it has the potential to lead to a ton more confusion.</p>
 <p>I am not sure that these problems are solvable without much more involved language changes, so I think in light of wanting reflection sooner rather than later, I think we should reconsider the direction of constrained function parameters.</p>
 <h1 id="references" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> References<a href="#references" class="self-link"></a></h1>
 

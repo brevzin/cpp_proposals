@@ -64,8 +64,7 @@ In short, this concepts extension will allow for parameter identifiers to appear
 
 # Problems
 
-I have some serious concerns that this direction is viable, that I would like
-to express here. 
+I think this proposal has a few problems.
 
 ## Ephemerality 
 
@@ -95,8 +94,8 @@ powp1(3, 3); // calls #1
 powp1(3, 2); // also calls #1
 ```
 
-Right, we can't wrap, because once we get to the body we can't do constant
-evaluation anymore. Likewise, we cannot even name the other `pow`:
+Right, we can't wrap, because once we get to the body we don't have constant
+expressions anymore. Likewise, we cannot even name the other `pow`:
 
 ```cpp
 auto p = pow; // always #1, no way to take a pointer to #2
@@ -148,7 +147,17 @@ because it deduces its parameter to `info&&` and has to perform the construction
 of `class_info` internally, at which point our object is no longer a constant
 expression. 
 
-The general problem here is that the conversion has to happen _right away_.
+The general problem here is that the conversion has to happen _right away_,
+before we pass any function boundaries. If we stay as an `info` for too long, we
+lose all ability to make these conversions:
+
+```cpp
+consteval void f(std::meta::info i) {
+    constexpr std::meta::class_info c = i; // ill-formed
+}
+
+f(reflexpr(some_class));
+```
 
 ## Type-based overload resolution
 
@@ -164,7 +173,7 @@ Consider:
 
 ```cpp
 template <std::meta::class_info C> struct X { };
-template <auto I> requires is_class(C) struct Y { };
+template <auto I> requires is_class(I) struct Y { };
 template <convertible_to<meta::class_info> auto I> struct Z { };
 
 X<reflexpr(some_class)> x; // ok
@@ -172,8 +181,21 @@ Y<reflexpr(some_class)> y; // ok
 Z<reflexpr(some_class)> z; // error, probably?
 ```
 
-Dealing with these properly types would end up requiring their own little
-shadow library. 
+Dealing with these types properly ends up requiring their own little
+shadow library; we'd have our normal concepts for types and then our function
+concepts for reflection.
+
+Also, what would this mean:
+
+```cpp
+template <is_class auto I> struct Q { };
+```
+
+For normal (type-based) concepts, this means `requires is_class<decltype(I)>`.
+But that's ill-formed for these new function concepts, it would have to mean
+`requires is_class(I)`, if anything. Which means we'd have to make a choice of
+either not having a terse syntax for this case or having a terse syntax have
+different semantics from other, similar-looking terse syntax.
 
 ## Function parameters aren't constant expressions except when they are
 
@@ -202,10 +224,10 @@ harder to understand.
 
 # Conclusion
 
-While function parameter constraints is a creative and interesting compromise
-to trying to have both a monotype and a rich class hierarchy, I think it has
-serious problems. I think the  programming model that it ends up introducing
-isn't well supported in C++ and would just lead to a ton more confusion.
+Function parameter constraints is a creative and interesting compromise
+to trying to have both a monotype and a rich class hierarchy, but I think it
+presents its own problems that neither of the original choices had - and I think
+it has the potential to lead to a ton more confusion.
 
 I am not sure that these problems are solvable without much more involved
 language changes, so I think in light of wanting reflection sooner rather than
