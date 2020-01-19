@@ -70,11 +70,56 @@ to express here.
 ## Ephemerality 
 
 The fundamental problem is that whether or not an expression is a _constant 
-expression_ is an ephemeral property of an expression. It vanishes right away.
+expression_ is an ephemeral property of an expression. It has a tendency to not
+last as long as you want it to.
 Relying on an expression being a constant expression is going to prevent a whole
 class of abstractions using normal programming models.
 
-Consider again the code we want to work with this feature. This can work fine:
+Let's just start with the `pow` example. We had:
+
+```cpp
+double pow(double base, int exp); // #1
+double pow(double base, int exp) requires (exp == 2); // #2
+
+pow(3, 3); // calls #1
+pow(3, 2); // calls #2
+```
+
+Cool. What if what we _really_ wanted was `b@^e^@ + 1`? No problem, we just
+write a new overload:
+
+```cpp
+double powp1(double base, int exp) { return pow(base, exp) + 1; }
+
+powp1(3, 3); // calls #1
+powp1(3, 2); // also calls #1
+```
+
+Right, we can't wrap, because once we get to the body we can't do constant
+evaluation anymore. Likewise, we cannot even name the other `pow`:
+
+```cpp
+auto p = pow; // always #1, no way to take a pointer to #2
+```
+
+And the _only_ way to properly wrap `pow` is to actually manually write:
+
+```cpp
+double powp1(double base, int exp) { return pow(base, exp) + 1; }
+double powp1(double base, int exp) requires (exp == 2) { return pow(base, exp) + 1; }
+```
+
+Just kidding. That's still wrong! We have to _actually_ write:
+
+```cpp
+double powp1(double base, int exp) { return pow(base, exp) + 1; }
+double powp1(double base, int exp) requires (exp == 2) { return pow(base, 2) + 1; }
+```
+
+Think about how we might abstract if our constraint was more involved than a
+simple `==`.
+
+Let's go back to what really motivated this feature. This can work fine:
 
 ```cpp
 constexpr std::meta::class_info c = reflexpr(some_class);
