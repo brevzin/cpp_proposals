@@ -11,8 +11,8 @@ PANDOC = pandoc $< $(MPARK_DATA)/references.md \
    --css $(MPARK_DATA)/template/14882.css \
    --css $(THIS_DIR)/pandoc.css \
    --filter pandoc-citeproc \
-   --filter $(MPARK_DATA)/filter/wg21.py \
    --filter $(THIS_DIR)/pandoc.py \
+   --filter $(MPARK_DATA)/filter/wg21.py \
    --highlight-style $(MPARK_DATA)/syntax/wg21.theme \
    --metadata datadir:$(MPARK_DATA) \
    --metadata-file $(MPARK_DATA)/metadata.yaml \
