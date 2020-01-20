@@ -38,8 +38,8 @@ all the benefits that the monotype `info` API is able to provde.
 The way this is intended to work, from the initial paper, is described as:
 
 ::: quote
-Overload resolution in C++ happens at compile time,_not_ run time, so how could this ever work?
-Considerthe call to `pow` in the following function:
+Overload resolution in C++ happens at compile time, _not_ run time, so how could this ever work?
+Consider the call to `pow` in the following function:
 
 ```cpp
 void f(double in) {
@@ -55,7 +55,7 @@ In what other cases does the compiler know at compile time the value of a parame
 As it turns out, we already have standardese for such an argument
 (or generally an expression) in C++: _constant expression_.
 
-In short, this concepts extension will allow for parameter identifiers to appear in requires clauses and duringoverload resolution:
+In short, this concepts extension will allow for parameter identifiers to appear in requires clauses and during overload resolution:
 
 * if the argument is a _constant expression_ it is evaluated as part of evaluation of the requires clause, and
 * if the argument is _not_ a _constant expression_ the entire overload is discarded.
@@ -128,7 +128,7 @@ Because `reflexpr(some_class)` is a constant expression. Indeed, even this can
 work fine:
 
 ```cpp
-constexpr std::meta::info i = reflexpr(some_class)
+constexpr std::meta::info i = reflexpr(some_class);
 constexpr std::meta::class_info c = i;
 ```
 
@@ -158,6 +158,49 @@ consteval void f(std::meta::info i) {
 
 f(reflexpr(some_class));
 ```
+
+### Literal zero as null pointer constant
+
+This idea is reminiscent of another language feature we have: the fact that the
+literal zero is a null pointer constant. But since the type of the literal zero
+is still `int`, this vanishes quickly:
+
+```cpp
+int* p = 0; // ok
+
+constexpr auto zero = 0;
+int* p2 = zero; // ill-formed, even though zero is a constant expression
+```
+
+Which presents very similar problems with forwarding:
+
+```cpp
+void f(int*);
+
+template <typename... Ts>
+void wrap_f(Ts... ts) {
+    f(ts...);
+}
+
+f(0);      // ok
+wrap_f(0); // ill-formed
+```
+
+### Narrowing from constant expressions
+
+There's also a similar preexisting language feature with regards to narrowing:
+
+```cpp
+constexpr int ci = 2;
+constexpr short cs{ci}; // ok
+
+int i = 2;
+short s{i}; // error: narrowing
+```
+
+But while the construction of `s` is narrowing, it is at least possible to
+construct `s` in a different way. This suggests that we would at least need to
+add a "back-up" conversion mechanism from `meta:info` to `meta::class_info`.
 
 ## Type-based overload resolution
 
@@ -225,11 +268,11 @@ harder to understand.
 # Conclusion
 
 Function parameter constraints is a creative and interesting compromise
-to trying to have both a monotype and a rich class hierarchy, but I think it
+to trying to have both a monotype and a rich class hierarchy, but it
 presents its own problems that neither of the original choices had - and I think
 it has the potential to lead to a ton more confusion.
 
 I am not sure that these problems are solvable without much more involved
-language changes, so I think in light of wanting reflection sooner rather than
+language changes, so in light of wanting reflection sooner rather than
 later, I think we should reconsider the direction of constrained function
 parameters.
