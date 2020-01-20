@@ -1,5 +1,5 @@
 ---
-title: "Function parameter constraints are too fragile"
+title: "Function parameter constraints are fragile"
 document: D2089R0
 date: today
 audience: SG7
