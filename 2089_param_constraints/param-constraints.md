@@ -132,7 +132,7 @@ constexpr std::meta::info i = reflexpr(some_class);
 constexpr std::meta::class_info c = i;
 ```
 
-Because `i` is almost a constant expression. But what happens when we try to use
+Because `i` is also a constant expression. But what happens when we try to use
 other library features:
 
 ```cpp

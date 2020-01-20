@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-01-19" />
+  <meta name="dcterms.date" content="2020-01-20" />
   <title>Function parameter constraints are too fragile</title>
   <style>
       code{white-space: pre-wrap;}
@@ -541,7 +541,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date: </td>
-    <td>2020-01-19</td>
+    <td>2020-01-20</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project: </td>
@@ -616,7 +616,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Because <code class="sourceCode cpp"><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)</span></code> is a constant expression. Indeed, even this can work fine:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info i <span class="op">=</span> <span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">)</span>;</span>
 <span id="cb10-2"><a href="#cb10-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>class_info c <span class="op">=</span> i;</span></code></pre></div>
-<p>Because <code class="sourceCode cpp">i</code> is almost a constant expression. But what happens when we try to use other library features:</p>
+<p>Because <code class="sourceCode cpp">i</code> is also a constant expression. But what happens when we try to use other library features:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>class_info<span class="op">&gt;</span> classes;</span>
 <span id="cb11-2"><a href="#cb11-2"></a>classes<span class="op">.</span>push_back<span class="op">(</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">))</span>;    <span class="co">// ok</span></span>
 <span id="cb11-3"><a href="#cb11-3"></a>classes<span class="op">.</span>emplace_back<span class="op">(</span><span class="kw">reflexpr</span><span class="op">(</span>some_class<span class="op">))</span>; <span class="co">// error</span></span></code></pre></div>
