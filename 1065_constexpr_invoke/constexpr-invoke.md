@@ -4,10 +4,10 @@ document: P1065R2
 audience: LWG
 date: today
 author:
-	- name: Tomasz Kamiński
-	  email: <tomaszkam@gmail.com>
-	- name: Barry Revzin
-	  email: <barry.revzin@gmail.com>
+  - name: Tomasz Kamiński
+    email: <tomaszkam@gmail.com>
+  - name: Barry Revzin
+    email: <barry.revzin@gmail.com>
 ---
 
 # Revision History

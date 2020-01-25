@@ -4,8 +4,8 @@ document: P1186R3
 audience: CWG
 date: today
 author:
-	- name: Barry Revzin
-	  email: <barry.revzin@gmail.com>
+  - name: Barry Revzin
+    email: <barry.revzin@gmail.com>
 ---
 
 # Revision History
