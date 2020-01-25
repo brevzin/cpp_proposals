@@ -40,6 +40,8 @@ each other and have other issues that make them ripe for confusion.
 
 There are two problems this paper wishes to address.
 
+## Interaction between `constexpr` and `consteval`
+
 The first problem is the interplay between this magic library function and the
 new `consteval`. Consider the example:
 
@@ -84,6 +86,8 @@ the really trivial cases - one could call `f(42)` for instance, just never
 We find this lack of composability of features to be problematic and think it
 can be improved.
 
+## The `if constexpr (std::is_constant_evaluated())` problem
+
 The second problem is specific to `is_constant_evaluated`. Once you learn what this
 magic function is for, the obvious usage of it is:
 
@@ -122,6 +126,49 @@ But then people have to understand why this is a warning, and what this even
 means. Nevertheless, a compiler warning is substantially better than silently
 wrong code, but it is problematic to have an API in which many users are drawn
 to a usage that is tautologically incorrect.
+
+### Implementer promise
+
+When R0 of this paper was presented in Belfast, the implementers assured that
+all the compilers would properly warn on all tautological uses of
+`std::is_constant_evaluated()` - both in the always-`true` and always-`false`
+cases.
+
+As of this writing, for instance, EDG warns on all of the following:
+
+```cpp
+constexpr int f1() {
+  if constexpr (!std::is_constant_evaluated() && sizeof(int) == 4) { // warning: always true
+    return 0;
+  }
+  if (std::is_constant_evaluated()) {
+    return 42;
+  } else {
+    if constexpr (std::is_constant_evaluated()) { // warning: always true
+      return 0;
+    }
+  }
+  return 7;
+}
+
+
+consteval int f2() {
+  if (std::is_constant_evaluated() && f1()) { // warning: always true
+    return 42;
+  }
+  return 7;
+}
+
+
+int f3() {
+  if (std::is_constant_evaluated() && f1()) { // warning: always false
+    return 42;
+  }
+  return 7;
+}
+```
+
+We expect the other compilers to follow suit.
 
 # Proposal
 
@@ -197,10 +244,7 @@ constexpr bool is_constant_evaluated() {
 }
 ```
 
-Which in itself suggests that this is the more fundamental feature. As
-such, `std::is_constant_evaluated()` may itself no longer be necessary. However,
-given the very late date of this proposal, we would more than happily keep it
-if it allows us this new language feature.
+Although this paper does not suggest removing the library function.
 
 ## Negated form
 
@@ -235,12 +279,12 @@ bullet points):
 
 ::: bq
 An expression or conversion is in an _immediate function context_ if it is
-potentially evaluated and either:
+potentially evaluated and [either]{.addu}:
 
 - [12.1]{.pnum} its innermost non-block scope is a function parameter scope of an
 immediate function[.]{.rm} [, or]{.addu}
-- [12.2]{.pnum} [it appears in the first _compound-statement_ of an `if consteval`
-statement ([stmt.if]).]{.addu}
+- [12.2]{.pnum} [it appears in the appropriate _compound-statement_ of a
+consteval if statement ([stmt.if]).]{.addu}
 :::
 
 Change 8.5 [stmt.select] to add the new grammar:
@@ -258,10 +302,32 @@ Add a new clause to 8.5.1 [stmt.if]
 
 ::: bq
 ::: addu
-If the `if` statement is of the form `if consteval` and evaluation occurs in
+[a]{.pnum} An `if` statement is of the form `if consteval` or `if ! consteval` is
+called a _consteval if_ statement.
+
+[b]{.pnum} If the `if` statement is of the form `if consteval` and evaluation occurs in
 a context that is manifestly constant-evaluated ([expr.const]), the first
-substatement is executed. Otherwise, if the `else` part of the selection statement
+substatement is executed and is an immediate function context ([expr.const]).
+Otherwise, if the `else` part of the selection statement
 is present, then the second substatement is executed.
+A `case` or `default` label appearing within such an `if` statement shall be
+associated with a `switch` statement within the same `if` statement.
+A label declared in a substatement of an consteval if statement shall only be
+referred to by a statement in the same substatement.
+
+[c]{.pnum} A consteval if statement of the form `if ! consteval @_compound-statement_@`
+is equivalent to
+
+```
+if consteval { } else @_compound-statement_@
+```
+
+A consteval if statement of the form `if ! consteval @_compound-statement_~1~@ else @_compound-statement_~2~@`
+is equivalant to
+
+```
+if consteval @_compound-statement_~2~@ else @_compound-statement_~1~@
+```
 :::
 :::
 
