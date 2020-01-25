@@ -289,6 +289,7 @@ consteval if statement ([stmt.if]).]{.addu}
 
 Change 8.5 [stmt.select] to add the new grammar:
 
+::: bq
 ```diff
   @_selection-statement_@:
      if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
@@ -297,6 +298,7 @@ Change 8.5 [stmt.select] to add the new grammar:
 +    if !@~opt~@ consteval @_compound-statement_@ else @_compound-statement_@
      switch ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
 ```
+:::
 
 Add a new clause to 8.5.1 [stmt.if]
 
