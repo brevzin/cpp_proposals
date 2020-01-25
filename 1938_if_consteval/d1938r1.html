@@ -573,7 +573,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#interaction-between-constexpr-and-consteval"><span class="toc-section-number">3.1</span> Interaction between <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and <code class="sourceCode cpp"><span class="kw">consteval</span></code><span></span></a></li>
 <li><a href="#the-if-constexpr-stdis_constant_evaluated-problem"><span class="toc-section-number">3.2</span> The <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span></code> problem<span></span></a>
 <ul>
-<li><a href="#implementer-promise"><span class="toc-section-number">3.2.1</span> Implementer promise<span></span></a></li>
+<li><a href="#compiler-warnings"><span class="toc-section-number">3.2.1</span> Compiler warnings<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
@@ -581,7 +581,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#negated-form"><span class="toc-section-number">4.1</span> Negated form<span></span></a></li>
 </ul></li>
 <li><a href="#history"><span class="toc-section-number">5</span> History<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">6</span> Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">6</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">6.1</span> Feature test macro<span></span></a></li>
+</ul></li>
 <li><a href="#acknowledgments"><span class="toc-section-number">7</span> Acknowledgments<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
 </ul>
@@ -633,7 +636,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-3"><a href="#cb3-3"></a>    4 |     if constexpr (std::is_constant_evaluated()) {</span>
 <span id="cb3-4"><a href="#cb3-4"></a>      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span></code></pre></div>
 <p>But then people have to understand why this is a warning, and what this even means. Nevertheless, a compiler warning is substantially better than silently wrong code, but it is problematic to have an API in which many users are drawn to a usage that is tautologically incorrect.</p>
-<h3 data-number="3.2.1" id="implementer-promise" data-number="3.2.1"><span class="header-section-number">3.2.1</span> Implementer promise<a href="#implementer-promise" class="self-link"></a></h3>
+<h3 data-number="3.2.1" id="compiler-warnings" data-number="3.2.1"><span class="header-section-number">3.2.1</span> Compiler warnings<a href="#compiler-warnings" class="self-link"></a></h3>
 <p>When R0 of this paper was presented in Belfast, the implementers assured that all the compilers would properly warn on all tautological uses of <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> - both in the always-<code class="sourceCode cpp"><span class="kw">true</span></code> and always-<code class="sourceCode cpp"><span class="kw">false</span></code> cases.</p>
 <p>As of this writing, for instance, EDG warns on all of the following:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f1<span class="op">()</span> <span class="op">{</span></span>
@@ -757,6 +760,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-5"><a href="#cb15-5"></a>}</span></code></pre></div>
 </div>
 </blockquote>
+<h2 data-number="6.1" id="feature-test-macro" data-number="6.1"><span class="header-section-number">6.1</span> Feature test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Add the macro <code class="sourceCode cpp">__cpp_if_consteval</code>.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thank you to David Stone and Tim Song for working through these examples.</p>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="8" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>

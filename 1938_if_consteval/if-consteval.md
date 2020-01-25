@@ -127,7 +127,7 @@ means. Nevertheless, a compiler warning is substantially better than silently
 wrong code, but it is problematic to have an API in which many users are drawn
 to a usage that is tautologically incorrect.
 
-### Implementer promise
+### Compiler warnings
 
 When R0 of this paper was presented in Belfast, the implementers assured that
 all the compilers would properly warn on all tautological uses of
@@ -353,6 +353,10 @@ if consteval {
 ```
 :::
 :::
+
+## Feature test macro
+
+Add the macro `__cpp_if_consteval`.
 
 # Acknowledgments
 
