@@ -35,10 +35,16 @@ make all of my papers.
 
 ### Pending
 
-- [p0847r2 - Deducing this](0847_deducing_this/p0847r2.html), with Simon Brand,
-  Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil. R1 was
-  discussed in San Diego. 
+- [p0847r4 - Deducing this](0847_deducing_this/p0847r4.html), with Simon Brand,
+  Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil, R1 was
+  discussed in San Diego, R2 in Kona, R3 in Belfast.
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
-- [p1858r0 - Generalized pack declarations and usage](1858_generalized_packs/p1858r0.html).
+- [p1858r1 - Generalized pack declarations and usage](1858_generalized_packs/p1858r1.html).
+  R0 was discueed in EWGI in Belfast.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
+- [d1938r1 - `if consteval`](1938_if_consteval/d1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+- [p2011r0 - A pipeline-rewrite operator](2011_pipeline/p2011r0.html), with Colby Pike.
+- [p2017r0 - Conditionally safe ranges](2017_safe_range/p2017r0.html).
+- [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
+- [d2089r0 - Function parameter constraints are fragile](2089_param_constraints/d2089r0.html).
