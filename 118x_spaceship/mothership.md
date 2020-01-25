@@ -5,8 +5,8 @@ document: P1614R2
 audience: LWG
 date: today
 author:
-	- name: Barry Revzin
-	  email: <barry.revzin@gmail.com>
+  - name: Barry Revzin
+    email: <barry.revzin@gmail.com>
 ---
 
 # Revision History
