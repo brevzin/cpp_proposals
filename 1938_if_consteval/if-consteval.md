@@ -285,7 +285,7 @@ potentially evaluated and [either]{.addu}:
 immediate function[.]{.rm} [, or]{.addu}
 - [12.2]{.pnum} [it appears in the first _compound-statement_ of a
 consteval if statement ([stmt.if]) of the form `if consteval` or the second
-_compound-statement_ of a consteval if statement of the form `if ! consteval`.]{.addu}
+_compound-statement_ (if any) of a consteval if statement of the form `if ! consteval`.]{.addu}
 :::
 
 Change 8.5 [stmt.select] to add the new grammar:
