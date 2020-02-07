@@ -62,6 +62,22 @@ Change the grammar in [expr.prim.lambda.capture]{.sref}:
 ```
 :::
 
+Change [expr.prim.lambda.capture]{.sref}/2:
+
+::: bq
+If a _lambda-capture_ includes a _capture-default_ that is `=`, each
+_simple-capture_ of that _lambda-capture_ shall be of the form
+“`&`{.x} [`...`{.x}~opt~]{.addu} _identifier_”, “`this`”, or “`* this`”.
+:::
+
+Change [expr.prim.lambda.capture]{.sref}/6:
+
+::: bq
+An _init-capture_ [without ellipsis]{.addu} behaves as if it declares and
+explicitly captures a variable of the form “`auto init-capture ;`{.x}”
+whose declarative region is the _lambda-expression_'s compound-statement, except that: 
+::: 
+
 Change [expr.prim.lambda.capture]{.sref}/17:
 
 ::: bq
