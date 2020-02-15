@@ -24,6 +24,7 @@ make all of my papers.
 - [p1871r1 - Concept traits should be named after concepts](1871_enable_sized_range/p1871r1.html).
 - [p1946r0 - Allow defaulting comparisons by value](1946_dflt_value_comparisons/p1946r0.html).
 - [p1959r0 - Remove `std::weak_equality` and `std::strong_equality`](1959_remove_equality/p1959r0.html).
+- [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
 
 ### Rejected
 
@@ -33,18 +34,24 @@ make all of my papers.
 - [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter. Rejected in San Diego.
 - [p1169r0 - static `operator()`](1169_static_call/p1169r0.html), with Casey Carter. Rejected in San Diego.
 
+### On Hold
+- [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
+- [d2089r0 - Function parameter constraints are fragile](2089_param_constraints/d2089r0.html). The proposal this responds to was tabled.
+
 ### Pending
 
 - [p0847r4 - Deducing this](0847_deducing_this/p0847r4.html), with Simon Brand,
   Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil, R1 was
-  discussed in San Diego, R2 in Kona, R3 in Belfast.
+  discussed in San Diego, R2 in Kona, R3 in Belfast, R4 in Prague.
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
-- [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton.
 - [p1858r1 - Generalized pack declarations and usage](1858_generalized_packs/p1858r1.html).
-  R0 was discueed in EWGI in Belfast.
+  R0 was discueed in EWGI in Belfast, R1 in Prague.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
 - [d1938r1 - `if consteval`](1938_if_consteval/d1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+  R0 was discussed in EWG in Belfast, R1 in Prague.
 - [p2011r0 - A pipeline-rewrite operator](2011_pipeline/p2011r0.html), with Colby Pike.
+  R0 was discussed in EWGI in Prague.
 - [p2017r0 - Conditionally safe ranges](2017_safe_range/p2017r0.html).
 - [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
-- [d2089r0 - Function parameter constraints are fragile](2089_param_constraints/d2089r0.html).
+  R0 was approved by EWG in Prague and may be considered a DR.
+ 
