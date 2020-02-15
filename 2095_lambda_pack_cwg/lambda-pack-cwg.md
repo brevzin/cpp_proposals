@@ -1,6 +1,6 @@
 ---
 title: "Resolve lambda init-capture pack grammar (CWG2378)"
-document: D2095R0
+document: P2095R0
 date: today
 audience: CWG
 author:
