@@ -92,7 +92,7 @@ The second problem is specific to `is_constant_evaluated`. Once you learn what t
 magic function is for, the obvious usage of it is:
 
 ```cpp
-size_t strlen(char const* s) {
+constexpr size_t strlen(char const* s) {
     if constexpr (std::is_constant_evaluated()) {
         for (const char *p = s; ; ++p) {
             if (*p == '\0') {
