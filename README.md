@@ -44,7 +44,7 @@ make all of my papers.
   Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil, R1 was
   discussed in San Diego, R2 in Kona, R3 in Belfast, R4 in Prague.
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
-- [p1858r1 - Generalized pack declarations and usage](1858_generalized_packs/p1858r1.html).
+- [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
   R0 was discueed in EWGI in Belfast, R1 in Prague.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
 - [d1938r1 - `if consteval`](1938_if_consteval/d1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
@@ -54,4 +54,6 @@ make all of my papers.
 - [p2017r0 - Conditionally safe ranges](2017_safe_range/p2017r0.html).
 - [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
   R0 was approved by EWG in Prague and may be considered a DR.
- 
+- [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings
+  part from p1858.
+

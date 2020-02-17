@@ -1,6 +1,6 @@
 ---
 title: Generalized pack declaration and usage
-document: P1858R1
+document: P1858R2
 date: today
 audience: EWG
 author:
@@ -11,6 +11,12 @@ toc-depth: 2
 ---
 
 # Revision History
+
+R1 [@P1858R1] was presented in EWGI in Prague [@EWGI.Prague]. An ambiguity in
+pack indexing was pointed out, which is resolved here (see
+[pack indexing](#pack-indexing-ambiguity). The structured bindings simplification
+was split out into its own paper, [@P2120R0], and this paper includes a new
+[discussion](#one-paper-or-many) on the merits of splitting it into multiple papers.
 
 R0 [@P1858R0] was presented in EWGI in Belfast [@EWGI.Belfast], where further
 work was encouraged (9-4-1-0-0). Since then, several substantial changes have
@@ -255,7 +261,7 @@ every step of the way.
 
 Also I'm cheating a little and using Boost.Mp11 for pack indexing. 
 
-::: tonytable
+::: cmptable
 
 ### Status Quo
 ```cpp
@@ -384,116 +390,41 @@ public:
 ```
 :::
 
-## Extending Structured Bindings
+### Pack Indexing Ambiguity
 
-Currently, there are three kinds of types that can be used with structured
-bindings [@P0144R2]:
-
-1. Arrays (specifically `T[N]` and not `std::array<T, N>`).
-
-2. Tuple-like: those tupes that specialize `std::tuple_size`, `std::tuple_element`,
-and either provide a member or non-member `get()`.
-
-3. Types where all of their members are public members of the same class
-(approximately).
-
-The problem with the tuple-like protocol here is that we need to instantiate
-a lot of templates. A declaration like:
+In EWGI session in Prague, James Touton pointed out the following example:
 
 ```cpp
-auto [v@~1~@, v@~2~@, ..., v@~N~@] = tuple;
-```
-
-requires `2N+1` template instantiations: one for `std::tuple_size`, `N` for
-`std::tuple_element`, and another `N` for all the `get`s). That's pretty
-wasteful. Additionally, the tuple-like protocol is tedious for users to
-implement.  There was a proposal to reduce the customization mechanism by
-dropping `std::tuple_element` [@P1096R0], which was... close. 13-7 in San Diego.
-
-This proposal reduces the customization surface in a different way
-that does not even require including `<tuple>` for user-defined types.
-In the same way that this paper proposes defining member variable packs, it also
-allows member type alias packs. We can have our `tuple` declare a pack of its
-element types:
-
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    struct tuple {
-        using ...tuple_element = Ts;
-    };
-}
-```
-
-The advantage here is that the `tuple_element` pack provides both the size
-_and_ all the types. We could then change add specializations to `std::tuple_size`
-and `std::tuple_element` to understand this:
-
-```cpp
-template <typename T>
-    requires (sizeof...(T::...tuple_element))
-struct tuple_size<T>
-    : integral_constant<size_t, sizeof...(T::...tuple_element)>
-{ };
-
-template <size_t I, typename T>
-    requires (sizeof...(T::...tuple_element))
-struct tuple_element<I, T>
-{
-    using type = T::...tuple_element...[I];
+template <typename... Ts>
+struct X {
+    void f(Ts...[1]);
 };
 ```
 
-The extra preceding `...`s in the above code block are not typos, and will be
-explained in a [later section](#disambiguating-dependent).
+Since C++11, this is valid syntax. `X<int, char>::f` is a non-template member
+function that takes two arguments of types `int*` and `char*`. This would be
+more clear if we provided a name to the function parameter and instead spelled
+it `Ts... p[1]`. 
 
-At this point, we'd reduce the structured bindings protocol surface
-(`xstd::tuple` did not have to specialize anything), so this is arguably better.
-You don't have to leave your own namespace at all. But we still require all
-those extra instantiations. 
+With this paper, `Ts...[1]` would have different meaning: it would be the single
+type referring to the 2nd type in the pack `Ts`. In other words,
+`X<int, char>::f` would instead become a non-template member function that takes
+a single argument of type `char`. 
 
-What this paper proposes instead is to extend the language rules for structured
-bindings themselves to look directly for a member pack alias named
-`tuple_element`. That is, a type now is tuple-like if it _either_:
+This is a problem. Thankfully, it's a very small one. Neither gcc or msvc even allow
+this syntax today (clang and icc do), so that severely limits how much code exists
+in the wild that uses it. It's additionally unlikely to be used much since it's
+really just a very strange way to write `Ts*...` without any real benefit over
+this more direct formulation. Searching for `...[` on codesearch.isocpp finds
+11 uses, all of which are in compiler test cases.
 
-a. Has member pack alias `tuple_element`, in which case its size is the size of
-that pack and the element types are the constituents of that pack.
-b. Has specialized `std::tuple_size` and `std::tuple_element`, as status quo.
+The proposed resolution is that `Ts...[1]` _always_ means pack indexing. If a user
+really wants the C++11 meaning, they can either name the parameter (as in 
+`Ts... p[1]`) or spell it as a pointer instead (as in `Ts*...`).
 
-This library API change would allow for a complete structured bindings opt-in
-for our new `tuple` to be:
+## Extending Structured Bindings
 
-```cpp
-namespace xstd {
-    template <typename... Ts>
-    class tuple {
-        Ts... elems;
-    public:
-        using ...tuple_element = Ts;
-    
-        template <size_t I> requires I < sizeof...(Ts)
-        auto get() & -> Ts...[I] & {
-            return elems...[I];
-        }
-        
-        // + other overloads of get()
-    };
-}    
-
-int i = 42;
-tuple<int, int&> t(4, i);
-
-// proposed okay with only the library code shown above
-// no further specializations necessary
-// decltype(val) is int
-// decltype(ref) is int&
-auto&& [val, ref] = t;
-```
-
-Structured binding declarations for this new kind of tuple would only require
-`N` template instantiations (the `N` invocations to the member or non-member
-`get`), saving us a full `N+1` instantiations (the ones for `std::tuple_size`
-and `std::tuple_element`).
+See [@P2120R0].
 
 ## Packs at block scope
 
@@ -548,7 +479,7 @@ a lot more code that is harder to understand and takes longer to compile.
 The following is an implementation solely of the default
 constructor, the destructor, and `get_if`:
 
-::: tonytable
+::: cmptable
 ### Status Quo
 ```cpp
 template <size_t I, typename... Ts>
@@ -774,7 +705,7 @@ This paper proposes a non-overloadable `[:]` operator which can be
 thought of as the "add a layer of packness" operator. The semantics of this
 operator are to unpack an object into the elements that would make up its
 respective structured binding declaration. For a `std::tuple`, this would mean 
-calls to `std::get<0>`, `std::get<1>`, ... For an aggregate, this would mean
+calls to `std::get<0>()`, `std::get<1>()`, ... For an aggregate, this would mean
 aliases into its members. For the `xstd::tuple` we defined earlier, this would
 be calls into the members `get<0>()`, `get<1>(), ...`. For arrays, this would
 be the elements of the array.
@@ -1165,7 +1096,7 @@ template <class L, class... Us>
 using apply_pack_impl = typename pack_impl<L>::template apply<Us...>;
 ```
 
-::: tonytable
+::: cmptable
 
 ### Boost.Mp11 
 ```cpp
@@ -1347,7 +1278,7 @@ This section goes through those cases in turn.
 
 ## Disambiguating Dependent Packs {#disambiguating-dependent}
 
-If we have a dependnet name that's a pack, we need a way to disambiguate that
+If we have a dependent name that's a pack, we need a way to disambiguate that
 it's actually a pack. From [@Smith.Pack]:
 
 ::: quote
@@ -1469,7 +1400,7 @@ are:
 
 - `e.[:]` takes a [_pack-like type_](#pack-like-type)
 (or object of such) and adds a layer of packness
-to it, by way of either `operator...()` or `using ...`. It never is applied to
+to it, by way of structured bindings. It never is applied to
 an existing pack, and it is never used to disambiguate dependent member access.
 
 - `e.[I]` never removes a layer of packness. It is picking the `I`th element of
@@ -1539,8 +1470,8 @@ foo(xstd::tuple{1}, xstd::tuple{2, 3});
 ```
 
 Following the rules presented above, `e.[:]` adds a layer of packness to each
-element in the pack (which is fine because `xstd::tuple`s are pack-like types
-which define an `operator...()`). But what then do the `...`s refer to?
+element in the pack (which is fine because `xstd::tuple`s are structured-
+bindable). But what then do the `...`s refer to?
 
 We say that adding layer of packness in the middle of an existing unexpanded
 pack expression will hang a new, nested unexpanded pack expression onto that.
@@ -1602,7 +1533,8 @@ constexpr decltype(auto) apply(F&& f, T@~0~@ t@~0~@, T@~1~@ t@~1~@, ..., T@~N-1~
 }
 ```
 
-And then we unpack each of these `...`s through the appropriate `operator...`s.
+And then we unpack each of these `...`s through the appropriate structured bindings
+rules.
 
 Similarly, `tuple_cat` would be:
 
@@ -1640,7 +1572,7 @@ differences.
 Note that one notable example missing here is a constructor for `tuple` - I
 really don't know how to implement any of those constructors on top of reflection.
 
-::: tonytable
+::: cmptable
 ### Reflection
 ```cpp
 // member pack declaration (P1717)
@@ -1740,7 +1672,7 @@ void call_f(Tuple const& t) {
 :::
 
 It's not that I think that the reflection direction is bad, or isn't useful. Far
-from. It's just that dealing with `tuple` is, in no small part, and ergonomics
+from. It's just that dealing with `tuple` is, in no small part, an ergonomics
 problem and I don't think any reflection proposal that I've seen so far can
 adequately address that: neither from the perspective of declaring a pack (as
 in for `tuple` or `variant`) nor from the perspective of unpacking a tuple
@@ -1817,6 +1749,39 @@ foo(); // calls foo<int>(0);
 I'm not sure if this is sufficiently motivated to pursue, but would be curious
 to hear what people think about this matter. 
 
+# One paper or many
+
+R1 [@P1858R1] of this paper included several features that build on each other:
+
+1. Declaring packs in more places, and a disambiguation for dependent pack access.
+2. An extension to the structured bindings protocol to simplify the opt-in by
+using a pack.
+3. Indexing into a pack. 
+4. Turning a type into a pack. 
+5. Slicing a pack. 
+
+EWGI in Prague [@EWGI.Prague], took two votes about separating these features:
+
+1. Split the structured binding customization point changes into another paper? 3-8-5-1-1.
+2. Split the indexing facilities into another paper? 2-2-9-3-1.
+
+Many of the aspects of this proposal do seem separable. Indexing into a pack is
+nominally independent of declaring more packs, and both are nominally independent
+of turning a type into a pack. However, I think it's important to see the broad
+vision of what I want future pack facilities to look like - and it's especially
+important in this space to ensure that all the facilities properly interoperate.
+It's very easy to have issues with ambiguities here. All the syntax decisions
+were driven by the need to have every syntax look different from every other
+syntax in all contexts. Having all of the syntax-introducing proposals in a single
+paper ensures that they need to be considered as a cohesive whole and that they
+will be able to work together properly.
+
+Of course, none of that argument applies to the structured bindings customization
+aspect of the initial proposal - it's a small, self contained improvement that
+has no ambiguity concerns and really only affects structured bindings. Which is
+why that part, and only that part, has been split off into its own proposal:
+[@P2120R0].
+
 # Proposal
 
 All the separate bits and pieces of this proposal have been presented one step
@@ -1844,17 +1809,6 @@ the indexing or unpacking expression is ill-formed.
 
 Non-dependent packs do not need any disambiguation (the disambiguation is
 allowed, but unnecessary).
-
-## Structured Bindings
-
-This paper proposes both that:
-
-1. `std::tuple_size` and `std::tuple_element` add specializations that look
-for a member pack named `tuple_element`, and drive their answers from that.
-
-2. The tuple-like protocol for structured bindings itself directly first looks
-for a member pack named `tuple_element` before looking for specializations of
-the two `tuple` traits.
 
 ## Pack Indexing
 
@@ -1978,4 +1932,20 @@ references:
     issued:
         - year: 2019
     URL: http://wiki.edg.com/bin/view/Wg21belfast/P1858
+  - id: EWGI.Prague
+    citation-label: EWGI.Prague
+    title: "EWGI Discussion of P1858R1"
+    author:
+        - family: EWGI
+    issued:
+        - year: 2020
+    URL: http://wiki.edg.com/bin/view/Wg21prague/P1858R1SG17
+  - id: P2120R0
+    citation-label: P2120R0
+    title: "Simplified structured bindings protocol with pack aliases"
+    author:
+        - family: Barry Revzin
+    issued:
+        - year: 2020
+    URL: https://wg21.link/p2120r0   
 ---

@@ -20,7 +20,7 @@
 - 1500 Deduplicating Forwarding Overloads: [d1500r0](forward_ref/d1500r0.html)
 - 1614 The Mothership has Landed: [p1614r0](118x_spaceship/p1614r0.html) [p1614r1](118x_spaceship/p1614r1.html) [p1614r2](118x_spaceship/p1614r2.html)
 - 1630 Spaceship needs a tune-up: [p1630r0](118x_spaceship/p1630r0.html) [p1630r1](118x_spaceship/p1630r1.html)
-- 1858 Generalized pack declaration and usage: [p1858r0](1858_generalized_packs/p1858r0.html) [p1858r1](1858_generalized_packs/p1858r1.html)
+- 1858 Generalized pack declaration and usage: [p1858r0](1858_generalized_packs/p1858r0.html) [p1858r1](1858_generalized_packs/p1858r1.html) [p1858r2](1858_generalized_packs/p1858r2.html)
 - 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [p1870r0](1870_forwarding_range/p1870r0.html) [p1870r1](1870_forwarding_range/p1870r1.html)
 - 1871 Concept traits should be named after concepts: [p1871r0](1871_enable_sized_range/p1871r0.html) [p1871r1](1871_enable_sized_range/p1871r1.html)
 - 1900 Concepts-Adjacent Problems: [p1900r0](1900_concepts/p1900r0.html)
@@ -32,6 +32,7 @@
 - 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html)
 - 2089 Function parameter constraints are fragile: [d2089r0](2089_param_constraints/d2089r0.html)
 - 2095 Resolve lambda init-capture pack grammar (CWG2378): [p2095r0](2095_lambda_pack_cwg/p2095r0.html)
+- 2120 Simplified structured bindings protocol with pack aliases: [p2120r0](1858_generalized_packs/p2120r0.html)
 
 # Other Papers
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
