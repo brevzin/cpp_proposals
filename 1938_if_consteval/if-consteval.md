@@ -1,6 +1,6 @@
 ---
 title: "`if consteval`"
-document: D1938R1
+document: P1938R1
 date: today
 audience: EWG
 author:
@@ -260,6 +260,104 @@ if ! consteval { }
 
 With the semantics that the first substatement is executed if the context is _not_ manifestly constant evaluated, otherwise the second substatement (if any) is executed. 
 
+## Conditioned Form
+
+As proposed, this new form of `if` does not have a condition - unlike the other
+two we already have. While there are certainly cases where an added condition
+would be useful, this paper is deliberately not including such a thing. The vast
+majority of uses are expected to be just of the `if consteval` or `if not consteval`
+form and we do not want to clutter future design space in this area.
+
+There are currently two uses in libstdc++ that are of the form
+`if (is_constant_evaluated() && cond)`. [One example](https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/range_access.h#L1025-L1028):
+
+```cpp
+if (std::is_constant_evaluated() && __n < 0)
+  throw "attempt to decrement a non-bidirectional iterator";
+``` 
+
+This usage is perfectly fine and doesn't necessary need special support from
+this proposal. Or it could also be written as:
+
+```cpp
+if consteval {
+  if (__n < 0) throw "attempt to decrement a non-bidirectional iterator";
+}
+```
+
+Or factored into a function like:
+
+```cpp
+if consteval {
+  consteval_assert(__n >= 0,
+    "attempt to decrement a non-bidirectional iterator");
+}
+```
+
+Either way, the condition form doesn't feel strongly motivated except for
+consistency with `if` and `if constexpr`. 
+
+## Deprecating `std::is_constant_evaluated()`
+
+One of the questions that comes up regularly in discussing this paper is: if
+we had `if consteval`, we do we even need `std::is_constant_evaluated()`, and
+can we just deprecate it?
+
+This paper proposes no such deprecation. The reason is that this function is
+actually still occasionally useful (as in the previous section).
+If the standard library does not provide it,
+users will write their own. We're not concerned about the implementation difficulty
+of it - the users that need this will definitely be able to write it correctly -
+but we are concerned with a proliferation of exactly this function. The advantage
+of having the one `std::is_constant_evaluated()` is both that it becomes actually
+teachable and also that it becomes warnable: the warnings discussed can happen
+only because we know what this name means. Maybe it's still possible to warn 
+on `if constexpr (your::is_constant_evaluated())` but that's a much harder
+problem.
+
+And note that libstdc++ already has [some](https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/char_traits.h#L236)
+[uses](https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/char_traits.h#L260)
+that do require the function form.
+
+## Examples
+
+Here are a few examples from libstdc++. Today, they're implemented uses a builtin
+function, and how they would look with `if consteval`. It's not a big difference,
+just spelling.
+
+::: cmptable
+### From libstdc++
+```cpp
+if (!__builtin_is_constant_evaluated())
+  __glibcxx_assert( __shift_exponent != numeric_limits<_Tp>::digits );
+```
+
+### Proposed
+```cpp
+if not consteval {
+   __glibcxx_assert( __shift_exponent != numeric_limits<_Tp>::digits );
+}
+```
+
+---
+
+```cpp
+if (__builtin_is_constant_evaluated())
+  return __x < __y;
+return (__UINTPTR_TYPE__)__x > (__UINTPTR_TYPE__)__y;
+```
+
+```cpp
+if consteval {
+  return __x < __y;
+} else {
+  return (__UINTPTR_TYPE__)__x > (__UINTPTR_TYPE__)__y;
+}
+```
+:::
+
+As of this writing, libstdc++ has 23 uses that could be replaced by `if consteval`, 2 that could be replaced by `if not consteval`, and 2 that require an extra
+condition on the comparison. 
 
 # History
 
