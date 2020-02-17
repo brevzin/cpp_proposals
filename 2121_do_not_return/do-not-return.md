@@ -279,3 +279,8 @@ If a function is declared with the [_trailing-specifier_]{.addu} `noreturn` [att
  ]
 
 :::
+
+## Feature test macro
+
+This feature requires the macro `__cpp_noreturn` and to remove the existing
+attribute `__has_cpp_attribute(noreturn)`.
