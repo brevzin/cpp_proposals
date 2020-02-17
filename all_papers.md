@@ -24,15 +24,16 @@
 - 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [p1870r0](1870_forwarding_range/p1870r0.html) [p1870r1](1870_forwarding_range/p1870r1.html)
 - 1871 Concept traits should be named after concepts: [p1871r0](1871_enable_sized_range/p1871r0.html) [p1871r1](1871_enable_sized_range/p1871r1.html)
 - 1900 Concepts-Adjacent Problems: [p1900r0](1900_concepts/p1900r0.html)
-- 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html) [d1938r1](1938_if_consteval/d1938r1.html)
+- 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html) [p1938r1](1938_if_consteval/p1938r1.html)
 - 1946 Allow defaulting comparisons by value: [p1946r0](1946_dflt_value_comparisons/p1946r0.html)
 - 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 - 2011 A pipeline-rewrite operator: [p2011r0](2011_pipeline/p2011r0.html)
 - 2017 Conditionally safe ranges: [p2017r0](2017_safe_range/p2017r0.html)
 - 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html)
-- 2089 Function parameter constraints are fragile: [d2089r0](2089_param_constraints/d2089r0.html)
+- 2089 Function parameter constraints are fragile: [p2089r0](2089_param_constraints/p2089r0.html)
 - 2095 Resolve lambda init-capture pack grammar (CWG2378): [p2095r0](2095_lambda_pack_cwg/p2095r0.html)
 - 2120 Simplified structured bindings protocol with pack aliases: [p2120r0](1858_generalized_packs/p2120r0.html)
+- 2121 <code class="sourceCode cpp"><span class="cf">do</span> <span class="kw">not</span> <span class="cf">return</span> <span class="kw">or</span> <span class="cf">else</span></code>: [d2121r0](2121_do_not_return/d2121r0.html)
 
 # Other Papers
 - Equality categories: [equality_categories.html](118x_spaceship/equality_categories.html)
