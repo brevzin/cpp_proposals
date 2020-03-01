@@ -14,7 +14,7 @@ toc-depth: 2
 
 R1 [@P1858R1] was presented in EWGI in Prague [@EWGI.Prague]. An ambiguity in
 pack indexing was pointed out, which is resolved here (see
-[pack indexing](#pack-indexing-ambiguity). The structured bindings simplification
+[pack indexing](#pack-indexing-ambiguity)). The structured bindings simplification
 was split out into its own paper, [@P2120R0], and this paper includes a new
 [discussion](#one-paper-or-many) on the merits of splitting it into multiple papers.
 
