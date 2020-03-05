@@ -36,7 +36,7 @@ make all of my papers.
 
 ### On Hold
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
-- [d2089r0 - Function parameter constraints are fragile](2089_param_constraints/d2089r0.html). The proposal this responds to was tabled.
+- [p2089r0 - Function parameter constraints are fragile](2089_param_constraints/p2089r0.html). The proposal this responds to was tabled.
 
 ### Pending
 
@@ -47,11 +47,11 @@ make all of my papers.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
   R0 was discueed in EWGI in Belfast, R1 in Prague.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
-- [d1938r1 - `if consteval`](1938_if_consteval/d1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+- [p1938r1 - `if consteval`](1938_if_consteval/p1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
   R0 was discussed in EWG in Belfast, R1 in Prague.
 - [p2011r0 - A pipeline-rewrite operator](2011_pipeline/p2011r0.html), with Colby Pike.
   R0 was discussed in EWGI in Prague.
-- [p2017r0 - Conditionally safe ranges](2017_safe_range/p2017r0.html).
+- [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
   R0 was approved by EWG in Prague and may be considered a DR.
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings
