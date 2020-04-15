@@ -1041,13 +1041,13 @@ best approximation for how copying that language would fit into our grammar):
 `T()` `T{}`<br/>
 `a()` `a[]`<br/>
 `.` `->`<br/>
-<span style="color:green">P2011R0</span></tr>
+<span style="color:green">-- P2011R0 --</span></tr>
 <tr><td><center><b>3</b></center><td>`++a` `--a`<br/>
 `+a` `-a`<br/>`!` `~`<br/>`(T)`<br/>`*a` `&a`<br/>`sizeof`<br/>`co_await`<br/>`new` `new[]`<br/>`delete` `delete[]`</td></tr>
 <tr><td><center><b>4</b></center><td>`.*` `->*`</td></tr>
 <tr><td><center><b>5</b></center><td>`a*b` `a/b` `a%b`</td></tr>
 <tr><td><center><b>6</b></center><td>`a+b` `a-b`</td></tr>
-<tr><td><center><b>7</b></center><td>`<<` `>>`<br/><span style="color:green">Elixir, F#, OCaml</span></td></tr>
+<tr><td><center><b>7</b></center><td>`<<` `>>`<br/><span style="color:green">-- Elixir, F#, OCaml --</span></td></tr>
 <tr><td><center><b>8</b></center><td>`<=>`</td></tr>
 <tr><td><center><b>9</b></center><td>`<` `<=`<br/>`>` `>=`</td></tr>
 <tr><td><center><b>10</b></center><td>`==` `!=`</td></tr>
@@ -1056,7 +1056,7 @@ best approximation for how copying that language would fit into our grammar):
 <tr><td><center><b>13</b></center><td>`|`</td></tr>
 <tr><td><center><b>14</b></center><td>`&&`</td></tr>
 <tr><td><center><b>15</b></center><td>`||`</td></tr>
-<tr><td><center><b>15.5</b></center><td><span style="color:green">JavaScript, Hack, Elm</span></td></tr>
+<tr><td><center><b>15.5</b></center><td><span style="color:green">-- JavaScript, Hack, Elm --</span></td></tr>
 <tr><td><center><b>16</b></center><td>`a?b:c`<br/>`throw`<br/>`co_yield`<br/>`=`<br/>`op=`</td></tr>
 <tr><td><center><b>17</b></center><td>`,`</td></tr>
 </table>
@@ -1136,6 +1136,8 @@ and Arthur O'Dwyer [@odwyer.precedence]:
 <tr><td>`ctr |> size() == max()`</td><td>`size(ctr) == max()`</td><td>`size(ctr) == max()`</td><td>ill-formed</td></tr>
 <tr><td>`x + y |> f()`</td><td>`x + f(y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
 <tr><td>`(x + y) |> f()`</td><td>`f(x + y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
+<tr><td>`co_await x |> via(e)`</td><td>`via(co_await x, e)`</td><td>`via(co_await x, e)`</td><td>`via(co_await x, e)`</td></tr>
+<tr><td>`co_yield x |> via(e)`</td><td>`co_yield via(x, e)`</td><td>`co_yield via(x, e)`</td><td>`co_yield via(x, e)`</td></tr>
 </table>
 
 Consider `x |> f() + g()`. If `|>` has precedence above `+`, then
@@ -1785,7 +1787,8 @@ namespace N {
 # Acknowledgments
 
 Several people helped enormously with shaping this paper, both with direct
-feedback and giving us more information about other languages: Davis Herring,
+feedback and giving us more information about other languages: Gašper Ažman,
+Davis Herring,
 Arthur O'Dwyer, Tim Song, Richard Smith, Faisal Vali, Tony van Eerd,
 Daveed Vandevoorde, and Ville Voutilainen. 
 
