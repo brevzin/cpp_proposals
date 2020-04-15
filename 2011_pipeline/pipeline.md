@@ -1165,21 +1165,25 @@ We would write `views::zip_with(plus{}, a, b)`, and `plus{} |> views::zip_with(a
 is unlikely to ever actually be written.
 
 This is where a placeholder syntax would come in handy. If, instead of requiring
-a function call that the left-hand side was inserted into, we required a placeholder
-(like Hack and one of the JavaScript proposals), we could have both (we're using
-`>` as a placeholder, as suggested by Daveed Vandevoorde):
+a function call (that the left-hand side was inserted into), we chose to require a placeholder
+(like Hack and one of the JavaScript proposals), we could have both:
 
 ```cpp
 a |> views::zip(>, b)               // evaluates as views::zip(a, b)
 a |> views::zip_with(plus{}, >, b)  // evaluates as views::zip_with(plus{}, a, b)
 ```
 
-Moreover, as JavaScript demonstrates for us already, with the placeholder approach,
-we wouldn't actually need the requirement that the right-hand side is a call
-expression. It could be any expression at all that contains `>`: `a |> 2 * >`
-could be a valid expression that means exactly as `2 * a`. 
+Here, we're using `>` as a placeholder, as suggested by Daveed Vandevoorde (this
+choice of placeholder is itself simply a placeholder. Other placeholders we
+considered were `%` and `^`, which unfortunately can run into ambiguities with
+C++/CLI. `#` is unlikely to be confused for a preprocessor directive? `%%`?)
 
-There main benefit of a direction pursuing placeholder syntax is that the syntax
+Moreover, as JavaScript demonstrates for us already, with the placeholder approach,
+we wouldn't actually need to keep the requirement that the right-hand side is a call
+expression. It could be any expression at all, as long as it contains precisely
+one `>`. `a |> 2 * >` could be a valid expression that means exactly `2 * a`.
+
+The main benefit of a direction pursuing placeholder syntax is that the syntax
 can be used with any function, and indeed with any expression. As with `zip_with`,
 you don't need to rely on the function you intend on calling having the the correct
 first parameter. This would allow the `FILE` example described
@@ -1195,9 +1199,44 @@ if (file) {
 }
 ``` 
 
+An the earlier trim example could change to be fully pipelined (that is, we can
+take the extra `.base()` at the end without having to introduce parentheses - it
+just goes at the end of the expression, since that's the last thing logically
+we need to do):
+
+::: cmptable
+
+### No placeholder
+```cpp
+auto trim(std::string const& str) -> std::string
+{
+    auto b = str |> ranges::find_if(isalpha);
+    auto e = str |> views::reverse()
+                 |> ranges::find_if(isalpha);
+    return std::string(b, e.base());
+}
+```
+
+### Placeholder
+```cpp
+auto trim(std::string const& str) -> std::string
+{
+    auto b = str |> ranges::find_if(>, isalpha);
+    auto e = str |> views::reverse(>)
+                 |> ranges::find_if(>, isalpha)
+                 |> >.base();
+    return std::string(b, e);
+}
+```
+
+:::
+
 The major cost of this direction is that we add more syntax to what would be
 by far the most common use case: the `x |> f(y)` as `f(x, y)` examples used
-throughout this proposal. Unless we could optimize for this case, and come
+throughout this proposal. In the above `trim` example, three of the four `>`s
+are used as the first parameter, for instance.
+
+Unless we could optimize for this case, and come
 up with a way to allow both syntaxes (as below), we're hesitant to be fully
 on board.
 
