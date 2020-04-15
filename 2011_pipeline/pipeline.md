@@ -14,7 +14,7 @@ toc-depth: 2
 
 # Revision History
 
-R0 of this paper [@P2011R0] was presented in Prague [@Prague.Minutes]. The room
+R0 of this paper [@P2011R0] was presented in Prague [@prague.minutes]. The room
 encouraged further work on the proposal (16-0) and the discussion largely focused
 on the question of operator precedence, where we were asked to explore giving
 `|>` a lower precedence than `.` or `->` (18-0). That question was also
@@ -46,17 +46,18 @@ incarnation of the pipeline functionality brings a few important drawbacks:
     amounts of complexity, creating a larger maintenance burden on developers
     who wish to use and write pipeline-style code.
 2. The support machinery can incur large amounts of overhead when inlining
-    and peephole optimizations are not enabled.
+    and peephole optimizations are not enabled. 
 3. The support machinery places additional large burdens on the implementation
     in that it needs to parse and process large amounts of the support code
     that is needed to support the syntax.
 4. Adopting the ability to add pipeline support for some algorithms might be
-    impossible given fundamental ambiguities.
+    impossible given [fundamental ambiguities](#ambiguity-problems-with-as-a-pipeline-operator).
 
 The goal of the "pipeline-rewrite" operator proposed herein is to solve all of
 the above issues, as well as generalize the concept of "pipeline" code to work
 with arbitrary functions and types, and not just those that must specifically
-request it.
+request it. We elaborate on some of these issues when we talk about the
+[problems with `|` as a pipeline operator](#problems-with-as-a-pipeline-operator).
 
 The addition of a "pipeline-rewrite" operator requires no API adjustments to
 any existing or proposed libraries in order to support such an operator.
@@ -297,7 +298,7 @@ avoid having to duplicate the constraints.
 
 There are a few facially obvious drawbacks to using `|` for pipeline semantics:
 
-- The code required to support using `|` functionality is not simple. It adds
+- The code required to support using `|` functionality adds
     overhead during compilation, and without the aide of the inliner and basic
     optimizations it can be expensive at runtime.
 - Defining new range algorithms necessitates opting-in to this machinery.
@@ -306,13 +307,57 @@ There are a few facially obvious drawbacks to using `|` for pipeline semantics:
     provide both partial and full algorithm implementations, where the partial
     implementation is mostly boilerplate to generate the partially applied
     closure object.
+    
+We showed in the previous section how a `|`-friendly `transform_view` could
+be implemented. Could this be improved in a different way, perhaps with reflection?
+This seems, at least, theoretically possible. The algorithm would be: take the
+"full call", strip the first argument and strip all the constraints that (recursively)
+require the first argument). Then have the body be a lambda that takes a single
+argument, captures the function parameters by forward, and re-instances the
+constraints that were stripped from the original algorithm. A much simpler (and
+probably _mostly_) would be to generate a partial call version that
+is:
 
-Those are, in of themselves, pretty bad. But these problems are all just work -
+```cpp
+auto transform(auto&&... args)
+{
+    return make_left_pipeable(
+        [...args=FWD(args)](/* no constraint */ auto&& first)
+            -> decltype(transform(FWD(first), FWD(args)...))
+        {
+            return transform(FWD(first), FWD(args)...);
+        });
+```
+
+This one could actually be written as a macro once we write `make_left_pipeable`
+one time.
+
+But even with the simple macro approach (and, spoiler alert, that direction as a whole
+may not be viable), there's still cost to consider:
+
+- while `views::transform(rng, f)` and `rng | views::transform(f)` generate
+identical code in optimized builds, the latter has overhead in debug builds - both
+in terms of performance and debugability. That makes it not entirely the zero-
+overhead abstraction that we like to claim, for those users that regularly use
+debug builds (which is a large percentage of users).
+- having to deal with the extra `|` abstraction requires extra parsing on the
+compiler's part for each TU (possibly less of an issue in a modules world)
+- even with modules, this abstraction has compile time cost as `transform` now
+has two overloads (instead of one) regardless of if we use the pipeline syntax
+or not - and then we need to do an additional overload resolution for the `|`,
+all of which are function templates that need to be instantiated. 
+
+We'll discuss the second and third points more in the context of what we
+propose to do about [Ranges going forward](#what-to-do-about-ranges-going-forward).
+
+Those are, in of themselves, far from ideal. But these problems are all just work -
 work for the programmer to write the initial `|` support to begin with (just the
 one time), work for the programmer to write each additional overload to opt-in,
 work for the compiler to compile all these things together, work for the
 optimizer to get rid of all these things, work for the programmer to try to
 figure out what's getting called where. 
+
+## Ambiguity problems with `|` as a Pipeline Operator
 
 But there's a bigger problem here that no amount increased programmer or compiler
 throughput can solve: sometimes the partial and complete calls are ambiguous.
@@ -851,7 +896,7 @@ $x = vec[2,1,3]
 
 ### F#, Julia, OCaml, Elm
 
-F# [@f#.pipe], Julia, Elm [@elm.pipe], and OCaml also have an operator named `|>` - but theirs is slightly
+F# [@f-sharp.pipe], Julia, Elm [@elm.pipe], and OCaml also have an operator named `|>` - but theirs is slightly
 different. Theirs all invoke the right-hand side with the left-hand side as its
 sole argument:
 rather than `x |> f(y)` meaning `f(x, y)` as is being proposed here and as it
@@ -1066,28 +1111,15 @@ every right-hand side is just a call. In:
 ```
 
 we have basically `s |> f(x) |> g(y) |> h(z)`, nothing especially complicated.
-But how do we deal with more complex examples, examples courtesy of Davis Herring
-and Arthur O'Dwyer [@odwyer.precedence]:
-
-```cpp
-x |> f()
-x |> f()()
-x |> f().g
-x |> f().g()
-x |> get()++
-x |> ++get()
-x |> T().foo()
-x |> f() + g()
-x |> v[i]()
-x |> v[i]()()
-ctr |> size() == max()
-```
+But how do we deal with more complex examples? 
 
 We think the appropriate model for handling the right-hand side is that it must
 look like a call expression (that is, it must look like `f()`) when we parse up
 to the appropriate precedence, and then we insert he left-hand side as the first
-argument of that call expression. In other words, those examples evaluate as
-follows based on choice of precedence described earlier:
+argument of that call expression.
+
+Let's consider several more complex examples, some courtesy of Davis Herring
+and Arthur O'Dwyer [@odwyer.precedence]:
 
 <table>
 <tr><th>Example</th><th>Above `+` (4.5)</th><th>Between `+` and `==` (6.5)</th><th>Below `==` (15.5)</tr>
@@ -1102,6 +1134,8 @@ follows based on choice of precedence described earlier:
 <tr><td>`x |> v[i]()`</td><td>`v[i](x)`</td><td>`v[i](x)`</td><td>`v[i](x)`</td></tr>
 <tr><td>`x |> v[i]()()`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td></tr>
 <tr><td>`ctr |> size() == max()`</td><td>`size(ctr) == max()`</td><td>`size(ctr) == max()`</td><td>ill-formed</td></tr>
+<tr><td>`x + y |> f()`</td><td>`x + f(y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
+<tr><td>`(x + y) |> f()`</td><td>`f(x + y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
 </table>
 
 Consider `x |> f() + g()`. If `|>` has precedence above `+`, then
@@ -1567,20 +1601,26 @@ be written that uses Ranges with pipelines. Even with `|>`, that code will conti
 to be perfectly functional and correct. If we deprecate `|`, users may be in
 a position where they have code that has to compile against one compiler that
 supports `|>` and one that doesn't. Deprecation warnings seem like they would
-make for an unnecessarily difficult situation for early adopters.
+make for an unnecessarily difficult situation for early adopters (unless we
+very nicely suggest and encourage all the implementations to provide a flag 
+to specifically disabling the deprecation of this specific feature - otherwise
+users might have to just disable all deprecation warnings, which seems inherently
+undesirable).
 
 We think, and Eric Niebler in private correspondence agrees,
  that the right option here is (1): Ranges should continue adding
 `|` for new view adapters for consistency and not deprecate anything. This may
 seem at odds with one of the benefits of `|>` that we laid out earlier - that
 the existence of the library machinery adds overhead to compiler throughput.
-Because it kind of is. But at least that library machinery would be
-confined to just the range view adapters (and wouldn't have to be needed to
-the algorithms or executors) and we could even investigate, in range-v3, of having
-a macro opt-out of defining it entirely (for users that want to use `|>`
-throughout).
 
+Because it kind of is.
 
+But we hope to investigate, in range-v3 to start, the option of having a macro
+opt-out of defining the `|` support entirely. That is, rather than deprecate `|`
+and force users to move forward - possibly running into the kinds of problems
+mentioned earlier - let users move forward at their own pace and disable the costs
+when they don't need them anymore. This seems like a much softer way to move
+forward.
 
 # Other Concerns
 
@@ -1629,8 +1669,11 @@ Add a new section named "Pipeline rewrite" [expr.pizza]:
 @_pipeline-expression_@:
   @_pm-expression_@
   @_pipeline-expression_@ |> @_pipeline-rhs_@
+  
 @_pipeline-rhs_@:
   @_pm-expression_@ ( @_expression-list_~opt~@ )
+  @_simple-type-specifier_@ ( @_expression-list_~opt~@ )
+  @_typename-specifier_@ ( @_expression-list_~opt~@ )
   dynamic_cast < @_type-id_@ > ( )
   static_cast < @_type-id_@ > ( )
   reinterpret_cast < @_type-id_@ > ( )
@@ -1645,16 +1688,21 @@ _initializer-clauses_, is identical (by definition) to `E2(E1, E@~args~@)`
 ([expr.call]), except that `E1` is sequenced before `E2`. _\[Note:_ `E2` is
 still sequenced before the rest of the function arguments.   _-end note ]_
 
-[2]{.pnum} An expression of the form `E |> dynamic_cast<@_typeid_@>()` is
+[2]{.pnum} An expression of the form `E1 |> @_type-spec_@(E@~args~@)`, where
+_type-spec_ is either a _simple-type-specifier_ or a _typename-specifier_, is
+identical (by definition) to `@_type-spec_@(E1, E@~args~@)` ([expr.type.conv])
+except that `E1` is sequenced before `E@~args~@`.
+
+[3]{.pnum} An expression of the form `E |> dynamic_cast<@_typeid_@>()` is
 identical (by definition) to `dynamic_cast<@_typeid_@>(E)`.
 
-[3]{.pnum} An expression of the form `E |> static_cast<@_typeid_@>()` is
+[4]{.pnum} An expression of the form `E |> static_cast<@_typeid_@>()` is
 identical (by definition) to `static_cast<@_typeid_@>(E)`.
 
-[4]{.pnum} An expression of the form `E |> reinterpret_cast<@_typeid_@>()` is
+[5]{.pnum} An expression of the form `E |> reinterpret_cast<@_typeid_@>()` is
 identical (by definition) to `reinterpret_cast<@_typeid_@>(E)`.
 
-[5]{.pnum} An expression of the form `E |> typeid()` is
+[6]{.pnum} An expression of the form `E |> typeid()` is
 identical (by definition) to `typeid(E)`.
 :::
 
@@ -1695,11 +1743,17 @@ namespace N {
 :::
 :::
 
+# Acknowledgments
+
+Several people helped enormously with shaping this paper, both with direct
+feedback and giving us more information about other languages: Davis Herring,
+Arthur O'Dwyer, Tim Song, Richard Smith, Faisal Vali, Tony van Eerd,
+Daveed Vandevoorde, and Ville Voutilainen. 
 
 ---
 references:
   - id: hoekstra
-    citation-label: Hoekstra
+    citation-label: hoekstra
     title: "CppNow 2019: Algorithm Intuition"
     author:
       - family: Conor Hoekstra
@@ -1810,8 +1864,8 @@ references:
     issued:
         - year: 2012
     URL: https://package.elm-lang.org/packages/elm/core/latest/Basics#(|%3E)
-  - id: f#.pipe
-    ctation-label: f#.pipe
+  - id: f-sharp.pipe
+    ctation-label: f-sharp.pipe
     title: "Function"
     author:
         - family: F#
