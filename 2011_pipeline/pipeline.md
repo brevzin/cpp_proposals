@@ -22,9 +22,12 @@ raised on the reflectors [@ext.precedence].
 
 This revision lowers the precedence of `|>` (as described in
 [operator precedence](#operator-precedence)
-and includes discussions of what to do about Ranges pipelines in C++23 and also
-considers the idea of using a placeholder syntax. 
+and includes discussions of [what to do about Ranges pipelines](#what-to-do-about-ranges-going-forward)
+ in C++23 and also
+considers the idea of using a [placeholder syntax](#a-placeholder-syntax). 
 
+This revision also expands the kinds of expressions that can be pipelined into
+to additionally include casts and explicit type conversion.
 
 # Abstract
 
@@ -1116,29 +1119,89 @@ But how do we deal with more complex examples?
 We think the appropriate model for handling the right-hand side is that it must
 look like a call expression (that is, it must look like `f()`) when we parse up
 to the appropriate precedence, and then we insert he left-hand side as the first
-argument of that call expression.
+argument of that call expression. This notably differs from the first draft
+of this paper, where `|>` was presented as another _postfix-expression_.
 
 Let's consider several more complex examples, some courtesy of Davis Herring
-and Arthur O'Dwyer [@odwyer.precedence]:
+and most courtesy of Arthur O'Dwyer [@odwyer.precedence], and look at how they
+might evaluate with differing precedence (and including R0 as the last column
+for comparison). For most of the examples, the choice of precedence
+doesn't matter once it's below the postfix operators -- since the examples
+themselves mostly use postfix or unary operators -- so for convenience of
+presentation (and to avoid duplication), we're splitting the examples in
+two tables: the first table only uses postfix and unary prefix operators while
+the second table uses some other operators.
 
-<table>
-<tr><th>Example</th><th>Above `+` (4.5)</th><th>Between `+` and `==` (6.5)</th><th>Below `==` (15.5)</tr>
-<tr><td>`x |> f()`</td><td>`f(x)`</td><td colspan>`f(x)`</td><td colspan>`f(x)`</td></tr>
-<tr><td>`x |> f()()`</td><td>`f()(x)`</td><td colspan>`f()(x)`</td><td colspan>`f()(x)`</td></tr>
-<tr><td>`x |> f().g`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
-<tr><td>`x |> f().g()`</td><td>`f().g(x)`</td><td>`f().g(x)`</td><td>`f().g(x)`</td></tr>
-<tr><td>`x |> get()++`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
-<tr><td>`x |> ++get()`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
-<tr><td>`x |> T().foo()`</td><td>`T().foo(x)`</td><td>`T().foo(x)`</td><td>`T().foo(x)`</td></tr>
-<tr><td>`x |> f() + g()`</td><td>`f(x) + g()`</td><td>ill-formed</td><td>ill-formed</td></tr>
-<tr><td>`x |> v[i]()`</td><td>`v[i](x)`</td><td>`v[i](x)`</td><td>`v[i](x)`</td></tr>
-<tr><td>`x |> v[i]()()`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td></tr>
-<tr><td>`ctr |> size() == max()`</td><td>`size(ctr) == max()`</td><td>`size(ctr) == max()`</td><td>ill-formed</td></tr>
-<tr><td>`x + y |> f()`</td><td>`x + f(y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
-<tr><td>`(x + y) |> f()`</td><td>`f(x + y)`</td><td>`f(x + y)`</td><td>`f(x + y)`</td></tr>
-<tr><td>`co_await x |> via(e)`</td><td>`via(co_await x, e)`</td><td>`via(co_await x, e)`</td><td>`via(co_await x, e)`</td></tr>
-<tr><td>`co_yield x |> via(e)`</td><td>`co_yield via(x, e)`</td><td>`co_yield via(x, e)`</td><td>`co_yield via(x, e)`</td></tr>
-</table>
+Note that R0 of this paper only allowed function calls to be pipelined into -
+while this paper expands into all postfix parenthesized expression. That choice
+has nothing to do with choice of precedence though, so for the sake of interest,
+this table is presented as if R0 made the same choice.
+
+|Example|This Paper (R1)|Postfix (R0)|
+|---------------|---------------|------------|
+|`x |> f()`|`f(x)`|`f(x)`|
+|`x |> f()()`|`f()(x)`|`f(x)()`|
+|`x |> f().g`|ill-formed|`f(x).g`|
+|`x |> f().g()`|`f().g(x)`|`f(x).g()`|
+|`x |> (f()).g()`|`f().g(x)`|ill-formed|
+|`r |> filter(f) |> transform(g)`|`transform(filter(r,f),g)`|`transform(filter(r,f),g)`|
+|`x |> f() |> g<0>(0)`|`g<0>(f(x), 0)`|`g<0>(f(x), 0)`|
+|`x |> T::m()`|`T::m(x)`|`T::m(x)`|
+|`x |> T{}.m()`|`T{}.m(x)`|ill-formed|
+|`x |> T().m()`|`T().m(x)`|`T(x).m()`|
+|`x |> c.f()`|`c.f(x)`|`c.f(x)`|`c.f(x)`|ill-formed|
+|`x |> getA().*getMemptr()`|`getA().*getMemptr(x)`|`getA(x).*getMemptr()`|
+|`x |> always(y)(z)`|`always(y)(x, z)`|`always(x, y)(z)`|
+|`x |> always(y)() |> split()`|`split(always(y)(x))`|`split(always(x, y)())`|
+|`x |> get()++`|ill-formed|`get(x)++`|
+|`x |> ++get()`|ill-formed|ill-formed|
+|`++x |> get()`|`get(++x)`|`++get(x)`|
+|`x |> (y |> z())`|ill-formed|ill-formed|
+|`x |> f().g<0>(0)`|`f().g<0>(x,0)`|`f(x).g<0>(0)`|
+|`-3 |> std::abs()`|`std::abs(-3)`|`-std::abs(3)`|
+|`co_await x |> via(e)`|`via(co_await x, e)`|`co_await via(x, e)`|
+|`co_yield x |> via(e)`|`co_yield via(x, e)`|`co_yield via(x, e)`|
+|`throw x |> via(e)`|`throw via(x, e)`|`throw via(x, e)`|
+|`return x |> via(e)`|`return via(x, e)`|`return via(x, e)`|
+|`s |> rev() |> find_if(a).base()`|`find_if(a).base(rev(s))`|`find_if(rev(s), a).base()`
+|`x |> (f())`|ill-formed|ill-formed|
+|`x |> get()[i]`|ill-formed|`get(x)[i]`|
+|`x |> v[i]()`|`v[i](x)`|ill-formed|
+|`x |> v[i]()()`|`v[i]()(x)`|ill-formed|
+|`(x |> v[i]())()`|`v[i](x)()`|ill-formed|
+|`x |> (v[i])()()`|`v[i]()(x)`|`v[i](x)()`|
+|`x |> y.operator+()`|`y.operator+(x)`|ill-formed|
+|`x |> +y`|ill-formed|ill-formed|
+|`c ? left : right |> split('/')`|`c ? left : split(right, '/')`|`c ? left : split(right, '/')`|
+|`(c ? left : right) |> split('/')`|`split(c ? left : right)`|`split(c ? left : right)`|
+|`c ? left |> split('/') : right`|`c ? split('/', left) : right`|`c ? split('/', left) : right`|
+|`x |> f() |> std::make_pair(y)`|`std::make_pair(f(x), y)`|`std::make_pair(f(x), y)`|
+|`x |> f() |> std::pair<X,Y>(y)`|`std::pair<X,Y>(x, y)`|`std::pair<X,Y>(x, y)`|
+|`x |> new T()`|ill-formed|ill-formed|
+|`x |> [](int x, int y){ return x+y; }(1)`|`[](int x, int y){ return x+y; }(x,1)`|`[](int x, int y){ return x+y; }(x,1)`|
+|`x |> f() |> std::plus{}(1)`|`std::plus{}(f(x),1)`|`std::plus{}(f(x),1)`|
+
+
+And a table illustrating different precedences:
+
+|Example|Above `+` <br />(4.5)|Between `+` and `==` <br/>(6.5)|Below `==` <br />(15.5)|Postfix (R0) <br/> (2)|
+|------------------|---------------|---------------|---------------|---------------|
+|`x + y |> f()`|`x + f(y)`|`f(x + y)`|`f(x + y)`|`x + f(y)`|
+|`(x + y) |> f()`|`f(x + y)`|`f(x + y)`|`f(x + y)`|`f(x + y)`|
+|`ctr |> size() == max()`|`size(ctr) == max()`|`size(ctr) == max()`|ill-formed|`size(ctr) == max()`|
+|`(ctr |> size()) == max()`|`size(ctr) == max()`|`size(ctr) == max()`|`size(ctr) == max()`|`size(ctr) == max()`|
+|`x |> f() + g()`|`f(x) + g()`|ill-formed|ill-formed|`f(x) + g()`|
+|`x |> f() + 3`|`f(x) + 3`|ill-formed|ill-formed|`f(x) + 3`|
+|`(x |> f()) + 3`|`f(x) + 3`|`f(x) + 3`|`f(x) + 3`|`f(x) + 3`|
+|`"hi"sv |> count('o') == 0`|`count("hi"sv, 'o') == 0`|`count("hi"sv, 'o') == 0`|ill-formed|`count("hi"sv, 'o') == 0`|
+|`("hi"sv |> count('o')) == 0`|`count("hi"sv, 'o') == 0`|`count("hi"sv, 'o') == 0`|`count("hi"sv, 'o') == 0`|`count("hi"sv, 'o') == 0`|
+|`v |> filter(2) |> size() == 1`|`size(filter(v, 2)) == 0`|`size(filter(v, 2)) == 0`|ill-formed|`size(filter(v, 2)) == 0`|
+|`(v |> filter(2) |> size()) == 1`|`size(filter(v, 2)) == 0`|`size(filter(v, 2)) == 0`|`size(filter(v, 2)) == 0`|`size(filter(v, 2)) == 0`|
+|`a |> b() - c |> d()`|`b(a) - d(c)`|ill-formed|ill-formed|`b(a) - d(c)`|
+|`a |> b() | c() |> d()`|`b(a) | d(c())`|`b(a) | d(c())`|ill-formed|`b(a) | d(c())`|
+|`x + y |> f() + g() |> a.h()`|`x + f(y) + a.h(g())`|ill-formed|ill-formed|ill-formed|
+|
+
 
 Consider `x |> f() + g()`. If `|>` has precedence above `+`, then
 the right-hand side would be `f()`. That's a call expression, which makes this
@@ -1148,8 +1211,23 @@ which is _not_ a call expression (it's an addition). That's ill-formed.
 The same analysis holds for `ctr |> size() == max()`, just with a different
 operator.
 
-This paper proposes that the precedence of `|>` be at 4.5: just below
-`.*` and `->*`. But a significant argument in favor of lower precedence comes
+Let us draw your attention to two of the examples above:
+
+* `x |> f() + y` is described as being either `f(x) + y` or ill-formed
+* `x + y |> f()` is described as being either `x + f(y)` or `f(x + y)`
+
+Is it not possible to have `f(x) + y` for the first example and `f(x + y)` for
+the second? In other words, is it possible to have different precedence on each
+side of `|>` (in this case, lower than `+` on the left but higher than `+` on
+the right)? We think that would just be very confusing, not to mention difficult
+to specify. It's already hard to keep track of operator precedence, but this would
+bring in an entirely novel problem which is that in `x + y |> f() + z()`, this
+would then evaluate as `f(x + y) + z()` and you would
+have the two `+`s differ in their precedence to the `|>`? We're not sure what
+the mental model for that would be. 
+
+For the paper itself, we propose the precedence of `|>` to be at 4.5: just
+below `.*` and `->*`. But a significant argument in favor of lower precedence comes
 from considering a different direction for this operator... an explicit
 placeholder.
 
@@ -1259,7 +1337,17 @@ going on in that example - but the combined use of `|>` and placeholder allows
 for a direct, linear flow... top down.
 
 
-# What about Unified Function Call Syntax?
+# Concerns with the Pipeline Operator
+
+There are two major concerns regarding a pipeline operator that need to be
+discussed:
+
+1. Why can't we just have unified function call syntax?
+2. Ranges already has a pipeline operator, that additionally supports 
+composition. What about composition, and what should we do about Ranges
+going forward?
+
+## What about Unified Function Call Syntax?
 
 Any discussion regarding pipeline rewrites, or even the pipeline syntax in
 C++20 ranges, will eventually hit on Unified Function Call Syntax (UFCS). As
@@ -1291,7 +1379,7 @@ any change. (See also following points.)
 
 We will address these two points in turn.
 
-## UFCS does not enable more-generic code
+### UFCS does not enable more-generic code
 
 The most consistent argument in favor of UFCS, regardless of proposal details,
 as Herb made here and Bjarne Stroustrup made in [@N4174] and they both made
@@ -1313,7 +1401,7 @@ This is a very real problem in writing generic code in C++, one which UFCS set
 out to solve. Since a lot of the examples in this paper deal with Ranges already,
 let's stick to Ranges.
 
-### Fails for fundamental types
+#### Fails for fundamental types
 
 The fundamental concept in C++20 Ranges is the `std::range`
 concept. With a version of UFCS in which member function call syntax could
@@ -1404,7 +1492,7 @@ And if we don't have a generic solution that works for the fundamental types
 want to provide implementations for a generic algorithm for types like `int` or
 `char` or pointers), then we don't have a generic solution.
 
-### Too greedy on names
+#### Too greedy on names
 
 UFCS works by having the non-member fallback find a free function of the same
 name with ADL. C++20 ranges introduces customization point objects that do
@@ -1445,7 +1533,7 @@ feature would push much harder in that direction, and it's not a good direction.
 Put differently, designing generic code on top of ADL is somewhat akin to
 just eschewing namespaces altogether and going back to our C roots. 
 
-### This is a concepts problem
+#### This is a concepts problem
 
 As argued in [@P1900R0], the problem of customization should be considered
 a `concept`s problem and merits a `concept`s solution. What we are trying to do
@@ -1454,7 +1542,7 @@ solve, or even address, this problem.
 
 Instead, what we are trying to do is address...
 
-## UFCS does enable extension methods without a separate one-off language feature
+### UFCS does enable extension methods without a separate one-off language feature
 
 The other argument that Herb made in favor of UFCS was in favor of adopting
 extension method without a special language feature specific to them. Notably,
@@ -1498,7 +1586,7 @@ if (file) {
 }
 ```
 
-## 1 Syntax, 2 Meanings
+### 1 Syntax, 2 Meanings
 
 Fundamentally, a problem with UFCS is that it would be yet another example in
 C++ where a single syntax has two potential meanings: `x.f()` would either be
@@ -1520,7 +1608,7 @@ always mean invoking the free function `f` and `x.f()` always means invoking
 the member function `f`, and having that differentiation seems like a positive
 thing rather than a negative thing. 
 
-# What about pipeline composition?
+## What about pipeline composition?
 
 This paper largely focuses on the idea from Ranges that you can have a total
 function call and a partial function call:
@@ -1611,7 +1699,7 @@ much more expansive than just range adapters. And if we think it's a valuable
 things for range adapters, maybe we should find a way to make it work for all
 other C++ applications?
 
-# What to do about Ranges going forward?
+## What to do about Ranges going forward?
 
 An important question this paper needs to answer is: let's say we adopt `|>` as
 proposed. With the notable exception of the adapter compositions described in the
@@ -1663,7 +1751,7 @@ mentioned earlier - let users move forward at their own pace and disable the cos
 when they don't need them anymore. This seems like a much softer way to move
 forward.
 
-# Other Concerns
+## Other Concerns
 
 Some C++20 code could break. In the same way that the introduction of
 `operator<=>` introduced a `<=>` token that would break code that passed the
@@ -1729,21 +1817,24 @@ _initializer-clauses_, is identical (by definition) to `E2(E1, E@~args~@)`
 ([expr.call]), except that `E1` is sequenced before `E2`. _\[Note:_ `E2` is
 still sequenced before the rest of the function arguments.   _-end note ]_
 
-[2]{.pnum} An expression of the form `E1 |> @_type-spec_@(E@~args~@)`, where
-_type-spec_ is either a _simple-type-specifier_ or a _typename-specifier_, is
-identical (by definition) to `@_type-spec_@(E1, E@~args~@)` ([expr.type.conv])
+[2]{.pnum} An expression of the form `E1 |> @_simple-type-specifier_@(E@~args~@)`
+is identical (by definition) to `@_simple-type-specifier_@(E1, E@~args~@)` ([expr.type.conv])
 except that `E1` is sequenced before `E@~args~@`.
 
-[3]{.pnum} An expression of the form `E |> dynamic_cast<@_typeid_@>()` is
+[3]{.pnum} An expression of the form `E1 |> @_typename-specifier_@(E@~args~@)`
+is identical (by definition) to `@_typename-specifier_@(E1, E@~args~@)` ([expr.type.conv])
+except that `E1` is sequenced before `E@~args~@`.
+
+[4]{.pnum} An expression of the form `E |> dynamic_cast<@_typeid_@>()` is
 identical (by definition) to `dynamic_cast<@_typeid_@>(E)`.
 
-[4]{.pnum} An expression of the form `E |> static_cast<@_typeid_@>()` is
+[5]{.pnum} An expression of the form `E |> static_cast<@_typeid_@>()` is
 identical (by definition) to `static_cast<@_typeid_@>(E)`.
 
-[5]{.pnum} An expression of the form `E |> reinterpret_cast<@_typeid_@>()` is
+[6]{.pnum} An expression of the form `E |> reinterpret_cast<@_typeid_@>()` is
 identical (by definition) to `reinterpret_cast<@_typeid_@>(E)`.
 
-[6]{.pnum} An expression of the form `E |> typeid()` is
+[7]{.pnum} An expression of the form `E |> typeid()` is
 identical (by definition) to `typeid(E)`.
 :::
 

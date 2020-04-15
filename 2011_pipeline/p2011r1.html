@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-04-14" />
+  <meta name="dcterms.date" content="2020-04-15" />
   <title>A pipeline-rewrite operator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-04-14</td>
+    <td>2020-04-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -581,23 +581,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#operator-precedence"><span class="toc-section-number">5</span> Operator Precedence<span></span></a></li>
 <li><a href="#a-placeholder-syntax"><span class="toc-section-number">6</span> A Placeholder syntax<span></span></a></li>
-<li><a href="#what-about-unified-function-call-syntax"><span class="toc-section-number">7</span> What about Unified Function Call Syntax?<span></span></a>
+<li><a href="#concerns-with-the-pipeline-operator"><span class="toc-section-number">7</span> Concerns with the Pipeline Operator<span></span></a>
 <ul>
-<li><a href="#ufcs-does-not-enable-more-generic-code"><span class="toc-section-number">7.1</span> UFCS does not enable more-generic code<span></span></a></li>
-<li><a href="#ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature"><span class="toc-section-number">7.2</span> UFCS does enable extension methods without a separate one-off language feature<span></span></a></li>
-<li><a href="#syntax-2-meanings"><span class="toc-section-number">7.3</span> 1 Syntax, 2 Meanings<span></span></a></li>
+<li><a href="#what-about-unified-function-call-syntax"><span class="toc-section-number">7.1</span> What about Unified Function Call Syntax?<span></span></a></li>
+<li><a href="#what-about-pipeline-composition"><span class="toc-section-number">7.2</span> What about pipeline composition?<span></span></a></li>
+<li><a href="#what-to-do-about-ranges-going-forward"><span class="toc-section-number">7.3</span> What to do about Ranges going forward?<span></span></a></li>
+<li><a href="#other-concerns"><span class="toc-section-number">7.4</span> Other Concerns<span></span></a></li>
 </ul></li>
-<li><a href="#what-about-pipeline-composition"><span class="toc-section-number">8</span> What about pipeline composition?<span></span></a></li>
-<li><a href="#what-to-do-about-ranges-going-forward"><span class="toc-section-number">9</span> What to do about Ranges going forward?<span></span></a></li>
-<li><a href="#other-concerns"><span class="toc-section-number">10</span> Other Concerns<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">11</span> Wording<span></span></a></li>
-<li><a href="#acknowledgments"><span class="toc-section-number">12</span> Acknowledgments<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">13</span> References<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">8</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">9</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">10</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>R0 of this paper <span class="citation" data-cites="P2011R0">[<a href="#ref-P2011R0" role="doc-biblioref">P2011R0</a>]</span> was presented in Prague <span class="citation" data-cites="prague.minutes">[<a href="#ref-prague.minutes" role="doc-biblioref">prague.minutes</a>]</span>. The room encouraged further work on the proposal (16-0) and the discussion largely focused on the question of operator precedence, where we were asked to explore giving <code class="sourceCode cpp"><span class="op">|&gt;</span></code> a lower precedence than <code class="sourceCode cpp"><span class="op">.</span></code> or <code class="sourceCode cpp"><span class="op">-&gt;</span></code> (18-0). That question was also raised on the reflectors <span class="citation" data-cites="ext.precedence">[<a href="#ref-ext.precedence" role="doc-biblioref">ext.precedence</a>]</span>.</p>
-<p>This revision lowers the precedence of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> (as described in <a href="#operator-precedence">operator precedence</a> and includes discussions of what to do about Ranges pipelines in C++23 and also considers the idea of using a placeholder syntax.</p>
+<p>This revision lowers the precedence of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> (as described in <a href="#operator-precedence">operator precedence</a> and includes discussions of <a href="#what-to-do-about-ranges-going-forward">what to do about Ranges pipelines</a> in C++23 and also considers the idea of using a <a href="#a-placeholder-syntax">placeholder syntax</a>.</p>
+<p>This revision also expands the kinds of expressions that can be pipelined into to additionally include casts and explicit type conversion.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="abstract" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Abstract<a href="#abstract" class="self-link"></a></h1>
 <p>This paper proposes a new non-overloadable operator <code class="sourceCode cpp"><span class="op">|&gt;</span></code> such that the expression <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> evaluates exactly as <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code>. There would be no intermediate subexpression <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)</span></code>.</p>
 <p>This is notably unrelated to, and quite different from, <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, which proposed an overloadable <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|&gt;</span></code>, allowing the evaluation of the above expression as <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|&gt;(</span>x, f<span class="op">(</span>y<span class="op">))</span></code>.</p>
@@ -1297,236 +1296,381 @@ Operator
 <span id="cb42-5"><a href="#cb42-5"></a>                <span class="cf">return</span> s <span class="op">&gt;=</span> <span class="dv">7</span>;</span>
 <span id="cb42-6"><a href="#cb42-6"></a>            <span class="op">})</span>;</span></code></pre></div>
 <p>we have basically <code class="sourceCode cpp">s <span class="op">|&gt;</span> f<span class="op">(</span>x<span class="op">)</span> <span class="op">|&gt;</span> g<span class="op">(</span>y<span class="op">)</span> <span class="op">|&gt;</span> h<span class="op">(</span>z<span class="op">)</span></code>, nothing especially complicated. But how do we deal with more complex examples?</p>
-<p>We think the appropriate model for handling the right-hand side is that it must look like a call expression (that is, it must look like <code class="sourceCode cpp">f<span class="op">()</span></code>) when we parse up to the appropriate precedence, and then we insert he left-hand side as the first argument of that call expression.</p>
-<p>Let’s consider several more complex examples, some courtesy of Davis Herring and Arthur O’Dwyer <span class="citation" data-cites="odwyer.precedence">[<a href="#ref-odwyer.precedence" role="doc-biblioref">odwyer.precedence</a>]</span>:</p>
+<p>We think the appropriate model for handling the right-hand side is that it must look like a call expression (that is, it must look like <code class="sourceCode cpp">f<span class="op">()</span></code>) when we parse up to the appropriate precedence, and then we insert he left-hand side as the first argument of that call expression. This notably differs from the first draft of this paper, where <code class="sourceCode cpp"><span class="op">|&gt;</span></code> was presented as another <em>postfix-expression</em>.</p>
+<p>Let’s consider several more complex examples, some courtesy of Davis Herring and most courtesy of Arthur O’Dwyer <span class="citation" data-cites="odwyer.precedence">[<a href="#ref-odwyer.precedence" role="doc-biblioref">odwyer.precedence</a>]</span>, and look at how they might evaluate with differing precedence (and including R0 as the last column for comparison). For most of the examples, the choice of precedence doesn’t matter once it’s below the postfix operators – since the examples themselves mostly use postfix or unary operators – so for convenience of presentation (and to avoid duplication), we’re splitting the examples in two tables: the first table only uses postfix and unary prefix operators while the second table uses some other operators.</p>
+<p>Note that R0 of this paper only allowed function calls to be pipelined into - while this paper expands into all postfix parenthesized expression. That choice has nothing to do with choice of precedence though, so for the sake of interest, this table is presented as if R0 made the same choice.</p>
 <table>
-<tr>
-<th>
-Example
-</th>
-<th>
-Above <code class="sourceCode cpp"><span class="op">+</span></code> (4.5)
-</th>
-<th>
-Between <code class="sourceCode cpp"><span class="op">+</span></code> and <code class="sourceCode cpp"><span class="op">==</span></code> (6.5)
-</th>
-<th>
-Below <code class="sourceCode cpp"><span class="op">==</span></code> (15.5)
+<colgroup>
+<col style="width: 35%"></col>
+<col style="width: 35%"></col>
+<col style="width: 28%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Example</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>This Paper (R1)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Postfix (R0)</strong>
+</div></th>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td colspan>
-<code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td colspan>
-<code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>
-</td>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">()(</span>x<span class="op">)</span></code>
-</td>
-<td colspan>
-<code class="sourceCode cpp">f<span class="op">()(</span>x<span class="op">)</span></code>
-</td>
-<td colspan>
-<code class="sourceCode cpp">f<span class="op">()(</span>x<span class="op">)</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">()(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)()</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">().</span>g</code>
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">().</span>g</code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">).</span>g</code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">().</span>g<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">(</span>x<span class="op">)</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">().</span>g<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">).</span>g<span class="op">()</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> get<span class="op">()++</span></code>
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">(</span>f<span class="op">()).</span>g<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">(</span>x<span class="op">)</span></code></td>
+<td>ill-formed</td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">++</span>get<span class="op">()</span></code>
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">r <span class="op">|&gt;</span> filter<span class="op">(</span>f<span class="op">)</span> <span class="op">|&gt;</span> transform<span class="op">(</span>g<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">transform<span class="op">(</span>filter<span class="op">(</span>r,f<span class="op">)</span>,g<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">transform<span class="op">(</span>filter<span class="op">(</span>r,f<span class="op">)</span>,g<span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> T<span class="op">().</span>foo<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">T<span class="op">().</span>foo<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">T<span class="op">().</span>foo<span class="op">(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">T<span class="op">().</span>foo<span class="op">(</span>x<span class="op">)</span></code>
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">|&gt;</span> g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span><span class="dv">0</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>f<span class="op">(</span>x<span class="op">)</span>, <span class="dv">0</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>f<span class="op">(</span>x<span class="op">)</span>, <span class="dv">0</span><span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> g<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> g<span class="op">()</span></code>
-</td>
-<td>
-ill-formed
-</td>
-<td>
-ill-formed
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> T<span class="op">::</span>m<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">T<span class="op">::</span>m<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">T<span class="op">::</span>m<span class="op">(</span>x<span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> v<span class="op">[</span>i<span class="op">]()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)</span></code>
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> T<span class="op">{}.</span>m<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">T<span class="op">{}.</span>m<span class="op">(</span>x<span class="op">)</span></code></td>
+<td>ill-formed</td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">|&gt;</span> v<span class="op">[</span>i<span class="op">]()()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">]()(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">]()(</span>x<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">]()(</span>x<span class="op">)</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> T<span class="op">().</span>m<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">T<span class="op">().</span>m<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">T<span class="op">(</span>x<span class="op">).</span>m<span class="op">()</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">ctr <span class="op">|&gt;</span> size<span class="op">()</span> <span class="op">==</span> max<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code>
-</td>
-<td>
-ill-formed
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> c<span class="op">.</span>f<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">(</span>x<span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">x <span class="op">+</span> f<span class="op">(</span>y<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> getA<span class="op">().*</span>getMemptr<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">getA<span class="op">().*</span>getMemptr<span class="op">(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">getA<span class="op">(</span>x<span class="op">).*</span>getMemptr<span class="op">()</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp"><span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span> <span class="op">|&gt;</span> f<span class="op">()</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code>
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> always<span class="op">(</span>y<span class="op">)(</span>z<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">always<span class="op">(</span>y<span class="op">)(</span>x, z<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">always<span class="op">(</span>x, y<span class="op">)(</span>z<span class="op">)</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp"><span class="kw">co_await</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">via<span class="op">(</span><span class="kw">co_await</span> x, e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">via<span class="op">(</span><span class="kw">co_await</span> x, e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">via<span class="op">(</span><span class="kw">co_await</span> x, e<span class="op">)</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> always<span class="op">(</span>y<span class="op">)()</span> <span class="op">|&gt;</span> split<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">split<span class="op">(</span>always<span class="op">(</span>y<span class="op">)(</span>x<span class="op">))</span></code></td>
+<td><code class="sourceCode cpp">split<span class="op">(</span>always<span class="op">(</span>x, y<span class="op">)())</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp"><span class="kw">co_yield</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp"><span class="kw">co_yield</span> via<span class="op">(</span>x, e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp"><span class="kw">co_yield</span> via<span class="op">(</span>x, e<span class="op">)</span></code>
-</td>
-<td>
-<code class="sourceCode cpp"><span class="kw">co_yield</span> via<span class="op">(</span>x, e<span class="op">)</span></code>
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> get<span class="op">()++</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">get<span class="op">(</span>x<span class="op">)++</span></code></td>
 </tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">++</span>get<span class="op">()</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">++</span>x <span class="op">|&gt;</span> get<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">get<span class="op">(++</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="op">++</span>get<span class="op">(</span>x<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">(</span>y <span class="op">|&gt;</span> z<span class="op">())</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">().</span>g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span><span class="dv">0</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">().</span>g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>x,<span class="dv">0</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">).</span>g<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span><span class="dv">0</span><span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">-</span><span class="dv">3</span> <span class="op">|&gt;</span> std<span class="op">::</span>abs<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>abs<span class="op">(-</span><span class="dv">3</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="op">-</span>std<span class="op">::</span>abs<span class="op">(</span><span class="dv">3</span><span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="kw">co_await</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">via<span class="op">(</span><span class="kw">co_await</span> x, e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="kw">co_await</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="kw">co_yield</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="kw">co_yield</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="kw">co_yield</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="cf">throw</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="cf">throw</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="cf">throw</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="cf">return</span> x <span class="op">|&gt;</span> via<span class="op">(</span>e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="cf">return</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="cf">return</span> via<span class="op">(</span>x, e<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">s <span class="op">|&gt;</span> rev<span class="op">()</span> <span class="op">|&gt;</span> find_if<span class="op">(</span>a<span class="op">).</span>base<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">find_if<span class="op">(</span>a<span class="op">).</span>base<span class="op">(</span>rev<span class="op">(</span>s<span class="op">))</span></code></td>
+<td><code class="sourceCode cpp">find_if<span class="op">(</span>rev<span class="op">(</span>s<span class="op">)</span>, a<span class="op">).</span>base<span class="op">()</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">(</span>f<span class="op">())</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> get<span class="op">()[</span>i<span class="op">]</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">get<span class="op">(</span>x<span class="op">)[</span>i<span class="op">]</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> v<span class="op">[</span>i<span class="op">]()</span></code></td>
+<td><code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)</span></code></td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> v<span class="op">[</span>i<span class="op">]()()</span></code></td>
+<td><code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">]()(</span>x<span class="op">)</span></code></td>
+<td>ill-formed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">(</span>x <span class="op">|&gt;</span> v<span class="op">[</span>i<span class="op">]())()</span></code></td>
+<td><code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)()</span></code></td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">(</span>v<span class="op">[</span>i<span class="op">])()()</span></code></td>
+<td><code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">]()(</span>x<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">v<span class="op">[</span>i<span class="op">](</span>x<span class="op">)()</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> y<span class="op">.</span><span class="kw">operator</span><span class="op">+()</span></code></td>
+<td><code class="sourceCode cpp">y<span class="op">.</span><span class="kw">operator</span><span class="op">+(</span>x<span class="op">)</span></code></td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">+</span>y</code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">c <span class="op">?</span> left <span class="op">:</span> right <span class="op">|&gt;</span> split<span class="op">(</span><span class="ch">&#39;/&#39;</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">c <span class="op">?</span> left <span class="op">:</span> split<span class="op">(</span>right, <span class="ch">&#39;/&#39;</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">c <span class="op">?</span> left <span class="op">:</span> split<span class="op">(</span>right, <span class="ch">&#39;/&#39;</span><span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">(</span>c <span class="op">?</span> left <span class="op">:</span> right<span class="op">)</span> <span class="op">|&gt;</span> split<span class="op">(</span><span class="ch">&#39;/&#39;</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">split<span class="op">(</span>c <span class="op">?</span> left <span class="op">:</span> right<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">split<span class="op">(</span>c <span class="op">?</span> left <span class="op">:</span> right<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">c <span class="op">?</span> left <span class="op">|&gt;</span> split<span class="op">(</span><span class="ch">&#39;/&#39;</span><span class="op">)</span> <span class="op">:</span> right</code></td>
+<td><code class="sourceCode cpp">c <span class="op">?</span> split<span class="op">(</span><span class="ch">&#39;/&#39;</span>, left<span class="op">)</span> <span class="op">:</span> right</code></td>
+<td><code class="sourceCode cpp">c <span class="op">?</span> split<span class="op">(</span><span class="ch">&#39;/&#39;</span>, left<span class="op">)</span> <span class="op">:</span> right</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">|&gt;</span> std<span class="op">::</span>make_pair<span class="op">(</span>y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>make_pair<span class="op">(</span>f<span class="op">(</span>x<span class="op">)</span>, y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>make_pair<span class="op">(</span>f<span class="op">(</span>x<span class="op">)</span>, y<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">|&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span>X,Y<span class="op">&gt;(</span>y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>X,Y<span class="op">&gt;(</span>x, y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>X,Y<span class="op">&gt;(</span>x, y<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="kw">new</span> T<span class="op">()</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> <span class="op">[](</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">){</span> <span class="cf">return</span> x<span class="op">+</span>y; <span class="op">}(</span><span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="op">[](</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">){</span> <span class="cf">return</span> x<span class="op">+</span>y; <span class="op">}(</span>x,<span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp"><span class="op">[](</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">){</span> <span class="cf">return</span> x<span class="op">+</span>y; <span class="op">}(</span>x,<span class="dv">1</span><span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">|&gt;</span> std<span class="op">::</span>plus<span class="op">{}(</span><span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>plus<span class="op">{}(</span>f<span class="op">(</span>x<span class="op">)</span>,<span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>plus<span class="op">{}(</span>f<span class="op">(</span>x<span class="op">)</span>,<span class="dv">1</span><span class="op">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>And a table illustrating different precedences:</p>
+<table>
+<colgroup>
+<col style="width: 23%"></col>
+<col style="width: 19%"></col>
+<col style="width: 19%"></col>
+<col style="width: 19%"></col>
+<col style="width: 19%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Example</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Above <code class="sourceCode cpp"><span class="op">+</span></code> <br />(4.5)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Between <code class="sourceCode cpp"><span class="op">+</span></code> and <code class="sourceCode cpp"><span class="op">==</span></code> <br />(6.5)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Below <code class="sourceCode cpp"><span class="op">==</span></code> <br />(15.5)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Postfix (R0) <br /> (2)</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">x <span class="op">+</span> f<span class="op">(</span>y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">x <span class="op">+</span> f<span class="op">(</span>y<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span> <span class="op">|&gt;</span> f<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">ctr <span class="op">|&gt;</span> size<span class="op">()</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">(</span>ctr <span class="op">|&gt;</span> size<span class="op">())</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>ctr<span class="op">)</span> <span class="op">==</span> max<span class="op">()</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> g<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> g<span class="op">()</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> g<span class="op">()</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">(</span>x <span class="op">|&gt;</span> f<span class="op">())</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+<td><code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">3</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="st">&quot;hi&quot;</span><span class="bu">sv</span> <span class="op">|&gt;</span> count<span class="op">(</span><span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span> <span class="op">|&gt;</span> count<span class="op">(</span><span class="ch">&#39;o&#39;</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">count<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="bu">sv</span>, <span class="ch">&#39;o&#39;</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">v <span class="op">|&gt;</span> filter<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">|&gt;</span> size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">(</span>v <span class="op">|&gt;</span> filter<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">|&gt;</span> size<span class="op">())</span> <span class="op">==</span> <span class="dv">1</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+<td><code class="sourceCode cpp">size<span class="op">(</span>filter<span class="op">(</span>v, <span class="dv">2</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">a <span class="op">|&gt;</span> b<span class="op">()</span> <span class="op">-</span> c <span class="op">|&gt;</span> d<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">b<span class="op">(</span>a<span class="op">)</span> <span class="op">-</span> d<span class="op">(</span>c<span class="op">)</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">b<span class="op">(</span>a<span class="op">)</span> <span class="op">-</span> d<span class="op">(</span>c<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">a <span class="op">|&gt;</span> b<span class="op">()</span> <span class="op">|</span> c<span class="op">()</span> <span class="op">|&gt;</span> d<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">b<span class="op">(</span>a<span class="op">)</span> <span class="op">|</span> d<span class="op">(</span>c<span class="op">())</span></code></td>
+<td><code class="sourceCode cpp">b<span class="op">(</span>a<span class="op">)</span> <span class="op">|</span> d<span class="op">(</span>c<span class="op">())</span></code></td>
+<td>ill-formed</td>
+<td><code class="sourceCode cpp">b<span class="op">(</span>a<span class="op">)</span> <span class="op">|</span> d<span class="op">(</span>c<span class="op">())</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> g<span class="op">()</span> <span class="op">|&gt;</span> a<span class="op">.</span>h<span class="op">()</span></code></td>
+<td><code class="sourceCode cpp">x <span class="op">+</span> f<span class="op">(</span>y<span class="op">)</span> <span class="op">+</span> a<span class="op">.</span>h<span class="op">(</span>g<span class="op">())</span></code></td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+<td>ill-formed</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
 </table>
 <p>Consider <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> g<span class="op">()</span></code>. If <code class="sourceCode cpp"><span class="op">|&gt;</span></code> has precedence above <code class="sourceCode cpp"><span class="op">+</span></code>, then the right-hand side would be <code class="sourceCode cpp">f<span class="op">()</span></code>. That’s a call expression, which makes this valid. But if <code class="sourceCode cpp"><span class="op">|&gt;</span></code> has lower precedence, then the right hand side is <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">+</span> g<span class="op">()</span></code> - which is <em>not</em> a call expression (it’s an addition). That’s ill-formed.</p>
 <p>The same analysis holds for <code class="sourceCode cpp">ctr <span class="op">|&gt;</span> size<span class="op">()</span> <span class="op">==</span> max<span class="op">()</span></code>, just with a different operator.</p>
-<p>This paper proposes that the precedence of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> be at 4.5: just below <code class="sourceCode cpp"><span class="op">.*</span></code> and <code class="sourceCode cpp"><span class="op">-&gt;*</span></code>. But a significant argument in favor of lower precedence comes from considering a different direction for this operator… an explicit placeholder.</p>
+<p>Let us draw your attention to two of the examples above:</p>
+<ul>
+<li><code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> y</code> is described as being either <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> y</code> or ill-formed</li>
+<li><code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">()</span></code> is described as being either <code class="sourceCode cpp">x <span class="op">+</span> f<span class="op">(</span>y<span class="op">)</span></code> or <code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code></li>
+</ul>
+<p>Is it not possible to have <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> y</code> for the first example and <code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code> for the second? In other words, is it possible to have different precedence on each side of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> (in this case, lower than <code class="sourceCode cpp"><span class="op">+</span></code> on the left but higher than <code class="sourceCode cpp"><span class="op">+</span></code> on the right)? We think that would just be very confusing, not to mention difficult to specify. It’s already hard to keep track of operator precedence, but this would bring in an entirely novel problem which is that in <code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">()</span> <span class="op">+</span> z<span class="op">()</span></code>, this would then evaluate as <code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span> <span class="op">+</span> z<span class="op">()</span></code> and you would have the two <code class="sourceCode cpp"><span class="op">+</span></code>s differ in their precedence to the <code class="sourceCode cpp"><span class="op">|&gt;</span></code>? We’re not sure what the mental model for that would be.</p>
+<p>For the paper itself, we propose the precedence of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to be at 4.5: just below <code class="sourceCode cpp"><span class="op">.*</span></code> and <code class="sourceCode cpp"><span class="op">-&gt;*</span></code>. But a significant argument in favor of lower precedence comes from considering a different direction for this operator… an explicit placeholder.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="a-placeholder-syntax" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> A Placeholder syntax<a href="#a-placeholder-syntax" class="self-link"></a></h1>
 <p>This proposal (along with languages like Elixir) is for <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> to evaluate as <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code>: the left-hand argument always gets put in the first slot of the call expression on the right-hand side. This feature has a lot of utility in a wide variety of contexts.</p>
 <p>But what if you want to put the left-hand argument somewhere else? While <code class="sourceCode cpp"><span class="op">|&gt;</span></code> can allow pipelining into <code class="sourceCode cpp">views<span class="op">::</span>zip</code>, it would not be able to allow pipelining into <code class="sourceCode cpp">views<span class="op">::</span>zip_with</code> - there the first parameter is a transform operator. We would write <code class="sourceCode cpp">views<span class="op">::</span>zip_with<span class="op">(</span>plus<span class="op">{}</span>, a, b<span class="op">)</span></code>, and <code class="sourceCode cpp">plus<span class="op">{}</span> <span class="op">|&gt;</span> views<span class="op">::</span>zip_with<span class="op">(</span>a, b<span class="op">)</span></code> is unlikely to ever actually be written.</p>
@@ -1580,7 +1724,13 @@ ill-formed
 <span id="cb47-2"><a href="#cb47-2"></a>x <span class="op">|&gt;</span> f<span class="op">(&gt;</span>, y<span class="op">)</span>   <span class="co">// f(x, y)</span></span>
 <span id="cb47-3"><a href="#cb47-3"></a>x <span class="op">|&gt;</span> f<span class="op">(</span>y, <span class="op">&gt;)</span>   <span class="co">// f(y, x)</span></span></code></pre></div>
 <p>But it’s quite important that we consider this now, since this would inform the choice of precedence. If we ever want to go in the direction of placeholder syntax, it’s quite valuable for the precedence of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to be as low as possible. With placeholders, such a choice of precedence allows <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to behave as an operator separator - and allows you to write whatever flow of operations you want to write without thoughts to precedence at all. Look again at the <a href="#javascript">JavaScript example</a> presented earlier. There’s a lot of different operations going on in that example - but the combined use of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> and placeholder allows for a direct, linear flow… top down.</p>
-<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="what-about-unified-function-call-syntax" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> What about Unified Function Call Syntax?<a href="#what-about-unified-function-call-syntax" class="self-link"></a></h1>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="concerns-with-the-pipeline-operator" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> Concerns with the Pipeline Operator<a href="#concerns-with-the-pipeline-operator" class="self-link"></a></h1>
+<p>There are two major concerns regarding a pipeline operator that need to be discussed:</p>
+<ol type="1">
+<li>Why can’t we just have unified function call syntax?</li>
+<li>Ranges already has a pipeline operator, that additionally supports composition. What about composition, and what should we do about Ranges going forward?</li>
+</ol>
+<h2 data-number="7.1" id="what-about-unified-function-call-syntax" data-number="7.1"><span class="header-section-number">7.1</span> What about Unified Function Call Syntax?<a href="#what-about-unified-function-call-syntax" class="self-link"></a></h2>
 <p>Any discussion regarding pipeline rewrites, or even the pipeline syntax in C++20 ranges, will eventually hit on Unified Function Call Syntax (UFCS). As previously described in a blog post <span class="citation" data-cites="revzin">[<a href="#ref-revzin" role="doc-biblioref">revzin</a>]</span>, UFCS means different things to different people: there were quite a few proposals under this banner that had a variety of different semantics and different applicability to this problem space.</p>
 <p>In <span class="citation" data-cites="N4165">[<a href="#ref-N4165" role="doc-biblioref">N4165</a>]</span>, Herb Sutter presented two goals:</p>
 <div class="quote">
@@ -1591,13 +1741,13 @@ ill-formed
 <p><em>Enable “extension methods” without a separate one-off language feature</em>: The proposed generalization enables calling non-member functions (and function pointers, function objects, etc.) symmetrically with member functions, but without a separate and more limited “extension methods” language feature. Further, unlike “extension methods” in other languages which are a special-purpose feature that adds only the ability to add member functions to an existing class, this proposal would immediately work with calling existing library code without any change. (See also following points.)</p>
 </div>
 <p>We will address these two points in turn.</p>
-<h2 data-number="7.1" id="ufcs-does-not-enable-more-generic-code" data-number="7.1"><span class="header-section-number">7.1</span> UFCS does not enable more-generic code<a href="#ufcs-does-not-enable-more-generic-code" class="self-link"></a></h2>
+<h3 data-number="7.1.1" id="ufcs-does-not-enable-more-generic-code" data-number="7.1.1"><span class="header-section-number">7.1.1</span> UFCS does not enable more-generic code<a href="#ufcs-does-not-enable-more-generic-code" class="self-link"></a></h3>
 <p>The most consistent argument in favor of UFCS, regardless of proposal details, as Herb made here and Bjarne Stroustrup made in <span class="citation" data-cites="N4174">[<a href="#ref-N4174" role="doc-biblioref">N4174</a>]</span> and they both made together in <span class="citation" data-cites="N4474">[<a href="#ref-N4474" role="doc-biblioref">N4474</a>]</span> and Bjarne made again in a blog post on isocpp.org <span class="citation" data-cites="stroustrup">[<a href="#ref-stroustrup" role="doc-biblioref">stroustrup</a>]</span> is this one, quoting from Bjarne’s blog post:</p>
 <div class="quote">
 <p>C++ provides two calling syntaxes, <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">(</span>y<span class="op">)</span></code> and <code class="sourceCode cpp">f<span class="op">(</span>x,y<span class="op">)</span></code>. This has bothered me for a long time. I discussed the problem in the context of multimethods in D&amp;E in 1994, referring back to a proposal by Doug Lea from 1991, and again in 2007. Each of the syntaxes has its virtues, but they force design decisions on people, especially library designers. When you write a library, which syntax do you use for operations on objects passed to you by your users? The STL insists on the traditional functional syntax, <code class="sourceCode cpp">f<span class="op">(</span>x,y<span class="op">)</span></code>, whereas many OO libraries insist on the dot notation, <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">(</span>y<span class="op">)</span></code>. In turn, libraries force these decisions on their users.</p>
 </div>
 <p>This is a very real problem in writing generic code in C++, one which UFCS set out to solve. Since a lot of the examples in this paper deal with Ranges already, let’s stick to Ranges.</p>
-<h3 data-number="7.1.1" id="fails-for-fundamental-types" data-number="7.1.1"><span class="header-section-number">7.1.1</span> Fails for fundamental types<a href="#fails-for-fundamental-types" class="self-link"></a></h3>
+<h4 data-number="7.1.1.1" id="fails-for-fundamental-types" data-number="7.1.1.1"><span class="header-section-number">7.1.1.1</span> Fails for fundamental types<a href="#fails-for-fundamental-types" class="self-link"></a></h4>
 <p>The fundamental concept in C++20 Ranges is the <code class="sourceCode cpp">std<span class="op">::</span>range</code> concept. With a version of UFCS in which member function call syntax could find non-member functions (notably, not the version that was voted on in plenary - that one allowed non-member call syntax to find member functions only), we might expect to be able to define that concept this way:</p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
 <span id="cb48-2"><a href="#cb48-2"></a><span class="kw">concept</span> ufcs_range <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>R<span class="op">&amp;</span> rng<span class="op">)</span> <span class="op">{</span></span>
@@ -1642,7 +1792,7 @@ ill-formed
 <span id="cb50-23"><a href="#cb50-23"></a><span class="op">}</span></span></code></pre></div>
 <p>But if we have to do this dance <em>anyway</em>, we didn’t gain anything from UFCS at all. We can do the exact same thing already, at the cost of a few more lines of code (adding declarations of <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> that invoke member functions) and using non-member syntax instead.</p>
 <p>And if we don’t have a generic solution that works for the fundamental types (this example fails for raw arrays, but the general solution will fail if you want to provide implementations for a generic algorithm for types like <code class="sourceCode cpp"><span class="dt">int</span></code> or <code class="sourceCode cpp"><span class="dt">char</span></code> or pointers), then we don’t have a generic solution.</p>
-<h3 data-number="7.1.2" id="too-greedy-on-names" data-number="7.1.2"><span class="header-section-number">7.1.2</span> Too greedy on names<a href="#too-greedy-on-names" class="self-link"></a></h3>
+<h4 data-number="7.1.1.2" id="too-greedy-on-names" data-number="7.1.1.2"><span class="header-section-number">7.1.1.2</span> Too greedy on names<a href="#too-greedy-on-names" class="self-link"></a></h4>
 <p>UFCS works by having the non-member fallback find a free function of the same name with ADL. C++20 ranges introduces customization point objects that do this for you, which at least makes it easier to write new algorithms (although the customization point objects themselves are a chore to implement). But this has fundamental problems, as noted in <span class="citation" data-cites="P1895R0">[<a href="#ref-P1895R0" role="doc-biblioref">P1895R0</a>]</span>:</p>
 <div class="quote">
 <ol type="1">
@@ -1654,10 +1804,10 @@ ill-formed
 </div>
 <p>The paper expresses its concerns specifically in relation to CPOs, but the problem is really about using ADL for customization points. UFCS as a language feature would push much harder in that direction, and it’s not a good direction.</p>
 <p>Put differently, designing generic code on top of ADL is somewhat akin to just eschewing namespaces altogether and going back to our C roots.</p>
-<h3 data-number="7.1.3" id="this-is-a-concepts-problem" data-number="7.1.3"><span class="header-section-number">7.1.3</span> This is a concepts problem<a href="#this-is-a-concepts-problem" class="self-link"></a></h3>
+<h4 data-number="7.1.1.3" id="this-is-a-concepts-problem" data-number="7.1.1.3"><span class="header-section-number">7.1.1.3</span> This is a concepts problem<a href="#this-is-a-concepts-problem" class="self-link"></a></h4>
 <p>As argued in <span class="citation" data-cites="P1900R0">[<a href="#ref-P1900R0" role="doc-biblioref">P1900R0</a>]</span>, the problem of customization should be considered a <code class="sourceCode cpp"><span class="kw">concept</span></code>s problem and merits a <code class="sourceCode cpp"><span class="kw">concept</span></code>s solution. What we are trying to do with this paper has nothing to do with customization - we are not trying to solve, or even address, this problem.</p>
 <p>Instead, what we are trying to do is address…</p>
-<h2 data-number="7.2" id="ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature" data-number="7.2"><span class="header-section-number">7.2</span> UFCS does enable extension methods without a separate one-off language feature<a href="#ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature" class="self-link"></a></h2>
+<h3 data-number="7.1.2" id="ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature" data-number="7.1.2"><span class="header-section-number">7.1.2</span> UFCS does enable extension methods without a separate one-off language feature<a href="#ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature" class="self-link"></a></h3>
 <p>The other argument that Herb made in favor of UFCS was in favor of adopting extension method without a special language feature specific to them. Notably, the argument he made in <span class="citation" data-cites="N4165">[<a href="#ref-N4165" role="doc-biblioref">N4165</a>]</span> specifically cites the desire to avoid having to make any library changes to start using all the functionality - which is precisely the argument we are making with this proposal with regards to pipelines.</p>
 <p>Herb also makes the argument that allow member call syntax to lookup non-member functions is friendlier to developers and tools as it allows things like autocomplete to work.</p>
 <p>But the question we have is: why does this feature <em>need</em> to be spelled <code class="sourceCode cpp"><span class="op">.</span></code>? There are many problems with that specific choice that completely evaporate if we simply choose an alternate spelling. There is no question about how the candidate set should be considered, or how overload resolution should work, nor is there any concern about long term library work and accidentally breaking user code by adding a private member function. The alternate spelling this paper is proposing is <code class="sourceCode cpp"><span class="op">|&gt;</span></code>.</p>
@@ -1675,7 +1825,7 @@ ill-formed
 <span id="cb52-4"><a href="#cb52-4"></a>    file <span class="op">|&gt;</span> fseek<span class="op">(</span><span class="dv">9</span>, SEEK_SET<span class="op">)</span>;</span>
 <span id="cb52-5"><a href="#cb52-5"></a>    file <span class="op">|&gt;</span> fclose<span class="op">()</span>;</span>
 <span id="cb52-6"><a href="#cb52-6"></a><span class="op">}</span></span></code></pre></div>
-<h2 data-number="7.3" id="syntax-2-meanings" data-number="7.3"><span class="header-section-number">7.3</span> 1 Syntax, 2 Meanings<a href="#syntax-2-meanings" class="self-link"></a></h2>
+<h3 data-number="7.1.3" id="syntax-2-meanings" data-number="7.1.3"><span class="header-section-number">7.1.3</span> 1 Syntax, 2 Meanings<a href="#syntax-2-meanings" class="self-link"></a></h3>
 <p>Fundamentally, a problem with UFCS is that it would be yet another example in C++ where a single syntax has two potential meanings: <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">()</span></code> would either be a member function call or a non-member function call, it simply depends.</p>
 <p>We already have several examples of this kind of thing in the language, and they are very frequent sources of complaint by beginners and experts alike:</p>
 <ul>
@@ -1683,7 +1833,7 @@ ill-formed
 <li><code class="sourceCode cpp">X<span class="op">{</span>v<span class="op">}</span></code> can construct an <code class="sourceCode cpp">initializer_list</code> from <code class="sourceCode cpp">v</code>, or not, depending on <code class="sourceCode cpp">X</code>.</li>
 </ul>
 <p>Name lookup and overload resolution are two of the most complex aspects of a very complex language. Instead of pursuing UFCS, we are proposing a second syntax that actually has the same meaning as an already existing syntax: <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">()</span></code> has the exact same meaning as <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>. But both of these syntaxes always mean invoking the free function <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">()</span></code> always means invoking the member function <code class="sourceCode cpp">f</code>, and having that differentiation seems like a positive thing rather than a negative thing.</p>
-<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="what-about-pipeline-composition" data-number="8" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> What about pipeline composition?<a href="#what-about-pipeline-composition" class="self-link"></a></h1>
+<h2 data-number="7.2" id="what-about-pipeline-composition" data-number="7.2"><span class="header-section-number">7.2</span> What about pipeline composition?<a href="#what-about-pipeline-composition" class="self-link"></a></h2>
 <p>This paper largely focuses on the idea from Ranges that you can have a total function call and a partial function call:</p>
 <div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a><span class="co">// total call</span></span>
 <span id="cb53-2"><a href="#cb53-2"></a>views<span class="op">::</span>filter<span class="op">(</span>ints, is_even<span class="op">)</span>;</span>
@@ -1723,7 +1873,7 @@ ill-formed
 <p>On the other hand, this is more that we have to write every time.</p>
 <p>This would certainly open up questions about how we want to handle range adapters in the future if we choose to adopt this proposal. The above code cannot work without the input range (<code class="sourceCode cpp">views<span class="op">::</span>filter<span class="op">(</span>f<span class="op">)</span> <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span></code> would not work). The only way to preserve the composition of range adapters as separate from the range input would be to preserve the current implementation of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>.</p>
 <p>However, the utility of partial function application and composition is much, much more expansive than just range adapters. And if we think it’s a valuable things for range adapters, maybe we should find a way to make it work for all other C++ applications?</p>
-<h1 data-number="9" style="border-bottom:1px solid #cccccc" id="what-to-do-about-ranges-going-forward" data-number="9" style="border-bottom:1px solid #cccccc"><span class="header-section-number">9</span> What to do about Ranges going forward?<a href="#what-to-do-about-ranges-going-forward" class="self-link"></a></h1>
+<h2 data-number="7.3" id="what-to-do-about-ranges-going-forward" data-number="7.3"><span class="header-section-number">7.3</span> What to do about Ranges going forward?<a href="#what-to-do-about-ranges-going-forward" class="self-link"></a></h2>
 <p>An important question this paper needs to answer is: let’s say we adopt <code class="sourceCode cpp"><span class="op">|&gt;</span></code> as proposed. With the notable exception of the adapter compositions described in the previous section, <code class="sourceCode cpp"><span class="op">|&gt;</span></code> would completely subsume the use of <code class="sourceCode cpp"><span class="op">|</span></code> and we would want to encourage its use going forward (especially since <code class="sourceCode cpp"><span class="op">|&gt;</span></code> would not be intersperse-able with <code class="sourceCode cpp"><span class="op">|</span></code>, you’d have to switch to <code class="sourceCode cpp"><span class="op">|&gt;</span></code> if you want to continue your pipeline into the algorithms).</p>
 <p>So what, then, do we do with Ranges in C++23? We fully expect many more view adapters to be added into the standard library in this time frame - should those view adapters support <code class="sourceCode cpp"><span class="op">|</span></code>?</p>
 <p>We see three alternatives.</p>
@@ -1737,10 +1887,10 @@ ill-formed
 <p>We think, and Eric Niebler in private correspondence agrees, that the right option here is (1): Ranges should continue adding <code class="sourceCode cpp"><span class="op">|</span></code> for new view adapters for consistency and not deprecate anything. This may seem at odds with one of the benefits of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> that we laid out earlier - that the existence of the library machinery adds overhead to compiler throughput.</p>
 <p>Because it kind of is.</p>
 <p>But we hope to investigate, in range-v3 to start, the option of having a macro opt-out of defining the <code class="sourceCode cpp"><span class="op">|</span></code> support entirely. That is, rather than deprecate <code class="sourceCode cpp"><span class="op">|</span></code> and force users to move forward - possibly running into the kinds of problems mentioned earlier - let users move forward at their own pace and disable the costs when they don’t need them anymore. This seems like a much softer way to move forward.</p>
-<h1 data-number="10" style="border-bottom:1px solid #cccccc" id="other-concerns" data-number="10" style="border-bottom:1px solid #cccccc"><span class="header-section-number">10</span> Other Concerns<a href="#other-concerns" class="self-link"></a></h1>
+<h2 data-number="7.4" id="other-concerns" data-number="7.4"><span class="header-section-number">7.4</span> Other Concerns<a href="#other-concerns" class="self-link"></a></h2>
 <p>Some C++20 code could break. In the same way that the introduction of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code> introduced a <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> token that would break code that passed the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=</span></code> as a template argument (<code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">f<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">&lt;=</span> <span class="op">&gt;()</span></code>), a <code class="sourceCode cpp"><span class="op">|&gt;</span></code> token would break code that passes the address of an <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code> as a template argument (<code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|&gt;()</span></code> would now have to be written as <code class="sourceCode cpp">g<span class="op">&lt;&amp;</span><span class="kw">operator</span><span class="op">|</span> <span class="op">&gt;()</span></code>). This wasn’t a huge concern with the spaceship operator, and it isn’t a huge concern with the pipeline rewrite operator.</p>
 <p>There may be a concern that this would lead to yet another conflict in the C++ community as to whether the proper way to invoke functions is spelled <code class="sourceCode cpp">west<span class="op">(</span>invocable<span class="op">)</span></code> or <code class="sourceCode cpp">invocable <span class="op">|&gt;</span> east<span class="op">()</span></code>. We’re not too concerned about this potential conflict. Just wanted to be thorough.</p>
-<h1 data-number="11" style="border-bottom:1px solid #cccccc" id="wording" data-number="11" style="border-bottom:1px solid #cccccc"><span class="header-section-number">11</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="wording" data-number="8" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>This wording is based on adding <code class="sourceCode cpp"><span class="op">|&gt;</span></code> with precedence just below <code class="sourceCode cpp"><span class="op">.*</span></code> and <code class="sourceCode cpp"><span class="op">-&gt;*</span></code>.</p>
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> as a token to <span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span>.</p>
 <p>Change the grammar in <em>multiplicative-expression</em> to refer to a new production <em>pipeline-expression</em> instead <span>7.6.5 <a href="https://wg21.link/expr.mul">[expr.mul]</a></span>:</p>
@@ -1774,11 +1924,12 @@ ill-formed
 <span id="cb60-12"><a href="#cb60-12"></a>  const_cast &lt; <em>type-id</em> &gt; ( )</span>
 <span id="cb60-13"><a href="#cb60-13"></a>  typeid ( )</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> An expression of the form <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> E2<span class="op">(</span>E<sub>args</sub><span class="op">)</span></code> , where <code class="sourceCode cpp">E2</code> is a <em>pm-expression</em> and <code class="sourceCode cpp">E<sub>args</sub></code> is a possibly empty, comma-separated list of <em>initializer-clauses</em>, is identical (by definition) to <code class="sourceCode cpp">E2<span class="op">(</span>E1, E<sub>args</sub><span class="op">)</span></code> ([expr.call]), except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E2</code>. <em>[Note:</em> <code class="sourceCode cpp">E2</code> is still sequenced before the rest of the function arguments. <em>-end note ]</em></p>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> An expression of the form <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> <em>type-spec</em><span class="op">(</span>E<sub>args</sub><span class="op">)</span></code>, where <em>type-spec</em> is either a <em>simple-type-specifier</em> or a <em>typename-specifier</em>, is identical (by definition) to <code class="sourceCode cpp"><em>type-spec</em><span class="op">(</span>E1, E<sub>args</sub><span class="op">)</span></code> ([expr.type.conv]) except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E<sub>args</sub></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">dynamic_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">4</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">static_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">5</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">6</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">typeid</span><span class="op">()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">typeid</span><span class="op">(</span>E<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> An expression of the form <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> <em>simple-type-specifier</em><span class="op">(</span>E<sub>args</sub><span class="op">)</span></code> is identical (by definition) to <code class="sourceCode cpp"><em>simple-type-specifier</em><span class="op">(</span>E1, E<sub>args</sub><span class="op">)</span></code> ([expr.type.conv]) except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E<sub>args</sub></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> An expression of the form <code class="sourceCode cpp">E1 <span class="op">|&gt;</span> <em>typename-specifier</em><span class="op">(</span>E<sub>args</sub><span class="op">)</span></code> is identical (by definition) to <code class="sourceCode cpp"><em>typename-specifier</em><span class="op">(</span>E1, E<sub>args</sub><span class="op">)</span></code> ([expr.type.conv]) except that <code class="sourceCode cpp">E1</code> is sequenced before <code class="sourceCode cpp">E<sub>args</sub></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">dynamic_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">static_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><em>typeid</em><span class="op">&gt;(</span>E<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> An expression of the form <code class="sourceCode cpp">E <span class="op">|&gt;</span> <span class="kw">typeid</span><span class="op">()</span></code> is identical (by definition) to <code class="sourceCode cpp"><span class="kw">typeid</span><span class="op">(</span>E<span class="op">)</span></code>.</p>
 </div>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="op">|&gt;</span></code> to the list of non-overloadable operators in <span>12.6 <a href="https://wg21.link/over.oper">[over.oper]</a></span>/3:</p>
@@ -1801,9 +1952,9 @@ ill-formed
 <span id="cb61-6"><a href="#cb61-6"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="12" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="12" style="border-bottom:1px solid #cccccc"><span class="header-section-number">12</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<h1 data-number="9" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="9" style="border-bottom:1px solid #cccccc"><span class="header-section-number">9</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Several people helped enormously with shaping this paper, both with direct feedback and giving us more information about other languages: Gašper Ažman, Davis Herring, Arthur O’Dwyer, Tim Song, Richard Smith, Faisal Vali, Tony van Eerd, Daveed Vandevoorde, and Ville Voutilainen.</p>
-<h1 data-number="13" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="13" style="border-bottom:1px solid #cccccc"><span class="header-section-number">13</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="10" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="10" style="border-bottom:1px solid #cccccc"><span class="header-section-number">10</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-clojure.thread-first">
 <p>[clojure.thread-first] ClojureDocs. 2010. <code class="sourceCode cpp"><span class="op">-&gt;</span></code> clojure.core. <br />
