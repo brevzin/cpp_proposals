@@ -1,6 +1,6 @@
 ---
 title: "A pipeline-rewrite operator"
-document: P2011R0
+document: P2011R1
 date: today
 audience: EWG
 author:
@@ -11,6 +11,20 @@ author:
 toc: true
 toc-depth: 2
 ---
+
+# Revision History
+
+R0 of this paper [@P2011R0] was presented in Prague [@Prague.Minutes]. The room
+encouraged further work on the proposal (16-0) and the discussion largely focused
+on the question of operator precedence, where we were asked to explore giving
+`|>` a lower precedence than `.` or `->` (18-0). That question was also
+raised on the reflectors [@ext.precedence].
+
+This revision lowers the precedence of `|>` (as described in
+[operator precedence](#operator-precedence)
+and includes discussions of what to do about Ranges pipelines in C++23 and also
+considers the idea of using a placeholder syntax. 
+
 
 # Abstract
 
@@ -348,7 +362,7 @@ syntax are those algorithms that take one or more ranges as input and produce
 a [lazy] range as output. There is a whole other class of algorithms that does
 not have this particular shape, but still would be quite useful to have pipeline
 syntax for. Conor Hoekstra, in his CppNow talk entitled Algorithm Intuition
-[@Hoekstra], presented a problem which boiled down to checking if a string
+[@hoekstra], presented a problem which boiled down to checking if a string
 had at least 7 consecutive 0s or 1s. One way to solve that using the pipeline
 syntax would be:
 
@@ -397,7 +411,7 @@ We would like to propose something better.
 # Proposal: Rewriting Pipelines with a `|>` Operator
 
 We propose a new, non-overloaded function call operator spelled `|>`. What it
-does is simply evaluate the _postfix-expression_:
+does is simply evaluate:
 
 ```cpp
 x |> f(y)
@@ -430,7 +444,8 @@ constexpr int add(int a, int b) {
     return a + b;
 }
 
-static_assert(1 |> add(2) == 3);
+constexpr int sum = 1 |> add(2);
+static_assert(sum == 3);
 ```
 
 This is a complete program, no `#include`s or <code>[import]{.kw}</code>s, no additional library
@@ -442,20 +457,13 @@ This is similar to member function call syntax, where `c.f(x)` does not evaluate
 as the expression `operator.(c, f(x))` and instead evaluates as something much
 closer to `C::f(c, x)`
 
-## Specific Proposal Details
+## A few more examples
 
-The description above is roughly the entirety of the proposal. We introduce two
-new forms of [_postfix-expression_](http://eel.is/c++draft/expr#nt:postfix-expression),
-which have the grammar:
+The description above is roughly the entirety of the proposal. We take the
+expression on the left-hand side of `|>` and treat it as the first argument of
+the call expression on the right-hand side of `|>`.
 
-::: bq
-_postfix-expression_ `|>` _primary-expression_ `(` _expression-list_ ~opt~ `)`  
-:::
-
-And evaluate directly as function calls as a result of moving the left-hand-side
-as the first argument of the call expression. 
-
-Some examples:
+Some more examples:
 
 ```cpp
 namespace N {
@@ -467,7 +475,7 @@ template <typename T>
 void f(T);
 
 N::X{1} |> f(); // ADL finds N::f, is 1
-N::X{1} |> (f); // parens inhibit ADL, so this calls `::f`, is a void
+N::X{1} |> (f)(); // parens inhibit ADL, so this calls `::f`, is a void
 
 // immediately invokes the lambda with arguments 1 and 2
 1 |> [](int i, int j){ return i + j; }(2);
@@ -494,33 +502,6 @@ auto dbl = [](int i) { return i*2; };
 4 |> (add1 >> dbl)();
 ```
 
-Note that _postfix-expression_ s can chain after each other too, so these
-also work:
-
-```cpp
-template <typename T>
-auto always(T val) {
-    return [=](auto&&...){ return val; };
-}
-
-// the first ()s are the pipeline rewrite call
-// and the second ()s invoke the resulting function
-1 |> always()();
-
-namespace N {
-    struct X { int i; };
-    X add(X x, X y) {
-        return X{x.i + y.i};
-    }
-}
-
-// the |> and . have the same "precedence", so
-// this evaluates the |> first and then the .
-// on the result of that
-int i = N::X{2} |> add(N::X{3}) . i;
-```
-
-
 All of the above works directly out of the box with this proposal.
 
 ## Further examples
@@ -537,9 +518,6 @@ auto trim(std::string const& str) -> std::string
     return std::string(b, e);
 }
 ```
-
-The reversed lookup doesn't compile due to [stl2 #640](https://github.com/ericniebler/stl2/issues/640)
-(but will if [@P2017R0] is adopted), but let's ignore that part for now.
 It's hard to interpret what's going on in
 that second line due to the inside-out reading that is necessary - there's a lot
 of back and forth. With the pipeline rewrite operator, we could rewrite this
@@ -549,15 +527,14 @@ function to be entirely left-to-right:
 auto trim(std::string const& str) -> std::string
 {
     auto b = str |> ranges::find_if(isalpha);
-    auto e = str |> views::reverse() |> ranges::find_if(isalpha) . base();
-    return std::string(b, e);
+    auto e = str |> views::reverse() |> ranges::find_if(isalpha);
+    return std::string(b, e.base());
 }
 ```
 
 This ordering is a more direct translation of the original thought process: we
 take our `string`, reverse it, find the first alpha character, then get the base
-iterator out of it.  In the above, `.` and `|>` have the same "precedence" - 
-the `.base()` bind to the entire expression to its left.
+iterator out of it. 
 
 To make the `ranges::find_if` algorithm work with the `|>` operator, we need
 to write this additional code:
@@ -572,9 +549,9 @@ Remember that the semantics of ``|>`` will *rewrite* the code:
 
 ```c++
 // This:
-auto e = str |> views::reverse() |> ranges::find_if(isalpha) . base();
+auto e = str |> views::reverse() |> ranges::find_if(isalpha);
 // becomes this:
-auto e = ranges::find_if(views::reverse(str), isalpha).base();
+auto e = ranges::find_if(views::reverse(str), isalpha);
 ```
 
 That is, using ``|>`` is equivalent to the code not using the pipeline style.
@@ -844,8 +821,11 @@ Which demonstrates the linear flow of execution quite well.
 It's important to point out that the notion of a pipeline rewrite operator is
 not novel across programming languages, and it isn't even novel in C++.
 
+
+### Elixir
+
 The particular form of the operator this paper is proposing comes from the
-Elixir programming language, where it is known as the pipe operator [@Elixir.Pipe].
+Elixir programming language, where it is known as the pipe operator [@elixir.pipe].
 Its semantics are the same as are being proposed here. From the docs:
 
 ```elixir
@@ -853,8 +833,10 @@ iex> "Elixir rocks" |> String.upcase() |> String.split()
 ["ELIXIR", "ROCKS"]
 ```
 
+### Hack
+
 Another language with the same operator is Hack, except its usage is slightly
-more generalized than either Elixir's or what is being proposed here [@Hack.Pipe].
+more generalized than either Elixir's or what is being proposed here [@hack.pipe].
 While the underlying idea is the same - a function call is split such that one
 argument is on the left of `|>` and the rest of the call is on the right - Hack
 instead stores the left-hand operand in a variable named `$$`{.x} which then must
@@ -867,7 +849,9 @@ $x = vec[2,1,3]
   |> Vec\sort($$);
 ```
 
-F#, Julia, and OCaml also have an operator named `|>` - but theirs is slightly
+### F#, Julia, OCaml, Elm
+
+F# [@f#.pipe], Julia, Elm [@elm.pipe], and OCaml also have an operator named `|>` - but theirs is slightly
 different. Theirs all invoke the right-hand side with the left-hand side as its
 sole argument:
 rather than `x |> f(y)` meaning `f(x, y)` as is being proposed here and as it
@@ -890,13 +874,103 @@ calls - you could just return a lambda from those partial calls instead of
 having to have this left-pipeable type - but it's still a lot of work on
 everyone's behalf to get there.
 
+### JavaScript
+
+JavaScript is currently discussion a proposal for an operator named `|>`
+[@javascript.pipeline]. Indeed, they have two different directions for the
+proposal that they are considering (really three, but for our purposes two of
+them are basically equivalent):
+
+1. What F# does: where `x |> f(y)` evaluates as `f(y)(x)`.
+2. A very expanded version of what Hack does, where the left-hand argument needs
+a placeholder but right-hand side no longer needs to be a function. An example
+from the paper
+
+::: cmptable
+
+### Existing Code
+```js
+console.log(
+  await stream.write(
+    new User.Message(
+      capitalize(
+        doubledSay(
+          await promise
+            || throw new TypeError(
+              `Invalid value from ${promise}`)
+        ), ', '
+      ) + '!'
+    )
+  )
+);
+```
+
+### With Pipeline Rewrite
+```js
+promise
+    |> await #
+    |> # || throw new TypeError(
+        `Invalid value from ${promise}`)
+    |> doubleSay(#, ', ')
+    |> capitalize
+    |> # + '!'
+    |> new User.Message(#)
+    |> await stream.write(#)
+    |> console.log;
+```
+:::
+
+### Clojure
+
+Clojure solves this problem in an entirely different way, that is still worth
+noting for completeness. It has threading operators spelled `->` [@clojure.thread-first]
+and `->>` [@clojure.thread-last].
+The former operator sends every argument into the first parameter of the subsequent
+function call (quite like `|>` in Elixir and `|` in Ranges, except it only
+appears at the front of an expression) and the latter
+sends every argment in to the _last_ parameter of the subsequent function
+call. Here are a few examples from those docs:
+
+```clojure
+;; Arguably a bit cumbersome to read:
+user=> (first (.split (.replace (.toUpperCase "a b c d") "A" "X") " "))
+"X"
+
+;; Perhaps easier to read:
+user=> (-> "a b c d" 
+           .toUpperCase 
+           (.replace "A" "X") 
+           (.split " ") 
+           first)
+"X"
+
+;; An example of using the "thread-last" macro to get
+;; the sum of the first 10 even squares.
+user=> (->> (range)
+            (map #(* % %))
+            (filter even?)
+            (take 10)
+            (reduce +))
+1140
+
+;; This expands to:
+user=> (reduce +
+               (take 10
+                     (filter even?
+                             (map #(* % %)
+                                  (range)))))
+1140
+```
+
+### C++
+
 As far as C++ is concerned, it would be a third in a set of operators that
 have special semantics as far as function lookup is concerned:
 
 ```cpp
 x->f(y)
-x .f(y)
-x|>f(y)
+x.f(y)
+x |> f(y)
 ```
 
 None of the first two operators evaluate `f(y)` by itself and then evaluate
@@ -906,11 +980,215 @@ to something named `f` using both arguments. It's just that while the first two
 always invoke a member function, the last would always invoke a non-member
 function.
 
+# Operator Precedence
+
+An important question (discussed at some length on the reflectors [@ext.precedence])
+is where in the C++ grammar `|>` should go into. We'll start by copying the
+operator precedence table from cppreference [@cppref.precedence] and adding
+into it where other languages' versions of `|>` appear (thereby providing precedence
+to the precedence question - note that the placements for other languages are our
+best approximation for how copying that language would fit into our grammar):
+
+<table>
+<tr><th>Precedence</th><th>Operator</th></tr>
+<tr><td><center><b>1</b></center><td>`::`</td></tr>
+<tr><td><center><b>2</b></center><td>`a++` `a--`<br/>
+`T()` `T{}`<br/>
+`a()` `a[]`<br/>
+`.` `->`<br/>
+<span style="color:green">P2011R0</span></tr>
+<tr><td><center><b>3</b></center><td>`++a` `--a`<br/>
+`+a` `-a`<br/>`!` `~`<br/>`(T)`<br/>`*a` `&a`<br/>`sizeof`<br/>`co_await`<br/>`new` `new[]`<br/>`delete` `delete[]`</td></tr>
+<tr><td><center><b>4</b></center><td>`.*` `->*`</td></tr>
+<tr><td><center><b>5</b></center><td>`a*b` `a/b` `a%b`</td></tr>
+<tr><td><center><b>6</b></center><td>`a+b` `a-b`</td></tr>
+<tr><td><center><b>7</b></center><td>`<<` `>>`<br/><span style="color:green">Elixir, F#, OCaml</span></td></tr>
+<tr><td><center><b>8</b></center><td>`<=>`</td></tr>
+<tr><td><center><b>9</b></center><td>`<` `<=`<br/>`>` `>=`</td></tr>
+<tr><td><center><b>10</b></center><td>`==` `!=`</td></tr>
+<tr><td><center><b>11</b></center><td>`&`</td></tr>
+<tr><td><center><b>12</b></center><td>`^`</td></tr>
+<tr><td><center><b>13</b></center><td>`|`</td></tr>
+<tr><td><center><b>14</b></center><td>`&&`</td></tr>
+<tr><td><center><b>15</b></center><td>`||`</td></tr>
+<tr><td><center><b>15.5</b></center><td><span style="color:green">JavaScript, Hack, Elm</span></td></tr>
+<tr><td><center><b>16</b></center><td>`a?b:c`<br/>`throw`<br/>`co_yield`<br/>`=`<br/>`op=`</td></tr>
+<tr><td><center><b>17</b></center><td>`,`</td></tr>
+</table>
+
+What we see are that, ignoring the first draft of this proposal, there are two
+places where languages decided to place this operator: just below the
+math operators, and basically as low as possible.
+
+Precedence needs to be driven by usage, and what users might expect a given syntax
+to look like. Consider unary operator, this example courtesy of Richard Smith:
+
+```cpp
+++x |> f()
+-x |> f()
+-3 |> f()
+*x |> f()
+```
+
+The expectation is likely quite strong that these evaluate as `f(++x)`, `f(-x)`,
+`f(-3)`, and `f(*x)`, respectively, while in the first draft of the paper they
+would have evaluated as `++f(x)`, `-f(x)`, `-f(3)`, and `*f(x)`. This suggests
+that treating this as a new _postfix-expression_ is simply the wrong model.
+Similarly, having `x |> f()++` evaluate as `f(x)++` seems surprising - since it
+looks very much like `f()++` is the function intended to be evaluated.
+
+Further than that, the question becomes less obvious, but it seems like there
+are three reasonable levels for this operator to sit:
+
+* At 4.5: Below `.*` and `->*` but above all the other binary operators.
+* At 6.5: Where Elixir, F#, and OCaml have it. Below the math, but
+above the comparisons.
+* At 15.5: Where JavaScript, Hack, and Elm have it. As low as possible, just
+above assignment.
+
+Before we delve further into precedence question, let's consider the situation
+with the left- and right-hand sides of `|>`. Unlike all the other binary operators,
+we're not evaluating both sides separately and then combining them with some
+function. Here, the right-hand side has to be something that is shaped like a 
+function call - that isn't evaluated until we first evaluate the left hand side
+and then treat it as an argument.
+
+This is straightforward to reason about in all the typical `|>` examples since
+every right-hand side is just a call. In:
+
+```cpp
+    return s
+         |> views::group_by(std::equal_to{})
+         |> views::transform(ranges::distance)
+         |> ranges::any_of([](std::size_t s){
+                return s >= 7;
+            });
+```
+
+we have basically `s |> f(x) |> g(y) |> h(z)`, nothing especially complicated.
+But how do we deal with more complex examples, examples courtesy of Davis Herring
+and Arthur O'Dwyer [@odwyer.precedence]:
+
+```cpp
+x |> f()
+x |> f()()
+x |> f().g
+x |> f().g()
+x |> get()++
+x |> ++get()
+x |> T().foo()
+x |> f() + g()
+x |> v[i]()
+x |> v[i]()()
+ctr |> size() == max()
+```
+
+We think the appropriate model for handling the right-hand side is that it must
+look like a call expression (that is, it must look like `f()`) when we parse up
+to the appropriate precedence, and then we insert he left-hand side as the first
+argument of that call expression. In other words, those examples evaluate as
+follows based on choice of precedence described earlier:
+
+<table>
+<tr><th>Example</th><th>Above `+` (4.5)</th><th>Between `+` and `==` (6.5)</th><th>Below `==` (15.5)</tr>
+<tr><td>`x |> f()`</td><td>`f(x)`</td><td colspan>`f(x)`</td><td colspan>`f(x)`</td></tr>
+<tr><td>`x |> f()()`</td><td>`f()(x)`</td><td colspan>`f()(x)`</td><td colspan>`f()(x)`</td></tr>
+<tr><td>`x |> f().g`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
+<tr><td>`x |> f().g()`</td><td>`f().g(x)`</td><td>`f().g(x)`</td><td>`f().g(x)`</td></tr>
+<tr><td>`x |> get()++`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
+<tr><td>`x |> ++get()`</td><td>ill-formed</td><td>ill-formed</td><td>ill-formed</td></tr>
+<tr><td>`x |> T().foo()`</td><td>`T().foo(x)`</td><td>`T().foo(x)`</td><td>`T().foo(x)`</td></tr>
+<tr><td>`x |> f() + g()`</td><td>`f(x) + g()`</td><td>ill-formed</td><td>ill-formed</td></tr>
+<tr><td>`x |> v[i]()`</td><td>`v[i](x)`</td><td>`v[i](x)`</td><td>`v[i](x)`</td></tr>
+<tr><td>`x |> v[i]()()`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td><td>`v[i]()(x)`</td></tr>
+<tr><td>`ctr |> size() == max()`</td><td>`size(ctr) == max()`</td><td>`size(ctr) == max()`</td><td>ill-formed</td></tr>
+</table>
+
+Consider `x |> f() + g()`. If `|>` has precedence above `+`, then
+the right-hand side would be `f()`. That's a call expression, which makes this
+valid. But if `|>` has lower precedence, then the right hand side is `f() + g()` -
+which is _not_ a call expression (it's an addition). That's ill-formed.
+
+The same analysis holds for `ctr |> size() == max()`, just with a different
+operator.
+
+This paper proposes that the precedence of `|>` be at 4.5: just below
+`.*` and `->*`. But a significant argument in favor of lower precedence comes
+from considering a different direction for this operator... an explicit
+placeholder.
+
+# A Placeholder syntax
+
+This proposal (along with languages like Elixir) is for `x |> f(y)` to evaluate
+as `f(x, y)`: the left-hand argument always gets put in the first slot of the
+call expression on the right-hand side. This feature has a lot of utility in a
+wide variety of contexts. 
+
+But what if you want to put the left-hand argument somewhere else? While `|>`
+can allow pipelining into `views::zip`, it would not be able to allow pipelining
+into `views::zip_with` - there the first parameter is a transform operator.
+We would write `views::zip_with(plus{}, a, b)`, and `plus{} |> views::zip_with(a, b)`
+is unlikely to ever actually be written.
+
+This is where a placeholder syntax would come in handy. If, instead of requiring
+a function call that the left-hand side was inserted into, we required a placeholder
+(like Hack and one of the JavaScript proposals), we could have both (we're using
+`>` as a placeholder, as suggested by Daveed Vandevoorde):
+
+```cpp
+a |> views::zip(>, b)               // evaluates as views::zip(a, b)
+a |> views::zip_with(plus{}, >, b)  // evaluates as views::zip_with(plus{}, a, b)
+```
+
+Moreover, as JavaScript demonstrates for us already, with the placeholder approach,
+we wouldn't actually need the requirement that the right-hand side is a call
+expression. It could be any expression at all that contains `>`: `a |> 2 * >`
+could be a valid expression that means exactly as `2 * a`. 
+
+There main benefit of a direction pursuing placeholder syntax is that the syntax
+can be used with any function, and indeed with any expression. As with `zip_with`,
+you don't need to rely on the function you intend on calling having the the correct
+first parameter. This would allow the `FILE` example described
+[later](#ufcs-does-enable-extension-methods-without-a-separate-one-off-language-feature)
+to be written entirely `FILE`-first:
+
+```cpp
+FILE* file = fopen( “a.txt”, “wb” );
+if (file) {
+    file |> fputs(“Hello world”, >);
+    file |> fseek(>, 9, SEEK_SET);
+    file |> fclose(>);
+}
+``` 
+
+The major cost of this direction is that we add more syntax to what would be
+by far the most common use case: the `x |> f(y)` as `f(x, y)` examples used
+throughout this proposal. Unless we could optimize for this case, and come
+up with a way to allow both syntaxes (as below), we're hesitant to be fully
+on board.
+
+```cpp
+x |> f(y)      // f(x, y)
+x |> f(>, y)   // f(x, y)
+x |> f(y, >)   // f(y, x)
+```
+
+But it's quite important that we consider this now, since this would inform
+the choice of precedence. If we ever want to go in the direction of placeholder
+syntax, it's quite valuable for the precedence of `|>` to be as low as possible.
+With placeholders, such a choice of precedence allows `|>` to behave as an 
+operator separator - and allows you to write whatever flow of operations you want
+to write without thoughts to precedence at all. Look again at the [JavaScript
+example](#javascript) presented earlier. There's a lot of different operations
+going on in that example - but the combined use of `|>` and placeholder allows
+for a direct, linear flow... top down.
+
+
 # What about Unified Function Call Syntax?
 
 Any discussion regarding pipeline rewrites, or even the pipeline syntax in
 C++20 ranges, will eventually hit on Unified Function Call Syntax (UFCS). As
-previously described in a blog post [@Revzin], UFCS means different things to
+previously described in a blog post [@revzin], UFCS means different things to
 different people: there were quite a few proposals under this banner that had
 a variety of different semantics and different applicability to this problem
 space. 
@@ -943,7 +1221,7 @@ We will address these two points in turn.
 The most consistent argument in favor of UFCS, regardless of proposal details,
 as Herb made here and Bjarne Stroustrup made in [@N4174] and they both made
 together in [@N4474] and Bjarne made again in a blog post on isocpp.org
-[@Stroustrup] is this one, quoting from Bjarne's blog post:
+[@stroustrup] is this one, quoting from Bjarne's blog post:
 
 ::: quote
 C++ provides two calling syntaxes, `x.f(y)` and `f(x,y)`. This has bothered me
@@ -1133,9 +1411,8 @@ if (file) {
 ```
 
 This proposal wouldn't allow for any help on `fputs`. To do that, we would need
-something like
-Hack's explicit `$$`{.x} token to allow for `file |> fputs("Hello world", $$)`
-. But the rest could be written as:
+the [placeholder syntax](#a-placeholder-syntax) described earlier to allow
+for `file |> fputs("Hello world", >)`. But the rest could be written as:
 
 ```cpp
 FILE* file = fopen( “a.txt”, “wb” );
@@ -1259,6 +1536,52 @@ much more expansive than just range adapters. And if we think it's a valuable
 things for range adapters, maybe we should find a way to make it work for all
 other C++ applications?
 
+# What to do about Ranges going forward?
+
+An important question this paper needs to answer is: let's say we adopt `|>` as
+proposed. With the notable exception of the adapter compositions described in the
+previous section, `|>` would completely subsume the use of `|` and we would
+want to encourage its use going forward (especially since `|>` would not be
+intersperse-able with `|`, you'd have to switch to `|>` if you want to continue
+your pipeline into the algorithms).
+
+So what, then, do we do with Ranges in C++23?
+We fully expect many more view adapters to be added into the standard library
+in this time frame - should those view adapters support `|`?
+
+We see three alternatives.
+
+1. Ranges could complete ignore `|>`. All new view adapters should add `|`
+anyway.
+2. Don't add `|` support to any new C++23 views, keep `|` for the existing ones.
+3. Don't add `|` support to any new C++23 views, and deprecate `|` for the
+existing ones.
+
+The advantage of deprecation is that we really would only want one way to do
+something - and `|>` is a superior pipeline tool to `|`. 
+
+But deprecation has cost. Even though we're still in C++20, standard libraries
+will ship Ranges implementations this year, and this proposal could not be adopted
+as part of C++23 until February 2021 at the earliest - and code will certainly
+be written that uses Ranges with pipelines. Even with `|>`, that code will continue
+to be perfectly functional and correct. If we deprecate `|`, users may be in
+a position where they have code that has to compile against one compiler that
+supports `|>` and one that doesn't. Deprecation warnings seem like they would
+make for an unnecessarily difficult situation for early adopters.
+
+We think, and Eric Niebler in private correspondence agrees,
+ that the right option here is (1): Ranges should continue adding
+`|` for new view adapters for consistency and not deprecate anything. This may
+seem at odds with one of the benefits of `|>` that we laid out earlier - that
+the existence of the library machinery adds overhead to compiler throughput.
+Because it kind of is. But at least that library machinery would be
+confined to just the range view adapters (and wouldn't have to be needed to
+the algorithms or executors) and we could even investigate, in range-v3, of having
+a macro opt-out of defining it entirely (for users that want to use `|>`
+throughout).
+
+
+
 # Other Concerns
 
 Some C++20 code could break. In the same way that the introduction of
@@ -1277,49 +1600,64 @@ this potential conflict. Just wanted to be thorough.
 
 # Wording
 
+This wording is based on adding `|>` with precedence just below `.*` and `->*`.
+
 Add `|>` as a token to [lex.operators]{.sref}.
 
-Add `|>` to the _postfix-expression_ grammar in [expr.post]{.sref}:
+Change the grammar in _multiplicative-expression_ to refer to a new production
+_pipeline-expression_ instead [expr.mul]{.sref}:
 
 ::: bq
 ```diff
-@_postfix-expression_@:
-	@_primary-expression_@
-	@_postfix-expression_@ [ @_expr-or-braced-init-list_@ ]
-	@_postfix-expression_@ ( @_expression-list_~opt~@ )
-	@_simple-type-specifier_@ ( @_expression-list_~opt~@ )
-	@_typename-specifier_@ ( @_expression-list_~opt~@ )
-	@_simple-type-specifier braced-init-list_@
-	@_typename-specifier braced-init-list_@
-	@_postfix-expression_@ . template@~opt~ _id-expression_@
-	@_postfix-expression_@ -> template@~opt~ _id-expression_@
-+   @_postfix-expression_@ |> @_primary-expression_@ ( @_expression-list_~opt~@ ) 
-	@_postfix-expression_@ ++
-	@_postfix-expression_@ --
-	dynamic_cast < @_type-id_@ > ( @_expression_@ )
-	static_cast < @_type-id_@ > ( @_expression_@ )
-	reinterpret_cast < @_type-id_@ > ( @_expression_@ )
-	const_cast < @_type-id_@ > ( @_expression_@ )
-	typeid ( @_expression_@ )
-	typeid ( @_type-id_@ )
+@_multiplicative-expression_@:
+-   @[_pm-expression_]{.diffdel}@
+-   @_multiplicative-expression_@ * @[_pm-expression_]{.diffdel}@
+-   @_multiplicative-expression_@ / @[_pm-expression_]{.diffdel}@
+-   @_multiplicative-expression_@ % @[_pm-expression_]{.diffdel}@
++   @[_pipeline-expression_]{.diffins}@
++   @_multiplicative-expression_@ * @[_pipeline-expression_]{.diffins}@
++   @_multiplicative-expression_@ / @[_pipeline-expression_]{.diffins}@
++   @_multiplicative-expression_@ % @[_pipeline-expression_]{.diffins}@
 ```
 :::
 
-Add a new section immediately after [expr.call]{.sref} named "Pipeline rewrite" [expr.pizza]:
+Add a new section named "Pipeline rewrite" [expr.pizza]:
 
 ::: bq
 ::: addu
-[1]{.pnum} A postfix expression followed by a `|>` token is a postfix expression.
-The `|>` shall be followed by a _primary-expression_ and parentheses. 
+```
+@_pipeline-expression_@:
+  @_pm-expression_@
+  @_pipeline-expression_@ |> @_pipeline-rhs_@
+@_pipeline-rhs_@:
+  @_pm-expression_@ ( @_expression-list_~opt~@ )
+  dynamic_cast < @_type-id_@ > ( )
+  static_cast < @_type-id_@ > ( )
+  reinterpret_cast < @_type-id_@ > ( )
+  const_cast < @_type-id_@ > ( )
+  typeid ( )
+```
 
-[2]{.pnum} The
-expression <code>E1 |> E2(E~args~)</code>, were <code>E~args~</code>
- is a possibly empty, comma-separated
-list of _initializer-clauses_, is identical (by definition) to 
-<code>E2(E1, E~args~)</code>
+[1]{.pnum} An expression of the form `E1 |> E2(E@~args~@)`
+, where `E2` is a _pm-expression_ and
+`E@~args~@` is a possibly empty, comma-separated list of
+_initializer-clauses_, is identical (by definition) to `E2(E1, E@~args~@)`
 ([expr.call]), except that `E1` is sequenced before `E2`. _\[Note:_ `E2` is
 still sequenced before the rest of the function arguments.   _-end note ]_
+
+[2]{.pnum} An expression of the form `E |> dynamic_cast<@_typeid_@>()` is
+identical (by definition) to `dynamic_cast<@_typeid_@>(E)`.
+
+[3]{.pnum} An expression of the form `E |> static_cast<@_typeid_@>()` is
+identical (by definition) to `static_cast<@_typeid_@>(E)`.
+
+[4]{.pnum} An expression of the form `E |> reinterpret_cast<@_typeid_@>()` is
+identical (by definition) to `reinterpret_cast<@_typeid_@>(E)`.
+
+[5]{.pnum} An expression of the form `E |> typeid()` is
+identical (by definition) to `typeid(E)`.
 :::
+
 :::
 
 Add `|>` to the list of non-overloadable operators in [over.oper]{.sref}/3:
@@ -1357,20 +1695,10 @@ namespace N {
 :::
 :::
 
-# Implementation
-
-An implementation in Clang can be found
-[here](https://github.com/BRevzin/llvm-project/tree/85bc4172cd9df0f9419fa20ae3b9400906656501).
-At the moment, the implementation is a direct translations of how we think about
-this operator: it actually creates a regular function call expression by
-prepending the left-hand side of `|>` to the argument list for function calls
-rather than introducing a new AST node for a pipeline rewrite expression. The
-implemenation also allows omitting parens in in the empty argument case (that is
-`x |> f` is a valid expression that evaluates as `f(x)`).
 
 ---
 references:
-  - id: Hoekstra
+  - id: hoekstra
     citation-label: Hoekstra
     title: "CppNow 2019: Algorithm Intuition"
     author:
@@ -1378,22 +1706,38 @@ references:
     issued:
       - year: 2019
     URL: https://www.youtube.com/watch?v=48gV1SNm3WA
-  - id: Elixir.Pipe
-    citation-label: Elixir.Pipe
+  - id: elixir.pipe
+    citation-label: elixir.pipe
     title: "Pipe Operator - Elixir School"
     author:
         - family: Elixir School
     issued:
         - year: 2019
     URL: https://elixirschool.com/en/lessons/basics/pipe-operator/
-  - id: Hack.Pipe
-    citation-label: Hack.Pipe
+  - id: hack.pipe
+    citation-label: hack.pipe
     title: "Expressions and Operators - Pipe"
     author:
         - family: HHVM
     issued:
         - year: 2019
     URL: https://docs.hhvm.com/hack/expressions-and-operators/pipe
+  - id: clojure.thread-first
+    citation-label: clojure.thread-first
+    title: "`->` clojure.core"
+    author:
+        - family: ClojureDocs
+    issued:
+        - year: 2010
+    URL: https://clojuredocs.org/clojure.core/-%3E
+  - id: clojure.thread-last
+    citation-label: clojure.thread-last
+    title: "`->>` clojure.core"
+    author:
+        - family: ClojureDocs
+    issued:
+        - year: 2010
+    URL: https://clojuredocs.org/clojure.core/-%3E%3E    
   - id: range-v3
     citation-label: range-v3
     title: "Range library for C++14/17/20, basis for C++20's std::ranges"
@@ -1410,28 +1754,84 @@ references:
     issued:
         - year: 2015
     URL: https://github.com/ericniebler/range-v3/blob/9221d364a82450873d49d302d475ce22110f0a9d/example/calendar.cpp
-  - id: Revzin
-    citation-label: Revzin
+  - id: revzin
+    citation-label: revzin
     title: "What is unified function call syntax anyway?"
     author:
         - family: Barry Revzin
     issued:
         - year: 2019
     URL: https://brevzin.github.io/c++/2019/04/13/ufcs-history/
-  - id: Stroustrup
-    citation-label: Stroustrup
+  - id: stroustrup
+    citation-label: stroustrup
     title: "A bit of background for the unified call proposal"
     author:
         - family: Bjarne Stroustrup
     issued:
         - year: 2016
     URL: https://isocpp.org/blog/2016/02/a-bit-of-background-for-the-unified-call-proposal
-  - id: P2017R0
-    citation-label: P2017R0
-    title: "Conditionally safe ranges"
+  - id: prague.minutes
+    citation-label: prague.minutes
+    title: "Discussion of P2011R0 in Prague"
     author:
-        - family: Barry Revzin
+        - family: EWGI
     issued:
         - year: 2020
-    URL: https://wg21.link/p2017r0
+    URL: http://wiki.edg.com/bin/view/Wg21prague/P2011R0SG17
+  - id: ext.precedence
+    citation-label: ext.precedence
+    title: "Precedence for `|>` (P2011: pipeline rewrite operator)"
+    author:
+        - family: Ext Reflectors
+    issued:
+        - year: 2020
+    URL: https://lists.isocpp.org/ext/2020/04/13071.php
+  - id: javascript.pipeline
+    citation-label: javascript.pipeline
+    title: "Proposals for `|>` operator"
+    author:
+        - family: TC39
+    issued:
+        - year: 2019
+    URL: https://github.com/tc39/proposal-pipeline-operator/wiki
+  - id: cppref.precedence
+    citation-label: cppref.precedence
+    title: "C++ Operator Precedence"
+    author:
+        - family: cppreference
+    issued:
+        - year: 2020
+    URL: https://en.cppreference.com/w/cpp/language/operator_precedence
+  - id: elm.pipe
+    ctation-label: elm.pipe
+    title: "Basics"
+    author:
+        - family: elm-lang
+    issued:
+        - year: 2012
+    URL: https://package.elm-lang.org/packages/elm/core/latest/Basics#(|%3E)
+  - id: f#.pipe
+    ctation-label: f#.pipe
+    title: "Function"
+    author:
+        - family: F#
+    issued:
+        - year: 2020
+    URL: https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/
+  - id: julia.pipe
+    ctation-label: julia.pipe
+    title: "Function Composition and Piping"
+    author:
+        - family: julialang
+    issued:
+        - year: 2020    
+    URL: https://docs.julialang.org/en/v1/manual/functions/#Function-composition-and-piping-1
+  - id: odwyer.precedence
+    citation-label: odwyer.precedence
+    title: "Precedence of a proposed `|>` operator"
+    author:
+        - family: Arthur O'Dwyer
+    issued:
+        - year: 2020    
+    URL: https://quuxplusone.github.io/blog/2020/04/10/pipeline-operator-examples/
 ---
