@@ -1013,7 +1013,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-2"><a href="#cb3-2"></a>  |&gt; Vec\map<span class="ot">(</span>$$<span class="ot">,</span> <span class="kw">$a</span> ==&gt; <span class="kw">$a</span> * <span class="kw">$a</span><span class="ot">)</span></span>
 <span id="cb3-3"><a href="#cb3-3"></a>  |&gt; Vec\<span class="fu">sort</span><span class="ot">(</span>$$<span class="ot">);</span></span></code></pre></div>
 <h3 data-number="4.3.3" id="f-julia-ocaml-elm" data-number="4.3.3"><span class="header-section-number">4.3.3</span> F#, Julia, OCaml, Elm<a href="#f-julia-ocaml-elm" class="self-link"></a></h3>
-<p>F# <span class="citation" data-cites="f-sharp.pipe">[]</span>, Julia, Elm <span class="citation" data-cites="elm.pipe">[]</span>, and OCaml also have an operator named <code class="sourceCode cpp"><span class="op">|&gt;</span></code> - but theirs is slightly different. Theirs all invoke the right-hand side with the left-hand side as its sole argument: rather than <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> meaning <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code> as is being proposed here and as it means in Elixir, it instead means <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)(</span>x<span class="op">)</span></code>. In other words, given a binary operator as proposed in <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, these languages’ version of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> could be implemented as a global:</p>
+<p>F# <span class="citation" data-cites="f-sharp.pipe">[<a href="#ref-f-sharp.pipe" role="doc-biblioref">f-sharp.pipe</a>]</span>, Julia <span class="citation" data-cites="julia.pipe">[<a href="#ref-julia.pipe" role="doc-biblioref">julia.pipe</a>]</span>, Elm <span class="citation" data-cites="elm.pipe">[<a href="#ref-elm.pipe" role="doc-biblioref">elm.pipe</a>]</span>, and OCaml also have an operator named <code class="sourceCode cpp"><span class="op">|&gt;</span></code> - but theirs is slightly different. Theirs all invoke the right-hand side with the left-hand side as its sole argument: rather than <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>y<span class="op">)</span></code> meaning <code class="sourceCode cpp">f<span class="op">(</span>x, y<span class="op">)</span></code> as is being proposed here and as it means in Elixir, it instead means <code class="sourceCode cpp">f<span class="op">(</span>y<span class="op">)(</span>x<span class="op">)</span></code>. In other words, given a binary operator as proposed in <span class="citation" data-cites="P1282R0">[<a href="#ref-P1282R0" role="doc-biblioref">P1282R0</a>]</span>, these languages’ version of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> could be implemented as a global:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Arg, std<span class="op">::</span>invocable<span class="op">&lt;</span>Arg<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
 <span id="cb39-2"><a href="#cb39-2"></a><span class="kw">auto</span> <span class="kw">operator</span><span class="op">|&gt;(</span>Arg<span class="op">&amp;&amp;</span> a, F<span class="op">&amp;&amp;</span> f<span class="op">)</span></span>
 <span id="cb39-3"><a href="#cb39-3"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F, Arg<span class="op">&gt;</span></span>
@@ -1759,9 +1759,17 @@ ill-formed
 <p>[elixir.pipe] Elixir School. 2019. Pipe Operator - Elixir School. <br />
 <a href="https://elixirschool.com/en/lessons/basics/pipe-operator/">https://elixirschool.com/en/lessons/basics/pipe-operator/</a></p>
 </div>
+<div id="ref-elm.pipe">
+<p>[elm.pipe] elm-lang. 2012. Basics. <br />
+<a href="https://package.elm-lang.org/packages/elm/core/latest/Basics#(%7C%3E)">https://package.elm-lang.org/packages/elm/core/latest/Basics#(|%3E)</a></p>
+</div>
 <div id="ref-ext.precedence">
 <p>[ext.precedence] Ext Reflectors. 2020. Precedence for <code class="sourceCode cpp"><span class="op">|&gt;</span></code> (P2011: pipeline rewrite operator). <br />
 <a href="https://lists.isocpp.org/ext/2020/04/13071.php">https://lists.isocpp.org/ext/2020/04/13071.php</a></p>
+</div>
+<div id="ref-f-sharp.pipe">
+<p>[f-sharp.pipe] F#. 2020. Function. <br />
+<a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/">https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/</a></p>
 </div>
 <div id="ref-hack.pipe">
 <p>[hack.pipe] HHVM. 2019. Expressions and Operators - Pipe. <br />
@@ -1774,6 +1782,10 @@ ill-formed
 <div id="ref-javascript.pipeline">
 <p>[javascript.pipeline] TC39. 2019. Proposals for <code class="sourceCode cpp"><span class="op">|&gt;</span></code> operator. <br />
 <a href="https://github.com/tc39/proposal-pipeline-operator/wiki">https://github.com/tc39/proposal-pipeline-operator/wiki</a></p>
+</div>
+<div id="ref-julia.pipe">
+<p>[julia.pipe] julialang. 2020. Function Composition and Piping. <br />
+<a href="https://docs.julialang.org/en/v1/manual/functions/#Function-composition-and-piping-1">https://docs.julialang.org/en/v1/manual/functions/#Function-composition-and-piping-1</a></p>
 </div>
 <div id="ref-N4165">
 <p>[N4165] Herb Sutter. 2014. Unified Call Syntax. <br />
@@ -1826,14 +1838,6 @@ ill-formed
 <div id="ref-stroustrup">
 <p>[stroustrup] Bjarne Stroustrup. 2016. A bit of background for the unified call proposal. <br />
 <a href="https://isocpp.org/blog/2016/02/a-bit-of-background-for-the-unified-call-proposal">https://isocpp.org/blog/2016/02/a-bit-of-background-for-the-unified-call-proposal</a></p>
-</div>
-<div id="ref-f-sharp.pipe">
-<p>F#. 2020. Function. <br />
-<a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/">https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/</a></p>
-</div>
-<div id="ref-elm.pipe">
-<p>elm-lang. 2012. Basics. <br />
-<a href="https://package.elm-lang.org/packages/elm/core/latest/Basics#(%7C%3E)">https://package.elm-lang.org/packages/elm/core/latest/Basics#(|%3E)</a></p>
 </div>
 </div>
 </div>

@@ -896,7 +896,7 @@ $x = vec[2,1,3]
 
 ### F#, Julia, OCaml, Elm
 
-F# [@f-sharp.pipe], Julia, Elm [@elm.pipe], and OCaml also have an operator named `|>` - but theirs is slightly
+F# [@f-sharp.pipe], Julia [@julia.pipe], Elm [@elm.pipe], and OCaml also have an operator named `|>` - but theirs is slightly
 different. Theirs all invoke the right-hand side with the left-hand side as its
 sole argument:
 rather than `x |> f(y)` meaning `f(x, y)` as is being proposed here and as it
@@ -1857,7 +1857,7 @@ references:
         - year: 2020
     URL: https://en.cppreference.com/w/cpp/language/operator_precedence
   - id: elm.pipe
-    ctation-label: elm.pipe
+    citation-label: elm.pipe
     title: "Basics"
     author:
         - family: elm-lang
@@ -1865,7 +1865,7 @@ references:
         - year: 2012
     URL: https://package.elm-lang.org/packages/elm/core/latest/Basics#(|%3E)
   - id: f-sharp.pipe
-    ctation-label: f-sharp.pipe
+    citation-label: f-sharp.pipe
     title: "Function"
     author:
         - family: F#
@@ -1873,7 +1873,7 @@ references:
         - year: 2020
     URL: https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/
   - id: julia.pipe
-    ctation-label: julia.pipe
+    citation-label: julia.pipe
     title: "Function Composition and Piping"
     author:
         - family: julialang
