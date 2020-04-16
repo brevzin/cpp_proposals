@@ -864,6 +864,60 @@ int main() {
 
 Which demonstrates the linear flow of execution quite well. 
 
+Here's a more realistic example from libunifex [@libunifex] (I changed the printf
+strings just to fit side-by-side better, in the original code they are more
+meaningful than A, B, C):
+
+::: cmptable
+
+### Existing Code
+```cpp
+auto start = std::chrono::steady_clock::now();
+inplace_stop_source timerStopSource;
+sync_wait(
+  with_query_value(
+    when_all(
+        transform(
+            schedule_at(scheduler, now(scheduler) + 1s),
+            []() { std::printf("A"); }),
+        transform(
+            schedule_at(scheduler, now(scheduler) + 2s),
+            []() { std::printf("B"); }),
+        transform(
+            schedule_at(scheduler, now(scheduler) + 1500ms),
+            [&]() {
+              std::printf("C\n");
+              timerStopSource.request_stop();
+            })),
+    get_stop_token,
+    timerStopSource.get_token()));
+auto end = std::chrono::steady_clock::now();
+```
+
+### With Pipeline
+```cpp
+auto start = std::chrono::steady_clock::now();
+inplace_stop_source timerStopSource;
+when_all(
+    scheduler
+        |> schedule_at(now(scheduler) + 1s)
+        |> transfrom([]() { std::printf("A\n"); }),
+    scheduler
+        |> schedule_at(now(scheduler) + 2s)
+        |> transform([]() { std::printf("B\n"); }),
+    scheduler
+        |> schedule_at(now(scheduler) + 1500ms)
+        |> transform([&]() {
+             std::printf("C\n");
+             timerStopSource.request_stop();
+           }))
+  |> with_query_value(get_stop_token,
+                      timerStopSource.get_token())
+  |> sync_wait();
+auto end = std::chrono::steady_clock::now();
+```
+:::
+
 ## Prior Art (in C++ and elsewhere)
 
 It's important to point out that the notion of a pipeline rewrite operator is
@@ -2021,4 +2075,12 @@ references:
     issued:
         - year: 2020    
     URL: https://quuxplusone.github.io/blog/2020/04/10/pipeline-operator-examples/
+  - id: libunifex
+    citation-label: libunifex
+    title: "io_epoll_test.cpp, lines 89-108"
+    author:
+        - family: libunifex
+    issued:
+        - year: 2020
+    URL: https://github.com/facebookexperimental/libunifex/blob/epoll-moar-sfinae/examples/linux/io_epoll_test.cpp#L89-L108    
 ---
