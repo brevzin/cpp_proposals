@@ -78,6 +78,8 @@ namespace std {
 That paper even has an example of passing an `Expr` to `std::visit()` directly, a use-case that this paper is seeking to properly specify. It would be pretty
 nice if that just worked.
 
+Note also that the example includes an explicit specialization of `variant_size` and `variant_alternative` that just forward along to `Expr`'s base class. These specializations are pure boilerplate - they basically have to look the way they do, so they don't really offer much in the way of adding value to the program.
+
 # Implementation Approach
 
 The proposed resolution of LWG3052 is to, basically, add this constraint onto
@@ -153,12 +155,12 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[0]{.pnum} Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@`denote the unique specialization of `variant` that is a public and unambiguous base of `remove_cvref_t<Variants@~i~@>` if such a base exists, and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
+[0]{.pnum} Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the unique specialization of `variant` that is a public and unambiguous base of `remove_cvref_t<Variants@~i~@>` if such a base exists, and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
 Let `m` be a pack of n values of type `size_t`.
-Such a pack is called valid if `0 <= m@~i~@<variant_size_v<@[remove_reference_t<Variants~i~>]{.rm} [V~i~]{.addu}@>` for all `0 <= i < n`.
+Such a pack is called valid if `0 <= m@~i~@ < variant_size_v<@[remove_reference_t<Variants~i~>]{.rm} [V~i~]{.addu}@>` for all `0 <= i < n`.
 For each valid pack `m`, let `e(m)` denote the expression:
 
 ```diff
@@ -176,7 +178,7 @@ for the first form and
 for the second form.
 
 ::: addu
-[1*]{.pnum} _Constraints_: `V@~i~@` is not `void` for all `0 <= i < n`.
+[1*]{.pnum} _Constraints_: `(!is_void_v<V> || ...)`.
 ::: 
 
 [2]{.pnum} _Mandates_: For each valid pack `m`, `e(m)` is a valid expression.
