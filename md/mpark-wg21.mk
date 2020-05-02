@@ -7,7 +7,13 @@ include $(THIS_DIR)wg21/Makefile
 $(THIS_DIR)defaults.yaml : $(THIS_DIR)defaults.py
 	$< > $@
 
+ifdef NO_BIBLIO
+full_index := 
+else
+full_index := --bibliography $(DATADIR)/index.yaml
+endif
+
 %.html : $(DEPS)
 	$(PANDOC) \
     --bibliography $(THIS_DIR)wg21_fmt.yaml \
-    --bibliography $(DATADIR)/index.yaml
+	$(full_index)
