@@ -155,7 +155,7 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[0]{.pnum} Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the unique specialization of `variant` that is a public and unambiguous base of `remove_cvref_t<Variants@~i~@>` if such a base exists, and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
+[0]{.pnum} Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the unique specialization of `variant` that is a base of `remove_cvref_t<Variants@~i~@>` if such a base exists, and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
@@ -178,7 +178,7 @@ for the first form and
 for the second form.
 
 ::: addu
-[1*]{.pnum} _Constraints_: `(!is_void_v<V> || ...)`.
+[1*]{.pnum} _Constraints_: `(is_void_v<V> || ...)` is `false` and `(is_convertible_v<add_pointer_t<Variants>, const V*> && ...)` is `true`.
 ::: 
 
 [2]{.pnum} _Mandates_: For each valid pack `m`, `e(m)` is a valid expression.
