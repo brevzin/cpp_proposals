@@ -198,7 +198,7 @@ All such expressions are of the same type and value category.
 
 [4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} if [`(@_as-variant_@(vars).valueless_by_exception() || ...)` is `true`]{.addu}. 
 
-[5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of `Variants@~0~@`.
+[5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of [`Variants@~0~@`]{.rm} [`V@~0~@`]{.addu}.
 For `n>1`, the invocation of the callable object has no complexity requirements.
 
 :::
