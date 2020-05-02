@@ -155,7 +155,7 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[a]{.pnum} Let _`as-variant`_ denote the exposition-only function template
+[-2]{.pnum} Let _`as-variant`_ denote the exposition-only function template
 
 
 ```cpp
@@ -167,9 +167,9 @@ const variant<Ts...>& @_as-variant_@(const variant<Ts...>& var) { return var; }
 Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
 the type `remove_cvref_t<decltype(@_as-variant_@(vars@~i~@))>`.
 
-[b]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
+[-1]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
 
-[c]{.pnum} Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
+[0]{.pnum} Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `VR` denote the pack of types `VR@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
@@ -202,6 +202,10 @@ All such expressions are of the same type and value category.
 For `n>1`, the invocation of the callable object has no complexity requirements.
 
 :::
+
+## Feature-test macro
+
+This paper proposes to bump the value `__cpp_lib_variant`. The macro already exists, so this is, in a sense, free. And users can use the value of this macro to avoid having to specialize `variant_size` and `variant_alternative` for their inherited variants.
 
 # Acknowledgments
 
