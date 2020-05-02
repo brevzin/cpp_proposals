@@ -93,7 +93,7 @@ constexpr decltype(auto) visit(Visitor&&, Variants&&) {
 }
 ```
 
-This paper proposes instead that `visit` conditionally downcasts all of its incoming variants to `std::variant` specializations:
+This paper proposes instead that `visit` conditionally upcasts all of its incoming variants to `std::variant` specializations:
 
 ```cpp
 template <typename Visitor, typename... Variants>
