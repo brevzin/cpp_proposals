@@ -155,7 +155,7 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[0]{.pnum} Let _`as-variant`_ denote the exposition-only function template
+[a]{.pnum} Let _`as-variant`_ denote the exposition-only function template
 
 
 ```cpp
@@ -165,8 +165,11 @@ const variant<Ts...>& @_as-variant_@(const variant<Ts...>& var) { return var; }
 
 
 Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
-the type `remove_cvref_t<decltype(@_as-variant_@(vars@~i~@))>` if that is a valid
-type and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
+the type `remove_cvref_t<decltype(@_as-variant_@(vars@~i~@))>`.
+
+[b]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
+
+[c]{.pnum} Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
@@ -187,10 +190,6 @@ for the first form and
 ```
 
 for the second form.
-
-::: addu
-[1*]{.pnum} _Constraints_: `(is_void_v<V> || ...)` is `false`.
-::: 
 
 [2]{.pnum} _Mandates_: For each valid pack `m`, `e(m)` is a valid expression.
 All such expressions are of the same type and value category.
