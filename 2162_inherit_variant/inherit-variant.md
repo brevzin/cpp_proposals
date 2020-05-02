@@ -138,6 +138,8 @@ struct MyEvilVariantBase {
 struct MyEvilVariant : std::variant<int, long>, std::tuple<int>, MyEvilVariantBase { };
 ```
 
+But... who cares. Don't write types like that.
+
 # Wording
 
 Change [variant.visit]{.sref}:
