@@ -18,7 +18,7 @@ toc-depth: 2
 
 # Abstract
 
-We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
+We propose a new mechanism for specifying or deducing the value category of the expression that a member-function is invoked on. In other words, a way to tell from within a member function whether the expression it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the expression's type.
 
 # Revision History # {#revision-history}
 
@@ -1526,6 +1526,7 @@ The authors would like to thank:
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
 - Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
+- Lisa Lippincott for pointing out objects don't have lvalue/rvalueness. 
 
 ---
 references:
