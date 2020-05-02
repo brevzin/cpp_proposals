@@ -34,5 +34,6 @@
 - 2095 Resolve lambda init-capture pack grammar (CWG2378): [p2095r0](2095_lambda_pack_cwg/p2095r0.html)
 - 2120 Simplified structured bindings protocol with pack aliases: [p2120r0](1858_generalized_packs/p2120r0.html)
 - 2121 <code class="sourceCode cpp"><span class="cf">do</span> <span class="kw">not</span> <span class="cf">return</span> <span class="kw">or</span> <span class="cf">else</span></code>: [d2121r0](2121_do_not_return/d2121r0.html)
+- 2162 Inheriting from  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [d2162r0](2162_inherit_variant/d2162r0.html)
 
 # Other Papers
