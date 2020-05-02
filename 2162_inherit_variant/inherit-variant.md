@@ -155,7 +155,18 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[0]{.pnum} Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the unique specialization of `variant` that is a base of `remove_cvref_t<Variants@~i~@>` if such a base exists, and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
+[0]{.pnum} Let _`as-variant`_ denote the exposition-only function template
+
+
+```cpp
+template<class... Ts>
+const variant<Ts...>& @_as-variant_@(const variant<Ts...>& var) { return var; }
+```
+
+
+Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
+the type `remove_cvref_t<decltype(@_as-variant_@(vars@~i~@))>` if that is a valid
+type and `void` otherwise. Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `V` denote the pack of types `V@~i~@` and let `VR` denote the pack of types `VR@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
@@ -178,15 +189,15 @@ for the first form and
 for the second form.
 
 ::: addu
-[1*]{.pnum} _Constraints_: `(is_void_v<V> || ...)` is `false` and `(is_convertible_v<add_pointer_t<Variants>, const V*> && ...)` is `true`.
+[1*]{.pnum} _Constraints_: `(is_void_v<V> || ...)` is `false`.
 ::: 
 
 [2]{.pnum} _Mandates_: For each valid pack `m`, `e(m)` is a valid expression.
 All such expressions are of the same type and value category.
 
-[3]{.pnum} _Returns_: `e(m)`, where `m` is the pack for which `m@~i~@` is [`vars@~i~@.index()`]{.rm} [`static_cast<const V@~i~@&>(vars@~i~@).index()`]{.addu} for all `0 <= i < n`. The return type is `decltype(e(m))` for the first form.
+[3]{.pnum} _Returns_: `e(m)`, where `m` is the pack for which `m@~i~@` is [`vars@~i~@.index()`]{.rm} [`@_as-variant_@(vars@~i~@).index()`]{.addu} for all `0 <= i < n`. The return type is `decltype(e(m))` for the first form.
 
-[4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} if [`(static_cast<const V&>(vars).valueless_by_exception() || ...)` is `true`]{.addu}. 
+[4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} if [`(@_as-variant_@(vars).valueless_by_exception() || ...)` is `true`]{.addu}. 
 
 [5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of `Variants@~0~@`.
 For `n>1`, the invocation of the callable object has no complexity requirements.
