@@ -1539,7 +1539,21 @@ After [dcl.fct]{.sref}/5, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_.
+[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
+
+```
+struct C {
+    void f(this C& self);
+    template <typename Self>
+    void g(this Self&& self, int);
+};
+
+void h(C c) {
+    c.f();               // ok: calls C::f
+    std::move(c).g(42);  // ok: calls C::g<C>
+}
+```
+- *end example* ]
 
 [5b]{.pnum} A function parameter declared with an _explicit-this-parameter-declaration_ is an _explicit this parameter_. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An _object member function_ is either a non-static member function or a static member function with an explicit this parameter.
 

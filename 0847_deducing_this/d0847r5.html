@@ -1795,7 +1795,20 @@ Proposed
 <p>After <span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/5, insert paragraph describing where a function declaration with an explicit this parameter may appear, and renumber section.</p>
 <blockquote>
 <div class="add" style="color: #006e28">
-<p><span class="marginalizedparent"><a class="marginalized">5a</a></span> An <em>explicit-this-parameter-declaration</em> shall only appear in either a <em>member-declarator</em> that declares a member function ([class.mem]) or a <em>lambda-declarator</em> ([expr.prim.lambda]). Such a function shall not be explicitly declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>. [ <em>Note</em>: Such a function is implicitly static ([class.mem]) - <em>end note</em> ] Such a declarator shall not include a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">5a</a></span> An <em>explicit-this-parameter-declaration</em> shall only appear in either a <em>member-declarator</em> that declares a member function ([class.mem]) or a <em>lambda-declarator</em> ([expr.prim.lambda]). Such a function shall not be explicitly declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>. [ <em>Note</em>: Such a function is implicitly static ([class.mem]) - <em>end note</em> ] Such a declarator shall not include a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em>. [ <em>Example</em>:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>struct C {</span>
+<span id="cb53-2"><a href="#cb53-2"></a>    void f(this C&amp; self);</span>
+<span id="cb53-3"><a href="#cb53-3"></a>    template &lt;typename Self&gt;</span>
+<span id="cb53-4"><a href="#cb53-4"></a>    void g(this Self&amp;&amp; self, int);</span>
+<span id="cb53-5"><a href="#cb53-5"></a>};</span>
+<span id="cb53-6"><a href="#cb53-6"></a></span>
+<span id="cb53-7"><a href="#cb53-7"></a>void h(C c) {</span>
+<span id="cb53-8"><a href="#cb53-8"></a>    c.f();               // ok: calls C::f</span>
+<span id="cb53-9"><a href="#cb53-9"></a>    std::move(c).g(42);  // ok: calls C::g&lt;C&gt;</span>
+<span id="cb53-10"><a href="#cb53-10"></a>}</span></code></pre></div>
+<ul>
+<li><em>end example</em> ]</li>
+</ul>
 <p><span class="marginalizedparent"><a class="marginalized">5b</a></span> A function parameter declared with an <em>explicit-this-parameter-declaration</em> is an <em>explicit this parameter</em>. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An <em>object member function</em> is either a non-static member function or a static member function with an explicit this parameter.</p>
 <p><span class="marginalizedparent"><a class="marginalized">5c</a></span> An <em>ordinary member parameter</em> is a function parameter that is not the explicit this parameter. The <em>ordinary-parameter-type-list</em> of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ <em>Note</em>: The ordinary-parameter-type-list consists of the adjusted types of all the ordinary member parameters. <em>-end note</em> ]</p>
 </div>
@@ -1817,22 +1830,22 @@ Proposed
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> Member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span> ([dcl.fct]), and the same trailing <em>requires-clause</em> (if any) cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function declaration <span class="rm" style="color: #bf0303"><del>([class.static])</del></span> <span class="addu">([dcl.fct])</span>. Likewise, member function template declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span>, the same trailing requires-clause (if any), and the same template-head cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function template declaration. The types of the implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameters constructed for the member functions for the purpose of overload resolution ([over.match.funcs]) are not considered when comparing <span class="rm" style="color: #bf0303"><del>parameter-type-lists</del></span> <span class="addu">ordinary-parameter-type-lists</span> for enforcement of this rule. In contrast, if <span class="rm" style="color: #bf0303"><del>there is no <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">every</span> member function declaration among a set of member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span>, and the same <em>trailing requires-clause</em> (if any) <span class="addu">is an object member function</span>, then these member function declarations can be overloaded if they differ in the type of their implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameter. [ <em>Example</em>: The following illustrates this distinction:</p>
 <div>
-<div class="sourceCode" id="cb53"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb53-1"><a href="#cb53-1"></a>class X {</span>
-<span id="cb53-2"><a href="#cb53-2"></a>  static void f();</span>
-<span id="cb53-3"><a href="#cb53-3"></a>  void f();                     // error</span>
-<span id="cb53-4"><a href="#cb53-4"></a>  void f() const;               // error</span>
-<span id="cb53-5"><a href="#cb53-5"></a>  void f() const volatile;      // error</span>
-<span id="cb53-6"><a href="#cb53-6"></a>  void g();</span>
-<span id="cb53-7"><a href="#cb53-7"></a>  void g() const;               // OK: no static g</span>
-<span id="cb53-8"><a href="#cb53-8"></a>  void g() const volatile;      // OK: no static g</span>
-<span id="cb53-9"><a href="#cb53-9"></a>  </span>
-<span id="cb53-10"><a href="#cb53-10"></a><span class="va">+ void h(this X&amp;, int);</span></span>
-<span id="cb53-11"><a href="#cb53-11"></a><span class="va">+ void h(int) &amp;&amp;;               // OK: different this parameter</span></span>
-<span id="cb53-12"><a href="#cb53-12"></a><span class="va">+ void j(this const X&amp;);</span></span>
-<span id="cb53-13"><a href="#cb53-13"></a><span class="va">+ void j() const&amp;;              // error: same this parameter type</span></span>
-<span id="cb53-14"><a href="#cb53-14"></a><span class="va">+ void k(this X&amp;);              // OK</span></span>
-<span id="cb53-15"><a href="#cb53-15"></a><span class="va">+ void k(this X&amp;&amp;);             // OK</span></span>
-<span id="cb53-16"><a href="#cb53-16"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb54-1"><a href="#cb54-1"></a>class X {</span>
+<span id="cb54-2"><a href="#cb54-2"></a>  static void f();</span>
+<span id="cb54-3"><a href="#cb54-3"></a>  void f();                     // error</span>
+<span id="cb54-4"><a href="#cb54-4"></a>  void f() const;               // error</span>
+<span id="cb54-5"><a href="#cb54-5"></a>  void f() const volatile;      // error</span>
+<span id="cb54-6"><a href="#cb54-6"></a>  void g();</span>
+<span id="cb54-7"><a href="#cb54-7"></a>  void g() const;               // OK: no static g</span>
+<span id="cb54-8"><a href="#cb54-8"></a>  void g() const volatile;      // OK: no static g</span>
+<span id="cb54-9"><a href="#cb54-9"></a>  </span>
+<span id="cb54-10"><a href="#cb54-10"></a><span class="va">+ void h(this X&amp;, int);</span></span>
+<span id="cb54-11"><a href="#cb54-11"></a><span class="va">+ void h(int) &amp;&amp;;               // OK: different this parameter</span></span>
+<span id="cb54-12"><a href="#cb54-12"></a><span class="va">+ void j(this const X&amp;);</span></span>
+<span id="cb54-13"><a href="#cb54-13"></a><span class="va">+ void j() const&amp;;              // error: same this parameter type</span></span>
+<span id="cb54-14"><a href="#cb54-14"></a><span class="va">+ void k(this X&amp;);              // OK</span></span>
+<span id="cb54-15"><a href="#cb54-15"></a><span class="va">+ void k(this X&amp;&amp;);             // OK</span></span>
+<span id="cb54-16"><a href="#cb54-16"></a>};</span></code></pre></div>
 </div>
 <p>— <em>end example</em> ]</p>
 </blockquote>
@@ -1862,25 +1875,25 @@ Proposed
 <p>If the argument list is augmented by a contrived object and overload resolution selects one of the <span class="rm" style="color: #bf0303"><del>non-static</del></span> <span class="addu">object</span> member functions of <code class="sourceCode cpp">T</code>, the call is ill-formed.</p>
 <div class="addu">
 <p>[ <em>Example</em>:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb54-1"><a href="#cb54-1"></a>struct C {</span>
-<span id="cb54-2"><a href="#cb54-2"></a>    void a();</span>
-<span id="cb54-3"><a href="#cb54-3"></a>    void b() {</span>
-<span id="cb54-4"><a href="#cb54-4"></a>        a(); // ok, (*this).a()</span>
-<span id="cb54-5"><a href="#cb54-5"></a>    }</span>
-<span id="cb54-6"><a href="#cb54-6"></a>    </span>
-<span id="cb54-7"><a href="#cb54-7"></a>    void f(this const C&amp;);</span>
-<span id="cb54-8"><a href="#cb54-8"></a>    void g() const {</span>
-<span id="cb54-9"><a href="#cb54-9"></a>        f();       // error: implied object argument is contrived</span>
-<span id="cb54-10"><a href="#cb54-10"></a>        f(*this);  // error: no viable candidate</span>
-<span id="cb54-11"><a href="#cb54-11"></a>        this-&gt;f(); // ok</span>
-<span id="cb54-12"><a href="#cb54-12"></a>    }</span>
-<span id="cb54-13"><a href="#cb54-13"></a>    </span>
-<span id="cb54-14"><a href="#cb54-14"></a>    static void h() {</span>
-<span id="cb54-15"><a href="#cb54-15"></a>        f();       // error: implied object argument is contrived</span>
-<span id="cb54-16"><a href="#cb54-16"></a>        f(C{});    // error: no viable candidate</span>
-<span id="cb54-17"><a href="#cb54-17"></a>        C{}.f();   // ok</span>
-<span id="cb54-18"><a href="#cb54-18"></a>    }</span>
-<span id="cb54-19"><a href="#cb54-19"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb55-1"><a href="#cb55-1"></a>struct C {</span>
+<span id="cb55-2"><a href="#cb55-2"></a>    void a();</span>
+<span id="cb55-3"><a href="#cb55-3"></a>    void b() {</span>
+<span id="cb55-4"><a href="#cb55-4"></a>        a(); // ok, (*this).a()</span>
+<span id="cb55-5"><a href="#cb55-5"></a>    }</span>
+<span id="cb55-6"><a href="#cb55-6"></a>    </span>
+<span id="cb55-7"><a href="#cb55-7"></a>    void f(this const C&amp;);</span>
+<span id="cb55-8"><a href="#cb55-8"></a>    void g() const {</span>
+<span id="cb55-9"><a href="#cb55-9"></a>        f();       // error: implied object argument is contrived</span>
+<span id="cb55-10"><a href="#cb55-10"></a>        f(*this);  // error: no viable candidate</span>
+<span id="cb55-11"><a href="#cb55-11"></a>        this-&gt;f(); // ok</span>
+<span id="cb55-12"><a href="#cb55-12"></a>    }</span>
+<span id="cb55-13"><a href="#cb55-13"></a>    </span>
+<span id="cb55-14"><a href="#cb55-14"></a>    static void h() {</span>
+<span id="cb55-15"><a href="#cb55-15"></a>        f();       // error: implied object argument is contrived</span>
+<span id="cb55-16"><a href="#cb55-16"></a>        f(C{});    // error: no viable candidate</span>
+<span id="cb55-17"><a href="#cb55-17"></a>        C{}.f();   // ok</span>
+<span id="cb55-18"><a href="#cb55-18"></a>    }</span>
+<span id="cb55-19"><a href="#cb55-19"></a>};</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
