@@ -18,7 +18,7 @@ toc-depth: 2
 
 # Abstract
 
-We propose a new mechanism for specifying or deducing the value category of an instance of a class &mdash; in other words, a way to tell from within a member function whether the object it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the object's type.
+We propose a new mechanism for specifying or deducing the value category of the expression that a member-function is invoked on. In other words, a way to tell from within a member function whether the expression it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the expression's type.
 
 # Revision History # {#revision-history}
 
@@ -1430,7 +1430,7 @@ After [dcl.fct]{.sref}/7, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[7a]{.pnum} An _explicit-object-parameter-declaration_ shall only appear in a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a declaration declares a static member function. Such a function shall not be explicitly declared `static` or `virtual`. Such a declarator shall not include a _ref-qualifier_.
+[7a]{.pnum} An _explicit-object-parameter-declaration_ shall only appear in a [get top-level declarator of a member function but also outside of the class] declaration of a member function _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a declaration declares a static member function. Such a function shall not be explicitly declared `static` or `virtual`. Such a declarator shall not include a _ref-qualifier_. [make sure that the refqualifier cna only appear for static member functions]
 
 [7b]{.pnum} The parameter declared with the _explicit-object-parameter-declaration_ is the _explicit object parameter_. The explicit object parameter shall not be a function parameter pack ([temp.variadic]).
 
@@ -1482,6 +1482,7 @@ Add to [class.conv.fct]{.sref}/1:
 [1]{.pnum} A member function of a class `X` having no parameters or an explicit object parameter of the form [...]
 The type of the conversion function (9.3.3.5) is "function taking no parameter returning _conversion-type-id_" [or "function taking an explicit object parameter returning _conversion-type-id_"]{.addu}.
 :::
+[TODO: needs to quote dcl.fct p 1 "function of (explicit-object-parameters, ...) returning Topt]
 
 Add to [over.oper]{.sref}/7:
 
@@ -1507,6 +1508,69 @@ Add to [over.ref]{.sref}/1:
 [1]{.pnum} `operator->` shall be a non-static member function taking no parameters [or a function taking an explicit object parameter with exactly that parameter]{.addu}. [...]
 :::
 
+[expr.call], fix p3, do the fixes TODO that acutally bind parameters. p2, actually. the explicit object parameter is initialized with the object expression. p7 is param initialization ]
+
+Insert into [expr.call]/7:
+
+When a function is called, each parameter ([dcl.fct]) is initialized ([dcl.init], [class.copy.ctor]) with its corresponding argument. [If the _postfix-expression_ of the function call is a (possibly implicit) class member access, the argument corresponding to an explicit object parameter is the object expression of the class member access.]{.add} If there is no corresponding argument, the default argument for the parameter is used.
+[ Example:
+```cpp
+template<typename ...T> int f(int n = 0, T ...t);
+int x = f<int>();               // error: no argument for second function parameter
+```
+— end example
+ ]
+[If the]{.del}[For a non-static member]{.add} function [is a non-static member function]{.del}, the _postfix-expression_ of the function call is a (possibly implicit) class member access, whose object expression is a glvalue designating an object `x`. In that case, the `this` parameter of the function is initialized with a pointer to `x`, converted as if by an explicit type conversion.
+[ Note: There is no access or ambiguity checking on this conversion; the access checking and disambiguation are done as part of the (possibly implicit) class member access operator.
+See [class.member.lookup], [class.access.base], and [expr.ref].
+— end note ]
+When a function is called, the type of any parameter shall not be a class type that is either incomplete or abstract.
+[ Note: This still allows a parameter to be a pointer or reference to such a type.
+However, it prevents a passed-by-value parameter to have an incomplete or abstract class type.
+— end note
+ ]
+It is implementation-defined whether the lifetime of a parameter ends when the function in which it is defined returns or at the end of the enclosing full-expression.
+The initialization and destruction of each parameter occurs within the context of the calling function.
+[ Example: The access of the constructor, conversion functions or destructor is checked at the point of call in the calling function.
+If a constructor or destructor for a function parameter throws an exception, the search for a handler starts in the scope of the calling function; in particular, if the function called has a function-try-block with a handler that could handle the exception, this handler is not considered.
+— end example
+ ]
+
+[TODO: add example in wording when we introduce the syntax of the explicit object parameter]
+
+[class.mfct.non-static]/3 When an id-expression that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]) is used in a member of class X in a context where this can be used, if name lookup resolves the name in the id-expression to
+ * a non-static non-type member or,
+ * [a member function with an explicit object parameter]{.add}
+of some class C, and if either the id-expression is potentially evaluated or C is X or a base class of X, the id-expression is transformed into a class member access expression using (*this) as the postfix-expression to the left of the . operator.
+
+[TODO: move entire p3 into expr.prim.id and p2 would be the right place. Before p2. Footnote 58 should go away, add "as part of a (possibly implicit) class member access" in (2.1). Add editing instruction saying insert p2, say "this is copied from wherever and copied from class.mfct.non-static", use two shades of green if possible, light green for copy, dark green for actual ins.]
+
+[TODO dublecheck the function call wording so it doesn't do funny things for X::f(x) syntax]
+
+overload x{
+  [a](this auto&, long) {
+    a++;
+  },
+  [a](this auto, int) {
+    a++;
+  },
+  [a](this int, int) {
+    a++;
+  }
+};
+
+template <typename... Fs>
+struct overload : Fs... {
+  using Fs::operator()...;
+};
+
+x(1);
+x(1l);
+
+(*(decltype(defining-lambda))&self).__member_a
+
+[expr.prim.lambda.capture]/11 has the wording for id-expressions inside lambdas, potentially referring to captures. Associate explicit object parameter with the closure, and say that if it's present then the...
+
 ## Feature-test macro [tab:cpp.predefined.ft]
 
 Add to [cpp.predefined]{.sref}/table 17 ([tab:cpp.predefined.ft]):
@@ -1526,6 +1590,7 @@ The authors would like to thank:
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
 - Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
+- Lisa Lippincott for her review and finding thie issue with "rvalue objects"
 
 ---
 references:
