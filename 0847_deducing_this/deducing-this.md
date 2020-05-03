@@ -1403,6 +1403,37 @@ Instead, the wording introduces the term _this parameter_, renaming implicit obj
 
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previous restricted to be non-static member functions are now restricted to be object member functions.
 
+
+Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the text remains unchanged):
+
+::: bq
+::: addu
+[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class X in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to a non-static non-type member of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
+— *end note*
+ ]
+This transformation does not apply in the template definition context ([temp.dep.type]).
+[ *Example*: [...] - *end example* ]
+:::
+:::
+
+then change [expr.prim.id]{.sref}/2, now 3, removing the footnote:
+
+::: bq
+[3]{.pnum} An _id-expression_ that denotes a non-static data member or [non-static]{.rm} [object]{.addu} member function of a class can only be used:
+
+- [3.1]{.pnum} as part of a class member access in which the object expression refers to the member's class ^[57]{.rm}^ or a class derived from that class, or
+- [3.2]{.pnum} to form a pointer to member ([expr.unary.op]), or
+- [3.3]{.pnum} if that _id-expression_ denotes a non-static data member and it appears in an unevaluated operand. [ *Example*:
+  ```
+    struct S {
+      int m;
+    };
+    int i = sizeof(S::m);           // OK
+    int j = sizeof(S::m + 42);      // OK
+  ```
+    — *end example* ]
+:::
+
 Change [expr.prim.lambda]{.sref}/3:
 
 ::: bq
@@ -1410,6 +1441,33 @@ Change [expr.prim.lambda]{.sref}/3:
 [ Note: The trailing requires-clause is described in [dcl.decl].
 — end note
  ]
+:::
+
+Add a new paragraph after [expr.prim.lambda.closure]{.sref}/3:
+
+::: bq
+::: addu
+[3*]{.pnum} If a function call operator of a lambda with a _lambda-capture_ and an explicit this parameter is odr-used, the type of the explicit this parameter shall be either:
+
+- [3*.1]{.pnum} the closure type,
+- [3*.2]{.pnum} a class type derived from the closure type, or
+- [3*.3]{.pnum} a reference to a possibly cv-qualified such type.
+
+[ *Example*:
+```
+struct C {
+    template <typename T>
+    C(T);
+};
+
+void func(int i) {
+    int x = [=](this auto&&) { return i; }(); // ok
+    int y = [=](this C) { return i; }();      // ill-formed
+    int z = [](this C) { return 42; }();      // ok
+}
+```
+- *end example* ]
+:::
 :::
 
 Change [expr.prim.lambda.closure]{.sref}/4:
@@ -1499,6 +1557,8 @@ Any other data member or member function is a _non-static member_ (a _non-static
 — _end note_
  ]
 :::
+
+Remove [class.mfct.non-static]{.sref}/3 (was moved into [expr.prim.id] earlier).
 
 Change [class.conv.fct]{.sref}/1:
 
