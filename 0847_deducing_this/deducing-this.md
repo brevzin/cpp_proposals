@@ -1850,11 +1850,10 @@ The authors would like to thank:
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
 - Amy Worthington, Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
 - Guilherme Hartmann for his guidance with the implementation
-- Richard Smith, Jens Maurer, and Hubert Tong for help with wording
+- Jens Maurer, Richard Smith, Hubert Tong, Faisal Vali, and Daveed Vandevoorde for help with wording
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
-- Daveed Vandevoorde for his extensive feedback on implementability of the recursive lambda part, and his feedback on the types of the member functions
-- Lisa Lippincott for pointing out objects don't have lvalue/rvalueness. 
+- Daveed Vandevoorde for his extensive feedback on recursive lambdas and implementation help
 
 ---
 references:
