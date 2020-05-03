@@ -1,6 +1,6 @@
 ---
 title: Deducing this
-document: P0847R4
+document: D0847R5
 date: today
 audience: EWG => CWG
 author:
@@ -1402,6 +1402,21 @@ The status quo here is that a member function has an _implicit object parameter_
 Instead, the wording introduces the term _this parameter_, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were "selector parameter" or "instance parameter".
 
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previous restricted to be non-static member functions are now restricted to be object member functions.
+
+Change [expr.prim.lambda]{.sref}/3:
+
+::: bq
+[3]{.pnum} In the _decl-specifier-seq_ of the _lambda-declarator_, each _decl-specifier_ shall be one of `mutable`, `constexpr`, or `consteval`. [If the _lambda-declarator_ contains an explicit this parameter ([dcl.fct]), then no _decl-specifier_ in the _decl-specifier-seq_ shall be `mutable`.]{.addu}
+[ Note: The trailing requires-clause is described in [dcl.decl].
+— end note
+ ]
+:::
+
+Change [expr.prim.lambda.closure]{.sref}/4:
+
+::: bq
+[4]{.pnum} The function call operator or operator template is declared `const` ([class.mfct.non-static]) if and only if the _lambda-expression_'s _parameter-declaration-clause_ is not followed by `mutable` [and the _lambda-declarator_ does not contain an explicit this parameter]{.addu}.
+:::
 
 Change [expr.call]{.sref}/1-2:
 

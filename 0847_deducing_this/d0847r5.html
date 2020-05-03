@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P0847R4</td>
+    <td>D0847R5</td>
   </tr>
   <tr>
     <td>Date:</td>
@@ -1704,6 +1704,14 @@ Proposed
 <p>The status quo here is that a member function has an <em>implicit object parameter</em>, always of reference type, which the <em>implied object argument</em> is bound to. The obvious name for what this paper is proposing is, then, the <em>explicit object parameter</em>. The problem with these names is: well, what is an object parameter? A parameter that takes an object? Isn’t that most parameters?</p>
 <p>Instead, the wording introduces the term <em>this parameter</em>, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were “selector parameter” or “instance parameter”.</p>
 <p>Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term “object member function” for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previous restricted to be non-static member functions are now restricted to be object member functions.</p>
+<p>Change <span>7.5.5 <a href="https://wg21.link/expr.prim.lambda">[expr.prim.lambda]</a></span>/3:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> In the <em>decl-specifier-seq</em> of the <em>lambda-declarator</em>, each <em>decl-specifier</em> shall be one of <code class="sourceCode cpp"><span class="kw">mutable</span></code>, <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, or <code class="sourceCode cpp"><span class="kw">consteval</span></code>. <span class="addu">If the <em>lambda-declarator</em> contains an explicit this parameter ([dcl.fct]), then no <em>decl-specifier</em> in the <em>decl-specifier-seq</em> shall be <code class="sourceCode cpp"><span class="kw">mutable</span></code>.</span> [ Note: The trailing requires-clause is described in [dcl.decl]. — end note ]</p>
+</blockquote>
+<p>Change <span>7.5.5.1 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>/4:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> The function call operator or operator template is declared <code class="sourceCode cpp"><span class="kw">const</span></code> ([class.mfct.non-static]) if and only if the <em>lambda-expression</em>’s <em>parameter-declaration-clause</em> is not followed by <code class="sourceCode cpp"><span class="kw">mutable</span></code> <span class="addu">and the <em>lambda-declarator</em> does not contain an explicit this parameter</span>.</p>
+</blockquote>
 <p>Change <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span>/1-2:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> […] The postfix expression shall have function type or function pointer type. For a call to a non-member function or to a static member function <span class="addu">that is not an object member function ([dcl.fct])</span>, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.</p>
