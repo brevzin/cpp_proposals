@@ -1401,7 +1401,7 @@ The status quo here is that a member function has an _implicit object parameter_
 
 Instead, the wording introduces the term _this parameter_, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were "selector parameter" or "instance parameter".
 
-Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previous restricted to be non-static member functions are now restricted to be object member functions.
+Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previously restricted to be non-static member functions are now restricted to be object member functions.
 
 
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the text remains unchanged):
