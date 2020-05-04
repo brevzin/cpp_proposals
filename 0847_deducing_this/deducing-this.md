@@ -1404,11 +1404,11 @@ Instead, the wording introduces the term _this parameter_, renaming implicit obj
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previous restricted to be non-static member functions are now restricted to be object member functions.
 
 
-Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the text remains unchanged):
+Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2, and fix to encompass all object member functions:
 
 ::: bq
 ::: addu
-[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class X in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to a non-static non-type member of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
+[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class X in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to a non-static non-type member [or object member function]{.addu} of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
 — *end note*
  ]
 This transformation does not apply in the template definition context ([temp.dep.type]).
@@ -1501,7 +1501,7 @@ void func(int i) {
 Change [expr.prim.lambda.closure]{.sref}/4:
 
 ::: bq
-[4]{.pnum} The function call operator or operator template is declared `const` ([class.mfct.non-static]) if and only if the _lambda-expression_'s _parameter-declaration-clause_ is not followed by `mutable` [and the _lambda-declarator_ does not contain an explicit this parameter]{.addu}.
+[4]{.pnum} The function call operator or operator template is declared `const` ([class.mfct.non-static]) if and only if the _lambda-expression_'s _parameter-declaration-clause_ is not followed by `mutable` [and the _lambda-declarator_ does not contain an explicit this parameter. If the lambda declarator contains an explicit this parameter, the _parameter-declaration-clause_ shall not contain `mutable`.]{.addu}.
 :::
 
 Change [expr.call]{.sref}/1-2:
@@ -1567,7 +1567,7 @@ After [dcl.fct]{.sref}/5, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
+[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a top-level _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
 
 ```
 struct C {
@@ -1596,8 +1596,7 @@ Change [class.mem]{.sref}/4:
 [4]{.pnum} A data member or member function may be declared `static` in its _member-declaration_, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. [A member function declared with an explicit this parameter ([dcl.fct]) is a static member function.]{.addu}
 Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non-static]), respectively).
 [ _Note_: A non-static data member of non-reference type is a member subobject of a class object.
-— _end note_
- ]
+— _end note_]
 :::
 
 Remove [class.mfct.non-static]{.sref}/3 (was moved into [expr.prim.id] earlier).
