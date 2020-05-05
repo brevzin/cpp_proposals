@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-05-02" />
-  <title>Inheriting from </title>
+  <meta name="dcterms.date" content="2020-05-04" />
+  <title>Inheriting from std::variant</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -539,7 +539,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-05-02</td>
+    <td>2020-05-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -572,7 +572,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><em>Remarks</em>: This function shall not participate in overload resolution unless <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>Variants<sub>i</sub><span class="op">&gt;</span></code> is a specialization of <code class="sourceCode cpp">variant</code> for all <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i <span class="op">&lt;</span> n</code>.</p>
 </blockquote>
 <p>This paper suggests a different direction. Instead of restricting to <em>just</em> <code class="sourceCode cpp">std<span class="op">::</span>variant</code> (and certainly not wanting to go all out and design a “variant-like” interface), this paper proposes to allow an additional category of useful types to be <code class="sourceCode cpp">std<span class="op">::</span>visit<span class="op">()</span></code>-ed: those that publicly and unambiguously inherit from a specialization of <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
-<p>Notably, the MSVC implementation already supports this design.</p>
+<p>Notably, the MSVC implementation already supports this design. It has been shipping exactly this behavior since the first Visual Studio 2019 release in April 2019.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="inheriting-from-variant" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Inheriting from <code class="sourceCode cpp">variant</code><a href="#inheriting-from-variant" class="self-link"></a></h1>
 <p>There are two primary motivators for inheriting from <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
 <p>One is to simply extend functionality. If we’re using <code class="sourceCode cpp">variant</code> to represent a state machine, we may want additional operations that are relevant to our state that <code class="sourceCode cpp">variant</code> doesn’t itself provide:</p>

@@ -1,4 +1,5 @@
 ---
+pagetitle: "Inheriting from std::variant"
 title: "Inheriting from `std::variant`"
 subtitle: Resolving LWG3052
 document: D2162R0
@@ -24,7 +25,7 @@ The proposed resolution in the library issue is to make `std::visit` only work i
 
 This paper suggests a different direction. Instead of restricting to _just_ `std::variant` (and certainly not wanting to go all out and design a "variant-like" interface), this paper proposes to allow an additional category of useful types to be `std::visit()`-ed: those that publicly and unambiguously inherit from a specialization of `std::variant`.
 
-Notably, the MSVC implementation already supports this design.
+Notably, the MSVC implementation already supports this design. It has been shipping exactly this behavior since the first Visual Studio 2019 release in April 2019.
 
 # Inheriting from `variant`
 
@@ -210,3 +211,4 @@ This paper proposes to bump the value `__cpp_lib_variant`. The macro already exi
 # Acknowledgments
 
 Thanks to Casey Carter, Ville Voutilainen, and the unfortunately non-alliterative Tim Song for design discussion and help with the wording.
+
