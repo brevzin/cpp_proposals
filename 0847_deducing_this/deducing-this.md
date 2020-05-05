@@ -1403,6 +1403,32 @@ Instead, the wording introduces the term _this parameter_, renaming implicit obj
 
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previously restricted to be non-static member functions are now restricted to be object member functions.
 
+Member functions with an explicit this parameter are sort of half-static, half-non-static. They're static in the sense that a pointer to a function with an explicit this parameter has pointer-to-function type, not pointer-to-member type, and there is no implicit `this` in the body of such functions. They're non-static in the sense that class access to such a function must be a full call expression, and you can use such functions to declare operators:
+
+```cpp
+struct C {
+    static void static_fun();
+    void nonstatic_fun();
+    
+    void explicit_fun(this C c) {
+        nonstatic_fun();   // error
+        c.nonstatic_fun(); // ok
+        static_fun();      // ok
+        auto x = this;     // error
+    }
+    
+    static void operator()(int);   // error
+    void operator()(this C, char); // ok
+};
+
+C c;
+void (*a)(C) = &C::explicit_fun; // ok
+
+auto x = c.static_fun;     // ok
+auto y = c.explicit_fun;   // error
+auto z = c.explicit_fun(); // ok
+```
+
 
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
@@ -1510,7 +1536,7 @@ For a call to a non-member function or to a static member function [that is not 
 
 [2]{.pnum} For a call to [a non-static]{.rm} [an object]{.addu} member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression.
 In the case of an implicit class member access, the implied object is the one pointed to by `this`.
-[ Note: A member function call of the form `f()` is interpreted as `(*this).f()` (see [class.mfct.non-static]).
+[ Note: A member function call of the form `f()` is interpreted as `(*this).f()` (see [\[class.mfct.non-static\]]{.rm} [\[expr.prim.id\]]{.addu}).
 — end note
  ]
 :::
@@ -1641,7 +1667,7 @@ class X {
   void g() const volatile;      // OK: no static g
   
 + void h(this X&, int);
-+ void h(int) &&;               // OK: different this parameter
++ void h(int) &&;               // OK: different this parameter type
 + void j(this const X&);
 + void j() const&;              // error: same this parameter type
 + void k(this X&);              // OK
