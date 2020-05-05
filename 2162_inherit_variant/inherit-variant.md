@@ -25,8 +25,6 @@ The proposed resolution in the library issue is to make `std::visit` only work i
 
 This paper suggests a different direction. Instead of restricting to _just_ `std::variant` (and certainly not wanting to go all out and design a "variant-like" interface), this paper proposes to allow an additional category of useful types to be `std::visit()`-ed: those that publicly and unambiguously inherit from a specialization of `std::variant`.
 
-Notably, the MSVC implementation already supports this design. It has been shipping exactly this behavior since the first Visual Studio 2019 release in April 2019.
-
 # Inheriting from `variant`
 
 There are two primary motivators for inheriting from `std::variant`.
@@ -143,6 +141,12 @@ struct MyEvilVariant : std::variant<int, long>, std::tuple<int>, MyEvilVariantBa
 
 But... who cares. Don't write types like that.
 
+# Implementation Experience
+
+The libc++ implementation has supported this design since day one [@libcpp].
+
+The Microsoft STL implementation also already supports this design [@stlstl] since the first Visual Studio 2019 release in April 2019. 
+
 # Wording
 
 Change [variant.visit]{.sref}:
@@ -212,3 +216,22 @@ This paper proposes to bump the value `__cpp_lib_variant`. The macro already exi
 
 Thanks to Casey Carter, Ville Voutilainen, and the unfortunately non-alliterative Tim Song for design discussion and help with the wording.
 
+---
+references:
+    - id: libcpp
+      citation-label: libcpp
+      title: libc++ variant
+      author:
+        - family: Michael Park
+      issued:
+        - year: 2017
+      URL: "https://github.com/llvm/llvm-project/blob/24b4965ce65b14ead595dcc68add22ba37533207/libcxx/include/variant#L455"
+    - id: stlstl
+      citation-label: stlstl
+      title: stlstl variant
+      author:
+        - family: Microsoft
+      issued:
+        - year: 2019
+      URL: "https://github.com/microsoft/STL/blob/65d98ffabab3a95d79255f741daa1230692e8066/stl/inc/variant#L1638-L1657"
+---

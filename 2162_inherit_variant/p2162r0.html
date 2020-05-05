@@ -572,7 +572,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><em>Remarks</em>: This function shall not participate in overload resolution unless <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>Variants<sub>i</sub><span class="op">&gt;</span></code> is a specialization of <code class="sourceCode cpp">variant</code> for all <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i <span class="op">&lt;</span> n</code>.</p>
 </blockquote>
 <p>This paper suggests a different direction. Instead of restricting to <em>just</em> <code class="sourceCode cpp">std<span class="op">::</span>variant</code> (and certainly not wanting to go all out and design a “variant-like” interface), this paper proposes to allow an additional category of useful types to be <code class="sourceCode cpp">std<span class="op">::</span>visit<span class="op">()</span></code>-ed: those that publicly and unambiguously inherit from a specialization of <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
-<p>Notably, the MSVC implementation already supports this design. It has been shipping exactly this behavior since the first Visual Studio 2019 release in April 2019.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="inheriting-from-variant" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Inheriting from <code class="sourceCode cpp">variant</code><a href="#inheriting-from-variant" class="self-link"></a></h1>
 <p>There are two primary motivators for inheriting from <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
 <p>One is to simply extend functionality. If we’re using <code class="sourceCode cpp">variant</code> to represent a state machine, we may want additional operations that are relevant to our state that <code class="sourceCode cpp">variant</code> doesn’t itself provide:</p>
@@ -659,7 +658,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-5"><a href="#cb5-5"></a></span>
 <span id="cb5-6"><a href="#cb5-6"></a><span class="kw">struct</span> MyEvilVariant <span class="op">:</span> std<span class="op">::</span>variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;</span>, std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, MyEvilVariantBase <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 <p>But… who cares. Don’t write types like that.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="implementation-experience" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h1>
+<p>The libc++ implementation has supported this design since day one <span class="citation" data-cites="libcpp">[<a href="#ref-libcpp" role="doc-biblioref">libcpp</a>]</span>.</p>
+<p>The Microsoft STL implementation also already supports this design <span class="citation" data-cites="stlstl">[<a href="#ref-stlstl" role="doc-biblioref">stlstl</a>]</span> since the first Visual Studio 2019 release in April 2019.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Change <span>20.7.7 <a href="https://wg21.link/variant.visit">[variant.visit]</a></span>:</p>
 <blockquote>
 <div>
@@ -692,12 +694,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Throws</em>: <code class="sourceCode cpp">bad_variant_access</code> if <span class="rm" style="color: #bf0303"><del>any <span><code class="sourceCode default">variant</code></span> in <span><code class="sourceCode default">vars</code></span> is <span><code class="sourceCode default">valueless_by_exception()</code></span></del></span> if <span class="addu"><code class="sourceCode cpp"><span class="op">(</span><em>as-variant</em><span class="op">(</span>vars<span class="op">).</span>valueless_by_exception<span class="op">()</span> <span class="op">||</span> <span class="op">...)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Complexity</em>: For <code class="sourceCode cpp">n <span class="op">&lt;=</span> <span class="dv">1</span></code>, the invocation of the callable object is implemented in constant time, i.e., for <code class="sourceCode cpp">n<span class="op">=</span><span class="dv">1</span></code>, it does not depend on the number of alternative types of <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">Variants<sub>0</sub></code></span></del></span> <span class="addu"><code class="sourceCode cpp">V<sub>0</sub></code></span>. For <code class="sourceCode cpp">n<span class="op">&gt;</span><span class="dv">1</span></code>, the invocation of the callable object has no complexity requirements.</p>
 </blockquote>
-<h2 data-number="4.1" id="feature-test-macro" data-number="4.1"><span class="header-section-number">4.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="5.1" id="feature-test-macro" data-number="5.1"><span class="header-section-number">5.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>This paper proposes to bump the value <code class="sourceCode cpp">__cpp_lib_variant</code>. The macro already exists, so this is, in a sense, free. And users can use the value of this macro to avoid having to specialize <code class="sourceCode cpp">variant_size</code> and <code class="sourceCode cpp">variant_alternative</code> for their inherited variants.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thanks to Casey Carter, Ville Voutilainen, and the unfortunately non-alliterative Tim Song for design discussion and help with the wording.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-libcpp">
+<p>[libcpp] Michael Park. 2017. libc++ variant. <br />
+<a href="https://github.com/llvm/llvm-project/blob/24b4965ce65b14ead595dcc68add22ba37533207/libcxx/include/variant#L455">https://github.com/llvm/llvm-project/blob/24b4965ce65b14ead595dcc68add22ba37533207/libcxx/include/variant#L455</a></p>
+</div>
 <div id="ref-LWG3052">
 <p>[LWG3052] Casey Carter. visit is underconstrained. <br />
 <a href="https://wg21.link/lwg3052">https://wg21.link/lwg3052</a></p>
@@ -709,6 +715,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P1371R2">
 <p>[P1371R2] Sergei Murzin, Michael Park, David Sankel, Dan Sarginson. 2020. Pattern Matching. <br />
 <a href="https://wg21.link/p1371r2">https://wg21.link/p1371r2</a></p>
+</div>
+<div id="ref-stlstl">
+<p>[stlstl] Microsoft. 2019. stlstl variant. <br />
+<a href="https://github.com/microsoft/STL/blob/65d98ffabab3a95d79255f741daa1230692e8066/stl/inc/variant#L1638-L1657">https://github.com/microsoft/STL/blob/65d98ffabab3a95d79255f741daa1230692e8066/stl/inc/variant#L1638-L1657</a></p>
 </div>
 </div>
 </div>
