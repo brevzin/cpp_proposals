@@ -1404,16 +1404,14 @@ Instead, the wording introduces the term _this parameter_, renaming implicit obj
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previously restricted to be non-static member functions are now restricted to be object member functions.
 
 
-Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the text remains unchanged):
+Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
 ::: bq
-::: addu
-[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class X in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to a non-static non-type member of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
+[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class `X` in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to [either]{.addu} a non-static non-type member [or an object member function]{.addu} of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
 — *end note*
  ]
 This transformation does not apply in the template definition context ([temp.dep.type]).
 [ *Example*: [...] - *end example* ]
-:::
 :::
 
 then change [expr.prim.id]{.sref}/2, now 3, removing the footnote:
@@ -1510,9 +1508,9 @@ Change [expr.call]{.sref}/1-2:
 [1]{.pnum} [...] The postfix expression shall have function type or function pointer type.
 For a call to a non-member function or to a static member function [that is not an object member function ([dcl.fct])]{.addu}, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.
 
-[2]{.pnum} For a call to a non-static member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member[;]{.rm} [.]{.addu} [For a call to an object member function with an explicit this parameter, the postfix expression shall be an explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member.]{.addu} [the]{.rm} [The]{.addu} call is as a member of the class object referred to by the object expression.
+[2]{.pnum} For a call to [a non-static]{.rm} [an object]{.addu} member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression.
 In the case of an implicit class member access, the implied object is the one pointed to by `this`.
-[ Note: A member function call of the form f() is interpreted as `(*this).f()` (see [class.mfct.non-static]).
+[ Note: A member function call of the form `f()` is interpreted as `(*this).f()` (see [class.mfct.non-static]).
 — end note
  ]
 :::
@@ -1567,7 +1565,7 @@ After [dcl.fct]{.sref}/5, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
+[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a [top-level]{.addu} _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
 
 ```
 struct C {
@@ -1700,7 +1698,7 @@ Change [over.call.func]{.sref}/3 and the corresponding footnote, and add the exa
 In case (1), the argument list is the same as the expression-list in the call.
 In case (2), the argument list is the _expression-list_ in the call augmented by the addition of an implied object argument as in a qualified function call [.]{.rm} [as follows:]{.addu}
 
-- [3.1]{.pnum} [If]{.rm} [if]{.addu} the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, [and the candidate function has no explicit this parameter,]{.addu} then the implied object argument is `(*this)`[.]{.rm} [;]{.addu}
+- [3.1]{.pnum} [If]{.rm} [if]{.addu} the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, then the implied object argument is `(*this)`[.]{.rm} [;]{.addu}
 - [3.2]{.pnum} [If the keyword `this` is not in scope or refers to another class, then]{.rm} [otherwise, ]{.addu} a contrived object of type `T` becomes the implied object argument. ^119^
 
 If the argument list is augmented by a contrived object and overload resolution selects one of the [non-static]{.rm} [object]{.addu} member functions of `T`, the call is ill-formed.
@@ -1716,7 +1714,7 @@ struct C {
     
     void f(this const C&);
     void g() const {
-        f();       // error: implied object argument is contrived
+        f();       // ok: (*this).f()
         f(*this);  // error: no viable candidate
         this->f(); // ok
     }
