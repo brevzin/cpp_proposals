@@ -1,5 +1,4 @@
 ---
-pagetitle: "Inheriting from std::variant"
 title: "Inheriting from `std::variant`"
 subtitle: Resolving LWG3052
 document: P2162R0
@@ -143,9 +142,17 @@ But... who cares. Don't write types like that.
 
 # Implementation Experience
 
-The libc++ implementation has supported this design since day one [@libcpp].
+The Microsoft STL implementation already supports exactly this design [@stlstl] since the first Visual Studio 2019 release in April 2019. 
 
-The Microsoft STL implementation also already supports this design [@stlstl] since the first Visual Studio 2019 release in April 2019. 
+The libc++ implementation has supported _nearly_ this design since day one [@libcpp]. While the incoming variants to `visit` are upcast to specializations of `std::variant`, the member function `valueless_by_exception()` is invoked directly on the arguments. The spirit of the implementation matches the intent of this paper, though it does technically break on Tim's example (but does work fine on any types that inherit from `std::variant` without touching `valueless_by_exception()` -- and it's just the `valueless_by_exception` member that causes the problem, the `index` member doesn't).
+
+When I pointed out to Tim that libc++'s variant only breaks for absurd types that do things like have a member named `valueless_by_exception`, he followed up by providing a different absurd type that instead breaks by inheriting from `std::type_info`:
+
+```cpp
+struct MyEvilVariant : std::variant<int, long>, std::type_info { };
+using x = decltype(std::visit([](auto){},     // error for libc++
+    std::declval<MyEvilVariant>()));          // ambiguous look on __impl
+```
 
 # Wording
 

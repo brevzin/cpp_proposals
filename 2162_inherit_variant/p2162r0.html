@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-05-05" />
-  <title>Inheriting from std::variant</title>
+  <meta name="dcterms.date" content="2020-05-06" />
+  <title>Inheriting from `std::variant`</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -539,7 +539,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-05-05</td>
+    <td>2020-05-06</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -659,34 +659,38 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-6"><a href="#cb5-6"></a><span class="kw">struct</span> MyEvilVariant <span class="op">:</span> std<span class="op">::</span>variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;</span>, std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, MyEvilVariantBase <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 <p>But… who cares. Don’t write types like that.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="implementation-experience" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h1>
-<p>The libc++ implementation has supported this design since day one <span class="citation" data-cites="libcpp">[<a href="#ref-libcpp" role="doc-biblioref">libcpp</a>]</span>.</p>
-<p>The Microsoft STL implementation also already supports this design <span class="citation" data-cites="stlstl">[<a href="#ref-stlstl" role="doc-biblioref">stlstl</a>]</span> since the first Visual Studio 2019 release in April 2019.</p>
+<p>The Microsoft STL implementation already supports exactly this design <span class="citation" data-cites="stlstl">[<a href="#ref-stlstl" role="doc-biblioref">stlstl</a>]</span> since the first Visual Studio 2019 release in April 2019.</p>
+<p>The libc++ implementation has supported <em>nearly</em> this design since day one <span class="citation" data-cites="libcpp">[<a href="#ref-libcpp" role="doc-biblioref">libcpp</a>]</span>. While the incoming variants to <code class="sourceCode cpp">visit</code> are upcast to specializations of <code class="sourceCode cpp">std<span class="op">::</span>variant</code>, the member function <code class="sourceCode cpp">valueless_by_exception<span class="op">()</span></code> is invoked directly on the arguments. The spirit of the implementation matches the intent of this paper, though it does technically break on Tim’s example (but does work fine on any types that inherit from <code class="sourceCode cpp">std<span class="op">::</span>variant</code> without touching <code class="sourceCode cpp">valueless_by_exception<span class="op">()</span></code> – and it’s just the <code class="sourceCode cpp">valueless_by_exception</code> member that causes the problem, the <code class="sourceCode cpp">index</code> member doesn’t).</p>
+<p>When I pointed out to Tim that libc++’s variant only breaks for absurd types that do things like have a member named <code class="sourceCode cpp">valueless_by_exception</code>, he followed up by providing a different absurd type that instead breaks by inheriting from <code class="sourceCode cpp">std<span class="op">::</span>type_info</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">struct</span> MyEvilVariant <span class="op">:</span> std<span class="op">::</span>variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;</span>, std<span class="op">::</span>type_info <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">using</span> x <span class="op">=</span> <span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>visit<span class="op">([](</span><span class="kw">auto</span><span class="op">){}</span>,     <span class="co">// error for libc++</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    std<span class="op">::</span>declval<span class="op">&lt;</span>MyEvilVariant<span class="op">&gt;()))</span>;          <span class="co">// ambiguous look on __impl</span></span></code></pre></div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Change <span>20.7.7 <a href="https://wg21.link/variant.visit">[variant.visit]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>template&lt;class Visitor, class... Variants&gt;</span>
-<span id="cb6-2"><a href="#cb6-2"></a>  constexpr see below visit(Visitor&amp;&amp; vis, Variants&amp;&amp;... vars);</span>
-<span id="cb6-3"><a href="#cb6-3"></a>template&lt;class R, class Visitor, class... Variants&gt;</span>
-<span id="cb6-4"><a href="#cb6-4"></a>  constexpr R visit(Visitor&amp;&amp; vis, Variants&amp;&amp;... vars);</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>template&lt;class Visitor, class... Variants&gt;</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  constexpr see below visit(Visitor&amp;&amp; vis, Variants&amp;&amp;... vars);</span>
+<span id="cb7-3"><a href="#cb7-3"></a>template&lt;class R, class Visitor, class... Variants&gt;</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  constexpr R visit(Visitor&amp;&amp; vis, Variants&amp;&amp;... vars);</span></code></pre></div>
 </div>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized">-2</a></span> Let <em><code class="sourceCode cpp">as<span class="op">-</span>variant</code></em> denote the exposition-only function template</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">const</span> variant<span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span> <em>as-variant</em><span class="op">(</span><span class="kw">const</span> variant<span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span> var<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> var; <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">const</span> variant<span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span> <em>as-variant</em><span class="op">(</span><span class="kw">const</span> variant<span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span> var<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> var; <span class="op">}</span></span></code></pre></div>
 <p>Let <code class="sourceCode cpp">n</code> be <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Variants<span class="op">)</span></code>. For each <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i <span class="op">&lt;</span> n</code>, let <code class="sourceCode cpp">V<sub>i</sub></code> denote the the type <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>as-variant</em><span class="op">(</span>vars<sub>i</sub><span class="op">))&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">-1</a></span> <em>Constraints</em>: <code class="sourceCode cpp">V<sub>i</sub></code> is a valid type for all <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i <span class="op">&lt;</span> n</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">0</a></span> Let <code class="sourceCode cpp">VR<sub>i</sub></code> denote the type <code class="sourceCode cpp">V<sub>i</sub></code> with the addition of <code class="sourceCode cpp">Variant<sub>i</sub></code>’s cv and reference qualifiers. Let <code class="sourceCode cpp">VR</code> denote the pack of types <code class="sourceCode cpp">VR<sub>i</sub></code>.</p>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <span class="rm" style="color: #bf0303"><del>Let <span><code class="sourceCode default">n</code></span> be <span><code class="sourceCode default">sizeof...(Variants)</code></span>.</del></span> Let <code class="sourceCode cpp">m</code> be a pack of n values of type <code class="sourceCode cpp"><span class="dt">size_t</span></code>. Such a pack is called valid if <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> m<sub>i</sub> <span class="op">&lt;</span> variant_size_v<span class="op">&lt;</span><span class="rm" style="color: #bf0303"><del>remove_reference_t&lt;Variants<sub>i</sub>&gt;</del></span> <span class="addu">V<sub>i</sub></span><span class="op">&gt;</span></code> for all <code class="sourceCode cpp"><span class="dv">0</span> <span class="op">&lt;=</span> i <span class="op">&lt;</span> n</code>. For each valid pack <code class="sourceCode cpp">m</code>, let <code class="sourceCode cpp">e<span class="op">(</span>m<span class="op">)</span></code> denote the expression:</p>
 <div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a><span class="st">- INVOKE(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;Variants&gt;(vars))...) // see [func.require]</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="va">+ INVOKE(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;VR&gt;(vars))...) // see [func.require]</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a><span class="st">- INVOKE(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;Variants&gt;(vars))...) // see [func.require]</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="va">+ INVOKE(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;VR&gt;(vars))...) // see [func.require]</span></span></code></pre></div>
 </div>
 <p>for the first form and</p>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a><span class="st">- INVOKE&lt;R&gt;(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;Variants&gt;(vars))...) // see [func.require]</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="va">+ INVOKE&lt;R&gt;(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;VR&gt;(vars))...) // see [func.require]</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a><span class="st">- INVOKE&lt;R&gt;(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;Variants&gt;(vars))...) // see [func.require]</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="va">+ INVOKE&lt;R&gt;(std::forward&lt;Visitor&gt;(vis), get&lt;m&gt;(std::forward&lt;VR&gt;(vars))...) // see [func.require]</span></span></code></pre></div>
 </div>
 <p>for the second form.</p>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Mandates</em>: For each valid pack <code class="sourceCode cpp">m</code>, <code class="sourceCode cpp">e<span class="op">(</span>m<span class="op">)</span></code> is a valid expression. All such expressions are of the same type and value category.</p>
