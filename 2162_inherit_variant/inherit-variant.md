@@ -154,6 +154,8 @@ using x = decltype(std::visit([](auto){},     // error for libc++
     std::declval<MyEvilVariant>()));          // ambiguous look on __impl
 ```
 
+The libstdc++ implementation used to support visiting inheriting variants in gcc 8, but then stopped supporting them in gcc 9 - only because its check for whether the variant can be never valueless only works for `std::variant` specializations directly [@libstdcpp]. I filed a bug report [@gcc.90943] to get them to start supporting again, but that bug report has been suspended pending the resolution of the library issue in question.
+
 # Wording
 
 Change [variant.visit]{.sref}:
@@ -241,4 +243,20 @@ references:
       issued:
         - year: 2019
       URL: "https://github.com/microsoft/STL/blob/65d98ffabab3a95d79255f741daa1230692e8066/stl/inc/variant#L1638-L1657"
+    - id: libstdcpp
+      citation-label: libstdcpp
+      title: "libstdc++ variant"
+      author:
+        - family: Tim Shen and Jonathan Wakely
+      issued:
+        - year: 2018
+      URL: "https://github.com/gcc-mirror/gcc/blob/ab2952c77d029c93fc813dec9760f8a517286e5e/libstdc%2B%2B-v3/include/std/variant#L798-L811"
+    - id: gcc.90943
+      citation-label: gcc.90943
+      title: "Visiting inherited variants no longer works in 9.1"
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2019
+      URL: "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943"
 ---

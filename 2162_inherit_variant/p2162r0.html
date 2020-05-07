@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-05-06" />
+  <meta name="dcterms.date" content="2020-05-07" />
   <title>Inheriting from `std::variant`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -539,7 +539,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-05-06</td>
+    <td>2020-05-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -665,6 +665,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">struct</span> MyEvilVariant <span class="op">:</span> std<span class="op">::</span>variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;</span>, std<span class="op">::</span>type_info <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="kw">using</span> x <span class="op">=</span> <span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>visit<span class="op">([](</span><span class="kw">auto</span><span class="op">){}</span>,     <span class="co">// error for libc++</span></span>
 <span id="cb6-3"><a href="#cb6-3"></a>    std<span class="op">::</span>declval<span class="op">&lt;</span>MyEvilVariant<span class="op">&gt;()))</span>;          <span class="co">// ambiguous look on __impl</span></span></code></pre></div>
+<p>The libstdc++ implementation used to support visiting inheriting variants in gcc 8, but then stopped supporting them in gcc 9 - only because its check for whether the variant can be never valueless only works for <code class="sourceCode cpp">std<span class="op">::</span>variant</code> specializations directly <span class="citation" data-cites="libstdcpp">[<a href="#ref-libstdcpp" role="doc-biblioref">libstdcpp</a>]</span>. I filed a bug report <span class="citation" data-cites="gcc.90943">[<a href="#ref-gcc.90943" role="doc-biblioref">gcc.90943</a>]</span> to get them to start supporting again, but that bug report has been suspended pending the resolution of the library issue in question.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Change <span>20.7.7 <a href="https://wg21.link/variant.visit">[variant.visit]</a></span>:</p>
 <blockquote>
@@ -704,9 +705,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Thanks to Casey Carter, Ville Voutilainen, and the unfortunately non-alliterative Tim Song for design discussion and help with the wording.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-gcc.90943">
+<p>[gcc.90943] Barry Revzin. 2019. Visiting inherited variants no longer works in 9.1. <br />
+<a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943">https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943</a></p>
+</div>
 <div id="ref-libcpp">
 <p>[libcpp] Michael Park. 2017. libc++ variant. <br />
 <a href="https://github.com/llvm/llvm-project/blob/24b4965ce65b14ead595dcc68add22ba37533207/libcxx/include/variant#L455">https://github.com/llvm/llvm-project/blob/24b4965ce65b14ead595dcc68add22ba37533207/libcxx/include/variant#L455</a></p>
+</div>
+<div id="ref-libstdcpp">
+<p>[libstdcpp] Tim Shen and Jonathan Wakely. 2018. libstdc++ variant. <br />
+<a href="https://github.com/gcc-mirror/gcc/blob/ab2952c77d029c93fc813dec9760f8a517286e5e/libstdc%2B%2B-v3/include/std/variant#L798-L811">https://github.com/gcc-mirror/gcc/blob/ab2952c77d029c93fc813dec9760f8a517286e5e/libstdc%2B%2B-v3/include/std/variant#L798-L811</a></p>
 </div>
 <div id="ref-LWG3052">
 <p>[LWG3052] Casey Carter. visit is underconstrained. <br />
