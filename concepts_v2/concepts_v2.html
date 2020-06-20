@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2020-06-20" />
+  <title>Concepts, v2</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Concepts, v2</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>DxxxxR0</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2020-06-20</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#introduction-and-motivation"><span class="toc-section-number">1</span> Introduction and Motivation<span></span></a></li>
+<li><a href="#the-range-concept"><span class="toc-section-number">2</span> The <code class="sourceCode cpp">Range</code> concept<span></span></a>
+<ul>
+<li><a href="#concept-class-satisfaction"><span class="toc-section-number">2.1</span> Concept Class Satisfaction<span></span></a></li>
+<li><a href="#invoking-concept-class-associated-functions"><span class="toc-section-number">2.2</span> Invoking Concept Class Associated Functions<span></span></a></li>
+<li><a href="#using-concept"><span class="toc-section-number">2.3</span> Using Concept<span></span></a></li>
+</ul></li>
+<li><a href="#the-view-concept"><span class="toc-section-number">3</span> The <code class="sourceCode cpp">View</code> concept<span></span></a></li>
+<li><a href="#the-invocable-concept-family"><span class="toc-section-number">4</span> The <code class="sourceCode cpp">invocable</code> concept family<span></span></a>
+<ul>
+<li><a href="#the-predicate-concept"><span class="toc-section-number">4.1</span> The <code class="sourceCode cpp">predicate</code> concept<span></span></a></li>
+<li><a href="#terser-associated-type-access-syntax"><span class="toc-section-number">4.2</span> Terser associated type access syntax<span></span></a></li>
+</ul></li>
+<li><a href="#design-summary"><span class="toc-section-number">5</span> Design Summary<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction-and-motivation" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction and Motivation<a href="#introduction-and-motivation" class="self-link"></a></h1>
+<p>See <span class="citation" data-cites="P1900R0">[<a href="#ref-P1900R0" role="doc-biblioref">P1900R0</a>]</span>, which was presented in Prague and received favorably.</p>
+<blockquote>
+<p>These problems are worth solving: 14-14-0-0-0</p>
+</blockquote>
+<p>This paper attempts to present a new concepts design to address the problems presented there. I’ll go through the design here based on three example concepts in C++20: <code class="sourceCode cpp">range</code>, <code class="sourceCode cpp">view</code>, and <code class="sourceCode cpp">invocable</code>.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="the-range-concept" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> The <code class="sourceCode cpp">Range</code> concept<a href="#the-range-concept" class="self-link"></a></h1>
+<p><code class="sourceCode cpp">Range</code> makes for a great litmus test here, since there’s so much we need to be able to handle here, a lot of which is currently has to be manually implemented (in a way that is not reusable for other concepts that might conceptually require similar machinery).</p>
+<p>Let’s start with just a small part of <code class="sourceCode cpp">Range</code> and build up from there: we have a function <code class="sourceCode cpp">begin<span class="op">()</span></code> which returns an <code class="sourceCode cpp">iterator</code>, which has to satisfy the <code class="sourceCode cpp">input_or_output_iterator</code> concept:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Range <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">typename</span> iterator;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">requires</span> std<span class="op">::</span>input_or_output_iterator<span class="op">&lt;</span>iterator<span class="op">&gt;</span>;</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    </span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="kw">virtual</span> <span class="kw">auto</span> begin<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> iterator <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="op">}</span>;</span></code></pre></div>
+<p>We have a new notation, <code class="sourceCode cpp"><span class="kw">concept</span> <span class="kw">struct</span></code>, to differentiate from C++20 concepts - we need a lot more structure here, and because we’re basically defining an interface, treating this as a class declaration has a lot of benefits. The declarations here are basically like member functions and member typedefs, and will be used as such.</p>
+<p>In our new concept class, we have three declarations:</p>
+<ol type="1">
+<li><code class="sourceCode cpp"><span class="kw">typename</span> iterator</code> introduces an <em>associated type</em> named <code class="sourceCode cpp">iterator</code> with no definition. The type that this refers to will have to be introduced later.</li>
+<li><code class="sourceCode cpp"><span class="kw">requires</span> std<span class="op">::</span>input_or_output_iterator<span class="op">&lt;</span>iterator<span class="op">&gt;</span></code> introduces a constraint on the associated type <code class="sourceCode cpp">iterator</code>.</li>
+<li><code class="sourceCode cpp"><span class="kw">virtual</span> <span class="kw">auto</span> begin<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> iterator <span class="op">=</span> <span class="dv">0</span>;</code> introduces an <em>associated function</em>, whose presence is mandatory in order to satisfy the concept. See <span class="citation" data-cites="P1292R0">[<a href="#ref-P1292R0" role="doc-biblioref">P1292R0</a>]</span> for motivation for the <code class="sourceCode cpp"><span class="kw">virtual</span></code> keyword here.</li>
+</ol>
+<p>Because <code class="sourceCode cpp">begin<span class="op">()</span></code> is used unqualified here, this function can be satisfied by either member or non-member syntax, preferring member. When a candidate is considered, its return type will be used as the type <code class="sourceCode cpp">iterator</code> refers to, whose constraints will then be checked.</p>
+<p>In other words, these declarations are equivalent (at this point) in what constraints they impose on a given type and how a type would satisfy <code class="sourceCode cpp">Range</code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>C++20 Concepts</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>This design</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">concept</span> Range <span class="op">=</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="kw">requires</span><span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        <span class="op">{</span> begin<span class="op">(</span>r<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>input_or_output_iterator;</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="op">}</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="kw">or</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">requires</span><span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>        <span class="op">{</span> r<span class="op">.</span>begin<span class="op">()</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>input_or_output_iterator;</span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Range <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">typename</span> iterator;</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">requires</span> std<span class="op">::</span>input_or_output_iterator<span class="op">&lt;</span>iterator<span class="op">&gt;</span>;</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    </span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="kw">virtual</span> <span class="kw">auto</span> begin<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> iterator <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Now, the C++20 concept isn’t actually written like the above, for a few important reasons. One reason is: C arrays satisfy neither formulation (neither in C++20 concepts nor in the design proposed). Either way, this has to be handled separately.</p>
+<p>With C++20, any kind of other customization must be handled manually by the concept author, who has to come up with their own customization mechanism and figure out how arrays play into it.</p>
+<p>With the design presented here, because <code class="sourceCode cpp">begin<span class="op">()</span></code> is declared as a function, a <code class="sourceCode cpp"><span class="kw">virtual</span></code> function no less, we have a more direct avenue for customization. In this design, that is:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&gt;</span>  <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;</span> <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>T<span class="op">[</span>N<span class="op">]&gt;</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    <span class="kw">auto</span> begin<span class="op">(</span>T<span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> arr; <span class="op">}</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Several things going on here. First, a type satisfies <code class="sourceCode cpp">Range</code> regardless of its value category. If <code class="sourceCode cpp">R</code> is a range, <code class="sourceCode cpp">R<span class="op">&amp;</span></code> is a range and <code class="sourceCode cpp">R<span class="op">&amp;&amp;</span></code> is a range as well (although <code class="sourceCode cpp">R <span class="kw">const</span></code> may not be). So as the author of the <code class="sourceCode cpp">Range</code> concept, we want to make it easy to opt-in to being a <code class="sourceCode cpp">Range</code> and we wouldn’t want to have to make class authors “specialize” for each reference type. The first two partial specializations just strip off the reference so that only non-reference types need to be explicitly provided.</p>
+<p>The third declaration is the key one. This is how we <em>implement</em> <code class="sourceCode cpp">Range</code> for <code class="sourceCode cpp">T<span class="op">[</span>N<span class="op">]</span></code>. Similarly to how we implement a polymorphic interface with a derived type, we have to <code class="sourceCode cpp"><span class="kw">override</span></code> all of the pure <code class="sourceCode cpp"><span class="kw">virtual</span></code> functions. With this additional implementation, arrays now satisfy <code class="sourceCode cpp">Range</code> because we implemented <code class="sourceCode cpp">begin<span class="op">()</span></code> (matching the signature!) and the return type of <code class="sourceCode cpp">begin<span class="op">()</span></code>, <code class="sourceCode cpp">T<span class="op">*</span></code>, satisfies <code class="sourceCode cpp">input_or_output_iterator</code>.</p>
+<h2 data-number="2.1" id="concept-class-satisfaction" data-number="2.1"><span class="header-section-number">2.1</span> Concept Class Satisfaction<a href="#concept-class-satisfaction" class="self-link"></a></h2>
+<p>Let’s back up and talk about how a <code class="sourceCode cpp"><span class="kw">concept</span> <span class="kw">class</span></code> is satisfied, since it’s slightly different to how a C++20 <code class="sourceCode cpp"><span class="kw">concept</span></code> would be. Copying our whole declaration for <code class="sourceCode cpp">Range</code> here again for clarity:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Range <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">typename</span> iterator;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="kw">requires</span> std<span class="op">::</span>input_or_output_iterator<span class="op">&lt;</span>iterator<span class="op">&gt;</span>;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    </span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="kw">virtual</span> <span class="kw">auto</span> begin<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> iterator <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="op">}</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&gt;</span>  <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;</span> <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb5-11"><a href="#cb5-11"></a></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>T<span class="op">[</span>N<span class="op">]&gt;</span> <span class="op">{</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="kw">auto</span> begin<span class="op">(</span>T<span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> arr; <span class="op">}</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="op">}</span>;</span></code></pre></div>
+<p>In order to check if a type <code class="sourceCode cpp">T</code> satisfies <code class="sourceCode cpp">Range</code>, we go through several steps.</p>
+<ol type="1">
+<li>Pick the most specialized implementation of <code class="sourceCode cpp">Range</code> for <code class="sourceCode cpp">T</code>.</li>
+<li>For each <code class="sourceCode cpp"><span class="kw">virtual</span></code> function:
+<ol type="a">
+<li>Find an implementation. The candidate set here is first, the set of specialized implementations, then the set of member functions, then the set of non-member functions. We stop once we find a candidate.</li>
+<li>A candidate is viable if it matches the signature and, if the function’s return type is an associated type, the return type meets all that associated type’s requirements.</li>
+</ol>
+If we cannot find a valid implementation for a <code class="sourceCode cpp"><span class="kw">virtual</span></code> function, the concept is not satisfied.</li>
+<li>If there is inconsistent determination of associated types or values, the concept is not satisfied.</li>
+</ol>
+<p>Let’s consider three types (<code class="sourceCode cpp"><span class="dt">int</span></code>, <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span></code>, and <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">20</span><span class="op">]</span></code>) and see how those steps work out.</p>
+<p>For <code class="sourceCode cpp"><span class="dt">int</span></code>, the most specialized implementation is the primary. We then look for an implementation of <code class="sourceCode cpp">begin</code>. We have no specialized implementation, nor do we have any member functions, and non-member lookup for <code class="sourceCode cpp">begin</code> (in the context of the declaration of <code class="sourceCode cpp">Range</code>) finds nothing. We fail to find a valid implementation and so <code class="sourceCode cpp"><span class="dt">int</span></code> does not satisfy <code class="sourceCode cpp">Range</code>.</p>
+<p>For <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span></code>, we go through a longer process. To pick the most specialized implementation, we have to see if <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span></code> satisfies <code class="sourceCode cpp">Range</code> (if so, the <code class="sourceCode cpp">R<span class="op">&amp;</span></code> one is the most specialized). So we look for an implementation of <code class="sourceCode cpp">begin</code>. We have no specialized implementation, but we do have a member function <code class="sourceCode cpp">begin</code> that we can invoke on an lvalue of type <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span></code>. That function returns a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>const_iterator</code>, which does satisfy <code class="sourceCode cpp">std<span class="op">::</span>input_or_output_iterator</code>. We have thus satisfied all of our requirements, so <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span></code> indeed satisfies <code class="sourceCode cpp">Range</code>. And then <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span></code> satisfies <code class="sourceCode cpp">Range</code> following those same steps again (although an implementation could probably just determine from the empty body that once <code class="sourceCode cpp">R</code> is a <code class="sourceCode cpp">Range</code>, <code class="sourceCode cpp">R<span class="op">&amp;</span></code> trivially follows).</p>
+<p>For <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">20</span><span class="op">]</span></code>, the most specialized implementation is <code class="sourceCode cpp">Range<span class="op">&lt;</span>T<span class="op">[</span>N<span class="op">]&gt;</span></code>, which does contain an implementation of <code class="sourceCode cpp">begin</code>. This satisfies all of our requirements, so <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">20</span><span class="op">]</span></code> satisfies <code class="sourceCode cpp">Range</code>.</p>
+<h2 data-number="2.2" id="invoking-concept-class-associated-functions" data-number="2.2"><span class="header-section-number">2.2</span> Invoking Concept Class Associated Functions<a href="#invoking-concept-class-associated-functions" class="self-link"></a></h2>
+<p>It’s all well and good that we have all these ways of satisfies the <code class="sourceCode cpp">Range</code> concept’s <code class="sourceCode cpp">begin<span class="op">()</span></code> function - but how do we actually <em>invoke</em> the thing? A lot of the preexisting implementation complexity is to actually call the right function.</p>
+<p>And here, again the fact that <code class="sourceCode cpp">begin<span class="op">()</span></code> is declared as a function helps. We can simply treat it as a function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a>Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>iterator it <span class="op">=</span> Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>begin<span class="op">(</span>rng<span class="op">)</span>;</span></code></pre></div>
+<p>The above is ill-formed if <code class="sourceCode cpp">R</code> does not satisfy <code class="sourceCode cpp">Range</code>, otherwise we already went through the process of verifying that there is a valid <code class="sourceCode cpp">begin<span class="op">()</span></code> implementation - this just invokes the correct one. Statically. Despite the use of <code class="sourceCode cpp"><span class="kw">virtual</span></code> and <code class="sourceCode cpp"><span class="kw">override</span></code>, there is no dynamic dispatch here. Likewise, we already went through the process of verifying the <code class="sourceCode cpp">iterator</code> associated type, so we can just use it.</p>
+<p>We can add a further simplification by following the <em>type-constraint</em> syntax idea and allow dropping the first type when invoking associated functions and letting it be deduced from context (sort of like a CTAD for static member functions, except still allowing a partial template list):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a>Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>iterator it <span class="op">=</span> Range<span class="op">::</span>begin<span class="op">(</span>rng<span class="op">)</span>;</span></code></pre></div>
+<p><code class="sourceCode cpp">Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>begin</code> is not quite a function - it’s a niebloid. It’s an object, it cannot be found by ADL (and stops ADL if it is found), it can be passed as an argument to another function template. <code class="sourceCode cpp">Range<span class="op">::</span>begin</code> is likewise not quite a function template - you cannot provide direct template arguments to it, and you can pass it as an argument.</p>
+<p>And at this point we can do a full comparison between a C++20 implementation of the half of the <code class="sourceCode cpp">Range</code> concept presented so far and the design presented here. Note that <code class="sourceCode cpp">end</code> is missing so far - and requires twice as much code in C++20 to support while only a few extra lines with this design (still roughly twice as much code in the new design, but we’re only doubling like 5 lines of code rather than about 50).</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>C++20</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>This Design</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">namespace</span> __begin <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="dt">void</span> begin<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>  <span class="dt">void</span> begin<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb8-6"><a href="#cb8-6"></a></span>
+<span id="cb8-7"><a href="#cb8-7"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>  <span class="kw">concept</span> has_member <span class="op">=</span> std<span class="op">::</span>is_lvalue_reference_v<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a>    <span class="kw">requires</span><span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>      r<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb8-11"><a href="#cb8-11"></a>      <span class="op">{</span> __decay_copy<span class="op">(</span>r<span class="op">.</span>begin<span class="op">())</span> <span class="op">}</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>        <span class="op">-&gt;</span> input_or_output_iterator;</span>
+<span id="cb8-13"><a href="#cb8-13"></a>    <span class="op">}</span>;</span>
+<span id="cb8-14"><a href="#cb8-14"></a></span>
+<span id="cb8-15"><a href="#cb8-15"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a>  <span class="kw">concept</span> has_non_member <span class="op">=</span> <span class="kw">requires</span><span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a>    begin<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb8-18"><a href="#cb8-18"></a>    <span class="op">{</span> __decay_copy<span class="op">(</span>begin<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;(</span>r<span class="op">)))</span> <span class="op">}</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>      <span class="op">-&gt;</span> input_or_output_iterator;</span>
+<span id="cb8-20"><a href="#cb8-20"></a>  <span class="op">}</span>;</span>
+<span id="cb8-21"><a href="#cb8-21"></a></span>
+<span id="cb8-22"><a href="#cb8-22"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">&gt;</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> nothrow <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb8-24"><a href="#cb8-24"></a>  <span class="kw">template</span> <span class="op">&lt;</span>has_member R<span class="op">&gt;</span></span>
+<span id="cb8-25"><a href="#cb8-25"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> nothrow<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span></span>
+<span id="cb8-26"><a href="#cb8-26"></a>    <span class="kw">noexcept</span><span class="op">(</span>std<span class="op">::</span>declval<span class="op">&lt;</span>R<span class="op">&amp;&gt;().</span>begin<span class="op">())</span>;</span>
+<span id="cb8-27"><a href="#cb8-27"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a>  <span class="kw">requires</span> <span class="op">(!</span>has_member<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> has_non_member<span class="op">&lt;</span>R<span class="op">&gt;)</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> nothrow<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span></span>
+<span id="cb8-30"><a href="#cb8-30"></a>    <span class="kw">noexcept</span><span class="op">(</span>begin<span class="op">(</span>std<span class="op">::</span>declval<span class="op">&lt;</span>R<span class="op">&gt;()))</span>;</span>
+<span id="cb8-31"><a href="#cb8-31"></a></span>
+<span id="cb8-32"><a href="#cb8-32"></a>  <span class="kw">struct</span> __fn <span class="op">{</span></span>
+<span id="cb8-33"><a href="#cb8-33"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R, std<span class="op">::</span><span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb8-34"><a href="#cb8-34"></a>    <span class="kw">constexpr</span> R<span class="op">*</span> <span class="kw">operator</span><span class="op">()(</span>R <span class="op">(&amp;</span>array<span class="op">)[</span>N<span class="op">])</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb8-35"><a href="#cb8-35"></a>      <span class="cf">return</span> array;</span>
+<span id="cb8-36"><a href="#cb8-36"></a>    <span class="op">}</span></span>
+<span id="cb8-37"><a href="#cb8-37"></a></span>
+<span id="cb8-38"><a href="#cb8-38"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb8-39"><a href="#cb8-39"></a>      <span class="kw">requires</span> has_member<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">||</span> has_non_member<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb8-40"><a href="#cb8-40"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span> <span class="kw">noexcept</span><span class="op">(</span>nothrow<span class="op">&lt;</span>R<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb8-41"><a href="#cb8-41"></a>      <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>has_member<span class="op">&lt;</span>R<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb8-42"><a href="#cb8-42"></a>        <span class="cf">return</span> r<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb8-43"><a href="#cb8-43"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-44"><a href="#cb8-44"></a>        <span class="cf">return</span> begin<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb8-45"><a href="#cb8-45"></a>      <span class="op">}</span></span>
+<span id="cb8-46"><a href="#cb8-46"></a>    <span class="op">}</span></span>
+<span id="cb8-47"><a href="#cb8-47"></a>  <span class="op">}</span>;</span>
+<span id="cb8-48"><a href="#cb8-48"></a><span class="op">}</span></span>
+<span id="cb8-49"><a href="#cb8-49"></a></span>
+<span id="cb8-50"><a href="#cb8-50"></a><span class="kw">inline</span> <span class="kw">namespace</span> __cpos <span class="op">{</span></span>
+<span id="cb8-51"><a href="#cb8-51"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> __begin<span class="op">::</span>__fn begin<span class="op">{}</span>;</span>
+<span id="cb8-52"><a href="#cb8-52"></a><span class="op">}</span></span>
+<span id="cb8-53"><a href="#cb8-53"></a></span>
+<span id="cb8-54"><a href="#cb8-54"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb8-55"><a href="#cb8-55"></a><span class="kw">concept</span> range <span class="op">=</span> <span class="kw">requires</span><span class="op">(</span>T<span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-56"><a href="#cb8-56"></a>    ranges<span class="op">::</span>begin<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb8-57"><a href="#cb8-57"></a><span class="op">}</span>;</span>
+<span id="cb8-58"><a href="#cb8-58"></a></span>
+<span id="cb8-59"><a href="#cb8-59"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb8-60"><a href="#cb8-60"></a><span class="kw">using</span> iterator_t <span class="op">=</span> <span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>declval<span class="op">&lt;</span>T<span class="op">&amp;&gt;()))</span>;</span>
+<span id="cb8-61"><a href="#cb8-61"></a></span>
+<span id="cb8-62"><a href="#cb8-62"></a>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> b <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Range <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="kw">typename</span> iterator;</span>
+<span id="cb9-4"><a href="#cb9-4"></a>    <span class="kw">requires</span> std<span class="op">::</span>input_or_output_iterator<span class="op">&lt;</span>iterator<span class="op">&gt;</span>;</span>
+<span id="cb9-5"><a href="#cb9-5"></a>    </span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="kw">virtual</span> <span class="kw">auto</span> begin<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> iterator <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span>;</span>
+<span id="cb9-8"><a href="#cb9-8"></a></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&gt;</span>  <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>R<span class="op">&amp;&amp;&gt;</span> <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb9-11"><a href="#cb9-11"></a></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="kw">concept</span> <span class="kw">struct</span> Range<span class="op">&lt;</span>T<span class="op">[</span>N<span class="op">]&gt;</span> <span class="op">{</span></span>
+<span id="cb9-14"><a href="#cb9-14"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">(</span>T<span class="op">(&amp;</span>arr<span class="op">)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="kw">noexcept</span> <span class="kw">override</span> <span class="op">{</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>        <span class="cf">return</span> arr;</span>
+<span id="cb9-16"><a href="#cb9-16"></a>    <span class="op">}</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a><span class="op">}</span>;</span>
+<span id="cb9-18"><a href="#cb9-18"></a></span>
+<span id="cb9-19"><a href="#cb9-19"></a>Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>iterator b <span class="op">=</span> Range<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="2.3" id="using-concept" data-number="2.3"><span class="header-section-number">2.3</span> Using Concept<a href="#using-concept" class="self-link"></a></h2>
+<p>Since associated functions and associated types are really just function and type declarations, we can think of the concept class they’re associated with as something of a namespace. To that end, we can bring that namespace into scope with a new kind of <em>using-directive</em>:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Longer Form</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Shorter Form</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">auto</span> distance<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>iterator b <span class="op">=</span> Range<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>sentinel e <span class="op">=</span> Range<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    </span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="dt">int</span> cnt <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="cf">for</span> <span class="op">(</span>; b <span class="op">!=</span> e; <span class="op">++</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>        <span class="op">++</span>cnt;</span>
+<span id="cb10-9"><a href="#cb10-9"></a>    <span class="op">}</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="cf">return</span> cnt;</span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">auto</span> distance<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="kw">using</span> <span class="kw">concept</span> Range;</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    iterator b <span class="op">=</span> begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    sentinel e <span class="op">=</span> end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>    </span>
+<span id="cb11-7"><a href="#cb11-7"></a>    <span class="dt">int</span> cnt <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="cf">for</span> <span class="op">(</span>; b <span class="op">!=</span> e; <span class="op">++</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>        <span class="op">++</span>cnt;</span>
+<span id="cb11-10"><a href="#cb11-10"></a>    <span class="op">}</span></span>
+<span id="cb11-11"><a href="#cb11-11"></a>    <span class="cf">return</span> cnt;</span>
+<span id="cb11-12"><a href="#cb11-12"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Name lookup for <code class="sourceCode cpp">begin<span class="op">(</span>r<span class="op">)</span></code>, for instance, will for look through the <em>using-directive</em> and find the associated function <code class="sourceCode cpp">begin<span class="op">()</span></code> and stop there (this does <em>not</em> do ADL, because <code class="sourceCode cpp">Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>begin<span class="op">()</span></code> is not a function in the usual sense, it’s a niebloid).</p>
+<p>Maybe we even make such a <em>using-directive</em> implicit based on the constraints of the function template or class template we’re inside of, or maybe that’s too much implicitness.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="the-view-concept" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> The <code class="sourceCode cpp">View</code> concept<a href="#the-view-concept" class="self-link"></a></h1>
+<p>A <code class="sourceCode cpp">View</code> is very similar to a <code class="sourceCode cpp">Range</code>. It has a few extra requirements, the most important of which is explicit opt-in. We cannot <em>infer</em> whether a type is a <code class="sourceCode cpp">View</code>. The class author must tell this to us.</p>
+<p>In the C++20 design, this is implemented as:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> enable_view <span class="op">=</span> derived_from<span class="op">&lt;</span>T, view_base<span class="op">&gt;</span>;</span>
+<span id="cb12-3"><a href="#cb12-3"></a></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="kw">concept</span> view <span class="op">=</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> movable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> default_initializable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span></code></pre></div>
+<p>The simplest way of becoming a <code class="sourceCode cpp">view</code> is just to inherit from the empty type <code class="sourceCode cpp">view_base</code>. Barring that, you can specialize the variable template <code class="sourceCode cpp">enable_view</code> for your type.</p>
+<p>But explicit opt-in is a fairly significant feature of a concept. Rather than relying on the concept author to come up with such a facility, we can build it into the language. In this design:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">explicit</span> <span class="kw">concept</span> <span class="kw">struct</span> View</span>
+<span id="cb13-3"><a href="#cb13-3"></a>    <span class="op">:</span> Range<span class="op">&lt;</span>R<span class="op">&gt;</span>, movable<span class="op">&lt;</span>R<span class="op">&gt;</span>, default_initializable<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="kw">template</span> <span class="op">&lt;</span>derived_from<span class="op">&lt;</span>view_base<span class="op">&gt;</span> V<span class="op">&gt;</span> <span class="kw">concept</span> <span class="kw">struct</span> View<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">:</span> View<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<p>Here, the concept class <code class="sourceCode cpp">View</code> “inherits” the requirements from <code class="sourceCode cpp">Range</code>, <code class="sourceCode cpp">movable</code>, and <code class="sourceCode cpp">default_initializable</code> (even though the latter two are not concept classes, this is fine). But it also adds the <code class="sourceCode cpp"><span class="kw">explicit</span></code> keyword. This means that a type is not a <code class="sourceCode cpp">View</code>, regardless of all the other requirements, unless there is an explicit implementation of <code class="sourceCode cpp">View</code> for that type.</p>
+<p>Similar to C++20’s <code class="sourceCode cpp">view</code>, we provide a default opt-in for all types inheriting from <code class="sourceCode cpp">view_base</code>. This doesn’t automatically make them a <code class="sourceCode cpp">View</code>, they still have to satisfy all the other requirements - this only satisfies the <code class="sourceCode cpp"><span class="kw">explicit</span></code> requirement.</p>
+<p>While C++20 Ranges has concepts that require explicit opt-in, it also has concepts that require explicit opt-out (like <code class="sourceCode cpp">sized_sentinel_for</code>). I am not sure yet how to fit opt-out here.</p>
+<p>Note that because <code class="sourceCode cpp">View</code> “inherits” from <code class="sourceCode cpp">Range</code>, it also inherits the associated types and functions. That is:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span>View V<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="dt">void</span> foo<span class="op">(</span>V v<span class="op">)</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="kw">using</span> <span class="kw">concept</span> View;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>    iterator i <span class="op">=</span> begin<span class="op">(</span>v<span class="op">)</span>;</span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="op">}</span></span></code></pre></div>
+<p>This works, <code class="sourceCode cpp">iterator</code> would be <code class="sourceCode cpp">View<span class="op">&lt;</span>V<span class="op">&gt;::</span>iterator</code> which is <code class="sourceCode cpp">Range<span class="op">&lt;</span>V<span class="op">&gt;::</span>iterator</code> and likewise <code class="sourceCode cpp">begin<span class="op">()</span></code> finds <code class="sourceCode cpp">Range<span class="op">&lt;</span>V<span class="op">&gt;::</span>begin</code>.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="the-invocable-concept-family" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> The <code class="sourceCode cpp">invocable</code> concept family<a href="#the-invocable-concept-family" class="self-link"></a></h1>
+<p>Let’s turn now to invocation, and the family of concepts that can be found there. In particular, I’ll focus on just <code class="sourceCode cpp">invocable</code> and <code class="sourceCode cpp">predicate</code> which are currently defined as (for the purposes of this paper, I’m simplifying to assume equality- preservation and am skipping <code class="sourceCode cpp">regular_invocable</code>. It doesn’t change anything here and just adds noise):</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">concept</span> invocable <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>F<span class="op">&amp;&amp;</span> f, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>    invoke<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb15-4"><a href="#cb15-4"></a>  <span class="op">}</span>;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>  </span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="kw">concept</span> predicate <span class="op">=</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>    invocable<span class="op">&lt;</span>F, Args<span class="op">...&gt;</span> <span class="op">&amp;&amp;</span> <em>boolean-testable</em><span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F, Args<span class="op">...&gt;&gt;</span>;</span></code></pre></div>
+<p>There are several interesting questions these concepts bring up for the design. How could we declare these things differently? How do we specify the associated type here (the result of the invocation)? Can we do better than <em><code class="sourceCode cpp">boolean<span class="op">-</span>testable</code></em>?</p>
+<p>Let’s start with <code class="sourceCode cpp">invocable</code>. Invocation is fundamentally the call operator, so we would want to specify it as such:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Invocable <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    <span class="kw">typename</span> result_type;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    </span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="kw">virtual</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>F, Args<span class="op">...)</span> <span class="op">-&gt;</span> result_type <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="op">}</span>;</span>
+<span id="cb16-7"><a href="#cb16-7"></a></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="co">// bunch of specializations follow for invocables that aren&#39;t ()-able</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="co">// this one is very incomplete, but just intended to be illustrative and</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="co">// I didn&#39;t want to clutter this with too much noise:</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, <span class="kw">typename</span> R, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="kw">concept</span> <span class="kw">struct</span> Invocable<span class="op">&lt;</span>R <span class="op">(</span>C<span class="op">::*)(</span>Args<span class="op">...)</span>, C<span class="op">*</span>, Args<span class="op">...&gt;</span> <span class="op">{</span></span>
+<span id="cb16-13"><a href="#cb16-13"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R <span class="op">(</span>C<span class="op">::*</span>pmf<span class="op">)(</span>Args<span class="op">...)</span>, C<span class="op">*</span> c, Args<span class="op">...</span> args<span class="op">)</span> <span class="op">-&gt;</span> R <span class="kw">override</span> <span class="op">{</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a>        <span class="cf">return</span> <span class="op">(</span>c<span class="op">-&gt;*</span>pmf<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb16-15"><a href="#cb16-15"></a>    <span class="op">}</span></span>
+<span id="cb16-16"><a href="#cb16-16"></a><span class="op">}</span>;</span>
+<span id="cb16-17"><a href="#cb16-17"></a></span>
+<span id="cb16-18"><a href="#cb16-18"></a><span class="co">// our favorite std::invoke</span></span>
+<span id="cb16-19"><a href="#cb16-19"></a><span class="kw">constexpr</span> <span class="kw">auto</span> invoke <span class="op">=</span></span>
+<span id="cb16-20"><a href="#cb16-20"></a>    <span class="op">[]&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;(</span>F<span class="op">&amp;&amp;</span> f, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span></span>
+<span id="cb16-21"><a href="#cb16-21"></a>        <span class="kw">requires</span> Invocable<span class="op">&lt;</span>F, Args<span class="op">...&gt;</span></span>
+<span id="cb16-22"><a href="#cb16-22"></a>    <span class="op">{</span></span>
+<span id="cb16-23"><a href="#cb16-23"></a>        <span class="cf">return</span> Invocable<span class="op">&lt;</span>Args<span class="op">...&gt;::</span><span class="kw">operator</span><span class="op">()(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb16-24"><a href="#cb16-24"></a>    <span class="op">}</span>;</span></code></pre></div>
+<p>There’s an interesting turnaround here, in that the callable object <code class="sourceCode cpp">std<span class="op">::</span>invoke</code> that actually does the invocation is implemented in terms of the concept, rather than the concept being implementation in terms of the function. This just seems like the correct direction.</p>
+<p>But we can even do a little bit better. First, let’s extend our notion of what it means to bring in a “concept namespace” with a <em>using-directive</em> to be more expansive. Perhaps we can make the concept the driver of lookup <em>even in member contexts</em>?</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">// our favorite std::invoke</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> invoke <span class="op">=</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="op">[]&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;(</span>F<span class="op">&amp;&amp;</span> f, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>        <span class="kw">requires</span> Invocable<span class="op">&lt;</span>F, Args<span class="op">...&gt;</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="op">{</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a>        <span class="kw">using</span> <span class="kw">concept</span> Invocable<span class="op">&lt;</span>Args<span class="op">...&gt;</span>;</span>
+<span id="cb17-7"><a href="#cb17-7"></a>        <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb17-8"><a href="#cb17-8"></a>    <span class="op">}</span>;</span></code></pre></div>
+<p>That is, before even looking inside of <code class="sourceCode cpp">F</code> for <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>, we start by looking inside of <code class="sourceCode cpp">Invocable<span class="op">&lt;</span>Args<span class="op">...&gt;</span></code>. This now works for pointers to members as well.</p>
+<p>Although really, this is going to be such a common pattern, we may as well go all the way and allow:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> invoke <span class="op">=</span> Invocable<span class="op">::</span><span class="kw">operator</span><span class="op">()</span>;</span></code></pre></div>
+<h2 data-number="4.1" id="the-predicate-concept" data-number="4.1"><span class="header-section-number">4.1</span> The <code class="sourceCode cpp">predicate</code> concept<a href="#the-predicate-concept" class="self-link"></a></h2>
+<p>All <code class="sourceCode cpp">predicate</code> does is refine <code class="sourceCode cpp">invocable</code> such that it returns <code class="sourceCode cpp"><span class="dt">bool</span></code>. But we can’t just say that, for complicated C++ reasons and having to deal with types that are convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code> but don’t actually behave like <code class="sourceCode cpp"><span class="dt">bool</span></code> when it comes to the operators <code class="sourceCode cpp"><span class="op">&amp;&amp;</span></code>, <code class="sourceCode cpp"><span class="op">||</span></code>, and <code class="sourceCode cpp"><span class="op">!</span></code>. Rather than pushing the burden of dealing with this onto generic programming authors, let’s embrace the issue and deal with it entirely in the concept:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">concept</span> <span class="kw">struct</span> Predicate <span class="op">:</span> Invocable<span class="op">&lt;</span>F, Args<span class="op">...&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="op">{</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>    <span class="kw">requires</span> convertible_to<span class="op">&lt;</span>result_type, <span class="dt">bool</span><span class="op">&gt;</span>;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>    </span>
+<span id="cb19-6"><a href="#cb19-6"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>F f, Args<span class="op">...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>        <span class="kw">using</span> <span class="kw">concept</span> Invocable;</span>
+<span id="cb19-8"><a href="#cb19-8"></a>        <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb19-9"><a href="#cb19-9"></a>    <span class="op">}</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a><span class="op">}</span>;</span></code></pre></div>
+<p>What’s going on here? We have a concept class declaration, but with no new <code class="sourceCode cpp"><span class="kw">virtual</span></code> functions or associated types. We have a non-<code class="sourceCode cpp"><span class="kw">virtual</span></code> function and a new constraint. The constraint part is straightforward, a <code class="sourceCode cpp">Predicate</code> is an <code class="sourceCode cpp">Invocable</code> whose <code class="sourceCode cpp">result_type</code> is <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code> (we don’t need to use any qualification because all <code class="sourceCode cpp">Invocable</code>s will have a <code class="sourceCode cpp">result_type</code>).</p>
+<p>The new <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code> is there solely to coerce the result of the invocation to <code class="sourceCode cpp"><span class="dt">bool</span></code>, which is an entirely different way of dealing with the problem thoroughly described in <span class="citation" data-cites="P1964R0">[<a href="#ref-P1964R0" role="doc-biblioref">P1964R0</a>]</span>. Consider an implementation of <code class="sourceCode cpp">count_if</code> that instead takes two predicates instead of one:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R, <span class="kw">typename</span> T <span class="op">=</span> Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>reference</span>
+<span id="cb20-2"><a href="#cb20-2"></a>          Predicate<span class="op">&lt;</span>T<span class="op">&gt;</span> Pred1, Predicate<span class="op">&lt;</span>T<span class="op">&gt;</span> Pred2<span class="op">&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">auto</span> count_if<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Pred1 p1, Pred2 p2<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="op">{</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a>    <span class="kw">using</span> <span class="kw">concept</span> Range, Predicate;</span>
+<span id="cb20-6"><a href="#cb20-6"></a></span>
+<span id="cb20-7"><a href="#cb20-7"></a>    R<span class="op">::</span>iterator b <span class="op">=</span> r<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb20-8"><a href="#cb20-8"></a>    R<span class="op">::</span>sentinel e <span class="op">=</span> r<span class="op">.</span>end<span class="op">()</span>;</span>
+<span id="cb20-9"><a href="#cb20-9"></a>    <span class="dt">int</span> n <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb20-10"><a href="#cb20-10"></a>    <span class="cf">for</span> <span class="op">(</span>; b <span class="op">!=</span> e; <span class="op">++</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a>        <span class="cf">if</span> <span class="op">(</span>p1<span class="op">(*</span>b<span class="op">)</span> <span class="op">&amp;&amp;</span> p2<span class="op">(*</span>b<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>            <span class="op">++</span>n;</span>
+<span id="cb20-13"><a href="#cb20-13"></a>        <span class="op">}</span></span>
+<span id="cb20-14"><a href="#cb20-14"></a>    <span class="op">}</span></span>
+<span id="cb20-15"><a href="#cb20-15"></a>    <span class="cf">return</span> n;</span>
+<span id="cb20-16"><a href="#cb20-16"></a><span class="op">}</span></span></code></pre></div>
+<p>First, I wanted to point out the declartions of the iterator and sentinel here. Because of the <em>using-directive</em> bringing in the concept <code class="sourceCode cpp">Range</code>, we look in the concept for <code class="sourceCode cpp">R<span class="op">::</span>iterator</code> and <code class="sourceCode cpp">r<span class="op">.</span>begin<span class="op">()</span></code> first and find those there. This syntax works for all types that satsify <code class="sourceCode cpp">Range</code> (including C arrays!). Really, we would basically always want this (and there’s no way around <code class="sourceCode cpp">Range<span class="op">&lt;</span>R<span class="op">&gt;::</span>reference</code>), so maybe this is an extra argument in favor of implicitly bringing in concept associations from constrained declarations.</p>
+<p>Second, this implementation is <em>guaranteed</em> to be valid because the type of <code class="sourceCode cpp">p1<span class="op">(*</span>b<span class="op">)</span></code> <em>is</em> <code class="sourceCode cpp"><span class="dt">bool</span></code>, regardless of what the type of <code class="sourceCode cpp">invoke<span class="op">(</span>p1, <span class="op">*</span>b<span class="op">)</span></code> is. We already know from the constraints that the type of <code class="sourceCode cpp">invoke<span class="op">(</span>p1, <span class="op">*</span>b<span class="op">)</span></code> is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>, and what <code class="sourceCode cpp">p1<span class="op">(*</span>b<span class="op">)</span></code> does is invoke <code class="sourceCode cpp">Predicate<span class="op">::</span><span class="kw">operator</span><span class="op">()(</span>p1, <span class="op">*</span>b<span class="op">)</span></code> - which invokes <code class="sourceCode cpp">Invocable<span class="op">::</span><span class="kw">operator</span><span class="op">()(</span>p1, <span class="op">*</span>b<span class="op">)</span></code> and converts its result to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
+<p>We don’t need <em><code class="sourceCode cpp">boolean<span class="op">-</span>testable</code></em> here as such. Even with a type like:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> Evil <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>    <span class="kw">operator</span> <span class="dt">bool</span><span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a>    <span class="kw">friend</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&amp;&amp;(</span>Evil, Evil<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb21-4"><a href="#cb21-4"></a><span class="op">}</span>;</span>
+<span id="cb21-5"><a href="#cb21-5"></a></span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="kw">auto</span> evil_pred<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> Evil;</span>
+<span id="cb21-7"><a href="#cb21-7"></a></span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="kw">auto</span> count_evil<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>    <span class="cf">return</span> count_if<span class="op">(</span>v, evil_pred, evil_pred<span class="op">)</span>;</span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="op">}</span></span></code></pre></div>
+<p>The above implementation compiles, because the <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&amp;&amp;</span></code> here is never used.</p>
+<h2 data-number="4.2" id="terser-associated-type-access-syntax" data-number="4.2"><span class="header-section-number">4.2</span> Terser associated type access syntax<a href="#terser-associated-type-access-syntax" class="self-link"></a></h2>
+<p>Consider the desire to implement the function <code class="sourceCode cpp">fmap</code> for <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. This is a function that takes two arguments:</p>
+<ol type="1">
+<li>an <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code></li>
+<li>a function that when invoked with a <code class="sourceCode cpp">T</code> yields a <code class="sourceCode cpp">U</code></li>
+</ol>
+<p>and returns an <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code>. Consider also the desire to implement a very similar function <code class="sourceCode cpp">bind</code> for <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, whose second argument is a function that takes a <code class="sourceCode cpp">T</code> and returns an <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code> (for some <code class="sourceCode cpp">U</code>).</p>
+<p>Implementing the first in C++20 is… ok. Implementing the second is less so:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, invocable<span class="op">&lt;</span>T<span class="op">&gt;</span> F, <span class="kw">typename</span> U <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F, T<span class="op">&gt;&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">auto</span> fmap<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, F<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>U<span class="op">&gt;</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, invocable<span class="op">&lt;</span>T<span class="op">&gt;</span> F, <span class="kw">typename</span> Z <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F, T<span class="op">&gt;&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>    <span class="kw">requires</span> is_specialization_of<span class="op">&lt;</span>Z, optional<span class="op">&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="kw">auto</span> bind<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, F<span class="op">)</span> <span class="op">-&gt;</span> Z;</span></code></pre></div>
+<p>These declarations have some notable issues. First, there’s just the API surface area to deal with that you just have to know about <code class="sourceCode cpp">invoke_result_t</code>. Second, what is <code class="sourceCode cpp">Z</code>? We talk about this function as returning an <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code>, but instead for specification convenience, we just return <code class="sourceCode cpp">Z</code>.</p>
+<p>I mean, you could return an <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code> too:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, invocable<span class="op">&lt;</span>T<span class="op">&gt;</span> F,</span>
+<span id="cb23-2"><a href="#cb23-2"></a>          specializes<span class="op">&lt;</span>optional<span class="op">&gt;</span> Z <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F, T<span class="op">&gt;</span>,</span>
+<span id="cb23-3"><a href="#cb23-3"></a>          <span class="kw">typename</span> U <span class="op">=</span> Z<span class="op">::</span>value_type<span class="op">&gt;</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a><span class="kw">auto</span> bind<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, F<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>U<span class="op">&gt;</span>;</span></code></pre></div>
+<p>Maybe that’s better? This relies on just knowing that the <code class="sourceCode cpp">U</code> in <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code> can be retrieved via the <code class="sourceCode cpp">value_type</code> specialization. You could instead just treat <code class="sourceCode cpp">optional</code> as a typelist and use <code class="sourceCode cpp">mp_first<span class="op">&lt;</span>Z<span class="op">&gt;</span></code>? Neither of these provide a lot of clarity.</p>
+<p>Instead, what this design suggests is a new syntax for introducing names based on the associated types of concepts. We just need some separator between the arguments for the concept and the new kind of introducer, for which this paper just picks <code class="sourceCode cpp"><span class="op">/</span></code>.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> U, <span class="kw">typename</span> T, Invocable<span class="op">&lt;</span>T <span class="op">/</span> result_type<span class="op">=</span>U<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">auto</span> fmap<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, F f<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>U<span class="op">&gt;</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> U, <span class="kw">typename</span> T, Invocable<span class="op">&lt;</span>T <span class="op">/</span> result_type<span class="op">=</span>optional<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="kw">auto</span> bind<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, F f<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>U<span class="op">&gt;</span>;</span></code></pre></div>
+<p>What this means is that first we introduce an unbound template parameter, <code class="sourceCode cpp">U</code>. But then, in <code class="sourceCode cpp">fmap</code>, we add the introducer <code class="sourceCode cpp">result_type<span class="op">=</span>U</code>. This pattern matches the type <code class="sourceCode cpp">Invocable<span class="op">&lt;</span>F, T<span class="op">&gt;::</span>result_type</code> against <code class="sourceCode cpp">U</code> (which would always match because it’s a type), and assigns <code class="sourceCode cpp">U</code> to that result.</p>
+<p>The more complicated version is in <code class="sourceCode cpp">bind</code>, where the pattern is <code class="sourceCode cpp">result_type<span class="op">=</span>optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code>. If the <code class="sourceCode cpp">result_type</code> does <em>not</em> match the pattern (say if we provided a function whose result type was <code class="sourceCode cpp"><span class="dt">int</span></code>), then this constraint is not satisfied and this function template is removed from overload resolution. But if it <em>is</em> satisfied, then we pull out the the type and assign it to the name <code class="sourceCode cpp">U</code>.</p>
+<p>While this seems initially more complex, this is a staggeringly simpler way of expressing the constraint and reads precisely like what we’re going for. We need an <code class="sourceCode cpp">Invocable</code> on <code class="sourceCode cpp">T</code> whose <code class="sourceCode cpp">result_type</code> is <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code>, for some <code class="sourceCode cpp">U</code>.</p>
+<p>Consider a different algorithm which is even harder to properly declare in C++20 (although, like the above algorithms, very easy to implement once we get past the declaration). In Haskell, there is a function <code class="sourceCode cpp">sequence</code> that takes (in C++ terms) a range of <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> and returns a <code class="sourceCode cpp">expected<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span>, E<span class="op">&gt;</span></code>. That is, if all of the <code class="sourceCode cpp">expected</code>s hold a value, return a new <code class="sourceCode cpp">expected</code> whose value is the list of the success results. Otherwise, return the first failure.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>C++20</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>This Design</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Range R,</span>
+<span id="cb25-2"><a href="#cb25-2"></a>    Specializes<span class="op">&lt;</span>expected<span class="op">&gt;</span> V <span class="op">=</span> range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">auto</span> sequence<span class="op">(</span>R<span class="op">)</span> <span class="op">-&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a>    expected<span class="op">&lt;</span>vector<span class="op">&lt;</span>V<span class="op">::</span>value_type<span class="op">&gt;</span>, V<span class="op">::</span>error_type<span class="op">&gt;</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> E, Range<span class="op">&lt;/</span>value<span class="op">=</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span> R<span class="op">&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">auto</span> sequence<span class="op">(</span>R r<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span>, E<span class="op">&gt;</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>It’s not like the C++20 solution is especially long. It’s just … what is even going on here and what does any of it mean?</p>
+<p>With this design, it’s pretty obvious at a glance what the parameter to <code class="sourceCode cpp">sequence</code> has to satisfy and what the result type is.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="design-summary" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Design Summary<a href="#design-summary" class="self-link"></a></h1>
+<p>In short, this paper proposes a new kind of concept (a concept class) which uses pseudo-signatures instead of expression and has support for declaring associated types. A concept class can be specialized (mapped) to provide custom support for a particular associated function.</p>
+<p>A concept class’ associated functions can be used externally as niebloids, and both associated functions and types can be brought into scope with a new kind of <em>using-directive</em>, which also affects lookup for members. Concepts classes can have non-customizable functions as well, which can be used to just provided bonus functionality or to do things like coerce types.</p>
+<p>Lastly, this paper proposes a convenient syntax for accessing associated types in template declarations, to make certain kinds of constraints vastly more expressible.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P1292R0">
+<p>[P1292R0] Matt Calabrese. 2018. Customization Point Functions. <br />
+<a href="https://wg21.link/p1292r0">https://wg21.link/p1292r0</a></p>
+</div>
+<div id="ref-P1900R0">
+<p>[P1900R0] Barry Revzin. 2019. Concepts-Adjacent Problems. <br />
+<a href="https://wg21.link/p1900r0">https://wg21.link/p1900r0</a></p>
+</div>
+<div id="ref-P1964R0">
+<p>[P1964R0] Tim Song. 2019. Casting convertible_to<bool> considered harmful. <br />
+<a href="https://wg21.link/p1964r0">https://wg21.link/p1964r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
