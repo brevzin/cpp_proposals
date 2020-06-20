@@ -410,7 +410,7 @@ explicit concept struct View
     : Range<R>, movable<R>, default_initializable<R>
 { };
 
-template <derived_from<view_base> V> concept struct View<V> : View<V> { };
+template <derived_from<view_base> V> concept struct View<V> { };
 ```
 
 Here, the concept class `View` "inherits" the requirements from `Range`, `movable`,
