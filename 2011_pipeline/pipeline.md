@@ -1,6 +1,6 @@
 ---
 title: "A pipeline-rewrite operator"
-document: P2011R1
+document: D2011R2
 date: today
 audience: EWG
 author:
@@ -1064,6 +1064,45 @@ user=> (reduce +
 1140
 ```
 
+### Racket
+
+Similar to Clojure, Racket is another LISP that has threading operators, similarly
+spelled `~>` and `~>>` [@racket.threading]. Unlike Clojure, but like Hack and
+the JavaScript proposal, Racket's threading macro provides a placeholder to
+let you choose where the previous result is placed in the subsequent argument.
+
+For example:
+
+```clojure
+(~> lst
+    (sort >)
+    (take 2)
+    (map (λ (x) (* x x)) _)
+    (foldl + 0 _))
+```
+
+Here, the first two callables do not use `_`, so the result is implicitly
+inserted as the first argument, but the last two do, so the result is inserted
+at that spot. This expands to:
+
+```clojure
+(foldl +
+       0
+       (map (λ (x) (* x x))
+            (take (sort lst >) 2)))
+```
+
+Or from the docs:
+
+```clojure
+> (~> '(1 2 3)
+      (map add1 _)
+      (apply + _)
+      (- 1))
+8
+```
+
+
 ### C++
 
 As far as C++ is concerned, it would be a third in a set of operators that
@@ -1300,7 +1339,7 @@ is unlikely to ever actually be written.
 
 This is where a placeholder syntax would come in handy. If, instead of requiring
 a function call (that the left-hand side was inserted into), we chose to require a placeholder
-(like Hack and one of the JavaScript proposals), we could have both:
+(like Hack, Racket, and one of the JavaScript proposals), we could have both:
 
 ```cpp
 a |> views::zip(>, b)               // evaluates as views::zip(a, b)
@@ -1979,6 +2018,14 @@ references:
     issued:
         - year: 2010
     URL: https://clojuredocs.org/clojure.core/-%3E%3E    
+  - id: racket.threading
+    citation-label: racket.threading
+    title: "Threading Macros"
+    author:
+        - family: RacketLang
+    issued:
+        - year: 2020
+    URL: https://docs.racket-lang.org/threading/index.html
   - id: range-v3
     citation-label: range-v3
     title: "Range library for C++14/17/20, basis for C++20's std::ranges"
