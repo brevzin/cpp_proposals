@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-03-01" />
-  <title>do-not-return</title>
+  <meta name="dcterms.date" content="2020-07-30" />
+  <title>`do not return or else`</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-03-01</td>
+    <td>2020-07-30</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -566,7 +566,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    __<span class="op">:</span> <span class="cf">throw</span> bad_argument<span class="op">()</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    _<span class="op">:</span> <span class="cf">throw</span> bad_argument<span class="op">()</span>;</span>
 <span id="cb1-5"><a href="#cb1-5"></a>  <span class="op">}</span>;</span>
 <span id="cb1-6"><a href="#cb1-6"></a><span class="op">}</span></span></code></pre></div>
 <p>Here, we have two cases: one has type <code class="sourceCode cpp"><span class="dt">int</span></code>, and the other technically has type <code class="sourceCode cpp"><span class="dt">void</span></code>. But because the <code class="sourceCode cpp"><span class="cf">throw</span></code> actually escapes the scope anyway, we don’t need to consider that case when resolving the type. As a result, the above can be a perfectly valid use of <code class="sourceCode cpp">inspect</code> - the type of the expression can be said to be <code class="sourceCode cpp"><span class="dt">int</span></code>.</p>
@@ -593,7 +593,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">int</span> maybe_terminate<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb4-3"><a href="#cb4-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
-<span id="cb4-4"><a href="#cb4-4"></a>    __<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    _<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>;</span>
 <span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">}</span>;</span>
 <span id="cb4-6"><a href="#cb4-6"></a><span class="op">}</span></span></code></pre></div>
 <p>The guidance we adopted in Albuquerque <span class="citation" data-cites="Attributes">[<a href="#ref-Attributes" role="doc-biblioref">Attributes</a>]</span> during the discussion of <span class="citation" data-cites="P0840R0">[<a href="#ref-P0840R0" role="doc-biblioref">P0840R0</a>]</span> was:</p>
@@ -603,13 +603,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The above <code class="sourceCode cpp">inspect</code>, if we added semantic meaning to <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>, could work - it would ignore the second pattern and simply deduce the type of the <code class="sourceCode cpp">inspect</code>-expression as <code class="sourceCode cpp"><span class="dt">int</span></code>. But if we ignored <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>, then we have two patterns of differing type (<code class="sourceCode cpp"><span class="dt">int</span></code> and <code class="sourceCode cpp"><span class="dt">void</span></code>) and the type of the <code class="sourceCode cpp">inspect</code>-expression would have to be either <code class="sourceCode cpp"><span class="dt">void</span></code> or ill-formed, either way definitely not <code class="sourceCode cpp"><span class="dt">int</span></code>. This violates the attribute rule.</p>
 <p>However, being able to <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code> in a particular case is an important feature in an <code class="sourceCode cpp">inspect</code>-expression, and so the problem of how to make it work must be resolved… somehow.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="presentation-of-alternatives" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Presentation of Alternatives<a href="#presentation-of-alternatives" class="self-link"></a></h1>
-<p>This paper goes through four mechanisms for how we could get this behavior to work. It will first introduce the four mechanisms, and then provide a compare and contrast for them.</p>
+<p>This paper goes through four mechanisms for how we could get this behavior to work. It will first introduce the four mechanisms, and then compare and contrast them.</p>
 <h2 data-number="2.1" id="annotate-escaping-blocks" data-number="2.1"><span class="header-section-number">2.1</span> Annotate escaping blocks<a href="#annotate-escaping-blocks" class="self-link"></a></h2>
 <p>At a session in Prague, the paper authors proposed new syntax for introducing a block which marked the block as <code class="sourceCode cpp">noreturn</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">int</span> maybe_terminate<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb5-3"><a href="#cb5-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
-<span id="cb5-4"><a href="#cb5-4"></a>    __<span class="op">:</span> <span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>    _<span class="op">:</span> <span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></span>
 <span id="cb5-5"><a href="#cb5-5"></a>  <span class="op">}</span>;</span>
 <span id="cb5-6"><a href="#cb5-6"></a><span class="op">}</span></span></code></pre></div>
 <p>The above could then be allowed: the second case would be considered an escaping statement by virtue of the <code class="sourceCode cpp"><span class="op">!{</span> <span class="op">...</span> <span class="op">}</span></code> and would thus not participate in determining the type. This leaves a single case having type <code class="sourceCode cpp"><span class="dt">int</span></code>.</p>
@@ -618,7 +618,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="2.2" id="annotate-escaping-functions" data-number="2.2"><span class="header-section-number">2.2</span> Annotate escaping functions<a href="#annotate-escaping-functions" class="self-link"></a></h2>
 <p>The other three suggested mechanisms all are based on applying some kind of annotation to the <em>functions</em> that escape rather than to the blocks that invoke these functions. These are:</p>
 <h3 data-number="2.2.1" id="a-new-type-indicating-escaping" data-number="2.2.1"><span class="header-section-number">2.2.1</span> A new type indicating escaping<a href="#a-new-type-indicating-escaping" class="self-link"></a></h3>
-<p>C and C++ have the type <code class="sourceCode cpp"><span class="dt">void</span></code>, but despite the name, it’s not an entirely uninhabited type. You can’t have an object of type <code class="sourceCode cpp"><span class="dt">void</span></code> (yet?), but functions which return <code class="sourceCode cpp"><span class="dt">void</span></code> do, in fact, return. We could introduce a new type that actually has zero possible values, which would indicate that a function can never return. For the sake of discussion, let’s call this type <code class="sourceCode cpp">std<span class="op">::</span>never</code>.</p>
+<p>C and C++ have the type <code class="sourceCode cpp"><span class="dt">void</span></code>, but despite the name, it’s not an entirely uninhabited type. You can’t have an object of type <code class="sourceCode cpp"><span class="dt">void</span></code> (yet?), but functions which return <code class="sourceCode cpp"><span class="dt">void</span></code> do, in fact, return. We could introduce a new type that actually has zero possible values, which would indicate that a function can never return. For the sake of discussion, let’s call this type <code class="sourceCode cpp"><span class="kw">true</span> <span class="dt">void</span></code>. Actually, that’s a bit much. Let’s call it <code class="sourceCode cpp">std<span class="op">::</span>never</code>.</p>
 <p>We could then change the declaration of functions like <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code>:</p>
 <div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a><span class="st">- [[noreturn]] void abort() noexcept;</span></span>
@@ -628,7 +628,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="dt">int</span> maybe_terminate<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb7-3"><a href="#cb7-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    __<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="co">// ok, returns std::never, so never returns</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    _<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="co">// ok, returns std::never, so never returns</span></span>
 <span id="cb7-5"><a href="#cb7-5"></a>  <span class="op">}</span>;</span>
 <span id="cb7-6"><a href="#cb7-6"></a><span class="op">}</span></span></code></pre></div>
 <h3 data-number="2.2.2" id="a-context-sensitive-keyword-indicating-escaping" data-number="2.2.2"><span class="header-section-number">2.2.2</span> A context-sensitive keyword indicating escaping<a href="#a-context-sensitive-keyword-indicating-escaping" class="self-link"></a></h3>
@@ -652,7 +652,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Instead of introducing a new language feature to mark a block as escaping (as proposed in Prague), or introducing a new language feature to mark a function as escaping (as in the previous two sections), let’s actually just take advantage of the fact that we already have a language feature to mark a function as escaping: the <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> attribute.</p>
 <p>That is: don’t introduce anything new at all. Just allow the <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> attribute to have semantic meaning. Say that a function so annotated counts as an escaping function, as a language rule, and allow that to work.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="comparison-of-alternatives" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Comparison of Alternatives<a href="#comparison-of-alternatives" class="self-link"></a></h1>
-<p>The set of <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>-annotated functions is very small (the standard library has 9: <code class="sourceCode cpp">std<span class="op">::</span>abort</code>, <code class="sourceCode cpp">std<span class="op">::</span>exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>_Exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>quick_exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>terminate</code>, <code class="sourceCode cpp">std<span class="op">::</span>rethrow_exception</code>, <code class="sourceCode cpp">std<span class="op">::</span>throw_with_nested</code>, <code class="sourceCode cpp">std<span class="op">::</span>nested_exception<span class="op">::</span>rethrow_nested</code>, and <code class="sourceCode cpp">std<span class="op">::</span>longjmp</code> - with <code class="sourceCode cpp">std<span class="op">::</span>unreachable</code> on the way), and we already have to annotate these functions. It’s hard to count how many uses of this attribute exist in the wild since it so frequently shows up being a macro, but I think it’s safe to say that the number of invocations of escaping functions far exceeds the number of declared escaping functions.</p>
+<p>The set of <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>-annotated functions is very small (the standard library has 9: <code class="sourceCode cpp">std<span class="op">::</span>abort</code>, <code class="sourceCode cpp">std<span class="op">::</span>exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>_Exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>quick_exit</code>, <code class="sourceCode cpp">std<span class="op">::</span>terminate</code>, <code class="sourceCode cpp">std<span class="op">::</span>rethrow_exception</code>, <code class="sourceCode cpp">std<span class="op">::</span>throw_with_nested</code>, <code class="sourceCode cpp">std<span class="op">::</span>nested_exception<span class="op">::</span>rethrow_nested</code>, and <code class="sourceCode cpp">std<span class="op">::</span>longjmp</code> - with <code class="sourceCode cpp">std<span class="op">::</span>unreachable</code> on the way), and we already have to annotate these functions. It’s hard to count how many uses of this attribute exist in the wild since it so frequently shows up being a macro, but I think it’s safe to say that the number of invocations of escaping functions far exceeds the number of declared escaping functions. By many orders of magnitude.</p>
 <p>Given that, and the fact that we need to make some kind of language change to make this work anyway, it seems like we should change the language to recognize the escaping functions themselves rather than recognize uses of them. The suggested path of <code class="sourceCode cpp"><span class="op">!{</span> std<span class="op">::</span>abort<span class="op">()</span>; <span class="op">}</span></code> isn’t exactly enormous syntactic overhead over <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code>, it’s probably about as minimal an annotation as you can really get, but it just seems like the wrong direction to take - and it seems better for the annotation to be localized to the functions rather than the invocations of them. We should instead elevate <code class="sourceCode cpp">noreturn</code> to be a first-class language feature so that we can treat <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> the same as a <code class="sourceCode cpp"><span class="cf">return</span></code> or a <code class="sourceCode cpp"><span class="cf">throw</span></code> without requiring further annotation on all uses of it.</p>
 <p>Let’s go through the suggested options for annotating the function itself.</p>
 <p>The problem with introducing a new type like <code class="sourceCode cpp">std<span class="op">::</span>never</code> is the enormous amount of work necessary to really work through what <code class="sourceCode cpp">std<span class="op">::</span>never</code> means in the type system. Can you have a…</p>
@@ -670,120 +670,65 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ol>
 <p>The advantage of the former is it allows us to preserve the adopted guidance on the meaning of attributes from Albuquerque.</p>
 <p>The advantage of the latter is: we already have an existing solution to exactly this problem, and having to introduce a new language feature, to solve exactly the same problem, seems like artificial and pointless language churn. The issue is that we are not allowing ourselves to use the existing solution to this problem. Maybe we should?</p>
+<h2 data-number="3.1" id="c-compatibility" data-number="3.1"><span class="header-section-number">3.1</span> C Compatibility<a href="#c-compatibility" class="self-link"></a></h2>
+<p>An important thing to consider is C compatibility. C <em>also</em> has functions that do not return, and we should figure out how to treat those as escaping functions as well. C has a <em>different</em> function annotation to indicate an escaping function, introduced in C11 by <span class="citation" data-cites="C.N1478">[<a href="#ref-C.N1478" role="doc-biblioref">C.N1478</a>]</span>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a>_Noreturn <span class="dt">void</span> fatal<span class="op">(</span><span class="dt">void</span><span class="op">)</span>; </span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="dt">void</span> fatal<span class="op">()</span> <span class="op">{</span> </span>
+<span id="cb12-4"><a href="#cb12-4"></a>  <span class="co">/* ... */</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>  exit<span class="op">(</span><span class="dv">1</span><span class="op">)</span>; </span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="op">}</span></span></code></pre></div>
+<p>Where the C functions <code class="sourceCode cpp">longjmp<span class="op">()</span></code>, <code class="sourceCode cpp">abort<span class="op">()</span></code>, <code class="sourceCode cpp">exit<span class="op">()</span></code>, <code class="sourceCode cpp">_Exit<span class="op">()</span></code>, and <code class="sourceCode cpp">quick_exit<span class="op">()</span></code> so annotated. C also provides a header which <code class="sourceCode cpp"><span class="pp">#define</span></code>s <code class="sourceCode cpp">noreturn</code> to <code class="sourceCode cpp">_Noreturn</code>.</p>
+<p>On top of this, WG14 is pursuing the C++ <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> attribute itself, via <span class="citation" data-cites="C.N2410">[<a href="#ref-C.N2410" role="doc-biblioref">C.N2410</a>]</span>.</p>
+<p>This suggests that pursuing a different context-sensitive keyword for <code class="sourceCode cpp">noreturn</code> would just introduce a <em>new</em> incompatibility with C, that C is currently working to remedy. Unless the context-sensitive keyword we picked was, specifically, <code class="sourceCode cpp">_Noreturn</code>.</p>
+<h2 data-number="3.2" id="interaction-with-the-type-system" data-number="3.2"><span class="header-section-number">3.2</span> Interaction with the type system<a href="#interaction-with-the-type-system" class="self-link"></a></h2>
+<p>I want to be very clear that regardless of the direction taken for this paper, given:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="dt">void</span> g<span class="op">()</span>;</span></code></pre></div>
+<p>the type of <code class="sourceCode cpp">f</code> is still <code class="sourceCode cpp"><span class="dt">void</span><span class="op">()</span></code>, the same as the type of <code class="sourceCode cpp">g</code>. Though it turns out that clang <em>already</em> models <code class="sourceCode cpp">__attribute<span class="op">((</span>noreturn<span class="op">))</span></code> (but not <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>) in the type system:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">constexpr</span> <span class="dt">bool</span> is_noreturn<span class="op">(</span>T <span class="op">())</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">false</span>; <span class="op">}</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="kw">constexpr</span> <span class="dt">bool</span> is_noreturn<span class="op">(</span>__attribute__<span class="op">((</span>noreturn<span class="op">))</span> T <span class="op">())</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">true</span>; <span class="op">}</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a></span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="dt">int</span> x<span class="op">()</span>;</span>
+<span id="cb14-7"><a href="#cb14-7"></a>__attribute__<span class="op">((</span>noreturn<span class="op">))</span> <span class="dt">float</span> y<span class="op">()</span>;</span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">double</span> z<span class="op">()</span>;</span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="kw">static_assert</span><span class="op">(</span><span class="kw">not</span> is_noreturn<span class="op">(</span>x<span class="op">))</span>;</span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="kw">static_assert</span><span class="op">(</span>is_noreturn<span class="op">(</span>y<span class="op">))</span>;</span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="kw">static_assert</span><span class="op">(</span><span class="kw">not</span> is_noreturn<span class="op">(</span>z<span class="op">))</span>;</span></code></pre></div>
+<p>But, again, not something I’m interesting in.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>In my opinion, this:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>   <span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> terminate<span class="op">()</span>;</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="op">}</span></span></code></pre></div>
+<p>should be enough to make:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="dt">int</span> maybe_terminate<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    _<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>;</span>
+<span id="cb16-5"><a href="#cb16-5"></a>  <span class="op">}</span>;</span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="op">}</span></span></code></pre></div>
+<p>work. I would not want to either add a new annotation to, or change the existing annotion of, functions like <code class="sourceCode cpp">terminate</code>. And I would not want to have to annotate every use of <code class="sourceCode cpp">terminate</code> in an <code class="sourceCode cpp">inspect</code>-expression, when the compiler should already know that <code class="sourceCode cpp">terminate</code> is an escaping function.</p>
 <p>Sure, such a direction would open the door to wanting to introduce other attributes that may want to have normative semantic impact, and we’d lose the ability to just reject all of those uniformly. But I think we should seriously consider this direction. It would mean that we would not have to make any changes to the standard library at all. Any user-defined <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> functions that already exist would just seamlessly work without them having to make any changes.</p>
 <p>Note that <code class="sourceCode cpp"><span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span></code>, the attribute during whose discussion we adopted this guidance, already is somewhat fuzzy with this rule. The correctness of a program may well depend annotated members taking no space (e.g. if a type so annotated needs to be constructed in a fixed-length buffer). We more or less say this doesn’t count, and there is certainly no such fuzziness with the other attributes like <code class="sourceCode cpp"><span class="op">[[</span><span class="at">likely</span><span class="op">]]</span></code>, <code class="sourceCode cpp"><span class="op">[[</span><span class="at">fallthrough</span><span class="op">]]</span></code>, or <code class="sourceCode cpp"><span class="op">[[</span><span class="at">deprecated</span><span class="op">]]</span></code>.</p>
-<p>In my opinion, this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a>   <span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> terminate<span class="op">()</span>;</span>
-<span id="cb12-3"><a href="#cb12-3"></a><span class="op">}</span></span></code></pre></div>
-<p>should be enough to make:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="dt">int</span> maybe_terminate<span class="op">(</span><span class="dt">int</span> arg<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>  <span class="cf">return</span> inspect <span class="op">(</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>    <span class="dv">0</span><span class="op">:</span> <span class="dv">42</span>;</span>
-<span id="cb13-4"><a href="#cb13-4"></a>    __<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>;</span>
-<span id="cb13-5"><a href="#cb13-5"></a>  <span class="op">}</span>;</span>
-<span id="cb13-6"><a href="#cb13-6"></a><span class="op">}</span></span></code></pre></div>
-<p>work. I would not want to either add a new annotation to, or change the existing annotion of, functions like <code class="sourceCode cpp">terminate</code>. And I would not want to have to annotate every use of <code class="sourceCode cpp">terminate</code> in an <code class="sourceCode cpp">inspect</code>-expression, when the compiler should already know that <code class="sourceCode cpp">terminate</code> is an escaping function.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>My preferred direction is to allow functions annotated with <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> to be considered escaping functions, in the same way that <code class="sourceCode cpp"><span class="cf">throw</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="cf">goto</span></code>, and <code class="sourceCode cpp"><span class="kw">co_return</span></code> can be considered escaping statements. This requires no wording change at all, since the feature this change would be necessary for doesn’t even exist yet.</p>
-<p>But just in case we want to go a different route, this paper does provide wording for my second preferred direction: a new, non-attribute version of <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>.</p>
-<p>Add <code class="sourceCode cpp">noreturn</code> to the identifiers with special meanings table in <span>5.10 <a href="https://wg21.link/lex.name">[lex.name]</a></span>/2.</p>
-<p>Change <span>9.5.1 <a href="https://wg21.link/dcl.fct.def.general">[dcl.fct.def.general]</a></span>/1:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> Function definitions have the form:</p>
-<div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>  <em>function-definition</em>:</span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="st">-   <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em><sub>opt</sub> <em>declarator</em> <span class="diffdel"><em>virt-specifier-seq</em><sub>opt</sub></span> <em>function-body</em></span></span>
-<span id="cb14-3"><a href="#cb14-3"></a><span class="va">+   <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em><sub>opt</sub> <em>declarator</em> <span class="diffins"><em>trailing-specifier-seq</em><sub>opt</sub></span> <em>function-body</em></span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em><sub>opt</sub> <em>declarator</em> <em>requires-clause</em> <em>function-body</em></span>
-<span id="cb14-5"><a href="#cb14-5"></a></span>
-<span id="cb14-6"><a href="#cb14-6"></a><span class="va">+ <em>trailing-specifier-seq</em>:</span></span>
-<span id="cb14-7"><a href="#cb14-7"></a><span class="va">+   <em>trailing-specifier</em></span></span>
-<span id="cb14-8"><a href="#cb14-8"></a><span class="va">+   <em>trailing-specifier-seq</em> <em>trailing-specifier</em></span></span>
-<span id="cb14-9"><a href="#cb14-9"></a></span>
-<span id="cb14-10"><a href="#cb14-10"></a><span class="va">+ <em>trailing-specifier</em>:</span></span>
-<span id="cb14-11"><a href="#cb14-11"></a><span class="va">+   override</span></span>
-<span id="cb14-12"><a href="#cb14-12"></a><span class="va">+   final</span></span>
-<span id="cb14-13"><a href="#cb14-13"></a><span class="va">+   noreturn</span></span>
-<span id="cb14-14"><a href="#cb14-14"></a></span>
-<span id="cb14-15"><a href="#cb14-15"></a>  <em>function-body</em>:</span>
-<span id="cb14-16"><a href="#cb14-16"></a>    <em>ctor-initializer</em><sub>opt</sub> <em>compound-statement</em></span>
-<span id="cb14-17"><a href="#cb14-17"></a>    <em>function-try-block</em></span>
-<span id="cb14-18"><a href="#cb14-18"></a>    = default ;</span>
-<span id="cb14-19"><a href="#cb14-19"></a>    = delete ;</span></code></pre></div>
-</div>
-<p>Any informal reference to the body of a function should be interpreted as a reference to the non-terminal <em>function-body</em>. The optional <em>attribute-specifier-seq</em> in a <em>function-definition</em> appertains to the function. <span class="rm" style="color: #bf0303"><del>A <em>virt-specifier-seq</em> can be part of a <em>function-definition</em> only if it is a <em>member-declaration</em></del></span>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">b</a></span> <span class="addu">A <em>trailing-specifier-seq</em> shall contain at most one of each <em>trailing-specifier</em>. The <em>trailing-specifier</em> s <code class="sourceCode cpp"><span class="kw">override</span></code> and <code class="sourceCode cpp"><span class="kw">final</span></code> shall appear only in the first declaration of a virtual member function ([class.virtual]).</span></p>
-</blockquote>
-<p>Change the grammar in <span>11.4 <a href="https://wg21.link/class.mem">[class.mem]</a></span></p>
-<blockquote>
-<div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>  <em>member-declarator</em>:</span>
-<span id="cb15-2"><a href="#cb15-2"></a><span class="st">-   <em>declarator</em> <span class="diffdel"><em>virt-specifier-seq</em><sub>opt</sub></span> <em>pure-specifier</em><sub>opt</sub></span></span>
-<span id="cb15-3"><a href="#cb15-3"></a><span class="va">+   <em>declarator</em> <span class="diffins"><em>trailing-specifier-seq</em><sub>opt</sub></span> <em>pure-specifier</em><sub>opt</sub></span></span>
-<span id="cb15-4"><a href="#cb15-4"></a>    <em>declarator</em> <em>requires-clause</em></span>
-<span id="cb15-5"><a href="#cb15-5"></a>    <em>declarator</em> <em>brace-or-equal-initializer</em><sub>opt</sub></span>
-<span id="cb15-6"><a href="#cb15-6"></a>    <em>identifier</em><sub>opt</sub> <em>attribute-specifier-seq</em><sub>opt</sub> : <em>constant-expression</em> <em>brace-or-equal-initializer</em><sub>opt</sub></span>
-<span id="cb15-7"><a href="#cb15-7"></a></span>
-<span id="cb15-8"><a href="#cb15-8"></a><span class="st">- <em>virt-specifier-seq</em>:</span></span>
-<span id="cb15-9"><a href="#cb15-9"></a><span class="st">-   <em>virt-specifier</em></span></span>
-<span id="cb15-10"><a href="#cb15-10"></a><span class="st">-   <em>virt-specifier-seq</em> <em>virt-specifier</em></span></span>
-<span id="cb15-11"><a href="#cb15-11"></a></span>
-<span id="cb15-12"><a href="#cb15-12"></a><span class="st">- <em>virt-specifier</em>:</span></span>
-<span id="cb15-13"><a href="#cb15-13"></a><span class="st">-   override</span></span>
-<span id="cb15-14"><a href="#cb15-14"></a><span class="st">-   final</span></span></code></pre></div>
-</div>
-</blockquote>
-<p>Remove <span>11.4 <a href="https://wg21.link/class.mem">[class.mem]</a></span>/14:</p>
-<blockquote>
-<p><span class="rm" style="color: #bf0303"><del>A <em>virt-specifier-seq</em> shall contain at most one of each <em>virt-specifier</em>.</del></span> <span class="rm" style="color: #bf0303"><del>A <em>virt-specifier-seq</em> shall appear only in the first declaration of a virtual member function ([class.virtual]).</del></span></p>
-</blockquote>
-<p>Change <span>11.7.2 <a href="https://wg21.link/class.virtual">[class.virtual]</a></span>/4:</p>
-<blockquote>
-<p>If a virtual function <code class="sourceCode cpp">f</code> in some class <code class="sourceCode cpp">B</code> is marked with the <span class="rm" style="color: #bf0303"><del><em>virt-specifier</em></del></span> <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp"><span class="kw">final</span></code> and in a class <code class="sourceCode cpp">D</code> derived from <code class="sourceCode cpp">B</code> a function <code class="sourceCode cpp">D​<span class="op">::</span>​f</code> overrides <code class="sourceCode cpp">B​<span class="op">::</span>​</code>f, the program is ill-formed.</p>
-</blockquote>
-<p>Change <span>11.7.2 <a href="https://wg21.link/class.virtual">[class.virtual]</a></span>/5:</p>
-<blockquote>
-<p>If a virtual function is marked with the <span class="rm" style="color: #bf0303"><del><em>virt-specifier</em></del></span> <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp"><span class="kw">override</span></code> and does not override a member function of a base class, the program is ill-formed.</p>
-</blockquote>
-<p>Copy <span>9.12.9 <a href="https://wg21.link/dcl.attr.noreturn">[dcl.attr.noreturn]</a></span> into [dcl.fct] somewhere, applying the following changes (presented as a diff for reviewer clarity):</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> The <span class="rm" style="color: #bf0303"><del><em>attribute-token</em></del></span> <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp">noreturn</code> specifies that a function does not return. <span class="rm" style="color: #bf0303"><del>It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.</del></span> <span class="rm" style="color: #bf0303"><del>The attribute may be applied to the <em>declarator-id</em> in a function declaration.</del></span> The first declaration of a function shall specify the <code class="sourceCode cpp">noreturn</code> <span class="rm" style="color: #bf0303"><del>attribute</del></span> <span class="addu">specifier</span> if any declaration of that function specifies the <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp">noreturn</code> <span class="rm" style="color: #bf0303"><del>attribute</del></span>. If a function is declared with the <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp">noreturn</code> <span class="rm" style="color: #bf0303"><del>attribute</del></span> in one translation unit and the same function is declared without the <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp">noreturn</code> <span class="rm" style="color: #bf0303"><del>attribute</del></span> in another translation unit, the program is ill-formed, no diagnostic required.</p>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> If a function <code class="sourceCode cpp">f</code> is called where <code class="sourceCode cpp">f</code> was previously declared with the <span class="addu"><em>trailing-specifier</em></span> <code class="sourceCode cpp">noreturn</code> <span class="rm" style="color: #bf0303"><del>attribute</del></span> and <code class="sourceCode cpp">f</code> eventually returns, the behavior is undefined. [ <em>Note</em>: The function may terminate by throwing an exception. — <em>end note</em> ] [ <em>Note</em>: Implementations should issue a warning if a function marked <code class="sourceCode cpp">noreturn</code> might return. — <em>end note</em> ]</p>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> [ <em>Example</em>:</p>
-<div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a><span class="st">- <span class="diffdel">[[ noreturn ]]</span> void f() {</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a><span class="va">+ void f() <span class="diffins">noreturn</span> {</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>    throw &quot;error&quot;;                // OK</span>
-<span id="cb16-4"><a href="#cb16-4"></a>  }</span>
-<span id="cb16-5"><a href="#cb16-5"></a></span>
-<span id="cb16-6"><a href="#cb16-6"></a><span class="st">- <span class="diffdel">[[ noreturn ]]</span> void q(int i) {  // behavior is undefined if called with an argument &lt;= 0</span></span>
-<span id="cb16-7"><a href="#cb16-7"></a><span class="va">+ void q(int i) <span class="diffins">noreturn</span> {  // behavior is undefined if called with an argument &lt;= 0</span></span>
-<span id="cb16-8"><a href="#cb16-8"></a>    if (i &gt; 0)</span>
-<span id="cb16-9"><a href="#cb16-9"></a>      throw &quot;positive&quot;;</span>
-<span id="cb16-10"><a href="#cb16-10"></a>  }</span></code></pre></div>
-</div>
-<p>— <em>end example</em> ]</p>
-</blockquote>
-<p>Change all uses of <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> as an attribute in <span>17 <a href="https://wg21.link/language.support">[language.support]</a></span> to be trailing <code class="sourceCode cpp">noreturn</code> instead. Those uses are:</p>
-<blockquote>
-<ul>
-<li><code class="sourceCode cpp">abort</code>, <code class="sourceCode cpp">exit</code>, <code class="sourceCode cpp">_Exit</code>, and <code class="sourceCode cpp">quick_exit</code> in <span>17.2.2 <a href="https://wg21.link/cstdlib.syn">[cstdlib.syn]</a></span></li>
-<li><code class="sourceCode cpp">abort</code>, <code class="sourceCode cpp">exit</code>, <code class="sourceCode cpp">_Exit</code>, and <code class="sourceCode cpp">quick_exit</code> in <span>17.5 <a href="https://wg21.link/support.start.term">[support.start.term]</a></span></li>
-<li><code class="sourceCode cpp">terminate</code>, <code class="sourceCode cpp">rethrow_exception</code>, and <code class="sourceCode cpp">throw_with_nested</code> in <span>17.9.1 <a href="https://wg21.link/exception.syn">[exception.syn]</a></span></li>
-<li><code class="sourceCode cpp">terminate</code> in <span>17.9.4.4 <a href="https://wg21.link/terminate">[terminate]</a></span></li>
-<li><code class="sourceCode cpp">rethrow_exception</code> in <span>17.9.6 <a href="https://wg21.link/propagation">[propagation]</a></span></li>
-<li><code class="sourceCode cpp">nested_exception<span class="op">::</span>rethrow_nested</code> and <code class="sourceCode cpp">throw_with_nested</code> in <span>17.9.7 <a href="https://wg21.link/except.nested">[except.nested]</a></span></li>
-<li><code class="sourceCode cpp">longjmp</code> in <span>17.13.2 <a href="https://wg21.link/csetjmp.syn">[csetjmp.syn]</a></span></li>
-</ul>
-</blockquote>
-<h2 data-number="4.1" id="feature-test-macro" data-number="4.1"><span class="header-section-number">4.1</span> Feature test macro<a href="#feature-test-macro" class="self-link"></a></h2>
-<p>This feature requires the macro <code class="sourceCode cpp">__cpp_noreturn</code>.</p>
+<h2 data-number="4.1" id="plan-b" data-number="4.1"><span class="header-section-number">4.1</span> Plan B<a href="#plan-b" class="self-link"></a></h2>
+<p>If WG21 dislikes giving semantic meaning to <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> in this way, then the secondary proposal would be to introduce C’s <code class="sourceCode cpp">_Noreturn</code> function specifier, preserving compatibility in C’s direction instead of C++’s. I think this is strictly worse (C isn’t adding attributes out of thin air), but nevertheless still better than having to annotate every escaping expression.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-Attributes">
 <p>[Attributes] EWG. 2017. EWG discussion of P0840R0. <br />
 <a href="http://wiki.edg.com/bin/view/Wg21albuquerque/P0840R0">http://wiki.edg.com/bin/view/Wg21albuquerque/P0840R0</a></p>
+</div>
+<div id="ref-C.N1478">
+<p>[C.N1478] David Svoboda. 2010. Supporting the “noreturn” property in C1x. <br />
+<a href="http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1478.htm">http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1478.htm</a></p>
+</div>
+<div id="ref-C.N2410">
+<p>[C.N2410] Aaron Ballman. 2019. The noreturn attribute. <br />
+<a href="http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2410.pdf">http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2410.pdf</a></p>
 </div>
 <div id="ref-P0840R0">
 <p>[P0840R0] Richard Smith. 2017. Lamguage support for empty objects. <br />

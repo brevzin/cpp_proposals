@@ -23,7 +23,7 @@ all of the cases. But not every case actually contributes to the type:
 int f(int arg) {
   return inspect (i) {
     0: 42;
-    __: throw bad_argument();
+    _: throw bad_argument();
   };
 }
 ```
@@ -80,7 +80,7 @@ valueless, we cannot do the same for `[[noreturn]]` functions:
 int maybe_terminate(int arg) {
   return inspect (i) {
     0: 42;
-    __: std::terminate();
+    _: std::terminate();
   };
 }
 ```
@@ -107,8 +107,8 @@ the problem of how to make it work must be resolved... somehow.
 # Presentation of Alternatives
 
 This paper goes through four mechanisms for how we could get this behavior to
-work. It will first introduce the four mechanisms, and then provide a compare
-and contrast for them.
+work. It will first introduce the four mechanisms, and then compare
+and contrast them.
 
 ## Annotate escaping blocks
 
@@ -119,7 +119,7 @@ a block which marked the block as `noreturn`:
 int maybe_terminate(int arg) {
   return inspect (i) {
     0: 42;
-    __: !{ std::terminate(); }
+    _: !{ std::terminate(); }
   };
 }
 ```
@@ -148,7 +148,8 @@ C and C++ have the type `void`, but despite the name, it's not an entirely
 uninhabited type. You can't have an object of type `void` (yet?), but functions
 which return `void` do, in fact, return. We could introduce a new type that
 actually has zero possible values, which would indicate that a function can
-never return. For the sake of discussion, let's call this type `std::never`. 
+never return. For the sake of discussion, let's call this type `true void`. 
+Actually, that's a bit much. Let's call it `std::never`.
 
 We could then change the declaration of functions like `std::abort()`:
 
@@ -166,7 +167,7 @@ works:
 int maybe_terminate(int arg) {
   return inspect (i) {
     0: 42;
-    __: std::terminate(); // ok, returns std::never, so never returns
+    _: std::terminate(); // ok, returns std::never, so never returns
   };
 }
 ```
@@ -234,7 +235,8 @@ very small (the standard library has 9: `std::abort`, `std::exit`, `std::_Exit`,
 and we already have to annotate these functions. It's hard to count how many
 uses of this attribute exist in the wild since it so frequently shows up being
 a macro, but I think it's safe to say that the number of invocations of
-escaping functions far exceeds the number of declared escaping functions.
+escaping functions far exceeds the number of declared escaping functions. By
+many orders of magnitude.
 
 Given that, and the fact that we need to make some kind of language change to
 make this work anyway, it seems like we should change the language to recognize
@@ -288,20 +290,66 @@ the same problem, seems like artificial and pointless language churn. The issue
 is that we are not allowing ourselves to use the existing solution to this
 problem. Maybe we should?
 
-Sure, such a direction would open the door to wanting to introduce other
-attributes that may want to have normative semantic impact, and we'd lose the
-ability to just reject all of those uniformly. But I think we should seriously
-consider this direction. It would mean that we would not have to make any
-changes to the standard library at all. Any user-defined `[[noreturn]]`
-functions that already exist would just seamlessly work without them having to
-make any changes. 
+## C Compatibility
 
-Note that `[[no_unique_address]]`, the attribute during whose discussion we
-adopted this guidance, already is somewhat fuzzy with this rule. The correctness
-of a program may well depend annotated members taking no space (e.g. if a type
-so annotated needs to be constructed in a fixed-length buffer). We more or less
-say this doesn't count, and there is certainly no such fuzziness with the other
-attributes like `[[likely]]`, `[[fallthrough]]`, or `[[deprecated]]`. 
+An important thing to consider is C compatibility. C _also_ has functions that
+do not return, and we should figure out how to treat those as escaping functions
+as well. C has a _different_ function annotation to indicate an escaping
+function, introduced in C11 by [@C.N1478]:
+
+```cpp
+_Noreturn void fatal(void); 
+
+void fatal() { 
+  /* ... */
+  exit(1); 
+}
+```
+
+Where the C functions `longjmp()`, `abort()`, `exit()`, `_Exit()`, and
+`quick_exit()` so annotated. C also provides a header which `#define`s
+`noreturn` to `_Noreturn`.
+
+On top of this, WG14 is pursuing the C++ `[[noreturn]]` attribute itself,
+via [@C.N2410].
+
+This suggests that pursuing a different context-sensitive keyword for `noreturn`
+would just introduce a _new_ incompatibility with C, that C is currently working
+to remedy. Unless the context-sensitive keyword we picked was, specifically,
+`_Noreturn`.
+
+## Interaction with the type system
+
+I want to be very clear that regardless of the direction taken for this paper,
+given:
+
+```cpp
+[[noreturn]] void f();
+void g();
+```
+
+the type of `f` is still `void()`, the same as the type of `g`. Though it turns
+out that clang _already_ models `__attribute((noreturn))` (but not `[[noreturn]]`)
+in the type system:
+
+```cpp
+template <typename T>
+constexpr bool is_noreturn(T ()) { return false; }
+template <typename T>
+constexpr bool is_noreturn(__attribute__((noreturn)) T ()) { return true; }
+
+int x();
+__attribute__((noreturn)) float y();
+[[noreturn]] double z();
+
+static_assert(not is_noreturn(x));
+static_assert(is_noreturn(y));
+static_assert(not is_noreturn(z));
+```
+
+But, again, not something I'm interesting in.
+
+# Proposal
 
 In my opinion, this:
 
@@ -317,7 +365,7 @@ should be enough to make:
 int maybe_terminate(int arg) {
   return inspect (i) {
     0: 42;
-    __: std::terminate();
+    _: std::terminate();
   };
 }
 ```
@@ -327,155 +375,48 @@ existing annotion of, functions like `terminate`. And I would not want to have
 to annotate every use of `terminate` in an `inspect`-expression, when the
 compiler should already know that `terminate` is an escaping function. 
 
-# Wording
+Sure, such a direction would open the door to wanting to introduce other
+attributes that may want to have normative semantic impact, and we'd lose the
+ability to just reject all of those uniformly. But I think we should seriously
+consider this direction. It would mean that we would not have to make any
+changes to the standard library at all. Any user-defined `[[noreturn]]`
+functions that already exist would just seamlessly work without them having to
+make any changes. 
 
-My preferred direction is to allow functions
-annotated with `[[noreturn]]` to be considered escaping functions, in the same
-way that `throw`, `break`, `return`, `continue`, `goto`, and `co_return` can
-be considered escaping statements. This requires no wording change at all, since
-the feature this change would be necessary for doesn't even exist yet.
+Note that `[[no_unique_address]]`, the attribute during whose discussion we
+adopted this guidance, already is somewhat fuzzy with this rule. The correctness
+of a program may well depend annotated members taking no space (e.g. if a type
+so annotated needs to be constructed in a fixed-length buffer). We more or less
+say this doesn't count, and there is certainly no such fuzziness with the other
+attributes like `[[likely]]`, `[[fallthrough]]`, or `[[deprecated]]`. 
 
-But just in case we want to go a different route, this paper does provide wording
-for my second preferred direction: a new, non-attribute version of `[[noreturn]]`.
+## Plan B
 
-Add `noreturn` to the identifiers with special meanings table in [lex.name]{.sref}/2.
+If WG21 dislikes giving semantic meaning to `[[noreturn]]` in this way, then
+the secondary proposal would be to introduce C's `_Noreturn` function specifier,
+preserving compatibility in C's direction instead of C++'s. I think this is
+strictly worse (C isn't adding attributes out of thin air), but nevertheless
+still better than having to annotate every escaping expression.
 
-Change [dcl.fct.def.general]{.sref}/1:
-
-::: bq
-[1]{.pnum} Function definitions have the form:
-
-```diff
-  @_function-definition_@:
--   @_attribute-specifier-seq_~opt~ _decl-specifier-seq_~opt~ _declarator_ [_virt-specifier-seq_~opt~]{.diffdel} _function-body_@
-+   @_attribute-specifier-seq_~opt~ _decl-specifier-seq_~opt~ _declarator_ [_trailing-specifier-seq_~opt~]{.diffins} _function-body_@
-    @_attribute-specifier-seq_~opt~ _decl-specifier-seq_~opt~ _declarator_ _requires-clause_ _function-body_@
-
-+ @_trailing-specifier-seq_@:
-+   @_trailing-specifier_@
-+   @_trailing-specifier-seq_ _trailing-specifier_@
-
-+ @_trailing-specifier_@:
-+   override
-+   final
-+   noreturn
-
-  @_function-body_@:
-    @_ctor-initializer_~opt~ _compound-statement_@
-    @_function-try-block_@
-    = default ;
-    = delete ;
-```
-
-Any informal reference to the body of a function should be interpreted as a reference to the non-terminal _function-body_.
-The optional _attribute-specifier-seq_ in a _function-definition_ appertains to the function.
-[A _virt-specifier-seq_ can be part of a _function-definition_ only if it is a _member-declaration_]{.rm}.
-
-[b]{.pnum} [A _trailing-specifier-seq_ shall contain at most one of each
-_trailing-specifier_. The _trailing-specifier_ s `override` and `final`
-shall appear only in the first declaration of a virtual member function ([class.virtual]).]{.addu}
-:::
-
-Change the grammar in [class.mem]{.sref}
-
-::: bq
-```diff
-  @_member-declarator_@:
--   @_declarator_ [_virt-specifier-seq_~opt~]{.diffdel} _pure-specifier_~opt~@
-+   @_declarator_ [_trailing-specifier-seq_~opt~]{.diffins} _pure-specifier_~opt~@
-    @_declarator_ _requires-clause_@
-    @_declarator_ _brace-or-equal-initializer_~opt~@
-    @_identifier_~opt~ _attribute-specifier-seq_~opt~ : _constant-expression_ _brace-or-equal-initializer_~opt~@
-
-- @_virt-specifier-seq_@:
--   @_virt-specifier_@
--   @_virt-specifier-seq_ _virt-specifier_@
-
-- @_virt-specifier_@:
--   override
--   final
-```
-:::
-
-Remove [class.mem]{.sref}/14:
-
-::: bq
-[A _virt-specifier-seq_ shall contain at most one of each _virt-specifier_.]{.rm}
-[A _virt-specifier-seq_ shall appear only in the first declaration of a virtual member function ([class.virtual]).]{.rm}
-:::
-
-Change [class.virtual]{.sref}/4:
-
-::: bq
-If a virtual function `f` in some class `B` is marked with the [_virt-specifier_]{.rm}
-[_trailing-specifier_]{.addu} `final` and in a class `D` derived from `B` a function `D​::​f` overrides `B​::​`f, the program is ill-formed.
-:::
-
-Change [class.virtual]{.sref}/5:
-
-::: bq
-If a virtual function is marked with the [_virt-specifier_]{.rm} [_trailing-specifier_]{.addu} `override` and does not override a member function of a base class, the program is ill-formed.
-:::
-
-Copy [dcl.attr.noreturn]{.sref} into [dcl.fct] somewhere, applying the following
-changes (presented as a diff for reviewer clarity):
-
-::: bq
-[1]{.pnum} The [_attribute-token_]{.rm} [_trailing-specifier_]{.addu}
-`noreturn` specifies that a function does not return.
-[It shall appear at most once in each _attribute-list_ and no _attribute-argument-clause_ shall be present.]{.rm}
-[The attribute may be applied to the _declarator-id_ in a function declaration.]{.rm}
-The first declaration of a function shall specify the `noreturn` [attribute]{.rm} [specifier]{.addu} if any declaration of that function specifies the
-[_trailing-specifier_]{.addu} `noreturn` [attribute]{.rm}.
-If a function is declared with the [_trailing-specifier_]{.addu} `noreturn` [attribute]{.rm} in one translation unit and the same function is declared without the [_trailing-specifier_]{.addu} `noreturn` [attribute]{.rm} in another translation unit, the program is ill-formed, no diagnostic required.
-
-[2]{.pnum} If a function `f` is called where `f` was previously declared with the
-[_trailing-specifier_]{.addu} `noreturn` [attribute]{.rm} and `f` eventually returns, the behavior is undefined.
-[ *Note*: The function may terminate by throwing an exception.
-— *end note*
- ]
-[ *Note*: Implementations should issue a warning if a function marked `noreturn` might return.
-— *end note*
- ]
-
-[3]{.pnum} [ *Example*:
-
-```diff
-- @[[[ noreturn ]]]{.diffdel}@ void f() {
-+ void f() @[noreturn]{.diffins}@ {
-    throw "error";                // OK
-  }
-
-- @[[[ noreturn ]]]{.diffdel}@ void q(int i) {  // behavior is undefined if called with an argument <= 0
-+ void q(int i) @[noreturn]{.diffins}@ {  // behavior is undefined if called with an argument <= 0
-    if (i > 0)
-      throw "positive";
-  }
-```
-— *end example*
- ]
-
-:::
-
-Change all uses of `[[noreturn]]` as an attribute in [language.support]{.sref}
-to be trailing `noreturn` instead. Those uses are:
-
-::: bq
-* `abort`, `exit`, `_Exit`, and `quick_exit` in [cstdlib.syn]{.sref}
-* `abort`, `exit`, `_Exit`, and `quick_exit` in [support.start.term]{.sref}
-* `terminate`, `rethrow_exception`, and `throw_with_nested` in [exception.syn]{.sref}
-* `terminate` in [terminate]{.sref}
-* `rethrow_exception` in [propagation]{.sref}
-* `nested_exception::rethrow_nested` and `throw_with_nested` in [except.nested]{.sref}
-* `longjmp` in [csetjmp.syn]{.sref}
-:::     
-
-## Feature test macro
-
-This feature requires the macro `__cpp_noreturn`.
 
 ---
 references:
+  - id: C.N1478
+    citation-label: C.N1478
+    title: "Supporting the 'noreturn' property in C1x"
+    author:
+        - family: David Svoboda
+    issued:
+        - year: 2010
+    URL: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1478.htm
+  - id: C.N2410
+    citation-label: C.N2410
+    title: "The noreturn attribute"
+    author:
+        - family: Aaron Ballman
+    issued:
+        - year: 2019
+    URL: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2410.pdf
   - id: Attributes
     citation-label: Attributes
     title: "EWG discussion of P0840R0"
