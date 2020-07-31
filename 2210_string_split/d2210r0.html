@@ -642,7 +642,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-9"><a href="#cb6-9"></a>        <span class="cf">return</span> <span class="op">{</span><span class="kw">this</span><span class="op">-&gt;</span>data<span class="op">()</span>, <span class="kw">this</span><span class="op">-&gt;</span>size<span class="op">()}</span>;</span>
 <span id="cb6-10"><a href="#cb6-10"></a>    <span class="op">}</span></span>
 <span id="cb6-11"><a href="#cb6-11"></a><span class="op">}</span>;</span></code></pre></div>
-<p>Although if we actually adopt <span class="citation" data-cites="P1391R4">[<span class="citeproc-not-found" data-reference-id="P1391R4"><strong>???</strong></span>]</span> this becomes less of an issue, since treating the <code class="sourceCode cpp">reference</code> as if it were <code class="sourceCode cpp">string_view</code> would just work.</p>
+<p>Although if we actually adopt <span class="citation" data-cites="P1391R4">[<a href="#ref-P1391R4" role="doc-biblioref">P1391R4</a>]</span> this becomes less of an issue, since treating the <code class="sourceCode cpp">reference</code> as if it were <code class="sourceCode cpp">string_view</code> would just work.</p>
 <h2 data-number="2.2" id="what-category-of-ranges-should-yield-this-kind-of-value-type" data-number="2.2"><span class="header-section-number">2.2</span> What category of ranges should yield this kind of value type?<a href="#what-category-of-ranges-should-yield-this-kind-of-value-type" class="self-link"></a></h2>
 <p>As mentioned earlier, there are many useful algorithms which don’t <em>require</em> contiguity, that nevertheless require something stronger than a forward range. Should splitting a random access range give you random access sub-ranges? Should splitting a bidirectional range give you bidirectional sub-ranges? The answer should be facially yes. The major selling point of Ranges is precisely this iterator category preservation to the extent that it is possible to preserve. It is unfortunate that <code class="sourceCode cpp">split</code> does not do so.</p>
 <p>As mentioned earlier, I pretty much only <code class="sourceCode cpp">split</code> strings, so I care about the contiguous case much more than I care about the bidirectional case. However, if we’re going to draw a line somewhere, I think the line that makes the most sense is actually between input range and forward range - let the input range be maximally laxy and have the forward case and better produce <code class="sourceCode cpp">subrange</code>s (in which case the previous section can be thought of to use <code class="sourceCode cpp">subrange</code>s as well rather than <code class="sourceCode cpp">span</code>s).</p>
@@ -799,6 +799,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-issue385">
 <p>[issue385] Casey Carter. 2016. <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of view operations. <br />
 <a href="https://github.com/ericniebler/range-v3/issues/385">https://github.com/ericniebler/range-v3/issues/385</a></p>
+</div>
+<div id="ref-P1391R4">
+<p>[P1391R4] Corentin Jabot. 2019. Range constructor for std::string_view. <br />
+<a href="https://wg21.link/p1391r4">https://wg21.link/p1391r4</a></p>
 </div>
 <div id="ref-revzin.split">
 <p>[revzin.split] Barry Revzin. 2020. Implementing a better views::split. <br />
