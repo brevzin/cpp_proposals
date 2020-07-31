@@ -22,6 +22,10 @@ We propose a new mechanism for specifying or deducing the value category of the 
 
 # Revision History # {#revision-history}
 
+## Changes since r4 ## {#changes-since-r4}
+
+Wording. Discussion about implicit vs explicit invocation and interaction with static functions.
+
 ## Changes since r3 ## {#changes-since-r3}
 
 The feedback from Belfast in EWG was "This looks good, come back with wording and implementation". This version adds wording, the implementation is in the works.
@@ -374,6 +378,32 @@ The behaviors of the two columns are exactly equivalent as proposed.
 
 The only change as far as candidates are concerned is that the proposal allows for deduction of the object parameter, which is new for the language.
 
+Since in some cases there are multiple ways to declare the same function, it
+would be ill-formed to declare two functions with the same parameters and the
+same qualifiers for the object parameter. This is:
+
+```cpp
+struct X {
+    void bar() &&;
+    void bar(this X&&); // error: same this parameter type
+    
+    static void f();
+    void f(this X const&); // error: two functions taking no parameters
+};
+```
+
+But as long as any of the qualifiers are different, it is fine:
+
+```cpp
+struct Y {
+    void bar() &;
+    void bar() const&;
+    void bar(this Y&&);
+};
+```
+
+The rule in question is 12.2 [over.load]/2.2, and is extended in the wording below.
+
 
 ### Type deduction ### {#type-deduction}
 
@@ -470,6 +500,60 @@ auto&& f5(this Self&& self) {
 }
 ```
 
+### The Shadowing Mitigation / Private Inheritance Problem
+
+The worst case for this proposal is the case where we do _not_ intend on deducing
+a derived object - we only mean to deduce the qualifiers - but that derived type
+inherits from us privately and shadows one of our members:
+
+```cpp
+class B {
+    int i;
+public:
+    template <typename Self>
+    auto&& get(this Self&& self) {
+        // see above: we need to mitigate against shadowing
+        return forward<Self>(self).B::i;
+    }
+};
+
+class D : private B {
+    double i;
+public:
+    using B::get;
+};
+
+D().get(); // error
+```
+
+In this example, `Self` deduces as `D` (not `B`), but our choice of shadowing
+mitigation will not work - we cannot actually access `B::i` from a `D` because
+that inheritance is private! 
+
+However, we don't have to rely on `D` to friend `B` to get this to work. There
+actually is a way to get this to work correctly and safely. C-style casts get
+a bad rap, but they are actually the solution here:
+
+```cpp
+class B {
+    int i;
+public:
+    template <typename Self>
+    auto&& get(this Self&& self) {
+        return ((like_t<Self, B>&&)self).i;
+    }
+};
+
+class D : private B {
+    double i;
+public:
+    using B::get;
+};
+
+D().get(); // error
+```
+
+No access checking for the win.
 
 ### Writing the function pointer types for such functions ### {#writing-function-pointer-types}
 
@@ -514,6 +598,7 @@ struct D : B { };
 ```
 
 Types are as follows:
+
 - Type of `&B::foo<B>` is `void(*)(B&&)`
 - Type of `&B::foo<B const&>` is `void(*)(B const&)`
 - Type of `&D::foo<B>` is `void(*)(B&&)`
@@ -1090,7 +1175,7 @@ auto fib = [] self (int n) {
 };
 
 // this proposal
-auto fib = [](this auto const& self, int n) {
+auto fib = [](this auto self, int n) {
     if (n < 2) return n;
     return self(n-1) + self(n-2);
 };
@@ -1103,6 +1188,7 @@ In San Diego, issues of implementability were raised. The proposal ends up being
 Combine this with the new style of mixins allowing us to automatically deduce the most derived object, and you get the following example &mdash; a simple recursive lambda that counts the number of leaves in a tree.
 
 ```c++
+struct Leaf { };
 struct Node;
 using Tree = variant<Leaf, Node*>;
 struct Node {
@@ -1397,6 +1483,8 @@ The authors strongly believe this feature is orthogonal. However, hoping that me
 
 # Proposed Wording # {#wording}
 
+## Overview
+
 The status quo here is that a member function has an _implicit object parameter_, always of reference type, which the _implied object argument_ is bound to. The obvious name for what this paper is proposing is, then, the _explicit object parameter_. The problem with these names is: well, what is an object parameter? A parameter that takes an object? Isn't that most parameters?
 
 Instead, the wording introduces the term _this parameter_, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were "selector parameter" or "instance parameter".
@@ -1429,6 +1517,53 @@ auto y = c.explicit_fun;   // error
 auto z = c.explicit_fun(); // ok
 ```
 
+## Implicit this access
+
+One question came up over the course of implementing this featuer which was whether or not there should be implicit this syntax for invoking an "explicit this" member function from an "implicit this" one. That is:
+
+```cpp
+struct D {
+    void explicit_fun(this D const&);
+    
+    void implicit_fun() const {
+        this->explicit_fun(); // obviously ok
+        explicit_fun();       // but what about this?
+    }
+};
+```
+
+This ends up being awkward in the presence of an "explicit this" function which takes a parameter of its own type:
+
+```cpp
+struct E {
+    void f(this E, E);
+    void g() {
+        f(E{});      // #1
+        E::f(E{});   // #2
+        f(E{}, E{}); // #3
+        
+        auto _f = f;
+        _f(E{}, E[}); // #4
+    }
+};
+E::f(E{}, E{}); // #5
+```
+
+Note that `#4` and `#5` are definitely valid. With an "implicit this", `#1` and `#2` would be valid but not `#3`. Without an "implicit this", the reverse would be true. Either way, this is weird. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
+
+```cpp
+struct F : std::optional<int>
+{
+    bool is_big() const {
+        // if this language feature required explicit call syntax, then this
+        // call would be valid if and only if the particular implementation of
+        // optional did _not_ use this feature. This is undesirable
+        return value() > 42;
+    }
+};
+```
+
+## Wording
 
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
