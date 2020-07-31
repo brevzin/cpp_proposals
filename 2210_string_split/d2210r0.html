@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2020-07-30" />
+  <title>Superior String Splitting</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Superior String Splitting</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>D2210R0</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2020-07-30</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Let’s say you have a string like <code class="sourceCode cpp"><span class="st">&quot;1.2.3.4&quot;</span></code> and you want it turn it into a range of integers. You might expect to be able to write:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="st">&quot;1.2.3.4&quot;</span>;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">auto</span> ints <span class="op">=</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    s <span class="op">|</span> views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>      <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span> v<span class="op">){</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>            <span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>            std<span class="op">::</span>from_chars<span class="op">(</span>v<span class="op">.</span>data<span class="op">()</span>, v<span class="op">.</span>size<span class="op">()</span>, <span class="op">&amp;</span>i<span class="op">)</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>            <span class="cf">return</span> i;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        <span class="op">})</span></span></code></pre></div>
+<p>But that doesn’t work. Nor does this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="st">&quot;1.2.3.4&quot;</span>;</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">auto</span> ints <span class="op">=</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    s <span class="op">|</span> views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>      <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span> v<span class="op">){</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>          <span class="cf">return</span> std<span class="op">::</span>stoi<span class="op">(</span>std<span class="op">::</span>string<span class="op">(</span>v<span class="op">.</span>begin<span class="op">()</span>, v<span class="op">.</span>end<span class="op">()))</span>;</span>
+<span id="cb2-7"><a href="#cb2-7"></a>        <span class="op">})</span>;</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="op">}</span></span></code></pre></div>
+<p>although for a different reason.</p>
+<p>The problem ultimately is that splitting a <code class="sourceCode cpp">string</code> using C++20’s <code class="sourceCode cpp">views<span class="op">::</span>split</code> gives you a range that is <em>only</em> a forward range. Even though the source range is contiguous! And that forward range isn’t a common range either. As a result, can’t use <code class="sourceCode cpp">from_chars</code> (it needs a pointer) and can’t construct a <code class="sourceCode cpp">std<span class="op">::</span>string</code> (its range constructor takes an iterator pair, not iterator/sentinel).</p>
+<p>The reason it’s like this is that <code class="sourceCode cpp">views<span class="op">::</span>split</code> is maximally lazy. It kind of needs to be in order to support splitting an input range. But the intent of laziness is that you can build more eager algorithms on top of them. But with this particular one, that’s actually… still kind of hard. Building a less-lazy- but-still-lazy split on top of <code class="sourceCode cpp">views<span class="op">::</span>split</code> can’t really work. Consider:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a>std<span class="op">::</span>string input <span class="op">=</span> <span class="st">&quot;1.2.3.4&quot;</span>;</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">auto</span> parts <span class="op">=</span> input <span class="op">|</span> views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">auto</span> f <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>parts<span class="op">)</span>;</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">auto</span> l <span class="op">=</span> ranges<span class="op">::</span>end<span class="op">(</span>parts<span class="op">)</span>;</span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="kw">auto</span> n <span class="op">=</span> std<span class="op">::</span>next<span class="op">(</span>f<span class="op">)</span>;</span></code></pre></div>
+<p>Let’s say we actually had a hypothetical <code class="sourceCode cpp">f<span class="op">.</span>base<span class="op">()</span></code> (<code class="sourceCode cpp">split_view</code>’s iterators do not provide this at the moment). That would point to the <code class="sourceCode cpp"><span class="dv">1</span></code>, while the same hypothetical <code class="sourceCode cpp">n<span class="op">.</span>base<span class="op">()</span></code> would point to the <code class="sourceCode cpp"><span class="dv">2</span></code>. That’s all well and good, but that means that <code class="sourceCode cpp">subrange<span class="op">(</span>f<span class="op">.</span>base<span class="op">()</span>, n<span class="op">.</span>base<span class="op">())</span></code> would be the range <code class="sourceCode cpp"><span class="st">&quot;1.&quot;</span></code>. That’s too long. We’d need to back up. But that, in of itself, only works if we have a bidirectional range - so can’t even have a range of subranges for splitting a forward range. But even then, what if the pattern weren’t just a single char? The iterator would need to keep track of the beginning of the previous delimiter? I’m not sure how that would work at all.</p>
+<p>In any case, the problem here is that two points work against us:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">split</code> is overwhelmingly likely to be used on, specifically, a contiguous range of characters.</li>
+<li><code class="sourceCode cpp">split</code>ting a <code class="sourceCode cpp">string</code> is a common operation to want to do.</li>
+</ol>
+<p>While I’ve <code class="sourceCode cpp">transform</code>ed and <code class="sourceCode cpp">filter</code>ed all sorts of other kinds of ranges, and have appreciated the work that went into making them as flexible as they are, I’ve really never wanted to split anything other than a <code class="sourceCode cpp">string</code> (or a <code class="sourceCode cpp">string_view</code> or other equivalent types). But for the most common use case of a fairly common operation, the <code class="sourceCode cpp">views<span class="op">::</span>split</code> that we have ends up falling short because of what it gives us: a forward range. Pretty much every interesting string algorithm requires more than that:</p>
+<ul>
+<li>The aforementioned <code class="sourceCode cpp">std<span class="op">::</span>from_chars</code> requires a contiguous range (really, specifically, a <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code> and a length)</li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>regex</code> and <code class="sourceCode cpp">boost<span class="op">::</span>regex</code> both require a bidirectional range. CTRE requires a random access range.</li>
+<li>Many text and unicode algorithms require a bidirectional range.</li>
+</ul>
+<p>It would be great if <code class="sourceCode cpp">views<span class="op">::</span>split</code> could work in such a way that the result was maximally usable - which in this case means that splitting a contiguous range should provide contiguous sub-ranges.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="design" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Design<a href="#design" class="self-link"></a></h1>
+<p>I wrote a blog on this topic <span class="citation" data-cites="revzin.split">[<a href="#ref-revzin.split" role="doc-biblioref">revzin.split</a>]</span>, which implements a version of <code class="sourceCode cpp">split_view</code> that operates on contiguous ranges (and naughtily partially specializes <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>split_view</code>) such that the following work:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">auto</span> ip <span class="op">=</span> <span class="st">&quot;127.0.0.1&quot;</span><span class="bu">s</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> parts <span class="op">=</span> ip <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">auto</span> as_vec <span class="op">=</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;(</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    parts<span class="op">.</span>begin<span class="op">()</span>, parts<span class="op">.</span>end<span class="op">())</span>;</span></code></pre></div>
+<p>as well as:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">struct</span> zstring_sentinel <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>        <span class="cf">return</span> <span class="op">*</span>p <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="op">}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="op">}</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="kw">struct</span> zstring <span class="op">:</span> view_interface<span class="op">&lt;</span>zstring<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> p <span class="op">=</span> <span class="kw">nullptr</span>;</span>
+<span id="cb5-9"><a href="#cb5-9"></a>    zstring<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a>    zstring<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="op">:</span> p<span class="op">(</span>p<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a>    <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> p; <span class="op">}</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> zstring_sentinel<span class="op">{}</span>; <span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="op">}</span>;</span>
+<span id="cb5-14"><a href="#cb5-14"></a></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> words <span class="op">=</span> <span class="st">&quot;A quick brown fox&quot;</span>;</span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>string_view sv <span class="op">:</span> zstring<span class="op">{</span>words<span class="op">}</span> <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39; &#39;</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> sv <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="op">}</span></span></code></pre></div>
+<p>There are three big questions to be resolved here:</p>
+<h2 data-number="2.1" id="what-should-the-reference-type-of-this-be" data-number="2.1"><span class="header-section-number">2.1</span> What should the reference type of this be?<a href="#what-should-the-reference-type-of-this-be" class="self-link"></a></h2>
+<p>At a first go, given a contiguous range <code class="sourceCode cpp">V</code>, we could have a <code class="sourceCode cpp">reference</code> type of <code class="sourceCode cpp">span<span class="op">&lt;</span>remove_reference_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;&gt;</span></code>. That is, splitting a <code class="sourceCode cpp">string <span class="kw">const</span><span class="op">&amp;</span></code> would yield <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">&gt;</span></code>s, while splitting a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would yield <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>s. This would work great.</p>
+<p>To make the above work, we could additionally favor the <code class="sourceCode cpp"><span class="dt">char</span></code> case. Since, again, splitting <code class="sourceCode cpp">string</code>s is the overwhemlingly common case. So we could do something like:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">using</span> underlying <span class="op">=</span> remove_reference_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">struct</span> reference <span class="op">:</span> span<span class="op">&lt;</span>underlying<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="kw">using</span> span<span class="op">&lt;</span>underlying<span class="op">&gt;::</span>span;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    </span>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="kw">operator</span> string_view<span class="op">()</span> <span class="kw">const</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>        <span class="kw">requires</span> same_as<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>    <span class="op">{</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>        <span class="cf">return</span> <span class="op">{</span><span class="kw">this</span><span class="op">-&gt;</span>data<span class="op">()</span>, <span class="kw">this</span><span class="op">-&gt;</span>size<span class="op">()}</span>;</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="op">}</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Although if we actually adopt <span class="citation" data-cites="P1391R4">[<span class="citeproc-not-found" data-reference-id="P1391R4"><strong>???</strong></span>]</span> this becomes less of an issue, since treating the <code class="sourceCode cpp">reference</code> as if it were <code class="sourceCode cpp">string_view</code> would just work.</p>
+<h2 data-number="2.2" id="what-category-of-ranges-should-yield-this-kind-of-value-type" data-number="2.2"><span class="header-section-number">2.2</span> What category of ranges should yield this kind of value type?<a href="#what-category-of-ranges-should-yield-this-kind-of-value-type" class="self-link"></a></h2>
+<p>As mentioned earlier, there are many useful algorithms which don’t <em>require</em> contiguity, that nevertheless require something stronger than a forward range. Should splitting a random access range give you random access sub-ranges? Should splitting a bidirectional range give you bidirectional sub-ranges? The answer should be facially yes. The major selling point of Ranges is precisely this iterator category preservation to the extent that it is possible to preserve. It is unfortunate that <code class="sourceCode cpp">split</code> does not do so.</p>
+<p>As mentioned earlier, I pretty much only <code class="sourceCode cpp">split</code> strings, so I care about the contiguous case much more than I care about the bidirectional case. However, if we’re going to draw a line somewhere, I think the line that makes the most sense is actually between input range and forward range - let the input range be maximally laxy and have the forward case and better produce <code class="sourceCode cpp">subrange</code>s (in which case the previous section can be thought of to use <code class="sourceCode cpp">subrange</code>s as well rather than <code class="sourceCode cpp">span</code>s).</p>
+<h2 data-number="2.3" id="how-would-const-iteration-work" data-number="2.3"><span class="header-section-number">2.3</span> How would <code class="sourceCode cpp"><span class="kw">const</span></code> iteration work?<a href="#how-would-const-iteration-work" class="self-link"></a></h2>
+<p>However, the big issue for moving forward with <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>split_view</code> is how to square some constraints:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">begin<span class="op">()</span></code> must be amortized constant time to model <code class="sourceCode cpp">range</code></li>
+<li>We can’t modify things in <code class="sourceCode cpp"><span class="kw">const</span></code> member functions in the standard library</li>
+<li>The existing <code class="sourceCode cpp">split_view</code> is <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable.</li>
+</ol>
+<p>So how do we get the first piece? What I did as part of my implementation was to not allow <code class="sourceCode cpp"><span class="kw">const</span></code>-iteration. <code class="sourceCode cpp">split_view</code> just has an <code class="sourceCode cpp">optional<span class="op">&lt;</span>iterator<span class="op">&gt;</span></code> member which is populated the first time you call <code class="sourceCode cpp">begin</code> and then is just returned thereafter. This is similar to other views that need to do arbitrary work to yield the first element (canonically, <code class="sourceCode cpp">filter_view</code>). See also <span class="citation" data-cites="issue385">[<a href="#ref-issue385" role="doc-biblioref">issue385</a>]</span>. This, in a vacuum, is fairly straightforward. But, as I noted, the <em>existing</em> <code class="sourceCode cpp">split_view</code> <em>is</em> <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable - because it’s lazy! It doesn’t yield <code class="sourceCode cpp">subrange</code>s, it yields a lazy range. So it doesn’t actually need to do work in <code class="sourceCode cpp">begin<span class="op">()</span></code> - this is a non-issue.</p>
+<p>This is the hardest question - since any kind of implementation that eagerly produces <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">&gt;</span></code>s for splitting a <code class="sourceCode cpp">string <span class="kw">const</span></code> necessarily has to do work to get that first <code class="sourceCode cpp">span</code> and that ends up being a clash with the existing design.</p>
+<p>The question is - how much code currently exists that iterates over, specifically, a <code class="sourceCode cpp"><span class="kw">const</span> split_view</code> that is splitting a contiguous range?</p>
+<p>Personally, I think the trade-off is hugely in favor of making this change - it makes <code class="sourceCode cpp">split</code> substantially more useful. But it is worth considering.</p>
+<h2 data-number="2.4" id="implementation" data-number="2.4"><span class="header-section-number">2.4</span> Implementation<a href="#implementation" class="self-link"></a></h2>
+<p>The implementation can be found in action here <span class="citation" data-cites="revzin.split.impl">[<a href="#ref-revzin.split.impl" role="doc-biblioref">revzin.split.impl</a>]</span>, but reproduces for clarity:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>ranges;</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">template</span> <span class="op">&lt;</span>contiguous_range V, forward_range Pattern<span class="op">&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    std<span class="op">::</span>indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6"></a>                               iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7"></a>                               equal_to<span class="op">&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="kw">class</span> contig_split_view</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>contig_split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="op">{</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>    contig_split_view<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    contig_split_view<span class="op">(</span>V base, Pattern pattern<span class="op">)</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>        <span class="op">:</span> base_<span class="op">(</span>base<span class="op">)</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a>        , pattern_<span class="op">(</span>pattern<span class="op">)</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a>    <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a></span>
+<span id="cb7-18"><a href="#cb7-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span>contiguous_range R<span class="op">&gt;</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a>        <span class="kw">requires</span> std<span class="op">::</span>constructible_from<span class="op">&lt;</span>V, views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a>            <span class="op">&amp;&amp;</span> std<span class="op">::</span>constructible_from<span class="op">&lt;</span>Pattern, single_view<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a>    contig_split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> elem<span class="op">)</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a>        <span class="op">:</span> base_<span class="op">(</span>std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)))</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a>        , pattern_<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>elem<span class="op">))</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a>    <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a></span>
+<span id="cb7-26"><a href="#cb7-26"></a>    <span class="kw">struct</span> sentinel;</span>
+<span id="cb7-27"><a href="#cb7-27"></a>    <span class="kw">struct</span> as_sentinel_t <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb7-28"><a href="#cb7-28"></a></span>
+<span id="cb7-29"><a href="#cb7-29"></a>    <span class="kw">class</span> iterator <span class="op">{</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a>    <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb7-31"><a href="#cb7-31"></a>        <span class="kw">using</span> underlying <span class="op">=</span> std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span></span>
+<span id="cb7-32"><a href="#cb7-32"></a>            range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span>;</span>
+<span id="cb7-33"><a href="#cb7-33"></a>        <span class="kw">friend</span> sentinel;</span>
+<span id="cb7-34"><a href="#cb7-34"></a></span>
+<span id="cb7-35"><a href="#cb7-35"></a>        contig_split_view<span class="op">*</span> parent <span class="op">=</span> <span class="kw">nullptr</span>;</span>
+<span id="cb7-36"><a href="#cb7-36"></a>        iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> cur <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;</span>
+<span id="cb7-37"><a href="#cb7-37"></a>        iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> next <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;</span>
+<span id="cb7-38"><a href="#cb7-38"></a></span>
+<span id="cb7-39"><a href="#cb7-39"></a>    <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb7-40"><a href="#cb7-40"></a>        iterator<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb7-41"><a href="#cb7-41"></a>        iterator<span class="op">(</span>contig_split_view<span class="op">*</span> p<span class="op">)</span></span>
+<span id="cb7-42"><a href="#cb7-42"></a>            <span class="op">:</span> parent<span class="op">(</span>p<span class="op">)</span></span>
+<span id="cb7-43"><a href="#cb7-43"></a>            , cur<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>p<span class="op">-&gt;</span>base_<span class="op">))</span></span>
+<span id="cb7-44"><a href="#cb7-44"></a>            , next<span class="op">(</span>lookup_next<span class="op">())</span></span>
+<span id="cb7-45"><a href="#cb7-45"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-46"><a href="#cb7-46"></a>        </span>
+<span id="cb7-47"><a href="#cb7-47"></a>        iterator<span class="op">(</span>as_sentinel_t, contig_split_view<span class="op">*</span> p<span class="op">)</span></span>
+<span id="cb7-48"><a href="#cb7-48"></a>            <span class="op">:</span> parent<span class="op">(</span>p<span class="op">)</span></span>
+<span id="cb7-49"><a href="#cb7-49"></a>            , cur<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>p<span class="op">-&gt;</span>base_<span class="op">))</span></span>
+<span id="cb7-50"><a href="#cb7-50"></a>            , next<span class="op">()</span></span>
+<span id="cb7-51"><a href="#cb7-51"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-52"><a href="#cb7-52"></a></span>
+<span id="cb7-53"><a href="#cb7-53"></a>        <span class="kw">using</span> iterator_category <span class="op">=</span> std<span class="op">::</span>forward_iterator_tag;</span>
+<span id="cb7-54"><a href="#cb7-54"></a></span>
+<span id="cb7-55"><a href="#cb7-55"></a>        <span class="kw">struct</span> reference <span class="op">:</span> std<span class="op">::</span>span<span class="op">&lt;</span>underlying<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb7-56"><a href="#cb7-56"></a>            <span class="kw">using</span> std<span class="op">::</span>span<span class="op">&lt;</span>underlying<span class="op">&gt;::</span>span;</span>
+<span id="cb7-57"><a href="#cb7-57"></a></span>
+<span id="cb7-58"><a href="#cb7-58"></a>            <span class="kw">operator</span> std<span class="op">::</span>string_view<span class="op">()</span> <span class="kw">const</span></span>
+<span id="cb7-59"><a href="#cb7-59"></a>                <span class="kw">requires</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span></span>
+<span id="cb7-60"><a href="#cb7-60"></a>            <span class="op">{</span></span>
+<span id="cb7-61"><a href="#cb7-61"></a>                <span class="cf">return</span> <span class="op">{</span><span class="kw">this</span><span class="op">-&gt;</span>data<span class="op">()</span>, <span class="kw">this</span><span class="op">-&gt;</span>size<span class="op">()}</span>;</span>
+<span id="cb7-62"><a href="#cb7-62"></a>            <span class="op">}</span></span>
+<span id="cb7-63"><a href="#cb7-63"></a>        <span class="op">}</span>;</span>
+<span id="cb7-64"><a href="#cb7-64"></a></span>
+<span id="cb7-65"><a href="#cb7-65"></a>        <span class="kw">using</span> value_type <span class="op">=</span> reference;</span>
+<span id="cb7-66"><a href="#cb7-66"></a>        <span class="kw">using</span> difference_type <span class="op">=</span> std<span class="op">::</span><span class="dt">ptrdiff_t</span>;</span>
+<span id="cb7-67"><a href="#cb7-67"></a></span>
+<span id="cb7-68"><a href="#cb7-68"></a>        <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>iterator <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb7-69"><a href="#cb7-69"></a>            <span class="cf">return</span> cur <span class="op">==</span> rhs<span class="op">.</span>cur;</span>
+<span id="cb7-70"><a href="#cb7-70"></a>        <span class="op">}</span></span>
+<span id="cb7-71"><a href="#cb7-71"></a></span>
+<span id="cb7-72"><a href="#cb7-72"></a>        <span class="kw">auto</span> lookup_next<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb7-73"><a href="#cb7-73"></a>            <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>search<span class="op">(</span></span>
+<span id="cb7-74"><a href="#cb7-74"></a>                subrange<span class="op">(</span>cur, std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>parent<span class="op">-&gt;</span>base_<span class="op">))</span>,</span>
+<span id="cb7-75"><a href="#cb7-75"></a>                parent<span class="op">-&gt;</span>pattern_</span>
+<span id="cb7-76"><a href="#cb7-76"></a>                <span class="op">).</span>begin<span class="op">()</span>;</span>
+<span id="cb7-77"><a href="#cb7-77"></a>        <span class="op">}</span></span>
+<span id="cb7-78"><a href="#cb7-78"></a></span>
+<span id="cb7-79"><a href="#cb7-79"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> iterator<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb7-80"><a href="#cb7-80"></a>            cur <span class="op">=</span> next;</span>
+<span id="cb7-81"><a href="#cb7-81"></a>            <span class="cf">if</span> <span class="op">(</span>cur <span class="op">!=</span> std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>parent<span class="op">-&gt;</span>base_<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-82"><a href="#cb7-82"></a>                cur <span class="op">+=</span> distance<span class="op">(</span>parent<span class="op">-&gt;</span>pattern_<span class="op">)</span>;</span>
+<span id="cb7-83"><a href="#cb7-83"></a>                next <span class="op">=</span> lookup_next<span class="op">()</span>;</span>
+<span id="cb7-84"><a href="#cb7-84"></a>            <span class="op">}</span></span>
+<span id="cb7-85"><a href="#cb7-85"></a>            <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb7-86"><a href="#cb7-86"></a>        <span class="op">}</span></span>
+<span id="cb7-87"><a href="#cb7-87"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> iterator <span class="op">{</span></span>
+<span id="cb7-88"><a href="#cb7-88"></a>            <span class="kw">auto</span> tmp <span class="op">=</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb7-89"><a href="#cb7-89"></a>            <span class="op">++*</span><span class="kw">this</span>;</span>
+<span id="cb7-90"><a href="#cb7-90"></a>            <span class="cf">return</span> tmp;</span>
+<span id="cb7-91"><a href="#cb7-91"></a>        <span class="op">}</span></span>
+<span id="cb7-92"><a href="#cb7-92"></a></span>
+<span id="cb7-93"><a href="#cb7-93"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> reference <span class="op">{</span></span>
+<span id="cb7-94"><a href="#cb7-94"></a>            <span class="cf">return</span> <span class="op">{</span>cur, next<span class="op">}</span>;</span>
+<span id="cb7-95"><a href="#cb7-95"></a>        <span class="op">}</span></span>
+<span id="cb7-96"><a href="#cb7-96"></a>    <span class="op">}</span>;</span>
+<span id="cb7-97"><a href="#cb7-97"></a></span>
+<span id="cb7-98"><a href="#cb7-98"></a>    <span class="kw">struct</span> sentinel <span class="op">{</span></span>
+<span id="cb7-99"><a href="#cb7-99"></a>        <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>iterator <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb7-100"><a href="#cb7-100"></a>            <span class="cf">return</span> rhs<span class="op">.</span>cur <span class="op">==</span> sentinel;</span>
+<span id="cb7-101"><a href="#cb7-101"></a>        <span class="op">}</span></span>
+<span id="cb7-102"><a href="#cb7-102"></a></span>
+<span id="cb7-103"><a href="#cb7-103"></a>        sentinel_t<span class="op">&lt;</span>V<span class="op">&gt;</span> sentinel;</span>
+<span id="cb7-104"><a href="#cb7-104"></a>    <span class="op">}</span>;</span>
+<span id="cb7-105"><a href="#cb7-105"></a></span>
+<span id="cb7-106"><a href="#cb7-106"></a>    <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> iterator <span class="op">{</span></span>
+<span id="cb7-107"><a href="#cb7-107"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> cached_begin_<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-108"><a href="#cb7-108"></a>            cached_begin_<span class="op">.</span>emplace<span class="op">(</span><span class="kw">this</span><span class="op">)</span>;</span>
+<span id="cb7-109"><a href="#cb7-109"></a>        <span class="op">}</span></span>
+<span id="cb7-110"><a href="#cb7-110"></a>        <span class="cf">return</span> <span class="op">*</span>cached_begin_;</span>
+<span id="cb7-111"><a href="#cb7-111"></a>    <span class="op">}</span></span>
+<span id="cb7-112"><a href="#cb7-112"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> sentinel <span class="op">{</span></span>
+<span id="cb7-113"><a href="#cb7-113"></a>        <span class="cf">return</span> <span class="op">{</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>base_<span class="op">)}</span>;</span>
+<span id="cb7-114"><a href="#cb7-114"></a>    <span class="op">}</span></span>
+<span id="cb7-115"><a href="#cb7-115"></a></span>
+<span id="cb7-116"><a href="#cb7-116"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> iterator <span class="kw">requires</span> common_range<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb7-117"><a href="#cb7-117"></a>        <span class="cf">return</span> <span class="op">{</span>as_sentinel_t<span class="op">()</span>, <span class="kw">this</span><span class="op">}</span>;</span>
+<span id="cb7-118"><a href="#cb7-118"></a>    <span class="op">}</span></span>
+<span id="cb7-119"><a href="#cb7-119"></a></span>
+<span id="cb7-120"><a href="#cb7-120"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb7-121"><a href="#cb7-121"></a>    V base_ <span class="op">=</span> V<span class="op">()</span>;</span>
+<span id="cb7-122"><a href="#cb7-122"></a>    Pattern pattern_ <span class="op">=</span> Pattern<span class="op">()</span>;</span>
+<span id="cb7-123"><a href="#cb7-123"></a>    std<span class="op">::</span>optional<span class="op">&lt;</span>iterator<span class="op">&gt;</span> cached_begin_;</span>
+<span id="cb7-124"><a href="#cb7-124"></a><span class="op">}</span>;</span>
+<span id="cb7-125"><a href="#cb7-125"></a></span>
+<span id="cb7-126"><a href="#cb7-126"></a><span class="co">// It&#39;s okay if you&#39;re just writing a paper?</span></span>
+<span id="cb7-127"><a href="#cb7-127"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb7-128"><a href="#cb7-128"></a>    <span class="kw">template</span><span class="op">&lt;</span>contiguous_range V, forward_range Pattern<span class="op">&gt;</span></span>
+<span id="cb7-129"><a href="#cb7-129"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span></span>
+<span id="cb7-130"><a href="#cb7-130"></a>      <span class="op">&amp;&amp;</span> indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, equal_to<span class="op">&gt;</span></span>
+<span id="cb7-131"><a href="#cb7-131"></a>    <span class="kw">class</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;</span> <span class="op">:</span> <span class="kw">public</span> contig_split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;</span></span>
+<span id="cb7-132"><a href="#cb7-132"></a>    <span class="op">{</span></span>
+<span id="cb7-133"><a href="#cb7-133"></a>        <span class="kw">using</span> contig_split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span>contig_split_view;</span>
+<span id="cb7-134"><a href="#cb7-134"></a>    <span class="op">}</span>;</span>
+<span id="cb7-135"><a href="#cb7-135"></a><span class="op">}</span></span></code></pre></div>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-issue385">
+<p>[issue385] Casey Carter. 2016. <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of view operations. <br />
+<a href="https://github.com/ericniebler/range-v3/issues/385">https://github.com/ericniebler/range-v3/issues/385</a></p>
+</div>
+<div id="ref-revzin.split">
+<p>[revzin.split] Barry Revzin. 2020. Implementing a better views::split. <br />
+<a href="https://brevzin.github.io/c++/2020/07/06/split-view/">https://brevzin.github.io/c++/2020/07/06/split-view/</a></p>
+</div>
+<div id="ref-revzin.split.impl">
+<p>[revzin.split.impl] Barry Revzin. 2020. Implementation of <code class="sourceCode cpp">contig_split_view</code>. <br />
+<a href="https://godbolt.org/z/nyWW3F">https://godbolt.org/z/nyWW3F</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
