@@ -57,7 +57,7 @@ statements is:
 - `return`
 - `throw`
 
-`goto` is a little special, but the others have a lot like `throw`: they 
+`goto` is a little special, but the others behave a lot like `throw`: they 
 necessarily escape scope and have no possible value, so they can't meaningfully
 affect the type of an expression. The following could be a perfectly reasonable
 function (though this paper is not proposing it):
@@ -187,28 +187,21 @@ namespace std {
 }
 ```
 
-Just kidding. The syntax this paper is actually proposing is a context-sensitive
-keyword spelled `@[noreturn]{.kw}@` (similar to how `override` and `final` are context-
+Just kidding. The syntax this paper is actually proposing (for reasons that will become clearer shortly) is a context-sensitive
+keyword spelled `@[_Noreturn]{.kw}@` (similar to how `override` and `final` are context-
 sensitive):
 
 ```cpp
 namespace std {
-  void abort() @[noreturn]{.kw}@;
-  void terminate() @[noreturn]{.kw}@;
+  @[_Noreturn]{.kw}@ void abort();
+  @[_Noreturn]{.kw}@ void terminate();
 }
 ```
 
-This paper proposes trailing `@[noreturn]{.kw}@`, instead of leading `@[noreturn]{.kw}@` as would
-match the use of the attribute, to simplify the grammar: it fits in the same spot
-as the _`virt-specifier`_ s that it most similarly otherwise fits with. This
-means that libraries straddling multiple language versions may end up having
-to write either:
+This means that libraries straddling multiple language versions may end up having
+to write:
 ```cpp
-NORETURN_ATTR void abort() NORETURN_SPECIFIER
-```
-or
-```cpp
-NORETURN(void abort())
+NORETURN_SPECIFIER void abort();
 ```
 but because there are a fairly small number of such functions, I don't think
 it's a huge problem.
@@ -290,7 +283,24 @@ the same problem, seems like artificial and pointless language churn. The issue
 is that we are not allowing ourselves to use the existing solution to this
 problem. Maybe we should?
 
-## C Compatibility
+Sure, such a direction would open the door to wanting to introduce other
+attributes that may want to have normative semantic impact, and we'd lose the
+ability to just reject all of those uniformly. But I think we should seriously
+consider this direction. It would mean that we would not have to make any
+changes to the standard library at all. Any user-defined `[[noreturn]]`
+functions that already exist would just seamlessly work without them having to
+make any changes.
+
+Note that `[[no_unique_address]]`, the attribute during whose discussion we
+adopted this guidance, already is somewhat fuzzy with this rule. The correctness
+of a program may well depend annotated members taking no space (e.g. if a type
+so annotated needs to be constructed in a fixed-length buffer). We more or less
+say this doesn't count, and there is certainly no such fuzziness with the other
+attributes like `[[likely]]`, `[[fallthrough]]`, or `[[deprecated]]`.
+
+But there's one other important thing to consider...
+
+# C Compatibility
 
 An important thing to consider is C compatibility. C _also_ has functions that
 do not return, and we should figure out how to treat those as escaping functions
@@ -317,6 +327,45 @@ This suggests that pursuing a different context-sensitive keyword for `noreturn`
 would just introduce a _new_ incompatibility with C, that C is currently working
 to remedy. Unless the context-sensitive keyword we picked was, specifically,
 `_Noreturn`.
+
+But the C compatibility issue is actually even stronger than this. While in C++,
+we just have _guidance_ that attributes _should_ be ignorable, this is actually
+normative in C. From the latest C working draft, 6.7.11.1p3 [@C.N2478]:
+
+::: quote
+A strictly conforming program using a standard attribute remains strictly conforming in the absence of that attribute.
+:::
+
+with corresponding footnote:
+
+::: quote
+Standard attributes specified by this document can be parsed but ignored by an implementation without changing thesemantics of a correct program; the same is not true for attributes not specified by this document.
+:::
+
+That's pretty clear. If C++ adopts semantics for `[[noreturn]]`, that kills any attempt at C compatibility going forward. 
+
+# Proposal
+
+Given WG21's guidance that attributes should be ignorable, and WG14's normative
+rule of the same, it seems like the best course of action is to introduce a new,
+context-sensitive keyword to indicate that a function will not return. 
+
+For compatibility with C, which already has exactly this feature, we should just
+adopt the C feature - except while `@[_Noreturn]{.kw}@` is a keyword in C, we can just
+keep it context-sensitive, preserving the same meaning.
+
+This would be a novel direction in C++, since we typically don't use these kinds
+of names, but as mentioned before, the number of noreturn functions is small so
+it seems far more important to get a consistent feature than it is to have that
+feature have nice spelling.
+
+We would then go through the library and swap out the `[[noreturn]]` attribute
+for the `@[_Noreturn]{.kw}@` specifier:
+
+```diff
+- [[noreturn]] void terminate() noexcept;
++ _Noreturn void terminate() noexcept;
+```
 
 ## Interaction with the type system
 
@@ -349,55 +398,10 @@ static_assert(not is_noreturn(z));
 
 But, again, not something I'm interesting in.
 
-# Proposal
+# Acknowledgments
 
-In my opinion, this:
-
-```cpp
-namespace std {
-   [[noreturn]] void terminate();
-}
-```
-
-should be enough to make:
-
-```cpp
-int maybe_terminate(int arg) {
-  return inspect (i) {
-    0: 42;
-    _: std::terminate();
-  };
-}
-```
-
-work. I would not want to either add a new annotation to, or change the
-existing annotion of, functions like `terminate`. And I would not want to have
-to annotate every use of `terminate` in an `inspect`-expression, when the
-compiler should already know that `terminate` is an escaping function. 
-
-Sure, such a direction would open the door to wanting to introduce other
-attributes that may want to have normative semantic impact, and we'd lose the
-ability to just reject all of those uniformly. But I think we should seriously
-consider this direction. It would mean that we would not have to make any
-changes to the standard library at all. Any user-defined `[[noreturn]]`
-functions that already exist would just seamlessly work without them having to
-make any changes. 
-
-Note that `[[no_unique_address]]`, the attribute during whose discussion we
-adopted this guidance, already is somewhat fuzzy with this rule. The correctness
-of a program may well depend annotated members taking no space (e.g. if a type
-so annotated needs to be constructed in a fixed-length buffer). We more or less
-say this doesn't count, and there is certainly no such fuzziness with the other
-attributes like `[[likely]]`, `[[fallthrough]]`, or `[[deprecated]]`. 
-
-## Plan B
-
-If WG21 dislikes giving semantic meaning to `[[noreturn]]` in this way, then
-the secondary proposal would be to introduce C's `_Noreturn` function specifier,
-preserving compatibility in C's direction instead of C++'s. I think this is
-strictly worse (C isn't adding attributes out of thin air), but nevertheless
-still better than having to annotate every escaping expression.
-
+Thanks to Aaron Ballman for pointing me to the relevant C rules and discussing
+the issues with me.
 
 ---
 references:
@@ -417,6 +421,14 @@ references:
     issued:
         - year: 2019
     URL: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2410.pdf
+  - id: C.N2478
+    citation-label: C.N2478
+    title: "C Working Draft"
+    author:
+        - family: WG14
+    issued:
+        - year: 2020
+    URL: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2478.pdf
   - id: Attributes
     citation-label: Attributes
     title: "EWG discussion of P0840R0"
