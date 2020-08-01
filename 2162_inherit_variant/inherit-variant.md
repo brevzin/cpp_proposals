@@ -1,7 +1,7 @@
 ---
 title: "Inheriting from `std::variant`"
 subtitle: Resolving LWG3052
-document: P2162R0
+document: D2162R1
 date: today
 audience: LEWG
 author:
@@ -9,6 +9,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: false
 ---
+
+# Revision History
+
+Since [@P2162R0], added more information in the implementation experience section.
 
 # Introduction
 
@@ -156,6 +160,8 @@ using x = decltype(std::visit([](auto){},     // error for libc++
 
 The libstdc++ implementation used to support visiting inheriting variants in gcc 8, but then stopped supporting them in gcc 9 - only because its check for whether the variant can be never valueless only works for `std::variant` specializations directly [@libstdcpp]. I filed a bug report [@gcc.90943] to get them to start supporting again, but that bug report has been suspended pending the resolution of the library issue in question.
 
+Boost.Variant supports visiting inherited `variant`s. Boost.Variant2 will start supporting visiting inherited `variant`s in Boost 1.74. [@boost.variant2].
+
 # Wording
 
 Change [variant.visit]{.sref}:
@@ -259,4 +265,12 @@ references:
       issued:
         - year: 2019
       URL: "https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943"
+    - id: boost.variant2
+      citation-label: boost.variant2
+      title: "Support derived types in visit"
+      author:
+        - family: Peter Dimov
+      issued:
+        - year: 2020
+      URL: "https://github.com/boostorg/variant2/commit/772ef0d312868a1bdb371e8f336d5abd41cc61b2"
 ---
