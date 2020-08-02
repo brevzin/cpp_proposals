@@ -399,6 +399,20 @@ But, again, not something I'm interesting in.
 
 In [lex.key]{.sref}, add `@[_Noreturn]{.kw}@` as a keyword.
 
+Change [expr.prim.lambda]{.sref}/3:
+
+::: bq
+[3]{.pnum} In the _decl-specifier-seq_ of the _lambda-declarator_, each _decl-specifier_ shall be one of `mutable`, `constexpr`, [or]{.rm} `consteval` [, or `_Noreturn`]{.addu}.
+[_Note_: The trailing requires-clause is described in [dcl.decl].
+— _end note_]
+:::
+
+Add somewhere in [expr.prim.lambda.closure]{.sref}:
+
+::: addu
+[*]{.pnum} If the _lambda-expression_'s _decl-specifier-seq_ contains `_Noreturn` and if the function call operator or any given operator template specification is called and eventually returns, the behavior is undefined.
+::: 
+
 In [dcl.fct.spec]{.sref}, change the grammar to add `@[_Noreturn]{.kw}@` as a _function-specifier_:
 
 ```diff
