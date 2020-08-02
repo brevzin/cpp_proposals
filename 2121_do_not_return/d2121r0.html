@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-08-01" />
+  <meta name="dcterms.date" content="2020-08-02" />
   <title>`do not return or else`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-08-01</td>
+    <td>2020-08-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -631,14 +631,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-4"><a href="#cb7-4"></a>    _<span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="co">// ok, returns std::never, so never returns</span></span>
 <span id="cb7-5"><a href="#cb7-5"></a>  <span class="op">}</span>;</span>
 <span id="cb7-6"><a href="#cb7-6"></a><span class="op">}</span></span></code></pre></div>
-<h3 data-number="2.2.2" id="a-context-sensitive-keyword-indicating-escaping" data-number="2.2.2"><span class="header-section-number">2.2.2</span> A context-sensitive keyword indicating escaping<a href="#a-context-sensitive-keyword-indicating-escaping" class="self-link"></a></h3>
+<h3 data-number="2.2.2" id="a-keyword-indicating-escaping" data-number="2.2.2"><span class="header-section-number">2.2.2</span> A keyword indicating escaping<a href="#a-keyword-indicating-escaping" class="self-link"></a></h3>
 <p>We could take the <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> function attribute and elevate it into a first class language feature, so that future language evolution (e.g. pattern matching) may then take this into account in determining semantics.</p>
 <p>The syntax this paper proposes is:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
 <span id="cb8-2"><a href="#cb8-2"></a>  <span class="cf">do</span> <span class="kw">not</span> <span class="cf">return</span> <span class="kw">or</span> <span class="cf">else</span> <span class="dt">void</span> abort<span class="op">()</span>;</span>
 <span id="cb8-3"><a href="#cb8-3"></a>  <span class="cf">do</span> <span class="kw">not</span> <span class="cf">return</span> <span class="kw">or</span> <span class="cf">else</span> <span class="dt">void</span> terminate<span class="op">()</span>;</span>
 <span id="cb8-4"><a href="#cb8-4"></a><span class="op">}</span></span></code></pre></div>
-<p>Just kidding. The syntax this paper is actually proposing (for reasons that will become clearer shortly) is a context-sensitive keyword spelled <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> (similar to how <code class="sourceCode cpp"><span class="kw">override</span></code> and <code class="sourceCode cpp"><span class="kw">final</span></code> are context- sensitive):</p>
+<p>Just kidding. The syntax this paper is actually proposing (for reasons that will become clearer shortly) is the keyword spelled <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> (this is already a keyword in C so seems straightforwardly available):</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a>  <span class="kw">_Noreturn</span> <span class="dt">void</span> abort<span class="op">()</span>;</span>
 <span id="cb9-3"><a href="#cb9-3"></a>  <span class="kw">_Noreturn</span> <span class="dt">void</span> terminate<span class="op">()</span>;</span>
@@ -663,7 +663,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>All of these questions seem quite interesting to think about, but ultimately the benefit doesn’t seem to be there at all. It’s nice to only have to annotate the escaping functions - rather than all escaping uses of those functions - but this direction just has too many other questions.</p>
 <p>That reduces us to the last two choices:</p>
 <ol type="1">
-<li>Introduce a context-sensitive <code class="sourceCode cpp"><span class="kw">noreturn</span></code> as a trailing specifier, or</li>
+<li>Introduce <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> as a <em>function-specifier</em>, or</li>
 <li>Allow the language to impart semantics on <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>.</li>
 </ol>
 <p>The advantage of the former is it allows us to preserve the adopted guidance on the meaning of attributes from Albuquerque.</p>
@@ -681,7 +681,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-6"><a href="#cb11-6"></a><span class="op">}</span></span></code></pre></div>
 <p>Where the C functions <code class="sourceCode cpp">longjmp<span class="op">()</span></code>, <code class="sourceCode cpp">abort<span class="op">()</span></code>, <code class="sourceCode cpp">exit<span class="op">()</span></code>, <code class="sourceCode cpp">_Exit<span class="op">()</span></code>, and <code class="sourceCode cpp">quick_exit<span class="op">()</span></code> so annotated. C also provides a header which <code class="sourceCode cpp"><span class="pp">#define</span></code>s <code class="sourceCode cpp">noreturn</code> to <code class="sourceCode cpp">_Noreturn</code>.</p>
 <p>On top of this, WG14 is pursuing the C++ <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> attribute itself, via <span class="citation" data-cites="C.N2410">[<a href="#ref-C.N2410" role="doc-biblioref">C.N2410</a>]</span>.</p>
-<p>This suggests that pursuing a different context-sensitive keyword for <code class="sourceCode cpp">noreturn</code> would just introduce a <em>new</em> incompatibility with C, that C is currently working to remedy. Unless the context-sensitive keyword we picked was, specifically, <code class="sourceCode cpp">_Noreturn</code>.</p>
+<p>This suggests that pursuing a different keyword (possibly a context-sensitive one) for <code class="sourceCode cpp">noreturn</code> would just introduce a <em>new</em> incompatibility with C, that C is currently working to remedy. Unless the keyword we picked was, specifically, <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code>.</p>
 <p>But the C compatibility issue is actually even stronger than this. While in C++, we just have <em>guidance</em> that attributes <em>should</em> be ignorable, this is actually normative in C. From the latest C working draft, 6.7.11.1p3 <span class="citation" data-cites="C.N2478">[<a href="#ref-C.N2478" role="doc-biblioref">C.N2478</a>]</span>:</p>
 <div class="quote">
 <p>A strictly conforming program using a standard attribute remains strictly conforming in the absence of that attribute.</p>
@@ -692,8 +692,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p>That’s pretty clear. If C++ adopts semantics for <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>, that kills any attempt at C compatibility going forward.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>Given WG21’s guidance that attributes should be ignorable, and WG14’s normative rule of the same, it seems like the best course of action is to introduce a new, context-sensitive keyword to indicate that a function will not return.</p>
-<p>For compatibility with C, which already has exactly this feature, we should just adopt the C feature - except while <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> is a keyword in C, we can just keep it context-sensitive, preserving the same meaning.</p>
+<p>Given WG21’s guidance that attributes should be ignorable, and WG14’s normative rule of the same, it seems like the best course of action is to introduce a new, keyword to indicate that a function will not return.</p>
+<p>For compatibility with C, which already has exactly this feature, we should just adopt the C feature.</p>
 <p>This would be a novel direction in C++, since we typically don’t use these kinds of names, but as mentioned before, the number of noreturn functions is small so it seems far more important to get a consistent feature than it is to have that feature have nice spelling.</p>
 <p>We would then go through the library and swap out the <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> attribute for the <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> specifier:</p>
 <div>
@@ -702,7 +702,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <h2 data-number="5.1" id="interaction-with-the-type-system" data-number="5.1"><span class="header-section-number">5.1</span> Interaction with the type system<a href="#interaction-with-the-type-system" class="self-link"></a></h2>
 <p>I want to be very clear that regardless of the direction taken for this paper, given:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">_Noreturn</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
 <span id="cb13-2"><a href="#cb13-2"></a><span class="dt">void</span> g<span class="op">()</span>;</span></code></pre></div>
 <p>the type of <code class="sourceCode cpp">f</code> is still <code class="sourceCode cpp"><span class="dt">void</span><span class="op">()</span></code>, the same as the type of <code class="sourceCode cpp">g</code>. Though it turns out that clang <em>already</em> models <code class="sourceCode cpp">__attribute<span class="op">((</span>noreturn<span class="op">))</span></code> (but not <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>) in the type system:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
@@ -718,6 +718,43 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb14-11"><a href="#cb14-11"></a><span class="kw">static_assert</span><span class="op">(</span>is_noreturn<span class="op">(</span>y<span class="op">))</span>;</span>
 <span id="cb14-12"><a href="#cb14-12"></a><span class="kw">static_assert</span><span class="op">(</span><span class="kw">not</span> is_noreturn<span class="op">(</span>z<span class="op">))</span>;</span></code></pre></div>
 <p>But, again, not something I’m interesting in.</p>
+<h2 data-number="5.2" id="proposed-wording" data-number="5.2"><span class="header-section-number">5.2</span> Proposed Wording<a href="#proposed-wording" class="self-link"></a></h2>
+<p>In <span>5.11 <a href="https://wg21.link/lex.key">[lex.key]</a></span>, add <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> as a keyword.</p>
+<p>In <span>9.2.2 <a href="https://wg21.link/dcl.fct.spec">[dcl.fct.spec]</a></span>, change the grammar to add <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> as a <em>function-specifier</em>:</p>
+<div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a><em>function-specifier</em>:</span>
+<span id="cb15-2"><a href="#cb15-2"></a>    virtual</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="va">+   _Noreturn</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>    <em>explicit-specifier</em></span>
+<span id="cb15-5"><a href="#cb15-5"></a>    </span>
+<span id="cb15-6"><a href="#cb15-6"></a><em>explicit-specifier</em>:</span>
+<span id="cb15-7"><a href="#cb15-7"></a>    explicit ( <em>constant-expression</em> )</span>
+<span id="cb15-8"><a href="#cb15-8"></a>    explicit</span></code></pre></div>
+</div>
+<p>Add a new paragraph to the end of <span>9.2.2 <a href="https://wg21.link/dcl.fct.spec">[dcl.fct.spec]</a></span> (this is the same wording as in <span>9.12.9 <a href="https://wg21.link/dcl.attr.noreturn">[dcl.attr.noreturn]</a></span>):</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> If a function <code class="sourceCode cpp">f</code> is called where <code class="sourceCode cpp">f</code> was previously declared with the <code class="sourceCode cpp">_Noreturn</code> specifier and <code class="sourceCode cpp">f</code> eventually returns, the behavior is undefined. [<em>Note</em>: The function may terminate by throwing an exception. — <em>end note</em>]</p>
+</div>
+<p>Change all uses of <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> as an attribute in <span>17 <a href="https://wg21.link/support">[support]</a></span> to use the <code class="sourceCode cpp"><span class="kw">_Noreturn</span></code> specifier instead. Those uses are:</p>
+<blockquote>
+<ul>
+<li><code class="sourceCode cpp">abort</code>, <code class="sourceCode cpp">exit</code>, <code class="sourceCode cpp">_Exit</code>, and <code class="sourceCode cpp">quick_exit</code> in <span>17.2.2 <a href="https://wg21.link/cstdlib.syn">[cstdlib.syn]</a></span></li>
+<li><code class="sourceCode cpp">abort</code>, <code class="sourceCode cpp">exit</code>, <code class="sourceCode cpp">_Exit</code>, and <code class="sourceCode cpp">quick_exit</code> in <span>17.5 <a href="https://wg21.link/support.start.term">[support.start.term]</a></span></li>
+<li><code class="sourceCode cpp">terminate</code>, <code class="sourceCode cpp">rethrow_exception</code>, and <code class="sourceCode cpp">throw_with_nested</code> in <span>17.9.1 <a href="https://wg21.link/exception.syn">[exception.syn]</a></span></li>
+<li><code class="sourceCode cpp">terminate</code> in <span>17.9.4.4 <a href="https://wg21.link/terminate">[terminate]</a></span></li>
+<li><code class="sourceCode cpp">rethrow_exception</code> in <span>17.9.6 <a href="https://wg21.link/propagation">[propagation]</a></span></li>
+<li><code class="sourceCode cpp">nested_exception<span class="op">::</span>rethrow_nested</code> and <code class="sourceCode cpp">throw_with_nested</code> in <span>17.9.7 <a href="https://wg21.link/except.nested">[except.nested]</a></span> <code class="sourceCode cpp">longjmp</code> in <span>17.13.2 <a href="https://wg21.link/csetjmp.syn">[csetjmp.syn]</a></span></li>
+</ul>
+</blockquote>
+<h2 data-number="5.3" id="feature-test-macro" data-number="5.3"><span class="header-section-number">5.3</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Add the feature-test macro <code class="sourceCode cpp">__cpp_noreturn</code>. This will let users properly add non-returning semantics to their functions:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="pp">#if __cpp_noreturn</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="pp">#  define NORETURN </span>_Noreturn</span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="pp">#elif __cpp_has_attribute(noreturn)</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="pp">#  define NORETURN </span><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="pp">#else</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="pp">#  define NORETURN</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="pp">#endif</span></span></code></pre></div>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thanks to Aaron Ballman for pointing me to the relevant C rules and discussing the issues with me.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>

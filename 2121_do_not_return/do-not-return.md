@@ -172,7 +172,7 @@ int maybe_terminate(int arg) {
 }
 ```
 
-### A context-sensitive keyword indicating escaping
+### A keyword indicating escaping
 
 We could take the `[[noreturn]]` function attribute and elevate it into
 a first class language feature, so that future language evolution (e.g. pattern
@@ -187,9 +187,7 @@ namespace std {
 }
 ```
 
-Just kidding. The syntax this paper is actually proposing (for reasons that will become clearer shortly) is a context-sensitive
-keyword spelled `@[_Noreturn]{.kw}@` (similar to how `override` and `final` are context-
-sensitive):
+Just kidding. The syntax this paper is actually proposing (for reasons that will become clearer shortly) is the keyword spelled `@[_Noreturn]{.kw}@` (this is already a keyword in C so seems straightforwardly available):
 
 ```cpp
 namespace std {
@@ -271,7 +269,7 @@ this direction just has too many other questions.
 
 That reduces us to the last two choices:
 
-1. Introduce a context-sensitive `@[noreturn]{.kw}@` as a trailing specifier, or
+1. Introduce `@[_Noreturn]{.kw}@` as a _function-specifier_, or
 2. Allow the language to impart semantics on `[[noreturn]]`.
 
 The advantage of the former is it allows us to preserve the adopted guidance
@@ -323,10 +321,10 @@ Where the C functions `longjmp()`, `abort()`, `exit()`, `_Exit()`, and
 On top of this, WG14 is pursuing the C++ `[[noreturn]]` attribute itself,
 via [@C.N2410].
 
-This suggests that pursuing a different context-sensitive keyword for `noreturn`
+This suggests that pursuing a different keyword (possibly a context-sensitive one)
+for `noreturn`
 would just introduce a _new_ incompatibility with C, that C is currently working
-to remedy. Unless the context-sensitive keyword we picked was, specifically,
-`_Noreturn`.
+to remedy. Unless the keyword we picked was, specifically, `@[_Noreturn]{.kw}@`.
 
 But the C compatibility issue is actually even stronger than this. While in C++,
 we just have _guidance_ that attributes _should_ be ignorable, this is actually
@@ -348,11 +346,10 @@ That's pretty clear. If C++ adopts semantics for `[[noreturn]]`, that kills any 
 
 Given WG21's guidance that attributes should be ignorable, and WG14's normative
 rule of the same, it seems like the best course of action is to introduce a new,
-context-sensitive keyword to indicate that a function will not return. 
+keyword to indicate that a function will not return. 
 
 For compatibility with C, which already has exactly this feature, we should just
-adopt the C feature - except while `@[_Noreturn]{.kw}@` is a keyword in C, we can just
-keep it context-sensitive, preserving the same meaning.
+adopt the C feature.
 
 This would be a novel direction in C++, since we typically don't use these kinds
 of names, but as mentioned before, the number of noreturn functions is small so
@@ -373,7 +370,7 @@ I want to be very clear that regardless of the direction taken for this paper,
 given:
 
 ```cpp
-[[noreturn]] void f();
+@[_Noreturn]{.kw}@ void f();
 void g();
 ```
 
@@ -397,6 +394,59 @@ static_assert(not is_noreturn(z));
 ```
 
 But, again, not something I'm interesting in.
+
+## Proposed Wording
+
+In [lex.key]{.sref}, add `@[_Noreturn]{.kw}@` as a keyword.
+
+In [dcl.fct.spec]{.sref}, change the grammar to add `@[_Noreturn]{.kw}@` as a _function-specifier_:
+
+```diff
+@_function-specifier_@:
+    virtual
++   _Noreturn
+    @_explicit-specifier_@
+    
+@_explicit-specifier_@:
+    explicit ( @_constant-expression_@ )
+    explicit
+```
+
+Add a new paragraph to the end of [dcl.fct.spec]{.sref} (this is the same wording as in [dcl.attr.noreturn]{.sref}):
+
+::: addu
+[5]{.pnum} If a function `f` is called where `f` was previously declared with the `_Noreturn` specifier and `f` eventually returns, the behavior is undefined.
+[_Note_: The function may terminate by throwing an exception.
+— _end note_]
+:::
+
+Change all uses of `[[noreturn]]` as an attribute in [support]{.sref}
+to use the `@[_Noreturn]{.kw}@` specifier instead. Those uses are:
+
+::: bq
+* `abort`, `exit`, `_Exit`, and `quick_exit` in [cstdlib.syn]{.sref}
+* `abort`, `exit`, `_Exit`, and `quick_exit` in [support.start.term]{.sref}
+* `terminate`, `rethrow_exception`, and `throw_with_nested` in [exception.syn]{.sref}
+* `terminate` in [terminate]{.sref}
+* `rethrow_exception` in [propagation]{.sref}
+* `nested_exception::rethrow_nested` and `throw_with_nested` in [except.nested]{.sref}
+ `longjmp` in [csetjmp.syn]{.sref}
+:::     
+
+## Feature-test macro
+
+Add the feature-test macro `__cpp_noreturn`. This will let users properly
+add non-returning semantics to their functions:
+
+```cpp
+#if __cpp_noreturn
+#  define NORETURN _Noreturn
+#elif __cpp_has_attribute(noreturn)
+#  define NORETURN [[noreturn]]
+#else
+#  define NORETURN
+#endif
+```
 
 # Acknowledgments
 
