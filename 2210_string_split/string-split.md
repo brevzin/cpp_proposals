@@ -1,6 +1,6 @@
 ---
 title: "Superior String Splitting"
-document: D2210R0
+document: P2210R0
 date: today
 audience: LEWG
 author:
@@ -210,10 +210,30 @@ specifically, a `const split_view` that is splitting a contiguous range?
 Personally, I think the trade-off is hugely in favor of making this change -
 it makes `split` substantially more useful. But it is worth considering.
 
+# Proposal
+
+This paper proposes redesigning `split_view` in the following ways:
+
+1. Splitting a range that is forward-or-better should yield subranges that are 
+specializations of `subrange` (and adoping P1391 would resolve the 
+convertibility-to-`string_view` issue). Splitting an input range can preserve
+status quo behavior.
+2. `split_view` will no longer be `const`-iterable. Even though splitting an
+input range can preserve this functionality, I think consistency of the
+functionality is more important. 
+
+This could certainly break some C++20 code. But I would argue that `views::split`
+is so unergonomic for its most common intended use-case that the benefit of
+making it actually usable for that case far outweighs the cost of potentially
+breaking some code.
+
 ## Implementation
 
 The implementation can be found in action here [@revzin.split.impl], but
-reproduces for clarity:
+reproduced here for clarity. This implementation is strictly for contiguous
+ranges and produces a `reference` type that is a `span` which is conditionally
+convertible to `string_view`, which differs from the proposal but not in any
+way that's particularly interesting.
 
 ```cpp
 using namespace std::ranges;

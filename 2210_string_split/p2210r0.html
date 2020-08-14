@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-07-30" />
+  <meta name="dcterms.date" content="2020-08-13" />
   <title>Superior String Splitting</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D2210R0</td>
+    <td>P2210R0</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-07-30</td>
+    <td>2020-08-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -657,8 +657,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This is the hardest question - since any kind of implementation that eagerly produces <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">&gt;</span></code>s for splitting a <code class="sourceCode cpp">string <span class="kw">const</span></code> necessarily has to do work to get that first <code class="sourceCode cpp">span</code> and that ends up being a clash with the existing design.</p>
 <p>The question is - how much code currently exists that iterates over, specifically, a <code class="sourceCode cpp"><span class="kw">const</span> split_view</code> that is splitting a contiguous range?</p>
 <p>Personally, I think the trade-off is hugely in favor of making this change - it makes <code class="sourceCode cpp">split</code> substantially more useful. But it is worth considering.</p>
-<h2 data-number="2.4" id="implementation" data-number="2.4"><span class="header-section-number">2.4</span> Implementation<a href="#implementation" class="self-link"></a></h2>
-<p>The implementation can be found in action here <span class="citation" data-cites="revzin.split.impl">[<a href="#ref-revzin.split.impl" role="doc-biblioref">revzin.split.impl</a>]</span>, but reproduces for clarity:</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes redesigning <code class="sourceCode cpp">split_view</code> in the following ways:</p>
+<ol type="1">
+<li>Splitting a range that is forward-or-better should yield subranges that are specializations of <code class="sourceCode cpp">subrange</code> (and adoping P1391 would resolve the convertibility-to-<code class="sourceCode cpp">string_view</code> issue). Splitting an input range can preserve status quo behavior.</li>
+<li><code class="sourceCode cpp">split_view</code> will no longer be <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable. Even though splitting an input range can preserve this functionality, I think consistency of the functionality is more important.</li>
+</ol>
+<p>This could certainly break some C++20 code. But I would argue that <code class="sourceCode cpp">views<span class="op">::</span>split</code> is so unergonomic for its most common intended use-case that the benefit of making it actually usable for that case far outweighs the cost of potentially breaking some code.</p>
+<h2 data-number="3.1" id="implementation" data-number="3.1"><span class="header-section-number">3.1</span> Implementation<a href="#implementation" class="self-link"></a></h2>
+<p>The implementation can be found in action here <span class="citation" data-cites="revzin.split.impl">[<a href="#ref-revzin.split.impl" role="doc-biblioref">revzin.split.impl</a>]</span>, but reproduced here for clarity. This implementation is strictly for contiguous ranges and produces a <code class="sourceCode cpp">reference</code> type that is a <code class="sourceCode cpp">span</code> which is conditionally convertible to <code class="sourceCode cpp">string_view</code>, which differs from the proposal but not in any way that’s particularly interesting.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>ranges;</span>
 <span id="cb7-2"><a href="#cb7-2"></a></span>
 <span id="cb7-3"><a href="#cb7-3"></a><span class="kw">template</span> <span class="op">&lt;</span>contiguous_range V, forward_range Pattern<span class="op">&gt;</span></span>
@@ -794,7 +801,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-133"><a href="#cb7-133"></a>        <span class="kw">using</span> contig_split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span>contig_split_view;</span>
 <span id="cb7-134"><a href="#cb7-134"></a>    <span class="op">}</span>;</span>
 <span id="cb7-135"><a href="#cb7-135"></a><span class="op">}</span></span></code></pre></div>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-issue385">
 <p>[issue385] Casey Carter. 2016. <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of view operations. <br />
