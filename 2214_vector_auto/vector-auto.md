@@ -18,7 +18,7 @@ removed. A new abbreviated function syntax was eventually adopted as part of
 [@P1141R2]. But while the latter paper re-added support for an abbreviated
 syntax as part of variables and function templates, it missed one aspect of
 the original TS - in fact it didn't even mention it at all. And that was the 
-ability to use placeholders in template parameters. As in:
+ability to use placeholders in template arguments. As in:
 
 ```cpp
 std::vector<auto> v = f();
@@ -60,7 +60,7 @@ specializes<std::tuple> auto t = g();
 ```
 
 But while this works for this case, it's arguably more cumbersome and less clear
-to write, but also much more limited in functionality. It doesn't offer the
+to read, but also much more limited in functionality. It doesn't offer the
 ability to do something like... constrain your `tuple` on being all references:
 
 ```cpp
