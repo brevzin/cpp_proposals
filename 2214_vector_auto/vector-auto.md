@@ -177,8 +177,30 @@ requires (T t) { [](std::vector<auto> const&){}(t); } // not very direct
 ```
 
 It would be very useful to come up with a syntax such that `vector<auto>` could
-be checked more directly. At this moment, I do not have any ideas for what
-such a syntax might look like. 
+be checked more directly. Such a syntax could be useful to, for instance,
+in [@P0798R4]'s `and_then` we need to constrain the result of `F` to be a
+specialization of `optional`:
+
+```cpp
+template <typename F, typename U = std::invoke_result_t<F, T const&>>
+    requires ???
+auto and_then(F&&) const& -> U;
+```
+
+We want to say that `U` is some kind of `optional`. Which we could do with the
+`specializes` concept I mentioned earlier (`requires specializes<U, std::optional>`)
+but in the same way it'd be nice to avoid using that in variable declarations,
+it'd also be nice to avoid using that in function template constraints. 
+
+Perhaps in the same way that a _compound-requirement_ is spelled `{ e } -> C`
+we could introduce `(T -> C)`, such that above becomes
+
+```cpp
+template <typename F, typename U = std::invoke_result_t<F, T const&>>
+    requires (U -> std::optional<auto>)
+auto and_then(F&&) const& -> U;
+```
+
 
 # Wording
 
