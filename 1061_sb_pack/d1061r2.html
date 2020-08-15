@@ -926,10 +926,11 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <p>Add a new paragraph after <span>13.7.3 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span></p>
 <blockquote>
 <div class="addu">
-<p>A structured bindings pack is dependent if the type of its initializer is:</p>
+<p>A structured bindings pack is dependent if, letting <code class="sourceCode cpp">E</code> denote the type of its initializer:</p>
 <ul>
-<li>dependent ([temp.dep.type]), and</li>
-<li>it is neither a member of the current instantiation nor, in the context of a function template, a local class</li>
+<li><code class="sourceCode cpp">E</code> is dependent ([temp.dep.type]), and</li>
+<li><code class="sourceCode cpp">E</code> is not a member of the current instantiation, and</li>
+<li>either <code class="sourceCode cpp">E</code> is not a local class or <code class="sourceCode cpp">E</code> inherits from a type that is dependent.</li>
 </ul>
 <p>[ <em>Example:</em></p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1"></a>struct B { int i; };</span>
@@ -943,9 +944,13 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <span id="cb21-9"><a href="#cb21-9"></a>   auto [...b] = B{1};     // b is not dependent</span>
 <span id="cb21-10"><a href="#cb21-10"></a>   auto [...c] = C&lt;T&gt;{t};  // c is dependent</span>
 <span id="cb21-11"><a href="#cb21-11"></a>   </span>
-<span id="cb21-12"><a href="#cb21-12"></a>   struct D { int i; };</span>
-<span id="cb21-13"><a href="#cb21-13"></a>   auto [...d] = D{2};     // d is not dependent</span>
-<span id="cb21-14"><a href="#cb21-14"></a>}</span></code></pre></div>
+<span id="cb21-12"><a href="#cb21-12"></a>   struct D { T t; };</span>
+<span id="cb21-13"><a href="#cb21-13"></a>   auto [...d] = D{t};     // d is not dependent</span>
+<span id="cb21-14"><a href="#cb21-14"></a>   </span>
+<span id="cb21-15"><a href="#cb21-15"></a>   struct E : T {};</span>
+<span id="cb21-16"><a href="#cb21-16"></a>   auto [...e] = E{t};     // e is dependent</span>
+<span id="cb21-17"><a href="#cb21-17"></a>   </span>
+<span id="cb21-18"><a href="#cb21-18"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>

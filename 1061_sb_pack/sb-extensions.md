@@ -532,11 +532,12 @@ Add a new paragraph after [temp.variadic]{.sref}
 
 ::: bq
 ::: addu
-A structured bindings pack is dependent if the type of its initializer is:
+A structured bindings pack is dependent if, letting `E` denote the type of its
+initializer:
 
-- dependent ([temp.dep.type]), and
-- it is neither a member of the current instantiation nor, in the context of
-a function template, a local class
+- `E` is dependent ([temp.dep.type]), and
+- `E` is not a member of the current instantiation, and
+- either `E` is not a local class or `E` inherits from a type that is dependent.
 
 [ *Example:* 
 
@@ -552,8 +553,12 @@ void f(T t) {
    auto [...b] = B{1};     // b is not dependent
    auto [...c] = C<T>{t};  // c is dependent
    
-   struct D { int i; };
-   auto [...d] = D{2};     // d is not dependent
+   struct D { T t; };
+   auto [...d] = D{t};     // d is not dependent
+   
+   struct E : T {};
+   auto [...e] = E{t};     // e is dependent
+   
 }
 ```
 - *end example* ]
