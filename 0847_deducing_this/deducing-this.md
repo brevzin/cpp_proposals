@@ -1570,6 +1570,8 @@ Or, more generally, the implementation strategy of a particular type's member fu
 
 ## Wording
 
+### Wording in [expr]{.sref}
+
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
 ::: bq
@@ -1708,6 +1710,8 @@ The expression can be used only as the left-hand operand of a member function ca
 - [6.3.2]{.pnum} [If `E2` refers to a static member function]{.rm} [Otherwise]{.addu}, `E1.E2` is an lvalue.
 :::
 
+### Wording in [dcl.dcl]{.sref}
+
 In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
 
 ::: bq
@@ -1754,6 +1758,8 @@ void h(C c) {
 :::
 :::
 
+### Wording in [class]{.sref}
+
 Change [class.mem]{.sref}/4:
 
 ::: bq
@@ -1786,6 +1792,8 @@ A static member function shall not be `virtual`.
 There shall not be a static and a non-static member function with the same name and the same [parameter types]{.rm} [ordinary-parameter-type-list]{.addu} ([\[dcl.fct\], ]{.addu} [over.load]).
 A static member function shall not be declared `const`, `volatile`, or `const volatile`.
 :::
+
+### Wording in [over]{.sref}
 
 Change [over.load]{.sref}/2.2:
 
