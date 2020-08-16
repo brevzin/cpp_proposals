@@ -1570,12 +1570,17 @@ Or, more generally, the implementation strategy of a particular type's member fu
 
 ## Wording
 
+[This paper introduces many new terms that are defined in [dcl.dcl] - so even
+though the wording here is presented in standard layout order (we obviously want
+to ensure that `is_standard_layout<P0847>` is `true`), it may be helpful to
+refer to [those definitions](#dcl.dcl) when reviewing the wording]{.ednote}
+
 ### Wording in [expr]{.sref}
 
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
 ::: bq
-[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class `X` in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to [either]{.addu} a non-static non-type member [or an object member function]{.addu} of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
+[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class `X` in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to [either]{.addu} a non-static non-type member [or an object member function]{.addu} ([dcl.fct]) of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
 — *end note*
  ]
 This transformation does not apply in the template definition context ([temp.dep.type]).
@@ -1710,7 +1715,7 @@ The expression can be used only as the left-hand operand of a member function ca
 - [6.3.2]{.pnum} [If `E2` refers to a static member function]{.rm} [Otherwise]{.addu}, `E1.E2` is an lvalue.
 :::
 
-### Wording in [dcl.dcl]{.sref}
+### Wording in [dcl.dcl]{.sref} {#dcl.dcl}
 
 In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
 
@@ -1776,7 +1781,7 @@ Change [class.conv.fct]{.sref}/1:
 
 ::: bq
 
-[1]{.pnum} [A]{.rm} [An object]{.addu} member function of a class `X` having no [ordinary member]{.addu} parameters with a name of the form [...] specifies a conversion from `X` to the type specified by the _conversion-type-id_.
+[1]{.pnum} [A]{.rm} [An object]{.addu} member function of a class `X` having no [ordinary member]{.addu} parameters [([dcl.fct])]{.addu} with a name of the form [...] specifies a conversion from `X` to the type specified by the _conversion-type-id_.
 Such functions are called _conversion functions_.
 A _decl-specifier_ in the _decl-specifier-seq_ of a conversion function (if any) shall be neither a _defining-type-specifier_ nor `static`.
 The type of the conversion function ([dcl.fct]) is "function taking no parameter returning _conversion-type-id_".
@@ -1830,7 +1835,7 @@ class X {
 Change [over.match]{.sref}/1:
 
 ::: bq
-[1]{.pnum} The selection criteria for the best function are the number of arguments, how well the arguments match the parameter-type-list of the candidate function, how well (for non-static member functions) the object matches the implicit [object]{.rm} [this]{.addu} parameter, and certain other properties of the candidate function.
+[1]{.pnum} The selection criteria for the best function are the number of arguments, how well the arguments match the parameter-type-list of the candidate function, how well (for non-static member functions) the object matches the implicit [object]{.rm} [this]{.addu} parameter [([dcl.fct])]{.addu}, and certain other properties of the candidate function.
 :::
 
 Change [over.match.funcs]{.sref}/2-5:
