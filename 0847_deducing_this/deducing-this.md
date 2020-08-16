@@ -1519,7 +1519,7 @@ auto z = c.explicit_fun(); // ok
 
 ## Implicit this access
 
-One question came up over the course of implementing this featuer which was whether or not there should be implicit this syntax for invoking an "explicit this" member function from an "implicit this" one. That is:
+One question came up over the course of implementing this feature which was whether or not there should be implicit this syntax for invoking an "explicit this" member function from an "implicit this" one. That is:
 
 ```cpp
 struct D {
@@ -1546,7 +1546,10 @@ struct E {
         _f(E{}, E[}); // #4
     }
 };
-E::f(E{}, E{}); // #5
+
+void h() {
+    E::f(E{}, E{}); // #5
+}
 ```
 
 Note that `#4` and `#5` are definitely valid. With an "implicit this", `#1` and `#2` would be valid but not `#3`. Without an "implicit this", the reverse would be true. Either way, this is weird. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
@@ -1562,6 +1565,8 @@ struct F : std::optional<int>
     }
 };
 ```
+
+Or, more generally, the implementation strategy of a particular type's member function should not be relevant for users deriving from that type. So "implicit this" stays.
 
 ## Wording
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-07-30" />
+  <meta name="dcterms.date" content="2020-08-16" />
   <title>Deducing this</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-07-30</td>
+    <td>2020-08-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1794,7 +1794,7 @@ Proposed
 <span id="cb55-20"><a href="#cb55-20"></a><span class="kw">auto</span> y <span class="op">=</span> c<span class="op">.</span>explicit_fun;   <span class="co">// error</span></span>
 <span id="cb55-21"><a href="#cb55-21"></a><span class="kw">auto</span> z <span class="op">=</span> c<span class="op">.</span>explicit_fun<span class="op">()</span>; <span class="co">// ok</span></span></code></pre></div>
 <h2 data-number="7.2" id="implicit-this-access" data-number="7.2"><span class="header-section-number">7.2</span> Implicit this access<a href="#implicit-this-access" class="self-link"></a></h2>
-<p>One question came up over the course of implementing this featuer which was whether or not there should be implicit this syntax for invoking an “explicit this” member function from an “implicit this” one. That is:</p>
+<p>One question came up over the course of implementing this feature which was whether or not there should be implicit this syntax for invoking an “explicit this” member function from an “implicit this” one. That is:</p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1"></a><span class="kw">struct</span> D <span class="op">{</span></span>
 <span id="cb56-2"><a href="#cb56-2"></a>    <span class="dt">void</span> explicit_fun<span class="op">(</span><span class="kw">this</span> D <span class="kw">const</span><span class="op">&amp;)</span>;</span>
 <span id="cb56-3"><a href="#cb56-3"></a>    </span>
@@ -1815,7 +1815,10 @@ Proposed
 <span id="cb57-9"><a href="#cb57-9"></a>        _f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">[})</span>; <span class="co">// #4</span></span>
 <span id="cb57-10"><a href="#cb57-10"></a>    <span class="op">}</span></span>
 <span id="cb57-11"><a href="#cb57-11"></a><span class="op">}</span>;</span>
-<span id="cb57-12"><a href="#cb57-12"></a>E<span class="op">::</span>f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">{})</span>; <span class="co">// #5</span></span></code></pre></div>
+<span id="cb57-12"><a href="#cb57-12"></a></span>
+<span id="cb57-13"><a href="#cb57-13"></a><span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb57-14"><a href="#cb57-14"></a>    E<span class="op">::</span>f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">{})</span>; <span class="co">// #5</span></span>
+<span id="cb57-15"><a href="#cb57-15"></a><span class="op">}</span></span></code></pre></div>
 <p>Note that <code class="sourceCode cpp"><span class="pp">#4</span></code> and <code class="sourceCode cpp"><span class="pp">#5</span></code> are definitely valid. With an “implicit this”, <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> would be valid but not <code class="sourceCode cpp"><span class="pp">#3</span></code>. Without an “implicit this”, the reverse would be true. Either way, this is weird. But one of the major advantages of having the “implicit this” call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like <code class="sourceCode cpp">std<span class="op">::</span>optional</code> to be able to implement its member functions using this language feature if it wants to, without us having to know about it:</p>
 <div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1"></a><span class="kw">struct</span> F <span class="op">:</span> std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></span>
 <span id="cb58-2"><a href="#cb58-2"></a><span class="op">{</span></span>
@@ -1826,6 +1829,7 @@ Proposed
 <span id="cb58-7"><a href="#cb58-7"></a>        <span class="cf">return</span> value<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">42</span>;</span>
 <span id="cb58-8"><a href="#cb58-8"></a>    <span class="op">}</span></span>
 <span id="cb58-9"><a href="#cb58-9"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Or, more generally, the implementation strategy of a particular type’s member function should not be relevant for users deriving from that type. So “implicit this” stays.</p>
 <h2 data-number="7.3" id="wording-1" data-number="7.3"><span class="header-section-number">7.3</span> Wording<a href="#wording-1" class="self-link"></a></h2>
 <p>Move <span>11.4.2 <a href="https://wg21.link/class.mfct.non-static">[class.mfct.non-static]</a></span>/3 in front of <span>7.5.4 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>/2 (the highlighted diff is relative to the original paragraph):</p>
 <blockquote>
