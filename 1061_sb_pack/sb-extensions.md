@@ -537,7 +537,7 @@ initializer:
 
 - `E` is dependent ([temp.dep.type]), and
 - `E` is not a member of the current instantiation, and
-- either `E` is not a local class or `E` inherits from a type that is dependent.
+- either `E` is not a local class or `E` has a dependent base class.
 
 [ *Example:* 
 
