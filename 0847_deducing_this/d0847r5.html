@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-08-16" />
+  <meta name="dcterms.date" content="2020-08-25" />
   <title>Deducing this</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-08-16</td>
+    <td>2020-08-25</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1072,17 +1072,18 @@ Proposed
 <p>It is important to mention the pathological cases. First, what happens if <code class="sourceCode cpp">D</code> is incomplete but becomes valid later?</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">struct</span> D;</span>
 <span id="cb24-2"><a href="#cb24-2"></a><span class="kw">struct</span> B <span class="op">{</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a>    <span class="dt">void</span> foo<span class="op">(</span><span class="kw">this</span> D<span class="op">&amp;)</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a>    <span class="dt">void</span> foo<span class="op">(</span><span class="kw">this</span> D <span class="kw">const</span><span class="op">&amp;)</span>;</span>
 <span id="cb24-4"><a href="#cb24-4"></a><span class="op">}</span>;</span>
 <span id="cb24-5"><a href="#cb24-5"></a><span class="kw">struct</span> D <span class="op">:</span> B <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
-<p>Following the precedent of <span class="citation" data-cites="P0929R2">[<a href="#ref-P0929R2" role="doc-biblioref">P0929R2</a>]</span>, we think this should be fine, albeit strange. If <code class="sourceCode cpp">D</code> is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.</p>
+<p>Following the precedent of <span class="citation" data-cites="P0929R2">[<a href="#ref-P0929R2" role="doc-biblioref">P0929R2</a>]</span>, we think this should be fine, albeit strange. If <code class="sourceCode cpp">D</code> is incomplete, we simply postpone checking until the point where we actually need a complete type, as usual. At that point <code class="sourceCode cpp">D<span class="op">().</span>foo<span class="op">()</span></code> would be a valid expression. We see no reason to reject.</p>
 <p>For unrelated complete classes or non-classes:</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb25-2"><a href="#cb25-2"></a><span class="kw">struct</span> B <span class="op">{</span></span>
 <span id="cb25-3"><a href="#cb25-3"></a>    <span class="dt">void</span> foo<span class="op">(</span><span class="kw">this</span> A<span class="op">&amp;)</span>;</span>
 <span id="cb25-4"><a href="#cb25-4"></a>    <span class="dt">void</span> bar<span class="op">(</span><span class="kw">this</span> <span class="dt">int</span><span class="op">)</span>;</span>
 <span id="cb25-5"><a href="#cb25-5"></a><span class="op">}</span>;</span></code></pre></div>
-<p>The declaration can be immediately diagnosed as ill-formed.</p>
+<p>These are even more unlikely to be actually useful code. In this example, <code class="sourceCode cpp">B</code> is neither convertible to <code class="sourceCode cpp">A</code> nor <code class="sourceCode cpp"><span class="dt">int</span></code>, so neither of these functions is even invocable using normal member syntax. However, they’re still static member functions, so <code class="sourceCode cpp">B<span class="op">::</span>bar<span class="op">(</span><span class="dv">42</span><span class="op">)</span></code> is a valid call.</p>
+<p>We think these declarations can best be left for compilers to warn about if they so choose, rather than coming up with a language rule to reject them.</p>
 <p>Another interesting case, courtesy of Jens Maurer:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">struct</span> D;</span>
 <span id="cb26-2"><a href="#cb26-2"></a><span class="kw">struct</span> B <span class="op">{</span></span>
@@ -1095,8 +1096,10 @@ Proposed
 <span id="cb26-9"><a href="#cb26-9"></a><span class="dt">int</span> x <span class="op">=</span> D<span class="op">().</span>f1<span class="op">()</span>;  <span class="co">// error: ambiguous lookup</span></span>
 <span id="cb26-10"><a href="#cb26-10"></a><span class="dt">int</span> y <span class="op">=</span> B<span class="op">().</span>f1<span class="op">()</span>;  <span class="co">// error: B is not implicitly convertible to D</span></span>
 <span id="cb26-11"><a href="#cb26-11"></a><span class="kw">auto</span> z <span class="op">=</span> <span class="op">&amp;</span>B<span class="op">::</span>f1;   <span class="co">// ok</span></span>
-<span id="cb26-12"><a href="#cb26-12"></a>z<span class="op">(</span>D<span class="op">())</span>;            <span class="co">// ok</span></span></code></pre></div>
-<p>Even though both <code class="sourceCode cpp">D<span class="op">().</span>f1<span class="op">()</span></code> and <code class="sourceCode cpp">B<span class="op">().</span>f1<span class="op">()</span></code> are ill-formed, for entirely different reasons, taking a pointer to <code class="sourceCode cpp"><span class="op">&amp;</span>B<span class="op">::</span>f1</code> is acceptable — its type is <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span>D<span class="op">)</span></code> — and that function pointer can be invoked with a <code class="sourceCode cpp">D</code>. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see <a href="#by-value-this">by-value <code class="sourceCode cpp"><span class="kw">this</span></code></a>.</p>
+<span id="cb26-12"><a href="#cb26-12"></a>z<span class="op">(</span>D<span class="op">())</span>;            <span class="co">// ok</span></span>
+<span id="cb26-13"><a href="#cb26-13"></a>B<span class="op">::</span>f1<span class="op">(</span>D<span class="op">{})</span>;        <span class="co">// ok</span></span></code></pre></div>
+<p>Even though both <code class="sourceCode cpp">D<span class="op">().</span>f1<span class="op">()</span></code> and <code class="sourceCode cpp">B<span class="op">().</span>f1<span class="op">()</span></code> are ill-formed, for entirely different reasons, taking a pointer to <code class="sourceCode cpp"><span class="op">&amp;</span>B<span class="op">::</span>f1</code> is acceptable — its type is <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span>D<span class="op">)</span></code> — and that function pointer can be invoked with a <code class="sourceCode cpp">D</code>. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see <a href="#by-value-this">by-value <code class="sourceCode cpp"><span class="kw">this</span></code></a>). The same reasoning holds for the direct function invocation.</p>
+<p>Again, we’re not sure if these formulations are actually useful. More so that they don’t seem harmful and attempting to reject these cases may accidentally reject useful ones.</p>
 <h3 data-number="4.2.8" id="teachability-implications" data-number="4.2.8"><span class="header-section-number">4.2.8</span> Teachability Implications<a href="#teachability-implications" class="self-link"></a></h3>
 <p>Explicitly naming the object as the <code class="sourceCode cpp"><span class="kw">this</span></code>-designated first parameter fits within many programmers’ mental models of the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer being the first parameter to member functions “under the hood” and is comparable to its usage in other languages, e.g. Python and Rust. It also works as a more obvious way to teach how <code class="sourceCode cpp">std<span class="op">::</span>bind</code>, <code class="sourceCode cpp">std<span class="op">::</span>thread</code>, <code class="sourceCode cpp">std<span class="op">::</span>function</code>, and others work with a member function pointer by making the pointer explicit.</p>
 <p>As such, we do not believe there to be any teachability problems.</p>
@@ -1811,15 +1814,18 @@ Proposed
 <span id="cb57-5"><a href="#cb57-5"></a>        E<span class="op">::</span>f<span class="op">(</span>E<span class="op">{})</span>;   <span class="co">// #2</span></span>
 <span id="cb57-6"><a href="#cb57-6"></a>        f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">{})</span>; <span class="co">// #3</span></span>
 <span id="cb57-7"><a href="#cb57-7"></a>        </span>
-<span id="cb57-8"><a href="#cb57-8"></a>        <span class="kw">auto</span> _f <span class="op">=</span> f;</span>
-<span id="cb57-9"><a href="#cb57-9"></a>        _f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">[})</span>; <span class="co">// #4</span></span>
+<span id="cb57-8"><a href="#cb57-8"></a>        <span class="kw">auto</span> pf <span class="op">=</span> f;  <span class="co">// #4</span></span>
+<span id="cb57-9"><a href="#cb57-9"></a>        pf<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">[})</span>;</span>
 <span id="cb57-10"><a href="#cb57-10"></a>    <span class="op">}</span></span>
 <span id="cb57-11"><a href="#cb57-11"></a><span class="op">}</span>;</span>
 <span id="cb57-12"><a href="#cb57-12"></a></span>
 <span id="cb57-13"><a href="#cb57-13"></a><span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb57-14"><a href="#cb57-14"></a>    E<span class="op">::</span>f<span class="op">(</span>E<span class="op">{}</span>, E<span class="op">{})</span>; <span class="co">// #5</span></span>
 <span id="cb57-15"><a href="#cb57-15"></a><span class="op">}</span></span></code></pre></div>
-<p>Note that <code class="sourceCode cpp"><span class="pp">#4</span></code> and <code class="sourceCode cpp"><span class="pp">#5</span></code> are definitely valid. With an “implicit this”, <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> would be valid but not <code class="sourceCode cpp"><span class="pp">#3</span></code>. Without an “implicit this”, the reverse would be true. Either way, this is weird. But one of the major advantages of having the “implicit this” call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like <code class="sourceCode cpp">std<span class="op">::</span>optional</code> to be able to implement its member functions using this language feature if it wants to, without us having to know about it:</p>
+<p>Note that <code class="sourceCode cpp"><span class="pp">#5</span></code> is definitely valid (<code class="sourceCode cpp">E<span class="op">::</span>f</code> is static).</p>
+<p>With an “implicit this”, <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> would be valid (<code class="sourceCode cpp"><span class="pp">#2</span></code> would just be a more qualified call), but <code class="sourceCode cpp"><span class="pp">#3</span></code> and <code class="sourceCode cpp"><span class="pp">#4a</span></code> would be ill-formed (<code class="sourceCode cpp"><span class="pp">#3</span></code> for too many parameters, <code class="sourceCode cpp"><span class="pp">#4</span></code> for an access that isn’t a function call).</p>
+<p>Without an “implicit this”, the reverse is true — <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> are invalid while <code class="sourceCode cpp"><span class="pp">#3</span></code> and <code class="sourceCode cpp"><span class="pp">#4</span></code> (and the subsequent invocation) are fine.</p>
+<p>Either way, this is weird. But one of the major advantages of having the “implicit this” call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like <code class="sourceCode cpp">std<span class="op">::</span>optional</code> to be able to implement its member functions using this language feature if it wants to, without us having to know about it:</p>
 <div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1"></a><span class="kw">struct</span> F <span class="op">:</span> std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></span>
 <span id="cb58-2"><a href="#cb58-2"></a><span class="op">{</span></span>
 <span id="cb58-3"><a href="#cb58-3"></a>    <span class="dt">bool</span> is_big<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span></span>
@@ -1835,21 +1841,12 @@ Proposed
 <h3 data-number="7.3.1" id="wording-in-expr" data-number="7.3.1"><span class="header-section-number">7.3.1</span> Wording in <span>7 <a href="https://wg21.link/expr">[expr]</a></span><a href="#wording-in-expr" class="self-link"></a></h3>
 <p>Move <span>11.4.2 <a href="https://wg21.link/class.mfct.non-static">[class.mfct.non-static]</a></span>/3 in front of <span>7.5.4 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>/2 (the highlighted diff is relative to the original paragraph):</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">2*</a></span> When an <em>id-expression</em> that is not part of a class member access syntax and not used to form a pointer to member (<span>7.6.2.1 <a href="https://wg21.link/expr.unary.op">[expr.unary.op]</a></span>) is used in a member of class <code class="sourceCode cpp">X</code> in a context where <code class="sourceCode cpp"><span class="kw">this</span></code> can be used, if name lookup resolves the name in the <em>id-expression</em> to <span class="addu">either</span> a non-static non-type member <span class="addu">or an object member function</span> ([dcl.fct]) of some class <code class="sourceCode cpp">C</code>, and if either the <em>id-expression</em> is potentially evaluated or <code class="sourceCode cpp">C</code> is <code class="sourceCode cpp">X</code> or a base class of <code class="sourceCode cpp">X</code>, the <em>id-expression</em> is transformed into a class member access expression using <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">)</span></code> as the <em>postfix-expression</em> to the left of the <code class="sourceCode cpp"><span class="op">.</span></code> operator. [ <em>Note</em>: If <code class="sourceCode cpp">C</code> is not <code class="sourceCode cpp">X</code> or a base class of <code class="sourceCode cpp">X</code>, the class member access expression is ill-formed. — <em>end note</em> ] This transformation does not apply in the template definition context ([temp.dep.type]). [ <em>Example</em>: […] - <em>end example</em> ]</p>
+<p><span class="marginalizedparent"><a class="marginalized">2*</a></span> When an <em>id-expression</em> that is not part of a class member access syntax and not used to form a pointer to member (<span>7.6.2.1 <a href="https://wg21.link/expr.unary.op">[expr.unary.op]</a></span>) is used in a member of class <code class="sourceCode cpp">X</code> in a context where <code class="sourceCode cpp"><span class="kw">this</span></code> can be used, if name lookup resolves the name in the <em>id-expression</em> to <span class="addu">either</span> a non-static non-type member <span class="addu">or a static member function with an explicit this parameter</span> ([dcl.fct]) of some class <code class="sourceCode cpp">C</code>, and if either the <em>id-expression</em> is potentially evaluated or <code class="sourceCode cpp">C</code> is <code class="sourceCode cpp">X</code> or a base class of <code class="sourceCode cpp">X</code>, the <em>id-expression</em> is transformed into a class member access expression using <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">)</span></code> as the <em>postfix-expression</em> to the left of the <code class="sourceCode cpp"><span class="op">.</span></code> operator. [ <em>Note</em>: If <code class="sourceCode cpp">C</code> is not <code class="sourceCode cpp">X</code> or a base class of <code class="sourceCode cpp">X</code>, the class member access expression is ill-formed. — <em>end note</em> ] This transformation does not apply in the template definition context ([temp.dep.type]). [ <em>Example</em>: […] - <em>end example</em> ]</p>
 </blockquote>
-<p>then change <span>7.5.4 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>/2, now 3, removing the footnote:</p>
+<p>Strike the footnote in <span>7.5.4 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>/2 as a drive-by-fix:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> An <em>id-expression</em> that denotes a non-static data member or <span class="rm" style="color: #bf0303"><del>non-static</del></span> <span class="addu">object</span> member function of a class can only be used:</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> as part of a class member access in which the object expression refers to the member’s class <sup><span class="rm" style="color: #bf0303"><del>57</del></span></sup> or a class derived from that class, or</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> to form a pointer to member ([expr.unary.op]), or</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized">(3.3)</a></span> if that <em>id-expression</em> denotes a non-static data member and it appears in an unevaluated operand. [ <em>Example</em>:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a>  struct S {</span>
-<span id="cb59-2"><a href="#cb59-2"></a>    int m;</span>
-<span id="cb59-3"><a href="#cb59-3"></a>  };</span>
-<span id="cb59-4"><a href="#cb59-4"></a>  int i = sizeof(S::m);           // OK</span>
-<span id="cb59-5"><a href="#cb59-5"></a>  int j = sizeof(S::m + 42);      // OK</span></code></pre></div>
-<p>— <em>end example</em> ]</p></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> as part of a class member access in which the object expression refers to the member’s class <sup><span class="rm" style="color: #bf0303"><del>57</del></span></sup> or a class derived from that class, or</li>
 </ul>
 </blockquote>
 <p>Change <span>7.5.5 <a href="https://wg21.link/expr.prim.lambda">[expr.prim.lambda]</a></span>/3:</p>
@@ -1859,27 +1856,27 @@ Proposed
 <p>Extend the example in <span>7.5.5.1 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>/3:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb60"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb60-1"><a href="#cb60-1"></a>  auto glambda = [](auto a, auto&amp;&amp; b) { return a &lt; b; };</span>
-<span id="cb60-2"><a href="#cb60-2"></a>  bool b = glambda(3, 3.14);                                      // OK</span>
-<span id="cb60-3"><a href="#cb60-3"></a>  </span>
-<span id="cb60-4"><a href="#cb60-4"></a>  auto vglambda = [](auto printer) {</span>
-<span id="cb60-5"><a href="#cb60-5"></a>    return [=](auto&amp;&amp; ... ts) {                                   // OK: ts is a function parameter pack</span>
-<span id="cb60-6"><a href="#cb60-6"></a>      printer(std::forward&lt;decltype(ts)&gt;(ts)...);</span>
-<span id="cb60-7"><a href="#cb60-7"></a>  </span>
-<span id="cb60-8"><a href="#cb60-8"></a>      return [=]() {</span>
-<span id="cb60-9"><a href="#cb60-9"></a>        printer(ts ...);</span>
-<span id="cb60-10"><a href="#cb60-10"></a>      };</span>
-<span id="cb60-11"><a href="#cb60-11"></a>    };</span>
-<span id="cb60-12"><a href="#cb60-12"></a>  };</span>
-<span id="cb60-13"><a href="#cb60-13"></a>  auto p = vglambda( [](auto v1, auto v2, auto v3)</span>
-<span id="cb60-14"><a href="#cb60-14"></a>                     { std::cout &lt;&lt; v1 &lt;&lt; v2 &lt;&lt; v3; } );</span>
-<span id="cb60-15"><a href="#cb60-15"></a>  auto q = p(1, &#39;a&#39;, 3.14);                                       // OK: outputs 1a3.14</span>
-<span id="cb60-16"><a href="#cb60-16"></a>  q();                                                            // OK: outputs 1a3.14</span>
-<span id="cb60-17"><a href="#cb60-17"></a><span class="va">+ </span></span>
-<span id="cb60-18"><a href="#cb60-18"></a><span class="va">+ auto fact = [](this auto self, int n) -&gt; int {                  // OK: explicit this parameter</span></span>
-<span id="cb60-19"><a href="#cb60-19"></a><span class="va">+    return (n &lt;= 1) ? 1 : n * self(n-1);</span></span>
-<span id="cb60-20"><a href="#cb60-20"></a><span class="va">+ };</span></span>
-<span id="cb60-21"><a href="#cb60-21"></a><span class="va">+ std::cout &lt;&lt; fact(5);                                           // OK: outputs 120</span></span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb59-1"><a href="#cb59-1"></a>  auto glambda = [](auto a, auto&amp;&amp; b) { return a &lt; b; };</span>
+<span id="cb59-2"><a href="#cb59-2"></a>  bool b = glambda(3, 3.14);                                      // OK</span>
+<span id="cb59-3"><a href="#cb59-3"></a>  </span>
+<span id="cb59-4"><a href="#cb59-4"></a>  auto vglambda = [](auto printer) {</span>
+<span id="cb59-5"><a href="#cb59-5"></a>    return [=](auto&amp;&amp; ... ts) {                                   // OK: ts is a function parameter pack</span>
+<span id="cb59-6"><a href="#cb59-6"></a>      printer(std::forward&lt;decltype(ts)&gt;(ts)...);</span>
+<span id="cb59-7"><a href="#cb59-7"></a>  </span>
+<span id="cb59-8"><a href="#cb59-8"></a>      return [=]() {</span>
+<span id="cb59-9"><a href="#cb59-9"></a>        printer(ts ...);</span>
+<span id="cb59-10"><a href="#cb59-10"></a>      };</span>
+<span id="cb59-11"><a href="#cb59-11"></a>    };</span>
+<span id="cb59-12"><a href="#cb59-12"></a>  };</span>
+<span id="cb59-13"><a href="#cb59-13"></a>  auto p = vglambda( [](auto v1, auto v2, auto v3)</span>
+<span id="cb59-14"><a href="#cb59-14"></a>                     { std::cout &lt;&lt; v1 &lt;&lt; v2 &lt;&lt; v3; } );</span>
+<span id="cb59-15"><a href="#cb59-15"></a>  auto q = p(1, &#39;a&#39;, 3.14);                                       // OK: outputs 1a3.14</span>
+<span id="cb59-16"><a href="#cb59-16"></a>  q();                                                            // OK: outputs 1a3.14</span>
+<span id="cb59-17"><a href="#cb59-17"></a><span class="va">+ </span></span>
+<span id="cb59-18"><a href="#cb59-18"></a><span class="va">+ auto fact = [](this auto self, int n) -&gt; int {                  // OK: explicit this parameter</span></span>
+<span id="cb59-19"><a href="#cb59-19"></a><span class="va">+    return (n &lt;= 1) ? 1 : n * self(n-1);</span></span>
+<span id="cb59-20"><a href="#cb59-20"></a><span class="va">+ };</span></span>
+<span id="cb59-21"><a href="#cb59-21"></a><span class="va">+ std::cout &lt;&lt; fact(5);                                           // OK: outputs 120</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new paragraph after <span>7.5.5.1 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>/3:</p>
@@ -1892,16 +1889,16 @@ Proposed
 <li><span class="marginalizedparent"><a class="marginalized">(3*.3)</a></span> a reference to a possibly cv-qualified such type.</li>
 </ul>
 <p>[ <em>Example</em>:</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>struct C {</span>
-<span id="cb61-2"><a href="#cb61-2"></a>    template &lt;typename T&gt;</span>
-<span id="cb61-3"><a href="#cb61-3"></a>    C(T);</span>
-<span id="cb61-4"><a href="#cb61-4"></a>};</span>
-<span id="cb61-5"><a href="#cb61-5"></a></span>
-<span id="cb61-6"><a href="#cb61-6"></a>void func(int i) {</span>
-<span id="cb61-7"><a href="#cb61-7"></a>    int x = [=](this auto&amp;&amp;) { return i; }(); // ok</span>
-<span id="cb61-8"><a href="#cb61-8"></a>    int y = [=](this C) { return i; }();      // ill-formed</span>
-<span id="cb61-9"><a href="#cb61-9"></a>    int z = [](this C) { return 42; }();      // ok</span>
-<span id="cb61-10"><a href="#cb61-10"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb60-1"><a href="#cb60-1"></a>struct C {</span>
+<span id="cb60-2"><a href="#cb60-2"></a>    template &lt;typename T&gt;</span>
+<span id="cb60-3"><a href="#cb60-3"></a>    C(T);</span>
+<span id="cb60-4"><a href="#cb60-4"></a>};</span>
+<span id="cb60-5"><a href="#cb60-5"></a></span>
+<span id="cb60-6"><a href="#cb60-6"></a>void func(int i) {</span>
+<span id="cb60-7"><a href="#cb60-7"></a>    int x = [=](this auto&amp;&amp;) { return i; }(); // ok</span>
+<span id="cb60-8"><a href="#cb60-8"></a>    int y = [=](this C) { return i; }();      // ill-formed</span>
+<span id="cb60-9"><a href="#cb60-9"></a>    int z = [](this C) { return 42; }();      // ok</span>
+<span id="cb60-10"><a href="#cb60-10"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -1911,10 +1908,10 @@ Proposed
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> The function call operator or operator template is declared <code class="sourceCode cpp"><span class="kw">const</span></code> ([class.mfct.non-static]) if and only if the <em>lambda-expression</em>’s <em>parameter-declaration-clause</em> is not followed by <code class="sourceCode cpp"><span class="kw">mutable</span></code> <span class="addu">and the <em>lambda-declarator</em> does not contain an explicit this parameter</span>.</p>
 </blockquote>
-<p>Change <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span>/1-2:</p>
+<p>Change <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span>/1-2. The intent is to reduce the restriction on static member functions to just the ones without an explicit this parameter (since otherwise it would prevent the typical <code class="sourceCode cpp">x<span class="op">.</span>f<span class="op">()</span></code> use-cases from working, since <code class="sourceCode cpp">x<span class="op">.</span>f</code> is later defined as a prvalue). We do not need to change p2 to refer to object member functions since explicit this functions are also regular static member functions, and this restriction would prevent such uses.</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> […] The postfix expression shall have function type or function pointer type. For a call to a non-member function or to a static member function <span class="addu">that is not an object member function ([dcl.fct])</span>, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.</p>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> For a call to <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose <em>id-expression</em> is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression. In the case of an implicit class member access, the implied object is the one pointed to by <code class="sourceCode cpp"><span class="kw">this</span></code>. [ Note: A member function call of the form <code class="sourceCode cpp">f<span class="op">()</span></code> is interpreted as <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">).</span>f<span class="op">()</span></code> (see <span class="rm" style="color: #bf0303"><del>[class.mfct.non-static]</del></span> <span class="addu">[expr.prim.id]</span>). — end note ]</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> For a call to a non-static member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose <em>id-expression</em> is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression. In the case of an implicit class member access, the implied object is the one pointed to by <code class="sourceCode cpp"><span class="kw">this</span></code>. [ Note: A member function call of the form <code class="sourceCode cpp">f<span class="op">()</span></code> is interpreted as <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">).</span>f<span class="op">()</span></code> (see <span class="rm" style="color: #bf0303"><del>[class.mfct.non-static]</del></span> <span class="addu">[expr.prim.id]</span>). — end note ]</p>
 </blockquote>
 <p>Change <span>7.6.1.2 <a href="https://wg21.link/expr.call">[expr.call]</a></span>/7:</p>
 <blockquote>
@@ -1949,23 +1946,40 @@ Proposed
 <p>After <span>9.3.3.5 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/5, insert paragraph describing where a function declaration with an explicit this parameter may appear, and renumber section.</p>
 <blockquote>
 <div class="add" style="color: #006e28">
-<p><span class="marginalizedparent"><a class="marginalized">5a</a></span> An <em>explicit-this-parameter-declaration</em> shall only appear in either a <span class="addu">top-level</span> <em>member-declarator</em> that declares a member function ([class.mem]) or a <em>lambda-declarator</em> ([expr.prim.lambda]). Such a function shall not be explicitly declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>. [ <em>Note</em>: Such a function is implicitly static ([class.mem]) - <em>end note</em> ] Such a declarator shall not include a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em>. [ <em>Example</em>:</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>struct C {</span>
-<span id="cb62-2"><a href="#cb62-2"></a>    void f(this C&amp; self);</span>
-<span id="cb62-3"><a href="#cb62-3"></a>    template &lt;typename Self&gt;</span>
-<span id="cb62-4"><a href="#cb62-4"></a>    void g(this Self&amp;&amp; self, int);</span>
-<span id="cb62-5"><a href="#cb62-5"></a>};</span>
-<span id="cb62-6"><a href="#cb62-6"></a></span>
-<span id="cb62-7"><a href="#cb62-7"></a>void h(C c) {</span>
-<span id="cb62-8"><a href="#cb62-8"></a>    c.f();               // ok: calls C::f</span>
-<span id="cb62-9"><a href="#cb62-9"></a>    std::move(c).g(42);  // ok: calls C::g&lt;C&gt;</span>
-<span id="cb62-10"><a href="#cb62-10"></a>}</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5a</a></span> An <em>explicit-this-parameter-declaration</em> shall appear only as a component of a <em>parameter-declaration-list</em> of either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5a.1)</a></span> a <em>member-declarator</em> that declares a member function ([class.mem]), or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5a.2)</a></span> a <em>lambda-declarator</em> ([expr.prim.lambda]).</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">5b</a></span> A <em>member-declarator</em> with an <em>explicit-this-parameter-declaration</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5b.1)</a></span> shall not include include either a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em>, and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5b.2)</a></span> shall not be declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>. [ <em>Note</em>: Such a function is implicitly static ([class.mem]) - <em>end note</em> ]</li>
+</ul>
+<p>[ <em>Example</em>:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>struct C {</span>
+<span id="cb61-2"><a href="#cb61-2"></a>    void f(this C&amp; self);</span>
+<span id="cb61-3"><a href="#cb61-3"></a>    template &lt;typename Self&gt;</span>
+<span id="cb61-4"><a href="#cb61-4"></a>    void g(this Self&amp;&amp; self, int);</span>
+<span id="cb61-5"><a href="#cb61-5"></a>    </span>
+<span id="cb61-6"><a href="#cb61-6"></a>    void h(this C) const; // error: const not allowed here</span>
+<span id="cb61-7"><a href="#cb61-7"></a>};</span>
+<span id="cb61-8"><a href="#cb61-8"></a></span>
+<span id="cb61-9"><a href="#cb61-9"></a>void test(C c) {</span>
+<span id="cb61-10"><a href="#cb61-10"></a>    c.f();               // ok: calls C::f</span>
+<span id="cb61-11"><a href="#cb61-11"></a>    std::move(c).g(42);  // ok: calls C::g&lt;C&gt;</span>
+<span id="cb61-12"><a href="#cb61-12"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized">5b</a></span> A function parameter declared with an <em>explicit-this-parameter-declaration</em> is an <em>explicit this parameter</em>. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An <em>object member function</em> is either a non-static member function or a static member function with an explicit this parameter.</p>
-<p><span class="marginalizedparent"><a class="marginalized">5c</a></span> An <em>ordinary member parameter</em> is a function parameter that is not the explicit this parameter. The <em>ordinary-parameter-type-list</em> of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ <em>Note</em>: The ordinary-parameter-type-list consists of the adjusted types of all the ordinary member parameters. <em>-end note</em> ]</p>
+<p><span class="marginalizedparent"><a class="marginalized">5c</a></span> A function parameter declared with an <em>explicit-this-parameter-declaration</em> is an <em>explicit this parameter</em>. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An <em>object member function</em> is either a non-static member function or a static member function with an explicit this parameter.</p>
+<p><span class="marginalizedparent"><a class="marginalized">5d</a></span> An <em>non-this parameter</em> is a function parameter that is not the explicit this parameter. The <em>non-this-parameter-type-list</em> of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ <em>Note</em>: The non-this-parameter-type-list consists of the adjusted types of all the non-this parameters. <em>-end note</em> ]</p>
 </div>
+</blockquote>
+<p>Change <span>9.5.4 <a href="https://wg21.link/dcl.fct.def.coroutine">[dcl.fct.def.coroutine]</a></span>/3-4:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The <em>promise type</em> of a coroutine is <code class="sourceCode cpp">std​<span class="op">::</span>​coroutine_traits<span class="op">&lt;</span>R, P<sub>1</sub>, …, P<sub>n</sub><span class="op">&gt;</span>​<span class="op">::</span>​promise_type</code>, where <code class="sourceCode cpp">R</code> is the return type of the function, and <code class="sourceCode cpp">P<sub>1</sub>…P<sub>n</sub></code> are the sequence of types of the <span class="addu">non-this</span> function parameters, preceded by the type of the implicit <span class="addu">or explicit this</span> <span class="rm" style="color: #bf0303"><del>object</del></span> parameter ([over.match.funcs]) if the coroutine is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function. The promise type shall be a class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> In the following, <code class="sourceCode cpp">p<sub>i</sub></code> is an lvalue of type <code class="sourceCode cpp">P<sub>i</sub></code>, where <code class="sourceCode cpp">p<sub>1</sub></code> denotes <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">*this</code></span></del></span> <span class="addu">the implicit or explicit this parameter</span> and <code class="sourceCode cpp">p<sub>i+1</sub></code> denotes the <em>i</em><sup>th</sup> <span class="addu">non-this</span> function parameter for <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function, and <code class="sourceCode cpp">p<sub>i</sub></code> denotes the <em>i</em><sup>th</sup> function parameter otherwise.</p>
 </blockquote>
 <h3 data-number="7.3.3" id="wording-in-class" data-number="7.3.3"><span class="header-section-number">7.3.3</span> Wording in <span>11 <a href="https://wg21.link/class">[class]</a></span><a href="#wording-in-class" class="self-link"></a></h3>
 <p>Change <span>11.4 <a href="https://wg21.link/class.mem">[class.mem]</a></span>/4:</p>
@@ -1975,16 +1989,49 @@ Proposed
 <p>Remove <span>11.4.2 <a href="https://wg21.link/class.mfct.non-static">[class.mfct.non-static]</a></span>/3 (was moved into [expr.prim.id] earlier).</p>
 <p>Change <span>11.4.7.2 <a href="https://wg21.link/class.conv.fct">[class.conv.fct]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <span class="rm" style="color: #bf0303"><del>A</del></span> <span class="addu">An object</span> member function of a class <code class="sourceCode cpp">X</code> having no <span class="addu">ordinary member</span> parameters <span class="addu">([dcl.fct])</span> with a name of the form […] specifies a conversion from <code class="sourceCode cpp">X</code> to the type specified by the <em>conversion-type-id</em>. Such functions are called <em>conversion functions</em>. A <em>decl-specifier</em> in the <em>decl-specifier-seq</em> of a conversion function (if any) shall be neither a <em>defining-type-specifier</em> nor <code class="sourceCode cpp"><span class="kw">static</span></code>. The type of the conversion function ([dcl.fct]) is “function taking no parameter returning <em>conversion-type-id</em>”.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <span class="rm" style="color: #bf0303"><del>A</del></span> <span class="addu">An object</span> member function of a class <code class="sourceCode cpp">X</code> having no <span class="addu">non-this</span> parameters <span class="addu">([dcl.fct])</span> with a name of the form […] specifies a conversion from <code class="sourceCode cpp">X</code> to the type specified by the <em>conversion-type-id</em>. Such functions are called <em>conversion functions</em>. A <em>decl-specifier</em> in the <em>decl-specifier-seq</em> of a conversion function (if any) shall be neither a <em>defining-type-specifier</em> nor <code class="sourceCode cpp"><span class="kw">static</span></code>. The type of the conversion function ([dcl.fct]) is “function taking no parameter returning <em>conversion-type-id</em>”.</p>
 </blockquote>
 <p>Change <span>11.4.8.1 <a href="https://wg21.link/class.static.mfct">[class.static.mfct]</a></span>/2:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> [ <em>Note</em>: A static member function does not have a this pointer ([class.this]). — <em>end note</em> ] A static member function shall not be <code class="sourceCode cpp"><span class="kw">virtual</span></code>. There shall not be a static and a non-static member function with the same name and the same <span class="rm" style="color: #bf0303"><del>parameter types</del></span> <span class="addu">ordinary-parameter-type-list</span> (<span class="addu">[dcl.fct],</span> [over.load]). A static member function shall not be declared <code class="sourceCode cpp"><span class="kw">const</span></code>, <code class="sourceCode cpp"><span class="kw">volatile</span></code>, or <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> [ <em>Note</em>: A static member function does not have a this pointer ([class.this]). — <em>end note</em> ] A static member function shall not be <code class="sourceCode cpp"><span class="kw">virtual</span></code>. There shall not be a static and a non-static member function with the same name and the same <span class="rm" style="color: #bf0303"><del>parameter types</del></span> <span class="addu">non-this-parameter-type-list</span> (<span class="addu">[dcl.fct],</span> [over.load]). A static member function shall not be declared <code class="sourceCode cpp"><span class="kw">const</span></code>, <code class="sourceCode cpp"><span class="kw">volatile</span></code>, or <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">volatile</span></code>.</p>
+</blockquote>
+<p>Extend the note in <span>11.7.2 <a href="https://wg21.link/class.virtual">[class.virtual]</a></span>/11:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> [ <em>Note</em>: The <code class="sourceCode cpp"><span class="kw">virtual</span></code> specifier implies membership, so a virtual function cannot be a non-member ([dcl.fct.spec]) function. Nor can a virtual function be a static member, since a virtual function call relies on a specific object for determining which function to invoke. A virtual function declared in one class can be declared a friend ([class.friend]) in another class. — <em>end note</em> ]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">11b</a></span> [ <em>Note</em>: A static member function with an explicit this parameter ([dcl.fct]) never overrides a virtual member function. [ <em>Example</em>:</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>struct Base {</span>
+<span id="cb62-2"><a href="#cb62-2"></a>    virtual void f() &amp;;</span>
+<span id="cb62-3"><a href="#cb62-3"></a>};</span>
+<span id="cb62-4"><a href="#cb62-4"></a></span>
+<span id="cb62-5"><a href="#cb62-5"></a>struct D1 : Base {</span>
+<span id="cb62-6"><a href="#cb62-6"></a>    void f(this D1&amp;); // does not override Base::f</span>
+<span id="cb62-7"><a href="#cb62-7"></a>};</span>
+<span id="cb62-8"><a href="#cb62-8"></a></span>
+<span id="cb62-9"><a href="#cb62-9"></a>struct D2 : Base {</span>
+<span id="cb62-10"><a href="#cb62-10"></a>    void f(this Base&amp;); // does not override Base::f</span>
+<span id="cb62-11"><a href="#cb62-11"></a>};</span>
+<span id="cb62-12"><a href="#cb62-12"></a></span>
+<span id="cb62-13"><a href="#cb62-13"></a>void call_f(Base&amp; b) {</span>
+<span id="cb62-14"><a href="#cb62-14"></a>    b.f();</span>
+<span id="cb62-15"><a href="#cb62-15"></a>}</span>
+<span id="cb62-16"><a href="#cb62-16"></a></span>
+<span id="cb62-17"><a href="#cb62-17"></a>void test_f() {</span>
+<span id="cb62-18"><a href="#cb62-18"></a>    D1 d1;</span>
+<span id="cb62-19"><a href="#cb62-19"></a>    D2 d2;</span>
+<span id="cb62-20"><a href="#cb62-20"></a>    </span>
+<span id="cb62-21"><a href="#cb62-21"></a>    call_f(d1); // calls Base::f, not D1::f</span>
+<span id="cb62-22"><a href="#cb62-22"></a>    call_f(d2); // calls Base::f, not D2::f</span>
+<span id="cb62-23"><a href="#cb62-23"></a>}</span></code></pre></div>
+<ul>
+<li><em>end example</em> ] - <em>end note</em> ]</li>
+</ul>
+</div>
 </blockquote>
 <h3 data-number="7.3.4" id="wording-in-over" data-number="7.3.4"><span class="header-section-number">7.3.4</span> Wording in <span>12 <a href="https://wg21.link/over">[over]</a></span><a href="#wording-in-over" class="self-link"></a></h3>
 <p>Change <span>12.2 <a href="https://wg21.link/over.load">[over.load]</a></span>/2.2:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> Member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span> ([dcl.fct]), and the same trailing <em>requires-clause</em> (if any) cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function declaration <span class="rm" style="color: #bf0303"><del>([class.static])</del></span> <span class="addu">([dcl.fct])</span>. Likewise, member function template declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span>, the same trailing requires-clause (if any), and the same template-head cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function template declaration. The types of the implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameters constructed for the member functions for the purpose of overload resolution ([over.match.funcs]) are not considered when comparing <span class="rm" style="color: #bf0303"><del>parameter-type-lists</del></span> <span class="addu">ordinary-parameter-type-lists</span> for enforcement of this rule. In contrast, if <span class="rm" style="color: #bf0303"><del>there is no <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">every</span> member function declaration among a set of member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">ordinary-parameter-type-list</span>, and the same <em>trailing requires-clause</em> (if any) <span class="addu">is an object member function</span>, then these member function declarations can be overloaded if they differ in the type of their implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameter. [ <em>Example</em>: The following illustrates this distinction:</p>
+<p><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> Member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">non-this-parameter-type-list</span> ([dcl.fct]), and the same trailing <em>requires-clause</em> (if any) cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function declaration <span class="rm" style="color: #bf0303"><del>([class.static])</del></span> <span class="addu">([dcl.fct])</span>. Likewise, member function template declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">non-this-parameter-type-list</span>, the same trailing requires-clause (if any), and the same template-head cannot be overloaded if any of them is <span class="rm" style="color: #bf0303"><del>a <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">not an object</span> member function template declaration. The types of the implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameters constructed for the member functions for the purpose of overload resolution ([over.match.funcs]) are not considered when comparing <span class="rm" style="color: #bf0303"><del>parameter-type-lists</del></span> <span class="addu">non-this-parameter-type-lists</span> for enforcement of this rule. In contrast, if <span class="rm" style="color: #bf0303"><del>there is no <span><code class="sourceCode default">static</code></span></del></span> <span class="addu">every</span> member function declaration among a set of member function declarations with the same name, the same <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">non-this-parameter-type-list</span>, and the same <em>trailing requires-clause</em> (if any) <span class="addu">is an object member function</span>, then these member function declarations can be overloaded if they differ in the type of their implicit <span class="addu">or explicit</span> <span class="rm" style="color: #bf0303"><del>object</del></span> <span class="addu">this</span> parameter. [ <em>Example</em>: The following illustrates this distinction:</p>
 <div>
 <div class="sourceCode" id="cb63"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb63-1"><a href="#cb63-1"></a>class X {</span>
 <span id="cb63-2"><a href="#cb63-2"></a>  static void f();</span>
@@ -2110,11 +2157,11 @@ Proposed
 </blockquote>
 <p>Change <span>12.6.1 <a href="https://wg21.link/over.unary">[over.unary]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>prefix unary operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">@</span></code> for a prefix <em>unary-operator</em> <code class="sourceCode cpp"><span class="op">@</span></code> ([expr.unary.op]) that is either <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function ([class.mfct]) with no <span class="addu">ordinary member</span> parameters or a non-member function with one parameter.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>prefix unary operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">@</span></code> for a prefix <em>unary-operator</em> <code class="sourceCode cpp"><span class="op">@</span></code> ([expr.unary.op]) that is either <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function ([class.mfct]) with no <span class="addu">non-this</span> parameters or a non-member function with one parameter.</p>
 </blockquote>
 <p>Change <span>12.6.2 <a href="https://wg21.link/over.binary">[over.binary]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>binary operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">@</span></code> for a binary operator <code class="sourceCode cpp"><span class="op">@</span></code> that is either <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function ([class.mfct]) with one <span class="addu">ordinary member</span> parameter or a non-member function with two parameters.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>binary operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">@</span></code> for a binary operator <code class="sourceCode cpp"><span class="op">@</span></code> that is either <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function ([class.mfct]) with one <span class="addu">non-this</span> parameter or a non-member function with two parameters.</p>
 </blockquote>
 <p>Change <span>12.6.2.1 <a href="https://wg21.link/over.ass">[over.ass]</a></span>/1:</p>
 <blockquote>
@@ -2126,15 +2173,15 @@ Proposed
 </blockquote>
 <p>Change <span>12.6.4 <a href="https://wg21.link/over.sub">[over.sub]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>subscripting operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">[]</span></code> that is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with exactly one <span class="addu">ordinary member</span> parameter.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>subscripting operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">[]</span></code> that is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with exactly one <span class="addu">non-this</span> parameter.</p>
 </blockquote>
 <p>Change <span>12.6.5 <a href="https://wg21.link/over.ref">[over.ref]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>class member access operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code> that is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function taking no <span class="addu">ordinary member</span> parameters.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>class member access operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">-&gt;</span></code> that is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function taking no <span class="addu">non-this</span> parameters.</p>
 </blockquote>
 <p>Change <span>12.6.6 <a href="https://wg21.link/over.inc">[over.inc]</a></span>/1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">1</a></span> An <em>increment operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++</span></code>. If this function is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with no <span class="addu">ordinary member</span> parameters, or a non-member function with one parameter, it defines the prefix increment operator <code class="sourceCode cpp"><span class="op">++</span></code> for objects of that type. If the function is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with one <span class="addu">ordinary member</span> parameter (which shall be of type <code class="sourceCode cpp"><span class="dt">int</span></code>) or a non-member function with two parameters (the second of which shall be of type <code class="sourceCode cpp"><span class="dt">int</span></code>), it defines the postfix increment operator <code class="sourceCode cpp"><span class="op">++</span></code> for objects of that type.</p>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> An <em>increment operator function</em> is a function named <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++</span></code>. If this function is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with no <span class="addu">non-this</span> parameters, or a non-member function with one parameter, it defines the prefix increment operator <code class="sourceCode cpp"><span class="op">++</span></code> for objects of that type. If the function is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function with one <span class="addu">non-this</span> parameter (which shall be of type <code class="sourceCode cpp"><span class="dt">int</span></code>) or a non-member function with two parameters (the second of which shall be of type <code class="sourceCode cpp"><span class="dt">int</span></code>), it defines the postfix increment operator <code class="sourceCode cpp"><span class="op">++</span></code> for objects of that type.</p>
 </blockquote>
 <h2 data-number="7.4" id="feature-test-macro-tabcpp.predefined.ft" data-number="7.4"><span class="header-section-number">7.4</span> Feature-test macro [tab:cpp.predefined.ft]<a href="#feature-test-macro-tabcpp.predefined.ft" class="self-link"></a></h2>
 <p>Add to <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>/table 17 ([tab:cpp.predefined.ft]):</p>

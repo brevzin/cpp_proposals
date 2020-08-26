@@ -634,12 +634,12 @@ It is important to mention the pathological cases. First, what happens if `D` is
 ```cpp
 struct D;
 struct B {
-    void foo(this D&);
+    void foo(this D const&);
 };
 struct D : B { };
 ```
 
-Following the precedent of [@P0929R2], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point of call or formation of pointer to member, etc. At that point, the call will either not be viable or the formation of pointer-to-member would be ill-formed.
+Following the precedent of [@P0929R2], we think this should be fine, albeit strange. If `D` is incomplete, we simply postpone checking until the point where we actually need a complete type, as usual. At that point `D().foo()` would be a valid expression. We see no reason to reject.
 
 For unrelated complete classes or non-classes:
 
@@ -651,7 +651,9 @@ struct B {
 };
 ```
 
-The declaration can be immediately diagnosed as ill-formed.
+These are even more unlikely to be actually useful code. In this example, `B` is neither convertible to `A` nor `int`, so neither of these functions is even invocable using normal member syntax. However, they're still static member functions, so `B::bar(42)` is a valid call.
+
+We think these declarations can best be left for compilers to warn about if they so choose, rather than coming up with a language rule to reject them.
 
 Another interesting case, courtesy of Jens Maurer:
 
@@ -668,9 +670,12 @@ int x = D().f1();  // error: ambiguous lookup
 int y = B().f1();  // error: B is not implicitly convertible to D
 auto z = &B::f1;   // ok
 z(D());            // ok
+B::f1(D{});        // ok
 ```
 
-Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [by-value `this`](#by-value-this).
+Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [by-value `this`](#by-value-this)). The same reasoning holds for the direct function invocation. 
+
+Again, we're not sure if these formulations are actually useful. More so that they don't seem harmful and attempting to reject these cases may accidentally reject useful ones. 
 
 ### Teachability Implications ### {#teachability-implications}
 
@@ -1542,8 +1547,8 @@ struct E {
         E::f(E{});   // #2
         f(E{}, E{}); // #3
         
-        auto _f = f;
-        _f(E{}, E[}); // #4
+        auto pf = f;  // #4
+        pf(E{}, E[});
     }
 };
 
@@ -1552,7 +1557,13 @@ void h() {
 }
 ```
 
-Note that `#4` and `#5` are definitely valid. With an "implicit this", `#1` and `#2` would be valid but not `#3`. Without an "implicit this", the reverse would be true. Either way, this is weird. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
+Note that `#5` is definitely valid (`E::f` is static).
+
+With an "implicit this", `#1` and `#2` would be valid (`#2` would just be a more qualified call), but `#3` and `#4a` would be ill-formed (`#3` for too many parameters, `#4` for an access that isn't a function call).
+
+Without an "implicit this", the reverse is true &mdash; `#1` and `#2` are invalid while `#3` and `#4` (and the subsequent invocation) are fine.
+
+Either way, this is weird. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
 
 ```cpp
 struct F : std::optional<int>
@@ -1580,29 +1591,17 @@ refer to [those definitions](#dcl.dcl) when reviewing the wording]{.ednote}
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
 ::: bq
-[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class `X` in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to [either]{.addu} a non-static non-type member [or an object member function]{.addu} ([dcl.fct]) of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
+[2*]{.pnum} When an _id-expression_ that is not part of a class member access syntax and not used to form a pointer to member ([expr.unary.op]{.sref}) is used in a member of class `X` in a context where `this` can be used, if name lookup resolves the name in the _id-expression_ to [either]{.addu} a non-static non-type member [or a static member function with an explicit this parameter]{.addu} ([dcl.fct]) of some class `C`, and if either the _id-expression_ is potentially evaluated or `C` is `X` or a base class of `X`, the _id-expression_ is transformed into a class member access expression using `(*this)` as the _postfix-expression_ to the left of the `.` operator. [ *Note*: If `C` is not `X` or a base class of `X`, the class member access expression is ill-formed.
 — *end note*
  ]
 This transformation does not apply in the template definition context ([temp.dep.type]).
 [ *Example*: [...] - *end example* ]
 :::
 
-then change [expr.prim.id]{.sref}/2, now 3, removing the footnote:
+Strike the footnote in [expr.prim.id]{.sref}/2 as a drive-by-fix:
 
 ::: bq
-[3]{.pnum} An _id-expression_ that denotes a non-static data member or [non-static]{.rm} [object]{.addu} member function of a class can only be used:
-
 - [3.1]{.pnum} as part of a class member access in which the object expression refers to the member's class ^[57]{.rm}^ or a class derived from that class, or
-- [3.2]{.pnum} to form a pointer to member ([expr.unary.op]), or
-- [3.3]{.pnum} if that _id-expression_ denotes a non-static data member and it appears in an unevaluated operand. [ *Example*:
-  ```
-    struct S {
-      int m;
-    };
-    int i = sizeof(S::m);           // OK
-    int j = sizeof(S::m + 42);      // OK
-  ```
-    — *end example* ]
 :::
 
 Change [expr.prim.lambda]{.sref}/3:
@@ -1675,13 +1674,13 @@ Change [expr.prim.lambda.closure]{.sref}/4:
 [4]{.pnum} The function call operator or operator template is declared `const` ([class.mfct.non-static]) if and only if the _lambda-expression_'s _parameter-declaration-clause_ is not followed by `mutable` [and the _lambda-declarator_ does not contain an explicit this parameter]{.addu}.
 :::
 
-Change [expr.call]{.sref}/1-2:
+Change [expr.call]{.sref}/1-2. The intent is to reduce the restriction on static member functions to just the ones without an explicit this parameter (since otherwise it would prevent the typical `x.f()` use-cases from working, since `x.f` is later defined as a prvalue). We do not need to change p2 to refer to object member functions since explicit this functions are also regular static member functions, and this restriction would prevent such uses.
 
 ::: bq
 [1]{.pnum} [...] The postfix expression shall have function type or function pointer type.
 For a call to a non-member function or to a static member function [that is not an object member function ([dcl.fct])]{.addu}, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.
 
-[2]{.pnum} For a call to [a non-static]{.rm} [an object]{.addu} member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression.
+[2]{.pnum} For a call to a non-static member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression.
 In the case of an implicit class member access, the implied object is the one pointed to by `this`.
 [ Note: A member function call of the form `f()` is interpreted as `(*this).f()` (see [\[class.mfct.non-static\]]{.rm} [\[expr.prim.id\]]{.addu}).
 — end note
@@ -1740,27 +1739,49 @@ After [dcl.fct]{.sref}/5, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[5a]{.pnum} An _explicit-this-parameter-declaration_ shall only appear in either a [top-level]{.addu} _member-declarator_ that declares a member function ([class.mem]) or a _lambda-declarator_ ([expr.prim.lambda]). Such a function shall not be explicitly declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ] Such a declarator shall not include a _ref-qualifier_ or a _cv-qualifier-seq_. [ *Example*:
+[5a]{.pnum} An _explicit-this-parameter-declaration_ shall appear only as a component of a _parameter-declaration-list_ of either:
+
+* [5a.1]{.pnum} a _member-declarator_ that declares a member function ([class.mem]), or
+* [5a.2]{.pnum} a _lambda-declarator_ ([expr.prim.lambda]).
+
+[5b]{.pnum} A _member-declarator_ with an _explicit-this-parameter-declaration_:
+
+* [5b.1]{.pnum} shall not include include either a _ref-qualifier_ or a _cv-qualifier-seq_, and
+* [5b.2]{.pnum} shall not be declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ]
+
+
+[ *Example*:
 
 ```
 struct C {
     void f(this C& self);
     template <typename Self>
     void g(this Self&& self, int);
+    
+    void h(this C) const; // error: const not allowed here
 };
 
-void h(C c) {
+void test(C c) {
     c.f();               // ok: calls C::f
     std::move(c).g(42);  // ok: calls C::g<C>
 }
 ```
 - *end example* ]
 
-[5b]{.pnum} A function parameter declared with an _explicit-this-parameter-declaration_ is an _explicit this parameter_. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An _object member function_ is either a non-static member function or a static member function with an explicit this parameter.
+[5c]{.pnum} A function parameter declared with an _explicit-this-parameter-declaration_ is an _explicit this parameter_. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An _object member function_ is either a non-static member function or a static member function with an explicit this parameter.
 
-[5c]{.pnum} An _ordinary member parameter_ is a function parameter that is not the explicit this parameter. The _ordinary-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ _Note_: The ordinary-parameter-type-list consists of the adjusted types of all the ordinary member parameters. _-end note_ ]
+[5d]{.pnum} An _non-this parameter_ is a function parameter that is not the explicit this parameter. The _non-this-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ _Note_: The non-this-parameter-type-list consists of the adjusted types of all the non-this parameters. _-end note_ ]
 
 :::
+:::
+
+Change [dcl.fct.def.coroutine]{.sref}/3-4:
+
+::: bq
+[3]{.pnum} The _promise type_ of a coroutine is `std​::​coroutine_traits<R, P@~1~@, …, P@~n~@>​::​promise_type`, where `R` is the return type of the function, and `P@~1~@…P@~n~@` are the sequence of types of the [non-this]{.addu} function parameters, preceded by the type of the implicit [or explicit this]{.addu} [object]{.rm} parameter ([over.match.funcs]) if the coroutine is [a non-static]{.rm} [an object]{.addu} member function.
+The promise type shall be a class type.
+
+[4]{.pnum} In the following, `p@~i~@` is an lvalue of type `P@~i~@`, where `p@~1~@` denotes [`*this`]{.rm} [the implicit or explicit this parameter]{.addu} and `p@~i+1~@` denotes the _i_^th^ [non-this]{.addu} function parameter for [a non-static]{.rm} [an object]{.addu} member function, and `p@~i~@` denotes the _i_^th^ function parameter otherwise.
 :::
 
 ### Wording in [class]{.sref}
@@ -1781,7 +1802,7 @@ Change [class.conv.fct]{.sref}/1:
 
 ::: bq
 
-[1]{.pnum} [A]{.rm} [An object]{.addu} member function of a class `X` having no [ordinary member]{.addu} parameters [([dcl.fct])]{.addu} with a name of the form [...] specifies a conversion from `X` to the type specified by the _conversion-type-id_.
+[1]{.pnum} [A]{.rm} [An object]{.addu} member function of a class `X` having no [non-this]{.addu} parameters [([dcl.fct])]{.addu} with a name of the form [...] specifies a conversion from `X` to the type specified by the _conversion-type-id_.
 Such functions are called _conversion functions_.
 A _decl-specifier_ in the _decl-specifier-seq_ of a conversion function (if any) shall be neither a _defining-type-specifier_ nor `static`.
 The type of the conversion function ([dcl.fct]) is "function taking no parameter returning _conversion-type-id_".
@@ -1794,8 +1815,47 @@ Change [class.static.mfct]{.sref}/2:
 — _end note_
  ]
 A static member function shall not be `virtual`.
-There shall not be a static and a non-static member function with the same name and the same [parameter types]{.rm} [ordinary-parameter-type-list]{.addu} ([\[dcl.fct\], ]{.addu} [over.load]).
+There shall not be a static and a non-static member function with the same name and the same [parameter types]{.rm} [non-this-parameter-type-list]{.addu} ([\[dcl.fct\], ]{.addu} [over.load]).
 A static member function shall not be declared `const`, `volatile`, or `const volatile`.
+:::
+
+Extend the note in [class.virtual]{.sref}/11:
+
+::: bq
+[11]{.pnum} [ _Note_: The `virtual` specifier implies membership, so a virtual function cannot be a non-member ([dcl.fct.spec]) function.
+Nor can a virtual function be a static member, since a virtual function call relies on a specific object for determining which function to invoke.
+A virtual function declared in one class can be declared a friend ([class.friend]) in another class.
+— _end note_ ]
+
+::: addu
+[11b]{.pnum} [ _Note_: A static member function with an explicit this parameter ([dcl.fct]) never overrides a virtual member function. [ _Example_: 
+```
+struct Base {
+    virtual void f() &;
+};
+
+struct D1 : Base {
+    void f(this D1&); // does not override Base::f
+};
+
+struct D2 : Base {
+    void f(this Base&); // does not override Base::f
+};
+
+void call_f(Base& b) {
+    b.f();
+}
+
+void test_f() {
+    D1 d1;
+    D2 d2;
+    
+    call_f(d1); // calls Base::f, not D1::f
+    call_f(d2); // calls Base::f, not D2::f
+}
+```
+- _end example_ ] - _end note_ ]
+:::
 :::
 
 ### Wording in [over]{.sref}
@@ -1803,10 +1863,10 @@ A static member function shall not be declared `const`, `volatile`, or `const vo
 Change [over.load]{.sref}/2.2:
 
 ::: bq
-[2.2]{.pnum} Member function declarations with the same name, the same [parameter-type-list]{.rm} [ordinary-parameter-type-list]{.addu} ([dcl.fct]), and the same trailing _requires-clause_ (if any) cannot be overloaded if any of them is [a `static`]{.rm} [not an object]{.addu} member function declaration [([class.static])]{.rm} [([dcl.fct])]{.addu}.
-Likewise, member function template declarations with the same name, the same [parameter-type-list]{.rm} [ordinary-parameter-type-list]{.addu}, the same trailing requires-clause (if any), and the same template-head cannot be overloaded if any of them is [a `static`]{.rm} [not an object]{.addu} member function template declaration.
-The types of the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameters constructed for the member functions for the purpose of overload resolution ([over.match.funcs]) are not considered when comparing [parameter-type-lists]{.rm} [ordinary-parameter-type-lists]{.addu} for enforcement of this rule.
-In contrast, if [there is no `static`]{.rm} [every]{.addu} member function declaration among a set of member function declarations with the same name, the same [parameter-type-list]{.rm} [ordinary-parameter-type-list]{.addu}, and the same _trailing requires-clause_ (if any) [is an object member function]{.addu}, then these member function declarations can be overloaded if they differ in the type of their implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter.
+[2.2]{.pnum} Member function declarations with the same name, the same [parameter-type-list]{.rm} [non-this-parameter-type-list]{.addu} ([dcl.fct]), and the same trailing _requires-clause_ (if any) cannot be overloaded if any of them is [a `static`]{.rm} [not an object]{.addu} member function declaration [([class.static])]{.rm} [([dcl.fct])]{.addu}.
+Likewise, member function template declarations with the same name, the same [parameter-type-list]{.rm} [non-this-parameter-type-list]{.addu}, the same trailing requires-clause (if any), and the same template-head cannot be overloaded if any of them is [a `static`]{.rm} [not an object]{.addu} member function template declaration.
+The types of the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameters constructed for the member functions for the purpose of overload resolution ([over.match.funcs]) are not considered when comparing [parameter-type-lists]{.rm} [non-this-parameter-type-lists]{.addu} for enforcement of this rule.
+In contrast, if [there is no `static`]{.rm} [every]{.addu} member function declaration among a set of member function declarations with the same name, the same [parameter-type-list]{.rm} [non-this-parameter-type-list]{.addu}, and the same _trailing requires-clause_ (if any) [is an object member function]{.addu}, then these member function declarations can be overloaded if they differ in the type of their implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter.
 [ _Example_: The following illustrates this distinction:
 
 ```diff
@@ -2010,13 +2070,13 @@ Change [over.oper]{.sref}/7:
 Change [over.unary]{.sref}/1:
 
 ::: bq
-[1]{.pnum} A _prefix unary operator function_ is a function named `operator@` for a prefix _unary-operator_ `@` ([expr.unary.op]) that is either [a non-static]{.rm} [an object]{.addu} member function ([class.mfct]) with no [ordinary member]{.addu} parameters or a non-member function with one parameter.
+[1]{.pnum} A _prefix unary operator function_ is a function named `operator@` for a prefix _unary-operator_ `@` ([expr.unary.op]) that is either [a non-static]{.rm} [an object]{.addu} member function ([class.mfct]) with no [non-this]{.addu} parameters or a non-member function with one parameter.
 :::
 
 Change [over.binary]{.sref}/1:
 
 ::: bq
-[1]{.pnum} A _binary operator function_ is a function named `operator@` for a binary operator `@` that is either [a non-static]{.rm} [an object]{.addu} member function ([class.mfct]) with one [ordinary member]{.addu} parameter or a non-member function with two parameters.
+[1]{.pnum} A _binary operator function_ is a function named `operator@` for a binary operator `@` that is either [a non-static]{.rm} [an object]{.addu} member function ([class.mfct]) with one [non-this]{.addu} parameter or a non-member function with two parameters.
 :::
 
 Change [over.ass]{.sref}/1:
@@ -2035,22 +2095,22 @@ Change [over.call]{.sref}/1:
 Change [over.sub]{.sref}/1:
 
 ::: bq
-[1]{.pnum} A _subscripting operator function_ is a function named `operator[]` that is [a non-static]{.rm} [an object]{.addu} member function with exactly one [ordinary member]{.addu} parameter.
+[1]{.pnum} A _subscripting operator function_ is a function named `operator[]` that is [a non-static]{.rm} [an object]{.addu} member function with exactly one [non-this]{.addu} parameter.
 
 ::: 
 
 Change [over.ref]{.sref}/1:
 
 ::: bq
-[1]{.pnum} A _class member access operator function_ is a function named `operator->` that is [a non-static]{.rm} [an object]{.addu} member function taking no [ordinary member]{.addu} parameters.
+[1]{.pnum} A _class member access operator function_ is a function named `operator->` that is [a non-static]{.rm} [an object]{.addu} member function taking no [non-this]{.addu} parameters.
 :::
 
 Change [over.inc]{.sref}/1:
 
 ::: bq
 [1]{.pnum} An _increment operator function_ is a function named `operator++`.
-If this function is [a non-static]{.rm} [an object]{.addu} member function with no [ordinary member]{.addu} parameters, or a non-member function with one parameter, it defines the prefix increment operator `++` for objects of that type.
-If the function is [a non-static]{.rm} [an object]{.addu} member function with one [ordinary member]{.addu} parameter (which shall be of type `int`) or a non-member function with two parameters (the second of which shall be of type `int`), it defines the postfix increment operator `++` for objects of that type.
+If this function is [a non-static]{.rm} [an object]{.addu} member function with no [non-this]{.addu} parameters, or a non-member function with one parameter, it defines the prefix increment operator `++` for objects of that type.
+If the function is [a non-static]{.rm} [an object]{.addu} member function with one [non-this]{.addu} parameter (which shall be of type `int`) or a non-member function with two parameters (the second of which shall be of type `int`), it defines the postfix increment operator `++` for objects of that type.
 
 :::
 
