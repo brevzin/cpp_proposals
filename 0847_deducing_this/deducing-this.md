@@ -1500,7 +1500,6 @@ Member functions with an explicit this parameter are sort of half-static, half-n
 
 ```cpp
 struct C {
-    static void static_fun();
     void nonstatic_fun();
     
     void explicit_fun(this C c) {
@@ -1508,6 +1507,12 @@ struct C {
         c.nonstatic_fun(); // ok
         static_fun();      // ok
         auto x = this;     // error
+    }
+    
+    static void static_fun() {
+        explicit_fun();     // error
+        explicit_fun(C{});  // ok
+        C{}.explicit_fun(); // ok
     }
     
     static void operator()(int);   // error
@@ -1645,7 +1650,7 @@ Add a new paragraph after [expr.prim.lambda.closure]{.sref}/3:
 
 ::: bq
 ::: addu
-[3*]{.pnum} If a function call operator of a lambda with a _lambda-capture_ and an explicit this parameter is odr-used, the type of the explicit this parameter shall be either:
+[3*]{.pnum} The type of the explicit this parameter, if any, of a possibly-instantiated function call operator of a lambda with a _lambda-capture_ shall be either:
 
 - [3*.1]{.pnum} the closure type,
 - [3*.2]{.pnum} a class type derived from the closure type, or
@@ -1678,7 +1683,7 @@ Change [expr.call]{.sref}/1-2. The intent is to reduce the restriction on static
 
 ::: bq
 [1]{.pnum} [...] The postfix expression shall have function type or function pointer type.
-For a call to a non-member function or to a static member function [that is not an object member function ([dcl.fct])]{.addu}, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.
+For a call to a non-member function or to a static member function [that does not have an explicit this parameter ([dcl.fct])]{.addu}, the postfix expression shall either be an lvalue that refers to a function (in which case the function-to-pointer standard conversion ([conv.func]) is suppressed on the postfix expression), or have function pointer type.
 
 [2]{.pnum} For a call to a non-static member function, the postfix expression shall be an implicit ([class.mfct.non-static], [class.static]) or explicit class member access whose _id-expression_ is a function member name, or a pointer-to-member expression selecting a function member; the call is as a member of the class object referred to by the object expression.
 In the case of an implicit class member access, the implied object is the one pointed to by `this`.
@@ -1690,14 +1695,13 @@ In the case of an implicit class member access, the implied object is the one po
 Change [expr.call]{.sref}/7:
 
 ::: bq
-[7]{.pnum} When a function is called, each parameter ([dcl.fct]) is initialized ([dcl.init], [class.copy.ctor]) with its corresponding argument.
+[7]{.pnum} When a function is called, each parameter ([dcl.fct]) is initialized ([dcl.init], [class.copy.ctor]) with its corresponding argument. [If the function is a static member function with an explicit this parameter and there is an implied object argument ([over.call.func]), the list of provided arguments is preceded by the implied object argument for the purposes of this correspondence.]{.addu}
 If there is no corresponding argument, the default argument for the parameter is used. [...] 
 If the function is a non-static member function, the `this` parameter of the function is initialized with a pointer to the object of the call, converted as if by an explicit type conversion.
 [ *Note*: There is no access or ambiguity checking on this conversion; the access checking and disambiguation are done as part of the (possibly implicit) class member access operator.
 See [class.member.lookup], [class.access.base], and [expr.ref].
 — end note
- ] [If the function is an object member function with an explicit this parameter, the explicit this parameter of the function is initialized with the object of the call.]{.addu}
-When a function is called, the type of any parameter shall not be a class type that is either incomplete or abstract.
+ ] When a function is called, the type of any parameter shall not be a class type that is either incomplete or abstract.
 :::
 
 Change [expr.ref]{.sref}/6.3 - flipping the two bullets.
@@ -1716,20 +1720,28 @@ The expression can be used only as the left-hand operand of a member function ca
 
 ### Wording in [dcl.dcl]{.sref} {#dcl.dcl}
 
-In [dcl.fct]{.sref}/3, insert the _explicit-object-parameter-declaration_ into the syntax for the _parameter-declaration-clause_:
+In [dcl.fct]{.sref}/3, introduce _explicit-this-parameter-declaration_ and _non-this-parameter-declaration_ as the two kinds of _parameter-declaration_:
 
 ::: bq
 
 >| _parameter-declaration-list_:
 >|    _parameter-declaration_
->|    [_explicit-this-parameter-declaration_]{.addu}
 >|    _parameter-declaration-list_ `,` _parameter-declaration_
+>|
+
+>| [_parameter-declaration_]{.rm} [_non-this-parameter-declaration_]{.addu}:
+>|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _declarator_
+>|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _declarator_ `=` _initializer-clause_
+>|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _abstract-declarator_~opt~
+>|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _abstract-declarator_~opt~ `=` _initializer-clause_ 
 
 ::: add
-
 >| _explicit-this-parameter-declaration_:
->|    `this` _parameter-declaration_
-
+>|    `this` _non-this-parameter-declaration_
+>|
+>| _parameter-declaration_:
+>|    _explicit-this-parameter-declaration_
+>|    _non-this-parameter-declaration_
 :::
 
 :::
@@ -1739,16 +1751,13 @@ After [dcl.fct]{.sref}/5, insert paragraph describing where a function declarati
 ::: bq
 ::: add
 
-[5a]{.pnum} An _explicit-this-parameter-declaration_ shall appear only as a component of a _parameter-declaration-list_ of either:
+[5a]{.pnum} An _explicit-this-parameter-declaration_ shall appear only as the first _parameter-declaration_ of a _parameter-declaration-list_ of either:
 
 * [5a.1]{.pnum} a _member-declarator_ that declares a member function ([class.mem]), or
 * [5a.2]{.pnum} a _lambda-declarator_ ([expr.prim.lambda]).
 
-[5b]{.pnum} A _member-declarator_ with an _explicit-this-parameter-declaration_:
-
-* [5b.1]{.pnum} shall not include include either a _ref-qualifier_ or a _cv-qualifier-seq_, and
-* [5b.2]{.pnum} shall not be declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ]
-
+[5b]{.pnum} A _member-declarator_ with an _explicit-this-parameter-declaration_ shall not include a _ref-qualifier_ or a _cv-qualifier-seq_ and
+shall not be declared `static` or `virtual`. [ _Note_: Such a function is implicitly static ([class.mem]) - _end note_ ]
 
 [ *Example*:
 
@@ -1763,6 +1772,9 @@ struct C {
 
 void test(C c) {
     c.f();               // ok: calls C::f
+    C::f(c);             // ok: calls C::f
+    
+    c.g(42);             // ok: calls C::g<C&>
     std::move(c).g(42);  // ok: calls C::g<C>
 }
 ```
@@ -1817,45 +1829,6 @@ Change [class.static.mfct]{.sref}/2:
 A static member function shall not be `virtual`.
 There shall not be a static and a non-static member function with the same name and the same [parameter types]{.rm} [non-this-parameter-type-list]{.addu} ([\[dcl.fct\], ]{.addu} [over.load]).
 A static member function shall not be declared `const`, `volatile`, or `const volatile`.
-:::
-
-Extend the note in [class.virtual]{.sref}/11:
-
-::: bq
-[11]{.pnum} [ _Note_: The `virtual` specifier implies membership, so a virtual function cannot be a non-member ([dcl.fct.spec]) function.
-Nor can a virtual function be a static member, since a virtual function call relies on a specific object for determining which function to invoke.
-A virtual function declared in one class can be declared a friend ([class.friend]) in another class.
-— _end note_ ]
-
-::: addu
-[11b]{.pnum} [ _Note_: A static member function with an explicit this parameter ([dcl.fct]) never overrides a virtual member function. [ _Example_: 
-```
-struct Base {
-    virtual void f() &;
-};
-
-struct D1 : Base {
-    void f(this D1&); // does not override Base::f
-};
-
-struct D2 : Base {
-    void f(this Base&); // does not override Base::f
-};
-
-void call_f(Base& b) {
-    b.f();
-}
-
-void test_f() {
-    D1 d1;
-    D2 d2;
-    
-    call_f(d1); // calls Base::f, not D1::f
-    call_f(d2); // calls Base::f, not D2::f
-}
-```
-- _end example_ ] - _end note_ ]
-:::
 :::
 
 ### Wording in [over]{.sref}
@@ -1915,7 +1888,7 @@ where `X` is the class of which the function is a member and *cv* is the *cv*-qu
 [ Example: For a `const` member function of class `X`, the extra parameter is assumed to have type “[lvalue]{.addu} reference to `const X`”.
 — _end example_
  ]
-For conversion functions, the function is considered to be a member of the class of the implied object argument for the purpose of defining the type of the implicit [object]{.rm} [this]{.addu} parameter.
+For conversion functions [that are non-static member functions]{.addu}, the function is considered to be a member of the class of the implied object argument for the purpose of defining the type of the implicit [object]{.rm} [this]{.addu} parameter.
 For non-conversion functions introduced by a _using-declaration_ into a derived class, the function is considered to be a member of the derived class for the purpose of defining the type of the implicit [object]{.rm} [this]{.addu} parameter.
 For static member functions [that do not have an explicit this parameter]{.addu}, the implicit [object]{.rm} [this]{.addu} parameter is considered to match any object (since if the function is selected, the object is discarded).
 [ _Note_: No actual type is established for the implicit [object]{.rm} [this]{.addu} parameter of [such]{.addu} a static member function, and no attempt will be made to determine a conversion sequence for that parameter ([over.match.best]).
@@ -1930,17 +1903,18 @@ For non-static member functions declared without a _ref-qualifier_, even if the 
  ]
 :::
 
-Change [over.call.func]{.sref}/3 and the corresponding footnote, and add the example:
+Change [over.call.func]{.sref}/3 and the corresponding footnote, and add the example. There may not be an implied object argument (in the case of invoking an explicit this function from a static member function):
 
 ::: bq
 [3]{.pnum} Because of the rules for name lookup, the set of candidate functions consists (1) entirely of non-member functions or (2) entirely of member functions of some class T.
 In case (1), the argument list is the same as the expression-list in the call.
-In case (2), the argument list is the _expression-list_ in the call augmented by the addition of an implied object argument as in a qualified function call [.]{.rm} [as follows:]{.addu}
+In case (2), the argument list is the _expression-list_ in the call [possibly]{.addu} augmented by the addition of an implied object argument as in a qualified function call [.]{.rm} [as follows:]{.addu}
 
-- [3.1]{.pnum} [If]{.rm} [if]{.addu} the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, then the implied object argument is `(*this)`[.]{.rm} [;]{.addu}
-- [3.2]{.pnum} [If the keyword `this` is not in scope or refers to another class, then]{.rm} [otherwise, ]{.addu} a contrived object of type `T` becomes the implied object argument. ^119^
+- [3.1]{.pnum} If the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, then the implied object argument is `(*this)`.
+- [3.2]{.pnum} [Otherwise, for candidate functions that are static member functions with an explicit this parameter, there is no implied object argument.]{.addu}
+- [3.2]{.pnum} [If the keyword `this` is not in scope or refers to another class, then]{.rm} [Otherwise, ]{.addu} a contrived object of type `T` becomes the implied object argument. ^119^
 
-If the argument list is augmented by a contrived object and overload resolution selects one of the [non-static]{.rm} [object]{.addu} member functions of `T`, the call is ill-formed.
+If the argument list is augmented by a contrived object and overload resolution selects one of the non-static member functions of `T`, the call is ill-formed.
 
 ::: addu
 [ *Example*:
@@ -1954,13 +1928,13 @@ struct C {
     void f(this const C&);
     void g() const {
         f();       // ok: (*this).f()
-        f(*this);  // error: no viable candidate
+        f(*this);  // error: no viable candidate for (*this).f(*this)
         this->f(); // ok
     }
     
     static void h() {
-        f();       // error: implied object argument is contrived
-        f(C{});    // error: no viable candidate
+        f();       // error: no viable candidate
+        f(C{});    // ok: no implied object argument
         C{}.f();   // ok
     }
 };
@@ -1970,17 +1944,17 @@ struct C {
 
 [ ^119^ ]{.pnum} An implied object argument must be contrived to correspond to the implicit [object]{.rm} [this]{.addu} parameter attributed to [non-static]{.addu} member functions during overload resolution.
 It is not used in the call to the selected function.
-Since the [member functions]{.rm} [candidates]{.addu} all have the same [implicit object parameter]{.rm} [implied object argument]{.addu}, the contrived object will not be the cause to select or reject a function.
+[Since the member functions all have the same implicit object parameter, the contrived object will not be the cause to select or reject a function.]{.rm}
 :::
 
 Add to [over.call.object]{.sref}/3:
 
 ::: bq
 
-[3]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument `(E)`.
-[ *Note*: When comparing the call against the function call operators, the implied object argument is compared against [either]{.addu} the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter of the function call operator.
-When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
-The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
+[3]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument `(E)` [, if any]{.addu}.
+[ *Note*: When comparing the call against the function call operators, the implied object argument[, if any,]{.addu} is compared against [either]{.addu} the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter of the function call operator.
+When comparing the call against a surrogate call function, the implied object argument[, if any,]{.addu} is compared against the first parameter of the surrogate call function.
+The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument[, if any,]{.addu} to the appropriate function pointer or reference required by that first parameter.
 — *end note*
  ]
 
@@ -2034,7 +2008,7 @@ and the constructor or user-defined conversion function is a candidate by [...]
 Change [over.best.ics]{.sref}/7:
 
 ::: bq
-[7]{.pnum} In all contexts, when converting to the implicit [object]{.rm} [this]{.addu} parameter or when converting to the left operand of an assignment operation only standard conversion sequences are allowed.
+[7]{.pnum} In all contexts, when converting to the implicit [object]{.rm} [this]{.addu} parameter or when converting to the left operand of an assignment operation only standard conversion sequences are allowed. [ [*Note*: When converting to the explicit this parameter, if any, user-defined conversion sequences are allowed. - *end note* ] ]{.addu}
 :::
 
 Change [over.ics.user]{.sref}/1:
