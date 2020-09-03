@@ -36,7 +36,7 @@
 - 2121 <code class="sourceCode cpp"><span class="cf">do</span> <span class="kw">not</span> <span class="cf">return</span> <span class="kw">or</span> <span class="cf">else</span></code>: [d2121r0](2121_do_not_return/d2121r0.html)
 - 2162 Inheriting from  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2162r0](2162_inherit_variant/p2162r0.html) [p2162r1](2162_inherit_variant/p2162r1.html)
 - 2210 Superior String Splitting: [p2210r0](2210_string_split/p2210r0.html)
-- 2214 <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code>: [p2214r0](2214_vector_auto/p2214r0.html)
+- 2214 A Plan for C++23 Ranges: [p2214r0](2214_ranges_plan/p2214r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
