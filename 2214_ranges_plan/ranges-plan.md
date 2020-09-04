@@ -7,7 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Conor Hoekstra
-      email: <hoekstra101@hotmail.com>
+      email: <conorhoekstra@gmail.com>
     - name: Tim Song
       email: <t.canens.cpp@gmail.com>
 toc: true
