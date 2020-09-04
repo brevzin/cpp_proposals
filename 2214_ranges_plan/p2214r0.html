@@ -554,7 +554,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
     <td style="vertical-align:top">Reply-to:</td>
     <td>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
-      Conor Hoekstra<br>&lt;<a href="mailto:conorhoekstra@gmail.com" class="email">hoekstra101@hotmail.com</a>&gt;<br>
+      Conor Hoekstra<br>&lt;<a href="mailto:conorhoekstra@gmail.com" class="email">conorhoekstra@gmail.com</a>&gt;<br>
       Tim Song<br>&lt;<a href="mailto:t.canens.cpp@gmail.com" class="email">t.canens.cpp@gmail.com</a>&gt;<br>
     </td>
   </tr>
@@ -566,12 +566,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#views"><span class="toc-section-number">2</span> Views<span></span></a></li>
+<li><a href="#views"><span class="toc-section-number">2</span> Views<span></span></a>
+<ul>
+<li><a href="#the-zip-family"><span class="toc-section-number">2.1</span> The <code class="sourceCode cpp">zip</code> family<span></span></a></li>
+<li><a href="#the-windowing-family"><span class="toc-section-number">2.2</span> The windowing family<span></span></a></li>
+<li><a href="#derivates-of-transform"><span class="toc-section-number">2.3</span> Derivates of <code class="sourceCode cpp">transform</code><span></span></a></li>
+</ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">3</span> Algorithms<span></span></a></li>
 <li><a href="#actions"><span class="toc-section-number">4</span> Actions<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
+<style type="text/css">
+span.orange {
+    background-color: #ffa500;
+}
+span.yellow {
+    background-color: #ffff00;
+}
+</style>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>When Ranges was merged into C++20 <span class="citation" data-cites="P0896R4">[<a href="#ref-P0896R4" role="doc-biblioref">P0896R4</a>]</span>, it was knowingly incomplete. While it was based on the implementation experience in range-v3 <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span>, only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later.</p>
 <p>But now that the core of Ranges has been included, later has come and we have to figure out what to do for C++23. This is a particularly trying period in the committee’s history with the global pandemic and lack of face-to-face meetings. But we do already have a plan for C++23 <span class="citation" data-cites="P0592R4">[<a href="#ref-P0592R4" role="doc-biblioref">P0592R4</a>]</span> which laid out the following priorities:</p>
@@ -601,6 +614,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>One critical piece of missing functionality is <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R1">[<a href="#ref-P1206R1" role="doc-biblioref">P1206R1</a>]</span></span>. It’s not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority.</p>
 <p>We’ll start this section by enumerating all the adapters in range-v3 (and a few that aren’t), noting their current status, and ranking them according to our view of their priority for C++23, before describing how we came up with such a ranking.</p>
 <table>
+<colgroup>
+<col style="width: 36%"></col>
+<col style="width: 39%"></col>
+<col style="width: 24%"></col>
+</colgroup>
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
@@ -618,102 +636,102 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <tr class="odd">
 <td><code class="sourceCode cpp">addressof</code></td>
 <td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">adjacent_filter</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">adjacent_remove_if</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">all</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">any_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code></td>
 <td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">c_str</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">cache1</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="addu">Top, largely for <code class="sourceCode cpp">flat_map</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">cartesian_product</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">chunk</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">common</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">concat</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">const_</code></td>
 <td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">counted</code></td>
-<td>range-v3</td>
-<td></td>
+<td>C++20</td>
+<td>C++20</td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">cycle</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">delimit</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">drop</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">drop_last</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">drop_exactly</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">drop_while</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">empty</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">enumerate</code></td>
@@ -723,230 +741,232 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <tr class="even">
 <td><code class="sourceCode cpp">filter</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">filter_map</code></td>
 <td>(not in range-v3)</td>
-<td></td>
+<td><span class="addu">Top, as a more ergonomic <code class="sourceCode cpp">maybe</code></span></td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp">flat_map</code></td>
-<td>(not in range-v3)</td>
-<td></td>
-</tr>
-<tr class="odd">
 <td><code class="sourceCode cpp">for_each</code></td>
 <td>range-v3</td>
-<td></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">generate</code></td>
-<td>range-v3</td>
-<td></td>
+<td><span class="addu">Top, except named <code class="sourceCode cpp">flat_map</code> like everyone else calls it and allow for non-views</span></td>
 </tr>
 <tr class="odd">
-<td><code class="sourceCode cpp">generate_n</code></td>
+<td><code class="sourceCode cpp">generate</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">generate_n</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="odd">
 <td><code class="sourceCode cpp">group_by</code></td>
 <td>range-v3</td>
 <td><span class="addu">Top (but not how range-v3 does it)</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">group_by_key</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Top</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">indirect</code></td>
 <td>range-v3</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><code class="sourceCode cpp">intersperse</code></td>
-<td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">intersperse</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="odd">
 <td><code class="sourceCode cpp">ints</code></td>
 <td>range-v3</td>
 <td>Unnecessary unless people really hate <code class="sourceCode cpp">iota</code>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">iota</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">join</code></td>
 <td>partially C++20, lacks delimiter ability</td>
-<td></td>
+<td><span class="addu">Top (adding delimiter ability)</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">keys</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">linear_distribute</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">maybe</code></td>
 <td>proposed in <span class="citation" data-cites="P1255R6">[<a href="#ref-P1255R6" role="doc-biblioref">P1255R6</a>]</span></td>
-<td></td>
+<td>???</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">move</code></td>
 <td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">partial_sum</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">remove</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">remove_if</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">repeat</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">repeat_n</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">replace</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">replace_if</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">reverse</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">sample</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">scan</code></td>
 <td>(not in range-v3)</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">single</code></td>
 <td>C++20</td>
-<td></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">slice</code></td>
-<td>range-v3</td>
-<td></td>
+<td>C++20</td>
 </tr>
 <tr class="odd">
-<td><code class="sourceCode cpp">sliding</code></td>
+<td><code class="sourceCode cpp">slice</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">sliding</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="odd">
 <td><code class="sourceCode cpp">split</code></td>
 <td>C++20, but unergonomic</td>
 <td>See <span class="citation" data-cites="P2210R0">[<a href="#ref-P2210R0" role="doc-biblioref">P2210R0</a>]</span>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">split_when</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">stride</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">tail</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_exactly</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take_last</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_while</code></td>
 <td>C++20</td>
-<td></td>
+<td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">tokenize</code></td>
 <td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">trim</code></td>
 <td>range-v3</td>
-<td></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">unbounded</code></td>
 <td>range-v3</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><code class="sourceCode cpp">unique</code></td>
-<td>range-v3</td>
-<td></td>
+<td>Not proposed</td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp">values</code></td>
-<td>C++20</td>
-<td></td>
+<td><code class="sourceCode cpp">unique</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="odd">
+<td><code class="sourceCode cpp">values</code></td>
+<td>C++20</td>
+<td>C++20</td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp">zip</code></td>
 <td>range-v3</td>
 <td><span class="addu">Top</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">zip_with</code></td>
 <td>range-v3</td>
 <td><span class="addu">Top</span></td>
 </tr>
 </tbody>
 </table>
+<h2 data-number="2.1" id="the-zip-family" data-number="2.1"><span class="header-section-number">2.1</span> The <code class="sourceCode cpp">zip</code> family<a href="#the-zip-family" class="self-link"></a></h2>
+<p>TODO</p>
+<h2 data-number="2.2" id="the-windowing-family" data-number="2.2"><span class="header-section-number">2.2</span> The windowing family<a href="#the-windowing-family" class="self-link"></a></h2>
+<p>TODO</p>
+<h2 data-number="2.3" id="derivates-of-transform" data-number="2.3"><span class="header-section-number">2.3</span> Derivates of <code class="sourceCode cpp">transform</code><a href="#derivates-of-transform" class="self-link"></a></h2>
+<p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">const_</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
+<p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="algorithms" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
 <p>TODO</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="actions" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Actions<a href="#actions" class="self-link"></a></h1>

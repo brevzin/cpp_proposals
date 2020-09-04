@@ -13,6 +13,15 @@ author:
 toc: true
 ---
 
+<style type="text/css">
+span.orange {
+    background-color: #ffa500;
+}
+span.yellow {
+    background-color: #ffff00;
+}
+</style>
+
 # Introduction
 
 When Ranges was merged into C++20 [@P0896R4], it was knowingly incomplete. While it was based on the implementation experience in range-v3 [@range-v3], only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later. 
@@ -55,72 +64,86 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 
 | View | Current Status | Priority |
 |---------------|----------------|----------|
-| `addressof` | range-v3 | |
-| `adjacent_filter` | range-v3 | |
-| `adjacent_remove_if` | range-v3 | |
-| `all` | C++20 | |
-| `any_view<T>` | range-v3 | |
-| `c_str` | range-v3 | |
-| `cache1` | range-v3 | |
-| `cartesian_product` | range-v3 | |
-| `chunk` | range-v3 | |
-| `common` | C++20 | |
-| `concat` | range-v3 | |
-| `const_` | range-v3 | |
-| `counted` | range-v3 | |
-| `cycle` | range-v3 | |
-| `delimit` | range-v3 | |
-| `drop` | C++20 | |
-| `drop_last` | range-v3 | |
-| `drop_exactly` | range-v3 | |
-| `drop_while` | C++20 | |
-| `empty` | C++20 | |
+| `addressof` | range-v3 | Not proposed |
+| `adjacent_filter` | range-v3 | [Tier 3]{.diffdel} |
+| `adjacent_remove_if` | range-v3 | [Tier 3]{.diffdel} |
+| `all` | C++20 | C++20 |
+| `any_view<T>` | range-v3 | Not proposed |
+| `c_str` | range-v3 | [Tier 3]{.diffdel} |
+| `cache1` | range-v3 | [Top, largely for `flat_map`]{.addu} |
+| `cartesian_product` | range-v3 | [Tier 3]{.diffdel} |
+| `chunk` | range-v3 | [Tier 2]{.yellow} |
+| `common` | C++20 | C++20 |
+| `concat` | range-v3 | [Tier 2]{.yellow} |
+| `const_` | range-v3 | Not proposed |
+| `counted` | C++20 | C++20 |
+| `cycle` | range-v3 | [Tier 2]{.yellow} |
+| `delimit` | range-v3 | [Tier 3]{.diffdel} |
+| `drop` | C++20 | C++20 |
+| `drop_last` | range-v3 | [Tier 2]{.yellow} |
+| `drop_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `drop_while` | C++20 | C++20 |
+| `empty` | C++20 | C++20 |
 | `enumerate` | range-v3 | [Top]{.addu} |
-| `filter` | C++20 | |
-| `filter_map` | (not in range-v3) | |
-| `flat_map` | (not in range-v3) | |
-| `for_each` | range-v3 | |
-| `generate` | range-v3 | |
-| `generate_n` | range-v3 | |
+| `filter` | C++20 | C++20 |
+| `filter_map` | (not in range-v3) | [Top, as a more ergonomic `maybe`]{.addu} |
+| `for_each` | range-v3 | [Top, except named `flat_map` like everyone else calls it and allow for non-views]{.addu} |
+| `generate` | range-v3 | [Tier 2]{.yellow} |
+| `generate_n` | range-v3 | [Tier 2]{.yellow} |
 | `group_by` | range-v3 | [Top (but not how range-v3 does it)]{.addu} |
 | `group_by_key` | (not in range-v3) | [Top]{.addu} |
-| `indirect` | range-v3 | |
-| `intersperse` | range-v3 | |
+| `indirect` | range-v3 | Not proposed |
+| `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
-| `iota` | C++20 | |
-| `join` | partially C++20, lacks delimiter ability | |
-| `keys` | C++20 | |
-| `linear_distribute` | range-v3 | |
-| `maybe` | proposed in [@P1255R6] | |
-| `move` | range-v3 | |
-| `partial_sum` | range-v3 | |
-| `remove` | range-v3 | |
-| `remove_if` | range-v3 | |
-| `repeat` | range-v3 | |
-| `repeat_n` | range-v3 | |
-| `replace` | range-v3 | |
-| `replace_if` | range-v3 | |
-| `reverse` | C++20 | |
-| `sample` | range-v3 | |
-| `scan` | (not in range-v3) | |
-| `single` | C++20 | |
-| `slice` | range-v3 | |
-| `sliding` | range-v3 | |
+| `iota` | C++20 | C++20 |
+| `join` | partially C++20, lacks delimiter ability | [Top (adding delimiter ability)]{.addu} |
+| `keys` | C++20 | C++20 |
+| `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
+| `maybe` | proposed in [@P1255R6] | ??? |
+| `move` | range-v3 | Not proposed |
+| `partial_sum` | range-v3 | [Tier 2]{.yellow} |
+| `remove` | range-v3 | [Tier 2]{.yellow} |
+| `remove_if` | range-v3 | [Tier 2]{.yellow} |
+| `repeat` | range-v3 | [Tier 2]{.yellow} |
+| `repeat_n` | range-v3 | [Tier 2]{.yellow} |
+| `replace` | range-v3 | [Tier 2]{.yellow} |
+| `replace_if` | range-v3 | [Tier 2]{.yellow} |
+| `reverse` | C++20 | C++20 |
+| `sample` | range-v3 | [Tier 3]{.diffdel} |
+| `scan` | (not in range-v3) | [Tier 2]{.yellow} |
+| `single` | C++20 | C++20 |
+| `slice` | range-v3 | [Tier 2]{.yellow} |
+| `sliding` | range-v3 | [Tier 2]{.yellow} |
 | `split` | C++20, but unergonomic | See [@P2210R0]. |
-| `split_when` | range-v3 | |
-| `stride` | range-v3 | |
-| `tail` | range-v3 | |
-| `take` | C++20 | |
-| `take_exactly` | range-v3 | |
-| `take_last` | range-v3 | |
-| `take_while` | C++20 | |
-| `tokenize` | range-v3 | |
-| `trim` | range-v3 | |
-| `unbounded` | range-v3 | |
-| `unique` | range-v3 | |
-| `values` | C++20 | |
+| `split_when` | range-v3 | [Tier 2]{.yellow} |
+| `stride` | range-v3 | [Tier 2]{.yellow} |
+| `tail` | range-v3 | [Tier 2]{.yellow} |
+| `take` | C++20 | C++20 |
+| `take_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `take_last` | range-v3 | [Tier 2]{.yellow} |
+| `take_while` | C++20 | C++20 |
+| `tokenize` | range-v3 | Not proposed |
+| `trim` | range-v3 | [Tier 2]{.yellow} |
+| `unbounded` | range-v3 | Not proposed |
+| `unique` | range-v3 | [Tier 2]{.yellow} |
+| `values` | C++20 | C++20 |
 | `zip` | range-v3 | [Top]{.addu} |
 | `zip_with` | range-v3 | [Top]{.addu} |
+
+## The `zip` family
+
+TODO
+
+## The windowing family
+
+TODO
+
+## Derivates of `transform`
+
+Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof`, `const_`, `indirect`, and `move` are all basically wrappers around `transform` that take `std::addressof`, `std::as_const`, `std::dereference` (a function object we do not have at the moment), and `std::move`, respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other three we can't pass as an argument anyway.
+
+But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. `views::addressof` is shorter than `views::transform(LIFT(std::addressof))` (assuming a `LIFT` macro that wraps a name and emits a lambda), but we're not sure that we necessarily need to add special cases of `transform` for every useful function.
+
 
 # Algorithms
 
