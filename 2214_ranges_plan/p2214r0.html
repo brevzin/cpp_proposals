@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-09-03" />
+  <meta name="dcterms.date" content="2020-09-05" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-09-03</td>
+    <td>2020-09-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -566,15 +566,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#views"><span class="toc-section-number">2</span> Views<span></span></a>
+<li><a href="#view-adjuncts"><span class="toc-section-number">2</span> View adjuncts<span></span></a></li>
+<li><a href="#views"><span class="toc-section-number">3</span> Views<span></span></a>
 <ul>
-<li><a href="#the-zip-family"><span class="toc-section-number">2.1</span> The <code class="sourceCode cpp">zip</code> family<span></span></a></li>
-<li><a href="#the-windowing-family"><span class="toc-section-number">2.2</span> The windowing family<span></span></a></li>
-<li><a href="#derivates-of-transform"><span class="toc-section-number">2.3</span> Derivates of <code class="sourceCode cpp">transform</code><span></span></a></li>
+<li><a href="#the-zip-family"><span class="toc-section-number">3.1</span> The <code class="sourceCode cpp">zip</code> family<span></span></a>
+<ul>
+<li><a href="#a-tuple-that-is-indirectly_writable"><span class="toc-section-number">3.1.1</span> A <code class="sourceCode cpp">tuple</code> that is <code class="sourceCode cpp">indirectly_writable</code><span></span></a></li>
+<li><a href="#a-tuple-whose-common_reference-has-reference-semantics"><span class="toc-section-number">3.1.2</span> A <code class="sourceCode cpp">tuple</code> whose <code class="sourceCode cpp">common_reference</code> has reference semantics<span></span></a></li>
+<li><a href="#enumerates-first-range"><span class="toc-section-number">3.1.3</span> <code class="sourceCode cpp">enumerate</code>’s first range<span></span></a></li>
 </ul></li>
-<li><a href="#algorithms"><span class="toc-section-number">3</span> Algorithms<span></span></a></li>
-<li><a href="#actions"><span class="toc-section-number">4</span> Actions<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#the-windowing-family"><span class="toc-section-number">3.2</span> The windowing family<span></span></a></li>
+<li><a href="#derivates-of-transform"><span class="toc-section-number">3.3</span> Derivates of <code class="sourceCode cpp">transform</code><span></span></a></li>
+</ul></li>
+<li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
+<ul>
+<li><a href="#algorithms-that-output-a-range"><span class="toc-section-number">4.1</span> Algorithms that Output a Range<span></span></a></li>
+<li><a href="#algorithms-that-output-a-value"><span class="toc-section-number">4.2</span> Algorithms that Output a Value<span></span></a></li>
+</ul></li>
+<li><a href="#actions"><span class="toc-section-number">5</span> Actions<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <style type="text/css">
@@ -608,10 +618,41 @@ span.yellow {
 <li>Functionality that would be nice to have for C++23. Not as frequently needed as the first bucket, but still clearly want it in the standard - but more tolerable if this slips. Ideally C++23 anyway, but simply less critical.</li>
 <li>Functionality that is less important or needs more design work.</li>
 </ol>
-<p>This paper provides our opinion for how to categorize Ranges functionality into those three buckets. We go through, in turn: <a href="#views">views</a>, <a href="#algorithms">algorithms</a>, and <a href="#actions">actions</a> (which do not exist in C++20).</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="views" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Views<a href="#views" class="self-link"></a></h1>
+<p>This paper provides our opinion for how to categorize Ranges functionality into those three buckets. We go through, in turn: <a href="#view-adjuncts">views-adjacent functionality</a>, <a href="#views">views</a>, <a href="#algorithms">algorithms</a>, and <a href="#actions">actions</a> (which do not exist in C++20).</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="view-adjuncts" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> View adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
+<p>C++20 Ranges, and the range-v3 that birthed it, isn’t just a collection of loosely related views and algorithms. There’s some important other functionality there.</p>
+<p>One critical piece of missing functionality is <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R1">[<a href="#ref-P1206R1" role="doc-biblioref">P1206R1</a>]</span></span>. It’s not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.</p>
+<p>Another important piece of functionality is simply the ability to print views. In range-v3, views were printable, which made it easy to debug programs or to provide meaningful output. For instnace, the following program using range-v3 happily compiles:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/iota.hpp&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/transform.hpp&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/filter.hpp&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">namespace</span> rv <span class="op">=</span> ranges<span class="op">::</span>views;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">auto</span> r <span class="op">=</span> rv<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">20</span><span class="op">)</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>           <span class="op">|</span> rv<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>; <span class="op">})</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>           <span class="op">|</span> rv<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">*</span> i; <span class="op">})</span>;</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> r;</span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="op">}</span></span></code></pre></div>
+<p>and prints <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">16</span>,<span class="dv">36</span>,<span class="dv">64</span>,<span class="dv">100</span>,<span class="dv">144</span>,<span class="dv">196</span>,<span class="dv">256</span>,<span class="dv">324</span><span class="op">]</span></code>.</p>
+<p>Similarly, fmtlib supports printing ranges with <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>, which is slightly more tedious but is at least still a single line:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/iota.hpp&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/transform.hpp&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/filter.hpp&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="pp">#include </span><span class="im">&lt;fmt/format.h&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">namespace</span> rv <span class="op">=</span> ranges<span class="op">::</span>views;</span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="kw">auto</span> r <span class="op">=</span> rv<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">20</span><span class="op">)</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>           <span class="op">|</span> rv<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>; <span class="op">})</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>           <span class="op">|</span> rv<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">*</span> i; <span class="op">})</span>;</span>
+<span id="cb2-11"><a href="#cb2-11"></a>    fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;[{}]&quot;</span>, fmt<span class="op">::</span>join<span class="op">(</span>r, <span class="st">&quot;,&quot;</span><span class="op">))</span>;</span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="op">}</span></span></code></pre></div>
+<p>But neither the ability to stream views directly nor <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> are in C++20, so there is no direct way to print a range at all.</p>
+<p>We think it’s important that C++23 provides the ability to <span class="addu">format all the <code class="sourceCode cpp">view</code>s</span>. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it’s frustrating to even have to.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="views" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Views<a href="#views" class="self-link"></a></h1>
 <p>C++20 included a bunch of views, but range-v3 has a whole lot more. Views, much like algorithms, are the kind of thing where it’s just generally good to have more of them. The C++20 standard library has over 100 algorithms, but only 17 range adapters (excluding <code class="sourceCode cpp">all</code> and <code class="sourceCode cpp">ref</code>). We want more.</p>
-<p>One critical piece of missing functionality is <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R1">[<a href="#ref-P1206R1" role="doc-biblioref">P1206R1</a>]</span></span>. It’s not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority.</p>
 <p>We’ll start this section by enumerating all the adapters in range-v3 (and a few that aren’t), noting their current status, and ranking them according to our view of their priority for C++23, before describing how we came up with such a ranking.</p>
 <table>
 <colgroup>
@@ -666,7 +707,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">cache1</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top, largely for <code class="sourceCode cpp">flat_map</code></span></td>
+<td><span class="addu">Tier 1, largely for <code class="sourceCode cpp">flat_map</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">cartesian_product</code></td>
@@ -736,7 +777,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">enumerate</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">filter</code></td>
@@ -746,12 +787,12 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">filter_map</code></td>
 <td>(not in range-v3)</td>
-<td><span class="addu">Top, as a more ergonomic <code class="sourceCode cpp">maybe</code></span></td>
+<td><span class="addu">Tier 1, as a more ergonomic <code class="sourceCode cpp">maybe</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">for_each</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top, except named <code class="sourceCode cpp">flat_map</code> like everyone else calls it and allow for non-views</span></td>
+<td><span class="addu">Tier 1, except named <code class="sourceCode cpp">flat_map</code> like everyone else calls it and allow for non-views</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">generate</code></td>
@@ -766,12 +807,12 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">group_by</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top (but not how range-v3 does it)</span></td>
+<td><span class="addu">Tier 1 (but not how range-v3 does it)</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">group_by_key</code></td>
 <td>(not in range-v3)</td>
-<td><span class="addu">Top</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">indirect</code></td>
@@ -796,7 +837,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">join</code></td>
 <td>partially C++20, lacks delimiter ability</td>
-<td><span class="addu">Top (adding delimiter ability)</span></td>
+<td><span class="addu">Tier 1 (adding delimiter ability)</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">keys</code></td>
@@ -951,27 +992,69 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">zip</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">zip_with</code></td>
 <td>range-v3</td>
-<td><span class="addu">Top</span></td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">zip_tail</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 </tbody>
 </table>
-<h2 data-number="2.1" id="the-zip-family" data-number="2.1"><span class="header-section-number">2.1</span> The <code class="sourceCode cpp">zip</code> family<a href="#the-zip-family" class="self-link"></a></h2>
+<h2 data-number="3.1" id="the-zip-family" data-number="3.1"><span class="header-section-number">3.1</span> The <code class="sourceCode cpp">zip</code> family<a href="#the-zip-family" class="self-link"></a></h2>
+<p>The <code class="sourceCode cpp">zip</code> family of range adapters (<code class="sourceCode cpp">enumerate</code>, <code class="sourceCode cpp">zip</code>, <code class="sourceCode cpp">zip_with</code>, and <code class="sourceCode cpp">zip_tail</code> – the latter also known as <code class="sourceCode cpp">pairwise</code>) is an extremely useful set of adapters, with broad applicability.</p>
+<p>Indeed, we have many algorithms that exist largely because we don’t have <code class="sourceCode cpp">zip</code> (and prior to Ranges, didn’t have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code> 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a <code class="sourceCode cpp">zip</code> of the two ranges, <code class="sourceCode cpp">adjacent_difference</code> is <code class="sourceCode cpp">zip_tail</code> followed by <code class="sourceCode cpp">transform</code>, <code class="sourceCode cpp">inner_product</code> is <code class="sourceCode cpp">zip</code> followed by <code class="sourceCode cpp">accumulate</code>, and so on and so on. This is why we think <code class="sourceCode cpp">zip</code> is the top priority view.</p>
+<p>The most generic of this group is actually <code class="sourceCode cpp">iter_zip_with</code>. We’re not proposing this for inclusion as it doesn’t come up much in user facing code, but it is the core functionality for the family. <code class="sourceCode cpp">iter_zip_with<span class="op">(</span>f, rs<span class="op">...)</span></code> takes an <code class="sourceCode cpp">n</code>-ary invocable an <code class="sourceCode cpp">n</code> ranges and combines those into a single range whose values are the result of <code class="sourceCode cpp">f<span class="op">(</span>is<span class="op">...)</span></code>, where the <code class="sourceCode cpp">is</code> are the iterators into those ranges (note: iterators, not what they refer to). The size of an <code class="sourceCode cpp">iter_zip_with</code> is the minimum size of its ranges.</p>
+<p>We can implement the adapters we want on top of <code class="sourceCode cpp">iter_zip_with</code> easily (there’s a minor detail about how we want <code class="sourceCode cpp">value_type</code> and <code class="sourceCode cpp">reference</code> to behave, but beyond that, these are basically straightforward equivalences):</p>
+<ul>
+<li><code class="sourceCode cpp">zip_with</code> is <code class="sourceCode cpp">iter_zip_with</code> except first dereferencing all the iterators into the provided callable.</li>
+<li><code class="sourceCode cpp">zip<span class="op">(</span>rs<span class="op">...)</span></code> is <code class="sourceCode cpp">iter_zip_with<span class="op">([](</span>Is<span class="op">...</span> is<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> tuple<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>Rs<span class="op">&gt;...&gt;(*</span>is<span class="op">...)</span>; <span class="op">}</span>, rs<span class="op">...)</span></code>. Can’t implement <code class="sourceCode cpp">zip</code> in terms of <code class="sourceCode cpp">zip_with</code> because zipping a range that produces prvalues should yield a tuple of values, not a tuple of references, and <code class="sourceCode cpp">zip_with</code> would lose that distinction. But you can think of <code class="sourceCode cpp">zip<span class="op">(</span>rs<span class="op">...)</span></code> as <code class="sourceCode cpp">zip_with<span class="op">(</span>make_tuple, rs<span class="op">...)</span></code>, except in a way that properly preserves references.</li>
+<li><code class="sourceCode cpp">enumerate<span class="op">(</span>r<span class="op">)</span></code> is <code class="sourceCode cpp">zip<span class="op">(</span>iota<span class="op">(</span>range_size_t<span class="op">&lt;</span>R<span class="op">&gt;(</span><span class="dv">0</span><span class="op">))</span>, r<span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">zip_tail<span class="op">(</span>r<span class="op">)</span></code> is <code class="sourceCode cpp">zip<span class="op">(</span>r, r <span class="op">|</span> tail<span class="op">)</span></code>, which is <code class="sourceCode cpp">zip<span class="op">(</span>r, r <span class="op">|</span> drop<span class="op">(</span><span class="dv">1</span><span class="op">))</span></code></li>
+</ul>
+<p>Which is why we think they should be considered and adopted as a group.</p>
+<p>But in order to actually adopt <code class="sourceCode cpp">zip</code> and friends into C++23, we need to resolve several problems.</p>
+<h3 data-number="3.1.1" id="a-tuple-that-is-indirectly_writable" data-number="3.1.1"><span class="header-section-number">3.1.1</span> A <code class="sourceCode cpp">tuple</code> that is <code class="sourceCode cpp">indirectly_writable</code><a href="#a-tuple-that-is-indirectly_writable" class="self-link"></a></h3>
 <p>TODO</p>
-<h2 data-number="2.2" id="the-windowing-family" data-number="2.2"><span class="header-section-number">2.2</span> The windowing family<a href="#the-windowing-family" class="self-link"></a></h2>
+<h3 data-number="3.1.2" id="a-tuple-whose-common_reference-has-reference-semantics" data-number="3.1.2"><span class="header-section-number">3.1.2</span> A <code class="sourceCode cpp">tuple</code> whose <code class="sourceCode cpp">common_reference</code> has reference semantics<a href="#a-tuple-whose-common_reference-has-reference-semantics" class="self-link"></a></h3>
 <p>TODO</p>
-<h2 data-number="2.3" id="derivates-of-transform" data-number="2.3"><span class="header-section-number">2.3</span> Derivates of <code class="sourceCode cpp">transform</code><a href="#derivates-of-transform" class="self-link"></a></h2>
+<h3 data-number="3.1.3" id="enumerates-first-range" data-number="3.1.3"><span class="header-section-number">3.1.3</span> <code class="sourceCode cpp">enumerate</code>’s first range<a href="#enumerates-first-range" class="self-link"></a></h3>
+<p>TODO</p>
+<h2 data-number="3.2" id="the-windowing-family" data-number="3.2"><span class="header-section-number">3.2</span> The windowing family<a href="#the-windowing-family" class="self-link"></a></h2>
+<p>TODO</p>
+<h2 data-number="3.3" id="derivates-of-transform" data-number="3.3"><span class="header-section-number">3.3</span> Derivates of <code class="sourceCode cpp">transform</code><a href="#derivates-of-transform" class="self-link"></a></h2>
 <p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">const_</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
 <p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="algorithms" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="algorithms" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
+<p>The largest chunk of C++20 Ranges were the algorithms, and the work here has been very thorough. All the <code class="sourceCode cpp"><span class="op">&lt;</span>algorithm<span class="op">&gt;</span></code>s have been rangified, which has been fantastic.</p>
+<p>But there are a few algorithms that aren’t in <code class="sourceCode cpp"><span class="op">&lt;</span>algorithm<span class="op">&gt;</span></code> that do not have range-based versions: those that are in <code class="sourceCode cpp"><span class="op">&lt;</span>numeric<span class="op">&gt;</span></code>. These are often the last algorithms considered for anything, they were the last algorithms that were made <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (<span class="citation" data-cites="P1645R1">[<a href="#ref-P1645R1" role="doc-biblioref">P1645R1</a>]</span>) and now are the last to become range-based. They are:</p>
+<ul>
+<li><code class="sourceCode cpp">iota</code></li>
+<li><code class="sourceCode cpp">accumulate</code></li>
+<li><code class="sourceCode cpp">reduce</code></li>
+<li><code class="sourceCode cpp">transform_reduce</code></li>
+<li><code class="sourceCode cpp">inner_product</code></li>
+<li><code class="sourceCode cpp">adjacent_difference</code></li>
+<li><code class="sourceCode cpp">partial_sum</code></li>
+<li><code class="sourceCode cpp">inclusive_scan</code></li>
+<li><code class="sourceCode cpp">exclusive_scan</code></li>
+<li><code class="sourceCode cpp">transform_inclusive_scan</code></li>
+<li><code class="sourceCode cpp">transform_exclusive_scan</code></li>
+</ul>
+<p>What to do about these algorithms? Well, one of the big motivations for Ranges was the ability to actually compose algorithms. This severely reduces the need for the combinatorial explosion of algorithms - all the <code class="sourceCode cpp">transform_meow</code> algorithms are <code class="sourceCode cpp">transform</code> followed by <code class="sourceCode cpp">meow</code>, so we probably don’t need separate range-based algorithms for those.</p>
+<p>Four of these (<code class="sourceCode cpp">accumulate</code>, <code class="sourceCode cpp">reduce</code>, <code class="sourceCode cpp">transform_reduce</code>, and <code class="sourceCode cpp">inner_product</code>) return a value, while the other seven output a range (one through a pair of writable iterators and the other six through an output iterator). We’ll consider these separately.</p>
+<h2 data-number="4.1" id="algorithms-that-output-a-range" data-number="4.1"><span class="header-section-number">4.1</span> Algorithms that Output a Range<a href="#algorithms-that-output-a-range" class="self-link"></a></h2>
+<p><code class="sourceCode cpp">iota</code> is the easiest one to consider here. We already have <code class="sourceCode cpp">views<span class="op">::</span>iota</code> in C++20, which importantly means that we already have all the correct constraints in place. In that sense, it almost takes less time to <span class="addu">adopt <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code></span> than it would take to discuss whether or not it’s worth spending time adopting it.</p>
+<h2 data-number="4.2" id="algorithms-that-output-a-value" data-number="4.2"><span class="header-section-number">4.2</span> Algorithms that Output a Value<a href="#algorithms-that-output-a-value" class="self-link"></a></h2>
 <p>TODO</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="actions" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Actions<a href="#actions" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="actions" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Actions<a href="#actions" class="self-link"></a></h1>
 <p>TODO</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0592R4">
 <p>[P0592R4] Ville Voutilainen. 2019. To boldly suggest an overall plan for C++23. <br />
@@ -988,6 +1071,10 @@ span.yellow {
 <div id="ref-P1255R6">
 <p>[P1255R6] Steve Downey. 2020. A view of 0 or 1 elements: views::maybe. <br />
 <a href="https://wg21.link/p1255r6">https://wg21.link/p1255r6</a></p>
+</div>
+<div id="ref-P1645R1">
+<p>[P1645R1] Ben Deane. 2019. constexpr for numeric algorithms. <br />
+<a href="https://wg21.link/p1645r1">https://wg21.link/p1645r1</a></p>
 </div>
 <div id="ref-P1894R0">
 <p>[P1894R0] Andrew Tomazos. 2019. Proposal of std::upto, std::indices and std::enumerate. <br />
