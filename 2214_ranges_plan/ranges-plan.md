@@ -432,6 +432,28 @@ We therefore propose that to extend the constructor overload set of `std::tuple<
 
 ### `enumerate`'s first range
 
+We wrote earlier that `enumerate(r)` can be defined as `zip(iota(range_size_t<R>(0)), r)`, but it turns out that this isn't _quite_ right, and we need to do something slightly different.
+
+It turns out `iota` is a fairly complicated view due to wanting to avoid undefined behavior in its `difference_type` [@P1522R1]. `iota_view` has to choose a type that is wide enough to properly compute differences. One of the important points in that paper is that integer-like types are:
+
+::: quote
+Not required to be `WeaklyIncrementable`: There is no requirement that a user-defined integer-like type specify what _its_ difference type is.  (If we were to require that, then by induction implementors would be on the hook to provide an infinite-precision integer-like type.)  Therefore, `iota_view<iter_difference_t<I>>` for an arbitrary iterator `I` may in fact be ill-formed.
+:::
+
+Similarly, `iota(range_size_t<R>(0))` need not be valid [@range-v3.1141]. And, even if it were valid, it may be a wider integer type than would be strictly necessary. But `enumerate` is not as general-purpose as `iota`. From Eric Niebler:
+
+::: quote
+However, the enumerate view is special. The `iota_view<diffmax_t>` that `view::enumerate` constructs will never produce a number less than zero or greater than the maximum `diffmax_t`. So `diffmax_t` itself has enough bits to be usable as the difference type of `iota_view<diffmax_t>::iterator`.
+
+I can solve this problem with a custom `index_view` that doesn't try to promote the index type when computing the difference type.
+:::
+
+And this is what range-v3 does: `enumerate(r)` is defined as `zip(@_index-view_@<range_size_t<R>, range_difference_t<R>>(), r)`, where `@_index-view_@<S, D>` is basically a specialized version of `iota` such that `range_size_t<@_index-view_@<S, D>>` is `S` and `range_difference_t<@_index-view_@<S, D>>` is `D`. That is, rather than trying to compute a size and difference types to fit the range, we just use the provided range's size and difference types. If it's good enough for `R`, it's good enough for `enumerate_view<R>`!
+
+This `@_index-view_@` can be exposition-only, it's effectively an implementation detail of `enumerate`.
+
+## The `group_by` family
+
 TODO
 
 ## The windowing family
@@ -935,6 +957,14 @@ references:
       issued:
         year: 2017
       URL: https://github.com/ericniebler/range-v3/issues/573
+    - id: range-v3.1141
+      citation-label: range-v3.1141
+      title: view::enumerate issues with latest 1.0-beta commits?
+      author:
+        - family: voivoid
+      issued:
+        year: 2019
+      URL: https://github.com/ericniebler/range-v3/issues/1141
     - id: stl2.381
       citation-label: stl2.381
       title: Readable types with prvalue reference types erroneously model Writable
