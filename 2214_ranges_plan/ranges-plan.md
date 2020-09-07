@@ -197,13 +197,238 @@ Which is why we think they should be considered and adopted as a group.
 
 But in order to actually adopt `zip` and friends into C++23, we need to resolve several problems.
 
-### A `tuple` that is `indirectly_writable`
+### A `tuple` that is `writable`
 
-TODO
+Consider the following:
 
-### A `tuple` whose `common_reference` has reference semantics
+```cpp
+std::vector<int> vi = /* ... */;
+std::vector<std::string> vs = /* ... */;
+ranges::sort(views::zip(vi, vs));
+```
 
-TODO
+Does this operation make sense? Definitely! It would be very useful if this compiled. Unfortunately, as-is, it will not. We need to go back and understand _why_ this won't compile today and what we need to do to fix it.
+
+In [@range-v3.573], user Jarod42 pointed out that the following program used to compile, yet provide a non-sensical answer:
+
+```cpp
+struct C
+{
+    explicit C(std::string a) : bar(a) {}
+
+    std::string bar;
+};
+
+int main()
+{
+    std::vector<C> cs = { C("z"), C("d"), C("b"), C("c") };
+
+    ranges::sort(cs | ranges::view::transform([](const C& x) {return x.bar;}));
+
+    for (const auto& c : cs) {
+        std::cout << c.bar << std::endl;
+    }
+}
+```
+
+The range was _not_ sorted, the emitted output was still in the same order as the input... because we're sorting a range of _prvalue_ `std::string`s, and trying to swap prvalue `std::string`s makes little sense because it doesn't do anything. 
+
+But the reason it compiled was that the constraints checked if the iterators were assignable-through, which in this case was equivalent to checking if `std::string() = std::string()` is a valid expression... and it, unfortunately, is.  Assignment operators simply are not reference-qualified - they could not have been for a long time, and they are not now. The question became then - how can the library ensure that the above nonsense _does not compile_? 
+
+As discussed in [@stl2.381]:
+
+::: quote
+One fix would be to require that `*o` return a true reference, but that breaks when `*o` returns a proxy reference. The trick is in distinguishing between a prvalue that is a proxy from a prvalue that is just a value. The trick lies in recognizing that a proxy always represents a (logical, if not physical) indirection. As such, adding a `const` to the proxy should not effect the mutability of the thing being proxied. Further, if `decltype(*o)` is a true reference, then adding `const` to it has no effect, which also does not effect the mutability. So the fix is to add `const` to `decltype(*o)`, `const_cast` `*o` to that, and then test for writability.
+:::
+
+Which is how we ended up with the `indirectly_writable` (the concept formerly known as `Writable`) requiring `const`-assignability. 
+
+Hence, in order to make `ranges::sort(zip(vi, vs))` compile, we need to make `zip_view<R...>::iterator` model `indirectly_writable`, which means we need to make `std::tuple` const-assignable. That is, adding the following assignment operators, appropriately constrained:
+
+```diff
+  // [tuple.assign], tuple assignment
+  constexpr tuple& operator=(const tuple&);
++ constexpr tuple& operator=(const tuple&) const;
+  constexpr tuple& operator=(tuple&&) noexcept(@_see below_@);
++ constexpr tuple& operator=(tuple&&) const noexcept(@_see below_@);
+
+  template<class... UTypes>
+    constexpr tuple& operator=(const tuple<UTypes...>&);
++ template<class... UTypes>
++   constexpr tuple& operator=(const tuple<UTypes...>&) const;
+  template<class... UTypes>
+    constexpr tuple& operator=(tuple<UTypes...>&&);
++ template<class... UTypes>
++   constexpr tuple& operator=(tuple<UTypes...>&&) const;
+```
+
+_Or_, rather than change `std::tuple`, we can have `zip_view<R...>::value_type` and `zip_view<R...>::reference` be an entirely different tuple type than `std::tuple`, introducing a second tuple type into the standard library: `std2::tuple2`. This just seems like a facially terrible idea, we already have one tuple type, we should just have it solve this problem for is.
+
+We therefore propose that `std::tuple<T...>` be const-assignable whenever all of `T...` are const-assignable. And likewise for `std::pair<T, U>`, for consistency, as well as the other proxy reference types in the standard libary: `std::vector<bool>::reference` and `std::bitset<N>::reference`.
+
+### A `tuple` that is `readable`
+
+We encourage everyone to review Eric Niebler's four-part series on iterators [@niebler.iter.0] [@niebler.iter.1] [@niebler.iter.2] [@niebler.iter.3], as this problem is covered in there in some depth.
+
+There is a fundamental problem with standard library algorithms and how they interact with proxy iterators. One example used in the series is `unique_copy`:
+
+::: quote
+```{.cpp .numberLines}
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+template <class InIter, class OutIter, class Fn,
+          class _Tp>
+OutIter
+__unique_copy(InIter first, InIter last,
+              OutIter result,
+              Fn binary_pred, _Tp*) {
+  _Tp value = *first;
+  *result = value;
+  while (++first != last)
+    if (!binary_pred(value, *first)) {
+      value = *first;
+      *++result = value;
+    }
+  return ++result;
+}
+```
+
+[...] Note the value local variable on line 11, and especially note line 14, where it passes a value and a reference to `binary_pred`. Keep that in mind because it’s important!
+
+[...] Why do I bring it up? Because it’s _super problematic_ when used with proxy iterators. Think about what happens when you try to pass `vector<bool>::iterator` to the above `__unique_copy` function:
+
+```cpp
+std::vector<bool> vb{true, true, false, false};
+using R = std::vector<bool>::reference;
+__unique_copy(
+  vb.begin(), vb.end(),
+  std::ostream_iterator<bool>{std::cout, " "},
+  [](R b1, R b2) { return b1 == b2; }, (bool*)0 );
+```
+
+This _should_ write a “true” and a “false” to `cout`, but it doesn’t compile. Why? The lambda is expecting to be passed two objects of `vector<bool>`‘s proxy reference type, but remember how `__unique_copy` calls the predicate:
+```cpp	
+if (!binary_pred(value, *first)) { /*...*/
+```
+
+That’s a `bool&` and a `vector<bool>::reference`. Ouch!
+:::
+
+The blog goes on to point out that one way to resolve this is by having the lambda take both parameters as `auto&&`. But having to _require_ a generic lambda is a bit... much. This was the reason we have the idea of a `common_reference`. Rewriting the above to be:
+
+```cpp
+using R = std::iter_common_reference_t<std::vector<bool>::reference>;
+__unique_copy(
+  vb.begin(), vb.end(),
+  std::ostream_iterator<bool>{std::cout, " "},
+  [](R b1, R b2) { return b1 == b2; }, (bool*)0 );
+```
+
+This now works. And that is now the requirement that we have for iterators, that they be `indirectly_readable` - which, among other things, requires that there be a `common_reference` between the iterator's `reference` type and the iterator's `value_type&`:
+
+```cpp
+template<class In>
+  concept @_indirectly-readable-impl_@ =
+    requires(const In in) {
+      typename iter_value_t<In>;
+      typename iter_reference_t<In>;
+      typename iter_rvalue_reference_t<In>;
+      { *in } -> same_as<iter_reference_t<In>>;
+      { ranges::iter_move(in) } -> same_as<iter_rvalue_reference_t<In>>;
+    } &&
+    common_reference_with<iter_reference_t<In>&&, iter_value_t<In>&> &&
+    common_reference_with<iter_reference_t<In>&&, iter_rvalue_reference_t<In>&&> &&
+    common_reference_with<iter_rvalue_reference_t<In>&&, const iter_value_t<In>&>;
+
+template<class In>
+  concept indirectly_readable =
+    @_indirectly-readable-impl_@<remove_cvref_t<In>>;
+    
+template<class I>
+  concept input_iterator =
+    input_or_output_iterator<I> &&
+    indirectly_readable<I> &&
+    requires { typename @_ITER_CONCEPT_@(I); } &&
+    derived_from<@_ITER_CONCEPT_@(I), input_iterator_tag>;    
+```
+
+How does this relate to `zip`?
+
+Letting `I` be `zip_view<R...>::iterator` for some set of ranges `R...`, it just follows from first principles that `iter_reference_t<I>` should be `std::tuple<range_reference_t<R>...>` &mdash; dereferencing a zip iterator should give you a tuple of dereferencing all the underlying ranges' iterators. And then it sort of follows from symmetry that `iter_value_t<I>` should be `std::tuple<range_value_t<R>...>`. But then what does `iter_common_reference_t<I>` end up being?
+
+Let's pick some concrete types. Taking our earlier example of:
+
+```cpp
+std::vector<int> vi = /* ... */;
+std::vector<std::string> vs = /* ... */;
+ranges::sort(views::zip(vi, vs));
+```
+
+We have a value type of `std::tuple<int, std::string>` and a reference type of `std::tuple<int&, std::string&>`. The common reference of those exists: the `reference` type is convertible to the value type but not in the other direction, so the common reference is just the value type of `std::tuple<int, std::string>`. This might be odd, having a common _reference_ type that has no reference semantics, but it does work. And in some cases you can't really do better (as in the `vector<bool>` example from the blog series, the common reference is `bool`).
+
+But where we really run into problems is with non-copyable types. If instead of zipping a `std::vector<int>` and a `std::vector<std::string>`, we changed the first range to be a `std::vector<std::unique_ptr<int>>`, what happens? We have a value type of `std::tuple<std::unique_ptr<int>, std::string>` and a reference type of `std::tuple<std::unique_ptr<int>&, std::string&>`, similar to before. But now, neither is convertible to the other.
+
+The constructor overload set of `std::tuple` is... intense to say the least. But the relevant ones are:
+
+```{.cpp .numberLines}
+constexpr explicit(@_see below_@) tuple();
+constexpr explicit(@_see below_@) tuple(const Types&...);         // only if sizeof...(Types) >= 1
+template<class... UTypes>
+  constexpr explicit(@_see below_@) tuple(UTypes&&...);           // only if sizeof...(Types) >= 1
+
+tuple(const tuple&) = default;
+tuple(tuple&&) = default;
+
+template<class... UTypes>
+  constexpr explicit(@_see below_@) tuple(const tuple<UTypes...>&);
+template<class... UTypes>
+  constexpr explicit(@_see below_@) tuple(tuple<UTypes...>&&);
+
+template<class U1, class U2>
+  constexpr explicit(@_see below_@) tuple(const pair<U1, U2>&);   // only if sizeof...(Types) == 2
+template<class U1, class U2>
+  constexpr explicit(@_see below_@) tuple(pair<U1, U2>&&);        // only if sizeof...(Types) == 2
+```
+
+We have a converting constructor from `std::tuple<U...> const&`, viable if `(constructible_from<T, U const&> && ...)`, and a converting constructor `std::tuple<U...>&&`, viable if `(constructible_from<T, U&&> && ...)`. In both cases, we're just distributing the qualifiers. 
+
+When trying to construct a `std::tuple<std::unique_ptr<int>, std::string>` from a `std::tuple<std::unique_ptr<int>&, std::string&>`, we reject the converting constructor of lines 9-10 because we can't construct a `std::unique_ptr<int>` from a `std::unique_ptr<int> const&`. `std::unique_ptr` isn't copyable, and that's not going to change.
+
+When trying to construct a `std::tuple<std::unique_ptr<int>&, std::string&>` from an _lvalue_ `std::tuple<std::unique_ptr<int>, std::string>` (the fact that it's an lvalue is important), we reject that very same converting constructor because we can't construct a `std::unique_ptr<int>&` from a `std::unique_ptr<int> const&`. Can't bind a non-const lvalue reference to a const lvalue. But we can of course bind a non-const lvalue reference to a non-const lvalue.
+
+And indeed that's how close this is to working. All we need is one more constructor (although we added two here for completeness):
+
+```{.diff .numberLines}
+  constexpr explicit(@_see below_@) tuple();
+  constexpr explicit(@_see below_@) tuple(const Types&...);         // only if sizeof...(Types) >= 1
+  template<class... UTypes>
+    constexpr explicit(@_see below_@) tuple(UTypes&&...);           // only if sizeof...(Types) >= 1
+
+  tuple(const tuple&) = default;
+  tuple(tuple&&) = default;
+
++ template<class... UTypes>
++   constexpr explicit(@_see below_@) tuple(tuple<UTypes...>&);
+  template<class... UTypes>
+    constexpr explicit(@_see below_@) tuple(const tuple<UTypes...>&);
+  template<class... UTypes>
+    constexpr explicit(@_see below_@) tuple(tuple<UTypes...>&&);
++ template<class... UTypes>
++   constexpr explicit(@_see below_@) tuple(const tuple<UTypes...>&&);  
+
+  template<class U1, class U2>
+    constexpr explicit(@_see below_@) tuple(const pair<U1, U2>&);   // only if sizeof...(Types) == 2
+  template<class U1, class U2>
+    constexpr explicit(@_see below_@) tuple(pair<U1, U2>&&);        // only if sizeof...(Types) == 2
+```
+
+If only we had a way to express "a forwarding reference to `tuple<UTypes...>`" in the language. But if we add these constructors, then suddenly we _can_ construct a `std::tuple<std::unique_ptr<int>&, std::string&>` from an lvalue `std::tuple<std::unique_ptr<int>, std::string>`. And that would just end up binding the references as you would expect.
+
+Such a change to the constructor set of `std::tuple` means that all of our `zip_view` iterators can actually be `indirectly_readable`, which means they can actually count as being iterators. In all cases then, the common reference type of zip iterators would become the reference type. Indeed, this even fixes the issue we mentioned earlier - where even when our underlying types were copyable, we originally ended up with a common reference type of `std::tuple<int, std::string>`, a type that does not have reference semantics. But now it would have a common reference type of `std::tuple<int&, std::string&>`, which certainly has reference semantics. 
+
+We therefore propose that to extend the constructor overload set of `std::tuple<T...>` to add converting constructors from `std::tuple<U...>&` and `std::tuple<U...> const&&`. And likewise for `std::pair<T, U>`, for consistency. 
 
 ### `enumerate`'s first range
 
@@ -213,7 +438,7 @@ TODO
 
 TODO
 
-## Derivates of `transform`
+## Derivatives of `transform`
 
 Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof`, `const_`, `indirect`, and `move` are all basically wrappers around `transform` that take `std::addressof`, `std::as_const`, `std::dereference` (a function object we do not have at the moment), and `std::move`, respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other three we can't pass as an argument anyway.
 
@@ -629,6 +854,13 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::zip_tail_with`
 - the addition of the following range algorithms:
     - `ranges::fold()`
+- the following other changes to standard library (necessary for the `zip` family):
+    - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
+    - `pair<T&, U&>` should be constructible from `pair<T, U>&`
+    - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
+    - `tuple<T&...>` should be constructible from `tuple<T...>&`.
+    - `vector<bool>::reference` should be const-assignable
+    - `bitset<N>::reference` should be const-assignable
 
 ## [Tier 2]{.yellow}
 
@@ -685,12 +917,62 @@ references:
       title: range-v3
       author:
         - family: Eric Niebler
-      issued: 2014
+      issued:
+        year: 2014
       URL: https://github.com/ericniebler/range-v3/
     - id: stepanov
       citation-label: stepanov
       title: From Mathematics to Generic Programming
       author:
         - family: Alexander A. Stepanov
-      issued: 2014
+      issued:
+        year: 2014
+    - id: range-v3.573
+      citation-label: range-v3.573
+      title: Readable types with prvalue reference types erroneously model IndirectlyMovable
+      author:
+        - family: Jarod42
+      issued:
+        year: 2017
+      URL: https://github.com/ericniebler/range-v3/issues/573
+    - id: stl2.381
+      citation-label: stl2.381
+      title: Readable types with prvalue reference types erroneously model Writable
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2017
+      URL: https://github.com/ericniebler/stl2/issues/381
+    - id: niebler.iter.0
+      citation-label: niebler.iter.0
+      title: To Be or Not to Be (an Iterator)
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2015
+      URL: http://ericniebler.com/2015/01/28/to-be-or-not-to-be-an-iterator/
+    - id: niebler.iter.1
+      citation-label: niebler.iter.1
+      title: Iterators++, Part 1
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2015
+      URL: http://ericniebler.com/2015/02/03/iterators-plus-plus-part-1/
+    - id: niebler.iter.2
+      citation-label: niebler.iter.2
+      title: Iterators++, Part 2
+      author:
+        - family: Eric Niebler
+      issued:
+        - year: 2015
+      URL: http://ericniebler.com/2015/02/13/iterators-plus-plus-part-2/
+    - id: niebler.iter.3
+      citation-label: niebler.iter.3
+      title: Iterators++, Part 3
+      author:
+        - family: Eric Niebler
+      issued:
+        - year: 2015
+      URL: http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/     
 ---
