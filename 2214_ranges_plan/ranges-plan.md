@@ -379,7 +379,9 @@ template<class I>
 
 How does this relate to `zip`?
 
-Letting `I` be `zip_view<R...>::iterator` for some set of ranges `R...`, it just follows from first principles that `iter_reference_t<I>` should be `std::tuple<range_reference_t<R>...>` &mdash; dereferencing a zip iterator should give you a tuple of dereferencing all the underlying ranges' iterators. And then it sort of follows from symmetry that `iter_value_t<I>` should be `std::tuple<range_value_t<R>...>`. But then what does `iter_common_reference_t<I>` end up being?
+Letting `I` be `zip_view<R...>::iterator` for some set of ranges `R...`, it just follows from first principles that `iter_reference_t<I>` should be `std::tuple<range_reference_t<R>...>` &mdash; dereferencing a zip iterator should give you a tuple of dereferencing all the underlying ranges' iterators. And then it sort of follows from symmetry that `iter_value_t<I>` should be `std::tuple<range_value_t<R>...>`. We'll discuss this in more depth [in a later section](#zip-and-zip_withs-value_type).
+
+But then what does `iter_common_reference_t<I>` end up being?
 
 Let's pick some concrete types. Taking our earlier example of:
 
@@ -452,6 +454,53 @@ If only we had a way to express "a forwarding reference to `tuple<UTypes...>`" i
 Such a change to the constructor set of `std::tuple` means that all of our `zip_view` iterators can actually be `indirectly_readable`, which means they can actually count as being iterators. In all cases then, the common reference type of zip iterators would become the reference type. Indeed, this even fixes the issue we mentioned earlier - where even when our underlying types were copyable, we originally ended up with a common reference type of `std::tuple<int, std::string>`, a type that does not have reference semantics. But now it would have a common reference type of `std::tuple<int&, std::string&>`, which certainly has reference semantics. 
 
 We therefore propose that to extend the constructor overload set of `std::tuple<T...>` to add converting constructors from `std::tuple<U...>&` and `std::tuple<U...> const&&`. And likewise for `std::pair<T, U>`, for consistency. 
+
+### `zip` and `zip_with`'s `value_type`
+
+Returning to our favorite example again:
+
+```cpp
+std::vector<int> vi = /* ... */;
+std::vector<std::string> vs = /* ... */;
+
+auto a = views::zip(vi, vs);
+```
+
+Let's talk about `a`. The reference type of `a` is `std::tuple<int&, std::string&>`. That's really the only option, it's the whole point of `zip`. `range_reference_t<zip_view<R...>>` needs to be `std::tuple<range_reference_t<R>...>`. 
+
+But what's the `value_type` of `a`? We ideally want the `value_type` to be something without reference semantics, something that we can properly hold onto and have a real copy. For a lot of ranges, the `reference` type is some `T&` or `T const&` and so the `value_type` is just `T`. But here, our `reference` is a prvalue. So we have a choice. 
+
+We could do `std::remove_cvref_t` on the `reference` as usual, that would give us just `reference` back, so the `value_type` of `a` would be `std::tuple<int&, std::string&>`. Not really an independent, value type. 
+
+Or, since we know what `zip` is, we don't have to guess what a good `value_type` might be. We could use the ranges themselves to tell us what that is. Each constituent `R` already provides a `range_value_t<R>`, and if those choices are good enough for the `R`s, they should be good enough for `zip`. That is, `std::tuple<range_value_t<R>...>`. Which, for `a`, would be `std::tuple<int, std::string>`.
+
+But there's a wrinkle here, consider:
+
+```cpp
+auto b = views::zip_with([](auto&... r){
+    return std::tie(r...);
+}, vi, vs);
+```
+
+The `reference` type of `b` is necessarily determined by the callable here: `invoke_result_t<F&, range_reference_t<R>...>`. In this case, this gives us `std::tuple<int&, std::string&>`. Notably, this is exactly the same `reference` type as with saw with `a`.
+
+But what's the `value_type` of `b`? Unlike in the case of `zip`, with `zip_with` we really have no idea where the `reference` type came from. It need not be any kind of reference at all, it could be... `int`. For `zip_with`, we really can't do much better than `remove_cvref_t<invoke_result_t<F&, range_reference_t<R>...>>` &mdash; which again gets us back to the same `std::tuple<int&, std::string&>`. 
+
+A hypothetical different direction would be to introduce a type trait that would inform range adapters how to turn a reference-semantic type to a value type. Something that would turn `std::vector<bool>::reference` into `bool`, or `std::tuple<T&...>` into `std::tuple<T...>`. Then other range adapters could have used it themselves.
+
+But `views::transform` already exists, and is very similar in nature to `views::zip_with`. Indeed, `views::zip_with(F, E...)` is very nearly `views::zip(E...) | views::transform([=](auto&& tup){ return std::apply(F, std::forward<decltype(tup)>(tup)); })`, so any attempt to make `zip_with`'s `value_type` line up with `zip`'s would mean changing the existing behavior of `views::transform`. That makes it unviable to pursue (assuming it were even a good idea to begin with).
+
+The other way to get `zip_with`'s `value_type` to be consistent with `zip`'s is to abandon the aforementioned symmetry and just use `remove_cvref_t` to determine `zip`'s `value_type` as well. But we find this questionable &mdash; we shouldn't sacrifice `zip` at the altar of consistency. It's really not that big of a deal, it's an inconsistency that only really surfaces when users would use `zip_with` to do exactly what `zip` already does. But why would they do that, when they have `zip`?
+
+In short, we propose that:
+
+| | `reference` | `value_type` |
+|-|-|-|
+|`zip_view<R...>` | `std::tuple<range_reference_t<R>...>` | `std::tuple<range_value_t<R>...>` |
+|`zip_with_view<F, R...>` | `invoke_result_t<F&, range_reference_t<R>...>` | `remove_cvref_t<invoke_result_t<F&, range_reference_t<R>...>>` |
+
+We think these would be the most valuable choices. 
+
 
 ### `enumerate`'s first range
 
