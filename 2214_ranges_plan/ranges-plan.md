@@ -158,7 +158,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `scan` | (not in range-v3) | [Tier 2, as a rename of what is `partial_sum` in range-v3]{.yellow} |
 | `single` | C++20 | C++20 |
 | `slice` | range-v3 | [Tier 2]{.yellow} |
-| `sliding` | range-v3 | [Tier 2]{.yellow} |
+| `sliding` | range-v3 | [Tier 2, renamed to `slide`]{.yellow} |
 | `split` | C++20, but unergonomic | See [@P2210R0]. |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
 | `stride` | range-v3 | [Tier 2]{.yellow} |
@@ -671,9 +671,27 @@ But we don't want to specify it like that either.
 
 We think that `filter_map` merits a first-class view to accomplish this functionality not only because the above is fairly involved but also because it has has unnecessary overhead - it'd be nice to avoid instantiating three views when one is sufficient, along with all the wrapping that entails. 
 
-## The windowing family
+## The sliding family
 
-TODO
+Conor talks about this family of ranges in a CppCon 2019 lighting talk [@hoekstra.cppcon].
+
+- `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4.
+- `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `zip_tail`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here.
+- `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges.
+
+These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm `windowed`, Scala calls it `sliding`, D calls it `slide`, Haskell calls it `divvy`, and Clojure calls it `partition`.
+
+| Algorithm | Step | Size | Partial |
+|-|-|-|-|
+| `@_generic_@` | `n` | `k` | `b` |
+| `chunk` | `k` | `k` | `true` |
+| `slide` | `1` | `k` | `false` |
+| `stride` | `k` | `1` | N/A |
+
+The above table isn't _quite_ right - since `stride` does not give you a range of ranges, so it would unfortunately not be implementable in terms of `@_generic_@`. And as with `tail` vs `drop`, we have the question here of should `chunk` and `slide` each be first-class views or should they both be implemented in terms of `@_generic_@`? Implementing in terms of `@_generic_@` saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.
+
+Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing. 
+
 
 ## Derivatives of `transform`
 
@@ -1121,7 +1139,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::replace_if`
     - `views::scan`
     - `views::slice`
-    - `views::sliding`
+    - `views::slide`
     - `views::split_when`
     - `views::stride`
     - `views::take_exactly`
@@ -1224,4 +1242,12 @@ references:
       issued:
         - year: 2015
       URL: http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/     
+    - id: hoekstra.cppcon
+      citation-label: hoekstra.cppcon
+      title: "23 Ranges: slide & stride"
+      author:
+        - family: Conor Hoekstra
+      issued:
+        - year: 2019
+      URL: https://www.youtube.com/watch?v=-_lqZJK2vjI
 ---

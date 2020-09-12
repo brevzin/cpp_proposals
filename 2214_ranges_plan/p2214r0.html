@@ -583,7 +583,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#flat_map"><span class="toc-section-number">3.4.1</span> <code class="sourceCode cpp">flat_map</code><span></span></a></li>
 <li><a href="#filter_map"><span class="toc-section-number">3.4.2</span> <code class="sourceCode cpp">filter_map</code><span></span></a></li>
 </ul></li>
-<li><a href="#the-windowing-family"><span class="toc-section-number">3.5</span> The windowing family<span></span></a></li>
+<li><a href="#the-sliding-family"><span class="toc-section-number">3.5</span> The sliding family<span></span></a></li>
 <li><a href="#derivatives-of-transform"><span class="toc-section-number">3.6</span> Derivatives of <code class="sourceCode cpp">transform</code><span></span></a></li>
 </ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
@@ -946,7 +946,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">sliding</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="yellow">Tier 2, renamed to <code class="sourceCode cpp">slide</code></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">split</code></td>
@@ -1459,8 +1459,60 @@ span.yellow {
 <p>This is certainly quite a bit more complicated than the <code class="sourceCode cpp">views<span class="op">::</span>tail</code> implementation suggested earlier!</p>
 <p>But we don’t want to specify it like that either.</p>
 <p>We think that <code class="sourceCode cpp">filter_map</code> merits a first-class view to accomplish this functionality not only because the above is fairly involved but also because it has has unnecessary overhead - it’d be nice to avoid instantiating three views when one is sufficient, along with all the wrapping that entails.</p>
-<h2 data-number="3.5" id="the-windowing-family" data-number="3.5"><span class="header-section-number">3.5</span> The windowing family<a href="#the-windowing-family" class="self-link"></a></h2>
-<p>TODO</p>
+<h2 data-number="3.5" id="the-sliding-family" data-number="3.5"><span class="header-section-number">3.5</span> The sliding family<a href="#the-sliding-family" class="self-link"></a></h2>
+<p>Conor talks about this family of ranges in a CppCon 2019 lighting talk <span class="citation" data-cites="hoekstra.cppcon">[<a href="#ref-hoekstra.cppcon" role="doc-biblioref">hoekstra.cppcon</a>]</span>.</p>
+<ul>
+<li><code class="sourceCode cpp">chunk<span class="op">(</span>N<span class="op">)</span></code> breaks a range into non-overlapping ranges of length <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that the last range has length less than 4.</li>
+<li><code class="sourceCode cpp">slide<span class="op">(</span>N<span class="op">)</span></code> is very similar to <code class="sourceCode cpp">chunk</code> except its subranges are overlapping and all have length exactly <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>slide<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span><span class="op">]</span>,<span class="op">[</span><span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span><span class="op">]</span>,<span class="op">[</span><span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span><span class="op">]</span>,<span class="op">[</span><span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that <code class="sourceCode cpp">slide<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is similar to <code class="sourceCode cpp">zip_tail</code>, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this <code class="sourceCode cpp">sliding</code>, which has a different tense from the other two, so we change it to <code class="sourceCode cpp">slide</code> here.</li>
+<li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges.</li>
+</ul>
+<p>These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm <code class="sourceCode cpp">windowed</code>, Scala calls it <code class="sourceCode cpp">sliding</code>, D calls it <code class="sourceCode cpp">slide</code>, Haskell calls it <code class="sourceCode cpp">divvy</code>, and Clojure calls it <code class="sourceCode cpp">partition</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Algorithm</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Step</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Size</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Partial</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><em>generic</em></code></td>
+<td><code class="sourceCode cpp">n</code></td>
+<td><code class="sourceCode cpp">k</code></td>
+<td><code class="sourceCode cpp">b</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">chunk</code></td>
+<td><code class="sourceCode cpp">k</code></td>
+<td><code class="sourceCode cpp">k</code></td>
+<td><code class="sourceCode cpp"><span class="kw">true</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">slide</code></td>
+<td><code class="sourceCode cpp"><span class="dv">1</span></code></td>
+<td><code class="sourceCode cpp">k</code></td>
+<td><code class="sourceCode cpp"><span class="kw">false</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">stride</code></td>
+<td><code class="sourceCode cpp">k</code></td>
+<td><code class="sourceCode cpp"><span class="dv">1</span></code></td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p>The above table isn’t <em>quite</em> right - since <code class="sourceCode cpp">stride</code> does not give you a range of ranges, so it would unfortunately not be implementable in terms of <code class="sourceCode cpp"><em>generic</em></code>. And as with <code class="sourceCode cpp">tail</code> vs <code class="sourceCode cpp">drop</code>, we have the question here of should <code class="sourceCode cpp">chunk</code> and <code class="sourceCode cpp">slide</code> each be first-class views or should they both be implemented in terms of <code class="sourceCode cpp"><em>generic</em></code>? Implementing in terms of <code class="sourceCode cpp"><em>generic</em></code> saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.</p>
+<p>Moreover, as a language without named arguments, we have a different problem when it comes to <code class="sourceCode cpp"><em>generic</em></code> here. It takes two <code class="sourceCode cpp"><span class="dt">int</span></code>s and a <code class="sourceCode cpp"><span class="dt">bool</span></code>. There is no natural order for these parameters, so who knows what <code class="sourceCode cpp"><em>generic</em><span class="op">(</span><span class="dv">1</span>, <span class="dv">4</span>, <span class="kw">false</span><span class="op">)</span></code> means — especially since <code class="sourceCode cpp"><em>generic</em><span class="op">(</span><span class="kw">false</span>, <span class="dv">1</span>, <span class="dv">4</span><span class="op">)</span></code> would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in <code class="sourceCode cpp"><em>generic</em><span class="op">({.</span>step<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>size<span class="op">=</span><span class="dv">4</span>, <span class="op">.</span>partial<span class="op">=</span><span class="kw">false</span><span class="op">})</span></code>. This is a very useful pattern, but one which has no precedent in the standard library as of this writing.</p>
 <h2 data-number="3.6" id="derivatives-of-transform" data-number="3.6"><span class="header-section-number">3.6</span> Derivatives of <code class="sourceCode cpp">transform</code><a href="#derivatives-of-transform" class="self-link"></a></h2>
 <p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">const_</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
 <p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
@@ -1855,7 +1907,7 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slice</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>sliding</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>split_when</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>take_exactly</code></li>
@@ -1895,6 +1947,10 @@ span.yellow {
 </ul>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-hoekstra.cppcon">
+<p>[hoekstra.cppcon] Conor Hoekstra. 2019. 23 Ranges: slide &amp; stride. <br />
+<a href="https://www.youtube.com/watch?v=-_lqZJK2vjI">https://www.youtube.com/watch?v=-_lqZJK2vjI</a></p>
+</div>
 <div id="ref-N3408">
 <p>[N3408] J. Hoberock, O. Giroux, V. Grover, J. Marathe, et al. 2012. Parallelizing The Standard Algorithms Library. <br />
 <a href="https://wg21.link/n3408">https://wg21.link/n3408</a></p>
