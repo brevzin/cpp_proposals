@@ -139,8 +139,6 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `group_by_key` | (not in range-v3) | [Tier 1]{.addu} |
 | `indirect` | range-v3 | Not proposed |
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
-| `iter_zip_with` | range-v3 | [Tier 1]{.addu} |
-| `iter_zip_tail_with` | (not in range-v3) | [Tier 1]{.addu} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | C++20 |
 | `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability)]{.addu} |
@@ -195,28 +193,41 @@ The above is a semantically correct implementation. However, is it the implement
 
 This puts us in an interesting position: we either adopt a known suboptimal implementation of `tail` with minimal LWG cost (such that we could likely adopt this for C++23) or we could hold off for the optimal implementation (in which case we could not in good conscience put `tail` as a Tier 1 view, as it is certainly not that important). As such, we have tentatively marked it as Tier 3.
 
-This question is easier for some other views. As we'll see in the `zip` family shortly, there is really no issue with specifying `views::zip_with(F, Es...)` as expression-equivalent to `views::iter_zip_with(@_indirected_@(F), Es...)`. Although with the `map` family later, while `filter_map(E, F)` can be easily specified in terms of three adapters today (a `transform`, then a `filter`, then another `transform`), it could be significantly improved as a standalone view. It's a question that should guide review of this paper. 
+Consider two different, closely related views: `views::zip` and `views::zip_with`. Each could potentially be specified in terms of the other:
+
+- `views::zip(Es...)` could be `views::zip_with(@_forward-as-tuple_@, Es...)`
+- `views::zip_with(F, Es...)` could be `views::zip(Es...) | views::transform(std::bind_front(@_apply_@, F))`
+
+where `@_forward-as-tuple_@` and `@_apply_@` are function object versions of `std::forward_as_tuple`and `std::apply`, respectively.
+
+But we actually don't want to do either, because they're not _quite_ equivalent &mdash; they differ in their handling of ranges that produce prvalues. `zip_with` can't differentiate between prvalues and xvalues, while `zip` would need to, so we lose that distinction by implementing `zip` in terms of `zip_with`. Likewise, a first-class `zip_with` would construct those prvalues directly into the parameters of the function that gets passed in; whereas if we implemented `zip_with` in terms of `zip` and `transform` those prvalues would have to first be materialized into a `tuple` and then moved into the function. 
+
+Even though these two views are very, very similar to each other, we still don't want to specify one in terms of the other even if it means more specification effort. And we still propose that both be Tier 1 views due to their overall importance.
+
+Another interesting example is `filter_map`. As we'll see later, `filter_map(E, F)` can easily be specified in terms of three adapters today (a `transform` followed by a `filter` followed by a `transform`), but as with `tail`, it too could be significantly improved as a standalone view. 
+
+Ultimately, this question of full view or not fill view is one that should guide review of this paper. 
 
 
 ## The `zip` family
 
-The `zip` family of range adapters is an extremely useful set of adapters with broad applicability. It consists of two primary adapters (`iter_zip_with` and `iter_zip_tail_with`) and five range adapters that can be specified in terms of them (`enumerate`, `zip`, `zip_with`, `zip_tail`, and `zip_tail_with`).
+The `zip` family of range adapters is an extremely useful set of adapters with broad applicability. It consists of five user-facing range adapters: `enumerate`, `zip`, `zip_with`, `zip_tail`, and `zip_tail_with`. We hope to be able to specify these five in terms of two, exposition-only range adapters: `@_iter-zip-with_@<V>` and `@_iter-zip-tail-with_@<V>`.
 
 Indeed, we have many algorithms that exist largely because we don't have `zip` (and prior to Ranges, didn't have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to `ranges::transform` 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a `zip` of the two ranges, `adjacent_difference` is `zip_tail` followed by `transform`, `inner_product` is `zip_with` followed by `accumulate`, and so on and so on. This is why we think `zip` is the top priority view.
 
-The most generic of this group is `iter_zip_with`. While it doesn't come up much, if at all, in user facing code, it is core functionality for the family and aids significantly in the specification effort where LWG bandwidth is concerned. `iter_zip_with(f, rs...)` takes an `n`-ary invocable an `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `iter_zip_with` is the minimum size of its ranges. 
+The most generic of this group is `@_iter-zip-with_@<V>`. It is core functionality for the family and aids significantly in the specification effort where LWG bandwidth is concerned. `@_iter-zip-with_@(f, rs...)` takes an `n`-ary invocable an `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `@_iter-zip-with_@` is the minimum size of its ranges. The `reference` type is the type of `f(*is...)` while the `value_type` is `V` (described in more detail [later](#zip-and-zip_withs-value_type) along with the specific choices for `@_V~zip_with~_@` and `@_V~zip~_@` used below).
 
-From `iter_zip_with`, we get:
+From `@_iter-zip-with_@`, we get:
 
-- `zip_with(F, E...)` is expression-equivalent to `views::iter_zip_with(@_indirected_@(F), Es...)`, where `@_indirected_@` is a specification-only function object that dereferences all of its arguments before invoking `F`. 
-- `zip(E...)` is expression-equivalent to `views::iter_zip_with(@_make-zip-tuple_@, Es...)`, where `@_make-zip-tuple_@` is basically `[]<input_iterator... Is>(Is... is) { return tuple<iter_reference_t<Is>...>(*is...); }`.
-- `enumerate(E)` is expression-equivalent to `zip(_@index-view@_(E), E)`. We will discuss why `_@index-view@_(E)` instead of `iota(range_size_t<decltype(E)>(0)` [later](#enumerates-first-range).
+- `zip_with(F, E...)` is expression-equivalent to `@_iter-zip-with_@<@_V~zip_with~_@>(@_indirected_@(F), Es...)`, where `@_indirected_@` is a specification-only function object that dereferences all of its arguments before invoking `F` (basically `std::bind_front(std::apply, F)` if that actually worked).
+- `zip(E...)` is expression-equivalent to `views::@_iter-zip-with_@<@_V~zip~_@>(@_make-zip-tuple_@, Es...)`, where `@_make-zip-tuple_@` is basically `[]<input_iterator... Is>(Is... is) { return tuple<iter_reference_t<Is>...>(*is...); }`.
+- `enumerate(E)` is expression-equivalent to `zip(@_index-view_@(E), E)`. We will discuss why `@_index-view_@(E)` instead of `iota(range_size_t<decltype(E)>(0)` [later](#enumerates-first-range).
 
-But we do not want to define `zip_tail(E)` as `zip(E, E | drop(1))`. The primary reason to avoid doing this, and to make `zip_tail` (or rather, `iter_zip_tail_with`) a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that `drop` has to store (see also the `drop`/`tail` discussion earlier).
+But we do not want to define `zip_tail(E)` as `zip(E, E | drop(1))`. The primary reason to avoid doing this, and to make `zip_tail` (or rather, `@_iter-zip-tail-with_@<V>`) a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that `drop` has to store (see also the `drop`/`tail` discussion earlier).
 
-Once we have `iter_zip_tail_with`, `zip_tail` and `zip_tail_with` follow in the same way that we defined `zip` and `zip_with`.
+Once we have `@_iter-zip-tail-with_@<V>`, `zip_tail` and `zip_tail_with` follow in the same way that we defined `zip` and `zip_with`.
 
-In short, we get seven extremely useful ranges for the price of two. Which is why we think they should be considered and adopted as a group. 
+In short, we get five extremely useful ranges for the price of three specification-only ones. Which is why we think they should be considered and adopted as a group. 
 
 But in order to actually adopt `zip` and friends into C++23, we need to resolve several problems.
 
@@ -499,7 +510,21 @@ In short, we propose that:
 |`zip_view<R...>` | `std::tuple<range_reference_t<R>...>` | `std::tuple<range_value_t<R>...>` |
 |`zip_with_view<F, R...>` | `invoke_result_t<F&, range_reference_t<R>...>` | `remove_cvref_t<invoke_result_t<F&, range_reference_t<R>...>>` |
 
+Or for this specific example:
+
+| | `reference` | `value_type` |
+|-|-|-|
+|`a` &mdash;`zip(vi, vs)` | `std::tuple<int&, std::string&>` | `std::tuple<int, std::string` |
+|`b` &mdash; `zip_with(@_std::tie_@, vi, vs)` | `std::tuple<int&, std::string&>` | `std::tuple<int&, std::string&>` |
+
 We think these would be the most valuable choices. 
+
+As such, we can be more precise in our earlier formulation and say that:
+
+- `views::zip_with(F, E...)` is expression-equivalent to `views::@_iter-zip-with_@<remove_cvref_t<invoke_result_t<decltype(F)&, range_reference_t<decltype(E)>...>>>(@_indirected_@(F), E...)`
+- `views::zip(E...)` is expression-equivalent to `views::@_iter-zip-with_@<std::tuple<range_value_t<decltype(E)>...>>(@_forward-as-tuple_@, E...)`
+
+and similar for `zip_tail_with` and `zip_tail`.
 
 
 ### `enumerate`'s first range
@@ -556,7 +581,7 @@ And there is one in range-v3, it's called `cache1`. As the name suggests, it cac
 
 range-v3 has `cache1` yet only supports the first bullet, under the name `views::for_each`.
 
-Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion.
+Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion. Unlike other examples we've seen in this paper, there really isn't much added benefit to `flat_map` being a first-class view, so we propose to specify it as suggested above &mdash; in terms of `transform`, `join`, and possibly `cache1`.
 
 ### `filter_map`
 
@@ -1033,8 +1058,9 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::filter_map`    
     - `views::group_by`
     - `views::group_by_key`
-    - `views::iter_zip_with`
-    - `views::iter_zip_tail_with`
+    - `views::@_iter-zip-with_@<V>` (exposition-only)
+    - `views::@_iter-zip-tail-with_@<V>` (exposition-only)
+    - `views::@_index-view_@<S, D>` (exposition-only)
     - `views::join_with`
 - the addition of the following range adapters specified in terms of other range adapters:
     - `views::enumerate` 

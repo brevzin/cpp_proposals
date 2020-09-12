@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-09-10" />
+  <meta name="dcterms.date" content="2020-09-12" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-09-10</td>
+    <td>2020-09-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -849,16 +849,6 @@ span.yellow {
 <td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="odd">
-<td><code class="sourceCode cpp">iter_zip_with</code></td>
-<td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">iter_zip_tail_with</code></td>
-<td>(not in range-v3)</td>
-<td><span class="addu">Tier 1</span></td>
-</tr>
-<tr class="odd">
 <td><code class="sourceCode cpp">ints</code></td>
 <td>range-v3</td>
 <td>Unnecessary unless people really hate <code class="sourceCode cpp">iota</code>.</td>
@@ -1053,20 +1043,29 @@ span.yellow {
 <span id="cb3-3"><a href="#cb3-3"></a><span class="op">}</span></span></code></pre></div>
 <p>The above is a semantically correct implementation. However, is it the implementation we would actually want for <code class="sourceCode cpp">views<span class="op">::</span>tail</code>? There are a few extra things <code class="sourceCode cpp">views<span class="op">::</span>drop</code> has to do. <code class="sourceCode cpp">views<span class="op">::</span>drop</code> must store a count and a cache for the begin iterator for forward ranges (to satisfy <code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>), but <code class="sourceCode cpp">views<span class="op">:</span>tail</code> has to do none of these things since 1 is a constant and invoking <code class="sourceCode cpp">next<span class="op">()</span></code> one time still satisfies <code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>.</p>
 <p>This puts us in an interesting position: we either adopt a known suboptimal implementation of <code class="sourceCode cpp">tail</code> with minimal LWG cost (such that we could likely adopt this for C++23) or we could hold off for the optimal implementation (in which case we could not in good conscience put <code class="sourceCode cpp">tail</code> as a Tier 1 view, as it is certainly not that important). As such, we have tentatively marked it as Tier 3.</p>
-<p>This question is easier for some other views. As we’ll see in the <code class="sourceCode cpp">zip</code> family shortly, there is really no issue with specifying <code class="sourceCode cpp">views<span class="op">::</span>zip_with<span class="op">(</span>F, Es<span class="op">...)</span></code> as expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span>iter_zip_with<span class="op">(</span><em>indirected</em><span class="op">(</span>F<span class="op">)</span>, Es<span class="op">...)</span></code>. Although with the <code class="sourceCode cpp">map</code> family later, while <code class="sourceCode cpp">filter_map<span class="op">(</span>E, F<span class="op">)</span></code> can be easily specified in terms of three adapters today (a <code class="sourceCode cpp">transform</code>, then a <code class="sourceCode cpp">filter</code>, then another <code class="sourceCode cpp">transform</code>), it could be significantly improved as a standalone view. It’s a question that should guide review of this paper.</p>
-<h2 data-number="3.2" id="the-zip-family" data-number="3.2"><span class="header-section-number">3.2</span> The <code class="sourceCode cpp">zip</code> family<a href="#the-zip-family" class="self-link"></a></h2>
-<p>The <code class="sourceCode cpp">zip</code> family of range adapters is an extremely useful set of adapters with broad applicability. It consists of two primary adapters (<code class="sourceCode cpp">iter_zip_with</code> and <code class="sourceCode cpp">iter_zip_tail_with</code>) and five range adapters that can be specified in terms of them (<code class="sourceCode cpp">enumerate</code>, <code class="sourceCode cpp">zip</code>, <code class="sourceCode cpp">zip_with</code>, <code class="sourceCode cpp">zip_tail</code>, and <code class="sourceCode cpp">zip_tail_with</code>).</p>
-<p>Indeed, we have many algorithms that exist largely because we don’t have <code class="sourceCode cpp">zip</code> (and prior to Ranges, didn’t have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code> 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a <code class="sourceCode cpp">zip</code> of the two ranges, <code class="sourceCode cpp">adjacent_difference</code> is <code class="sourceCode cpp">zip_tail</code> followed by <code class="sourceCode cpp">transform</code>, <code class="sourceCode cpp">inner_product</code> is <code class="sourceCode cpp">zip_with</code> followed by <code class="sourceCode cpp">accumulate</code>, and so on and so on. This is why we think <code class="sourceCode cpp">zip</code> is the top priority view.</p>
-<p>The most generic of this group is <code class="sourceCode cpp">iter_zip_with</code>. While it doesn’t come up much, if at all, in user facing code, it is core functionality for the family and aids significantly in the specification effort where LWG bandwidth is concerned. <code class="sourceCode cpp">iter_zip_with<span class="op">(</span>f, rs<span class="op">...)</span></code> takes an <code class="sourceCode cpp">n</code>-ary invocable an <code class="sourceCode cpp">n</code> ranges and combines those into a single range whose values are the result of <code class="sourceCode cpp">f<span class="op">(</span>is<span class="op">...)</span></code>, where the <code class="sourceCode cpp">is</code> are the iterators into those ranges (note: iterators, not what they refer to). The size of an <code class="sourceCode cpp">iter_zip_with</code> is the minimum size of its ranges.</p>
-<p>From <code class="sourceCode cpp">iter_zip_with</code>, we get:</p>
+<p>Consider two different, closely related views: <code class="sourceCode cpp">views<span class="op">::</span>zip</code> and <code class="sourceCode cpp">views<span class="op">::</span>zip_with</code>. Each could potentially be specified in terms of the other:</p>
 <ul>
-<li><code class="sourceCode cpp">zip_with<span class="op">(</span>F, E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span>iter_zip_with<span class="op">(</span><em>indirected</em><span class="op">(</span>F<span class="op">)</span>, Es<span class="op">...)</span></code>, where <code class="sourceCode cpp"><em>indirected</em></code> is a specification-only function object that dereferences all of its arguments before invoking <code class="sourceCode cpp">F</code>.</li>
-<li><code class="sourceCode cpp">zip<span class="op">(</span>E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span>iter_zip_with<span class="op">(</span><em>make-zip-tuple</em>, Es<span class="op">...)</span></code>, where <code class="sourceCode cpp"><em>make-zip-tuple</em></code> is basically <code class="sourceCode cpp"><span class="op">[]&lt;</span>input_iterator<span class="op">...</span> Is<span class="op">&gt;(</span>Is<span class="op">...</span> is<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> tuple<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>Is<span class="op">&gt;...&gt;(*</span>is<span class="op">...)</span>; <span class="op">}</span></code>.</li>
-<li><code class="sourceCode cpp">enumerate<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <code class="sourceCode cpp">zip<span class="op">(</span>_index-view_<span class="op">(</span>E<span class="op">)</span>, E<span class="op">)</span></code>. We will discuss why <code class="sourceCode cpp">_index-view_<span class="op">(</span>E<span class="op">)</span></code> instead of <code class="sourceCode cpp">iota<span class="op">(</span>range_size_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>E<span class="op">)&gt;(</span><span class="dv">0</span><span class="op">)</span></code> <a href="#enumerates-first-range">later</a>.</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip<span class="op">(</span>Es<span class="op">...)</span></code> could be <code class="sourceCode cpp">views<span class="op">::</span>zip_with<span class="op">(</span><em>forward-as-tuple</em>, Es<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip_with<span class="op">(</span>F, Es<span class="op">...)</span></code> could be <code class="sourceCode cpp">views<span class="op">::</span>zip<span class="op">(</span>Es<span class="op">...)</span> <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>std<span class="op">::</span>bind_front<span class="op">(</span><em>apply</em>, F<span class="op">))</span></code></li>
 </ul>
-<p>But we do not want to define <code class="sourceCode cpp">zip_tail<span class="op">(</span>E<span class="op">)</span></code> as <code class="sourceCode cpp">zip<span class="op">(</span>E, E <span class="op">|</span> drop<span class="op">(</span><span class="dv">1</span><span class="op">))</span></code>. The primary reason to avoid doing this, and to make <code class="sourceCode cpp">zip_tail</code> (or rather, <code class="sourceCode cpp">iter_zip_tail_with</code>) a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that <code class="sourceCode cpp">drop</code> has to store (see also the <code class="sourceCode cpp">drop</code>/<code class="sourceCode cpp">tail</code> discussion earlier).</p>
-<p>Once we have <code class="sourceCode cpp">iter_zip_tail_with</code>, <code class="sourceCode cpp">zip_tail</code> and <code class="sourceCode cpp">zip_tail_with</code> follow in the same way that we defined <code class="sourceCode cpp">zip</code> and <code class="sourceCode cpp">zip_with</code>.</p>
-<p>In short, we get seven extremely useful ranges for the price of two. Which is why we think they should be considered and adopted as a group.</p>
+<p>where <code class="sourceCode cpp"><em>forward-as-tuple</em></code> and <code class="sourceCode cpp"><em>apply</em></code> are function object versions of <code class="sourceCode cpp">std<span class="op">::</span>forward_as_tuple</code>and <code class="sourceCode cpp">std<span class="op">::</span>apply</code>, respectively.</p>
+<p>But we actually don’t want to do either, because they’re not <em>quite</em> equivalent — they differ in their handling of ranges that produce prvalues. <code class="sourceCode cpp">zip_with</code> can’t differentiate between prvalues and xvalues, while <code class="sourceCode cpp">zip</code> would need to, so we lose that distinction by implementing <code class="sourceCode cpp">zip</code> in terms of <code class="sourceCode cpp">zip_with</code>. Likewise, a first-class <code class="sourceCode cpp">zip_with</code> would construct those prvalues directly into the parameters of the function that gets passed in; whereas if we implemented <code class="sourceCode cpp">zip_with</code> in terms of <code class="sourceCode cpp">zip</code> and <code class="sourceCode cpp">transform</code> those prvalues would have to first be materialized into a <code class="sourceCode cpp">tuple</code> and then moved into the function.</p>
+<p>Even though these two views are very, very similar to each other, we still don’t want to specify one in terms of the other even if it means more specification effort. And we still propose that both be Tier 1 views due to their overall importance.</p>
+<p>Another interesting example is <code class="sourceCode cpp">filter_map</code>. As we’ll see later, <code class="sourceCode cpp">filter_map<span class="op">(</span>E, F<span class="op">)</span></code> can easily be specified in terms of three adapters today (a <code class="sourceCode cpp">transform</code> followed by a <code class="sourceCode cpp">filter</code> followed by a <code class="sourceCode cpp">transform</code>), but as with <code class="sourceCode cpp">tail</code>, it too could be significantly improved as a standalone view.</p>
+<p>Ultimately, this question of full view or not fill view is one that should guide review of this paper.</p>
+<h2 data-number="3.2" id="the-zip-family" data-number="3.2"><span class="header-section-number">3.2</span> The <code class="sourceCode cpp">zip</code> family<a href="#the-zip-family" class="self-link"></a></h2>
+<p>The <code class="sourceCode cpp">zip</code> family of range adapters is an extremely useful set of adapters with broad applicability. It consists of five user-facing range adapters: <code class="sourceCode cpp">enumerate</code>, <code class="sourceCode cpp">zip</code>, <code class="sourceCode cpp">zip_with</code>, <code class="sourceCode cpp">zip_tail</code>, and <code class="sourceCode cpp">zip_tail_with</code>. We hope to be able to specify these five in terms of two, exposition-only range adapters: <code class="sourceCode cpp"><em>iter-zip-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> and <code class="sourceCode cpp"><em>iter-zip-tail-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code>.</p>
+<p>Indeed, we have many algorithms that exist largely because we don’t have <code class="sourceCode cpp">zip</code> (and prior to Ranges, didn’t have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code> 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a <code class="sourceCode cpp">zip</code> of the two ranges, <code class="sourceCode cpp">adjacent_difference</code> is <code class="sourceCode cpp">zip_tail</code> followed by <code class="sourceCode cpp">transform</code>, <code class="sourceCode cpp">inner_product</code> is <code class="sourceCode cpp">zip_with</code> followed by <code class="sourceCode cpp">accumulate</code>, and so on and so on. This is why we think <code class="sourceCode cpp">zip</code> is the top priority view.</p>
+<p>The most generic of this group is <code class="sourceCode cpp"><em>iter-zip-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code>. It is core functionality for the family and aids significantly in the specification effort where LWG bandwidth is concerned. <code class="sourceCode cpp"><em>iter-zip-with</em><span class="op">(</span>f, rs<span class="op">...)</span></code> takes an <code class="sourceCode cpp">n</code>-ary invocable an <code class="sourceCode cpp">n</code> ranges and combines those into a single range whose values are the result of <code class="sourceCode cpp">f<span class="op">(</span>is<span class="op">...)</span></code>, where the <code class="sourceCode cpp">is</code> are the iterators into those ranges (note: iterators, not what they refer to). The size of an <code class="sourceCode cpp"><em>iter-zip-with</em></code> is the minimum size of its ranges. The <code class="sourceCode cpp">reference</code> type is the type of <code class="sourceCode cpp">f<span class="op">(*</span>is<span class="op">...)</span></code> while the <code class="sourceCode cpp">value_type</code> is <code class="sourceCode cpp">V</code> (described in more detail <a href="#zip-and-zip_withs-value_type">later</a> along with the specific choices for <code class="sourceCode cpp"><em>V<sub>zip_with</sub></em></code> and <code class="sourceCode cpp"><em>V<sub>zip</sub></em></code> used below).</p>
+<p>From <code class="sourceCode cpp"><em>iter-zip-with</em></code>, we get:</p>
+<ul>
+<li><code class="sourceCode cpp">zip_with<span class="op">(</span>F, E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp"><em>iter-zip-with</em><span class="op">&lt;</span><em>V<sub>zip_with</sub></em><span class="op">&gt;(</span><em>indirected</em><span class="op">(</span>F<span class="op">)</span>, Es<span class="op">...)</span></code>, where <code class="sourceCode cpp"><em>indirected</em></code> is a specification-only function object that dereferences all of its arguments before invoking <code class="sourceCode cpp">F</code> (basically <code class="sourceCode cpp">std<span class="op">::</span>bind_front<span class="op">(</span>std<span class="op">::</span>apply, F<span class="op">)</span></code> if that actually worked).</li>
+<li><code class="sourceCode cpp">zip<span class="op">(</span>E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-with</em><span class="op">&lt;</span><em>V<sub>zip</sub></em><span class="op">&gt;(</span><em>make-zip-tuple</em>, Es<span class="op">...)</span></code>, where <code class="sourceCode cpp"><em>make-zip-tuple</em></code> is basically <code class="sourceCode cpp"><span class="op">[]&lt;</span>input_iterator<span class="op">...</span> Is<span class="op">&gt;(</span>Is<span class="op">...</span> is<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> tuple<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>Is<span class="op">&gt;...&gt;(*</span>is<span class="op">...)</span>; <span class="op">}</span></code>.</li>
+<li><code class="sourceCode cpp">enumerate<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <code class="sourceCode cpp">zip<span class="op">(</span><em>index-view</em><span class="op">(</span>E<span class="op">)</span>, E<span class="op">)</span></code>. We will discuss why <code class="sourceCode cpp"><em>index-view</em><span class="op">(</span>E<span class="op">)</span></code> instead of <code class="sourceCode cpp">iota<span class="op">(</span>range_size_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>E<span class="op">)&gt;(</span><span class="dv">0</span><span class="op">)</span></code> <a href="#enumerates-first-range">later</a>.</li>
+</ul>
+<p>But we do not want to define <code class="sourceCode cpp">zip_tail<span class="op">(</span>E<span class="op">)</span></code> as <code class="sourceCode cpp">zip<span class="op">(</span>E, E <span class="op">|</span> drop<span class="op">(</span><span class="dv">1</span><span class="op">))</span></code>. The primary reason to avoid doing this, and to make <code class="sourceCode cpp">zip_tail</code> (or rather, <code class="sourceCode cpp"><em>iter-zip-tail-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code>) a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that <code class="sourceCode cpp">drop</code> has to store (see also the <code class="sourceCode cpp">drop</code>/<code class="sourceCode cpp">tail</code> discussion earlier).</p>
+<p>Once we have <code class="sourceCode cpp"><em>iter-zip-tail-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code>, <code class="sourceCode cpp">zip_tail</code> and <code class="sourceCode cpp">zip_tail_with</code> follow in the same way that we defined <code class="sourceCode cpp">zip</code> and <code class="sourceCode cpp">zip_with</code>.</p>
+<p>In short, we get five extremely useful ranges for the price of three specification-only ones. Which is why we think they should be considered and adopted as a group.</p>
 <p>But in order to actually adopt <code class="sourceCode cpp">zip</code> and friends into C++23, we need to resolve several problems.</p>
 <h3 data-number="3.2.1" id="a-tuple-that-is-writable" data-number="3.2.1"><span class="header-section-number">3.2.1</span> A <code class="sourceCode cpp">tuple</code> that is <code class="sourceCode cpp">writable</code><a href="#a-tuple-that-is-writable" class="self-link"></a></h3>
 <p>Consider the following:</p>
@@ -1290,7 +1289,44 @@ span.yellow {
 </tr>
 </tbody>
 </table>
+<p>Or for this specific example:</p>
+<table>
+<colgroup>
+<col style="width: 33%"></col>
+<col style="width: 33%"></col>
+<col style="width: 33%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">reference</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">value_type</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">a</code> —<code class="sourceCode cpp">zip<span class="op">(</span>vi, vs<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;</span>, std<span class="op">::</span>string<span class="op">&amp;&gt;</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span>, std<span class="op">::</span>string</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">b</code> — <code class="sourceCode cpp">zip_with<span class="op">(</span><em>std::tie</em>, vi, vs<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;</span>, std<span class="op">::</span>string<span class="op">&amp;&gt;</span></code></td>
+<td><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;</span>, std<span class="op">::</span>string<span class="op">&amp;&gt;</span></code></td>
+</tr>
+</tbody>
+</table>
 <p>We think these would be the most valuable choices.</p>
+<p>As such, we can be more precise in our earlier formulation and say that:</p>
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip_with<span class="op">(</span>F, E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-with</em><span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>F<span class="op">)&amp;</span>, range_reference_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>E<span class="op">)&gt;...&gt;&gt;&gt;(</span><em>indirected</em><span class="op">(</span>F<span class="op">)</span>, E<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip<span class="op">(</span>E<span class="op">...)</span></code> is expression-equivalent to <code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-with</em><span class="op">&lt;</span>std<span class="op">::</span>tuple<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>E<span class="op">)&gt;...&gt;&gt;(</span><em>forward-as-tuple</em>, E<span class="op">...)</span></code></li>
+</ul>
+<p>and similar for <code class="sourceCode cpp">zip_tail_with</code> and <code class="sourceCode cpp">zip_tail</code>.</p>
 <h3 data-number="3.2.4" id="enumerates-first-range" data-number="3.2.4"><span class="header-section-number">3.2.4</span> <code class="sourceCode cpp">enumerate</code>’s first range<a href="#enumerates-first-range" class="self-link"></a></h3>
 <p>We wrote earlier that <code class="sourceCode cpp">enumerate<span class="op">(</span>r<span class="op">)</span></code> can be defined as <code class="sourceCode cpp">zip<span class="op">(</span>iota<span class="op">(</span>range_size_t<span class="op">&lt;</span>R<span class="op">&gt;(</span><span class="dv">0</span><span class="op">))</span>, r<span class="op">)</span></code>, but it turns out that this isn’t <em>quite</em> right, and we need to do something slightly different.</p>
 <p>It turns out <code class="sourceCode cpp">iota</code> is a fairly complicated view due to wanting to avoid undefined behavior in its <code class="sourceCode cpp">difference_type</code> <span class="citation" data-cites="P1522R1">[<a href="#ref-P1522R1" role="doc-biblioref">P1522R1</a>]</span>. <code class="sourceCode cpp">iota_view</code> has to choose a type that is wide enough to properly compute differences. One of the important points in that paper is that integer-like types are:</p>
@@ -1326,7 +1362,7 @@ span.yellow {
 </ul>
 </blockquote>
 <p>range-v3 has <code class="sourceCode cpp">cache1</code> yet only supports the first bullet, under the name <code class="sourceCode cpp">views<span class="op">::</span>for_each</code>.</p>
-<p>Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion.</p>
+<p>Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion. Unlike other examples we’ve seen in this paper, there really isn’t much added benefit to <code class="sourceCode cpp">flat_map</code> being a first-class view, so we propose to specify it as suggested above — in terms of <code class="sourceCode cpp">transform</code>, <code class="sourceCode cpp">join</code>, and possibly <code class="sourceCode cpp">cache1</code>.</p>
 <h3 data-number="3.4.2" id="filter_map" data-number="3.4.2"><span class="header-section-number">3.4.2</span> <code class="sourceCode cpp">filter_map</code><a href="#filter_map" class="self-link"></a></h3>
 <p>For <code class="sourceCode cpp">filter_map</code>, <span class="citation" data-cites="P1255R6">[<a href="#ref-P1255R6" role="doc-biblioref">P1255R6</a>]</span> seeks to address this problem but requires using three chained adapters:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> filter_map1 <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
@@ -1756,8 +1792,9 @@ span.yellow {
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>group_by</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>group_by_key</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>iter_zip_with</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>iter_zip_tail_with</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> (exposition-only)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-tail-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> (exposition-only)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span><em>index-view</em><span class="op">&lt;</span>S, D<span class="op">&gt;</span></code> (exposition-only)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code></li>
 </ul></li>
 <li>the addition of the following range adapters specified in terms of other range adapters:
