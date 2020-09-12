@@ -551,7 +551,30 @@ This `@_index-view_@` can be exposition-only, it's effectively an implementation
 
 ## The `group_by` family
 
-TODO
+This family, as the name suggests, take a range of `T` and yield a range of ranges of `T` based on grouping consecutive elements based on the provided function.
+
+There are really two ways that such grouping can work:
+
+- Take a unary function, `T -> U`, such that `U` models `equality_comparable` and group consecutive elements with the same `U`. 
+- Take a binary predicate, `(T, T) -> bool`, and invoke this predicate on consecutive elements and start a new group when that predicate returns `false`.
+
+Rust and Python provide the former, Haskell provides the latter. Swift and Clojure provides something like the former, except they return a dictionary rather than a range of ranges, which is also useful functionality but not something we're suggesting here. D provides something like the latter, except it yields a range of tuples indicating a count of the number of times the element appears. 
+
+The unary group-by can be implemented, inefficiently, in terms of the binary group-by by invoking the provided unary function on each pair of elements. This leads to invoking the function `2(N-1)` times when you really only need to invoke it `N` times, so we think it would be a bad idea to define it this way.
+
+range-v3 only provides the latter, but its implementation choice is quite different from Haskell's. It always compares the _first_ element in each subrange with each subsequent one, while Haskell always compares _consecutive_ elements. As such, they may yield very different results:
+
+```haskell
+>>> groupBy (<=) [1,2,2,3,1,2,0,4,5,2]
+[[1,2,2,3],[1,2],[0,4,5],[2]] -- Haskell's implementation
+[[1,2,2,3,1,2],[0,4,5,2]]     -- range-v3's implementation
+```
+
+In Haskell, the second `1` starts a new group because `3 <= 1` is `false`. But with range-v3, we're not comparing the second `1` to its previous element &mdash; we're comparing to the first element in this subgroup, which is the first `1`. We think the Haskell choice is more familiar and more useful.
+
+The question is _which_ one we want to pick?
+
+Well, when it comes to algorithms, the more the better. While the binary version of `group_by` is more generic (since you can implement the unary version in terms of it, even if that's potentially inefficient) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both. We suggest the names `group_by_key` (for the unary function) and `group_by` (for the binary function). 
 
 ## The `map` family
 
