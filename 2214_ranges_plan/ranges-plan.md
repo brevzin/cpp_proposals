@@ -551,18 +551,15 @@ This `@_index-view_@` can be exposition-only, it's effectively an implementation
 
 ## The `group_by` family
 
-This family, as the name suggests, take a range of `T` and yield a range of ranges of `T` based on grouping consecutive elements based on the provided function.
+This family, as the name suggests, take a range of `T` and group them based on some provided function function. `group_by` is one of the most consistently named algorithms across all languages (modulo choice of spelling, as in `groupBy` or `group-by`) yet there are actually three-ish different approaches to what this algorithm actually means:
 
-There are really two ways that such grouping can work:
+1. Take a binary predicate, `(T, T) -> bool`, and invoke this predicate on consecutive elements and start a new group when that predicate returns `false`. Using Haskell notation, we're taking a `[T]` (range of `T`) and producing a `[[T]]` (range of range of `T`).
+2. Take a unary function, `T -> U` (such that `U` models `equality_comparable`), and group consecutive elements with the same `U`. Following the law of useful return, these algorithms don't just give you a `[[T]]` back, they rather give you a `[(U, [T])]` &mdash; the algorithm had to compute the `U`s for each element so they should give it to the user. 
+3. Take a unary function, `T -> U`, and return a dictionary that maps every `U` to a list of `T`s that mapped to it.
 
-- Take a unary function, `T -> U`, such that `U` models `equality_comparable` and group consecutive elements with the same `U`. 
-- Take a binary predicate, `(T, T) -> bool`, and invoke this predicate on consecutive elements and start a new group when that predicate returns `false`.
+Haskell, Elixir, D (`chunkBy`), and range-v3 (~ish) provide the first kind. Rust, Python, D (also `chunkBy` &mdash; it allows both uses), and F# provide the second. Clojure, Kotlin, and Scala provide the third. 
 
-Rust and Python provide the former, Haskell provides the latter. Swift and Clojure provides something like the former, except they return a dictionary rather than a range of ranges, which is also useful functionality but not something we're suggesting here. D provides something like the latter, except it yields a range of tuples indicating a count of the number of times the element appears. 
-
-The unary group-by can be implemented, inefficiently, in terms of the binary group-by by invoking the provided unary function on each pair of elements. This leads to invoking the function `2(N-1)` times when you really only need to invoke it `N` times, so we think it would be a bad idea to define it this way.
-
-range-v3 only provides the latter, but its implementation choice is quite different from Haskell's. It always compares the _first_ element in each subrange with each subsequent one, while Haskell always compares _consecutive_ elements. As such, they may yield very different results:
+range-v3 is mostly in the first category, except its implementation choice is quite different from the other languages. It always compaers the _first_ element in each subrange with each subsequent one, while the others always compare _consecutive_ elements. As such, they may yield very different  results:
 
 ```haskell
 >>> groupBy (<=) [1,2,2,3,1,2,0,4,5,2]
@@ -570,11 +567,13 @@ range-v3 only provides the latter, but its implementation choice is quite differ
 [[1,2,2,3,1,2],[0,4,5,2]]     -- range-v3's implementation
 ```
 
-In Haskell, the second `1` starts a new group because `3 <= 1` is `false`. But with range-v3, we're not comparing the second `1` to its previous element &mdash; we're comparing to the first element in this subgroup, which is the first `1`. We think the Haskell choice is more familiar and more useful.
+In Haskell, the second `1` starts a new group because we're comparing it with its previous element and `3 <= 1` is `false`. But in range-v3, the second `1` does not start a new group because we're comparing it with the first element of the group, and `1 <= 1` is `true`. We think the Haskell/Elixir/D choice is more familiar and more useful.
 
-The question is _which_ one we want to pick?
+The question is _which_ one of the three options would we want to pick for C++Next?
 
-Well, when it comes to algorithms, the more the better. While the binary version of `group_by` is more generic (since you can implement the unary version in terms of it, even if that's potentially inefficient) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both. We suggest the names `group_by_key` (for the unary function) and `group_by` (for the binary function). 
+Well, when it comes to algorithms, the more the better. We think it's clear we wouldn't want to pick the 3rd option (we can easily produce a dictionary from the 2nd option), so the question is between the first two. While the binary version of `group_by` is more generic (since you approximate the unary version in terms of it, even it's a different shape) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both.
+
+We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate &mdash; but we're not sure if that's the best idea. We insted suggest the names `group_by_key` (for the unary function) and `group_by` (for the binary function).
 
 ## The `map` family
 
@@ -691,7 +690,6 @@ These are three specific examples of a general algorithm that takes three parame
 The above table isn't _quite_ right - since `stride` does not give you a range of ranges, so it would unfortunately not be implementable in terms of `@_generic_@`. And as with `tail` vs `drop`, we have the question here of should `chunk` and `slide` each be first-class views or should they both be implemented in terms of `@_generic_@`? Implementing in terms of `@_generic_@` saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.
 
 Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing. 
-
 
 ## Derivatives of `transform`
 
