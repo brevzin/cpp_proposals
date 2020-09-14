@@ -196,6 +196,18 @@ The above is a semantically correct implementation. However, is it the implement
 
 This puts us in an interesting position: we either adopt a known suboptimal implementation of `tail` with minimal LWG cost (such that we could likely adopt this for C++23) or we could hold off for the optimal implementation (in which case we could not in good conscience put `tail` as a Tier 1 view, as it is certainly not that important). As such, we have tentatively marked it as Tier 3.
 
+Take a different view, `unbounded`. This isn't pipeable, and a perfectly valid implementation of it, in its entirely is:
+
+```cpp
+namespace std::ranges::views {
+    inline constexpr auto unbounded = [](input_iterator auto it){
+        return subrange(std::move(it), unreachable_sentinel);
+    };
+}
+```
+
+Unlike `tail`, there isn't really some other, better implementation here. Maybe we'd prefer to give `unbounded_view<I>` its own type rather than piggy-backing off of `subrange`, but it wouldn't really affect the choice of functionality overall. Here the question is less, do we do it fast for C++23 or do it right for C++26 or C++20. Rather, the question is more: do we even need this at all? We think we don't.
+
 Consider two different, closely related views: `views::zip` and `views::zip_with`. Each could potentially be specified in terms of the other:
 
 - `views::zip(Es...)` could be `views::zip_with(@_forward-as-tuple_@, Es...)`
