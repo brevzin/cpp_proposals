@@ -115,7 +115,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `all` | C++20 | C++20 |
 | `any_view<T>` | range-v3 | Not proposed |
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
-| `cache1` | range-v3 | [Tier 1, largely for `flat_map`]{.addu} |
+| `cache1` | range-v3 | [Tier 1, largely for `flat_map`. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
 | `cartesian_product` | range-v3 | [Tier 3]{.diffdel} |
 | `chunk` | range-v3 | [Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
@@ -143,7 +143,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | C++20 |
-| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability)]{.addu} |
+| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability via `join_with`)]{.addu} |
 | `keys` | C++20 | C++20 |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R6] | ??? |
