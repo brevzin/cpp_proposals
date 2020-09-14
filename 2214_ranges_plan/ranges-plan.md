@@ -746,6 +746,7 @@ The views in question here are:
 
 - `cartesian_product(E...)` takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges. 
 - `concat(E...)` concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called `chain`. 
+- `cycle(R)` produces an infinite ranges that, well, cycles through `R` repeatedly.
 - `generate(F)` takes a nullary function `F` and produces an infinite range of invoking that function.
 - `generate_n(F, N)` is equivalent to `generate(F) | views::take(N)`.
 - `scan(R, F, V)` is the lazy view version of `std::inclusive_scan`, except not having a defaulted binary operation.
