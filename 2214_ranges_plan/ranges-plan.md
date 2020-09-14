@@ -738,27 +738,37 @@ We'll go through the other potential range adapters in this family and discuss h
 
 We're tentatively labelling the more complicated ones here Tier 2 and the more trivial (i.e. `head`, `tail`, and `slice`) and possibly less needed (i.e. `meow_exactly`) ones  Tier 3.
 
-## Generative views
+## Generative factories
 
-There are several other views on the list that are roughly in the realm of generating new data or simply lazy versions of some of the eager algorithms that we already have that take output iterators. These aren't as closely tied together as the other groups of range adapters we've considered thus far, this is a very loosely defined category. But hopefully it makes at least some sense.
-
-The views in question here are:
+There are several views on the list that are simply factories &mdash; they cannot be piped into. So we'll consider them as their own family:
 
 - `cartesian_product(E...)` takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges. 
 - `concat(E...)` concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called `chain`. 
-- `cycle(R)` produces an infinite ranges that, well, cycles through `R` repeatedly.
 - `generate(F)` takes a nullary function `F` and produces an infinite range of invoking that function.
 - `generate_n(F, N)` is equivalent to `generate(F) | views::take(N)`.
+- `linear_distribute(B, E, N)` produces a range of `N` values linearly distributed from `B` to `E`. 
+- `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
+- `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
+
+These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But we're not sure any of these is quite important enough to be Tier 1 caliber, so we simply consider them to be lower priority. 
+
+## Other view adapters
+
+Other range adapters that we haven't talked about yet, but aren't sure how to group exactly, are:
+
+- `adjacent_filter(P)` is an extension of `filter` that rather than taking a unary predicate and going one element at a take takes a binary predicate and goes pairwise through the elements. Similar to `zip_tail_with(P) | views::keys` except that it always keeps the first element.
+- `adjacent_remove_if(P)` is similar to `adjacent_filter(not_fn(P))`, except that it always keeps the last element.
+- `cycle(R)` produces an infinite ranges that, well, cycles through `R` repeatedly.
 - `scan(R, F, V)` is the lazy view version of `std::inclusive_scan`, except not having a defaulted binary operation.
 - `intersperse(V)` produces a new range alternating selecting elements from the source range and the value `V`
 - `join_with(V)`. C++20 has a version of `join` that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what ` r | views::join(v)` means, if `v` happens to itself be a joinable range. range-v3 assumes that if `v` is a joinable range that `views::join(v)` joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce `join_with` that requires a delimiter.
 - `partial_sum(R)` is equivalent to `scan(R, std::plus<>())`.
-- `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
-- `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
+- `split_when(P)` is a more complicated version of `split` that rather than taking a value or a range, instead takes a predicate that could also return an iterator. 
+- `sample(N)` yields a random sample of the given length.
 
 There are other combinatoric generators that also could be explored. For example, Python has `itertools.product`, `itertools.combinations`, and `itertools.combination_with_replacement` which all operate on a single range of `T` and produce a range of range of `T`. 
 
-These views range greatly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `views::join_with` we feel as filling in an incomplete aspect of the already-existing `views::join`, as such we feel that it is a Tier 1 view. The rest we consider to have lower priority. 
+Of these, `views::join_with` fills in an incomplete aspect of the already-existing `views::join`, so we feel that it is a Tier 1 view. The rest we consider to have lower priority.
 
 ## Derivatives of `transform`
 
