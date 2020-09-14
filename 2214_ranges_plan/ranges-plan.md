@@ -123,10 +123,11 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `const_` | range-v3 | Not proposed |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
-| `delimit` | range-v3 | [Tier 3]{.diffdel} |
+| `delimit` | range-v3 | [Tier 2]{.yellow} |
 | `drop` | C++20 | C++20 |
 | `drop_last` | range-v3 | [Tier 2]{.yellow} |
-| `drop_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `take_last_while` | (not in range-v3) | [Tier 2]{.yellow} |
+| `drop_exactly` | range-v3 | [Tier 3]{.diffdel} |
 | `drop_while` | C++20 | C++20 |
 | `empty` | C++20 | C++20 |
 | `enumerate` | range-v3 | [Tier 1]{.addu} |
@@ -136,7 +137,8 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `generate` | range-v3 | [Tier 2]{.yellow} |
 | `generate_n` | range-v3 | [Tier 2]{.yellow} |
 | `group_by` | range-v3 | [Tier 1 (but not how range-v3 does it)]{.addu} |
-| `group_by_key` | (not in range-v3) | [Tier 1]{.addu} |
+| `group_by_key` | (not in range-v3) | [Tier 2]{.yellow} |
+| `head` | (not in range-v3) | [Tier 3]{.diffdel} |
 | `indirect` | range-v3 | Not proposed |
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
@@ -157,15 +159,16 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `sample` | range-v3 | [Tier 3]{.diffdel} |
 | `scan` | (not in range-v3) | [Tier 2, as a rename of what is `partial_sum` in range-v3]{.yellow} |
 | `single` | C++20 | C++20 |
-| `slice` | range-v3 | [Tier 2]{.yellow} |
+| `slice` | range-v3 | [Tier 3]{.diffdel} |
 | `sliding` | range-v3 | [Tier 2, renamed to `slide`]{.yellow} |
 | `split` | C++20, but unergonomic | See [@P2210R0]. |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
 | `stride` | range-v3 | [Tier 2]{.yellow} |
 | `tail` | range-v3 | [Tier 3]{.diffdel} |
 | `take` | C++20 | C++20 |
-| `take_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `take_exactly` | range-v3 | [Tier 3]{.diffdel} |
 | `take_last` | range-v3 | [Tier 2]{.yellow} |
+| `take_last_while` | (not in range-v3) | [Tier 2]{.yellow} |
 | `take_while` | C++20 | C++20 |
 | `tokenize` | range-v3 | Not proposed |
 | `trim` | range-v3 | [Tier 2]{.yellow} |
@@ -207,7 +210,6 @@ Even though these two views are very, very similar to each other, we still don't
 Another interesting example is `filter_map`. As we'll see later, `filter_map(E, F)` can easily be specified in terms of three adapters today (a `transform` followed by a `filter` followed by a `transform`), but as with `tail`, it too could be significantly improved as a standalone view. 
 
 Ultimately, this question of full view or not fill view is one that should guide review of this paper. 
-
 
 ## The `zip` family
 
@@ -573,7 +575,7 @@ The question is _which_ one of the three options would we want to pick for C++Ne
 
 Well, when it comes to algorithms, the more the better. We think it's clear we wouldn't want to pick the 3rd option (we can easily produce a dictionary from the 2nd option), so the question is between the first two. While the binary version of `group_by` is more generic (since you approximate the unary version in terms of it, even it's a different shape) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both.
 
-We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate &mdash; but we're not sure if that's the best idea. We insted suggest the names `group_by_key` (for the unary function) and `group_by` (for the binary function).
+We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate &mdash; but we're not sure if that's the best idea. We instead suggest the names `group_by_key` (for the unary function) and `group_by` (for the binary function). But given the time and bandwidth pressure, we rate the binary `group_by` as a Tier 1 view while lower the unary `group_by_key` to Tier 2.
 
 ## The `map` family
 
@@ -690,6 +692,60 @@ These are three specific examples of a general algorithm that takes three parame
 The above table isn't _quite_ right - since `stride` does not give you a range of ranges, so it would unfortunately not be implementable in terms of `@_generic_@`. And as with `tail` vs `drop`, we have the question here of should `chunk` and `slide` each be first-class views or should they both be implemented in terms of `@_generic_@`? Implementing in terms of `@_generic_@` saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.
 
 Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing. 
+
+## The take/drop family
+
+In C++20 already we have several views that pass through some subset of the initial range &mdash; without modifying any of the elements. Those are: `take`, `take_while`, `drop`, and `drop_while`. There are actually many more algorithms in this family that are all quite similar. Nearly all of these range adapters can be implemented in terms of adapters that already exist, although we can typically do better if we make them all first-class. The question is really what is it that we want to do here? 
+
+We already discussed the example of `tail` earlier &mdash; should this be a first-class view or is `drop(1)` sufficient? The same question applies to most of the views in this list, and we generally have the same answer for all of them: if we're okay with derivative implementations, then we might as well make all of them Tier 1 since they would all have single-sentence specifications; but if we want better implementations, then they're certainly not important enough to gain get top priority, so we would move them down to Tier 2 or Tier 3.
+
+The potential adoption of `|>` as a language feature [@P2011R1] also affects the calculus here, as most of these could also be implemented as simple functions and relying on `|>` instead of `|` to do the piping. For example, `tail` could be implemented ([@P1739R4] notwithstanding):
+
+```cpp
+template <viewable_range R>
+auto tail(R&& range) {
+    auto b = ranges::begin(range);
+    auto e = ranges::end(range);
+    if (b != e) {
+        ++b;
+    }
+    return subrange(b, e);
+}
+```
+
+We'll go through the other potential range adapters in this family and discuss how they could be implemented in terms of existing adapters:
+
+- `take_last(N)` and `drop_last(N)`. `views::take_last(N)` is equivalent to `views::reverse | views::take(N) | views::reverse`. But this is somewhat expensive, especially for non-common views. For random-access, sized ranges, we're probably want `r | views::take_last(N)` to evaluate as `r | views::drop(r.size() - N)`, and that desire is really the crux of this whole question &mdash; is the equivalent version good enough or should we want to do it right?
+- `take_last_while(P)` and `drop_last_while(P)`. These likewise could be implemented in terms of double-reverse, but `take_last_while` could not be implemented in terms of `drop_while`.
+- `take_exactly(N)` and `drop_exactly(N)`. These are similar to `take` and `drop` except not checked. `iota(0, 3) | take(5)` is a valid empty range, while `iota(0, 3) | take_exactly(5)` is undefined behavior.
+- `slice(M, N)` is equivalent to `views::drop(M) | views::take(N - M)`, and you couldn't do much better as a first class view. range-v3 also supports a flavor that works as `views::slice(M, end - N)` for a special variable `end`, which likewise be equivalent to `r | views::drop(M) | views::drop_last(N)`.
+- `head` is equivalent to `views::drop_last(1)`.
+- `tail` is equivalent to `views::drop(1)`.
+- `trim(P)` is equivalent to `views::drop_while(P) | views::drop_last_while(P)`.
+- `delimit(V)` has two flavors. When called with a range, `r | views::delimit(V)` is equivalent to `r | views::take_while([V](auto&& e) { return !(e == V); })`. But it also allows wrapping an iterator, such that `views::delimit(it, V)` is equivalent to `subrange(it, unreachable_sentinel) | views::delimit(V)`.
+
+We're tentatively labelling the more complicated ones here Tier 2 and the more trivial (i.e. `head`, `tail`, and `slice`) and possibly less needed (i.e. `meow_exactly`) ones  Tier 3.
+
+## Generative views
+
+There are several other views on the list that are roughly in the realm of generating new data or simply lazy versions of some of the eager algorithms that we already have that take output iterators. These aren't as closely tied together as the other groups of range adapters we've considered thus far, this is a very loosely defined category. But hopefully it makes at least some sense.
+
+The views in question here are:
+
+- `cartesian_product(E...)` takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges. 
+- `concat(E...)` concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called `chain`. 
+- `generate(F)` takes a nullary function `F` and produces an infinite range of invoking that function.
+- `generate_n(F, N)` is equivalent to `generate(F) | views::take(N)`.
+- `scan(R, F, V)` is the lazy view version of `std::inclusive_scan`, except not having a defaulted binary operation.
+- `intersperse(V)` produces a new range alternating selecting elements from the source range and the value `V`
+- `join_with(V)`. C++20 has a version of `join` that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what ` r | views::join(v)` means, if `v` happens to itself be a joinable range. range-v3 assumes that if `v` is a joinable range that `views::join(v)` joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce `join_with` that requires a delimiter.
+- `partial_sum(R)` is equivalent to `scan(R, std::plus<>())`.
+- `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
+- `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
+
+There are other combinatoric generators that also could be explored. For example, Python has `itertools.product`, `itertools.combinations`, and `itertools.combination_with_replacement` which all operate on a single range of `T` and produce a range of range of `T`. 
+
+These views range greatly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `views::join_with` we feel as filling in an incomplete aspect of the already-existing `views::join`, as such we feel that it is a Tier 1 view. The rest we consider to have lower priority. 
 
 ## Derivatives of `transform`
 
@@ -1096,7 +1152,6 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::cache1`
     - `views::filter_map`    
     - `views::group_by`
-    - `views::group_by_key`
     - `views::@_iter-zip-with_@<V>` (exposition-only)
     - `views::@_iter-zip-tail-with_@<V>` (exposition-only)
     - `views::@_index-view_@<S, D>` (exposition-only)
@@ -1123,10 +1178,12 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 - the addition of the following range adapters:
     - `views::chunk`
     - `views::cycle`
+    - `views::delimit`    
     - `views::drop_last`
-    - `views::drop_exactly`
+    - `views::drop_last_while`
     - `views::generate`
     - `views::generate_n`
+    - `views::group_by_key`    
     - `views::intersperse`
     - `views::partial_sum`
     - `views::remove`
@@ -1136,12 +1193,11 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::replace`
     - `views::replace_if`
     - `views::scan`
-    - `views::slice`
     - `views::slide`
     - `views::split_when`
     - `views::stride`
-    - `views::take_exactly`
     - `views::take_last`
+    - `views::take_last_while`
     - `views::trim`
     - `views::unique`
 - the addition of the following range algorithms:
@@ -1155,10 +1211,13 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::adjacent_filter`
     - `views::adjacent_remove_if`
     - `views::cartesian_product`
-    - `views::delimit`
+    - `views::drop_exactly`    
+    - `views::head`        
     - `views::linear_distribute`
     - `views::sample`
-    - `views::tail`    
+    - `views::slice`    
+    - `views::tail`  
+    - `views::take_exactly`
 - the addition of the following range algorithms:
     - `ranges::zip_tail_with()`
     - `ranges::partial_fold()`

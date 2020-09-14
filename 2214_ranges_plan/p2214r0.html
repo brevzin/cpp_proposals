@@ -584,7 +584,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#filter_map"><span class="toc-section-number">3.4.2</span> <code class="sourceCode cpp">filter_map</code><span></span></a></li>
 </ul></li>
 <li><a href="#the-sliding-family"><span class="toc-section-number">3.5</span> The sliding family<span></span></a></li>
-<li><a href="#derivatives-of-transform"><span class="toc-section-number">3.6</span> Derivatives of <code class="sourceCode cpp">transform</code><span></span></a></li>
+<li><a href="#the-takedrop-family"><span class="toc-section-number">3.6</span> The take/drop family<span></span></a></li>
+<li><a href="#generative-views"><span class="toc-section-number">3.7</span> Generative views<span></span></a></li>
+<li><a href="#derivatives-of-transform"><span class="toc-section-number">3.8</span> Derivatives of <code class="sourceCode cpp">transform</code><span></span></a></li>
 </ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
 <ul>
@@ -771,7 +773,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">delimit</code></td>
 <td>range-v3</td>
-<td><span class="diffdel">Tier 3</span></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">drop</code></td>
@@ -784,59 +786,69 @@ span.yellow {
 <td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp">drop_exactly</code></td>
-<td>range-v3</td>
+<td><code class="sourceCode cpp">take_last_while</code></td>
+<td>(not in range-v3)</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="odd">
+<td><code class="sourceCode cpp">drop_exactly</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp">drop_while</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">empty</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">enumerate</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">filter</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">filter_map</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1, as a more ergonomic <code class="sourceCode cpp">maybe</code></span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">for_each</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1, except named <code class="sourceCode cpp">flat_map</code> like everyone else calls it and allow for non-views</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">generate</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">generate_n</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">group_by</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1 (but not how range-v3 does it)</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">group_by_key</code></td>
 <td>(not in range-v3)</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">head</code></td>
+<td>(not in range-v3)</td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">indirect</code></td>
@@ -941,7 +953,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">slice</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">sliding</code></td>
@@ -976,7 +988,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">take_exactly</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="diffdel">Tier 3</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">take_last</code></td>
@@ -984,51 +996,56 @@ span.yellow {
 <td><span class="yellow">Tier 2</span></td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">take_last_while</code></td>
+<td>(not in range-v3)</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="odd">
 <td><code class="sourceCode cpp">take_while</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">tokenize</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">trim</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">unbounded</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">unique</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">values</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">zip</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">zip_with</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">zip_tail</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">zip_tail_with</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1</span></td>
@@ -1355,7 +1372,7 @@ span.yellow {
 <p>In Haskell, the second <code class="sourceCode cpp"><span class="dv">1</span></code> starts a new group because we’re comparing it with its previous element and <code class="sourceCode cpp"><span class="dv">3</span> <span class="op">&lt;=</span> <span class="dv">1</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>. But in range-v3, the second <code class="sourceCode cpp"><span class="dv">1</span></code> does not start a new group because we’re comparing it with the first element of the group, and <code class="sourceCode cpp"><span class="dv">1</span> <span class="op">&lt;=</span> <span class="dv">1</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>. We think the Haskell/Elixir/D choice is more familiar and more useful.</p>
 <p>The question is <em>which</em> one of the three options would we want to pick for C++Next?</p>
 <p>Well, when it comes to algorithms, the more the better. We think it’s clear we wouldn’t want to pick the 3rd option (we can easily produce a dictionary from the 2nd option), so the question is between the first two. While the binary version of <code class="sourceCode cpp">group_by</code> is more generic (since you approximate the unary version in terms of it, even it’s a different shape) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both.</p>
-<p>We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate — but we’re not sure if that’s the best idea. We insted suggest the names <code class="sourceCode cpp">group_by_key</code> (for the unary function) and <code class="sourceCode cpp">group_by</code> (for the binary function).</p>
+<p>We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate — but we’re not sure if that’s the best idea. We instead suggest the names <code class="sourceCode cpp">group_by_key</code> (for the unary function) and <code class="sourceCode cpp">group_by</code> (for the binary function). But given the time and bandwidth pressure, we rate the binary <code class="sourceCode cpp">group_by</code> as a Tier 1 view while lower the unary <code class="sourceCode cpp">group_by_key</code> to Tier 2.</p>
 <h2 data-number="3.4" id="the-map-family" data-number="3.4"><span class="header-section-number">3.4</span> The <code class="sourceCode cpp">map</code> family<a href="#the-map-family" class="self-link"></a></h2>
 <p>We added <code class="sourceCode cpp">views<span class="op">::</span>transform</code> in C++20, but there are closely related views in that family, which several other languages also provide.</p>
 <p><code class="sourceCode cpp">views<span class="op">::</span>transform</code> takes a range of <code class="sourceCode cpp">T</code> and a function <code class="sourceCode cpp">T <span class="op">-&gt;</span> U</code> and produces a range of <code class="sourceCode cpp">U</code>. But we can play around with the shape of the callable to produce two other extremely useful adapters:</p>
@@ -1513,7 +1530,49 @@ span.yellow {
 </table>
 <p>The above table isn’t <em>quite</em> right - since <code class="sourceCode cpp">stride</code> does not give you a range of ranges, so it would unfortunately not be implementable in terms of <code class="sourceCode cpp"><em>generic</em></code>. And as with <code class="sourceCode cpp">tail</code> vs <code class="sourceCode cpp">drop</code>, we have the question here of should <code class="sourceCode cpp">chunk</code> and <code class="sourceCode cpp">slide</code> each be first-class views or should they both be implemented in terms of <code class="sourceCode cpp"><em>generic</em></code>? Implementing in terms of <code class="sourceCode cpp"><em>generic</em></code> saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.</p>
 <p>Moreover, as a language without named arguments, we have a different problem when it comes to <code class="sourceCode cpp"><em>generic</em></code> here. It takes two <code class="sourceCode cpp"><span class="dt">int</span></code>s and a <code class="sourceCode cpp"><span class="dt">bool</span></code>. There is no natural order for these parameters, so who knows what <code class="sourceCode cpp"><em>generic</em><span class="op">(</span><span class="dv">1</span>, <span class="dv">4</span>, <span class="kw">false</span><span class="op">)</span></code> means — especially since <code class="sourceCode cpp"><em>generic</em><span class="op">(</span><span class="kw">false</span>, <span class="dv">1</span>, <span class="dv">4</span><span class="op">)</span></code> would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in <code class="sourceCode cpp"><em>generic</em><span class="op">({.</span>step<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>size<span class="op">=</span><span class="dv">4</span>, <span class="op">.</span>partial<span class="op">=</span><span class="kw">false</span><span class="op">})</span></code>. This is a very useful pattern, but one which has no precedent in the standard library as of this writing.</p>
-<h2 data-number="3.6" id="derivatives-of-transform" data-number="3.6"><span class="header-section-number">3.6</span> Derivatives of <code class="sourceCode cpp">transform</code><a href="#derivatives-of-transform" class="self-link"></a></h2>
+<h2 data-number="3.6" id="the-takedrop-family" data-number="3.6"><span class="header-section-number">3.6</span> The take/drop family<a href="#the-takedrop-family" class="self-link"></a></h2>
+<p>In C++20 already we have several views that pass through some subset of the initial range — without modifying any of the elements. Those are: <code class="sourceCode cpp">take</code>, <code class="sourceCode cpp">take_while</code>, <code class="sourceCode cpp">drop</code>, and <code class="sourceCode cpp">drop_while</code>. There are actually many more algorithms in this family that are all quite similar. Nearly all of these range adapters can be implemented in terms of adapters that already exist, although we can typically do better if we make them all first-class. The question is really what is it that we want to do here?</p>
+<p>We already discussed the example of <code class="sourceCode cpp">tail</code> earlier — should this be a first-class view or is <code class="sourceCode cpp">drop<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> sufficient? The same question applies to most of the views in this list, and we generally have the same answer for all of them: if we’re okay with derivative implementations, then we might as well make all of them Tier 1 since they would all have single-sentence specifications; but if we want better implementations, then they’re certainly not important enough to gain get top priority, so we would move them down to Tier 2 or Tier 3.</p>
+<p>The potential adoption of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> as a language feature <span class="citation" data-cites="P2011R1">[<a href="#ref-P2011R1" role="doc-biblioref">P2011R1</a>]</span> also affects the calculus here, as most of these could also be implemented as simple functions and relying on <code class="sourceCode cpp"><span class="op">|&gt;</span></code> instead of <code class="sourceCode cpp"><span class="op">|</span></code> to do the piping. For example, <code class="sourceCode cpp">tail</code> could be implemented (<span class="citation" data-cites="P1739R4">[<a href="#ref-P1739R4" role="doc-biblioref">P1739R4</a>]</span> notwithstanding):</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">auto</span> tail<span class="op">(</span>R<span class="op">&amp;&amp;</span> range<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>    <span class="kw">auto</span> b <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>range<span class="op">)</span>;</span>
+<span id="cb20-4"><a href="#cb20-4"></a>    <span class="kw">auto</span> e <span class="op">=</span> ranges<span class="op">::</span>end<span class="op">(</span>range<span class="op">)</span>;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>    <span class="cf">if</span> <span class="op">(</span>b <span class="op">!=</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a>        <span class="op">++</span>b;</span>
+<span id="cb20-7"><a href="#cb20-7"></a>    <span class="op">}</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>    <span class="cf">return</span> subrange<span class="op">(</span>b, e<span class="op">)</span>;</span>
+<span id="cb20-9"><a href="#cb20-9"></a><span class="op">}</span></span></code></pre></div>
+<p>We’ll go through the other potential range adapters in this family and discuss how they could be implemented in terms of existing adapters:</p>
+<ul>
+<li><code class="sourceCode cpp">take_last<span class="op">(</span>N<span class="op">)</span></code> and <code class="sourceCode cpp">drop_last<span class="op">(</span>N<span class="op">)</span></code>. <code class="sourceCode cpp">views<span class="op">::</span>take_last<span class="op">(</span>N<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">views<span class="op">::</span>reverse <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span>N<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>reverse</code>. But this is somewhat expensive, especially for non-common views. For random-access, sized ranges, we’re probably want <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>take_last<span class="op">(</span>N<span class="op">)</span></code> to evaluate as <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>drop<span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">-</span> N<span class="op">)</span></code>, and that desire is really the crux of this whole question — is the equivalent version good enough or should we want to do it right?</li>
+<li><code class="sourceCode cpp">take_last_while<span class="op">(</span>P<span class="op">)</span></code> and <code class="sourceCode cpp">drop_last_while<span class="op">(</span>P<span class="op">)</span></code>. These likewise could be implemented in terms of double-reverse, but <code class="sourceCode cpp">take_last_while</code> could not be implemented in terms of <code class="sourceCode cpp">drop_while</code>.</li>
+<li><code class="sourceCode cpp">take_exactly<span class="op">(</span>N<span class="op">)</span></code> and <code class="sourceCode cpp">drop_exactly<span class="op">(</span>N<span class="op">)</span></code>. These are similar to <code class="sourceCode cpp">take</code> and <code class="sourceCode cpp">drop</code> except not checked. <code class="sourceCode cpp">iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)</span> <span class="op">|</span> take<span class="op">(</span><span class="dv">5</span><span class="op">)</span></code> is a valid empty range, while <code class="sourceCode cpp">iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">3</span><span class="op">)</span> <span class="op">|</span> take_exactly<span class="op">(</span><span class="dv">5</span><span class="op">)</span></code> is undefined behavior.</li>
+<li><code class="sourceCode cpp">slice<span class="op">(</span>M, N<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">views<span class="op">::</span>drop<span class="op">(</span>M<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span>N <span class="op">-</span> M<span class="op">)</span></code>, and you couldn’t do much better as a first class view. range-v3 also supports a flavor that works as <code class="sourceCode cpp">views<span class="op">::</span>slice<span class="op">(</span>M, end <span class="op">-</span> N<span class="op">)</span></code> for a special variable <code class="sourceCode cpp">end</code>, which likewise be equivalent to <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>drop<span class="op">(</span>M<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>drop_last<span class="op">(</span>N<span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">head</code> is equivalent to <code class="sourceCode cpp">views<span class="op">::</span>drop_last<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">tail</code> is equivalent to <code class="sourceCode cpp">views<span class="op">::</span>drop<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">trim<span class="op">(</span>P<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">views<span class="op">::</span>drop_while<span class="op">(</span>P<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>drop_last_while<span class="op">(</span>P<span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">delimit<span class="op">(</span>V<span class="op">)</span></code> has two flavors. When called with a range, <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>delimit<span class="op">(</span>V<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>take_while<span class="op">([</span>V<span class="op">](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">!(</span>e <span class="op">==</span> V<span class="op">)</span>; <span class="op">})</span></code>. But it also allows wrapping an iterator, such that <code class="sourceCode cpp">views<span class="op">::</span>delimit<span class="op">(</span>it, V<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">subrange<span class="op">(</span>it, unreachable_sentinel<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>delimit<span class="op">(</span>V<span class="op">)</span></code>.</li>
+</ul>
+<p>We’re tentatively labelling the more complicated ones here Tier 2 and the more trivial (i.e. <code class="sourceCode cpp">head</code>, <code class="sourceCode cpp">tail</code>, and <code class="sourceCode cpp">slice</code>) and possibly less needed (i.e. <code class="sourceCode cpp">meow_exactly</code>) ones Tier 3.</p>
+<h2 data-number="3.7" id="generative-views" data-number="3.7"><span class="header-section-number">3.7</span> Generative views<a href="#generative-views" class="self-link"></a></h2>
+<p>There are several other views on the list that are roughly in the realm of generating new data or simply lazy versions of some of the eager algorithms that we already have that take output iterators. These aren’t as closely tied together as the other groups of range adapters we’ve considered thus far, this is a very loosely defined category. But hopefully it makes at least some sense.</p>
+<p>The views in question here are:</p>
+<ul>
+<li><code class="sourceCode cpp">cartesian_product<span class="op">(</span>E<span class="op">...)</span></code> takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges.</li>
+<li><code class="sourceCode cpp">concat<span class="op">(</span>E<span class="op">...)</span></code> concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called <code class="sourceCode cpp">chain</code>.</li>
+<li><code class="sourceCode cpp">generate<span class="op">(</span>F<span class="op">)</span></code> takes a nullary function <code class="sourceCode cpp">F</code> and produces an infinite range of invoking that function.</li>
+<li><code class="sourceCode cpp">generate_n<span class="op">(</span>F, N<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">generate<span class="op">(</span>F<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span>N<span class="op">)</span></code>.</li>
+<li><code class="sourceCode cpp">scan<span class="op">(</span>R, F, V<span class="op">)</span></code> is the lazy view version of <code class="sourceCode cpp">std<span class="op">::</span>inclusive_scan</code>, except not having a defaulted binary operation.</li>
+<li><code class="sourceCode cpp">intersperse<span class="op">(</span>V<span class="op">)</span></code> produces a new range alternating selecting elements from the source range and the value <code class="sourceCode cpp">V</code></li>
+<li><code class="sourceCode cpp">join_with<span class="op">(</span>V<span class="op">)</span></code>. C++20 has a version of <code class="sourceCode cpp">join</code> that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> means, if <code class="sourceCode cpp">v</code> happens to itself be a joinable range. range-v3 assumes that if <code class="sourceCode cpp">v</code> is a joinable range that <code class="sourceCode cpp">views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce <code class="sourceCode cpp">join_with</code> that requires a delimiter.</li>
+<li><code class="sourceCode cpp">partial_sum<span class="op">(</span>R<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">scan<span class="op">(</span>R, std<span class="op">::</span>plus<span class="op">&lt;&gt;())</span></code>.</li>
+<li><code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> is an infinite range of a single value, equivalent to <code class="sourceCode cpp">generate<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">})</span></code>.</li>
+<li><code class="sourceCode cpp">repeat_n<span class="op">(</span>V, N<span class="op">)</span></code> is <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code>, equivalent to <code class="sourceCode cpp">generate_n<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">}</span>, N<span class="op">)</span></code>.</li>
+</ul>
+<p>There are other combinatoric generators that also could be explored. For example, Python has <code class="sourceCode cpp">itertools<span class="op">.</span>product</code>, <code class="sourceCode cpp">itertools<span class="op">.</span>combinations</code>, and <code class="sourceCode cpp">itertools<span class="op">.</span>combination_with_replacement</code> which all operate on a single range of <code class="sourceCode cpp">T</code> and produce a range of range of <code class="sourceCode cpp">T</code>.</p>
+<p>These views range greatly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But <code class="sourceCode cpp">views<span class="op">::</span>join_with</code> we feel as filling in an incomplete aspect of the already-existing <code class="sourceCode cpp">views<span class="op">::</span>join</code>, as such we feel that it is a Tier 1 view. The rest we consider to have lower priority.</p>
+<h2 data-number="3.8" id="derivatives-of-transform" data-number="3.8"><span class="header-section-number">3.8</span> Derivatives of <code class="sourceCode cpp">transform</code><a href="#derivatives-of-transform" class="self-link"></a></h2>
 <p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">const_</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
 <p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="algorithms" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
@@ -1587,10 +1646,10 @@ span.yellow {
 <h3 data-number="4.1.1" id="stdaccumulate-rangesfold" data-number="4.1.1"><span class="header-section-number">4.1.1</span> <code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> → <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code><a href="#stdaccumulate-rangesfold" class="self-link"></a></h3>
 <p>We think having a range-based left-fold algorithm in the standard library is very important, since this is such a fundamental algorithm. Indeed, several of the other standard library algorithms <em>are</em> simple folds — for instance <code class="sourceCode cpp">count</code>, <code class="sourceCode cpp">count_if</code>, <code class="sourceCode cpp">max_element</code>, <code class="sourceCode cpp">min_element</code>, <code class="sourceCode cpp">minmax_element</code>, and <code class="sourceCode cpp">inner_product</code>. We don’t have a generic range-based <code class="sourceCode cpp">max</code> or <code class="sourceCode cpp">min</code> (just ones that takes an <code class="sourceCode cpp">initializer_list</code>), but those would also be a left-folds. As such , we think adding such a left-fold to the standard library is a top tier priority for C++23. Except that we think this algorithm should be named <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code></span> - the problem with the name <code class="sourceCode cpp">accumulate</code> is that it is strongly suggestive of addition, which makes uses of it over different operations just very strange. <code class="sourceCode cpp">fold</code> is what the algorithm is, and has no such emphasis. It’s the more generic name, for the most generic algorithm.</p>
 <p><span class="citation" data-cites="P1813R0">[<a href="#ref-P1813R0" role="doc-biblioref">P1813R0</a>]</span> goes through the work of introducing a set of constraints for these algorithms, and its suggestion for this algorithm is:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, movable T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb20-2"><a href="#cb20-2"></a>          indirect_magma<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">*</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;</span>, T<span class="op">*&gt;</span> BOp <span class="op">=</span> ranges<span class="op">::</span>plus<span class="op">&gt;</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">constexpr</span> accumulate_result<span class="op">&lt;</span>safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, T<span class="op">&gt;</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a>    accumulate<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, BOp bop <span class="op">=</span> <span class="op">{}</span>, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, movable T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb21-2"><a href="#cb21-2"></a>          indirect_magma<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">*</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;</span>, T<span class="op">*&gt;</span> BOp <span class="op">=</span> ranges<span class="op">::</span>plus<span class="op">&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">constexpr</span> accumulate_result<span class="op">&lt;</span>safe_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, T<span class="op">&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>    accumulate<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, BOp bop <span class="op">=</span> <span class="op">{}</span>, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
 <p>We think this is a bad direction, for three reasons.</p>
 <p>First, we should not default the binary operation at all. Having a default <code class="sourceCode cpp">fold</code> operation doesn’t make much sense - it’s reasonable for <code class="sourceCode cpp">ranges<span class="op">::</span>sort</code> to default to sorting by <code class="sourceCode cpp"><span class="op">&lt;</span></code>, since the entire standard library is built on <code class="sourceCode cpp"><span class="op">&lt;</span></code> as the primary comparison operator, but that doesn’t really hold for <code class="sourceCode cpp"><span class="op">+</span></code>. Instead, we should add separate named algorithms <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>sum</code></span> and <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></span> that just invoke <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> with <code class="sourceCode cpp">std<span class="op">::</span>plus<span class="op">()</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>multiplies<span class="op">()</span></code> – or more likely that these invoke <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> instead as the more efficient algorithm with more constraints.</p>
 <p>Second, the above definition definitely follows Alexander Stepanov’s law of useful return <span class="citation" data-cites="stepanov">[<a href="#ref-stepanov" role="doc-biblioref">stepanov</a>]</span> (emphasis ours):</p>
@@ -1598,94 +1657,94 @@ span.yellow {
 <p>When writing code, it’s often the case that you end up computing a value that the calling function doesn’t currently need. Later, however, this value may be important when the code is called in a different situation. In this situation, you should obey the law of useful return: <em>A procedure should return all the potentially useful information it computed.</em></p>
 </div>
 <p>But it makes the usage of the algorithm quite cumbersome. The point of a fold is to return the single value. We would just want to write:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
 <p>Rather than:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">auto</span> <span class="op">[</span>_, total<span class="op">]</span> <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">auto</span> <span class="op">[</span>_, total<span class="op">]</span> <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
 <p>or:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers, <span class="dv">0</span><span class="op">).</span>value;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers, <span class="dv">0</span><span class="op">).</span>value;</span></code></pre></div>
 <p><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> should just return <code class="sourceCode cpp">T</code>. This would be consistent with what the other range-based folds already return in C++20 (e.g. <code class="sourceCode cpp">ranges<span class="op">::</span>count</code> returns a <code class="sourceCode cpp">range_difference_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>, <code class="sourceCode cpp">ranges<span class="op">::</span>any_of</code> - which can’t quite be a <code class="sourceCode cpp">fold</code> due to wanting to short-circuit - just returns <code class="sourceCode cpp"><span class="dt">bool</span></code>).</p>
 <p>Third, these constraints are far too restrictive. Copying the proposed definition of <code class="sourceCode cpp">magma</code> and <code class="sourceCode cpp">indirect_magma</code> here for readability:</p>
 <div class="quote">
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">// section 3.2.2 from P1813R0</span></span>
-<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> BOp, <span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">concept</span> magma <span class="op">=</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>    common_with<span class="op">&lt;</span>T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-5"><a href="#cb24-5"></a>    regular_invocable<span class="op">&lt;</span>BOp, T, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-6"><a href="#cb24-6"></a>    regular_invocable<span class="op">&lt;</span>BOp, U, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-7"><a href="#cb24-7"></a>    regular_invocable<span class="op">&lt;</span>BOp, T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a>    regular_invocable<span class="op">&lt;</span>BOp, U, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-9"><a href="#cb24-9"></a>    common_with<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-10"><a href="#cb24-10"></a>    common_with<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb24-11"><a href="#cb24-11"></a>    same_as<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, U, T<span class="op">&gt;&gt;</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="co">// section 3.2.2 from P1813R0</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> BOp, <span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">concept</span> magma <span class="op">=</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a>    common_with<span class="op">&lt;</span>T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-5"><a href="#cb25-5"></a>    regular_invocable<span class="op">&lt;</span>BOp, T, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>    regular_invocable<span class="op">&lt;</span>BOp, U, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-7"><a href="#cb25-7"></a>    regular_invocable<span class="op">&lt;</span>BOp, T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-8"><a href="#cb25-8"></a>    regular_invocable<span class="op">&lt;</span>BOp, U, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-9"><a href="#cb25-9"></a>    common_with<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-10"><a href="#cb25-10"></a>    common_with<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb25-11"><a href="#cb25-11"></a>    same_as<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, invoke_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, U, T<span class="op">&gt;&gt;</span>;</span></code></pre></div>
 <p>Let <code class="sourceCode cpp">bop</code> be an object of type <code class="sourceCode cpp">BOp</code>, <code class="sourceCode cpp">t</code> be an object of type <code class="sourceCode cpp">T</code>, and <code class="sourceCode cpp">u</code> be an object of type <code class="sourceCode cpp">U</code>. The value <code class="sourceCode cpp">invoke<span class="op">(</span>bop, t, u<span class="op">)</span></code> must return a result that is representable by <code class="sourceCode cpp">common_type_t<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>.</p>
 <p>The decision to require common types for a over <code class="sourceCode cpp">magma<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> is similar to the reason that <code class="sourceCode cpp">equality_comparable_with</code> requires <code class="sourceCode cpp">common_reference_with</code>: this ensures that when an algorithm requires a <code class="sourceCode cpp">magma</code>,we are able to <em>equationally reason</em> about those requirements. It’s possible to overload <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">+(</span><span class="dt">int</span>,vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span></code>, but that doesn’t follow the canonical usage of <code class="sourceCode cpp"><span class="op">+</span></code>. Does <code class="sourceCode cpp"><span class="dv">1</span> <span class="op">+</span> vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span></code> mean “concatenate <code class="sourceCode cpp">vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span></code> to the end of a temporary <code class="sourceCode cpp">vector<span class="op">{</span><span class="dv">1</span><span class="op">}</span></code>”? Is it a shorthand for <code class="sourceCode cpp">accumulate<span class="op">(</span>vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>, <span class="dv">1</span><span class="op">)</span></code>? The intention is unclear, and so <code class="sourceCode cpp">std<span class="op">::</span>plus<span class="op">&lt;&gt;</span></code> should not model <code class="sourceCode cpp">magma<span class="op">&lt;</span><span class="dt">int</span>, vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code>.</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="co">// section 3.2.11 from P1813R0</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> BOp, <span class="kw">class</span> I1, <span class="kw">class</span> I2, <span class="kw">class</span> O<span class="op">&gt;</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">concept</span> indirect_magma <span class="op">=</span></span>
-<span id="cb25-4"><a href="#cb25-4"></a>    readable<span class="op">&lt;</span>I1<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-5"><a href="#cb25-5"></a>    readable<span class="op">&lt;</span>I2<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-6"><a href="#cb25-6"></a>    writable<span class="op">&lt;</span>O, indirect_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, I1, I2<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-7"><a href="#cb25-7"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_value_t<span class="op">&lt;</span>I1<span class="op">&gt;&amp;</span>, iter_value_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-8"><a href="#cb25-8"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_value_t<span class="op">&lt;</span>I1<span class="op">&gt;&amp;</span>, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-9"><a href="#cb25-9"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_value_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-10"><a href="#cb25-10"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb25-11"><a href="#cb25-11"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_common_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_common_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="co">// section 3.2.11 from P1813R0</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> BOp, <span class="kw">class</span> I1, <span class="kw">class</span> I2, <span class="kw">class</span> O<span class="op">&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="kw">concept</span> indirect_magma <span class="op">=</span></span>
+<span id="cb26-4"><a href="#cb26-4"></a>    readable<span class="op">&lt;</span>I1<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-5"><a href="#cb26-5"></a>    readable<span class="op">&lt;</span>I2<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a>    writable<span class="op">&lt;</span>O, indirect_result_t<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, I1, I2<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_value_t<span class="op">&lt;</span>I1<span class="op">&gt;&amp;</span>, iter_value_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_value_t<span class="op">&lt;</span>I1<span class="op">&gt;&amp;</span>, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-9"><a href="#cb26-9"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_value_t<span class="op">&lt;</span>I2<span class="op">&gt;&amp;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-10"><a href="#cb26-10"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb26-11"><a href="#cb26-11"></a>    magma<span class="op">&lt;</span>BOp<span class="op">&amp;</span>, iter_common_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;</span>, iter_common_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span>;</span></code></pre></div>
 </div>
 <p>We see here again the heavy association of <code class="sourceCode cpp">plus</code> with <code class="sourceCode cpp">accumulate</code>, hence again the desire to rename the algorithm to <code class="sourceCode cpp">fold</code>. But the important thing to consider here is the requirement that the binary function <em>need</em> be invokable on each type and that there <em>need</em> be a common type for the result. We’ve already been through this process with the ranges comparison algorithsm in <span class="citation" data-cites="P1716R3">[<a href="#ref-P1716R3" role="doc-biblioref">P1716R3</a>]</span> and removed those restrictions.</p>
 <p>Consider a simple fold counting the occurences of a string (i.e. how you would implement <code class="sourceCode cpp">ranges<span class="op">::</span>count</code> with <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>):</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="co">/* ... */</span>;</span>
-<span id="cb26-2"><a href="#cb26-2"></a><span class="dt">int</span> n <span class="op">=</span> ranges<span class="op">::</span>fold<span class="op">(</span>words, <span class="dv">0</span>, <span class="op">[](</span><span class="dt">int</span> accum, std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> w<span class="op">){</span></span>
-<span id="cb26-3"><a href="#cb26-3"></a>    <span class="cf">return</span> accum <span class="op">+</span> <span class="op">(</span>w <span class="op">==</span> <span class="st">&quot;range&quot;</span><span class="op">)</span>;</span>
-<span id="cb26-4"><a href="#cb26-4"></a><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="dt">int</span> n <span class="op">=</span> ranges<span class="op">::</span>fold<span class="op">(</span>words, <span class="dv">0</span>, <span class="op">[](</span><span class="dt">int</span> accum, std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> w<span class="op">){</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a>    <span class="cf">return</span> accum <span class="op">+</span> <span class="op">(</span>w <span class="op">==</span> <span class="st">&quot;range&quot;</span><span class="op">)</span>;</span>
+<span id="cb27-4"><a href="#cb27-4"></a><span class="op">})</span>;</span></code></pre></div>
 <p>Such an algorithm would not meet the requirements laid out in P1813. There’s no common type between <code class="sourceCode cpp"><span class="dt">int</span></code> and <code class="sourceCode cpp">string</code>, that lambda is only invocable with one of the possible four orders of arguments. But it’s a perfectly reasonable fold. Instead, the only allowed implementation would be:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="dt">int</span> n <span class="op">=</span> ranges<span class="op">::</span>fold<span class="op">(</span>words, <span class="dv">0</span>, ranges<span class="op">::</span>plus<span class="op">{}</span>, <span class="op">[](</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> w<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> w <span class="op">==</span> <span class="st">&quot;ranges&quot;</span>; <span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="dt">int</span> n <span class="op">=</span> ranges<span class="op">::</span>fold<span class="op">(</span>words, <span class="dv">0</span>, ranges<span class="op">::</span>plus<span class="op">{}</span>, <span class="op">[](</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> w<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> w <span class="op">==</span> <span class="st">&quot;ranges&quot;</span>; <span class="op">})</span>;</span></code></pre></div>
 <p>But we’re hard-pressed to explain why would be considered better. In the general case, there may not even be an allowed implementation. Consider wanting to score a word in Scrabble. In Scrabble, each letter has a value but each tile can either multiply the score of a single letter or multiple the score of the whole word. One way to compute the score then is to use two <code class="sourceCode cpp">fold</code>s, one to figure out the world multiplier and another to figure out the letter sum:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">struct</span> Square <span class="op">{</span> <span class="dt">int</span> letter_multiplier, word_multiplier; <span class="op">}</span>;</span>
-<span id="cb28-2"><a href="#cb28-2"></a>vector<span class="op">&lt;</span>Square<span class="op">&gt;</span> squares <span class="op">=</span> <span class="co">/* ... */</span>;</span>
-<span id="cb28-3"><a href="#cb28-3"></a>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> letters <span class="op">=</span> <span class="co">/* ... */</span>;</span>
-<span id="cb28-4"><a href="#cb28-4"></a></span>
-<span id="cb28-5"><a href="#cb28-5"></a><span class="dt">int</span> score <span class="op">=</span> fold<span class="op">(</span>squares, <span class="dv">1</span>, multiplies<span class="op">()</span>, <span class="op">&amp;</span>Square<span class="op">::</span>word_multiplier<span class="op">)</span></span>
-<span id="cb28-6"><a href="#cb28-6"></a>          <span class="op">*</span> fold<span class="op">(</span>zip_with<span class="op">(</span>multiplies<span class="op">()</span>,</span>
-<span id="cb28-7"><a href="#cb28-7"></a>                          squares <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(&amp;</span>Square<span class="op">::</span>letter_multiplier<span class="op">)</span>,</span>
-<span id="cb28-8"><a href="#cb28-8"></a>                          letters<span class="op">)</span>,</span>
-<span id="cb28-9"><a href="#cb28-9"></a>                 <span class="dv">0</span>, plus<span class="op">())</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">struct</span> Square <span class="op">{</span> <span class="dt">int</span> letter_multiplier, word_multiplier; <span class="op">}</span>;</span>
+<span id="cb29-2"><a href="#cb29-2"></a>vector<span class="op">&lt;</span>Square<span class="op">&gt;</span> squares <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> letters <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb29-4"><a href="#cb29-4"></a></span>
+<span id="cb29-5"><a href="#cb29-5"></a><span class="dt">int</span> score <span class="op">=</span> fold<span class="op">(</span>squares, <span class="dv">1</span>, multiplies<span class="op">()</span>, <span class="op">&amp;</span>Square<span class="op">::</span>word_multiplier<span class="op">)</span></span>
+<span id="cb29-6"><a href="#cb29-6"></a>          <span class="op">*</span> fold<span class="op">(</span>zip_with<span class="op">(</span>multiplies<span class="op">()</span>,</span>
+<span id="cb29-7"><a href="#cb29-7"></a>                          squares <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(&amp;</span>Square<span class="op">::</span>letter_multiplier<span class="op">)</span>,</span>
+<span id="cb29-8"><a href="#cb29-8"></a>                          letters<span class="op">)</span>,</span>
+<span id="cb29-9"><a href="#cb29-9"></a>                 <span class="dv">0</span>, plus<span class="op">())</span>;</span></code></pre></div>
 <p>Another way is to keep a running sum of the two parts separately, and do a manual multiply:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">struct</span> Accum <span class="op">{</span></span>
-<span id="cb29-2"><a href="#cb29-2"></a>    <span class="dt">int</span> result<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> total <span class="op">*</span> multiplier; <span class="op">}</span>;</span>
-<span id="cb29-3"><a href="#cb29-3"></a>    <span class="dt">int</span> multiplier, total;</span>
-<span id="cb29-4"><a href="#cb29-4"></a><span class="op">}</span>;</span>
-<span id="cb29-5"><a href="#cb29-5"></a><span class="dt">int</span> score <span class="op">=</span> fold<span class="op">(</span>zip<span class="op">(</span>squares, letters<span class="op">)</span>, Accum<span class="op">()</span>, <span class="op">[](</span>Accum a, <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> sq_let<span class="op">){</span></span>
-<span id="cb29-6"><a href="#cb29-6"></a>        <span class="kw">auto</span> <span class="op">[</span>sq, letter<span class="op">]</span> <span class="op">=</span> sq_letter;</span>
-<span id="cb29-7"><a href="#cb29-7"></a>        <span class="cf">return</span> Accum<span class="op">{</span></span>
-<span id="cb29-8"><a href="#cb29-8"></a>            <span class="op">.</span>multiplier <span class="op">=</span> a<span class="op">.</span>multiplier <span class="op">*</span> sq<span class="op">.</span>word_multiplier,</span>
-<span id="cb29-9"><a href="#cb29-9"></a>            <span class="op">.</span>total <span class="op">=</span> a<span class="op">.</span>total <span class="op">+</span> sq<span class="op">.</span>letter_multiplier <span class="op">*</span> letter</span>
-<span id="cb29-10"><a href="#cb29-10"></a>        <span class="op">}</span>;</span>
-<span id="cb29-11"><a href="#cb29-11"></a>    <span class="op">}).</span>result<span class="op">()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">struct</span> Accum <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a>    <span class="dt">int</span> result<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> total <span class="op">*</span> multiplier; <span class="op">}</span>;</span>
+<span id="cb30-3"><a href="#cb30-3"></a>    <span class="dt">int</span> multiplier, total;</span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="op">}</span>;</span>
+<span id="cb30-5"><a href="#cb30-5"></a><span class="dt">int</span> score <span class="op">=</span> fold<span class="op">(</span>zip<span class="op">(</span>squares, letters<span class="op">)</span>, Accum<span class="op">()</span>, <span class="op">[](</span>Accum a, <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> sq_let<span class="op">){</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>        <span class="kw">auto</span> <span class="op">[</span>sq, letter<span class="op">]</span> <span class="op">=</span> sq_letter;</span>
+<span id="cb30-7"><a href="#cb30-7"></a>        <span class="cf">return</span> Accum<span class="op">{</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a>            <span class="op">.</span>multiplier <span class="op">=</span> a<span class="op">.</span>multiplier <span class="op">*</span> sq<span class="op">.</span>word_multiplier,</span>
+<span id="cb30-9"><a href="#cb30-9"></a>            <span class="op">.</span>total <span class="op">=</span> a<span class="op">.</span>total <span class="op">+</span> sq<span class="op">.</span>letter_multiplier <span class="op">*</span> letter</span>
+<span id="cb30-10"><a href="#cb30-10"></a>        <span class="op">}</span>;</span>
+<span id="cb30-11"><a href="#cb30-11"></a>    <span class="op">}).</span>result<span class="op">()</span>;</span></code></pre></div>
 <p>We’re not trying to argue that the second solution is necessarily better than the first - merely that it is a perfectly adequate solution, that happens to not be able to meet the constraints as laid out in P1813.</p>
 <p>Instead, we suggest a much lighter set of restrictions on <code class="sourceCode cpp">fold</code>: simply that this is a binary operation:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a><span class="kw">concept</span> <em>foldable</em> <span class="op">=</span></span>
-<span id="cb30-3"><a href="#cb30-3"></a>    regular_invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb30-4"><a href="#cb30-4"></a>    convertible_to<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, T<span class="op">&gt;</span>;</span>
-<span id="cb30-5"><a href="#cb30-5"></a></span>
-<span id="cb30-6"><a href="#cb30-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
-<span id="cb30-7"><a href="#cb30-7"></a><span class="kw">concept</span> <em>indirectly-binary-foldable</em> <span class="op">=</span></span>
-<span id="cb30-8"><a href="#cb30-8"></a>    indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb30-9"><a href="#cb30-9"></a>    copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb30-10"><a href="#cb30-10"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb30-11"><a href="#cb30-11"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb30-12"><a href="#cb30-12"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
-<span id="cb30-13"><a href="#cb30-13"></a></span>
-<span id="cb30-14"><a href="#cb30-14"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, movable T, <span class="kw">class</span> Proj <span class="op">=</span> identity, </span>
-<span id="cb30-15"><a href="#cb30-15"></a>    <em>indirectly-binary-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> BinaryOperation<span class="op">&gt;</span></span>
-<span id="cb30-16"><a href="#cb30-16"></a><span class="kw">constexpr</span> T fold<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, BinaryOperation op, Proj proj <span class="op">=</span> <span class="op">{})</span> <span class="op">{</span></span>
-<span id="cb30-17"><a href="#cb30-17"></a>    range_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> b <span class="op">=</span> begin<span class="op">(</span>r<span class="op">)</span>;</span>
-<span id="cb30-18"><a href="#cb30-18"></a>    range_sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> e <span class="op">=</span> end<span class="op">(</span>r<span class="op">)</span>;</span>
-<span id="cb30-19"><a href="#cb30-19"></a>    <span class="cf">for</span> <span class="op">(</span>; b <span class="op">!=</span> e; <span class="op">++</span>b<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb30-20"><a href="#cb30-20"></a>        init <span class="op">=</span> op<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, proj<span class="op">(*</span>b<span class="op">))</span>;</span>
-<span id="cb30-21"><a href="#cb30-21"></a>    <span class="op">}</span></span>
-<span id="cb30-22"><a href="#cb30-22"></a>    <span class="cf">return</span> init;</span>
-<span id="cb30-23"><a href="#cb30-23"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">concept</span> <em>foldable</em> <span class="op">=</span></span>
+<span id="cb31-3"><a href="#cb31-3"></a>    regular_invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb31-4"><a href="#cb31-4"></a>    convertible_to<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, U<span class="op">&gt;</span>, T<span class="op">&gt;</span>;</span>
+<span id="cb31-5"><a href="#cb31-5"></a></span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="kw">concept</span> <em>indirectly-binary-foldable</em> <span class="op">=</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>    indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a>    copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb31-11"><a href="#cb31-11"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb31-12"><a href="#cb31-12"></a>    <em>foldable</em><span class="op">&lt;</span>F, T, iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb31-13"><a href="#cb31-13"></a></span>
+<span id="cb31-14"><a href="#cb31-14"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, movable T, <span class="kw">class</span> Proj <span class="op">=</span> identity, </span>
+<span id="cb31-15"><a href="#cb31-15"></a>    <em>indirectly-binary-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> BinaryOperation<span class="op">&gt;</span></span>
+<span id="cb31-16"><a href="#cb31-16"></a><span class="kw">constexpr</span> T fold<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, BinaryOperation op, Proj proj <span class="op">=</span> <span class="op">{})</span> <span class="op">{</span></span>
+<span id="cb31-17"><a href="#cb31-17"></a>    range_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> b <span class="op">=</span> begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb31-18"><a href="#cb31-18"></a>    range_sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> e <span class="op">=</span> end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb31-19"><a href="#cb31-19"></a>    <span class="cf">for</span> <span class="op">(</span>; b <span class="op">!=</span> e; <span class="op">++</span>b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-20"><a href="#cb31-20"></a>        init <span class="op">=</span> op<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, proj<span class="op">(*</span>b<span class="op">))</span>;</span>
+<span id="cb31-21"><a href="#cb31-21"></a>    <span class="op">}</span></span>
+<span id="cb31-22"><a href="#cb31-22"></a>    <span class="cf">return</span> init;</span>
+<span id="cb31-23"><a href="#cb31-23"></a><span class="op">}</span></span></code></pre></div>
 <h3 data-number="4.1.2" id="rangesreduce" data-number="4.1.2"><span class="header-section-number">4.1.2</span> <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code><a href="#rangesreduce" class="self-link"></a></h3>
 <p>We have this interesting situation in the standard library today where <code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> has a name strongly suggestive of addition, yet because it’s specified to invoke its binary operation serially, it has no additional requirements on that operation. But we also have <code class="sourceCode cpp">std<span class="op">::</span>reduce</code>, which is a much more generic name with no suggested underlying operation, yet has very strong semantic constraints on its operation: it must be both associative and commutative. This comes from <span class="citation" data-cites="N3408">[<a href="#ref-N3408" role="doc-biblioref">N3408</a>]</span>, emphasis ours:</p>
 <div class="quote">
@@ -1695,22 +1754,22 @@ span.yellow {
 <p>The naming here is somewhat problematic. <code class="sourceCode cpp">reduce</code> is, in general, a much better name than <code class="sourceCode cpp">accumulate</code> as it does not have any particular operation connotation. But it has additional requirements on the operation. With the suggested change in name, we would end up having both <code class="sourceCode cpp">fold</code> and <code class="sourceCode cpp">reduce</code> — names that seem synonymous and interchangeable, though they are not. We feel that this is probably okay though, since people already frequently think <code class="sourceCode cpp">reduce</code> is “just” the parallel version of <code class="sourceCode cpp">accumulate</code> and perhaps having <code class="sourceCode cpp">fold</code> and <code class="sourceCode cpp">reduce</code> both would make users more likely to consult the documentation?</p>
 <h3 data-number="4.1.3" id="rangestransform_reduce-and-rangesinner_product" data-number="4.1.3"><span class="header-section-number">4.1.3</span> <code class="sourceCode cpp">ranges<span class="op">::</span>transform_reduce</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>inner_product</code><a href="#rangestransform_reduce-and-rangesinner_product" class="self-link"></a></h3>
 <p>These two algorithms are different from the previous two in that they are less fundamental. <code class="sourceCode cpp">transform_reduce</code> is a binary <code class="sourceCode cpp">transform</code> followed by <code class="sourceCode cpp">reduce</code> while <code class="sourceCode cpp">inner_product</code> is a binary <code class="sourceCode cpp">transform</code> followed by <code class="sourceCode cpp">accumulate</code>. First, <code class="sourceCode cpp">inner_product</code>, much like <code class="sourceCode cpp">accumulate</code>, is a bad name for the algorithm as it strongly prejudices <code class="sourceCode cpp">product</code> as the binary transform operation and as such uses of the algorithm with any other function simply look bizarre. From the <a href="https://en.cppreference.com/w/cpp/algorithm/inner_product">cppreference example for <code class="sourceCode cpp">inner_product</code></a>:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="pp">#include </span><span class="im">&lt;numeric&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
-<span id="cb31-3"><a href="#cb31-3"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
-<span id="cb31-4"><a href="#cb31-4"></a><span class="pp">#include </span><span class="im">&lt;functional&gt;</span></span>
-<span id="cb31-5"><a href="#cb31-5"></a><span class="dt">int</span> main<span class="op">()</span></span>
-<span id="cb31-6"><a href="#cb31-6"></a><span class="op">{</span></span>
-<span id="cb31-7"><a href="#cb31-7"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>;</span>
-<span id="cb31-8"><a href="#cb31-8"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> b<span class="op">{</span><span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span><span class="op">}</span>;</span>
-<span id="cb31-9"><a href="#cb31-9"></a> </span>
-<span id="cb31-10"><a href="#cb31-10"></a>    <span class="dt">int</span> r1 <span class="op">=</span> std<span class="op">::</span>inner_product<span class="op">(</span>a<span class="op">.</span>begin<span class="op">()</span>, a<span class="op">.</span>end<span class="op">()</span>, b<span class="op">.</span>begin<span class="op">()</span>, <span class="dv">0</span><span class="op">)</span>;</span>
-<span id="cb31-11"><a href="#cb31-11"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Inner product of a and b: &quot;</span> <span class="op">&lt;&lt;</span> r1 <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
-<span id="cb31-12"><a href="#cb31-12"></a> </span>
-<span id="cb31-13"><a href="#cb31-13"></a>    <span class="dt">int</span> r2 <span class="op">=</span> std<span class="op">::</span>inner_product<span class="op">(</span>a<span class="op">.</span>begin<span class="op">()</span>, a<span class="op">.</span>end<span class="op">()</span>, b<span class="op">.</span>begin<span class="op">()</span>, <span class="dv">0</span>,</span>
-<span id="cb31-14"><a href="#cb31-14"></a>                                std<span class="op">::</span>plus<span class="op">&lt;&gt;()</span>, std<span class="op">::</span>equal_to<span class="op">&lt;&gt;())</span>;</span>
-<span id="cb31-15"><a href="#cb31-15"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Number of pairwise matches between a and b: &quot;</span> <span class="op">&lt;&lt;</span>  r2 <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
-<span id="cb31-16"><a href="#cb31-16"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="pp">#include </span><span class="im">&lt;numeric&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a><span class="pp">#include </span><span class="im">&lt;functional&gt;</span></span>
+<span id="cb32-5"><a href="#cb32-5"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a><span class="op">{</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>;</span>
+<span id="cb32-8"><a href="#cb32-8"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> b<span class="op">{</span><span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span><span class="op">}</span>;</span>
+<span id="cb32-9"><a href="#cb32-9"></a> </span>
+<span id="cb32-10"><a href="#cb32-10"></a>    <span class="dt">int</span> r1 <span class="op">=</span> std<span class="op">::</span>inner_product<span class="op">(</span>a<span class="op">.</span>begin<span class="op">()</span>, a<span class="op">.</span>end<span class="op">()</span>, b<span class="op">.</span>begin<span class="op">()</span>, <span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb32-11"><a href="#cb32-11"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Inner product of a and b: &quot;</span> <span class="op">&lt;&lt;</span> r1 <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
+<span id="cb32-12"><a href="#cb32-12"></a> </span>
+<span id="cb32-13"><a href="#cb32-13"></a>    <span class="dt">int</span> r2 <span class="op">=</span> std<span class="op">::</span>inner_product<span class="op">(</span>a<span class="op">.</span>begin<span class="op">()</span>, a<span class="op">.</span>end<span class="op">()</span>, b<span class="op">.</span>begin<span class="op">()</span>, <span class="dv">0</span>,</span>
+<span id="cb32-14"><a href="#cb32-14"></a>                                std<span class="op">::</span>plus<span class="op">&lt;&gt;()</span>, std<span class="op">::</span>equal_to<span class="op">&lt;&gt;())</span>;</span>
+<span id="cb32-15"><a href="#cb32-15"></a>    std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Number of pairwise matches between a and b: &quot;</span> <span class="op">&lt;&lt;</span>  r2 <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
+<span id="cb32-16"><a href="#cb32-16"></a><span class="op">}</span></span></code></pre></div>
 <p>Second, and more importantly, with Ranges allowing us to compose algorithms properly, do we even need these at all? Consider again the above example and how it might be written with and without specialized algorithms:</p>
 <table>
 <thead>
@@ -1725,11 +1784,11 @@ span.yellow {
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
-<span id="cb32-2"><a href="#cb32-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>equal_to<span class="op">())</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">()</span>, a, b<span class="op">)</span>,</span>
-<span id="cb33-2"><a href="#cb33-2"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span>
-<span id="cb33-3"><a href="#cb33-3"></a>ranges<span class="op">::</span>sum<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">()</span>, a, b<span class="op">))</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
+<span id="cb33-2"><a href="#cb33-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>equal_to<span class="op">())</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">()</span>, a, b<span class="op">)</span>,</span>
+<span id="cb34-2"><a href="#cb34-2"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span>
+<span id="cb34-3"><a href="#cb34-3"></a>ranges<span class="op">::</span>sum<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>equal_to<span class="op">()</span>, a, b<span class="op">))</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1748,28 +1807,28 @@ span.yellow {
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
-<span id="cb34-2"><a href="#cb34-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
-<span id="cb34-3"><a href="#cb34-3"></a>    p1<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
-<span id="cb35-2"><a href="#cb35-2"></a>        a <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p1<span class="op">)</span>, b<span class="op">)</span>,</span>
-<span id="cb35-3"><a href="#cb35-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
+<span id="cb35-2"><a href="#cb35-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
+<span id="cb35-3"><a href="#cb35-3"></a>    p1<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
+<span id="cb36-2"><a href="#cb36-2"></a>        a <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p1<span class="op">)</span>, b<span class="op">)</span>,</span>
+<span id="cb36-3"><a href="#cb36-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
-<span id="cb36-2"><a href="#cb36-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
-<span id="cb36-3"><a href="#cb36-3"></a>    <span class="op">{}</span>, p2<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
-<span id="cb37-2"><a href="#cb37-2"></a>        a, b <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p2<span class="op">))</span>,</span>
-<span id="cb37-3"><a href="#cb37-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
+<span id="cb37-2"><a href="#cb37-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
+<span id="cb37-3"><a href="#cb37-3"></a>    <span class="op">{}</span>, p2<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
+<span id="cb38-2"><a href="#cb38-2"></a>        a, b <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p2<span class="op">))</span>,</span>
+<span id="cb38-3"><a href="#cb38-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
 </tr>
 <tr class="odd">
-<td><div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
-<span id="cb38-2"><a href="#cb38-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
-<span id="cb38-3"><a href="#cb38-3"></a>    <span class="op">{}</span>, <span class="op">{}</span>, p3<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>, a, b<span class="op">)</span></span>
-<span id="cb39-2"><a href="#cb39-2"></a>           <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p3<span class="op">)</span>,</span>
-<span id="cb39-3"><a href="#cb39-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a>ranges<span class="op">::</span>inner_product<span class="op">(</span>a, b, <span class="dv">0</span>,</span>
+<span id="cb39-2"><a href="#cb39-2"></a>    std<span class="op">::</span>plus<span class="op">()</span>, std<span class="op">::</span>multiplies<span class="op">()</span>,</span>
+<span id="cb39-3"><a href="#cb39-3"></a>    <span class="op">{}</span>, <span class="op">{}</span>, p3<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a>ranges<span class="op">::</span>fold<span class="op">(</span>views<span class="op">::</span>zip_with<span class="op">(</span>std<span class="op">::</span>multiplies<span class="op">()</span>, a, b<span class="op">)</span></span>
+<span id="cb40-2"><a href="#cb40-2"></a>           <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>p3<span class="op">)</span>,</span>
+<span id="cb40-3"><a href="#cb40-3"></a>    <span class="dv">0</span>, std<span class="op">::</span>plus<span class="op">())</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1792,12 +1851,12 @@ span.yellow {
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, std<span class="op">::</span>minus<span class="op">())</span>, o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, std<span class="op">::</span>minus<span class="op">())</span>, o<span class="op">)</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o, f<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o, f<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1815,12 +1874,12 @@ span.yellow {
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, std<span class="op">::</span>minus<span class="op">())</span> <span class="op">|&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, std<span class="op">::</span>minus<span class="op">())</span> <span class="op">|&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>o<span class="op">)</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o, f<span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, f<span class="op">)</span> <span class="op">|&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>o<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1"></a>ranges<span class="op">::</span>adjacent_difference<span class="op">(</span>r, o, f<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a>views<span class="op">::</span>zip_tail_with<span class="op">(</span>r, f<span class="op">)</span> <span class="op">|&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>o<span class="op">)</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1837,11 +1896,11 @@ span.yellow {
 <p>As we discussed with the question of the need for <code class="sourceCode cpp">adjacent_difference</code>, there would also be the question of whether we need these algorithms at all. As such, we ascribe them fairly low priority.</p>
 <h3 data-number="4.2.3" id="transform_inexclusive_scan" data-number="4.2.3"><span class="header-section-number">4.2.3</span> <code class="sourceCode cpp">transform_<span class="op">{</span>in,ex<span class="op">}</span>clusive_scan</code><a href="#transform_inexclusive_scan" class="self-link"></a></h3>
 <p>Similar to the question of <code class="sourceCode cpp">transform_reduce</code> and <code class="sourceCode cpp">inner_product</code>, we don’t think we need a:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1"></a>ranges<span class="op">::</span>transform_inclusive_scan<span class="op">(</span>r, o, f, g<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a>ranges<span class="op">::</span>transform_inclusive_scan<span class="op">(</span>r, o, f, g<span class="op">)</span>;</span></code></pre></div>
 <p>once we can write</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a>ranges<span class="op">::</span>inclusive_scan<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span>, o, f<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a>ranges<span class="op">::</span>inclusive_scan<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span>, o, f<span class="op">)</span>;</span></code></pre></div>
 <p>or even</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>inclusive_scan<span class="op">(</span>f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>inclusive_scan<span class="op">(</span>f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div>
 <p>The latter two having the nice property that you don’t have to remember the order of operations of the operations. We don’t think we need these at all.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="actions" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Actions<a href="#actions" class="self-link"></a></h1>
 <p>TODO</p>
@@ -1857,7 +1916,6 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>filter_map</code><br />
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>group_by</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>group_by_key</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> (exposition-only)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span><em>iter-zip-tail-with</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> (exposition-only)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span><em>index-view</em><span class="op">&lt;</span>S, D<span class="op">&gt;</span></code> (exposition-only)</li>
@@ -1893,10 +1951,14 @@ span.yellow {
 <ul>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code><br />
+</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>drop_last</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>drop_exactly</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_last_while</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>generate</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>generate_n</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>group_by_key</code><br />
+</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>intersperse</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>partial_sum</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove</code></li>
@@ -1906,12 +1968,11 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>slice</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>split_when</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>take_exactly</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>take_last</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>take_last_while</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>trim</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>unique</code></li>
 </ul></li>
@@ -1929,11 +1990,17 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_filter</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_remove_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_exactly</code><br />
+</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>head</code><br />
+</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>linear_distribute</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>sample</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slice</code><br />
+</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>tail</code><br />
 </li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>take_exactly</code></li>
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
@@ -1998,6 +2065,10 @@ span.yellow {
 <div id="ref-P1716R3">
 <p>[P1716R3] Tomasz Kamiński. 2019. ranges compare algorithm are over-constrained. <br />
 <a href="https://wg21.link/p1716r3">https://wg21.link/p1716r3</a></p>
+</div>
+<div id="ref-P1739R4">
+<p>[P1739R4] Hannes Hauswedell. 2020. Avoid template bloat for safe_ranges in combination with “subrange-y” view adaptors. <br />
+<a href="https://wg21.link/p1739r4">https://wg21.link/p1739r4</a></p>
 </div>
 <div id="ref-P1813R0">
 <p>[P1813R0] Christopher Di Bella. 2019. A Concept Design for the Numeric Algorithms. <br />
