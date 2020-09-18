@@ -1933,7 +1933,33 @@ span.yellow {
 <div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>inclusive_scan<span class="op">(</span>f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div>
 <p>The latter two having the nice property that you don’t have to remember the order of operations of the operations. We don’t think we need these at all.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="actions" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Actions<a href="#actions" class="self-link"></a></h1>
-<p>TODO</p>
+<p>There are really three kinds of operations that exist in range-v3:</p>
+<ul>
+<li>Algorithms are operations that eagerly either mutate an input range (e.g. <code class="sourceCode cpp">sort</code>), produce a value (e.g. <code class="sourceCode cpp">max_element</code>), both (<code class="sourceCode cpp">partition</code>), or produce a new range by way of an output iterator or output range (e.g. <code class="sourceCode cpp">copy</code>).</li>
+<li>Views are operations that lazily produce a new range.</li>
+<li>Actions are operations that eagerly produce a new range.</li>
+</ul>
+<p>While we have range-based algorithms and views in C++20, we do not yet have any actions. range-v3 comes with many actions, some of which are the action flavor of views and some of which are the action flavor of algorithms. The full list is: <code class="sourceCode cpp">drop</code>, <code class="sourceCode cpp">drop_while</code>, <code class="sourceCode cpp">erase</code>, <code class="sourceCode cpp">insert</code>, <code class="sourceCode cpp">join</code>, <code class="sourceCode cpp">push_back</code>, <code class="sourceCode cpp">push_front</code>, <code class="sourceCode cpp">remove_if</code>, <code class="sourceCode cpp">remove</code>, <code class="sourceCode cpp">reverse</code>, <code class="sourceCode cpp">shuffle</code>, <code class="sourceCode cpp">slice</code>, <code class="sourceCode cpp">sort</code>, <code class="sourceCode cpp">split</code>, <code class="sourceCode cpp">stable_sort</code>, <code class="sourceCode cpp">stride</code>, <code class="sourceCode cpp">take</code>, <code class="sourceCode cpp">take_while</code>, <code class="sourceCode cpp">transform</code>, <code class="sourceCode cpp">unique</code>, and <code class="sourceCode cpp">unstable_remove_if</code>.</p>
+<p>The advantage of these actions is that unlike the algorithms, they compose, and unlike the views, you can pass rvalue ranges to them. From the examples in the range-v3 documentation <span class="citation" data-cites="range-v3.docs">[<a href="#ref-range-v3.docs" role="doc-biblioref">range-v3.docs</a>]</span>:</p>
+<div class="quote">
+<p>When you want to mutate a container in-place, or forward it through a chain of mutating operations, you can use actions. The following examples should make it clear.</p>
+<p>Read data into a vector, sort it, and make it unique.</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1"></a><span class="kw">extern</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> read_data<span class="op">()</span>;</span>
+<span id="cb54-2"><a href="#cb54-2"></a><span class="kw">using</span> <span class="kw">namespace</span> ranges;</span>
+<span id="cb54-3"><a href="#cb54-3"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> vi <span class="op">=</span> read_data<span class="op">()</span> <span class="op">|</span> actions<span class="op">::</span>sort <span class="op">|</span> actions<span class="op">::</span>unique;</span></code></pre></div>
+<p>Do the same to a vector that already contains some data:</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1"></a>vi <span class="op">=</span> std<span class="op">::</span>move<span class="op">(</span>vi<span class="op">)</span> <span class="op">|</span> actions<span class="op">::</span>sort <span class="op">|</span> actions<span class="op">::</span>unique;</span></code></pre></div>
+<p>Mutate the container in-place:</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1"></a>vi <span class="op">|=</span> actions<span class="op">::</span>sort <span class="op">|</span> actions<span class="op">::</span>unique;</span></code></pre></div>
+<p>Same as above, but with function-call syntax instead of pipe syntax:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1"></a>actions<span class="op">::</span>unique<span class="op">(</span>actions<span class="op">::</span>sort<span class="op">(</span>vi<span class="op">))</span>;</span></code></pre></div>
+</div>
+<p>Indeed, ranges actions do seem very useful — and provide the ability to pipeline operations that we cannot do today. There is, nor will there ever be, a <code class="sourceCode cpp">views<span class="op">::</span>sort</code>, so the only option today is:</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> vi <span class="op">=</span> read_data<span class="op">()</span>;</span>
+<span id="cb58-2"><a href="#cb58-2"></a>ranges<span class="op">::</span>sort<span class="op">(</span>vi<span class="op">)</span>;</span>
+<span id="cb58-3"><a href="#cb58-3"></a>ranges<span class="op">::</span>unique<span class="op">(</span>vi<span class="op">)</span>;</span></code></pre></div>
+<p>But while it might be nicer to provide a pipeline approach, we feel this whole space simply needs more research. It is an immediate source of frustration for users when they discover that while you can pipe a <code class="sourceCode cpp">view</code> into an <code class="sourceCode cpp">action</code>, you cannot do the reverse.</p>
+<p>Given that the actions don’t provide any functionality that we don’t already have, simply adding the ability to compose some operations better, we give them pretty low priority relative to the wealth of new functionality many of the other operations here provide.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="plan-summary" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> Plan Summary<a href="#plan-summary" class="self-link"></a></h1>
 <p>To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.</p>
 <h2 data-number="6.1" id="tier-1" data-number="6.1"><span class="header-section-number">6.1</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
@@ -2132,6 +2158,10 @@ span.yellow {
 <div id="ref-range-v3.573">
 <p>[range-v3.573] Jarod42. 2017. Readable types with prvalue reference types erroneously model IndirectlyMovable. <br />
 <a href="https://github.com/ericniebler/range-v3/issues/573">https://github.com/ericniebler/range-v3/issues/573</a></p>
+</div>
+<div id="ref-range-v3.docs">
+<p>[range-v3.docs] Eric Niebler. 2014. range-v3 documentation. <br />
+<a href="https://ericniebler.github.io/range-v3/">https://ericniebler.github.io/range-v3/</a></p>
 </div>
 <div id="ref-stepanov">
 <p>[stepanov] Alexander A. Stepanov. 2014. From Mathematics to Generic Programming. </p>

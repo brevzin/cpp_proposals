@@ -1179,7 +1179,53 @@ The latter two having the nice property that you don't have to remember the orde
 
 # Actions
 
-TODO
+There are really three kinds of operations that exist in range-v3:
+
+- Algorithms are operations that eagerly either mutate an input range (e.g. `sort`), produce a value (e.g. `max_element`), both (`partition`), or produce a new range by way of an output iterator or output range (e.g. `copy`).
+- Views are operations that lazily produce a new range.
+- Actions are operations that eagerly produce a new range.
+
+While we have range-based algorithms and views in C++20, we do not yet have any actions. range-v3 comes with many actions, some of which are the action flavor of views and some of which are the action flavor of algorithms. The full list is: `drop`, `drop_while`, `erase`, `insert`, `join`, `push_back`, `push_front`, `remove_if`, `remove`, `reverse`, `shuffle`, `slice`, `sort`, `split`, `stable_sort`, `stride`, `take`, `take_while`, `transform`, `unique`, and `unstable_remove_if`.
+
+The advantage of these actions is that unlike the algorithms, they compose, and unlike the views, you can pass rvalue ranges to them. From the examples in the range-v3 documentation [@range-v3.docs]:  
+
+::: quote
+ When you want to mutate a container in-place, or forward it through a chain of mutating operations, you can use actions. The following examples should make it clear.
+
+Read data into a vector, sort it, and make it unique.
+```cpp
+extern std::vector<int> read_data();
+using namespace ranges;
+std::vector<int> vi = read_data() | actions::sort | actions::unique;
+```
+
+Do the same to a vector that already contains some data:
+```cpp
+vi = std::move(vi) | actions::sort | actions::unique;
+```
+
+Mutate the container in-place:
+```cpp
+vi |= actions::sort | actions::unique;
+```
+
+Same as above, but with function-call syntax instead of pipe syntax:
+```cpp
+actions::unique(actions::sort(vi));
+```
+:::
+
+Indeed, ranges actions do seem very useful &mdash; and provide the ability to pipeline operations that we cannot do today. There is, nor will there ever be, a `views::sort`, so the only option today is:
+
+```cpp
+std::vector<int> vi = read_data();
+ranges::sort(vi);
+ranges::unique(vi);
+```
+
+But while it might be nicer to provide a pipeline approach, we feel this whole space simply needs more research. It is an immediate source of frustration for users when they discover that while you can pipe a `view` into an `action`, you cannot do the reverse. 
+
+Given that the actions don't provide any functionality that we don't already have, simply adding the ability to compose some operations better, we give them pretty low priority relative to the wealth of new functionality many of the other operations here provide.
 
 # Plan Summary
 
@@ -1278,6 +1324,14 @@ references:
       issued:
         year: 2014
       URL: https://github.com/ericniebler/range-v3/
+    - id: range-v3.docs
+      citation-label: range-v3.docs
+      title: range-v3 documentation
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2014
+      URL: https://ericniebler.github.io/range-v3/
     - id: stepanov
       citation-label: stepanov
       title: From Mathematics to Generic Programming
