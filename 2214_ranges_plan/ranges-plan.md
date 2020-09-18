@@ -900,7 +900,7 @@ concept indirect_magma =
 ```
 :::
 
-We see here again the heavy association of `plus` with `accumulate`, hence again the desire to rename the algorithm to `fold`. But the important thing to consider here is the requirement that the binary function _need_ be invokable on each type and that there _need_ be a common type for the result. We've already been through this process with the ranges comparison algorithsm in [@P1716R3] and removed those restrictions.
+We see here again the heavy association of `plus` with `accumulate`, hence again the desire to rename the algorithm to `fold`. But the important thing to consider here is the requirement that the binary function _need_ be invokable on each type and that there _need_ be a common type for the result. We've already been through this process with the ranges comparison algorithms in [@P1716R3] and removed those restrictions.
 
 Consider a simple fold counting the occurences of a string (i.e. how you would implement `ranges::count` with `ranges::fold`):
 
@@ -917,7 +917,7 @@ Such an algorithm would not meet the requirements laid out in P1813. There's no 
 int n = ranges::fold(words, 0, ranges::plus{}, [](std::string const& w) { return w == "ranges"; });
 ```
 
-But we're hard-pressed to explain why would be considered better. In the general case, there may not even be an allowed implementation. Consider wanting to score a word in Scrabble. In Scrabble, each letter has a value but each tile can either multiply the score of a single letter or multiple the score of the whole word. One way to compute the score then is to use two `fold`s, one to figure out the world multiplier and another to figure out the letter sum:
+But we're hard-pressed to explain why this would be considered better. In the general case, there may not even be an allowed implementation. Consider wanting to score a word in Scrabble. In Scrabble, each letter has a value but each tile can either multiply the score of a single letter or multiple the score of the whole word. One way to compute the score then is to use two `fold`s, one to figure out the world multiplier and another to figure out the letter sum:
 
 ```cpp
 struct Square { int letter_multiplier, word_multiplier; };
