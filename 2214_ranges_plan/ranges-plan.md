@@ -116,11 +116,11 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `any_view<T>` | range-v3 | Not proposed |
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
 | `cache1` | range-v3 | [Tier 1, largely for `flat_map`. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
-| `cartesian_product` | range-v3 | [Tier 3]{.diffdel} |
+| `cartesian_product` | range-v3 | [Tier 2]{.yellow} |
 | `chunk` | range-v3 | [Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | Not proposed |
+| `const_` | range-v3 | [Tier 3]{.diffdel} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -705,6 +705,8 @@ The above table isn't _quite_ right - since `stride` does not give you a range o
 
 Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing. 
 
+Ultimately, we don't think an algorithm like `@_generic_@` would necessarily be useful for C++, and it wouldn't really help much in specifying either `chunk` or `slide` (and definitely not `stride`). But these are important algorithms that come up frequently enough to be in consideration for Tier 1. We tentatively label them all as Tier 2, but at the higher end of Tier 2.
+
 ## The take/drop family
 
 In C++20 already we have several views that pass through some subset of the initial range &mdash; without modifying any of the elements. Those are: `take`, `take_while`, `drop`, and `drop_while`. There are actually many more algorithms in this family that are all quite similar. Nearly all of these range adapters can be implemented in terms of adapters that already exist, although we can typically do better if we make them all first-class. The question is really what is it that we want to do here? 
@@ -752,6 +754,8 @@ There are several views on the list that are simply factories &mdash; they canno
 
 These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But we're not sure any of these is quite important enough to be Tier 1 caliber, so we simply consider them to be lower priority. 
 
+`generate` and `generate_n` in particular need special care to deal with [res.on.data.races]{.sref}. The current implementation of `generate_n` in range-v3 has a data race.
+
 ## Other view adapters
 
 Other range adapters that we haven't talked about yet, but aren't sure how to group exactly, are:
@@ -772,10 +776,24 @@ Of these, `views::join_with` fills in an incomplete aspect of the already-existi
 
 ## Derivatives of `transform`
 
-Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof`, `const_`, `indirect`, and `move` are all basically wrappers around `transform` that take `std::addressof`, `std::as_const`, `std::dereference` (a function object we do not have at the moment), and `std::move`, respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other three we can't pass as an argument anyway.
+Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof`, `indirect`, and `move` are all basically wrappers around `transform` that take `std::addressof`, `std::dereference` (a function object we do not have at the moment), and `std::move`, respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other three we can't pass as an argument anyway.
 
 But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. `views::addressof` is shorter than `views::transform(LIFT(std::addressof))` (assuming a `LIFT` macro that wraps a name and emits a lambda), but we're not sure that we necessarily need to add special cases of `transform` for every useful function.
 
+### `views::const_`
+
+There's one that stands out as being slightly different though: `views::const_` isn't quite the same as a `transform` over `std::as_const`, because of the existence of proxy references. `std::as_const` only accepts lvalues, so something like:
+
+```cpp
+std::vector<int> v;
+views::zip(v) | views::transform(LIFT(std::as_const));
+```
+
+would not compile. And were it to compile, what should it actually mean? `zip`'s `reference` type here, as previously discussed, should be `std::tuple<int&>`. What would a `const` view over this range mean? Should we transparently propagate prvalues, thereby being a shallow `const`, and produce a new range whose `reference` is `std::tuple<int&>`? Or should we somehow come up with a way to do deep `const`-ness here and yield a range whose `reference` is `std::tuple<int const&>`? The latter noting that we are not doing this sort of introspection for `views::zip_with`.
+
+In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int> const`. This does not seem like a good choice, since it would involve actually copying elements. Maybe not terrible here because they're `int`s, but for more expensive types it would be very surprising if `views::const_` actually incurred overhead. 
+
+Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, but is something that needs more research. As such, we think it's Tier 3 material.
 
 # Algorithms
 
@@ -1199,6 +1217,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 ## [Tier 2]{.yellow}
 
 - the addition of the following range adapters:
+    - `views::cartesian_product`
     - `views::chunk`
     - `views::cycle`
     - `views::delimit`    
@@ -1233,7 +1252,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 - the addition of the following range adapters:
     - `views::adjacent_filter`
     - `views::adjacent_remove_if`
-    - `views::cartesian_product`
+    - `views::const_`
     - `views::drop_exactly`    
     - `views::head`        
     - `views::linear_distribute`
