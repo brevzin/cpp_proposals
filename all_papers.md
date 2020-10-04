@@ -37,6 +37,7 @@
 - 2162 Inheriting from  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2162r0](2162_inherit_variant/p2162r0.html) [p2162r1](2162_inherit_variant/p2162r1.html)
 - 2210 Superior String Splitting: [p2210r0](2210_string_split/p2210r0.html)
 - 2214 A Plan for C++23 Ranges: [p2214r0](2214_ranges_plan/p2214r0.html)
+- 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
