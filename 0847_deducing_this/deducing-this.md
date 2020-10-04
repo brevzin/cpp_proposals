@@ -24,7 +24,7 @@ We propose a new mechanism for specifying or deducing the value category of the 
 
 ## Changes since r4 ## {#changes-since-r4}
 
-Wording. Discussion about implicit vs explicit invocation and interaction with static functions.
+Wording and Implementation. Discussion about implicit vs explicit invocation and interaction with static functions.
 
 ## Changes since r3 ## {#changes-since-r3}
 
@@ -1485,6 +1485,10 @@ One family of possible solutions could be summarized as **make it easy to get th
 *This is already a problem for free-function templates*: The authors have heard many a complaint about it from library vendors, even before this paper was introduced, as it is desirable to only deduce the ref-qualifier in many contexts. Therefore, it might make sense to tackle this issue in a more general way. A complementary feature could be proposed to constrain *type deduction*.
 
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
+
+# Implementation
+
+This has been implemented in the EDG front end, with gracious help and encouragement from Daveed Vandevoorde. Implementation didn't turn up any notable issues. 
 
 # Proposed Wording # {#wording}
 
