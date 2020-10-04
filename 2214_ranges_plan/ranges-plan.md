@@ -126,7 +126,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
 | `drop` | C++20 | C++20 |
 | `drop_last` | range-v3 | [Tier 2]{.yellow} |
-| `take_last_while` | (not in range-v3) | [Tier 2]{.yellow} |
+| `drop_last_while` | (not in range-v3) | [Tier 2]{.yellow} |
 | `drop_exactly` | range-v3 | [Tier 3]{.diffdel} |
 | `drop_while` | C++20 | C++20 |
 | `empty` | C++20 | C++20 |
@@ -598,7 +598,7 @@ We added `views::transform` in C++20, but there are closely related views in tha
 - we can take a function `T -> RangeOf<U>` and produce a range of `U`. That is, take the resulting range and flatten it out into a single range. 
 - we can take a function `T -> optional<U>` and produce a range of `U` from those resulting optionals that are engaged. 
 
-The former is commonly known as `flat_map` (because it's a `map` followed by a `flatten`), although C++20's version of `flatten` is named` join` and C++20's version of `map` is named `transform`. So perhaps this adapter should be named `join_transform` or `transform_join`? Eughh?
+The former is commonly known as `flat_map` (because it's a `map` followed by a `flatten`), although C++20's version of `flatten` is named `join` and C++20's version of `map` is named `transform`. So perhaps this adapter should be named `join_transform` or `transform_join`? Eughh?
 
 The latter is called `filter_map` in Rust and `compactMap` in Swift. Neither strike us as great names either. 
 
