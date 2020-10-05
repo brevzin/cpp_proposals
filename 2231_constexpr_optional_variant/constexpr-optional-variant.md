@@ -15,7 +15,331 @@ Each new language standard has increased the kinds of operations that we can do 
 
 But even though the language provided the tools to make `std::optional` and `std::variant` completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission.
 
-But the library was not updated in response to the new addition. This paper fixes that omission by simply adding `constexpr` to all the relevant places. I updated libstdc++'s implementation of `std::optional` to add these `constexpr`s (and replace the placement `new` calls with calls to `std::construct_at`) and it [compiles](https://godbolt.org/z/nbhqer) with both gcc and clang.
+But the library was not updated in response to the new addition. This paper fixes that omission by simply adding `constexpr` to all the relevant places.
+
+## Implementing `std::optional`
+
+I updated libstdc++'s implementation of `std::optional` to add these `constexpr`s (and replace the placement `new` calls with calls to `std::construct_at`) as follows, which compiles with both gcc and clang ([demo](https://godbolt.org/z/nY1szr)):
+
+```diff
+XX -13,6 +11,7 XX
+ #include <bits/exception_defines.h>
+ #include <bits/functional_hash.h>
+ #include <bits/enable_special_members.h>
++#include <bits/stl_construct.h>
+ #if __cplusplus > 201703L
+ # include <compare>
+ #endif
+@@ -217,12 +216,12 @@
+     bool _M_engaged = false;
+ 
+     template<typename... _Args>
+-    void
++    constexpr void
+     _M_construct(_Args&&... __args)
+     noexcept(is_nothrow_constructible_v<_Stored_type, _Args...>)
+     {
+-        ::new ((void *) std::__addressof(this->_M_payload))
+-        _Stored_type(std::forward<_Args>(__args)...);
++        std::construct_at(std::__addressof(this->_M_payload),
++            std::forward<_Args>(__args)...);
+         this->_M_engaged = true;
+     }
+ 
+@@ -388,17 +387,16 @@
+     // The _M_construct operation has !_M_engaged as a precondition
+     // while _M_destruct has _M_engaged as a precondition.
+     template<typename... _Args>
+-    void
++    constexpr void
+     _M_construct(_Args&&... __args)
+     noexcept(is_nothrow_constructible_v<_Stored_type, _Args...>)
+     {
+-        ::new
+-        (std::__addressof(static_cast<_Dp*>(this)->_M_payload._M_payload))
+-        _Stored_type(std::forward<_Args>(__args)...);
++        std::construct_at(std::__addressof(static_cast<_Dp*>(this)->_M_payload._M_payload._M_value),
++            std::forward<_Args>(__args)...);
+         static_cast<_Dp*>(this)->_M_payload._M_engaged = true;
+     }
+ 
+-    void
++    constexpr void
+     _M_destruct() noexcept
+     {
+         static_cast<_Dp*>(this)->_M_payload._M_destroy();
+@@ -754,7 +752,7 @@
+         : _Base(std::in_place, __il, std::forward<_Args>(__args)...) { }
+ 
+     // Assignment operators.
+-    optional&
++    constexpr optional&
+     operator=(nullopt_t) noexcept
+     {
+         this->_M_reset();
+@@ -762,6 +760,7 @@
+     }
+ 
+     template<typename _Up = _Tp>
++    constexpr
+     enable_if_t<__and_v<__not_self<_Up>,
+                         __not_<__and_<is_scalar<_Tp>,
+                                       is_same<_Tp, decay_t<_Up>>>>,
+@@ -780,6 +779,7 @@
+     }
+ 
+     template<typename _Up>
++    constexpr
+     enable_if_t<__and_v<__not_<is_same<_Tp, _Up>>,
+                         is_constructible<_Tp, const _Up&>,
+                         is_assignable<_Tp&, _Up>,
+@@ -801,6 +801,7 @@
+     }
+ 
+     template<typename _Up>
++    constexpr
+     enable_if_t<__and_v<__not_<is_same<_Tp, _Up>>,
+                         is_constructible<_Tp, _Up>,
+                         is_assignable<_Tp&, _Up>,
+@@ -823,6 +824,7 @@
+     }
+ 
+     template<typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<_Tp, _Args&&...>, _Tp&>
+     emplace(_Args&&... __args)
+     {
+@@ -832,6 +834,7 @@
+     }
+ 
+     template<typename _Up, typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&,
+                                    _Args&&...>, _Tp&>
+     emplace(initializer_list<_Up> __il, _Args&&... __args)
+@@ -844,7 +847,7 @@
+     // Destructor is implicit, implemented in _Optional_base.
+ 
+     // Swap.
+-    void
++    constexpr void
+     swap(optional& __other)
+     noexcept(is_nothrow_move_constructible_v<_Tp>
+              && is_nothrow_swappable_v<_Tp>)
+@@ -957,7 +960,7 @@
+         : static_cast<_Tp>(std::forward<_Up>(__u));
+     }
+ 
+-    void reset() noexcept
++    constexpr void reset() noexcept
+     {
+         this->_M_reset();
+     }
+@@ -1187,7 +1190,7 @@
+ // _GLIBCXX_RESOLVE_LIB_DEFECTS
+ // 2748. swappable traits for optionals
+ template<typename _Tp>
+-inline enable_if_t<is_move_constructible_v<_Tp> && is_swappable_v<_Tp>>
++constexpr inline enable_if_t<is_move_constructible_v<_Tp> && is_swappable_v<_Tp>>
+ swap(optional<_Tp>& __lhs, optional<_Tp>& __rhs)
+ noexcept(noexcept(__lhs.swap(__rhs))) {
+     __lhs.swap(__rhs);
+```
+
+## Implementing `std::variant`
+
+And likewise, here is a diff against libstdc++'s implementation of `std::variant` for the changes proposed in this paper, which also compiles on both gcc and clang ([demo](https://godbolt.org/z/46zeYr)). This is slightly more complicated as we have to take more care with constructing and accessing the recursive union:
+
+```diff
+@@ -380,7 +380,7 @@
+           _M_index(_Np)
+     { }
+ 
+-    void _M_reset()
++    constexpr void _M_reset()
+     {
+         if (!_M_valid()) [[unlikely]]
+             return;
+@@ -420,6 +420,10 @@
+ 
+ template<typename... _Types>
+ struct _Variant_storage<true, _Types...> {
++    template<typename _Tp>
++    static constexpr size_t __index_of =
++        __detail::__variant::__index_of_v<_Tp, _Types...>;
++
+     constexpr _Variant_storage() : _M_index(variant_npos) { }
+ 
+     template<size_t _Np, typename... _Args>
+@@ -428,7 +432,7 @@
+           _M_index(_Np)
+     { }
+ 
+-    void _M_reset() noexcept
++    constexpr void _M_reset() noexcept
+     {
+         _M_index = variant_npos;
+     }
+@@ -459,13 +463,16 @@
+     _Variant_storage<_Traits<_Types...>::_S_trivial_dtor, _Types...>;
+ 
+ template<typename _Tp, typename _Up>
+-void __variant_construct_single(_Tp&& __lhs, _Up&& __rhs_mem)
++constexpr void __variant_construct_single(_Tp&& __lhs, _Up&& __rhs_mem)
+ {
+-    void* __storage = std::addressof(__lhs._M_u);
+     using _Type = remove_reference_t<decltype(__rhs_mem)>;
+-    if constexpr (!is_same_v<_Type, __variant_cookie>)
+-        ::new (__storage)
+-        _Type(std::forward<decltype(__rhs_mem)>(__rhs_mem));
++    constexpr auto index = remove_reference_t<_Tp>::template __index_of<_Type>;
++
++    if constexpr (!is_same_v<_Type, __variant_cookie>) {
++        std::construct_at(std::addressof(__lhs._M_u),
++            in_place_index<index>,
++            _Type(std::forward<decltype(__rhs_mem)>(__rhs_mem)));
++    }
+ }
+ 
+ template<typename... _Types, typename _Tp, typename _Up>
+@@ -519,7 +526,7 @@
+     }
+ 
+     template<typename _Up>
+-    void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
++    constexpr void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
+     {
+         this->_M_reset();
+         __variant_construct_single(*this, std::forward<_Up>(__rhs));
+@@ -527,7 +534,7 @@
+     }
+ 
+     template<typename _Up>
+-    void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
++    constexpr void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
+     {
+         this->_M_reset();
+         __variant_construct_single(*this, __rhs);
+@@ -545,7 +552,7 @@
+     using _Base::_Base;
+ 
+     template<typename _Up>
+-    void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
++    constexpr void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
+     {
+         this->_M_reset();
+         __variant_construct_single(*this, std::forward<_Up>(__rhs));
+@@ -553,7 +560,7 @@
+     }
+ 
+     template<typename _Up>
+-    void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
++    constexpr void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
+     {
+         this->_M_reset();
+         __variant_construct_single(*this, __rhs);
+@@ -570,7 +577,7 @@
+     using _Base = _Move_ctor_alias<_Types...>;
+     using _Base::_Base;
+ 
+-    _Copy_assign_base&
++    constexpr _Copy_assign_base&
+     operator=(const _Copy_assign_base& __rhs)
+     noexcept(_Traits<_Types...>::_S_nothrow_copy_assign)
+     {
+@@ -625,7 +632,7 @@
+     using _Base = _Copy_assign_alias<_Types...>;
+     using _Base::_Base;
+ 
+-    _Move_assign_base&
++    constexpr _Move_assign_base&
+     operator=(_Move_assign_base&& __rhs)
+     noexcept(_Traits<_Types...>::_S_nothrow_move_assign)
+     {
+@@ -1033,12 +1040,10 @@
+ } // namespace __detail
+ 
+ template<size_t _Np, typename _Variant, typename... _Args>
+-void __variant_construct_by_index(_Variant& __v, _Args&&... __args) {
+-    __v._M_index = _Np;
+-    auto&& __storage = __detail::__variant::__get<_Np>(__v);
+-    ::new ((void*)std::addressof(__storage))
+-    remove_reference_t<decltype(__storage)>
+-    (std::forward<_Args>(__args)...);
++constexpr void __variant_construct_by_index(_Variant& __v, _Args&&... __args) {
++    std::construct_at(std::addressof(__v), 
++        in_place_index<_Np>,
++        std::forward<_Args>(__args)...);
+ }
+ 
+ template<typename _Tp, typename... _Types>
+@@ -1220,6 +1225,7 @@
+ constexpr decltype(auto) visit(_Visitor&&, _Variants&&...);
+ 
+ template<typename... _Types>
++constexpr
+ inline enable_if_t<(is_move_constructible_v<_Types> && ...)
+                    && (is_swappable_v<_Types> && ...)>
+ swap(variant<_Types...>& __lhs, variant<_Types...>& __rhs)
+@@ -1283,7 +1289,7 @@
+     template <typename... _UTypes, typename _Tp>
+     friend decltype(auto) __variant_cast(_Tp&&);
+     template<size_t _Np, typename _Variant, typename... _Args>
+-    friend void __variant_construct_by_index(_Variant& __v,
++    friend constexpr void __variant_construct_by_index(_Variant& __v,
+             _Args&&... __args);
+ 
+     static_assert(sizeof...(_Types) > 0,
+@@ -1397,6 +1403,7 @@
+     { }
+ 
+     template<typename _Tp>
++    constexpr
+     enable_if_t<__exactly_once<__accepted_type<_Tp&&>>
+                 && is_constructible_v<__accepted_type<_Tp&&>, _Tp>
+                 && is_assignable_v<__accepted_type<_Tp&&>&, _Tp>,
+@@ -1421,6 +1428,7 @@
+     }
+ 
+     template<typename _Tp, typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<_Tp, _Args...> && __exactly_once<_Tp>,
+                 _Tp&>
+     emplace(_Args&&... __args)
+@@ -1430,6 +1438,7 @@
+     }
+ 
+     template<typename _Tp, typename _Up, typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
+                 && __exactly_once<_Tp>,
+                 _Tp&>
+@@ -1440,6 +1449,7 @@
+     }
+ 
+     template<size_t _Np, typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<variant_alternative_t<_Np, variant>,
+                                    _Args...>,
+                 variant_alternative_t<_Np, variant>&>
+@@ -1484,6 +1494,7 @@
+     }
+ 
+     template<size_t _Np, typename _Up, typename... _Args>
++    constexpr
+     enable_if_t<is_constructible_v<variant_alternative_t<_Np, variant>,
+                                    initializer_list<_Up>&, _Args...>,
+                 variant_alternative_t<_Np, variant>&>
+@@ -1540,7 +1551,7 @@
+         }
+     }
+ 
+-    void
++    constexpr void
+     swap(variant& __rhs)
+     noexcept((__is_nothrow_swappable<_Types>::value && ...)
+              && is_nothrow_move_constructible_v<variant>)
+```
 
 # Wording
 
