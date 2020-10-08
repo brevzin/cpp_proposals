@@ -2,7 +2,7 @@
 title: "Missing `constexpr` in `std::optional` and `std::variant`"
 document: P2231R0
 date: today
-audience: Library Evolution
+audience: LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -13,9 +13,7 @@ toc: false
 
 Each new language standard has increased the kinds of operations that we can do during constant evaluation time. C++20 was no different. With the adoption of [@P1330R0], C++20 added the ability to change the active member of a union inside constexpr (the paper specifically mentions `std::optional`). And with the adoption of [@P0784R7], C++20 added the ability to do placement new inside constexpr (by way of `std::construct_at`).
 
-But even though the language provided the tools to make `std::optional` and `std::variant` completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission.
-
-But the library was not updated in response to the new addition. This paper fixes that omission by simply adding `constexpr` to all the relevant places.
+But even though the language provided the tools to make `std::optional` and `std::variant` completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission by simply adding `constexpr` to all the relevant places.
 
 ## Implementing `std::optional`
 
@@ -580,3 +578,7 @@ namespace std {
   };
 }
 ```
+
+# Acknowledgements
+
+Thanks to Tim Song for all the help. Thanks to Jonathan Wakely for looking over the paper, pointing out how repetitive the introduction was, and pointing out how repetitive the introduction was. 

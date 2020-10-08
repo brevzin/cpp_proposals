@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-10-06" />
+  <meta name="dcterms.date" content="2020-10-08" />
   <title>Missing `constexpr` in `std::optional` and `std::variant`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-10-06</td>
+    <td>2020-10-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      Library Evolution<br>
+      LEWG<br>
     </td>
   </tr>
   <tr>
@@ -562,8 +562,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div style="clear:both">
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Each new language standard has increased the kinds of operations that we can do during constant evaluation time. C++20 was no different. With the adoption of <span class="citation" data-cites="P1330R0">[<a href="#ref-P1330R0" role="doc-biblioref">P1330R0</a>]</span>, C++20 added the ability to change the active member of a union inside constexpr (the paper specifically mentions <code class="sourceCode cpp">std<span class="op">::</span>optional</code>). And with the adoption of <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>, C++20 added the ability to do placement new inside constexpr (by way of <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>).</p>
-<p>But even though the language provided the tools to make <code class="sourceCode cpp">std<span class="op">::</span>optional</code> and <code class="sourceCode cpp">std<span class="op">::</span>variant</code> completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission.</p>
-<p>But the library was not updated in response to the new addition. This paper fixes that omission by simply adding <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to all the relevant places.</p>
+<p>But even though the language provided the tools to make <code class="sourceCode cpp">std<span class="op">::</span>optional</code> and <code class="sourceCode cpp">std<span class="op">::</span>variant</code> completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission by simply adding <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to all the relevant places.</p>
 <h2 data-number="1.1" id="implementing-stdoptional" data-number="1.1"><span class="header-section-number">1.1</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>optional</code><a href="#implementing-stdoptional" class="self-link"></a></h2>
 <p>I updated libstdc++’s implementation of <code class="sourceCode cpp">std<span class="op">::</span>optional</code> to add these <code class="sourceCode cpp"><span class="kw">constexpr</span></code>s (and replace the placement <code class="sourceCode cpp"><span class="kw">new</span></code> calls with calls to <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>) as follows, which compiles with both gcc and clang (<a href="https://godbolt.org/z/fE6aob">demo</a>):</p>
 <div>
@@ -1111,7 +1110,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-59"><a href="#cb6-59"></a>  };</span>
 <span id="cb6-60"><a href="#cb6-60"></a>}</span></code></pre></div>
 </div>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="acknowledgements" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for all the help. Thanks to Jonathan Wakely for looking over the paper, pointing out how repetitive the introduction was, and pointing out how repetitive the introduction was.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019. More constexpr containers. <br />
