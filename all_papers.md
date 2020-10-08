@@ -24,7 +24,7 @@
 - 1870 <em><code class="sourceCode cpp">forwarding<span class="op">-</span>range</code></em> <code class="sourceCode cpp"><span class="op">&lt;</span>T<span class="op">&gt;</span></code>  is too subtle: [p1870r0](1870_forwarding_range/p1870r0.html) [p1870r1](1870_forwarding_range/p1870r1.html)
 - 1871 Concept traits should be named after concepts: [p1871r0](1871_enable_sized_range/p1871r0.html) [p1871r1](1871_enable_sized_range/p1871r1.html)
 - 1900 Concepts-Adjacent Problems: [p1900r0](1900_concepts/p1900r0.html)
-- 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html) [p1938r1](1938_if_consteval/p1938r1.html)
+- 1938 <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>: [p1938r0](1938_if_consteval/p1938r0.html) [p1938r1](1938_if_consteval/p1938r1.html) [d1938r2](1938_if_consteval/d1938r2.html)
 - 1946 Allow defaulting comparisons by value: [p1946r0](1946_dflt_value_comparisons/p1946r0.html)
 - 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 - 2011 A pipeline-rewrite operator: [p2011r0](2011_pipeline/p2011r0.html) [p2011r1](2011_pipeline/p2011r1.html) [d2011r2](2011_pipeline/d2011r2.html)
