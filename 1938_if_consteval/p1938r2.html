@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D1938R2</td>
+    <td>P1938R2</td>
   </tr>
   <tr>
     <td>Date:</td>
@@ -904,7 +904,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and <span class="addu">either</span>:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(13.1)</a></span> its innermost non-block scope is a function parameter scope of an immediate function<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(13.2)</a></span> <span class="addu">it appears in the first <em>statement</em> of a consteval if statement ([stmt.if]).</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(13.2)</a></span> <span class="addu">it appears in the <em>compound-statement</em> of a consteval if statement ([stmt.if]).</span></li>
 </ul>
 </blockquote>
 <p>Change <span>8.5 <a href="https://wg21.link/stmt.select">[stmt.select]</a></span> to add the new grammar:</p>
@@ -913,15 +913,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>  <em>selection-statement</em>:</span>
 <span id="cb24-2"><a href="#cb24-2"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span>
 <span id="cb24-3"><a href="#cb24-3"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em> else <em>statement</em></span>
-<span id="cb24-4"><a href="#cb24-4"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em></span></span>
-<span id="cb24-5"><a href="#cb24-5"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em> else <em>statement</em></span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="va">+    if !<sub>opt</sub> consteval <em>compound-statement</em></span></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="va">+    if !<sub>opt</sub> consteval <em>compound-statement</em> else <em>statement</em></span></span>
 <span id="cb24-6"><a href="#cb24-6"></a>     switch ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause to <span>8.5.2 <a href="https://wg21.link/stmt.if">[stmt.if]</a></span>:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">a</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> or <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span></code> is called a <em>consteval if</em> statement. Each <em>statement</em> in a consteval if statement shall be a <em>compound-statement</em>. [ <em>Example</em> -</p>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> is called a <em>consteval if</em> statement. The <em>statement</em>, if any, in a consteval if statement shall be a <em>compound-statement</em>. [ <em>Example</em> -</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>constexpr void f(bool b) {</span>
 <span id="cb25-2"><a href="#cb25-2"></a>  if (true)</span>
 <span id="cb25-3"><a href="#cb25-3"></a>    if consteval { }</span>
@@ -931,11 +931,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized">b</a></span> If the <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and evaluation occurs in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed. [<em>Note</em>: The first substatement is an immediate function context - <em>end note</em> ] Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed. A <code class="sourceCode cpp"><span class="cf">case</span></code> or <code class="sourceCode cpp"><span class="cf">default</span></code> label appearing within such an <code class="sourceCode cpp"><span class="cf">if</span></code> statement shall be associated with a <code class="sourceCode cpp"><span class="cf">switch</span></code> statement within the same <code class="sourceCode cpp"><span class="cf">if</span></code> statement. A label declared in a substatement of a consteval if statement shall only be referred to by a statement in the same substatement.</p>
-<p><span class="marginalizedparent"><a class="marginalized">c</a></span> A consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>statement</em></code> is equivalent to</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>if consteval { } else <em>statement</em></span></code></pre></div>
-<p>A consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>statement</em><sub>1</sub> <span class="cf">else</span> <em>statement</em><sub>2</sub></code> is equivalent to</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>if consteval <em>statement</em><sub>2</sub> else <em>statement</em><sub>1</sub></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> If a consteval if statement is evaluated in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed. [<em>Note</em>: The first substatement is an immediate function context - <em>end note</em> ] Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed. A <code class="sourceCode cpp"><span class="cf">case</span></code> or <code class="sourceCode cpp"><span class="cf">default</span></code> label appearing within such an <code class="sourceCode cpp"><span class="cf">if</span></code> statement shall be associated with a <code class="sourceCode cpp"><span class="cf">switch</span></code> statement within the same <code class="sourceCode cpp"><span class="cf">if</span></code> statement. A label declared in a substatement of a consteval if statement shall only be referred to by a statement in the same substatement.</p>
+<p><span class="marginalizedparent"><a class="marginalized">c</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>compound-statement</em></code> is equivalent to</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>if consteval { } else <em>compound-statement</em></span></code></pre></div>
+<p>An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>compound-statement</em><sub>1</sub> <span class="cf">else</span> <em>statement</em><sub>2</sub></code> is equivalent to</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>if consteval <em>statement</em><sub>2</sub> else <em>compound-statement</em><sub>1</sub></span></code></pre></div>
 </div>
 </blockquote>
 <p>Change <span>20.15.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> to use this new functionality:</p>

@@ -1,6 +1,6 @@
 ---
 title: "`if consteval`"
-document: D1938R2
+document: P1938R2
 date: today
 audience: CWG
 author:
@@ -463,7 +463,7 @@ potentially evaluated and [either]{.addu}:
 
 - [13.1]{.pnum} its innermost non-block scope is a function parameter scope of an
 immediate function[.]{.rm} [, or]{.addu}
-- [13.2]{.pnum} [it appears in the first _statement_ of a
+- [13.2]{.pnum} [it appears in the _compound-statement_ of a
 consteval if statement ([stmt.if]).]{.addu}
 :::
 
@@ -474,8 +474,8 @@ Change [stmt.select]{.sref} to add the new grammar:
   @_selection-statement_@:
      if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
      if constexpr@~opt~@ ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@ else @_statement_@
-+    if !@~opt~@ consteval @_statement_@
-+    if !@~opt~@ consteval @_statement_@ else @_statement_@
++    if !@~opt~@ consteval @_compound-statement_@
++    if !@~opt~@ consteval @_compound-statement_@ else @_statement_@
      switch ( @_init-statement_@@~opt~@ @_condition_@ ) @_statement_@
 ```
 :::
@@ -484,8 +484,8 @@ Add a new clause to [stmt.if]{.sref}:
 
 ::: bq
 ::: addu
-[a]{.pnum} An `if` statement is of the form `if consteval` or `if ! consteval` is
-called a _consteval if_ statement. Each _statement_ in a consteval if statement shall be a _compound-statement_. [ *Example* -
+[a]{.pnum} An `if` statement of the form `if consteval` is
+called a _consteval if_ statement. The _statement_, if any, in a consteval if statement shall be a _compound-statement_. [ *Example* -
 ```
 constexpr void f(bool b) {
   if (true)
@@ -496,7 +496,7 @@ constexpr void f(bool b) {
 ```
 - *end example* ]
 
-[b]{.pnum} If the `if` statement is of the form `if consteval` and evaluation occurs in
+[b]{.pnum} If a consteval if statement is evaluated in
 a context that is manifestly constant-evaluated ([expr.const]), the first
 substatement is executed. [*Note*: The first substatement is an immediate function context - *end note* ]
 Otherwise, if the `else` part of the selection statement
@@ -506,18 +506,18 @@ associated with a `switch` statement within the same `if` statement.
 A label declared in a substatement of a consteval if statement shall only be
 referred to by a statement in the same substatement.
 
-[c]{.pnum} A consteval if statement of the form `if ! consteval @_statement_@`
+[c]{.pnum} An `if` statement of the form `if ! consteval @_compound-statement_@`
 is equivalent to
 
 ```
-if consteval { } else @_statement_@
+if consteval { } else @_compound-statement_@
 ```
 
-A consteval if statement of the form `if ! consteval @_statement_~1~@ else @_statement_~2~@`
+An `if` statement of the form `if ! consteval @_compound-statement_~1~@ else @_statement_~2~@`
 is equivalent to
 
 ```
-if consteval @_statement_~2~@ else @_statement_~1~@
+if consteval @_statement_~2~@ else @_compound-statement_~1~@
 ```
 :::
 :::
