@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-10-08" />
+  <meta name="dcterms.date" content="2020-10-09" />
   <title>`if consteval`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-10-08</td>
+    <td>2020-10-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -749,9 +749,119 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-3"><a href="#cb15-3"></a><span class="op">}</span></span>
 <span id="cb15-4"><a href="#cb15-4"></a></span>
 <span id="cb15-5"><a href="#cb15-5"></a><span class="cf">if</span> <span class="kw">consteval</span> f<span class="op">(</span>i<span class="op">)</span>; <span class="co">// ill-formed</span></span></code></pre></div>
-<p>There is no technical reason to mandate braces. Our reason for them is to emphasize visually that we’re dropping into an entirely different context. In this sense, it’s similar to <code class="sourceCode cpp"><span class="cf">try</span></code> and <code class="sourceCode cpp"><span class="cf">catch</span></code> mandating braces.</p>
-<p>Without braces, we have no separation between the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> introducer and the statement being executed. A normal <code class="sourceCode cpp"><span class="cf">if</span></code> statement has a parenthesized condition, which functions as such a separator, and we think such visual separation is important:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> f<span class="op">(</span>i<span class="op">)</span>;</span></code></pre></div>
+<p>There is no technical reason to mandate braces. Our reason for them is to emphasize visually that we’re dropping into an entirely different context. In this sense, it’s similar to <code class="sourceCode cpp"><span class="cf">try</span></code> and <code class="sourceCode cpp"><span class="cf">catch</span></code> mandating braces. It’s also quite unlike <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> in that the language rules in the taken statement actually change, so we think it merits the different rules.</p>
+<p>Without braces, we have no separation between the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> introducer and the statement being executed. This becomes especially important if the statement being executed itself includes some sort of keyword:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="cf">for</span> <span class="op">(</span>; it <span class="op">!=</span> end; <span class="op">++</span>it<span class="op">)</span> ;</span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="cf">if</span> <span class="op">(</span>it <span class="op">!=</span> end<span class="op">)</span>;</span></code></pre></div>
+<p>A normal <code class="sourceCode cpp"><span class="cf">if</span></code> statement has a parenthesized condition, which functions as such a separator, and we think such visual separation is important:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> f<span class="op">(</span>i<span class="op">)</span>;</span></code></pre></div>
+<p>An alternate syntax suggested was <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span></code>, with no requirement on braces, to look more like a regular <code class="sourceCode cpp"><span class="cf">if</span></code> statement. But this syntax suggests that other forms might be valid, which we either cannot support due to the implementation heroics necessary to so:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span> <span class="op">&amp;&amp;</span> n <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  <span class="co">// We would need to take an arbitrary boolean condition, C, and</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="co">// be able to prove that (not is_constant_evaluated) implies (not C).</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>  <span class="co">// That&#39;s an arbitrarily complex problem.</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>  some_consteval_fun<span class="op">(</span>n<span class="op">)</span>;</span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="op">}</span></span></code></pre></div>
+<p>Or suggests that other forms might be valid that make little sense to even want to support:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="cf">while</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="cf">switch</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span></code></pre></div>
+<p>Overall, we think the fact that <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> looks different from a regular <code class="sourceCode cpp"><span class="cf">if</span></code> statement is arguably a benefit.</p>
+<p>This question of syntax was discussed on the October 8th EWG telecon <span class="citation" data-cites="github.p1938">[<a href="#ref-github.p1938" role="doc-biblioref">github.p1938</a>]</span>, where the following polls were taken (note that the first two polls are phrased as changes from the status quo as proposed in this paper):</p>
+<div class="quote">
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> should be parenthesized as <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span></code></p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>1</td>
+<td>3</td>
+<td>10</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> should not require braces, making this valid: <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span> boom<span class="op">()</span>; <span class="cf">else</span> bam<span class="op">()</span>;</code></p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>3</td>
+<td>5</td>
+<td>7</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> is tentatively ready to be voted on to forward to Core, after updating the paper as discussed</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10</td>
+<td>11</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
 <h2 data-number="4.5" id="examples" data-number="4.5"><span class="header-section-number">4.5</span> Examples<a href="#examples" class="self-link"></a></h2>
 <p>Here are a few examples from libstdc++. Today, they’re implemented uses a builtin function, and how they would look with <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>. It’s not a big difference, just spelling.</p>
 <table>
@@ -767,21 +877,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="cf">if</span> <span class="op">(!</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a>  __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a>   __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="cf">if</span> <span class="op">(!</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>   __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="cf">if</span> <span class="op">(</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a>  <span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span>
-<span id="cb20-5"><a href="#cb20-5"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="cf">if</span> <span class="op">(</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>  <span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -794,52 +904,65 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and <span class="addu">either</span>:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(13.1)</a></span> its innermost non-block scope is a function parameter scope of an immediate function<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(13.2)</a></span> <span class="addu">it appears in the first <em>statement</em> of a consteval if statement ([stmt.if]) of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> or the second <em>statement</em> (if any) of a consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span></code>.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(13.2)</a></span> <span class="addu">it appears in the first <em>statement</em> of a consteval if statement ([stmt.if]).</span></li>
 </ul>
 </blockquote>
 <p>Change <span>8.5 <a href="https://wg21.link/stmt.select">[stmt.select]</a></span> to add the new grammar:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1"></a>  <em>selection-statement</em>:</span>
-<span id="cb21-2"><a href="#cb21-2"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span>
-<span id="cb21-3"><a href="#cb21-3"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em> else <em>statement</em></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em></span></span>
-<span id="cb21-5"><a href="#cb21-5"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em> else <em>statement</em></span></span>
-<span id="cb21-6"><a href="#cb21-6"></a>     switch ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>  <em>selection-statement</em>:</span>
+<span id="cb24-2"><a href="#cb24-2"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span>
+<span id="cb24-3"><a href="#cb24-3"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em> else <em>statement</em></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em></span></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="va">+    if !<sub>opt</sub> consteval <em>statement</em> else <em>statement</em></span></span>
+<span id="cb24-6"><a href="#cb24-6"></a>     switch ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause to <span>8.5.2 <a href="https://wg21.link/stmt.if">[stmt.if]</a></span>:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">a</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> or <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span></code> is called a <em>consteval if</em> statement. Each <em>statement</em> in a consteval if statement shall be a <em>compound-statement</em>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">b</a></span> If the <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and evaluation occurs in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed and is an immediate function context ([expr.const]). Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed. A <code class="sourceCode cpp"><span class="cf">case</span></code> or <code class="sourceCode cpp"><span class="cf">default</span></code> label appearing within such an <code class="sourceCode cpp"><span class="cf">if</span></code> statement shall be associated with a <code class="sourceCode cpp"><span class="cf">switch</span></code> statement within the same <code class="sourceCode cpp"><span class="cf">if</span></code> statement. A label declared in a substatement of an consteval if statement shall only be referred to by a statement in the same substatement.</p>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> or <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span></code> is called a <em>consteval if</em> statement. Each <em>statement</em> in a consteval if statement shall be a <em>compound-statement</em>. [ <em>Example</em> -</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>constexpr void f(bool b) {</span>
+<span id="cb25-2"><a href="#cb25-2"></a>  if (true)</span>
+<span id="cb25-3"><a href="#cb25-3"></a>    if consteval { }</span>
+<span id="cb25-4"><a href="#cb25-4"></a>    else ; // error: not a compound-statement</span>
+<span id="cb25-5"><a href="#cb25-5"></a>           // &quot;else&quot; not associated with outer if</span>
+<span id="cb25-6"><a href="#cb25-6"></a>}</span></code></pre></div>
+<ul>
+<li><em>end example</em> ]</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> If the <code class="sourceCode cpp"><span class="cf">if</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and evaluation occurs in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed. [<em>Note</em>: The first substatement is an immediate function context - <em>end note</em> ] Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed. A <code class="sourceCode cpp"><span class="cf">case</span></code> or <code class="sourceCode cpp"><span class="cf">default</span></code> label appearing within such an <code class="sourceCode cpp"><span class="cf">if</span></code> statement shall be associated with a <code class="sourceCode cpp"><span class="cf">switch</span></code> statement within the same <code class="sourceCode cpp"><span class="cf">if</span></code> statement. A label declared in a substatement of a consteval if statement shall only be referred to by a statement in the same substatement.</p>
 <p><span class="marginalizedparent"><a class="marginalized">c</a></span> A consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>statement</em></code> is equivalent to</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1"></a>if consteval { } else <em>statement</em></span></code></pre></div>
-<p>A consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>statement</em><sub>1</sub> <span class="cf">else</span> <em>statement</em><sub>2</sub></code> is equivalant to</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1"></a>if consteval <em>statement</em><sub>2</sub> else <em>statement</em><sub>1</sub></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>if consteval { } else <em>statement</em></span></code></pre></div>
+<p>A consteval if statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>statement</em><sub>1</sub> <span class="cf">else</span> <em>statement</em><sub>2</sub></code> is equivalent to</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>if consteval <em>statement</em><sub>2</sub> else <em>statement</em><sub>1</sub></span></code></pre></div>
 </div>
 </blockquote>
 <p>Change <span>20.15.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> to use this new functionality:</p>
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
 <div class="rm" style="color: #bf0303">
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode default">true</code> if and only if evaluation of the call occurs within the evaluation of an expression or conversion that is manifestly constant-evaluated ([expr.const]).</p>
 </div>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>if consteval {</span>
-<span id="cb25-2"><a href="#cb25-2"></a>    return true;</span>
-<span id="cb25-3"><a href="#cb25-3"></a>} else {</span>
-<span id="cb25-4"><a href="#cb25-4"></a>    return false;</span>
-<span id="cb25-5"><a href="#cb25-5"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>if consteval {</span>
+<span id="cb29-2"><a href="#cb29-2"></a>    return true;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>} else {</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    return false;</span>
+<span id="cb29-5"><a href="#cb29-5"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <h2 data-number="6.1" id="feature-test-macro" data-number="6.1"><span class="header-section-number">6.1</span> Feature test macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add the macro <code class="sourceCode cpp">__cpp_if_consteval</code>.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="acknowledgments" data-number="7" style="border-bottom:1px solid #cccccc"><span class="header-section-number">7</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
-<p>Thank you to David Stone and Tim Song for working through these examples. Thank you to Davis Herring for helping improve the grammar to remove a potential source of error.</p>
+<p>Thank you to David Stone and Tim Song for working through these examples. Thank you to Davis Herring for helping improve the grammar to remove a potential source of error, and Jens Maurer with help wording it properly.</p>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="8" style="border-bottom:1px solid #cccccc"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-github.p1938">
+<p>[github.p1938] WG21. 2019. P1938 if consteval. <br />
+<a href="https://github.com/cplusplus/papers/issues/677#issuecomment-705817492">https://github.com/cplusplus/papers/issues/677#issuecomment-705817492</a></p>
+</div>
 <div id="ref-P0595R0">
 <p>[P0595R0] Daveed Vandevoorde. 2017. The “constexpr” Operator. <br />
 <a href="https://wg21.link/p0595r0">https://wg21.link/p0595r0</a></p>

@@ -341,13 +341,65 @@ if consteval {
 if consteval f(i); // ill-formed
 ```
 
-There is no technical reason to mandate braces. Our reason for them is to emphasize visually that we're dropping into an entirely different context. In this sense, it's similar to `try` and `catch` mandating braces.
+There is no technical reason to mandate braces. Our reason for them is to emphasize visually that we're dropping into an entirely different context. In this sense, it's similar to `try` and `catch` mandating braces. It's also quite unlike `if constexpr` in that the language rules in the taken statement actually change, so we think it merits the different rules.
 
-Without braces, we have no separation between the `if consteval` introducer and the statement being executed. A normal `if` statement has a parenthesized condition, which functions as such a separator, and we think such visual separation is important:
+Without braces, we have no separation between the `if consteval` introducer and the statement being executed. This becomes especially important if the statement being executed itself includes some sort of keyword:
+
+```cpp
+if consteval for (; it != end; ++it) ;
+if consteval if (it != end);
+```
+
+A normal `if` statement has a parenthesized condition, which functions as such a separator, and we think such visual separation is important:
 
 ```cpp
 if (cond) f(i);
 ```
+
+An alternate syntax suggested was `if (consteval)`, with no requirement on braces, to look more like a regular `if` statement. But this syntax suggests that other forms might be valid, which we either cannot support due to the implementation heroics necessary to so:
+
+```cpp
+if (consteval && n < 0) {
+  // We would need to take an arbitrary boolean condition, C, and
+  // be able to prove that (not is_constant_evaluated) implies (not C).
+  // That's an arbitrarily complex problem.
+  some_consteval_fun(n);
+}
+```
+
+Or suggests that other forms might be valid that make little sense to even want to support:
+
+```cpp
+while (consteval) { /* ... */ }
+switch (consteval) { /* ... */ }
+```
+
+Overall, we think the fact that `if consteval` looks different from a regular `if` statement is arguably a benefit.
+
+This question of syntax was discussed on the October 8th EWG telecon [@github.p1938], where the following polls were taken (note that the first two polls are phrased as changes from the status quo as proposed in this paper):
+
+::: quote
+`if consteval` should be parenthesized as `if (consteval)`
+
+
+SF | F | N | A | SA
+-- | -- | -- | -- | --
+1 | 1 | 3 | 10 | 5
+
+`if consteval` should not require braces, making this valid: `if consteval boom(); else bam();`
+
+
+SF | F | N | A | SA
+-- | -- | -- | -- | --
+1 | 3 | 5 | 7 | 4
+
+
+`if consteval` is tentatively ready to be voted on to forward to Core, after updating the paper as discussed
+
+SF | F | N | A | SA
+-- | -- | -- | -- | --
+10 | 11 | 1 | 0 | 0
+:::
 
 ## Examples
 
@@ -412,8 +464,7 @@ potentially evaluated and [either]{.addu}:
 - [13.1]{.pnum} its innermost non-block scope is a function parameter scope of an
 immediate function[.]{.rm} [, or]{.addu}
 - [13.2]{.pnum} [it appears in the first _statement_ of a
-consteval if statement ([stmt.if]) of the form `if consteval` or the second
-_statement_ (if any) of a consteval if statement of the form `if ! consteval`.]{.addu}
+consteval if statement ([stmt.if]).]{.addu}
 :::
 
 Change [stmt.select]{.sref} to add the new grammar:
@@ -434,16 +485,25 @@ Add a new clause to [stmt.if]{.sref}:
 ::: bq
 ::: addu
 [a]{.pnum} An `if` statement is of the form `if consteval` or `if ! consteval` is
-called a _consteval if_ statement. Each _statement_ in a consteval if statement shall be a _compound-statement_.
+called a _consteval if_ statement. Each _statement_ in a consteval if statement shall be a _compound-statement_. [ *Example* -
+```
+constexpr void f(bool b) {
+  if (true)
+    if consteval { }
+    else ; // error: not a compound-statement
+           // "else" not associated with outer if
+}
+```
+- *end example* ]
 
 [b]{.pnum} If the `if` statement is of the form `if consteval` and evaluation occurs in
 a context that is manifestly constant-evaluated ([expr.const]), the first
-substatement is executed and is an immediate function context ([expr.const]).
+substatement is executed. [*Note*: The first substatement is an immediate function context - *end note* ]
 Otherwise, if the `else` part of the selection statement
 is present, then the second substatement is executed.
 A `case` or `default` label appearing within such an `if` statement shall be
 associated with a `switch` statement within the same `if` statement.
-A label declared in a substatement of an consteval if statement shall only be
+A label declared in a substatement of a consteval if statement shall only be
 referred to by a statement in the same substatement.
 
 [c]{.pnum} A consteval if statement of the form `if ! consteval @_statement_@`
@@ -454,7 +514,7 @@ if consteval { } else @_statement_@
 ```
 
 A consteval if statement of the form `if ! consteval @_statement_~1~@ else @_statement_~2~@`
-is equivalant to
+is equivalent to
 
 ```
 if consteval @_statement_~2~@ else @_statement_~1~@
@@ -491,4 +551,16 @@ Add the macro `__cpp_if_consteval`.
 
 # Acknowledgments
 
-Thank you to David Stone and Tim Song for working through these examples. Thank you to Davis Herring for helping improve the grammar to remove a potential source of error.
+Thank you to David Stone and Tim Song for working through these examples. Thank you to Davis Herring for helping improve the grammar to remove a potential source of error, and Jens Maurer with help wording it properly.
+
+---
+references:
+  - id: github.p1938
+    citation-label: github.p1938
+    title: "P1938 if consteval"
+    author:
+      - family: WG21
+    issued:
+      - year: 2019
+    URL: https://github.com/cplusplus/papers/issues/677#issuecomment-705817492
+---
