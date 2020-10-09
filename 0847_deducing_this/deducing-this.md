@@ -1610,7 +1610,8 @@ This transformation does not apply in the template definition context ([temp.dep
 Strike the footnote in [expr.prim.id]{.sref}/2 as a drive-by-fix:
 
 ::: bq
-- [3.1]{.pnum} as part of a class member access in which the object expression refers to the member's class ^[57]{.rm}^ or a class derived from that class, or
+- [3.1]{.pnum} as part of a class member access in which the object expression refers to the member's class [[Footnote: This also applies when the object expression is an implicit `(*this)` ([class.mfct.non-static]).
+ ]]{.rm} or a class derived from that class, or
 :::
 
 Change [expr.prim.lambda]{.sref}/3:
@@ -1654,7 +1655,7 @@ Add a new paragraph after [expr.prim.lambda.closure]{.sref}/3:
 
 ::: bq
 ::: addu
-[3*]{.pnum} The type of the explicit this parameter, if any, of a possibly-instantiated function call operator of a lambda with a _lambda-capture_ shall be either:
+[3*]{.pnum} Given a lambda with a _lambda-capture_, the type of the explicit this parameter, if any, of the lambda's function call operator (possibly instantiated from a function call operator template) shall be either:
 
 - [3*.1]{.pnum} the closure type,
 - [3*.2]{.pnum} a class type derived from the closure type, or
@@ -1734,23 +1735,23 @@ In [dcl.fct]{.sref}/3, introduce _explicit-this-parameter-declaration_ and _non-
 >|
 
 >| [_parameter-declaration_]{.rm} [_non-this-parameter-declaration_]{.addu}:
->|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _declarator_
->|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _declarator_ `=` _initializer-clause_
->|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _abstract-declarator_~opt~
->|    _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _abstract-declarator_~opt~ `=` _initializer-clause_ 
+>|    [_attribute-specifier-seq_~opt~]{.rm} _decl-specifier-seq_ _declarator_
+>|    [_attribute-specifier-seq_~opt~]{.rm} _decl-specifier-seq_ _declarator_ `=` _initializer-clause_
+>|    [_attribute-specifier-seq_~opt~]{.rm} _decl-specifier-seq_ _abstract-declarator_~opt~
+>|    [_attribute-specifier-seq_~opt~]{.rm} _decl-specifier-seq_ _abstract-declarator_~opt~ `=` _initializer-clause_ 
 
 ::: add
 >| _explicit-this-parameter-declaration_:
 >|    `this` _non-this-parameter-declaration_
 >|
 >| _parameter-declaration_:
->|    _explicit-this-parameter-declaration_
->|    _non-this-parameter-declaration_
+>|    _attribute-specifier-seq_~opt~ _explicit-this-parameter-declaration_
+>|    _attribute-specifier-seq_~opt~ _non-this-parameter-declaration_
 :::
 
 :::
 
-After [dcl.fct]{.sref}/5, insert paragraph describing where a function declaration with an explicit this parameter may appear, and renumber section.
+After [dcl.fct]{.sref}/5, insert a paragraph describing where a function declaration with an explicit this parameter may appear, and renumber section.
 
 ::: bq
 ::: add
@@ -1784,7 +1785,7 @@ void test(C c) {
 ```
 - *end example* ]
 
-[5c]{.pnum} A function parameter declared with an _explicit-this-parameter-declaration_ is an _explicit this parameter_. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An _object member function_ is either a non-static member function or a static member function with an explicit this parameter.
+[5c]{.pnum} A function parameter declared with an _explicit-this-parameter-declaration_ is an _explicit this parameter_. An explicit this parameter shall not be a function parameter pack ([temp.variadic]). An _object member function_ is either a static member function with an explicit this parameter or a non-static member function.
 
 [5d]{.pnum} An _non-this parameter_ is a function parameter that is not the explicit this parameter. The _non-this-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit this parameter, if any, omitted. [ _Note_: The non-this-parameter-type-list consists of the adjusted types of all the non-this parameters. _-end note_ ]
 
