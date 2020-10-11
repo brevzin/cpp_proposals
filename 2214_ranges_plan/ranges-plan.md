@@ -550,7 +550,7 @@ As such, we can be more precise in our earlier formulation and say that:
 - `views::zip_transform(F, E...)` is expression-equivalent to `views::@_iter-zip-transform_@<remove_cvref_t<invoke_result_t<decltype(F)&, range_reference_t<decltype(E)>...>>>(@_indirected_@(F), E...)`
 - `views::zip(E...)` is expression-equivalent to `views::@_iter-zip-transform_@<std::tuple<range_value_t<decltype(E)>...>>(@_forward-as-tuple_@, E...)`
 
-and similar for `zip_tail_with` and `zip_tail`.
+and similar for `adjacent_transform` and `adjacent`.
 
 
 ### `enumerate`'s first range
@@ -732,7 +732,7 @@ We think that `transform_view` merits a first-class view to accomplish this func
 Conor talks about this family of ranges in a CppCon 2019 lighting talk [@hoekstra.cppcon].
 
 - `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4.
-- `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `zip_tail`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here.
+- `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `adjacent`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here.
 - `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges.
 
 These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm `windowed`, Scala calls it `sliding`, D calls it `slide`, Haskell calls it `divvy`, and Clojure calls it `partition`.
@@ -852,7 +852,7 @@ But there are a few algorithms that aren't in `<algorithm>` that do not have ran
 | `reduce` | [Tier 2, along with `sum` and `product`.]{.yellow} |
 | `transform_reduce` | Not proposed. |
 | `inner_product` | Not proposed. |
-| `adjacent_difference` | [Tier 3, renamed to `zip_tail_with`]{.diffdel} |
+| `adjacent_difference` | [Tier 3, renamed to `adjacent_transform`]{.diffdel} |
 | `partial_sum` | [Tier 3, but without a binary operation parameter. Also adding `partial_fold`. ]{.diffdel} |
 | `inclusive_scan` | [Tier 3]{.diffdel} |
 | `exclusive_scan` | [Tier 3]{.diffdel} |
@@ -1133,9 +1133,9 @@ We think that once we add [`ranges::fold` as Tier 1]{.addu} and [`ranges::reduce
 
 But that does not hold for the other algorithms.
 
-### `std::adjacent_difference` &rarr; `ranges::zip_tail_with`
+### `std::adjacent_difference` &rarr; `ranges::adjacent_transform`
 
-`std::adjacent_difference` joins `std::accumulate` and `std::inner_product` in the list of algorithms prejudicially named after a specific operation. We do not yet have `views::zip_tail_with` ([Tier 1]{.addu} above), and this would be the algorithm version of those views:
+`std::adjacent_difference` joins `std::accumulate` and `std::inner_product` in the list of algorithms prejudicially named after a specific operation. We do not yet have `views::adjacent_transform` ([Tier 1]{.addu} above), and this would be the algorithm version of those views:
 
 ::: cmptable
 ### Specialized
@@ -1145,7 +1145,7 @@ ranges::adjacent_difference(r, o);
 
 ### Composed
 ```cpp
-ranges::copy(views::zip_tail_with(r, std::minus()), o);
+ranges::copy(views::adjacent_transform(r, std::minus()), o);
 ```
 
 ---
@@ -1155,7 +1155,7 @@ ranges::adjacent_difference(r, o, f);
 ```
 
 ```cpp
-ranges::copy(views::zip_tail_with(r, f), o);
+ranges::copy(views::adjacent_transform(r, f), o);
 ```
 :::
 
@@ -1169,7 +1169,7 @@ ranges::adjacent_difference(r, o);
 
 ### Composed
 ```cpp
-views::zip_tail_with(r, std::minus()) |> ranges::copy(o);
+views::adjacent_transform(r, std::minus()) |> ranges::copy(o);
 ```
 
 ---
@@ -1179,11 +1179,11 @@ ranges::adjacent_difference(r, o, f);
 ```
 
 ```cpp
-views::zip_tail_with(r, f) |> ranges::copy(o);
+views::adjacent_transform(r, f) |> ranges::copy(o);
 ```
 :::
 
-This begs the question: do we actually need to have a `ranges::zip_tail_with()` at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.
+This begs the question: do we actually need to have a `ranges::adjacent_transform()` at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.
 
 ### `std::partial_sum` &rarr; `ranges::partial_fold` and `std::{in,ex}clusive_scan`
 
@@ -1357,7 +1357,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::tail`  
     - `views::take_exactly`
 - the addition of the following range algorithms:
-    - `ranges::zip_tail_with()`
+    - `ranges::adjacent_transform()`
     - `ranges::partial_fold()`
     - `ranges::inclusive_scan()`
     - `ranges::exclusive_scan()`
