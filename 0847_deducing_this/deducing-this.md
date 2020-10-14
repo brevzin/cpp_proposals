@@ -1490,32 +1490,27 @@ The authors strongly believe this feature is orthogonal. However, hoping that me
 
 This has been implemented in the EDG front end, with gracious help and encouragement from Daveed Vandevoorde. Implementation didn't turn up any notable issues. 
 
-# Proposed Wording # {#wording}
-
-## Overview
-
-The status quo here is that a member function has an _implicit object parameter_, always of reference type, which the _implied object argument_ is bound to. The obvious name for what this paper is proposing is, then, the _explicit object parameter_. The problem with these names is: well, what is an object parameter? A parameter that takes an object? Isn't that most parameters?
-
-Instead, the wording introduces the term _this parameter_, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were "selector parameter" or "instance parameter".
+# Not quite static, not quite non-static
 
 Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previously restricted to be non-static member functions are now restricted to be object member functions.
 
-Member functions with an explicit this parameter are sort of half-static, half-non-static. They're static in the sense that a pointer to a function with an explicit this parameter has pointer-to-function type, not pointer-to-member type, and there is no implicit `this` in the body of such functions. They're non-static in the sense that class access to such a function must be a full call expression, and you can use such functions to declare operators:
+The biggest issue in working through the wording for this paper is: just _how_ static is a function with an explicit this parameter? Member functions with an explicit this parameter are sort of half-static, half-non-static. They're static in the sense that a pointer to a function with an explicit this parameter has pointer-to-function type, not pointer-to-member type, and there is no implicit `this` in the body of such functions. They're non-static in the sense that class access to such a function must be a full call expression, and you can use such functions to declare operators:
 
 ```cpp
 struct C {
     void nonstatic_fun();
     
-    void explicit_fun(this C c) {
+    int explicit_fun(this C c) {
         nonstatic_fun();   // error
         c.nonstatic_fun(); // ok
         static_fun();      // ok
         auto x = this;     // error
+        return 0;
     }
     
     static void static_fun() {
         explicit_fun();     // error
-        explicit_fun(C{});  // ok
+        explicit_fun(C{});  // error
         C{}.explicit_fun(); // ok
     }
     
@@ -1524,7 +1519,7 @@ struct C {
 };
 
 C c;
-void (*a)(C) = &C::explicit_fun; // ok
+int (*a)(C) = &C::explicit_fun; // ok
 
 auto x = c.static_fun;     // ok
 auto y = c.explicit_fun;   // error
@@ -1546,33 +1541,7 @@ struct D {
 };
 ```
 
-This ends up being awkward in the presence of an "explicit this" function which takes a parameter of its own type:
-
-```cpp
-struct E {
-    void f(this E, E);
-    void g() {
-        f(E{});      // #1
-        E::f(E{});   // #2
-        f(E{}, E{}); // #3
-        
-        auto pf = f;  // #4
-        pf(E{}, E[});
-    }
-};
-
-void h() {
-    E::f(E{}, E{}); // #5
-}
-```
-
-Note that `#5` is definitely valid (`E::f` is static).
-
-With an "implicit this", `#1` and `#2` would be valid (`#2` would just be a more qualified call), but `#3` and `#4a` would be ill-formed (`#3` for too many parameters, `#4` for an access that isn't a function call).
-
-Without an "implicit this", the reverse is true &mdash; `#1` and `#2` are invalid while `#3` and `#4` (and the subsequent invocation) are fine.
-
-Either way, this is weird. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
+It's tempting to say that given an _explicit_ `this` parameter, we should always require an _explicit_ `this` argument. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
 
 ```cpp
 struct F : std::optional<int>
@@ -1587,6 +1556,81 @@ struct F : std::optional<int>
 ```
 
 Or, more generally, the implementation strategy of a particular type's member function should not be relevant for users deriving from that type. So "implicit this" stays.
+
+## Implied object argument
+
+The way we talk about what it means to invoke a member function, there's always an object argument &mdash; whether explicit or implied. As mentioned above, it's important that this works:
+
+```cpp
+struct A {
+    void f(this A const&);
+    void g() {
+        f(); // #1
+    }
+};
+```
+
+Where the call in `#1` is equivalent to `(*this).f();` due to the implicit `this`, that's the implied object argument.
+
+But we say that `f` is a `static` member function, so what about this:
+
+```cpp
+struct B {
+    void f(this B const&);
+    static void h() {
+        f(B{}); // #2
+    }
+};
+```
+
+There is no `this` in a `static` member function, but there is _always_ an object argument anyway - in this case, in general, we create a "contrived" argument of type `B` and then say the call fails if we end up picking a non-`static` member function that actually needs a real object argument. But that's the status quo, what should we do in this case? There are two options to consider:
+
+1. We still create a contrived object argument (as we would if `f` were a "normal" `static` member function). But in this case, because `f` has an explicit `this` parameter, our contrived object argument would bind to the `this` parameter and this call would fail. That is, we're passing two arguments (a contrived object of type `B` and a `B`) to a function that takes a single parameter (`B const&`).
+2. We can choose to _not_ create a contrived object argument here, knowing that `f` has an explicit `this` parameter. As such, we're just invoking a single-parameter function with a single argument and this works fine.
+
+It's tempting to say, sure, let's just choose option 2, since we would be allowing more functionality. But that runs into a wrinkle:
+
+```cpp
+struct C {
+    static void f(C&);      // #3
+    void f(this C const&);  // #4
+    
+    static void j() {
+        C c;
+        f(c); // #5
+    }
+};
+```
+
+What does the call to `f(c)` do? `#3` is our legacy C++20 (or even C++98) candidate. But the way this candidate works is that `f` behaves like a two-parameter function (the first parameter is ignored and matches everything equivalently and the second is `C&`) and we are providing two arguments to it (a contrived object of type `C` and an lvalue of type `C`). If we say that `#2` above is a valid call, then `#4` here would likewise also be a valid candidate - but here we only have a single-parameter function with a single argument (there is no contrived object argument or fake parameter). In other words, we're performing overload resolution now with candidates of different arity? This would be a first in C++. 
+
+It's probably doable to come up with wording to properly handle this scenario, ending up with `#3` being invoked, but it seems fairly complicated and we're not even sure that we want to support the `f(B{})` or `f(c)` calls directly to begin with.
+
+This does come with its own quirk. Since a function with an explicit `this` parameter is still a `static` member function, a pointer to it still has function pointer type, which means you can invoke through the function pointer. Just not directly. That is:
+
+```cpp
+struct B {
+    void f(this B const&);
+    static void h() {
+        f(B{}); // proposed: error
+    }
+};
+
+void external() {
+    auto p = &B::f; // p is a void(*)(B const&)
+    p(B{});         // okay
+}
+```
+
+This is, admittedly, a weird place to arrive at.
+
+# Proposed Wording # {#wording}
+
+## Overview
+
+The status quo here is that a member function has an _implicit object parameter_, always of reference type, which the _implied object argument_ is bound to. The obvious name for what this paper is proposing is, then, the _explicit object parameter_. The problem with these names is: well, what is an object parameter? A parameter that takes an object? Isn't that most parameters?
+
+Instead, the wording introduces the term _this parameter_, renaming implicit object parameter to implicit this parameter, and introducing the notion of an explicit this parameter. Alternate terms considered were "selector parameter" or "instance parameter".
 
 ## Wording
 
@@ -1777,8 +1821,6 @@ struct C {
 
 void test(C c) {
     c.f();               // ok: calls C::f
-    C::f(c);             // ok: calls C::f
-    
     c.g(42);             // ok: calls C::g<C&>
     std::move(c).g(42);  // ok: calls C::g<C>
 }
@@ -1908,18 +1950,12 @@ For non-static member functions declared without a _ref-qualifier_, even if the 
  ]
 :::
 
-Change [over.call.func]{.sref}/3 and the corresponding footnote, and add the example. There may not be an implied object argument (in the case of invoking an explicit this function from a static member function):
+Change [over.call.func]{.sref}/3 and adjust the corresponding footnote, and add an example:
 
 ::: bq
 [3]{.pnum} Because of the rules for name lookup, the set of candidate functions consists (1) entirely of non-member functions or (2) entirely of member functions of some class T.
 In case (1), the argument list is the same as the expression-list in the call.
-In case (2), the argument list is the _expression-list_ in the call [possibly]{.addu} augmented by the addition of an implied object argument as in a qualified function call [.]{.rm} [as follows:]{.addu}
-
-- [3.1]{.pnum} If the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, then the implied object argument is `(*this)`.
-- [3.2]{.pnum} [Otherwise, for candidate functions that are static member functions with an explicit this parameter, there is no implied object argument.]{.addu}
-- [3.2]{.pnum} [If the keyword `this` is not in scope or refers to another class, then]{.rm} [Otherwise, ]{.addu} a contrived object of type `T` becomes the implied object argument. ^119^
-
-If the argument list is augmented by a contrived object and overload resolution selects one of the non-static member functions of `T`, the call is ill-formed.
+In case (2), the argument list is the _expression-list_ in the call augmented by the addition of an implied object argument as in a qualified function call. If the keyword `this` is in scope and refers to class `T`, or a derived class of `T`, then the implied object argument is `(*this)`. If the keyword `this` is not in scope or refers to another class, then a contrived object of type `T` becomes the implied object argument. ^123^  If the argument list is augmented by a contrived object and overload resolution selects one of the [non-static]{.rm} [object]{.addu} member functions of `T`, the call is ill-formed.
 
 ::: addu
 [ *Example*:
@@ -1938,8 +1974,8 @@ struct C {
     }
     
     static void h() {
-        f();       // error: no viable candidate
-        f(C{});    // ok: no implied object argument
+        f();       // error: contrived object argument, but overload resolution picked an object member function
+        f(C{});    // error: no viable candidate
         C{}.f();   // ok
     }
 };
@@ -1947,19 +1983,18 @@ struct C {
 - *end example* ]
 :::
 
-[ ^119^ ]{.pnum} An implied object argument must be contrived to correspond to the implicit [object]{.rm} [this]{.addu} parameter attributed to [non-static]{.addu} member functions during overload resolution.
-It is not used in the call to the selected function.
-[Since the member functions all have the same implicit object parameter, the contrived object will not be the cause to select or reject a function.]{.rm}
+[ ^119^ ]{.pnum} An implied object argument must be contrived to correspond to the implicit [object]{.rm} [this]{.addu} parameter attributed to member functions during overload resolution.
+It is not used in the call to the selected function. Since the member functions all have the same implicit object parameter, the contrived object will not be the cause to select or reject a function.
 :::
 
 Add to [over.call.object]{.sref}/3:
 
 ::: bq
 
-[3]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument `(E)` [, if any]{.addu}.
-[ *Note*: When comparing the call against the function call operators, the implied object argument[, if any,]{.addu} is compared against [either]{.addu} the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter of the function call operator.
-When comparing the call against a surrogate call function, the implied object argument[, if any,]{.addu} is compared against the first parameter of the surrogate call function.
-The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument[, if any,]{.addu} to the appropriate function pointer or reference required by that first parameter.
+[3]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument `(E)`.
+[ *Note*: When comparing the call against the function call operators, the implied object argument is compared against [either]{.addu} the implicit [or explicit]{.addu} [object]{.rm} [this]{.addu} parameter of the function call operator.
+When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
+The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
 — *end note*
  ]
 
@@ -2107,7 +2142,6 @@ The authors would like to thank:
 - Chandler Carruth for a lot of feedback and guidance around many design issues, but especially for help with use cases and the pointer-types for by-value passing
 - Graham Heynes, Andrew Bennieston, Jeff Snyder for early feedback regarding the meaning of `this` inside function bodies
 - Amy Worthington, Jackie Chen, Vittorio Romeo, Tristan Brindle, Agustín Bergé, Louis Dionne, and Michael Park for early feedback
-- Guilherme Hartmann for his guidance with the implementation
 - Jens Maurer, Richard Smith, Hubert Tong, Faisal Vali, and Daveed Vandevoorde for help with wording
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
