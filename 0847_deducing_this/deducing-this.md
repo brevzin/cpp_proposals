@@ -6,7 +6,7 @@ audience: EWG => CWG
 author:
   - name: Gašper Ažman
     email: <gasper.azman@gmail.com>
-  - name: Simon Brand
+  - name: Sy Brand
     email: <simon.brand@microsoft.com>
   - name: Ben Deane, ben at elbeno dot com
     email: <ben@elbeno.com>
