@@ -1860,18 +1860,21 @@ Proposed
 <span id="cb60-9"><a href="#cb60-9"></a><span class="op">}</span>;</span></code></pre></div>
 <p>What does the call to <code class="sourceCode cpp">f<span class="op">(</span>c<span class="op">)</span></code> do? <code class="sourceCode cpp"><span class="pp">#3</span></code> is our legacy C++20 (or even C++98) candidate. But the way this candidate works is that <code class="sourceCode cpp">f</code> behaves like a two-parameter function (the first parameter is ignored and matches everything equivalently and the second is <code class="sourceCode cpp">C<span class="op">&amp;</span></code>) and we are providing two arguments to it (a contrived object of type <code class="sourceCode cpp">C</code> and an lvalue of type <code class="sourceCode cpp">C</code>). If we say that <code class="sourceCode cpp"><span class="pp">#2</span></code> above is a valid call, then <code class="sourceCode cpp"><span class="pp">#4</span></code> here would likewise also be a valid candidate - but here we only have a single-parameter function with a single argument (there is no contrived object argument or fake parameter). In other words, we’re performing overload resolution now with candidates of different arity? This would be a first in C++.</p>
 <p>It’s probably doable to come up with wording to properly handle this scenario, ending up with <code class="sourceCode cpp"><span class="pp">#3</span></code> being invoked, but it seems fairly complicated and we’re not even sure that we want to support the <code class="sourceCode cpp">f<span class="op">(</span>B<span class="op">{})</span></code> or <code class="sourceCode cpp">f<span class="op">(</span>c<span class="op">)</span></code> calls directly to begin with.</p>
+<p>Instead, we propose <em>not</em> to support those calls. That is, while member functions with an explicit <code class="sourceCode cpp"><span class="kw">this</span></code> parameter are considered static member functions, they must still be invoked with an object argument (which can be implied) just like non-static member functions.</p>
 <p>This does come with its own quirk. Since a function with an explicit <code class="sourceCode cpp"><span class="kw">this</span></code> parameter is still a <code class="sourceCode cpp"><span class="kw">static</span></code> member function, a pointer to it still has function pointer type, which means you can invoke through the function pointer. Just not directly. That is:</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
 <span id="cb61-2"><a href="#cb61-2"></a>    <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> B <span class="kw">const</span><span class="op">&amp;)</span>;</span>
 <span id="cb61-3"><a href="#cb61-3"></a>    <span class="kw">static</span> <span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb61-4"><a href="#cb61-4"></a>        f<span class="op">(</span>B<span class="op">{})</span>; <span class="co">// proposed: error</span></span>
-<span id="cb61-5"><a href="#cb61-5"></a>    <span class="op">}</span></span>
-<span id="cb61-6"><a href="#cb61-6"></a><span class="op">}</span>;</span>
-<span id="cb61-7"><a href="#cb61-7"></a></span>
-<span id="cb61-8"><a href="#cb61-8"></a><span class="dt">void</span> external<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb61-9"><a href="#cb61-9"></a>    <span class="kw">auto</span> p <span class="op">=</span> <span class="op">&amp;</span>B<span class="op">::</span>f; <span class="co">// p is a void(*)(B const&amp;)</span></span>
-<span id="cb61-10"><a href="#cb61-10"></a>    p<span class="op">(</span>B<span class="op">{})</span>;         <span class="co">// okay</span></span>
-<span id="cb61-11"><a href="#cb61-11"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb61-4"><a href="#cb61-4"></a>        B<span class="op">{}.</span>f<span class="op">()</span>; <span class="co">// okay</span></span>
+<span id="cb61-5"><a href="#cb61-5"></a>        f<span class="op">(</span>B<span class="op">{})</span>;  <span class="co">// proposed: error. The B{} has to be the object</span></span>
+<span id="cb61-6"><a href="#cb61-6"></a>                 <span class="co">// argument, not just any kind of argument</span></span>
+<span id="cb61-7"><a href="#cb61-7"></a>    <span class="op">}</span></span>
+<span id="cb61-8"><a href="#cb61-8"></a><span class="op">}</span>;</span>
+<span id="cb61-9"><a href="#cb61-9"></a></span>
+<span id="cb61-10"><a href="#cb61-10"></a><span class="dt">void</span> external<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb61-11"><a href="#cb61-11"></a>    <span class="kw">auto</span> p <span class="op">=</span> <span class="op">&amp;</span>B<span class="op">::</span>f; <span class="co">// p is a void(*)(B const&amp;)</span></span>
+<span id="cb61-12"><a href="#cb61-12"></a>    p<span class="op">(</span>B<span class="op">{})</span>;         <span class="co">// okay</span></span>
+<span id="cb61-13"><a href="#cb61-13"></a><span class="op">}</span></span></code></pre></div>
 <p>This is, admittedly, a weird place to arrive at.</p>
 <h1 data-number="9" style="border-bottom:1px solid #cccccc" id="wording" data-number="9" style="border-bottom:1px solid #cccccc"><span class="header-section-number">9</span> Proposed Wording<a href="#wording" class="self-link"></a></h1>
 <h2 data-number="9.1" id="overview" data-number="9.1"><span class="header-section-number">9.1</span> Overview<a href="#overview" class="self-link"></a></h2>

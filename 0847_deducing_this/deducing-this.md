@@ -1606,13 +1606,17 @@ What does the call to `f(c)` do? `#3` is our legacy C++20 (or even C++98) candid
 
 It's probably doable to come up with wording to properly handle this scenario, ending up with `#3` being invoked, but it seems fairly complicated and we're not even sure that we want to support the `f(B{})` or `f(c)` calls directly to begin with.
 
+Instead, we propose _not_ to support those calls. That is, while member functions with an explicit `this` parameter are considered static member functions, they must still be invoked with an object argument (which can be implied) just like non-static member functions.
+
 This does come with its own quirk. Since a function with an explicit `this` parameter is still a `static` member function, a pointer to it still has function pointer type, which means you can invoke through the function pointer. Just not directly. That is:
 
 ```cpp
 struct B {
     void f(this B const&);
     static void h() {
-        f(B{}); // proposed: error
+        B{}.f(); // okay
+        f(B{});  // proposed: error. The B{} has to be the object
+                 // argument, not just any kind of argument
     }
 };
 
