@@ -1965,9 +1965,10 @@ span.yellow {
 <p>The latter two having the nice property that you don’t have to remember the order of operations of the operations. We don’t think we need these at all.</p>
 <h2 data-number="4.3" id="parallel-algorithms" data-number="4.3"><span class="header-section-number">4.3</span> Parallel Algorithms<a href="#parallel-algorithms" class="self-link"></a></h2>
 <p>One of the C++17 additions was the introduction of the parallel algorithms by way of the Parallelism TS <span class="citation" data-cites="P0024R2">[<a href="#ref-P0024R2" role="doc-biblioref">P0024R2</a>]</span>. But with Ranges, we don’t have parallel overloads of any of the algorithms yet. How should we prioritize adding parallel overloads for the range algorithms?</p>
-<p>The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the <code class="sourceCode cpp">ExecutionPolicy</code> parameter is constrained on <code class="sourceCode cpp">is_execution_policy_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ExecutionPolicy<span class="op">&gt;&gt;</span></code>. Is that good enough for executors? It might be, in which case adding parallel overloads for those algorithms that already have counterparts in <code class="sourceCode cpp">std<span class="op">::</span>ranges</code> is probably very straightforward. But it might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors.</p>
-<p>And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don’t have range-based overloads yet: what are the concepts that we need to constrain the various parameters? Once we figure those out, and the question about executor compatibility, adding parallel overload of <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> shouldn’t be any harder than adding the simple, sequential of it.</p>
-<p>Due to the executor dependency, we consider this Tier 2.</p>
+<p>The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the <code class="sourceCode cpp">ExecutionPolicy</code> parameter is constrained on <code class="sourceCode cpp">is_execution_policy_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ExecutionPolicy<span class="op">&gt;&gt;</span></code>. Is that good enough for executors? It might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors.</p>
+<p>The second issue is that there are additional requirements imposed on the parallel overloads as compared to the sequential ones (see <span>25.3 <a href="https://wg21.link/algorithms.parallel">[algorithms.parallel]</a></span> as well as <span class="citation" data-cites="P0836R1">[<a href="#ref-P0836R1" role="doc-biblioref">P0836R1</a>]</span>). Those requirements would need to be somehow captured in concepts. Even if the type trait is considered sufficient for executors going forward, the concepts work is still necessary.</p>
+<p>And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don’t have range-based overloads yet: what are the concepts that we need to constrain the various parameters?</p>
+<p>Due to the executor dependency and the need to be careful about specifying the concepts for parallel requirements, we consider this Tier 2.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="actions" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Actions<a href="#actions" class="self-link"></a></h1>
 <p>There are really three kinds of operations that exist in range-v3:</p>
 <ul>
@@ -2140,6 +2141,10 @@ span.yellow {
 <div id="ref-P0592R4">
 <p>[P0592R4] Ville Voutilainen. 2019. To boldly suggest an overall plan for C++23. <br />
 <a href="https://wg21.link/p0592r4">https://wg21.link/p0592r4</a></p>
+</div>
+<div id="ref-P0836R1">
+<p>[P0836R1] Gordon Brown, Christopher Di Bella, Michael Haidl, Toomas Remmelg, Ruyman Reyes, Michel Steuwer, Michael Wong. 2018. Introduce Parallelism to the Ranges TS. <br />
+<a href="https://wg21.link/p0836r1">https://wg21.link/p0836r1</a></p>
 </div>
 <div id="ref-P0896R4">
 <p>[P0896R4] Eric Niebler, Casey Carter, Christopher Di Bella. 2018. The One Ranges Proposal. <br />

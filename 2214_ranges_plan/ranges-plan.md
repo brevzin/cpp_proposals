@@ -1223,11 +1223,13 @@ The latter two having the nice property that you don't have to remember the orde
 
 One of the C++17 additions was the introduction of the parallel algorithms by way of the Parallelism TS [@P0024R2]. But with Ranges, we don't have parallel overloads of any of the algorithms yet. How should we prioritize adding parallel overloads for the range algorithms?
 
-The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the `ExecutionPolicy` parameter is constrained on `is_execution_policy_v<remove_cvref_t<ExecutionPolicy>>`. Is that good enough for executors? It might be, in which case adding parallel overloads for those algorithms that already have counterparts in `std::ranges` is probably very straightforward. But it might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors. 
+The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the `ExecutionPolicy` parameter is constrained on `is_execution_policy_v<remove_cvref_t<ExecutionPolicy>>`. Is that good enough for executors? It might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors. 
 
-And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don't have range-based overloads yet: what are the concepts that we need to constrain the various parameters? Once we figure those out, and the question about executor compatibility, adding parallel overload of `ranges::reduce` shouldn't be any harder than adding the simple, sequential of it.
+The second issue is that there are additional requirements imposed on the parallel overloads as compared to the sequential ones (see [algorithms.parallel]{.sref} as well as [@P0836R1]). Those requirements would need to be somehow captured in concepts. Even if the type trait is considered sufficient for executors going forward, the concepts work is still necessary. 
 
-Due to the executor dependency, we consider this Tier 2. 
+And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don't have range-based overloads yet: what are the concepts that we need to constrain the various parameters? 
+
+Due to the executor dependency and the need to be careful about specifying the concepts for parallel requirements, we consider this Tier 2. 
 
 # Actions
 
