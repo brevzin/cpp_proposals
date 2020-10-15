@@ -607,6 +607,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#stdpartial_sum-rangespartial_fold-and-stdinexclusive_scan"><span class="toc-section-number">4.2.2</span> <code class="sourceCode cpp">std<span class="op">::</span>partial_sum</code> → <code class="sourceCode cpp">ranges<span class="op">::</span>partial_fold</code> and <code class="sourceCode cpp">std<span class="op">::{</span>in,ex<span class="op">}</span>clusive_scan</code><span></span></a></li>
 <li><a href="#transform_inexclusive_scan"><span class="toc-section-number">4.2.3</span> <code class="sourceCode cpp">transform_<span class="op">{</span>in,ex<span class="op">}</span>clusive_scan</code><span></span></a></li>
 </ul></li>
+<li><a href="#parallel-algorithms"><span class="toc-section-number">4.3</span> Parallel Algorithms<span></span></a></li>
 </ul></li>
 <li><a href="#actions"><span class="toc-section-number">5</span> Actions<span></span></a></li>
 <li><a href="#plan-summary"><span class="toc-section-number">6</span> Plan Summary<span></span></a>
@@ -901,156 +902,151 @@ span.yellow {
 <td>Not proposed</td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp">outer_product</code></td>
-<td>(not in range-v3)</td>
-<td><span class="addu">Tier 1</span></td>
-</tr>
-<tr class="odd">
 <td><code class="sourceCode cpp">partial_sum</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2, but not taking a callable (solely as a specialized form of <code class="sourceCode cpp">scan</code>)</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">remove</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">remove_if</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">repeat</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">repeat_n</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">replace</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">replace_if</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">reverse</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">sample</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">scan</code></td>
 <td>(not in range-v3)</td>
 <td><span class="yellow">Tier 2, as a rename of what is <code class="sourceCode cpp">partial_sum</code> in range-v3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">single</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">slice</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">sliding</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">slide</code></span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">split</code></td>
 <td>C++20, but unergonomic</td>
 <td>See <span class="citation" data-cites="P2210R0">[<a href="#ref-P2210R0" role="doc-biblioref">P2210R0</a>]</span>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">split_when</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">stride</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">tail</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_exactly</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take_last</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_last_while</code></td>
 <td>(not in range-v3)</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take_while</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">tokenize</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">transform_maybe</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1, as a more ergonomic <code class="sourceCode cpp">maybe</code> (Haskell calls this <code class="sourceCode cpp">mapMaybe</code>, Rust calls this <code class="sourceCode cpp">filter_map</code>)</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">trim</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">unbounded</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">unique</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">values</code></td>
 <td>C++20</td>
 <td>C++20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">zip</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">zip_with</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">zip_transform</code></span></td>
@@ -1612,7 +1608,6 @@ span.yellow {
 <li><code class="sourceCode cpp">linear_distribute<span class="op">(</span>B, E, N<span class="op">)</span></code> produces a range of <code class="sourceCode cpp">N</code> values linearly distributed from <code class="sourceCode cpp">B</code> to <code class="sourceCode cpp">E</code>.</li>
 <li><code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> is an infinite range of a single value, equivalent to <code class="sourceCode cpp">generate<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">})</span></code>.</li>
 <li><code class="sourceCode cpp">repeat_n<span class="op">(</span>V, N<span class="op">)</span></code> is <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code>, equivalent to <code class="sourceCode cpp">generate_n<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">}</span>, N<span class="op">)</span></code>.</li>
-<li><code class="sourceCode cpp">outer_product<span class="op">(</span>E<span class="op">...)</span></code> is a range that isn’t in range-v3, but is a slight generalization of cartesian product - it takes a bunch of ranges and yields a range of range of tuples. In other words, <code class="sourceCode cpp">cartesian_product<span class="op">(</span>E<span class="op">...)</span></code> is equivalent to <code class="sourceCode cpp">outer_product<span class="op">(</span>E<span class="op">...)</span> <span class="op">|</span> join</code>.</li>
 </ul>
 <p>These vary wildly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But the two product ranges come up sufficiently often and are sufficiently complicated to merit Tier 1 priority.</p>
 <p>The rest, we consider lower priority. And <code class="sourceCode cpp">generate</code> and <code class="sourceCode cpp">generate_n</code> in particular need special care to deal with <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span>. The current implementation of <code class="sourceCode cpp">generate_n</code> in range-v3 has a data race.</p>
@@ -1968,6 +1963,11 @@ span.yellow {
 <p>or even</p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1"></a>ranges<span class="op">::</span>copy<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>g<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>inclusive_scan<span class="op">(</span>f<span class="op">)</span>, o<span class="op">)</span>;</span></code></pre></div>
 <p>The latter two having the nice property that you don’t have to remember the order of operations of the operations. We don’t think we need these at all.</p>
+<h2 data-number="4.3" id="parallel-algorithms" data-number="4.3"><span class="header-section-number">4.3</span> Parallel Algorithms<a href="#parallel-algorithms" class="self-link"></a></h2>
+<p>One of the C++17 additions was the introduction of the parallel algorithms by way of the Parallelism TS <span class="citation" data-cites="P0024R2">[<a href="#ref-P0024R2" role="doc-biblioref">P0024R2</a>]</span>. But with Ranges, we don’t have parallel overloads of any of the algorithms yet. How should we prioritize adding parallel overloads for the range algorithms?</p>
+<p>The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the <code class="sourceCode cpp">ExecutionPolicy</code> parameter is constrained on <code class="sourceCode cpp">is_execution_policy_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ExecutionPolicy<span class="op">&gt;&gt;</span></code>. Is that good enough for executors? It might be, in which case adding parallel overloads for those algorithms that already have counterparts in <code class="sourceCode cpp">std<span class="op">::</span>ranges</code> is probably very straightforward. But it might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors.</p>
+<p>And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don’t have range-based overloads yet: what are the concepts that we need to constrain the various parameters? Once we figure those out, and the question about executor compatibility, adding parallel overload of <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> shouldn’t be any harder than adding the simple, sequential of it.</p>
+<p>Due to the executor dependency, we consider this Tier 2.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="actions" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> Actions<a href="#actions" class="self-link"></a></h1>
 <p>There are really three kinds of operations that exist in range-v3:</p>
 <ul>
@@ -2012,7 +2012,6 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span><em>iter-adjacent-transform</em><span class="op">&lt;</span>V<span class="op">&gt;</span></code> (exposition-only)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span><em>index-view</em><span class="op">&lt;</span>S, D<span class="op">&gt;</span></code> (exposition-only)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>outer_product</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>transform_maybe</code></li>
@@ -2046,6 +2045,7 @@ span.yellow {
 <ul>
 <li>the addition of the following range adapters:
 <ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>concat</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code><br />
 </li>
@@ -2072,6 +2072,7 @@ span.yellow {
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
+<li>parallel overloads of all the existing algorithms in <code class="sourceCode cpp">std<span class="op">::</span>ranges</code> that have a parallel overload in <code class="sourceCode cpp">std</code></li>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code></li>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>sum</code></li>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></li>
@@ -2131,6 +2132,10 @@ span.yellow {
 <div id="ref-niebler.iter.3">
 <p>[niebler.iter.3] Eric Niebler. 2015. Iterators++, Part 3. <br />
 <a href="http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/">http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/</a></p>
+</div>
+<div id="ref-P0024R2">
+<p>[P0024R2] Jared Hoberock. 2016. The Parallelism TS Should be Standardized. <br />
+<a href="https://wg21.link/p0024r2">https://wg21.link/p0024r2</a></p>
 </div>
 <div id="ref-P0592R4">
 <p>[P0592R4] Ville Voutilainen. 2019. To boldly suggest an overall plan for C++23. <br />

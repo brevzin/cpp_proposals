@@ -148,7 +148,6 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R6] | ??? |
 | `move` | range-v3 | Not proposed |
-| `outer_product` | (not in range-v3) | [Tier 1]{.addu} |
 | `partial_sum` | range-v3 | [Tier 2, but not taking a callable (solely as a specialized form of `scan`)]{.yellow} |
 | `remove` | range-v3 | [Tier 2]{.yellow} |
 | `remove_if` | range-v3 | [Tier 2]{.yellow} |
@@ -794,7 +793,6 @@ There are several views on the list that are simply factories &mdash; they canno
 - `linear_distribute(B, E, N)` produces a range of `N` values linearly distributed from `B` to `E`. 
 - `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
 - `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
-- `outer_product(E...)` is a range that isn't in range-v3, but is a slight generalization of cartesian product - it takes a bunch of ranges and yields a range of range of tuples. In other words, `cartesian_product(E...)` is equivalent to `outer_product(E...) | join`.
 
 These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But the two product ranges come up sufficiently often and are sufficiently complicated to merit Tier 1 priority.
 
@@ -1221,6 +1219,16 @@ ranges::copy(r | views::transform(g) | views::inclusive_scan(f), o);
 
 The latter two having the nice property that you don't have to remember the order of operations of the operations. We don't think we need these at all.
 
+## Parallel Algorithms
+
+One of the C++17 additions was the introduction of the parallel algorithms by way of the Parallelism TS [@P0024R2]. But with Ranges, we don't have parallel overloads of any of the algorithms yet. How should we prioritize adding parallel overloads for the range algorithms?
+
+The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the `ExecutionPolicy` parameter is constrained on `is_execution_policy_v<remove_cvref_t<ExecutionPolicy>>`. Is that good enough for executors? It might be, in which case adding parallel overloads for those algorithms that already have counterparts in `std::ranges` is probably very straightforward. But it might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors. 
+
+And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don't have range-based overloads yet: what are the concepts that we need to constrain the various parameters? Once we figure those out, and the question about executor compatibility, adding parallel overload of `ranges::reduce` shouldn't be any harder than adding the simple, sequential of it.
+
+Due to the executor dependency, we consider this Tier 2. 
+
 # Actions
 
 There are really three kinds of operations that exist in range-v3:
@@ -1288,7 +1296,6 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::@_iter-adjacent-transform_@<V>` (exposition-only)
     - `views::@_index-view_@<S, D>` (exposition-only)
     - `views::join_with`
-    - `views::outer_product`
     - `views::slide`
     - `views::stride`
     - `views::transform_maybe`
@@ -1313,6 +1320,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 ## [Tier 2]{.yellow}
 
 - the addition of the following range adapters:
+    - `views::concat`
     - `views::cycle`
     - `views::delimit`    
     - `views::drop_last`
@@ -1335,6 +1343,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::trim`
     - `views::unique`
 - the addition of the following range algorithms:
+    - parallel overloads of all the existing algorithms in `std::ranges` that have a parallel overload in `std`
     - `ranges::reduce`
     - `ranges::sum`
     - `ranges::product`
