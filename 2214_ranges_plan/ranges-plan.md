@@ -794,7 +794,7 @@ There are several views on the list that are simply factories &mdash; they canno
 - `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
 - `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
 
-These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But the two product ranges come up sufficiently often and are sufficiently complicated to merit Tier 1 priority.
+These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `cartesian_product` comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority.
 
 The rest, we consider lower priority. And `generate` and `generate_n` in particular need special care to deal with [res.on.data.races]{.sref}. The current implementation of `generate_n` in range-v3 has a data race.
 
