@@ -2,7 +2,7 @@
 title: "A Plan for C++23 Ranges"
 document: P2214R0
 date: today
-audience: EWG
+audience: LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -1183,7 +1183,7 @@ views::adjacent_transform(r, f) |> ranges::copy(o);
 ```
 :::
 
-This begs the question: do we actually need to have a `ranges::adjacent_transform()` at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.
+This begs the question: do we actually need to have a `ranges::adjacent_transform` at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.
 
 ### `std::partial_sum` &rarr; `ranges::partial_fold` and `std::{in,ex}clusive_scan`
 
@@ -1300,8 +1300,8 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::adjacent`
     - `views::adjacent_transform`
 - the addition of the following range algorithms:
-    - `ranges::iota()`
-    - `ranges::fold()`
+    - `ranges::iota`
+    - `ranges::fold`
 - the following other changes to standard library (necessary for the `zip` family):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`
@@ -1313,8 +1313,6 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 ## [Tier 2]{.yellow}
 
 - the addition of the following range adapters:
-    - `views::cartesian_product`
-    - `views::chunk`
     - `views::cycle`
     - `views::delimit`    
     - `views::drop_last`
@@ -1331,17 +1329,15 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::replace`
     - `views::replace_if`
     - `views::scan`
-    - `views::slide`
     - `views::split_when`
-    - `views::stride`
     - `views::take_last`
     - `views::take_last_while`
     - `views::trim`
     - `views::unique`
 - the addition of the following range algorithms:
-    - `ranges::reduce()`
-    - `ranges::sum()`
-    - `ranges::product()`
+    - `ranges::reduce`
+    - `ranges::sum`
+    - `ranges::product`
 
 ## [Tier 3]{.diffdel}
 
@@ -1357,11 +1353,11 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::tail`  
     - `views::take_exactly`
 - the addition of the following range algorithms:
-    - `ranges::adjacent_transform()`
-    - `ranges::partial_fold()`
-    - `ranges::inclusive_scan()`
-    - `ranges::exclusive_scan()`
-    - `ranges::partial_sum()`
+    - `ranges::adjacent_transform`
+    - `ranges::partial_fold`
+    - `ranges::inclusive_scan`
+    - `ranges::exclusive_scan`
+    - `ranges::partial_sum`
 - the addition of ranges actions
 
 ---

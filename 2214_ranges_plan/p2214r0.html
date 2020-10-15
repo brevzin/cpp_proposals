@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-10-12" />
+  <meta name="dcterms.date" content="2020-10-14" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-10-12</td>
+    <td>2020-10-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      EWG<br>
+      LEWG<br>
     </td>
   </tr>
   <tr>
@@ -1949,7 +1949,7 @@ span.yellow {
 </tr>
 </tbody>
 </table>
-<p>This begs the question: do we actually need to have a <code class="sourceCode cpp">ranges<span class="op">::</span>adjacent_transform<span class="op">()</span></code> at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.</p>
+<p>This begs the question: do we actually need to have a <code class="sourceCode cpp">ranges<span class="op">::</span>adjacent_transform</code> at all? This question needs to be answered, and its existence lowers the priority of the range-ification of such algorithms relative to the adoption of their corresponding range adapters.</p>
 <h3 data-number="4.2.2" id="stdpartial_sum-rangespartial_fold-and-stdinexclusive_scan" data-number="4.2.2"><span class="header-section-number">4.2.2</span> <code class="sourceCode cpp">std<span class="op">::</span>partial_sum</code> → <code class="sourceCode cpp">ranges<span class="op">::</span>partial_fold</code> and <code class="sourceCode cpp">std<span class="op">::{</span>in,ex<span class="op">}</span>clusive_scan</code><a href="#stdpartial_sum-rangespartial_fold-and-stdinexclusive_scan" class="self-link"></a></h3>
 <p>We saw in the catamorphism section that we have a pair of algorithms, <code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> and <code class="sourceCode cpp">std<span class="op">::</span>reduce</code>, that solve basically the same problem except that one prejudices a particular operation (<code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> suggests <code class="sourceCode cpp"><span class="op">+</span></code>) while the other has the more generic name yet is actually more restrictive (<code class="sourceCode cpp">std<span class="op">::</span>reduce</code> requires both the operation to be both associative and commutative, <code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> does not require either).</p>
 <p>We have the exact same issue here, <code class="sourceCode cpp">std<span class="op">::</span>partial_sum</code> is strongly suggestive of <code class="sourceCode cpp"><span class="op">+</span></code>, while <code class="sourceCode cpp">std<span class="op">::</span>inclusive_scan</code> is the more generically-named algorithm that nevertheless imposes the stronger restriction (in this case, just associativity).</p>
@@ -2029,8 +2029,8 @@ span.yellow {
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>iota<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>fold<span class="op">()</span></code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>iota</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code></li>
 </ul></li>
 <li>the following other changes to standard library (necessary for the <code class="sourceCode cpp">zip</code> family):
 <ul>
@@ -2046,8 +2046,6 @@ span.yellow {
 <ul>
 <li>the addition of the following range adapters:
 <ul>
-<li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code><br />
 </li>
@@ -2066,9 +2064,7 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>split_when</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>take_last</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>take_last_while</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>trim</code></li>
@@ -2076,9 +2072,9 @@ span.yellow {
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>sum<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>product<span class="op">()</span></code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>sum</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></li>
 </ul></li>
 </ul>
 <h2 data-number="6.3" id="tier-3" data-number="6.3"><span class="header-section-number">6.3</span> <span class="diffdel">Tier 3</span><a href="#tier-3" class="self-link"></a></h2>
@@ -2102,11 +2098,11 @@ span.yellow {
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>adjacent_transform<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>partial_fold<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>inclusive_scan<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>exclusive_scan<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>partial_sum<span class="op">()</span></code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>adjacent_transform</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>partial_fold</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>inclusive_scan</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>exclusive_scan</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>partial_sum</code></li>
 </ul></li>
 <li>the addition of ranges actions</li>
 </ul>
