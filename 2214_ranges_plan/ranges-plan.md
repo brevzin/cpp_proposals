@@ -634,16 +634,16 @@ There really aren't any particular thorny library issues to resolve here, simply
 
 `flat_map(E, F)` is very nearly `E | transform(F) | join`. Very nearly, because that doesn't _quite_ work. If the callable returns a prvalue range that is not a `view` (a seemingly specific constraint that is actually a very common use-case - consider a function returning a `vector<int>`), the above doesn't work. This specific case frequently comes up on StackOverflow asking for workarounds. 
 
-And there is one in range-v3, it's called `cache1`. As the name suggests, it caches a single element at a time from its parent view - which allows the range to be `join`ed. With the adoption of `cache1` (a view itself with other broad applicability), we could specify `views::flat_map(E, F)` as expression-equivalent to:
+And there is one in range-v3, it's called `cache1` &mdash; though here we suggest renaming it as `cache_latest`. As the name suggests, it caches a single element at a time from its parent view - which allows the range to be `join`ed. With the adoption of `cache_latest` (a view itself with other broad applicability), we could specify `views::flat_map(E, F)` as expression-equivalent to:
 
 ::: bq
 - `E | views::transform(F) | views::join` if that is a valid expression.
-- Otherwise, `E | views::transform(F) | views::cache1 | views::join`.
+- Otherwise, `E | views::transform(F) | views::cache_latest | views::join`.
 :::
 
 range-v3 has `cache1` yet only supports the first bullet, under the name `views::for_each`.
 
-Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion. Unlike other examples we've seen in this paper, there really isn't much added benefit to `flat_map` being a first-class view, so we propose to specify it as suggested above &mdash; in terms of `transform`, `join`, and possibly `cache1`.
+Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion. Unlike other examples we've seen in this paper, there really isn't much added benefit to `flat_map` being a first-class view, so we propose to specify it as suggested above &mdash; in terms of `transform`, `join`, and possibly `cache_latest`.
 
 ### `transform_maybe`
 
@@ -711,7 +711,7 @@ But we don't want to specify it like that either. Even `transform3` has a huge p
 ```cpp
 inline constexpr auto transform_maybe4 = [](auto&& f){
     return views::transform(FWD(f))
-         | views::cache1
+         | views::cache_latest
          | views::filter([](auto&& e) -> decltype(static_cast<bool>(e)) {
                return static_cast<bool>(e);
            })
@@ -1290,7 +1290,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 - `ranges::to`
 - the ability to format `view`s with `std::format`
 - the addition of the following first class range adapters:
-    - `views::cache1`
+    - `views::cache_latest`
     - `views::cartesian_product`
     - `views::chunk`
     - `views::group_by`
