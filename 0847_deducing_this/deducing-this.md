@@ -1,8 +1,8 @@
 ---
 title: Deducing this
-document: P0847R5
+document: D0847R6
 date: today
-audience: EWG => CWG
+audience: CWG
 author:
   - name: Gašper Ažman
     email: <gasper.azman@gmail.com>
@@ -21,6 +21,10 @@ toc-depth: 2
 We propose a new mechanism for specifying or deducing the value category of the expression that a member-function is invoked on. In other words, a way to tell from within a member function whether the expression it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the expression's type.
 
 # Revision History # {#revision-history}
+
+## Changes since r5 ## {#changes-since-r5}
+
+Re-added section with the history of other syntaxes we considered (for posterity). Further wording improvements. 
 
 ## Changes since r4 ## {#changes-since-r4}
 
@@ -1492,26 +1496,38 @@ This has been implemented in the EDG front end, with gracious help and encourage
 
 # Not quite static, not quite non-static
 
-Where previously, member functions were divided into static member functions and non-static member functions, this gets a little more complex because some static member functions still use the implied object parameter (those that have an explicit this parameter) and some do not. This wording introduces the term "object member function" for the union of non-static member functions and static member functions with an explicit this parameter. Many functions were previously restricted to be non-static member functions are now restricted to be object member functions.
+The status quo is that all member functions are either static member functions or non-static member functions. A member function with an explicit this parameter is a third kind of member function that's sort of halfway in between those two. They're like semi-static member functions.
 
-The biggest issue in working through the wording for this paper is: just _how_ static is a function with an explicit this parameter? Member functions with an explicit this parameter are sort of half-static, half-non-static. They're static in the sense that a pointer to a function with an explicit this parameter has pointer-to-function type, not pointer-to-member type, and there is no implicit `this` in the body of such functions. They're non-static in the sense that class access to such a function must be a full call expression, and you can use such functions to declare operators:
+The high level overview of the design is that from the _outside_, an explicit `this` function looks and behaves as much like a non-static member function as possible. You can't take an lvalue to such a member, they have to be invoked like non-static member functions, etc. But from the _inside_, an explicit this function behaves exactly like a static member function: there is no implicit `this`, your only access to the class object is through the explicit `this` parameter. The difference is still observable &mdash; a pointer to such a function has pointer to function type rather than pointer to member type, but that's about the extent of it. 
+
+The wording (and the EDG implementation) treat an explicit this function as a static member function. Yet such functions also have a lot in common with non-static member functions, so the wording introduces the term "object member function" to refer to all those member functions that require an object parameter. Many rules that were previously restricted to be non-static member functions are now restricted to be object member functions (e.g. the restrictions on how declare various operator functions).
+
+Some examples of distinctions:
 
 ```cpp
 struct C {
     void nonstatic_fun();
     
-    int explicit_fun(this C c) {
-        nonstatic_fun();   // error
-        c.nonstatic_fun(); // ok
-        static_fun();      // ok
-        auto x = this;     // error
-        return 0;
+    void explicit_fun(this C c) {
+        auto x = this;      // error
+        nonstatic_fun();    // error
+        c.nonstatic_fun();  // ok
+        
+        static_fun(C{});    // ok
+        (+static_fun)(C{}); // ok
     }
     
-    static void static_fun() {
-        explicit_fun();     // error
-        explicit_fun(C{});  // error
-        C{}.explicit_fun(); // ok
+    static void static_fun(C) {
+        explicit_fun();        // error
+        explicit_fun(C{});     // error        
+        auto f = explicit_fun; // error
+        (+explicit_fun)(C{});  // error
+        
+        C{}.explicit_fun();        // ok
+        auto p = explicit_fun;     // error
+        auto q = &explicit_fun;    // error
+        auto r = &C::explicit_fun; // ok
+        r(C{});                    // ok
     }
     
     static void operator()(int);   // error
@@ -1520,6 +1536,7 @@ struct C {
 
 C c;
 int (*a)(C) = &C::explicit_fun; // ok
+int (*b)(C) = C::explicit_fun;  // error
 
 auto x = c.static_fun;     // ok
 auto y = c.explicit_fun;   // error
@@ -1644,6 +1661,12 @@ to ensure that `is_standard_layout<P0847>` is `true`), it may be helpful to
 refer to [those definitions](#dcl.dcl) when reviewing the wording]{.ednote}
 
 ### Wording in [expr]{.sref}
+
+Extend [conv.func]{.sref} to forbid converting an lvalue denoting an explicit this function to a function pointer.
+
+::: bq
+[1]{.pnum} An lvalue of function type `T` [that does not denote a static member function with an explicit this parameter (dcl.fct)]{.addu} can be converted to a prvalue of type “pointer to `T`”. The result is a pointer to the function.
+:::
 
 Move [class.mfct.non-static]{.sref}/3 in front of [expr.prim.id]{.sref}/2 (the highlighted diff is relative to the original paragraph):
 
@@ -1771,6 +1794,17 @@ The expression can be used only as the left-hand operand of a member function ca
 - [6.3.2]{.pnum} [If `E2` refers to a static member function]{.rm} [Otherwise]{.addu}, `E1.E2` is an lvalue.
 :::
 
+Change [expr.unary.op]{.sref}/3, requiring that taking a pointer to an explicit this function use a _qualified-id_:
+
+::: bq
+
+[3]{.pnum} The result of the unary `&` operator is a pointer to its operand.
+
+- [3.1]{.pnum} If the operand is a _qualified-id_ naming a non-static or variant member `m` of some class `C` with type `T`, the result has type “pointer to member of class `C` of type `T`” and is a prvalue designating `C​::​m`.
+- [3.2]{.pnum} Otherwise, if the operand is an lvalue of type `T`, the resulting expression is a prvalue of type “pointer to `T`” whose result is a pointer to the designated object ([intro.memory]) or function. [If the operand names a static member function with an explicit this parameter (dcl.fct), the operand shall be a _qualified-id_.]{.addu} [Note 2: In particular, taking the address of a variable of type “cv `T`” yields a pointer of type “pointer to cv `T`”. — end note]
+- [3.3]{.pnum} Otherwise, the program is ill-formed.
+:::
+
 ### Wording in [dcl.dcl]{.sref} {#dcl.dcl}
 
 In [dcl.fct]{.sref}/3, introduce _explicit-this-parameter-declaration_ and _non-this-parameter-declaration_ as the two kinds of _parameter-declaration_:
@@ -1846,6 +1880,69 @@ The promise type shall be a class type.
 
 [4]{.pnum} In the following, `p@~i~@` is an lvalue of type `P@~i~@`, where `p@~1~@` denotes [`*this`]{.rm} [the implicit or explicit this parameter]{.addu} and `p@~i+1~@` denotes the _i_^th^ [non-this]{.addu} function parameter for [a non-static]{.rm} [an object]{.addu} member function, and `p@~i~@` denotes the _i_^th^ function parameter otherwise.
 :::
+
+Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list and extend the example:
+
+::: bq
+[14]{.pnum} When a _using-declarator_ brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, [parameter-type-list]{.rm} [non-this-parameter-type-list]{.addu} ([dcl.fct]), trailing _requires-clause_ (if any), cv-qualification, and _ref-qualifier_ (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the _using-declarator_.
+
+[*Example 12*:
+```diff
+  struct B {
+    virtual void f(int);
+    virtual void f(char);
+    void g(int);
+    void h(int);
+    
++   void k(this B const&);
+  };
+  
+  struct D : B {
+    using B::f;
+    void f(int);           // OK: D​::​f(int) overrides B​::​f(int);
+  
+    using B::g;
+    void g(char);          // OK
+  
+    using B::h;
+    void h(int);           // OK: D​::​h(int) hides B​::​h(int)
+    
++   void k(this D const&); // OK: D::k(this D const&) hides B::k(this B const&)
+  };
+  
+  void k(D* p)
+  {
+    p->f(1);          // calls D​::​f(int)
+    p->f('a');        // calls B​::​f(char)
+    p->g(1);          // calls B​::​g(int)
+    p->g('a');        // calls D​::​g(char)
+  }
+  
+  struct B1 {
+    B1(int);
+  };
+  
+  struct B2 {
+    B2(int);
+  };
+  
+  struct D1 : B1, B2 {
+    using B1::B1;
+    using B2::B2;
+  };  
+  D1 d1(0);           // error: ambiguous
+  
+  struct D2 : B1, B2 {
+    using B1::B1;
+    using B2::B2;
+    D2(int);          // OK: D2​::​D2(int) hides B1​::​B1(int) and B2​::​B2(int)
+  };
+  D2 d2(0);           // calls D2​::​D2(int)
+```
+— _end example_]
+:::
+
+
 
 ### Wording in [class]{.sref}
 
