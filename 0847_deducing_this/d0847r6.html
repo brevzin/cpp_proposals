@@ -2072,49 +2072,53 @@ Proposed
 <span id="cb65-5"><a href="#cb65-5"></a>    void h(int);</span>
 <span id="cb65-6"><a href="#cb65-6"></a>    </span>
 <span id="cb65-7"><a href="#cb65-7"></a><span class="va">+   void k(this B const&amp;);</span></span>
-<span id="cb65-8"><a href="#cb65-8"></a>  };</span>
-<span id="cb65-9"><a href="#cb65-9"></a>  </span>
-<span id="cb65-10"><a href="#cb65-10"></a>  struct D : B {</span>
-<span id="cb65-11"><a href="#cb65-11"></a>    using B::f;</span>
-<span id="cb65-12"><a href="#cb65-12"></a>    void f(int);           // OK: D​::​f(int) overrides B​::​f(int);</span>
-<span id="cb65-13"><a href="#cb65-13"></a>  </span>
-<span id="cb65-14"><a href="#cb65-14"></a>    using B::g;</span>
-<span id="cb65-15"><a href="#cb65-15"></a>    void g(char);          // OK</span>
-<span id="cb65-16"><a href="#cb65-16"></a>  </span>
-<span id="cb65-17"><a href="#cb65-17"></a>    using B::h;</span>
-<span id="cb65-18"><a href="#cb65-18"></a>    void h(int);           // OK: D​::​h(int) hides B​::​h(int)</span>
-<span id="cb65-19"><a href="#cb65-19"></a>    </span>
-<span id="cb65-20"><a href="#cb65-20"></a><span class="va">+   void k(this D const&amp;); // OK: D::k(this D const&amp;) hides B::k(this B const&amp;)</span></span>
-<span id="cb65-21"><a href="#cb65-21"></a>  };</span>
-<span id="cb65-22"><a href="#cb65-22"></a>  </span>
-<span id="cb65-23"><a href="#cb65-23"></a>  void k(D* p)</span>
-<span id="cb65-24"><a href="#cb65-24"></a>  {</span>
-<span id="cb65-25"><a href="#cb65-25"></a>    p-&gt;f(1);          // calls D​::​f(int)</span>
-<span id="cb65-26"><a href="#cb65-26"></a>    p-&gt;f(&#39;a&#39;);        // calls B​::​f(char)</span>
-<span id="cb65-27"><a href="#cb65-27"></a>    p-&gt;g(1);          // calls B​::​g(int)</span>
-<span id="cb65-28"><a href="#cb65-28"></a>    p-&gt;g(&#39;a&#39;);        // calls D​::​g(char)</span>
-<span id="cb65-29"><a href="#cb65-29"></a>  }</span>
-<span id="cb65-30"><a href="#cb65-30"></a>  </span>
-<span id="cb65-31"><a href="#cb65-31"></a>  struct B1 {</span>
-<span id="cb65-32"><a href="#cb65-32"></a>    B1(int);</span>
-<span id="cb65-33"><a href="#cb65-33"></a>  };</span>
+<span id="cb65-8"><a href="#cb65-8"></a><span class="va">+   void k(this B const&amp;, int);</span></span>
+<span id="cb65-9"><a href="#cb65-9"></a>  };</span>
+<span id="cb65-10"><a href="#cb65-10"></a>  </span>
+<span id="cb65-11"><a href="#cb65-11"></a>  struct D : B {</span>
+<span id="cb65-12"><a href="#cb65-12"></a>    using B::f;</span>
+<span id="cb65-13"><a href="#cb65-13"></a>    void f(int);           // OK: D​::​f(int) overrides B​::​f(int);</span>
+<span id="cb65-14"><a href="#cb65-14"></a>  </span>
+<span id="cb65-15"><a href="#cb65-15"></a>    using B::g;</span>
+<span id="cb65-16"><a href="#cb65-16"></a>    void g(char);          // OK</span>
+<span id="cb65-17"><a href="#cb65-17"></a>  </span>
+<span id="cb65-18"><a href="#cb65-18"></a>    using B::h;</span>
+<span id="cb65-19"><a href="#cb65-19"></a>    void h(int);           // OK: D​::​h(int) hides B​::​h(int)</span>
+<span id="cb65-20"><a href="#cb65-20"></a>    </span>
+<span id="cb65-21"><a href="#cb65-21"></a><span class="va">+   using B::k;</span></span>
+<span id="cb65-22"><a href="#cb65-22"></a><span class="va">+   void k(this D const&amp;); // OK: D::k(this D const&amp;) hides B::k(this B const&amp;)</span></span>
+<span id="cb65-23"><a href="#cb65-23"></a>  };</span>
+<span id="cb65-24"><a href="#cb65-24"></a>  </span>
+<span id="cb65-25"><a href="#cb65-25"></a>  void k(D* p)</span>
+<span id="cb65-26"><a href="#cb65-26"></a>  {</span>
+<span id="cb65-27"><a href="#cb65-27"></a>    p-&gt;f(1);          // calls D​::​f(int)</span>
+<span id="cb65-28"><a href="#cb65-28"></a>    p-&gt;f(&#39;a&#39;);        // calls B​::​f(char)</span>
+<span id="cb65-29"><a href="#cb65-29"></a>    p-&gt;g(1);          // calls B​::​g(int)</span>
+<span id="cb65-30"><a href="#cb65-30"></a>    p-&gt;g(&#39;a&#39;);        // calls D​::​g(char)</span>
+<span id="cb65-31"><a href="#cb65-31"></a><span class="va">+   p-&gt;k(1);          // calls B::k(B const&amp;, int)</span></span>
+<span id="cb65-32"><a href="#cb65-32"></a><span class="va">+   p-&gt;k();           // calls D::k(D const&amp;)</span></span>
+<span id="cb65-33"><a href="#cb65-33"></a>  }</span>
 <span id="cb65-34"><a href="#cb65-34"></a>  </span>
-<span id="cb65-35"><a href="#cb65-35"></a>  struct B2 {</span>
-<span id="cb65-36"><a href="#cb65-36"></a>    B2(int);</span>
+<span id="cb65-35"><a href="#cb65-35"></a>  struct B1 {</span>
+<span id="cb65-36"><a href="#cb65-36"></a>    B1(int);</span>
 <span id="cb65-37"><a href="#cb65-37"></a>  };</span>
 <span id="cb65-38"><a href="#cb65-38"></a>  </span>
-<span id="cb65-39"><a href="#cb65-39"></a>  struct D1 : B1, B2 {</span>
-<span id="cb65-40"><a href="#cb65-40"></a>    using B1::B1;</span>
-<span id="cb65-41"><a href="#cb65-41"></a>    using B2::B2;</span>
-<span id="cb65-42"><a href="#cb65-42"></a>  };  </span>
-<span id="cb65-43"><a href="#cb65-43"></a>  D1 d1(0);           // error: ambiguous</span>
-<span id="cb65-44"><a href="#cb65-44"></a>  </span>
-<span id="cb65-45"><a href="#cb65-45"></a>  struct D2 : B1, B2 {</span>
-<span id="cb65-46"><a href="#cb65-46"></a>    using B1::B1;</span>
-<span id="cb65-47"><a href="#cb65-47"></a>    using B2::B2;</span>
-<span id="cb65-48"><a href="#cb65-48"></a>    D2(int);          // OK: D2​::​D2(int) hides B1​::​B1(int) and B2​::​B2(int)</span>
-<span id="cb65-49"><a href="#cb65-49"></a>  };</span>
-<span id="cb65-50"><a href="#cb65-50"></a>  D2 d2(0);           // calls D2​::​D2(int)</span></code></pre></div>
+<span id="cb65-39"><a href="#cb65-39"></a>  struct B2 {</span>
+<span id="cb65-40"><a href="#cb65-40"></a>    B2(int);</span>
+<span id="cb65-41"><a href="#cb65-41"></a>  };</span>
+<span id="cb65-42"><a href="#cb65-42"></a>  </span>
+<span id="cb65-43"><a href="#cb65-43"></a>  struct D1 : B1, B2 {</span>
+<span id="cb65-44"><a href="#cb65-44"></a>    using B1::B1;</span>
+<span id="cb65-45"><a href="#cb65-45"></a>    using B2::B2;</span>
+<span id="cb65-46"><a href="#cb65-46"></a>  };  </span>
+<span id="cb65-47"><a href="#cb65-47"></a>  D1 d1(0);           // error: ambiguous</span>
+<span id="cb65-48"><a href="#cb65-48"></a>  </span>
+<span id="cb65-49"><a href="#cb65-49"></a>  struct D2 : B1, B2 {</span>
+<span id="cb65-50"><a href="#cb65-50"></a>    using B1::B1;</span>
+<span id="cb65-51"><a href="#cb65-51"></a>    using B2::B2;</span>
+<span id="cb65-52"><a href="#cb65-52"></a>    D2(int);          // OK: D2​::​D2(int) hides B1​::​B1(int) and B2​::​B2(int)</span>
+<span id="cb65-53"><a href="#cb65-53"></a>  };</span>
+<span id="cb65-54"><a href="#cb65-54"></a>  D2 d2(0);           // calls D2​::​D2(int)</span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>

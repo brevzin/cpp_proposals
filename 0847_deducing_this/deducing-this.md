@@ -1895,6 +1895,7 @@ Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list 
     void h(int);
     
 +   void k(this B const&);
++   void k(this B const&, int);
   };
   
   struct D : B {
@@ -1907,6 +1908,7 @@ Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list 
     using B::h;
     void h(int);           // OK: D​::​h(int) hides B​::​h(int)
     
++   using B::k;
 +   void k(this D const&); // OK: D::k(this D const&) hides B::k(this B const&)
   };
   
@@ -1916,6 +1918,8 @@ Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list 
     p->f('a');        // calls B​::​f(char)
     p->g(1);          // calls B​::​g(int)
     p->g('a');        // calls D​::​g(char)
++   p->k(1);          // calls B::k(B const&, int)
++   p->k();           // calls D::k(D const&)
   }
   
   struct B1 {
