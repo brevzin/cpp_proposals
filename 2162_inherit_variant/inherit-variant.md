@@ -193,7 +193,7 @@ auto&& @_as-variant_@(const variant<Ts...>&& var) { return std::move(var); }
 
 
 Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
-the type `decltype(@_as-variant_@(vars@~i~@))`.
+the type `decltype(@_as-variant_@(std::forward<Variants@~i~@>(vars@~i~@)))`.
 
 [-1]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
 
