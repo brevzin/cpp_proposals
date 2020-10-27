@@ -1,7 +1,7 @@
 ---
 title: "Inheriting from `std::variant`"
 subtitle: Resolving LWG3052
-document: P2162R1
+document: D2162R2
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,8 @@ toc: false
 ---
 
 # Revision History
+
+Since [@P2162R1], adjusted the wording based on Tomasz Kamiński's suggestion.
 
 Since [@P2162R0], added more information in the implementation experience section.
 
@@ -175,38 +177,44 @@ template<class R, class Visitor, class... Variants>
 ```
 
 ::: addu
-[-2]{.pnum} Let _`as-variant`_ denote the exposition-only function template
+[-2]{.pnum} Let _`as-variant`_ denote the exposition-only function templates
 
 
 ```cpp
 template<class... Ts>
+variant<Ts...>& @_as-variant_@(variant<Ts...>& var) { return var; }
+template<class... Ts>
 const variant<Ts...>& @_as-variant_@(const variant<Ts...>& var) { return var; }
+template<class... Ts>
+variant<Ts...>&& @_as-variant_@(variant<Ts...>&& var) { return move(var); }
+template<class... Ts>
+const variant<Ts...>&& @_as-variant_@(const variant<Ts...>&& var) { return move(var); }
 ```
 
 
 Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
-the type `remove_cvref_t<decltype(@_as-variant_@(vars@~i~@))>`.
+the type `decltype(@_as-variant_@(vars@~i~@))`.
 
 [-1]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
 
-[0]{.pnum} Let `VR@~i~@` denote the type `V@~i~@` with the addition of `Variant@~i~@`'s cv and reference qualifiers. Let `VR` denote the pack of types `VR@~i~@`.
+[0]{.pnum} Let `V` denote the pack of types `V@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
 Let `m` be a pack of n values of type `size_t`.
-Such a pack is called valid if `0 <= m@~i~@ < variant_size_v<@[remove_reference_t<Variants~i~>]{.rm} [V~i~]{.addu}@>` for all `0 <= i < n`.
+Such a pack is called valid if `0 <= m@~i~@ < variant_size_v<remove_reference_t<@[Variants~i~]{.rm} [V~i~]{.addu}@>>` for all `0 <= i < n`.
 For each valid pack `m`, let `e(m)` denote the expression:
 
 ```diff
 - INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<Variants>(vars))...) // see [func.require]
-+ INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<VR>(vars))...) // see [func.require]
++ INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<V>(vars))...) // see [func.require]
 ```
 
 for the first form and
 
 ```diff
 - INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<Variants>(vars))...) // see [func.require]
-+ INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<VR>(vars))...) // see [func.require]
++ INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<V>(vars))...) // see [func.require]
 ```
 
 for the second form.
