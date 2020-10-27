@@ -182,13 +182,13 @@ template<class R, class Visitor, class... Variants>
 
 ```cpp
 template<class... Ts>
-variant<Ts...>& @_as-variant_@(variant<Ts...>& var) { return var; }
+auto&& @_as-variant_@(variant<Ts...>& var) { return var; }
 template<class... Ts>
-const variant<Ts...>& @_as-variant_@(const variant<Ts...>& var) { return var; }
+auto&& @_as-variant_@(const variant<Ts...>& var) { return var; }
 template<class... Ts>
-variant<Ts...>&& @_as-variant_@(variant<Ts...>&& var) { return move(var); }
+auto&& @_as-variant_@(variant<Ts...>&& var) { return std::move(var); }
 template<class... Ts>
-const variant<Ts...>&& @_as-variant_@(const variant<Ts...>&& var) { return move(var); }
+auto&& @_as-variant_@(const variant<Ts...>&& var) { return std::move(var); }
 ```
 
 
