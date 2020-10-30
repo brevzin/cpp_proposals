@@ -1,7 +1,7 @@
 ---
 title: "Inheriting from `std::variant`"
 subtitle: Resolving LWG3052
-document: D2162R2
+document: P2162R2
 date: today
 audience: LEWG
 author:
