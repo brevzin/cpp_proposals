@@ -192,18 +192,18 @@ auto&& @_as-variant_@(const variant<Ts...>&& var) { return std::move(var); }
 ```
 
 
-Let `n` be `sizeof...(Variants)`. For each `0 <= i < n`, let `V@~i~@` denote the
+Let _`n`_ be `sizeof...(Variants)`. For each `0 <= i < n`, let _`V@~i~@`_ denote
 the type `decltype(@_as-variant_@(std::forward<Variants@~i~@>(vars@~i~@)))`.
 
 [-1]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
 
-[0]{.pnum} Let `V` denote the pack of types `V@~i~@`.
+[0]{.pnum} Let _`V`_ denote the pack of types `V@~i~@`.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
-Let `m` be a pack of n values of type `size_t`.
+Let _`m`_ be a pack of `n` values of type `size_t`.
 Such a pack is called valid if `0 <= m@~i~@ < variant_size_v<remove_reference_t<@[Variants~i~]{.rm} [V~i~]{.addu}@>>` for all `0 <= i < n`.
-For each valid pack `m`, let `e(m)` denote the expression:
+For each valid pack `m`, let _`e(m)`_ denote the expression:
 
 ```diff
 - INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<Variants>(vars))...) // see [func.require]
