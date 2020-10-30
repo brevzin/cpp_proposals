@@ -195,26 +195,26 @@ auto&& @_as-variant_@(const variant<Ts...>&& var) { return std::move(var); }
 Let _`n`_ be `sizeof...(Variants)`. For each `0 <= i < n`, let _`V@~i~@`_ denote
 the type `decltype(@_as-variant_@(std::forward<Variants@~i~@>(vars@~i~@)))`.
 
-[-1]{.pnum} _Constraints_: `V@~i~@` is a valid type for all `0 <= i < n`.
+[-1]{.pnum} _Constraints_: _`V@~i~@`_ is a valid type for all `0 <= i < n`.
 
-[0]{.pnum} Let _`V`_ denote the pack of types `V@~i~@`.
+[0]{.pnum} Let _`V`_ denote the pack of types _`V@~i~@`_.
 ::: 
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
-Let _`m`_ be a pack of `n` values of type `size_t`.
-Such a pack is called valid if `0 <= m@~i~@ < variant_size_v<remove_reference_t<@[Variants~i~]{.rm} [V~i~]{.addu}@>>` for all `0 <= i < n`.
-For each valid pack `m`, let _`e(m)`_ denote the expression:
+Let [`m`]{.rm} [_`m`_]{.addu} [Italicize `m` throughout]{.ednote} be a pack of `n` values of type `size_t`.
+Such a pack is [called]{.rm} valid if `0 <= m@~i~@ < variant_size_v<remove_reference_t<@[Variants~i~]{.rm} [_V~i~_]{.addu}@>>` for all `0 <= i < n`.
+For each valid pack _`m`_, let _`e(m)`_ denote the expression:
 
 ```diff
 - INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<Variants>(vars))...) // see [func.require]
-+ INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<V>(vars))...) // see [func.require]
++ INVOKE(std::forward<Visitor>(vis), get<m>(std::forward<@_V_@>(vars))...) // see [func.require]
 ```
 
 for the first form and
 
 ```diff
 - INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<Variants>(vars))...) // see [func.require]
-+ INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<V>(vars))...) // see [func.require]
++ INVOKE<R>(std::forward<Visitor>(vis), get<m>(std::forward<@_V_@>(vars))...) // see [func.require]
 ```
 
 for the second form.
@@ -226,7 +226,7 @@ All such expressions are of the same type and value category.
 
 [4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} [`(@_as-variant_@(vars).valueless_by_exception() || ...)` is `true`]{.addu}. 
 
-[5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of [`Variants@~0~@`]{.rm} [`V@~0~@`]{.addu}.
+[5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of [`Variants@~0~@`]{.rm} [_`V@~0~@`_]{.addu}.
 For `n>1`, the invocation of the callable object has no complexity requirements.
 
 :::
