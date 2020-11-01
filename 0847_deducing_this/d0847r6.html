@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      CWG<br>
+      EWG<br>
     </td>
   </tr>
   <tr>
@@ -1032,7 +1032,7 @@ Proposed
 <span id="cb18-13"><a href="#cb18-13"></a>    <span class="kw">using</span> B<span class="op">::</span>get;</span>
 <span id="cb18-14"><a href="#cb18-14"></a><span class="op">}</span>;</span>
 <span id="cb18-15"><a href="#cb18-15"></a></span>
-<span id="cb18-16"><a href="#cb18-16"></a>D<span class="op">().</span>get<span class="op">()</span>; <span class="co">// error</span></span></code></pre></div>
+<span id="cb18-16"><a href="#cb18-16"></a>D<span class="op">().</span>get<span class="op">()</span>; <span class="co">// now ok, and returns B::i</span></span></code></pre></div>
 <p>No access checking for the win.</p>
 <h3 data-number="4.2.6" id="writing-function-pointer-types" data-number="4.2.6"><span class="header-section-number">4.2.6</span> Writing the function pointer types for such functions<a href="#writing-function-pointer-types" class="self-link"></a></h3>
 <p>As described in the previous section, the model for a member function with an explicit object parameter is a <code class="sourceCode cpp"><span class="kw">static</span></code> member function.</p>
@@ -1820,7 +1820,7 @@ Proposed
 <div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1"></a><span class="pp">#define INJECT_QUALS</span><span class="op">(</span>X<span class="op">)</span><span class="pp"> </span>X<span class="op">(&amp;)</span><span class="pp"> </span>X<span class="op">(</span><span class="kw">const</span><span class="op">&amp;)</span><span class="pp"> </span>X<span class="op">(&amp;&amp;)</span><span class="pp"> </span>X<span class="op">(</span><span class="kw">const</span><span class="op">&amp;&amp;)</span></span>
 <span id="cb58-2"><a href="#cb58-2"></a></span>
 <span id="cb58-3"><a href="#cb58-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> </span>
-<span id="cb58-4"><a href="#cb58-4"></a><span class="kw">struct</span> not_very_optional <span class="op">{</span></span>
+<span id="cb58-4"><a href="#cb58-4"></a><span class="kw">struct</span> still_not_very_optional <span class="op">{</span></span>
 <span id="cb58-5"><a href="#cb58-5"></a>    <span class="pp">#define MAP_QUALS</span><span class="op">(</span>q<span class="op">)</span><span class="pp"> </span><span class="kw">auto</span><span class="pp"> </span>map<span class="op">(</span>invocable<span class="op">&lt;</span>T<span class="pp"> </span>q<span class="op">&gt;</span><span class="pp"> </span><span class="kw">auto</span><span class="op">&amp;&amp;)</span><span class="pp"> </span>q;</span>
 <span id="cb58-6"><a href="#cb58-6"></a>    INJECT_QUALS<span class="op">(</span>MAP_QUALS<span class="op">)</span></span>
 <span id="cb58-7"><a href="#cb58-7"></a><span class="op">}</span>;</span></code></pre></div>
@@ -1854,18 +1854,19 @@ With reflection
 <span id="cb59-12"><a href="#cb59-12"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
 <td>
-<div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> add_postfix_increment <span class="op">=</span> <span class="op">&lt;</span><span class="kw">struct</span> T<span class="op">{</span></span>
-<span id="cb60-2"><a href="#cb60-2"></a>    T <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb60-3"><a href="#cb60-3"></a>        T tmp <span class="op">=</span> <span class="op">*</span><span class="kw">this</span>;</span>
-<span id="cb60-4"><a href="#cb60-4"></a>        <span class="op">++*</span><span class="kw">this</span>;</span>
-<span id="cb60-5"><a href="#cb60-5"></a>        <span class="cf">return</span> tmp;</span>
-<span id="cb60-6"><a href="#cb60-6"></a>    <span class="op">}</span></span>
-<span id="cb60-7"><a href="#cb60-7"></a><span class="op">}&gt;</span>;</span>
-<span id="cb60-8"><a href="#cb60-8"></a></span>
-<span id="cb60-9"><a href="#cb60-9"></a><span class="kw">struct</span> some_type <span class="op">{</span></span>
-<span id="cb60-10"><a href="#cb60-10"></a>    some_type<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb60-11"><a href="#cb60-11"></a>    <span class="op">&lt;&lt;</span> add_postfix_increment;</span>
-<span id="cb60-12"><a href="#cb60-12"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> add_postfix_increment <span class="op">=</span></span>
+<span id="cb60-2"><a href="#cb60-2"></a>    <span class="op">&lt;</span><span class="kw">struct</span> T<span class="op">{</span></span>
+<span id="cb60-3"><a href="#cb60-3"></a>        T <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb60-4"><a href="#cb60-4"></a>            T tmp <span class="op">=</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb60-5"><a href="#cb60-5"></a>            <span class="op">++*</span><span class="kw">this</span>;</span>
+<span id="cb60-6"><a href="#cb60-6"></a>            <span class="cf">return</span> tmp;</span>
+<span id="cb60-7"><a href="#cb60-7"></a>        <span class="op">}</span></span>
+<span id="cb60-8"><a href="#cb60-8"></a>    <span class="op">}&gt;</span>;</span>
+<span id="cb60-9"><a href="#cb60-9"></a></span>
+<span id="cb60-10"><a href="#cb60-10"></a><span class="kw">struct</span> some_type <span class="op">{</span></span>
+<span id="cb60-11"><a href="#cb60-11"></a>    some_type<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb60-12"><a href="#cb60-12"></a>    <span class="op">&lt;&lt;</span> add_postfix_increment;</span>
+<span id="cb60-13"><a href="#cb60-13"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
 </tr>
 </table>
@@ -2119,7 +2120,7 @@ With reflection
 <div class="add" style="color: #006e28">
 <p><span class="marginalizedparent"><a class="marginalized">5a</a></span> An <em>explicit-object-parameter-declaration</em> is a <em>parameter-declaration</em> with a <code class="sourceCode default">this</code> specifier. An <em>explicit-object-parameter-declaration</em> shall appear only as the first <em>parameter-declaration</em> of a <em>parameter-declaration-list</em> of either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5a.1)</a></span> a <em>member-declarator</em> that declares a member function ([class.mem]), or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5a.1)</a></span> a <em>member-declarator</em> that declares a member function ([class.mem]) that is not part of a friend declaration, or</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5a.2)</a></span> a <em>lambda-declarator</em> ([expr.prim.lambda]).</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized">5b</a></span> A <em>member-declarator</em> with an <em>explicit-object-parameter-declaration</em> shall not include a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em> and shall not be declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>. [ <em>Note</em>: Such a function is implicitly static ([class.mem]) - <em>end note</em> ]</p>
@@ -2149,9 +2150,9 @@ With reflection
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> The <em>promise type</em> of a coroutine is <code class="sourceCode cpp">std​<span class="op">::</span>​coroutine_traits<span class="op">&lt;</span>R, P<sub>1</sub>, …, P<sub>n</sub><span class="op">&gt;</span>​<span class="op">::</span>​promise_type</code>, where <code class="sourceCode cpp">R</code> is the return type of the function, and <code class="sourceCode cpp">P<sub>1</sub>…P<sub>n</sub></code> are the sequence of types of the <span class="addu">non-object</span> function parameters, preceded by the type of the implicit <span class="addu">or explicit</span> object parameter ([over.match.funcs]) if the coroutine is <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function. The promise type shall be a class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> In the following, <code class="sourceCode cpp">p<sub>i</sub></code> is an lvalue of type <code class="sourceCode cpp">P<sub>i</sub></code>, where <code class="sourceCode cpp">p<sub>1</sub></code> denotes <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">*this</code></span></del></span> <span class="addu">the implicit or explicit object parameter</span> and <code class="sourceCode cpp">p<sub>i+1</sub></code> denotes the <em>i</em><sup>th</sup> <span class="addu">non-object</span> function parameter for <span class="rm" style="color: #bf0303"><del>a non-static</del></span> <span class="addu">an object</span> member function, and <code class="sourceCode cpp">p<sub>i</sub></code> denotes the <em>i</em><sup>th</sup> function parameter otherwise.</p>
 </blockquote>
-<p>Change <span>9.9 <a href="https://wg21.link/namespace.udecl">[namespace.udecl]</a></span>/14 to refer to the adjusted parameter-type-list and extend the example:</p>
+<p>Change <span>9.9 <a href="https://wg21.link/namespace.udecl">[namespace.udecl]</a></span>/14 to group the cv-qualification and ref-qualifier checks into checking the type of the object parameter.</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">14</a></span> When a <em>using-declarator</em> brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">non-object-parameter-type-list</span> ([dcl.fct]), trailing <em>requires-clause</em> (if any), cv-qualification, and <em>ref-qualifier</em> (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the <em>using-declarator</em>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">14</a></span> When a <em>using-declarator</em> brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, <span class="rm" style="color: #bf0303"><del>parameter-type-list</del></span> <span class="addu">non-object-parameter-type-list</span> ([dcl.fct]), trailing <em>requires-clause</em> (if any), <span class="rm" style="color: #bf0303"><del>cv-qualification, and <em>ref-qualifier</em></del></span> <span class="addu">and type of their implicit or explicit object parameter</span> (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the <em>using-declarator</em>.</p>
 <p>[<em>Example 12</em>:</p>
 <div>
 <div class="sourceCode" id="cb71"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb71-1"><a href="#cb71-1"></a>  struct B {</span>
@@ -2175,7 +2176,7 @@ With reflection
 <span id="cb71-19"><a href="#cb71-19"></a>    void h(int);           // OK: D​::​h(int) hides B​::​h(int)</span>
 <span id="cb71-20"><a href="#cb71-20"></a>    </span>
 <span id="cb71-21"><a href="#cb71-21"></a><span class="va">+   using B::k;</span></span>
-<span id="cb71-22"><a href="#cb71-22"></a><span class="va">+   void k(this D&amp;);       // OK: D::k(this D&amp;) hides B::k() &amp;</span></span>
+<span id="cb71-22"><a href="#cb71-22"></a><span class="va">+   void k(this B&amp;);       // OK: D::k(this B&amp;) hides B::k() &amp;</span></span>
 <span id="cb71-23"><a href="#cb71-23"></a>  };</span>
 <span id="cb71-24"><a href="#cb71-24"></a>  </span>
 <span id="cb71-25"><a href="#cb71-25"></a>  void k(D* p)</span>
@@ -2185,7 +2186,7 @@ With reflection
 <span id="cb71-29"><a href="#cb71-29"></a>    p-&gt;g(1);          // calls B​::​g(int)</span>
 <span id="cb71-30"><a href="#cb71-30"></a>    p-&gt;g(&#39;a&#39;);        // calls D​::​g(char)</span>
 <span id="cb71-31"><a href="#cb71-31"></a><span class="va">+   p-&gt;k(1);          // calls B::k(int) &amp;</span></span>
-<span id="cb71-32"><a href="#cb71-32"></a><span class="va">+   p-&gt;k();           // calls D::k(this D&amp;)</span></span>
+<span id="cb71-32"><a href="#cb71-32"></a><span class="va">+   p-&gt;k();           // calls D::k(this B&amp;)</span></span>
 <span id="cb71-33"><a href="#cb71-33"></a>  }</span>
 <span id="cb71-34"><a href="#cb71-34"></a>  </span>
 <span id="cb71-35"><a href="#cb71-35"></a>  struct B1 {</span>
@@ -2381,7 +2382,7 @@ With reflection
 <li><span class="marginalizedparent"><a class="marginalized">(3.3)</a></span> an <em>identifier</em> associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,</li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.4)</a></span> an <em>identifier</em> associated by name lookup with one or more declarations of member functions of the current instantiation declared with a return type that contains a placeholder type,</li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.5)</a></span> an <em>identifier</em> associated by name lookup with a structured binding declaration whose <em>brace-or-equal-initializer</em> is type-dependent,</li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.5*)</a></span> <span class="addu">an <em>identifier</em> associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a <em>lambda-expression</em> that has an explicit object parameter ([dcl.fct]),</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.5*)</a></span> <span class="addu">an <em>identifier</em> associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a <em>lambda-expression</em> that has an explicit object parameter whose type is dependent ([dcl.fct]),</span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.6)</a></span> the <em>identifier</em> <code class="sourceCode cpp"><span class="ot">__func__</span></code> ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,</li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.7)</a></span> a <em>template-id</em> that is dependent,</li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.8)</a></span> a <em>conversion-function-id</em> that specifies a dependent type, or</li>

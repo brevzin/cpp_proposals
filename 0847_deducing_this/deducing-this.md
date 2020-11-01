@@ -2,7 +2,7 @@
 title: Deducing this
 document: D0847R6
 date: today
-audience: CWG
+audience: EWG
 author:
   - name: Gašper Ažman
     email: <gasper.azman@gmail.com>
@@ -554,7 +554,7 @@ public:
     using B::get;
 };
 
-D().get(); // error
+D().get(); // now ok, and returns B::i
 ```
 
 No access checking for the win.
@@ -1543,7 +1543,7 @@ This doesn't really translate in the `gen_crval_overloads` model. You could do t
 #define INJECT_QUALS(X) X(&) X(const&) X(&&) X(const&&)
 
 template <typename T> 
-struct not_very_optional {
+struct still_not_very_optional {
     #define MAP_QUALS(q) auto map(invocable<T q> auto&&) q;
     INJECT_QUALS(MAP_QUALS)
 };
@@ -1583,13 +1583,14 @@ struct some_type : add_postfix_increment {
 </td>
 <td>
 ```cpp
-constexpr auto add_postfix_increment = <struct T{
-    T operator++(int) {
-        T tmp = *this;
-        ++*this;
-        return tmp;
-    }
-}>;
+constexpr auto add_postfix_increment =
+    <struct T{
+        T operator++(int) {
+            T tmp = *this;
+            ++*this;
+            return tmp;
+        }
+    }>;
 
 struct some_type {
     some_type& operator++() { ... }
@@ -1959,7 +1960,7 @@ After [dcl.fct]{.sref}/5, insert a paragraph describing where a function declara
 
 [5a]{.pnum} An _explicit-object-parameter-declaration_ is a _parameter-declaration_ with a `this` specifier. An _explicit-object-parameter-declaration_ shall appear only as the first _parameter-declaration_ of a _parameter-declaration-list_ of either:
 
-* [5a.1]{.pnum} a _member-declarator_ that declares a member function ([class.mem]), or
+* [5a.1]{.pnum} a _member-declarator_ that declares a member function ([class.mem]) that is not part of a friend declaration, or
 * [5a.2]{.pnum} a _lambda-declarator_ ([expr.prim.lambda]).
 
 [5b]{.pnum} A _member-declarator_ with an _explicit-object-parameter-declaration_ shall not include a _ref-qualifier_ or a _cv-qualifier-seq_ and
@@ -2000,10 +2001,10 @@ The promise type shall be a class type.
 [4]{.pnum} In the following, `p@~i~@` is an lvalue of type `P@~i~@`, where `p@~1~@` denotes [`*this`]{.rm} [the implicit or explicit object parameter]{.addu} and `p@~i+1~@` denotes the _i_^th^ [non-object]{.addu} function parameter for [a non-static]{.rm} [an object]{.addu} member function, and `p@~i~@` denotes the _i_^th^ function parameter otherwise.
 :::
 
-Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list and extend the example:
+Change [namespace.udecl]{.sref}/14 to group the cv-qualification and ref-qualifier checks into checking the type of the object parameter. 
 
 ::: bq
-[14]{.pnum} When a _using-declarator_ brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, [parameter-type-list]{.rm} [non-object-parameter-type-list]{.addu} ([dcl.fct]), trailing _requires-clause_ (if any), cv-qualification, and _ref-qualifier_ (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the _using-declarator_.
+[14]{.pnum} When a _using-declarator_ brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, [parameter-type-list]{.rm} [non-object-parameter-type-list]{.addu} ([dcl.fct]), trailing _requires-clause_ (if any), [cv-qualification, and _ref-qualifier_]{.rm} [and type of their implicit or explicit object parameter]{.addu} (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the _using-declarator_.
 
 [*Example 12*:
 ```diff
@@ -2028,7 +2029,7 @@ Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list 
     void h(int);           // OK: D​::​h(int) hides B​::​h(int)
     
 +   using B::k;
-+   void k(this D&);       // OK: D::k(this D&) hides B::k() &
++   void k(this B&);       // OK: D::k(this B&) hides B::k() &
   };
   
   void k(D* p)
@@ -2038,7 +2039,7 @@ Change [namespace.udecl]{.sref}/14 to refer to the adjusted parameter-type-list 
     p->g(1);          // calls B​::​g(int)
     p->g('a');        // calls D​::​g(char)
 +   p->k(1);          // calls B::k(int) &
-+   p->k();           // calls D::k(this D&)
++   p->k();           // calls D::k(this B&)
   }
   
   struct B1 {
@@ -2358,7 +2359,7 @@ In [temp.dep.expr]{.sref}/3, add a new kind of type dependence:
 - [3.3]{.pnum} an _identifier_ associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,
 - [3.4]{.pnum} an _identifier_ associated by name lookup with one or more declarations of member functions of the current instantiation declared with a return type that contains a placeholder type,
 - [3.5]{.pnum} an _identifier_ associated by name lookup with a structured binding declaration whose _brace-or-equal-initializer_ is type-dependent,
-- [3.5*]{.pnum} [an _identifier_ associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a _lambda-expression_ that has an explicit object parameter ([dcl.fct]),]{.addu}
+- [3.5*]{.pnum} [an _identifier_ associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a _lambda-expression_ that has an explicit object parameter whose type is dependent ([dcl.fct]),]{.addu}
 - [3.6]{.pnum} the _identifier_ `__func__` ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,
 - [3.7]{.pnum} a _template-id_ that is dependent,
 - [3.8]{.pnum} a _conversion-function-id_ that specifies a dependent type, or
