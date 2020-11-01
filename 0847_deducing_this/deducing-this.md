@@ -7,7 +7,7 @@ author:
   - name: Gašper Ažman
     email: <gasper.azman@gmail.com>
   - name: Sy Brand
-    email: <simon.brand@microsoft.com>
+    email: <sibrand@microsoft.com>
   - name: Ben Deane, ben at elbeno dot com
     email: <ben@elbeno.com>
   - name: Barry Revzin
@@ -24,7 +24,7 @@ We propose a new mechanism for specifying or deducing the value category of the 
 
 ## Changes since r5 ## {#changes-since-r5}
 
-Re-added section with the history of other syntaxes we considered (for posterity). Further wording improvements. 
+Re-added section with the history of other syntaxes we considered (for posterity) and a discussion of reflection. Further wording improvements. 
 
 ## Changes since r4 ## {#changes-since-r4}
 
@@ -1489,6 +1489,132 @@ One family of possible solutions could be summarized as **make it easy to get th
 *This is already a problem for free-function templates*: The authors have heard many a complaint about it from library vendors, even before this paper was introduced, as it is desirable to only deduce the ref-qualifier in many contexts. Therefore, it might make sense to tackle this issue in a more general way. A complementary feature could be proposed to constrain *type deduction*.
 
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
+
+# Reflection
+
+One question that has come up periodically is: would we still need this language feature if we had a reflection facility that offered code injection (as described in [@P2237R0])? We can answer this question by going through the use-cases we've presented in this paper and try to figure out how well they could be resolved by a code-injection facility. 
+
+## Deduplicating Code
+
+Of the five use-cases, this one is the most up in the air. This one seems unlikely to be well-handled by code injection, but it really depends on the kinds of facilities injection will end up allowing. Let's consider the simplest possible case:
+
+```cpp
+template <typename T>
+struct not_very_optional {
+    T value;
+
+    auto get() & -> T& { return value; }
+    auto get() const& -> T const& { return value; }
+    auto get() && -> T const& { return std::move(value); }
+    auto get() const&& -> T const&& { return std::move(value); }
+};
+```
+
+As presented earlier, one way to do this is to implement three of these in terms of the fourth. For this case, this is something that potentially could be handled through injection, as in this way demonstrated on the reflectors by Ville Voutilainen:
+
+```cpp
+template <typename T>
+struct not_very_optional {
+    T value;
+
+    auto get() & -> T& { return value; }
+    
+    consteval {
+        std::meta::gen_crval_overloads(reflexpr(not_very_optional::get));
+    }    
+};
+```
+
+Although it's not clear if this pattern would work for more complex overload sets. As in, if the different overloads needed different constraints or had different `noexcept` specifications:
+
+```cpp
+template <typename T>
+struct still_not_very_optional {
+    auto map(invocable<T&> auto&&) &;
+    auto map(invocable<T const&> auto&&) const&;
+    auto map(invocable<T&&> auto&&) &&;
+    auto map(invocable<T const&&> auto&&) const&&;
+};
+```
+
+This doesn't really translate in the `gen_crval_overloads` model. You could do this sort of thing with macros:
+
+```cpp
+#define INJECT_QUALS(X) X(&) X(const&) X(&&) X(const&&)
+
+template <typename T> 
+struct not_very_optional {
+    #define MAP_QUALS(q) auto map(invocable<T q> auto&&) q;
+    INJECT_QUALS(MAP_QUALS)
+};
+```
+
+Which suggests a potential code injection direction if we could inject qualifiers somehow, which is a feature that the Metaprogramming paper does not mention, and it is unclear if that is a direction that will be pursued.
+
+As a result, we have to state that reflection as proposed thus far would not really address this use-case.
+
+## Better mixin support
+
+Deducing this provides us a better way to write mixins. But mixins are an especially clear use-case for code injection, and one that code injection could easily provide a superior alternative.
+
+We presented an example with postfix increment earlier in the paper, here is how that example could look with code injection:
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">Proposed in this paper</th>
+<th style="width:50%">With reflection</th>
+</tr>
+<tr>
+<td>
+```cpp
+struct add_postfix_increment {
+    template <typename Self>
+    auto operator++(this Self&& self, int) {
+        auto tmp = self;
+        ++self;
+        return tmp;
+    }
+};
+
+struct some_type : add_postfix_increment {
+    some_type& operator++() { ... }
+};
+```
+</td>
+<td>
+```cpp
+constexpr auto add_postfix_increment = <struct T{
+    T operator++(int) {
+        T tmp = *this;
+        ++*this;
+        return tmp;
+    }
+}>;
+
+struct some_type {
+    some_type& operator++() { ... }
+    << add_postfix_increment;
+};
+```
+</td>
+</tr>
+</table>
+
+Assuming this is roughly how the code injection facility will look, we expect the code on the right to be preferred in many use-cases. While obviously novel for C++, it's also simpler (there are no templates) and it is a more direct and less intrusive way to add functionality to a class (`some_type` no longer needs to have a base class, which is a meaningful benefit).
+
+## The other three
+
+The other three use-cases presented in this paper are recursive lambdas, by-value member functions, and the ability to properly create SFINAE-friendly call wrappers. What all of these use-cases have in common is that they are all cases you cannot write today. You cannot write a recursive lambda because you have no way of naming the lambda itself from its body, you cannot write a by-value member function since the object parameter of non-static member functions is always a reference, and you cannot create SFINAE-friendly call wrappers since you cannot write the wrapper as a single function template. 
+
+The ability to deduce this &mdash; to treat the object parameter as a first-class function parameter  &mdash; is a new language feature that allows us to do all of these things. It gives us the ability to name the lambda, to take the object parameter by value, and to write a single function template for call wrappers rather than writing four different call operators. 
+
+Code injection facilities can only inject code that you could already write yourself by hand. As such, no matter where reflection takes us, it could not provide solutions for these problems since they fundamentally require new language support.
+
+Potentially, reflection could provide some magic `std::meta::get_current_lambda()` function that when invoked from within a lambda body could give you access to the lambda itself. But this would have to be a facility provided by a compiler intrinsic and seems like an especially unsatisfying solution as compared to the one presented in this paper.
+
+## Reflection vs deducing this
+
+Of the five use-cases presented in this paper, we expect Reflection to provide a superior solution to one of them. But it basically cannot solve three of them, and it is unclear to what extent it would be able to provide a satisfactory solution to the fifth. As a result, Reflection can't really be a substitute for this proposal on the whole, even if we could get the facilities described in the Metaprogramming paper right away.
 
 # Implementation
 
