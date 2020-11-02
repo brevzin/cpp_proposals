@@ -22,19 +22,19 @@ We propose a new mechanism for specifying or deducing the value category of the 
 
 # Revision History # {#revision-history}
 
-## Changes since r5 ## {#changes-since-r5}
+### Changes since r5 ### {#changes-since-r5}
 
 Re-added section with the history of other syntaxes we considered (for posterity) and a discussion of reflection. Further wording improvements. 
 
-## Changes since r4 ## {#changes-since-r4}
+### Changes since r4 ### {#changes-since-r4}
 
 Wording and Implementation. Discussion about implicit vs explicit invocation and interaction with static functions.
 
-## Changes since r3 ## {#changes-since-r3}
+### Changes since r3 ### {#changes-since-r3}
 
 The feedback from Belfast in EWG was "This looks good, come back with wording and implementation". This version adds wording, the implementation is in the works.
 
-## Changes since r2 ## {#changes-since-r2}
+### Changes since r2 ### {#changes-since-r2}
 
 [@P0847R2] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
 
@@ -44,11 +44,11 @@ This version adds:
   - An FAQ entry for [implementability](#faq-rec-lambda-impl)
   - An FAQ entry for [computed deduction](#faq-computed-deduction), an orthogonal feature that EWGI asked for in Kona.
 
-## Changes since r1 ## {#changes-since-r1}
+### Changes since r1 ### {#changes-since-r1}
 
 [@P0847R1] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
 
-## Changes since r0 ## {#changes-since-r0}
+### Changes since r0 ### {#changes-since-r0}
 
 [@P0847R0] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
 
@@ -1490,6 +1490,54 @@ One family of possible solutions could be summarized as **make it easy to get th
 
 The authors strongly believe this feature is orthogonal. However, hoping that mentioning that solutions are in the pipeline helps gain consensus for this paper, we mention one solution here. The proposal is in early stages, and is not in the pre-belfast mailing. It will be present in the post-belfast mailing: [computed deduction](https://atomgalaxy.github.io/isocpp-1107/D1107.html)
 
+## Was this syntax considered?
+
+In the course of working on this paper, many different syntaxes were considered for how to properly express this idea. Those various options have been culled from previous revisions of the paper, but we should have always kept them in for posterity. So we're adding them in here.
+
+[@P0847R0] originally proposed the syntax as:
+
+```cpp
+struct X {
+    // an explicit object parameter named self
+    void f(X& this self);
+    
+    // an unnamed, deduced explicit object parameter
+    template <typename Self>
+    void g(Self&& this);
+};
+```
+
+[@P0847R1] considered four potential syntaxes. We'll present them here again with a trivial example that simply returns a member variable, without any deduction.
+
+1. An explicit `this`-annotated parameter. We took the R0 syntax and reordered it so that `this` precedes the parameter declaration rather than being in the middle of it. 
+2. An explicit parameter _named_ `this`. That is, the first parameter _must_ be named `this`, which would then become an object rather than a pointer.
+3. Having a trailing type (rather than just cv- and ref-qualifiers) with an identifier
+4. Having a trailing type (as above) just without an identifier.
+
+Putting them all in a single example:
+
+```cpp
+struct A {
+    // #1
+    int get(this A const& a) { return a.i; }
+    
+    // #2
+    int get(A const& this) { return this.i; }
+    
+    // #3
+    int get() A const& self { return self.i; }
+    
+    // #4
+    int get() A const& { return this->i; }
+    
+    int i;
+};
+```
+
+We ended up settling on option `#1` (as can be seen from the rest of this paper). The syntax isn't especially adventurous and solves all the use-cases we want to solve, and compares very favorably to the rest.
+
+While options `#3` and `#4` keep the cv- and ref-qualifiers where they are today, so in some sense they are more familiar, there were other issues with them overall that led us to where we are today. `#3` has parsing issues, `#4` doesn't work for lambdas and would have to have `this` be potentially dependent, neither allows by-value member functions. `#2` would provide meaning to parameter names that doesn't currently exist today, would give a very different interpretation to `this` than the one we've always had in C++, and would have fairly poor interaction with lambdas that may need to capture `this`.
+
 # Reflection
 
 One question that has come up periodically is: would we still need this language feature if we had a reflection facility that offered code injection (as described in [@P2237R0])? We can answer this question by going through the use-cases we've presented in this paper and try to figure out how well they could be resolved by a code-injection facility. 
@@ -1814,6 +1862,13 @@ Strike the footnote in [expr.prim.id]{.sref}/2 as a drive-by-fix:
  ]]{.rm} or a class derived from that class, or
 :::
 
+Change [expr.prim.id]{.sref}/2 to properly account for lambdas with an explicit object parameter:
+
+::: bq
+The result is the entity denoted by the identifier.
+If the entity is a local entity and naming it from outside of an unevaluated operand within the declarative region where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the [closure object]{.rm} [implicit or explicit object parameter ([dcl.fct]) of the function call operator of the]{.addu} innermost such intervening _lambda-expression_.
+:::
+
 Change [expr.prim.lambda]{.sref}/3:
 
 ::: bq
@@ -2004,7 +2059,7 @@ The promise type shall be a class type.
 Change [namespace.udecl]{.sref}/14 to group the cv-qualification and ref-qualifier checks into checking the type of the object parameter. 
 
 ::: bq
-[14]{.pnum} When a _using-declarator_ brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, [parameter-type-list]{.rm} [non-object-parameter-type-list]{.addu} ([dcl.fct]), trailing _requires-clause_ (if any), [cv-qualification, and _ref-qualifier_]{.rm} [and type of their implicit or explicit object parameter]{.addu} (if any), in a base class (rather than conflicting). Such hidden or overridden declarations are excluded from the set of declarations introduced by the _using-declarator_.
+[14]{.pnum} When a _using-declarator_ brings declarations from a base class into a derived class, member functions and member function templates in the derived class override and/or hide member functions and member function templates with the same name, [parameter-type-list]{.rm} [non-object-parameter-type-list]{.addu} ([dcl.fct]), trailing _requires-clause_ (if any), [cv-qualification, and _ref-qualifier_]{.rm} [and type of their implicit or explicit object parameter]{.addu} (if any), in a base class (rather than conflicting). [[ *Note*: Base class member functions and member function templates are considered to be members of the derived class for the purposes of determining the type of their implicit object parameter ([over.match.funcs.general]). -*end note* ]]{.addu} Such hidden or overridden declarations are excluded from the set of declarations introduced by the _using-declarator_.
 
 [*Example 12*:
 ```diff
@@ -2029,7 +2084,7 @@ Change [namespace.udecl]{.sref}/14 to group the cv-qualification and ref-qualifi
     void h(int);           // OK: D​::​h(int) hides B​::​h(int)
     
 +   using B::k;
-+   void k(this B&);       // OK: D::k(this B&) hides B::k() &
++   void k(this D&);       // OK: D::k(this D&) hides B::k() &
   };
   
   void k(D* p)
@@ -2039,7 +2094,7 @@ Change [namespace.udecl]{.sref}/14 to group the cv-qualification and ref-qualifi
     p->g(1);          // calls B​::​g(int)
     p->g('a');        // calls D​::​g(char)
 +   p->k(1);          // calls B::k(int) &
-+   p->k();           // calls D::k(this B&)
++   p->k();           // calls D::k(this D&)
   }
   
   struct B1 {
