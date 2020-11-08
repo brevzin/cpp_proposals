@@ -13,7 +13,7 @@ author:
   - name: Barry Revzin
     email: <barry.revzin@gmail.com>
 toc: true
-toc-depth: 2
+toc-depth: 3
 ---
 
 # Abstract
@@ -22,19 +22,19 @@ We propose a new mechanism for specifying or deducing the value category of the 
 
 # Revision History # {#revision-history}
 
-### Changes since r5 ### {#changes-since-r5}
+***Changes since r5***
 
-Re-added section with the history of other syntaxes we considered (for posterity) and a discussion of reflection. Further wording improvements. 
+Re-added section with the history of other syntaxes we considered (for posterity) and a discussion of reflection, explicit `static`, `virtual`, and coroutines. Further wording improvements. 
 
-### Changes since r4 ### {#changes-since-r4}
+***Changes since r4***
 
 Wording and Implementation. Discussion about implicit vs explicit invocation and interaction with static functions.
 
-### Changes since r3 ### {#changes-since-r3}
+***Changes since r3***
 
 The feedback from Belfast in EWG was "This looks good, come back with wording and implementation". This version adds wording, the implementation is in the works.
 
-### Changes since r2 ### {#changes-since-r2}
+***Changes since r2***
 
 [@P0847R2] was presented in Kona in Jaunary 2019 to EWGI, with generally enthusiastic support.
 
@@ -44,11 +44,11 @@ This version adds:
   - An FAQ entry for [implementability](#faq-rec-lambda-impl)
   - An FAQ entry for [computed deduction](#faq-computed-deduction), an orthogonal feature that EWGI asked for in Kona.
 
-### Changes since r1 ### {#changes-since-r1}
+***Changes since r1***
 
 [@P0847R1] was presented in San Diego in November 2018 with a wide array of syntaxes and name lookup options. Discussion there revealed some potential issues with regards to lambdas that needed to be ironed out. This revision zeroes in on one specific syntax and name lookup semantic which solves all the use-cases.
 
-### Changes since r0 ### {#changes-since-r0}
+***Changes since r0***
 
 [@P0847R0] was presented in Rapperswil in June 2018 using a syntax adjusted from the one used in that paper, using `this Self&& self` to indicate the explicit object parameter rather than the `Self&& this self` that appeared in r0 of our paper.
 
@@ -280,7 +280,7 @@ void ex(X& x, D const& d) {
 }
 ```
 
-Member functions with an explicit object parameter cannot be `static` or have *cv*- or *ref*-qualifiers.
+Member functions with an explicit object parameter cannot be `static` or `virtual` and they cannot have *cv*- or *ref*-qualifiers. We will discuss the restriction on `static` and `virtual` in followup sections.
 
 A call to a member function will interpret the object argument as the first (`this`-annotated) parameter to it; the first argument in the parenthesized expression list is then interpreted as the second parameter, and so forth.
 
@@ -325,7 +325,6 @@ The lambdas can either move or copy from the capture, depending on whether the l
 ## Proposed semantics ## {#proposed-semantics}
 
 What follows is a description of how deducing `this` affects all important language constructs &mdash; name lookup, type deduction, overload resolution, and so forth.
-
 
 ### Name lookup: candidate functions ### {#name-lookup-candidate-functions}
 
@@ -406,7 +405,7 @@ struct Y {
 };
 ```
 
-The rule in question is 12.2 [over.load]/2.2, and is extended in the wording below.
+The rule in question is [over.load]{.sref}/2.2, and is extended in the wording below.
 
 
 ### Type deduction ### {#type-deduction}
@@ -709,6 +708,241 @@ There are two programmatic issues with this proposal that we are aware of:
 1. Inadvertently referencing a shadowing member of a derived object in a base class `this`-annotated member function. There are some use cases where we would want to do this on purposes (see [crtp](#crtp)), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.
 
 2. Because there is no way to _just_ deduce `const` vs non-`const`, the only way to deduce the value category would be to take a forwarding reference. This means that potentially we create four instantiations when only two would be minimally necessary to solve the problem. But deferring to a templated implementation is an acceptable option and has been improved by no longer requiring casts. We believe that the problem is minimal.
+
+## Not quite static, not quite non-static
+
+The status quo is that all member functions are either static member functions or non-static member functions. A member function with an explicit object parameter (see the [wording overview](#overview) for why "object parameter" rather than "this parameter" or something else) is a third kind of member function that's sort of halfway in between those two. They're like semi-static member functions. We'll call them explicit object member functions due to them having an explicit object parameter. You can think of regular non-static member functions as being implicit object member functions.
+
+The high level overview of the design is that from the _outside_, an explicit object member function looks and behaves as much like a non-static member function as possible. You can't take an lvalue to such a member, they have to be invoked like non-static member functions, etc. But from the _inside_, an explicit object member function behaves exactly like a static member function: there is no implicit `this`, your only access to the class object is through the explicit object parameter. The difference is still observable &mdash; a pointer to such a function has pointer to function type rather than pointer to member type, but that's about the extent of it. 
+
+The wording (and the EDG implementation) treat an explicit object function as a static member function. Yet such functions also have a lot in common with non-static member functions, so the wording introduces the term "object member function" to refer to all those member functions that have a object parameter. Many rules that were previously restricted to be non-static member functions are now restricted to be object member functions (e.g. the restrictions on how declare various operator functions).
+
+Some examples of distinctions:
+
+```cpp
+struct C {
+    void nonstatic_fun();
+    
+    void explicit_fun(this C c) {
+        auto x = this;      // error
+        nonstatic_fun();    // error
+        c.nonstatic_fun();  // ok
+        
+        static_fun(C{});    // ok
+        (+static_fun)(C{}); // ok
+    }
+    
+    static void static_fun(C) {
+        explicit_fun();        // error
+        explicit_fun(C{});     // error        
+        auto f = explicit_fun; // error
+        (+explicit_fun)(C{});  // error
+        
+        C{}.explicit_fun();        // ok
+        auto p = explicit_fun;     // error
+        auto q = &explicit_fun;    // error
+        auto r = &C::explicit_fun; // ok
+        r(C{});                    // ok
+    }
+    
+    static void operator()(int);   // error
+    void operator()(this C, char); // ok
+};
+
+C c;
+int (*a)(C) = &C::explicit_fun; // ok
+int (*b)(C) = C::explicit_fun;  // error
+
+auto x = c.static_fun;     // ok
+auto y = c.explicit_fun;   // error
+auto z = c.explicit_fun(); // ok
+```
+
+### Implicit this access
+
+One question came up over the course of implementing this feature which was whether or not there should be implicit this syntax for invoking an explicit object member function from an implicit object member function (that is, a regular non-static member function). That is:
+
+```cpp
+struct D {
+    void explicit_fun(this D const&);
+    
+    void implicit_fun() const {
+        this->explicit_fun(); // obviously ok
+        explicit_fun();       // but what about this?
+    }
+};
+```
+
+It's tempting to say that given an _explicit_ object parameter, we should always require an _explicit_ object argument. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
+
+```cpp
+struct F : std::optional<int>
+{
+    bool is_big() const {
+        // if this language feature required explicit call syntax, then this
+        // call would be valid if and only if the particular implementation of
+        // optional did _not_ use this feature. This is undesirable
+        return value() > 42;
+    }
+};
+```
+
+Or, more generally, the implementation strategy of a particular type's member function should not be relevant for users deriving from that type. So "implicit this" stays.
+
+### Implied object argument
+
+The way we talk about what it means to invoke a member function, there's always an object argument &mdash; whether explicit or implied. As mentioned above, it's important that this works:
+
+```cpp
+struct A {
+    void f(this A const&);
+    void g() {
+        f(); // #1
+    }
+};
+```
+
+Where the call in `#1` is equivalent to `(*this).f();` due to the implicit `this`, that's the implied object argument.
+
+But we say that `f` is a `static` member function, so what about this:
+
+```cpp
+struct B {
+    void f(this B const&);
+    static void h() {
+        f(B{}); // #2
+    }
+};
+```
+
+There is no `this` in a `static` member function, but there is _always_ an object argument anyway - in this case, in general, we create a "contrived" argument of type `B` and then say the call fails if we end up picking a non-`static` member function that actually needs a real object argument. But that's the status quo, what should we do in this case? There are two options to consider:
+
+1. We still create a contrived object argument (as we would if `f` were a "normal" `static` member function). But in this case, because `f` has an explicit object parameter, our contrived object argument would bind to the object parameter and this call would fail. That is, we're passing two arguments (a contrived object of type `B` and a `B`) to a function that takes a single parameter (`B const&`).
+2. We can choose to _not_ create a contrived object argument here, knowing that `f` has an explicit object parameter. As such, we're just invoking a single-parameter function with a single argument and this works fine.
+
+It's tempting to say, sure, let's just choose option 2, since we would be allowing more functionality. But that runs into a wrinkle:
+
+```cpp
+struct C {
+    static void f(C&);      // #3
+    void f(this C const&);  // #4
+    
+    static void j() {
+        C c;
+        f(c); // #5
+    }
+};
+```
+
+What does the call to `f(c)` do? `#3` is our legacy C++20 (or even C++98) candidate. But the way this candidate works is that `f` behaves like a two-parameter function (the first parameter is ignored and matches everything equivalently and the second is `C&`) and we are providing two arguments to it (a contrived object of type `C` and an lvalue of type `C`). If we say that `#2` above is a valid call, then `#4` here would likewise also be a valid candidate - but here we only have a single-parameter function with a single argument (there is no contrived object argument or fake parameter). In other words, we're performing overload resolution now with candidates of different arity? This would be a first in C++. 
+
+It's probably doable to come up with wording to properly handle this scenario, ending up with `#3` being invoked, but it seems fairly complicated and we're not even sure that we want to support the `f(B{})` or `f(c)` calls directly to begin with.
+
+Instead, we propose _not_ to support those calls. That is, while member functions with an explicit object parameter are considered static member functions, they must still be invoked with a object argument (which can be implied) just like non-static member functions.
+
+This does come with its own quirk. Since a function with an explicit object parameter is still a `static` member function, a pointer to it still has function pointer type, which means you can invoke through the function pointer. Just not directly. That is:
+
+```cpp
+struct B {
+    void f(this B const&);
+    static void h() {
+        B{}.f(); // okay
+        f(B{});  // proposed: error. The B{} has to be the object
+                 // argument, not just any kind of argument
+    }
+};
+
+void external() {
+    auto p = &B::f; // p is a void(*)(B const&)
+    p(B{});         // okay
+}
+```
+
+This is, admittedly, a weird place to arrive at. But it fits within the design we described earlier, and would actually be consistent with regular non-static member functions (if pointers-to-members were invocable, which they should be).
+
+### Explicit object parameter and virtual
+
+In this proposal, member functions with an explicit object parameter cannot be `virtual`. This restriction is currently enforced in terms of defining such functions as `static` and `static` member functions cannot be virtual. But explicit object member functions are intended to be a substitute for implicit object member functions, so why can't they be virtual?
+
+Many of the motivating use-cases for this feature involve templates, which make the question of whether or not to allow virtual moot. However, several people have expressed an interest in using such syntax as their sole choice for writing any non-static member functions as a style choice. While we are not here to endorse or reject any particular style choice, we should at least consider to what extent this proposal can support them.
+
+To that end, the question of allowing explicit object member functions to be virtual comes up. Consider:
+
+```cpp
+struct B {
+    virtual void f(); // no ref-qualifier
+};
+
+struct D : B {
+    void f(this D&) override; // ok?
+};
+```
+
+There are two potential issues with this approach. 
+
+The first is that these really do mean slightly different things. `B().f()` is a valid expression. While `B::f`'s implicit object parameter has type `B&`, it can be invoked with any value category of `B`. But `D().f()` is ill-formed, we have no such value category carve-out for the explicit object parameter. 
+
+This particular issue doesn't seem terribly problematic, since the ability to invoke virtual member functions on rvalues of (statically) derived type isn't really the primary (or any kind of) motivation for virtual functions. But it is an issue.
+
+The second, and larger, issue is a question of calling convention. What would the calling convention be? If the calling convention of an explicit object member function is the same as that of a free function, would the virtual dispatch work by generating a forwarding thunk to do calling convention adjustment or would we emit `D::f` twice with two different calling conventions? Or, if the calling convention is the same as that of a member function, do we introduce a generalized pointer-to-member function type to properly account for by-value object parameters? Calling convention mismatch is a problem, and introducing a new kind of pointer-to-member type seems like a fairly large and potentially viral change.
+
+Notably, neither of these problems exist if we only allow overrides of the same _kind_ of member function. That is, explicit object member functions can only override other explicit object member functions and implicit object member functions can only override other implicit object member functions:
+
+```cpp
+struct B2 {
+    virtual void f();
+    virtual void g(this B2 const&, int);
+};
+
+struct D2 : B2 {
+    void f() override;                    // ok
+    void f(this D2&) override;            // error
+    
+    void g(int) const& override;          // error
+    void g(this D2 const&, int) override; // ok
+};
+```
+
+Such a direction would introduce a second observable difference between implicit and explicit object member functions: the type of a pointer to such a function and the override mechanism.
+
+However, such a direction also doesn't provide the user with any ability that they didn't have before. It would purely be a style choice. As such, we don't consider the question of allowing `virtual` to be especially important at this time. Instead, the paper considers any attempt at overriding ill-formed:
+
+```cpp
+struct B3 {
+    virtual void f();
+};
+
+struct D3 : B3 {
+    void f(this D3&); // error
+};
+```
+
+This keeps the door open to a future extension that would allow explicit object member functions to be `virtual` (whether the direction that mandates same-kind overriding, or the more general any-kind overriding).
+
+### Explicit `static`
+
+Given that we are defining a member function with an explicit object parameter as being a static member function (though nevertheless having a lot in common with non-static member functions), can we explicitly annotate such functions as being `static`? That is:
+
+```cpp
+struct C {
+    void f(this C const&);        // proposed ok
+    static void g(this C const&); // what about this?
+};
+```
+
+This paper proposes that that the declaration of `g` is ill-formed (even though `f` _is_ a static member function). The reason is that we consider the choice of labeling such functions as `static` as largely an implementation detail &mdash; both in the implementation itself and the wording.
+
+From the user's perspective, `g` behaves like a non-static member function. It needs to be invoked on an object, and it should not matter in most cases whether `g` is implemented with an explicit or implicit object parameter. Annoting such a function as `static` is potentially misleading as it suggests an entirely different usage pattern. We still have to use it as `c.g()` while `C::g(c)` is ill-formed.
+
+As described in the previous section, while explicit object member functions cannot be `virtual` with this proposal, it is possible that they could be in the future. So annotating them as `static` would be exceedingly misleading in this sense.
+
+It also doesn't work well with lambdas:
+
+```cpp
+[](this auto self) static { ... }
+```
+
+But we're not especially used to writing these specifiers after the lambda's declarator. `constexpr` is implicit, so is not necessary to write. `consteval` is too new to have much feedback on yet. Mandating `static` here seems actively harmful, while making it optional seems to provide no benefit.
 
 # Real-World Examples # {#real-world-examples}
 
@@ -1306,6 +1540,88 @@ struct less_than {
 
 In C++17, invoking `less_than()(x, y)` still requires an implicit reference to the `less_than` object &mdash; completely unnecessary work when copying it is free. The compiler knows it doesn't have to do anything. We *want* to pass `less_than` by value here. Indeed, this specific situation is the main motivation for [@P1169R0].
 
+### For lifetime management of coroutines ###
+
+One issue with coroutines is dealing with dangling references. This issue isn't specific to coroutines at all, it's simply that coroutines provide another venue for dangling references that takes some adjusting to. 
+
+One way to avoid dealing with dangling references is to, quite simply, not have references:
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">Dangles</th>
+<th style="width:50%">Doesn't dangle</th>
+</tr>
+<tr>
+<td>
+```cpp
+auto always(int const& val) -> std::generator<int> {
+    for (;;) {
+        co_yield val;
+    }
+}
+
+// 'val' above ends up being a dangling reference
+for (int i : always(42)) { ... }
+```
+</td>
+<td>
+```cpp
+auto always(int val) -> std::generator<int> {
+    for (;;) {
+        co_yield val;
+    }
+}
+
+// ok: val is copied
+for (int i : always(42)) { ... }
+```
+</td>
+</tr>
+</table>
+
+This general approach works for every function parameter &mdash; except the implicit object parameter, which is always a reference. But this proposal allows you to to avoid this dangling even for member function coroutines by also taking the object parameter by value:
+
+<table style="width:100%">
+<tr>
+<th style="width:50%">Dangles</th>
+<th style="width:50%">Doesn't dangle</th>
+</tr>
+<tr>
+<td>
+```cpp
+struct C {
+    int val;
+    
+    auto always() const -> std::generator<int> {
+        for (;;) {
+            co_yield val;
+        }
+    }
+};
+
+// 'this' above ends up being a dangling pointer
+for (int i : C{42}.always()) { ... }
+```
+</td>
+<td>
+```cpp
+struct C {
+    int val;
+    
+    auto always(this C c) -> std::generator<int> {
+        for (;;) {
+            co_yield c.val;
+        }
+    }
+};
+
+// ok: C is copied
+for (int i : C{42}.always()) { ... }
+```
+</td>
+</tr>
+</table>
+
 ## SFINAE-friendly callables ## {#sfinae-friendly-callables}
 
 A seemingly unrelated problem to the question of code quadruplication is that of writing numerous overloads for function wrappers, as demonstrated in [@P0826R0]. Consider what happens if we implement `std::not_fn()` as currently specified:
@@ -1668,157 +1984,6 @@ Of the five use-cases presented in this paper, we expect Reflection to provide a
 # Implementation
 
 This has been implemented in the EDG front end, with gracious help and encouragement from Daveed Vandevoorde. Implementation didn't turn up any notable issues. 
-
-# Not quite static, not quite non-static
-
-The status quo is that all member functions are either static member functions or non-static member functions. A member function with an explicit object parameter (see the [wording overview](#overview) for why "object parameter" rather than "this parameter" or something else) is a third kind of member function that's sort of halfway in between those two. They're like semi-static member functions, and we'll call them explicit object member functions due to them having an explicit object parameter. You can think of non-static member functions as being implicit object member functions.
-
-The high level overview of the design is that from the _outside_, an explicit object member function looks and behaves as much like a non-static member function as possible. You can't take an lvalue to such a member, they have to be invoked like non-static member functions, etc. But from the _inside_, an explicit object member function behaves exactly like a static member function: there is no implicit `this`, your only access to the class object is through the explicit object parameter. The difference is still observable &mdash; a pointer to such a function has pointer to function type rather than pointer to member type, but that's about the extent of it. 
-
-The wording (and the EDG implementation) treat an explicit object function as a static member function. Yet such functions also have a lot in common with non-static member functions, so the wording introduces the term "object member function" to refer to all those member functions that have a object parameter. Many rules that were previously restricted to be non-static member functions are now restricted to be object member functions (e.g. the restrictions on how declare various operator functions).
-
-Some examples of distinctions:
-
-```cpp
-struct C {
-    void nonstatic_fun();
-    
-    void explicit_fun(this C c) {
-        auto x = this;      // error
-        nonstatic_fun();    // error
-        c.nonstatic_fun();  // ok
-        
-        static_fun(C{});    // ok
-        (+static_fun)(C{}); // ok
-    }
-    
-    static void static_fun(C) {
-        explicit_fun();        // error
-        explicit_fun(C{});     // error        
-        auto f = explicit_fun; // error
-        (+explicit_fun)(C{});  // error
-        
-        C{}.explicit_fun();        // ok
-        auto p = explicit_fun;     // error
-        auto q = &explicit_fun;    // error
-        auto r = &C::explicit_fun; // ok
-        r(C{});                    // ok
-    }
-    
-    static void operator()(int);   // error
-    void operator()(this C, char); // ok
-};
-
-C c;
-int (*a)(C) = &C::explicit_fun; // ok
-int (*b)(C) = C::explicit_fun;  // error
-
-auto x = c.static_fun;     // ok
-auto y = c.explicit_fun;   // error
-auto z = c.explicit_fun(); // ok
-```
-
-## Implicit this access
-
-One question came up over the course of implementing this feature which was whether or not there should be implicit this syntax for invoking an explicit object member function from an implicit object member function (that is, a regular non-static member function). That is:
-
-```cpp
-struct D {
-    void explicit_fun(this D const&);
-    
-    void implicit_fun() const {
-        this->explicit_fun(); // obviously ok
-        explicit_fun();       // but what about this?
-    }
-};
-```
-
-It's tempting to say that given an _explicit_ object parameter, we should always require an _explicit_ object argument. But one of the major advantages of having the "implicit this" call support in this context is that it allows derived types to not have to know about the implementation choice. As frequently used as a motivating example, we would like `std::optional` to be able to implement its member functions using this language feature if it wants to, without us having to know about it:
-
-```cpp
-struct F : std::optional<int>
-{
-    bool is_big() const {
-        // if this language feature required explicit call syntax, then this
-        // call would be valid if and only if the particular implementation of
-        // optional did _not_ use this feature. This is undesirable
-        return value() > 42;
-    }
-};
-```
-
-Or, more generally, the implementation strategy of a particular type's member function should not be relevant for users deriving from that type. So "implicit this" stays.
-
-## Implied object argument
-
-The way we talk about what it means to invoke a member function, there's always an object argument &mdash; whether explicit or implied. As mentioned above, it's important that this works:
-
-```cpp
-struct A {
-    void f(this A const&);
-    void g() {
-        f(); // #1
-    }
-};
-```
-
-Where the call in `#1` is equivalent to `(*this).f();` due to the implicit `this`, that's the implied object argument.
-
-But we say that `f` is a `static` member function, so what about this:
-
-```cpp
-struct B {
-    void f(this B const&);
-    static void h() {
-        f(B{}); // #2
-    }
-};
-```
-
-There is no `this` in a `static` member function, but there is _always_ an object argument anyway - in this case, in general, we create a "contrived" argument of type `B` and then say the call fails if we end up picking a non-`static` member function that actually needs a real object argument. But that's the status quo, what should we do in this case? There are two options to consider:
-
-1. We still create a contrived object argument (as we would if `f` were a "normal" `static` member function). But in this case, because `f` has an explicit object parameter, our contrived object argument would bind to the object parameter and this call would fail. That is, we're passing two arguments (a contrived object of type `B` and a `B`) to a function that takes a single parameter (`B const&`).
-2. We can choose to _not_ create a contrived object argument here, knowing that `f` has an explicit object parameter. As such, we're just invoking a single-parameter function with a single argument and this works fine.
-
-It's tempting to say, sure, let's just choose option 2, since we would be allowing more functionality. But that runs into a wrinkle:
-
-```cpp
-struct C {
-    static void f(C&);      // #3
-    void f(this C const&);  // #4
-    
-    static void j() {
-        C c;
-        f(c); // #5
-    }
-};
-```
-
-What does the call to `f(c)` do? `#3` is our legacy C++20 (or even C++98) candidate. But the way this candidate works is that `f` behaves like a two-parameter function (the first parameter is ignored and matches everything equivalently and the second is `C&`) and we are providing two arguments to it (a contrived object of type `C` and an lvalue of type `C`). If we say that `#2` above is a valid call, then `#4` here would likewise also be a valid candidate - but here we only have a single-parameter function with a single argument (there is no contrived object argument or fake parameter). In other words, we're performing overload resolution now with candidates of different arity? This would be a first in C++. 
-
-It's probably doable to come up with wording to properly handle this scenario, ending up with `#3` being invoked, but it seems fairly complicated and we're not even sure that we want to support the `f(B{})` or `f(c)` calls directly to begin with.
-
-Instead, we propose _not_ to support those calls. That is, while member functions with an explicit object parameter are considered static member functions, they must still be invoked with a object argument (which can be implied) just like non-static member functions.
-
-This does come with its own quirk. Since a function with an explicit object parameter is still a `static` member function, a pointer to it still has function pointer type, which means you can invoke through the function pointer. Just not directly. That is:
-
-```cpp
-struct B {
-    void f(this B const&);
-    static void h() {
-        B{}.f(); // okay
-        f(B{});  // proposed: error. The B{} has to be the object
-                 // argument, not just any kind of argument
-    }
-};
-
-void external() {
-    auto p = &B::f; // p is a void(*)(B const&)
-    p(B{});         // okay
-}
-```
-
-This is, admittedly, a weird place to arrive at. But it fits within the design we described earlier, and would actually be consistent with regular non-static member functions (if pointers-to-members were invocable, which they should be).
 
 # Proposed Wording # {#wording}
 
