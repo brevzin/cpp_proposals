@@ -1,2 +1,2 @@
-p2036r0.html : lambda-scope.md
+d2036r1.html : lambda-scope.md
 include ../md/mpark-wg21.mk

@@ -1,6 +1,6 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: P2036R0
+document: D2036R1
 date: today
 audience: EWG
 author:
@@ -171,7 +171,7 @@ This is the sad case. Specifically, in the case where:
 3. That _trailing-return-type_ has an _id-expression_ which is not otherwise
 covered by any other kind of capture, and
 4. The use of that _id-expression_, if it appeared in the body, would be
-affected by the rule in [expr.prim.id.unqual]{.sref}/2 (that is, it's not just
+affected by the rule in [expr.prim.id.unqual]{.sref}/3 (that is, it's not just
 `decltype(x)` but has to be either `decltype((x))` or something like
 `decltype(f(x))`), and
 5. The lambda is not `mutable`, and
@@ -238,7 +238,7 @@ or not).
 
 This paper suggests option 3. As with the rest of this paper, it is easy
 to come up with examples where the rules would change. Lambdas like the following
-would become ill-formed:
+would change meaning:
 
 ```cpp
 int i;
@@ -278,3 +278,31 @@ direction of the problem that this paper has been describing. This is
 unfortunate, but it's an especially strange corner case - one that's much
 more unlikely to appear in real code than the cases that this paper is trying
 to resolve.
+
+# Wording
+
+This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
+
+Change [expr.prim.lambda.capture]{.sref}/6:
+
+::: bq
+An _init-capture_ inhabits the [function parameter]{.addu} scope of the _lambda-expression_’s [_compound-statement_]{.rm} [_parameter-declaration-clause_]{.addu}.
+:::
+
+And extend the example in that paragraph:
+
+::: bq
+```diff
+  int x = 4;
+  auto y = [&r = x, x = x+1]()->int {
+    r += 2;
+    return x+2;
+  }();                                      // Updates ::x to 6, and initializes y to 7.
+  
+  auto z = [a = 42](int a) { return 1; };   // error: parameter and local variable have the same name
+  
++  auto f = [i=0](int j) -> decltype(i+j) { // ok
++    return i+j;
++  };
+```
+:::

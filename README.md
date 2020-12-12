@@ -47,7 +47,7 @@ make all of my papers.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
 - [p1938r2 - `if consteval`](1938_if_consteval/p1938r2.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
-- [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
+- [d2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/d2036r1.html).
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
 - [d2121r0 - `do not return or else`](2121_do_not_return/d2121r0.html).
 - [p2210r0 - Superior String Splitting](2210_string_split/p2210r0.html).
