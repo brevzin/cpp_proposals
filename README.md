@@ -13,18 +13,19 @@ make all of my papers.
 - [p0892r2 - `explicit(bool)`](0892_explicit_bool/p0892r2.html), with STL. 
 - [p1065r2 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r2.html), with Tomasz Kamiński.
 - [p1185r2 - `<=> != ==`](118x_spaceship/p1185r2.html). Splitting `==` and `<=>`.
-- [p1186r3 - When do you actually use `<=>`?](118x_spaceship/p1186r3.html). A helper
-  feature to make it easier to adopt `<=>`.
-- [p1614r2 - The Mothership Has Landed](118x_spaceship/p1614r2.html). The one
-  library wording paper for everything `<=>` related (including many papers that
-  are not mine).
-- [p1630r1 - Spaceship needs a tuneup](118x_spaceship/p1630r1.html). A paper addressing several `<=>`-
-  related issues that have come up.
+- [p1186r3 - When do you actually use `<=>`?](118x_spaceship/p1186r3.html). A helper feature to make it easier to adopt `<=>`.
+- [p1187r0 - A type trait for `std::compare_3way()`'s type](118x_spaceship/p1187r0.html).
+- [p1188r0 - Library utilities for `<=>`](118x_spaceship/p1188r0.html).
+- [p1189r0 - Adding `<=>` to library](118x_spaceship/p1189r0.html).
+- [p1614r2 - The Mothership Has Landed](118x_spaceship/p1614r2.html). The one library wording paper for everything `<=>` related (including many papers that are not mine).
+- [p1630r1 - Spaceship needs a tuneup](118x_spaceship/p1630r1.html). A paper addressing several `<=>`-related issues that have come up.
 - [p1870r1 - `forwarding-range<T>` is too subtle](1870_forwarding_range/p1870r1.html).
 - [p1871r1 - Concept traits should be named after concepts](1871_enable_sized_range/p1871r1.html).
 - [p1946r0 - Allow defaulting comparisons by value](1946_dflt_value_comparisons/p1946r0.html).
 - [p1959r0 - Remove `std::weak_equality` and `std::strong_equality`](1959_remove_equality/p1959r0.html).
+- [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
+- [p2162r2 - Inheriting from `std::variant`](2162_inherit_variant/p2162r2.html).
 
 ### Rejected
 
@@ -40,20 +41,16 @@ make all of my papers.
 
 ### Pending
 
-- [p0847r4 - Deducing this](0847_deducing_this/p0847r4.html), with Simon Brand,
-  Gasper Asman, and Ben Deane. R0 was discussed in EWG in Rapperswil, R1 was
-  discussed in San Diego, R2 in Kona, R3 in Belfast, R4 in Prague.
+- [d0847r6 - Deducing this](0847_deducing_this/d0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
-  R0 was discueed in EWGI in Belfast, R1 in Prague.
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
-- [p1938r1 - `if consteval`](1938_if_consteval/p1938r1.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
-  R0 was discussed in EWG in Belfast, R1 in Prague.
-- [p2011r0 - A pipeline-rewrite operator](2011_pipeline/p2011r0.html), with Colby Pike.
-  R0 was discussed in EWGI in Prague.
-- [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
+- [p1938r2 - `if consteval`](1938_if_consteval/p1938r2.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+- [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2036r0 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r0.html).
-  R0 was approved by EWG in Prague and may be considered a DR.
-- [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings
-  part from p1858.
+- [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
+- [d2121r0 - `do not return or else`](2121_do_not_return/d2121r0.html).
+- [p2210r0 - Superior String Splitting](2210_string_split/p2210r0.html).
+- [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
+- [p2231r0 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r0.html).
 
