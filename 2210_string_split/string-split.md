@@ -6,7 +6,7 @@ audience: LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
-toc: false
+toc: true
 ---
 
 # Revision History
@@ -79,7 +79,7 @@ Given the range adapter closure functionality, we could just stash this somewher
 ```cpp
 template <typename Pattern>
 auto split2(Pattern pattern) {
-    return views::split('.')
+    return views::split(std::move(pattern))
          | views::transform([](auto r){
               auto b = r.begin();
               auto e = ranges::next(b, r.end());
@@ -93,7 +93,7 @@ auto parts = input | split2('.');
 
 Is this good enough?
 
-It's better, but there's some downsides with this. First, the above fares pretty badly with input iterators - since we've already consumed the whole range before even providing it to the user. If they touch the range in any way, it's undefined behavior. The narrowest possible contrast?
+It's better, but there's some downsides with this. First, the above fares pretty badly with input iterators - since we've already consumed the whole range before even providing it to the user. If they touch the range in any way, it's undefined behavior. The narrowest possible contract?
 
 We can fix that:
 
@@ -113,7 +113,7 @@ auto split2(Pattern pattern) {
 }
 ```
 
-Now we properly handle input ranges as well, although we can't really avoid the extra completely-pointless `transform` writing a proper range adapter closure ourselves. 
+Now we properly handle input ranges as well, although we can't really avoid the extra completely-pointless `transform` without writing a proper range adapter closure ourselves. 
 
 Second, this has the problem that every iterator dereference from the resulting view has to do a linear search. That's a cost that's incurred entirely due to this implementation strategy. This cost could be alleviated by using [@P2214R0]'s suggested `views::cache_latest`, though this itself has the problem that it demotes the resulting range to input-only... whereas a `split_view` could be a forward range. 
 
@@ -249,7 +249,11 @@ specifically, a `const split_view` that is splitting a contiguous range? It's
 likely to be exceedingly small, both because of the likelihood if such iteration
 to begin with (you'd have to _specifically_ declare an object of type `split_view`
 as being `const`) and the existing usability issues described in this paper.
-Plus, at this point, only libstdc++ ships `split_view`.
+
+Plus, at this point, only libstdc++ ships `split_view`. And even then, it
+implements the spec to the letter, which means there are at least two issues with
+it: broken support of long patterns [@LWG3505] and trailing patterns [@LWG3478].
+So even if somebody is depending on existing behavior, they probably shouldn't.
 
 Personally, I think the trade-off is hugely in favor of making this change -
 it makes `split` substantially more useful.
@@ -310,7 +314,7 @@ to the _`inner-iterator`_ type to get back to the adapted range's iterators.
 `ranges::split_view` with the following design:
 
     a. It can only support splitting forward-or-better ranges.
-    b. Splitting a `V` will `subrange<iterator_t<V>>`s, ensuring that the adapted range's
+    b. Splitting a `V` will yield `subrange<iterator_t<V>>`s, ensuring that the adapted range's
     category is preserved. Splitting a bidirectional range gives out bidirectional
     subranges. Spltiting a contiguous range gives out contiguous subranges.
     c. `views::split` will not be `const`-iterable. 
@@ -490,8 +494,8 @@ Change [ranges.syn]{.sref} to add the new view:
 
 - namespace views { inline constexpr unspecified split = unspecified; }
 + namespace views {
-+   inline constexpr unspecified split = @_unspecified_@;
-+   inline constexpr unspecified lazy_split = @_unspecified_@;
++   inline constexpr @_unspecified_@ lazy_split = @_unspecified_@;
++   inline constexpr @_unspecified_@ split = @_unspecified_@;
 + }
 ```
 

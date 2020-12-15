@@ -560,6 +560,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 
 </header>
 <div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#can-we-get-there-from-here"><span class="toc-section-number">2.1</span> Can we get there from here<span></span></a></li>
+</ul></li>
+<li><a href="#design"><span class="toc-section-number">3</span> Design<span></span></a>
+<ul>
+<li><a href="#what-should-the-reference-type-of-this-be"><span class="toc-section-number">3.1</span> What should the reference type of this be?<span></span></a></li>
+<li><a href="#how-would-const-iteration-work"><span class="toc-section-number">3.2</span> How would <code class="sourceCode cpp"><span class="kw">const</span></code> iteration work?<span></span></a></li>
+<li><a href="#what-about-input-ranges"><span class="toc-section-number">3.3</span> What about input ranges?<span></span></a></li>
+<li><a href="#replace-or-add"><span class="toc-section-number">3.4</span> Replace or Add<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#implementation"><span class="toc-section-number">4.1</span> Implementation<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">5</span> Wording<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P2210R0">[<a href="#ref-P2210R0" role="doc-biblioref">P2210R0</a>]</span>, corrected the explanation of <code class="sourceCode cpp"><span class="kw">const</span></code>-iteration and corrected that it is sort of possible to build a better <code class="sourceCode cpp">split</code> on top of the existing one. Changed the proposal to keep the preexisting <code class="sourceCode cpp">split</code> with its semantics under a different name instead.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -597,7 +620,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Given the range adapter closure functionality, we could just stash this somewhere:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Pattern<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> split2<span class="op">(</span>Pattern pattern<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> views<span class="op">::</span>split<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> views<span class="op">::</span>split<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>pattern<span class="op">))</span></span>
 <span id="cb4-4"><a href="#cb4-4"></a>         <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span> r<span class="op">){</span></span>
 <span id="cb4-5"><a href="#cb4-5"></a>              <span class="kw">auto</span> b <span class="op">=</span> r<span class="op">.</span>begin<span class="op">()</span>;</span>
 <span id="cb4-6"><a href="#cb4-6"></a>              <span class="kw">auto</span> e <span class="op">=</span> ranges<span class="op">::</span>next<span class="op">(</span>b, r<span class="op">.</span>end<span class="op">())</span>;</span>
@@ -608,7 +631,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-11"><a href="#cb4-11"></a>std<span class="op">::</span>string input <span class="op">=</span> <span class="st">&quot;1.2.3.4&quot;</span>;</span>
 <span id="cb4-12"><a href="#cb4-12"></a><span class="kw">auto</span> parts <span class="op">=</span> input <span class="op">|</span> split2<span class="op">(</span><span class="ch">&#39;.&#39;</span><span class="op">)</span>;</span></code></pre></div>
 <p>Is this good enough?</p>
-<p>It’s better, but there’s some downsides with this. First, the above fares pretty badly with input iterators - since we’ve already consumed the whole range before even providing it to the user. If they touch the range in any way, it’s undefined behavior. The narrowest possible contrast?</p>
+<p>It’s better, but there’s some downsides with this. First, the above fares pretty badly with input iterators - since we’ve already consumed the whole range before even providing it to the user. If they touch the range in any way, it’s undefined behavior. The narrowest possible contract?</p>
 <p>We can fix that:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Pattern<span class="op">&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">auto</span> split2<span class="op">(</span>Pattern pattern<span class="op">)</span> <span class="op">{</span></span>
@@ -623,7 +646,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-11"><a href="#cb5-11"></a>                <span class="op">}</span></span>
 <span id="cb5-12"><a href="#cb5-12"></a>           <span class="op">})</span>;    </span>
 <span id="cb5-13"><a href="#cb5-13"></a><span class="op">}</span></span></code></pre></div>
-<p>Now we properly handle input ranges as well, although we can’t really avoid the extra completely-pointless <code class="sourceCode cpp">transform</code> writing a proper range adapter closure ourselves.</p>
+<p>Now we properly handle input ranges as well, although we can’t really avoid the extra completely-pointless <code class="sourceCode cpp">transform</code> without writing a proper range adapter closure ourselves.</p>
 <p>Second, this has the problem that every iterator dereference from the resulting view has to do a linear search. That’s a cost that’s incurred entirely due to this implementation strategy. This cost could be alleviated by using <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>’s suggested <code class="sourceCode cpp">views<span class="op">::</span>cache_latest</code>, though this itself has the problem that it demotes the resulting range to input-only… whereas a <code class="sourceCode cpp">split_view</code> could be a forward range.</p>
 <p>Third, this is complicated! There are two important points here:</p>
 <ol type="1">
@@ -694,7 +717,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>So that’s okay, we just don’t support <code class="sourceCode cpp"><span class="kw">const</span></code>-iteration. What’s the big deal?</p>
 <p>Well, as I noted, the <em>existing</em> <code class="sourceCode cpp">split_view</code> <em>is</em> <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable - because it’s lazy! It doesn’t yield <code class="sourceCode cpp">subrange</code>s, it yields a lazy range. So it doesn’t actually need to do work in <code class="sourceCode cpp">begin<span class="op">()</span></code> - this is a non-issue.</p>
 <p>On the other hand, any kind of implementation that eagerly produces <code class="sourceCode cpp">subrange</code>s for splitting a <code class="sourceCode cpp">string <span class="kw">const</span></code> necessarily has to do work to get that first <code class="sourceCode cpp">subrange</code> and that ends up being a clash with the existing design.</p>
-<p>The question is - how much code currently exists that iterates over, specifically, a <code class="sourceCode cpp"><span class="kw">const</span> split_view</code> that is splitting a contiguous range? It’s likely to be exceedingly small, both because of the likelihood if such iteration to begin with (you’d have to <em>specifically</em> declare an object of type <code class="sourceCode cpp">split_view</code> as being <code class="sourceCode cpp"><span class="kw">const</span></code>) and the existing usability issues described in this paper. Plus, at this point, only libstdc++ ships <code class="sourceCode cpp">split_view</code>.</p>
+<p>The question is - how much code currently exists that iterates over, specifically, a <code class="sourceCode cpp"><span class="kw">const</span> split_view</code> that is splitting a contiguous range? It’s likely to be exceedingly small, both because of the likelihood if such iteration to begin with (you’d have to <em>specifically</em> declare an object of type <code class="sourceCode cpp">split_view</code> as being <code class="sourceCode cpp"><span class="kw">const</span></code>) and the existing usability issues described in this paper.</p>
+<p>Plus, at this point, only libstdc++ ships <code class="sourceCode cpp">split_view</code>. And even then, it implements the spec to the letter, which means there are at least two issues with it: broken support of long patterns <span class="citation" data-cites="LWG3505">[<a href="#ref-LWG3505" role="doc-biblioref">LWG3505</a>]</span> and trailing patterns <span class="citation" data-cites="LWG3478">[<a href="#ref-LWG3478" role="doc-biblioref">LWG3478</a>]</span>. So even if somebody is depending on existing behavior, they probably shouldn’t.</p>
 <p>Personally, I think the trade-off is hugely in favor of making this change - it makes <code class="sourceCode cpp">split</code> substantially more useful.</p>
 <h2 data-number="3.3" id="what-about-input-ranges" data-number="3.3"><span class="header-section-number">3.3</span> What about input ranges?<a href="#what-about-input-ranges" class="self-link"></a></h2>
 <p>This strategy of producing a range of <code class="sourceCode cpp">subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></code> works fine for forward ranges, and is a significant improvement over status quo for bidirectional, random access, and contiguous ranges.</p>
@@ -714,7 +738,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p>Introduce a new range adapter under the name <code class="sourceCode cpp">views<span class="op">::</span>split</code> / <code class="sourceCode cpp">ranges<span class="op">::</span>split_view</code> with the following design:</p>
 <ol type="a">
 <li>It can only support splitting forward-or-better ranges.</li>
-<li>Splitting a <code class="sourceCode cpp">V</code> will <code class="sourceCode cpp">subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></code>s, ensuring that the adapted range’s category is preserved. Splitting a bidirectional range gives out bidirectional subranges. Spltiting a contiguous range gives out contiguous subranges.</li>
+<li>Splitting a <code class="sourceCode cpp">V</code> will yield <code class="sourceCode cpp">subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></code>s, ensuring that the adapted range’s category is preserved. Splitting a bidirectional range gives out bidirectional subranges. Spltiting a contiguous range gives out contiguous subranges.</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>split</code> will not be <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable.</li>
 </ol></li>
 </ol>
@@ -876,8 +900,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-16"><a href="#cb9-16"></a></span>
 <span id="cb9-17"><a href="#cb9-17"></a><span class="st">- namespace views { inline constexpr unspecified split = unspecified; }</span></span>
 <span id="cb9-18"><a href="#cb9-18"></a><span class="va">+ namespace views {</span></span>
-<span id="cb9-19"><a href="#cb9-19"></a><span class="va">+   inline constexpr unspecified split = <em>unspecified</em>;</span></span>
-<span id="cb9-20"><a href="#cb9-20"></a><span class="va">+   inline constexpr unspecified lazy_split = <em>unspecified</em>;</span></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="va">+   inline constexpr <em>unspecified</em> lazy_split = <em>unspecified</em>;</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a><span class="va">+   inline constexpr <em>unspecified</em> split = <em>unspecified</em>;</span></span>
 <span id="cb9-21"><a href="#cb9-21"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="6" style="border-bottom:1px solid #cccccc"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
@@ -885,6 +909,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-issue385">
 <p>[issue385] Casey Carter. 2016. <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of view operations. <br />
 <a href="https://github.com/ericniebler/range-v3/issues/385">https://github.com/ericniebler/range-v3/issues/385</a></p>
+</div>
+<div id="ref-LWG3478">
+<p>[LWG3478] Barry Revzin. views::split drops trailing empty range. <br />
+<a href="https://wg21.link/lwg3478">https://wg21.link/lwg3478</a></p>
+</div>
+<div id="ref-LWG3505">
+<p>[LWG3505] Tim Song. split_view::outer-iterator::operator++ misspecified. <br />
+<a href="https://wg21.link/lwg3505">https://wg21.link/lwg3505</a></p>
 </div>
 <div id="ref-P1989R0">
 <p>[P1989R0] Corentin Jabot. 2019. Range constructor for std::string_view 2: Constrain Harder. <br />
