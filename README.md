@@ -50,7 +50,7 @@ make all of my papers.
 - [d2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/d2036r1.html).
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
 - [d2121r0 - `do not return or else`](2121_do_not_return/d2121r0.html).
-- [p2210r0 - Superior String Splitting](2210_string_split/p2210r0.html).
+- [p2210r1 - Superior String Splitting](2210_string_split/p2210r1.html).
 - [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
 - [p2231r0 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r0.html).
 

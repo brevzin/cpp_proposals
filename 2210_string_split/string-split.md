@@ -1,6 +1,6 @@
 ---
 title: "Superior String Splitting"
-document: P2210R0
+document: P2210R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: false
 ---
+
+# Revision History
+
+Since [@P2210R0], corrected the explanation of `const`-iteration and corrected that it is sort of possible to build a better `split` on top of the existing one. Changed the proposal to keep the preexisting `split` with its semantics under a different name instead. 
 
 # Introduction
 
@@ -47,32 +51,73 @@ is contiguous! And that forward range isn't a common range either. As a result,
 can't use `from_chars` (it needs a pointer) and can't construct a `std::string`
 (its range constructor takes an iterator pair, not iterator/sentinel).
 
+## Can we get there from here
+
 The reason it's like this is that `views::split` is maximally lazy. It kind of
 needs to be in order to support splitting an input range. But the intent of
-laziness is that you can build more eager algorithms on top of them. But with
-this particular one, that's actually... still kind of hard. Building a less-lazy-
-but-still-lazy split on top of `views::split` can't really work. Consider:
+laziness is that you can build more eager algorithms on top of them. We can
+sort of do that with this one:
 
 ```cpp
 std::string input = "1.2.3.4";
-auto parts = input | views::split('.');
-
-auto f = ranges::begin(parts);
-auto l = ranges::end(parts);
-auto n = std::next(f);
+auto parts = input | views::split('.')
+                   | views::transform([](auto r){
+                        auto b = r.begin();
+                        auto e = ranges::next(b, r.end());
+                        return ranges::subrange(b.base(), e.base());
+                     });
 ```
 
-Let's say we actually had a hypothetical `f.base()` (`split_view`'s iterators
-do not provide this at the moment). That would point to the `1`, while the same
-hypothetical `n.base()` would point to the `2`. That's all well and good, but
-that means that `subrange(f.base(), n.base())` would be the range `"1."`. That's
-too long. We'd need to back up. But that, in of itself, only works if we have
-a bidirectional range - so can't even have a range of subranges for splitting
-a forward range. But even then, what if the pattern weren't just a single char?
-The iterator would need to keep track of the beginning of the previous delimiter?
-I'm not sure how that would work at all.
+This implementation requires `b.base()` (`split_view`'s iterators do not provide
+such a thing at the moment), but once we add that, this solution provides the
+right overall shape that we need. The individual elements of `parts` here are
+contiguous views, which will have a `data()` member function that can be passed
+to `std::from_chars`.
 
-In any case, the problem here is that two points work against us:
+Given the range adapter closure functionality, we could just stash this somewhere:
+
+```cpp
+template <typename Pattern>
+auto split2(Pattern pattern) {
+    return views::split('.')
+         | views::transform([](auto r){
+              auto b = r.begin();
+              auto e = ranges::next(b, r.end());
+              return ranges::subrange(b.base(), e.base());
+           });    
+}
+
+std::string input = "1.2.3.4";
+auto parts = input | split2('.');
+```
+
+Is this good enough?
+
+It's better, but there's some downsides with this. First, the above fares pretty badly with input iterators - since we've already consumed the whole range before even providing it to the user. If they touch the range in any way, it's undefined behavior. The narrowest possible contrast?
+
+We can fix that:
+
+```cpp
+template <typename Pattern>
+auto split2(Pattern pattern) {
+    return views::split('.')
+         | views::transform([](auto r){
+                if constexpr (ranges::forward_iterator<decltype(r.begin().base())>) {
+                    auto b = r.begin();
+                    auto e = ranges::next(b, r.end());
+                    return ranges::subrange(b.base(), e.base());
+                } else {
+                    return r;
+                }
+           });    
+}
+```
+
+Now we properly handle input ranges as well, although we can't really avoid the extra completely-pointless `transform` writing a proper range adapter closure ourselves. 
+
+Second, this has the problem that every iterator dereference from the resulting view has to do a linear search. That's a cost that's incurred entirely due to this implementation strategy. This cost could be alleviated by using [@P2214R0]'s suggested `views::cache_latest`, though this itself has the problem that it demotes the resulting range to input-only... whereas a `split_view` could be a forward range. 
+
+Third, this is complicated! There are two important points here:
 
 1. `split` is overwhelmingly likely to be used on, specifically, a contiguous
 range of characters.
@@ -88,8 +133,7 @@ string algorithm requires more than that:
 
 * The aforementioned `std::from_chars` requires a contiguous range (really,
 specifically, a `char const*` and a length)
-* `std::regex` and `boost::regex` both require a bidirectional range. CTRE
-requires a random access range.
+* `std::regex` and `boost::regex` both require a bidirectional range.
 * Many text and unicode algorithms require a bidirectional range.
 
 It would be great if `views::split` could work in such a way that the result
@@ -100,18 +144,17 @@ range should provide contiguous sub-ranges.
 
 I wrote a blog on this topic [@revzin.split], which implements a version of
 `split_view` that operates on contiguous ranges (and naughtily partially
-specializes `std::ranges::split_view`) such that the following work:
+specializes `std::ranges::split_view`) such that the following actually works:
 
 ```cpp
 auto ip = "127.0.0.1"s;
-auto parts = ip | std::views::split('.');
-auto as_vec = std::vector<std::string>(
-    parts.begin(), parts.end());
-```
+auto parts = ip | std::views::split('.')
+                | std::views::transform([](std::span<char const> s){
+                      int i;
+                      std::from_chars(s.data(), s.data() + s.size(), i);
+                      return i;
+                  });
 
-as well as:
-
-```cpp
 struct zstring_sentinel {
     bool operator==(char const* p) const {
         return *p == '\0';
@@ -127,66 +170,53 @@ struct zstring : view_interface<zstring> {
 };
 
 char const* words = "A quick brown fox";
-for (std::string_view sv : zstring{words} | std::views::split(' ')) {
+for (std::span ss : zstring{words} | std::views::split(' ')) {
+    auto sv = std::string_view(ss.data(), ss.size());
     std::cout << sv << '\n';
 }
 ```
 
-There are three big questions to be resolved here:
+There are a few big questions to be resolved here:
+
 
 ## What should the reference type of this be?
 
-At a first go, given a contiguous range `V`, we could have a `reference` type
-of `span<remove_reference_t<range_reference_t<V>>>`. That is, splitting a
-`string const&` would yield `span<char const>`s, while splitting a `vector<int>`
-would yield `span<int>`s. This would work great.
+Given a range `V`, the reference type of `split_view<V>` should be
+`subrange<iterator_t<V>>`. This is a generic solution, that works well for all
+range categories (as long as they're forward-or-better).
 
-To make the above work, we could additionally favor the `char` case. Since,
-again, splitting `string`s is the overwhemlingly common case. So we could do
-something like:
+For splitting a `string`, this means we get a range of `subrange<string::iterator>`
+where we might wish we got a `span<char const>` or a `string_view`, but
+`span<char const>` is already constructible from `subrange<string::iterator>` and
+`string_view` would be with the adoption of [@P1989R0].
+
+We could additionally favor the `char` case (since, again, splitting `string`s
+is the overwhemlingly common case) by doing something like:
 
 ```cpp
-using underlying = remove_reference_t<range_reference_t<V>>;
-
-struct reference : span<underlying> {
-    using span<underlying>::span;
+struct reference : subrange<iterator_t<V>> {
+    using subrange::subrange;
     
     operator string_view() const
         requires same_as<range_value_t<V>, char>
+              && contiguous_range<V>
     {
         return {this->data(), this->size()};
     }
 };
 ```
 
-Although if we actually adopt [@P1391R4] this becomes less of an issue, since
-treating the `reference` as if it were `string_view` would just work. 
+But this just seems weirdly specific and not a good idea.
 
-## What category of ranges should yield this kind of value type?
-
-As mentioned earlier, there are many useful algorithms which don't _require_
-contiguity, that nevertheless require something stronger than a forward range.
-Should splitting a random access range give you random access sub-ranges? Should
-splitting a bidirectional range give you bidirectional sub-ranges? The answer
-should be facially yes. The major selling point of Ranges is precisely this
-iterator category preservation to the extent that it is possible to preserve.
-It is unfortunate that `split` does not do so.
-
-As mentioned earlier, I pretty much only `split` strings, so I care about the
-contiguous case much more than I care about the bidirectional case. However, if
-we're going to draw a line somewhere, I think the line that makes the most sense
-is actually between input range and forward range - let the input range be
-maximally laxy and have the forward case and better produce `subrange`s (in
-which case the previous section can be thought of to use `subrange`s as well
-rather than `span`s).
 
 ## How would `const` iteration work?
 
-However, the big issue for moving forward with `std::ranges::split_view` is
-how to square some constraints:
+The big issue for moving forward with `std::ranges::split_view` is how to
+square some constraints:
 
 1. `begin()` must be amortized constant time to model `range`
-2. We can't modify things in `const` member functions in the standard library
+2. Member functions that are marked `const` in the standard library cannot
+introduce data results (see [res.on.data.races]{.sref}).
 3. The existing `split_view` is `const`-iterable.
 
 So how do we get the first piece? What I did as part of my implementation was
@@ -194,69 +224,135 @@ to not allow `const`-iteration. `split_view` just has an `optional<iterator>`
 member which is populated the first time you call `begin` and then is just
 returned thereafter. This is similar to other views that need to do arbitrary
 work to yield the first element (canonically, `filter_view`). See also [@issue385].
-This, in a vacuum, is fairly straightforward. But, as I noted, the _existing_
+
+You can't do this in a `const` member function. We cannot simply specify the
+`optional<iterator>` member as `mutable`, since two threads couldn't safely
+update it concurrently. We _could_ introduce a synchronization mechanism
+into `split_view` which would safely allow such concurrent modification, but
+that's a very expensive solution which would also pessimize the typical
+non-const-iteration case. So we _shouldn't_. 
+
+So that's okay, we just don't support `const`-iteration. What's the big deal?
+
+Well, as I noted, the _existing_
 `split_view` _is_ `const`-iterable - because it's lazy! It doesn't yield
 `subrange`s, it yields a lazy range. So it doesn't actually need to do work in
 `begin()` - this is a non-issue.
 
-This is the hardest question - since any kind of implementation that eagerly
-produces `span<char const>`s for splitting a `string const` necessarily has to
-do work to get that first `span` and that ends up being a clash with the existing
+On the other hand, any kind of implementation that eagerly
+produces `subrange`s for splitting a `string const` necessarily has to
+do work to get that first `subrange` and that ends up being a clash with the existing
 design.
 
 The question is - how much code currently exists that iterates over, 
-specifically, a `const split_view` that is splitting a contiguous range? 
+specifically, a `const split_view` that is splitting a contiguous range? It's
+likely to be exceedingly small, both because of the likelihood if such iteration
+to begin with (you'd have to _specifically_ declare an object of type `split_view`
+as being `const`) and the existing usability issues described in this paper.
+Plus, at this point, only libstdc++ ships `split_view`.
 
 Personally, I think the trade-off is hugely in favor of making this change -
-it makes `split` substantially more useful. But it is worth considering.
+it makes `split` substantially more useful.
+
+## What about input ranges?
+
+This strategy of producing a range of `subrange<iterator_t<V>>` works fine for
+forward ranges, and is a significant improvement over status quo for bidirectional,
+random access, and contiguous ranges. 
+
+But it fails miserably for input ranges, which the current `views::split` supports.
+While `const`-iteration doesn't strike me as important functionality, being able
+to `split` an input range definitely does. 
+
+A `subrange`-yielding split could still fall back to the existing `views::split`
+behavior for splitting input ranges, but then we end up with fairly different
+semantics for splitting input ranges and splitting forward-or-better ranges. But
+we also don't want to _not_ support splitting input ranges.
+
+This leads us to the big question...
+
+## Replace or Add
+
+Do we _replace_ the existing `views::split` with the one outlined in this paper,
+or do we add a new one?
+
+The only way to really replace is if we have the one-view-two-semantics
+implementation described in the previous section: for forward-or-better, the
+view produces `subrange`s, while for input, it produces a lazy-searching range.
+This just doesn't seem great from a design perspective. And if we _don't_ do that,
+then the only way we can replace is by dropping input range support entirely.
+Which doesn't seem great from a user perspective since we lose functionality.
+Granted, we gain the ability to actually split strings well, which is drastically
+more important than splitting input ranges, but still.
+
+The alternative is to add a new kind of `views::split` that only supports splitting
+forward-or-better ranges. We could adopt such a new view under a different name
+(`views::split2` is the obvious choice, but `std2::split` is even better), but I think
+it would be better to give the good name to the more broadly useful facility.
+
+That is, provide a new `views::split` that produces `subrange`s and rename the
+existing facility to `views::lazy_split`. This isn't a great name, since
+`views::split` is _also_ a lazy split, but it's the best I've got at the moment.
+
+Note that, as described earlier, `views::split` should not be specified (or
+implemented) in terms of `views::lazy_split`, since a proper implementation of it
+could be much more efficient. 
 
 # Proposal
 
-This paper proposes redesigning `split_view` in the following ways:
+This paper proposes the following:
 
-1. Splitting a range that is forward-or-better should yield subranges that are 
-specializations of `subrange` (and adoping P1391 would resolve the 
-convertibility-to-`string_view` issue). Splitting an input range can preserve
-status quo behavior.
-2. `split_view` will no longer be `const`-iterable. Even though splitting an
-input range can preserve this functionality, I think consistency of the
-functionality is more important. 
+1. Rename the existing `views::split` / `ranges::split_view` to
+`views::lazy_split` / `ranges::lazy_split_view`. Add `base()` member functions
+to the _`inner-iterator`_ type to get back to the adapted range's iterators.
+
+2. Introduce a new range adapter under the name `views::split` /
+`ranges::split_view` with the following design:
+
+    a. It can only support splitting forward-or-better ranges.
+    b. Splitting a `V` will `subrange<iterator_t<V>>`s, ensuring that the adapted range's
+    category is preserved. Splitting a bidirectional range gives out bidirectional
+    subranges. Spltiting a contiguous range gives out contiguous subranges.
+    c. `views::split` will not be `const`-iterable. 
 
 This could certainly break some C++20 code. But I would argue that `views::split`
 is so unergonomic for its most common intended use-case that the benefit of
 making it actually usable for that case far outweighs the cost of potentially
-breaking some code.
+breaking some code (which itself is likely to be small given both the usability
+issues and lack of implementations thus far).
 
 ## Implementation
 
 The implementation can be found in action here [@revzin.split.impl], but
-reproduced here for clarity. This implementation is strictly for contiguous
-ranges and produces a `reference` type that is a `span` which is conditionally
-convertible to `string_view`, which differs from the proposal but not in any
-way that's particularly interesting.
+reproduced here for clarity.
+
+This implementation does the weird `operator string_view() const` hack
+described earlier as a workaround for the lack of [@P1989R0], and currently
+just hijacks the real `views::split` as a shortcut, but other than that it
+should be a valid implementation.
 
 ```cpp
 using namespace std::ranges;
 
-template <contiguous_range V, forward_range Pattern>
+template <forward_range V, forward_range Pattern>
     requires view<V> && view<Pattern> &&
     std::indirectly_comparable<iterator_t<V>,
                                iterator_t<Pattern>,
                                equal_to>
-class contig_split_view
-    : public view_interface<contig_split_view<V, Pattern>>
+class split2_view
+    : public view_interface<split2_view<V, Pattern>>
 {
 public:
-    contig_split_view() = default;
-    contig_split_view(V base, Pattern pattern)
+    split2_view() = default;
+    split2_view(V base, Pattern pattern)
         : base_(base)
         , pattern_(pattern)
     { }
 
-    template <contiguous_range R>
+    template <forward_range R>
 	    requires std::constructible_from<V, views::all_t<R>>
 	        && std::constructible_from<Pattern, single_view<range_value_t<R>>>
-	contig_split_view(R&& r, range_value_t<R> elem)
+	split2_view(R&& r, range_value_t<R> elem)
 	    : base_(std::views::all(std::forward<R>(r)))
 	    , pattern_(std::move(elem))
 	{ }
@@ -266,40 +362,37 @@ public:
 
     class iterator {
     private:
-        using underlying = std::remove_reference_t<
-            range_reference_t<V>>;
         friend sentinel;
 
-        contig_split_view* parent = nullptr;
+        split2_view* parent = nullptr;
         iterator_t<V> cur = iterator_t<V>();
         iterator_t<V> next = iterator_t<V>();
 
     public:
         iterator() = default;
-        iterator(contig_split_view* p)
+        iterator(split2_view* p)
             : parent(p)
             , cur(std::ranges::begin(p->base_))
             , next(lookup_next())
         { }
         
-        iterator(as_sentinel_t, contig_split_view* p)
+        iterator(as_sentinel_t, split2_view* p)
             : parent(p)
             , cur(std::ranges::end(p->base_))
             , next()
         { }
 
         using iterator_category = std::forward_iterator_tag;
-
-        struct reference : std::span<underlying> {
-            using std::span<underlying>::span;
+        struct reference : subrange<iterator_t<V>> {
+            using reference::subrange::subrange;
 
             operator std::string_view() const
                 requires std::same_as<range_value_t<V>, char>
+                      && contiguous_range<V>
             {
                 return {this->data(), this->size()};
-            }
+            }            
         };
-
         using value_type = reference;
         using difference_type = std::ptrdiff_t;
 
@@ -341,6 +434,7 @@ public:
         sentinel_t<V> sentinel;
     };
 
+
     auto begin() -> iterator {
         if (not cached_begin_) {
             cached_begin_.emplace(this);
@@ -363,14 +457,42 @@ private:
 
 // It's okay if you're just writing a paper?
 namespace std::ranges {
-    template<contiguous_range V, forward_range Pattern>
+    template<forward_range V, forward_range Pattern>
     requires view<V> && view<Pattern>
       && indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, equal_to>
-    class split_view<V, Pattern> : public contig_split_view<V, Pattern>
+    class split_view<V, Pattern> : public split2_view<V, Pattern>
     {
-        using contig_split_view<V, Pattern>::contig_split_view;
+        using split2_view<V, Pattern>::split2_view;
     };
 }
+```
+
+# Wording
+
+Change [ranges.syn]{.sref} to add the new view:
+
+```diff
+  // [range.split], split view
+  template<class R>
+    concept tiny-range = see below;   // exposition only
+
+  template<input_range V, forward_range Pattern>
+    requires view<V> && view<Pattern> &&
+             indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to> &&
+             (forward_range<V> || tiny-range<Pattern>)
+- class split_view;
++ class @[lazy_]{.diffins}@split_view;
+
++ template<forward_range V, forward_range Pattern>
++   requires view<V> && view<Pattern> &&
++            indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
++ class split_view;
+
+- namespace views { inline constexpr unspecified split = unspecified; }
++ namespace views {
++   inline constexpr unspecified split = @_unspecified_@;
++   inline constexpr unspecified lazy_split = @_unspecified_@;
++ }
 ```
 
 ---
@@ -385,12 +507,12 @@ references:
     URL: https://brevzin.github.io/c++/2020/07/06/split-view/
   - id: revzin.split.impl
     citation-label: revzin.split.impl
-    title: "Implementation of `contig_split_view`"
+    title: "Implementation of `split2_view`"
     author:
         - family: Barry Revzin
     issued:
         - year: 2020    
-    URL: https://godbolt.org/z/nyWW3F
+    URL: https://godbolt.org/z/Y9Pec8
   - id: issue385
     citation-label: issue385
     title: "`const`-ness of view operations"
