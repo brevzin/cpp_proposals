@@ -283,26 +283,38 @@ to resolve.
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
 
-Change [expr.prim.lambda.capture]{.sref}/6:
+Insert a new clause after paragraph 3 and before pargraph 4:
 
 ::: bq
-An _init-capture_ inhabits the [function parameter]{.addu} scope of the _lambda-expression_’s [_compound-statement_]{.rm} [_parameter-declaration-clause_]{.addu}.
+[3]{.pnum} A _lambda-expression_ shall not have a _capture-default_ or _simple-capture_ in its _lambda-introducer_ unless its
+innermost enclosing scope is a block scope (6.4.3) or it appears within a default member initializer and its
+innermost enclosing scope is the corresponding class scope (6.4.6).
+
+::: addu
+[3.5]{.pnum} [Each _lambda-capture_ inhabits the function parameter scope of the _lambda-expression_'s _parameter-declaration-clause_]{.addu}.
+
+[*Example 1.5*:
+```
+auto f = [i=0](int j) -> decltype(i+j) {    // ok: returns int
+    return i+j;
+};
+
+int i = 0;
+auto g = [i]() -> decltype((i)) {           // ok: returns const int&
+    return i;
+};
+auto h = [=]() -> decltype((i)) {           // ok: returns const int&
+    return i;
+};
+```
+*-end example*]
 :::
 
-And extend the example in that paragraph:
+[4]{.pnum} The _identifier_ in a _simple-capture_ shall denote a local entity (6.5.3). The <i>simple-capture</i>s `this` and `* this` denote the local entity `*this`. An entity that is designated by a _simple-capture_ is said to be _explicitly captured_. 
+:::
+
+Remove the opening sentence of [expr.prim.lambda.capture]{.sref}/6, it's now covered by the previous clause.
 
 ::: bq
-```diff
-  int x = 4;
-  auto y = [&r = x, x = x+1]()->int {
-    r += 2;
-    return x+2;
-  }();                                      // Updates ::x to 6, and initializes y to 7.
-  
-  auto z = [a = 42](int a) { return 1; };   // error: parameter and local variable have the same name
-  
-+  auto f = [i=0](int j) -> decltype(i+j) { // ok
-+    return i+j;
-+  };
-```
+[6]{.pnum} [An _init-capture_ inhabits the scope of the _lambda-expression_’s _compound-statement_]{.rm}. An _init-capture_ without ellipsis behaves as if it declares and explicitly captures a variable of the form [...]
 :::
