@@ -102,7 +102,7 @@ template <typename Pattern>
 auto split2(Pattern pattern) {
     return views::split('.')
          | views::transform([](auto r){
-                if constexpr (ranges::forward_iterator<decltype(r.begin().base())>) {
+                if constexpr (ranges::forward_range<decltype(r)>) {
                     auto b = r.begin();
                     auto e = ranges::next(b, r.end());
                     return ranges::subrange(b.base(), e.base());
