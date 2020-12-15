@@ -335,6 +335,8 @@ described earlier as a workaround for the lack of [@P1989R0], and currently
 just hijacks the real `views::split` as a shortcut, but other than that it
 should be a valid implementation.
 
+This implementation also correctly handles [@LWG3505] and [@LWG3478].
+
 ```cpp
 using namespace std::ranges;
 
@@ -371,6 +373,7 @@ public:
         split2_view* parent = nullptr;
         iterator_t<V> cur = iterator_t<V>();
         iterator_t<V> next = iterator_t<V>();
+        bool trailing_empty = false;
 
     public:
         iterator() = default;
@@ -401,21 +404,32 @@ public:
         using difference_type = std::ptrdiff_t;
 
         bool operator==(iterator const& rhs) const {
-            return cur == rhs.cur;
+            return cur == rhs.cur && trailing_empty == rhs.trailing_empty;
         }
 
         auto lookup_next() const -> iterator_t<V> {
-            return std::ranges::search(
+            auto n = std::ranges::search(
                 subrange(cur, std::ranges::end(parent->base_)),
                 parent->pattern_
                 ).begin();
+
+            if (n != std::ranges::end(parent->base_) and std::ranges::empty(parent->pattern_)) {
+                ++n;
+            }
+
+            return n;
         }
 
         auto operator++() -> iterator& {
             cur = next;
             if (cur != std::ranges::end(parent->base_)) {
-                cur += distance(parent->pattern_);
+                std::ranges::advance(cur, distance(parent->pattern_));
+                if (cur == std::ranges::end(parent->base_)) {
+                    trailing_empty = true;
+                }
                 next = lookup_next();
+            } else {
+                trailing_empty = false;
             }
             return *this;
         }
@@ -432,7 +446,7 @@ public:
 
     struct sentinel {
         bool operator==(iterator const& rhs) const {
-            return rhs.cur == sentinel;
+            return rhs.cur == sentinel and not rhs.trailing_empty;
         }
 
         sentinel_t<V> sentinel;
@@ -516,7 +530,7 @@ references:
         - family: Barry Revzin
     issued:
         - year: 2020    
-    URL: https://godbolt.org/z/Y9Pec8
+    URL: https://godbolt.org/z/hanc46
   - id: issue385
     citation-label: issue385
     title: "`const`-ness of view operations"
