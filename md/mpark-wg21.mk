@@ -13,7 +13,10 @@ else
 full_index := --bibliography $(DATADIR)/index.yaml
 endif
 
-%.html : $(DEPS)
-	$(PANDOC) \
-    --bibliography $(THIS_DIR)wg21_fmt.yaml \
-	$(full_index)
+#%.html : $(DEPS)
+#	$(PANDOC) \
+#    --bibliography $(THIS_DIR)wg21_fmt.yaml \
+#	$(full_index)
+
+%.html: $(DEPS)
+	$(PANDOC) --bibliography $(DATADIR)/csl.json --bibliography $(THIS_DIR)wg21_fmt.yaml
