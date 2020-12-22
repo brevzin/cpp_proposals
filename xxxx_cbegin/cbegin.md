@@ -220,7 +220,7 @@ constexpr auto make_const_iterator(It it) {
 
 There's a lot of boilerplate in implementing a C++20 iterator. And especially for `const_iterator` where every single operation but one is simply pass-through to the underlying iterator. Every function here is a one-liner, there are really only three interesting things in this whole implementation:
 
-1. Providing `iterator_concept = contiguous_iterator_tag;` ensures that wrapping a contiguous mutable iterator produces a contiguous constant iterator`.
+1. Providing `iterator_concept = contiguous_iterator_tag;` ensures that wrapping a contiguous mutable iterator produces a contiguous constant iterator.
 2. Only providing `iterator_category` for `forward_iterator`s ensures that we correctly handle C++20 input iterators (more on this later, and see also [@P2259R0]).
 3. The spelling of the `reference` type for this iterator, described above.
 
@@ -444,7 +444,7 @@ Ultimately, the question is where in the Ranges Plan for C++23 [@P2214R0] such a
 
 # Epilogue
 
-Thanks to Tim Song for helping me work through the design and implementation details of this paper, and Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs). 
+Thanks to Tim Song for helping me work through the design and implementation details of this paper. Thanks to Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs). Thanks to Eric Niebler for having already solved the problem of how to come up with the right reference type for a `const_iterator<It>` in range-v3.
 
 ---
 references:
