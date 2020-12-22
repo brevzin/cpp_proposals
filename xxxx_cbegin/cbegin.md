@@ -11,7 +11,7 @@ toc: true
 
 # How we got to here
 
-A tale in many parts acts.
+A tale in many acts.
 
 ## Prologue: Terminology
 
@@ -22,7 +22,7 @@ Iterators that further meet the requirements of output iterators are called _mut
 Nonmutable iterators are referred to as _constant iterators_.
 :::
 
-This paper uses those terms with those meanings: a mutable iterator is one that is writeable to, a constant iterator is one that is not writeable to. 
+This paper uses those terms with those meanings: a mutable iterator is one that is writable to, a constant iterator is one that is not writable to. 
 
 
 ## Act I: Introduction of Member `cbegin`
@@ -42,12 +42,12 @@ However, when a container traversal is intended for inspection only, it is a gen
 The solution proposed in [@N1674] (and later adopted by way of [@N1913]) was to add members `cbegin()` and `cend()` (and `crbegin()` and `crend()`) to all the standard library containers, facilitating this code:
 
 ```cpp
-for (auto it = v.cbegin(),end=v.cend(); it!=end; ++it)  {
+for (auto it = v.cbegin(), end = v.cend(); it != end; ++it)  {
     //use *it ...
 }
 ```
 
-`c.cbegin()` was specified in all of these containers perform `as_const(c).begin()`. Although `std::as_const` itself was not added until much later - it is a C++17 feature, first proposed in [@N4380].
+`c.cbegin()` was specified in all of these containers to perform `as_const(c).begin()`. Although `std::as_const` itself was not added until much later - it is a C++17 feature, first proposed in [@N4380].
 
 ## Act II: Rise of Non-Member `cbegin`
 
@@ -103,7 +103,7 @@ This leaves us in a state where:
 
     1. `std::string_view::cbegin()` exists and is a constant iterator (since it is `const`-only). `std::initializer_list<T>::cbegin()` does _not_ exist, but `std::cbegin(il)` also yields a constant iterator.
     2. `std::ranges::single_view<T>` is an owning view and is actually thus deep `const`. While it does not have a `cbegin()` member function, `std::cbegin(v)` nevertheless yields a constant iterator (the proposed `views::maybe` in [@P1255R6] would also fit into this category).
-    3. `std::ranges::filter_view<V, F>` is not actually `const`-iterable at all, so it is neither the case that `filt.cbegin()` exists as a member function nor that `std::cbegin(filt)` (nor `std::ranges::cbegin(filt)`) is well-formed. Other future views may fit into this category as well (e.g. my proposed improvement to `views::split` in [@P2210R0]).
+    3. `std::ranges::filter_view<V, F>` is not actually `const`-iterable at all, so it is neither the case that `filt.cbegin()` exists as a member function nor that `std::cbegin(filt)` (nor `std::ranges::cbegin(filt)`) is well-formed. Many other views fit this category as well (`drop_view` being the most obvious, but `drop`, `reverse`, and `join` may not be either, etc.). Other future views may fit into this category as well (e.g. my proposed improvement to `views::split` in [@P2210R0]).
 
 Put differently, the C++20 status quo is that `std::cbegin` on an owning range always provides a constant iterator while `std::cbegin` on a non-owning view could provide a mutable iterator or not compile at all. 
 
@@ -128,11 +128,11 @@ What does this do for all the views outside of the standard library? It does not
 
 But what would it actually mean to add a member `cbegin() const` to every view type? What would such a member function do? What it _should_ do is the exact same thing for every view &mdash; the same exact same thing that all views external to the standard library would have to do in order to opt in to `const`-traversal-on-demand. 
 
-But if every type needs to do the asme thing, that's an algorithm. The standard library should provide it once rather than having every view re-implement it. Or, more likely, have every view delegate to the algorithm and just have boilerplate member function implementations. A substantial amount of view implementations are already boilerplate, we do not need more. 
+But if every type needs to do the same thing, that's an algorithm. The standard library should provide it once rather than having every view re-implement it. Or, more likely, have every view delegate to the algorithm and just have boilerplate member function implementations. A substantial amount of view implementations are already boilerplate, we do not need more. 
 
 # Act IV: `std::const_iterator`
 
-The problem we actually have is this: given an iterator, how do I create an iterator that is identical in all respects except for top-level mutability? This is, ultimately, the problem that from the very beginning `vector<T>::const_iterator` is intending to solve. It is a `vector<T>::iterator` in all respects (it's random-access, its value type is `T`, it would have the same bounds coming from the same container) except that dereferencing such an iterator would give a `T const&` instead of a `T&`. 
+The problem we actually have is this: given an iterator, how do I create an iterator that is identical in all respects except for top-level mutability? This is, ultimately, the problem that from the very beginning `vector<T>::const_iterator` is intending to solve. It is a `vector<T>::iterator` in all respects (it's contiguous, its value type is `T`, it would have the same bounds coming from the same container) except that dereferencing such an iterator would give a `T const&` instead of a `T&`. 
 
 ## A Reverse Digression
 
@@ -338,7 +338,7 @@ inline constexpr auto cend = first_of(
 );
 ```
 
-Here, `cbegin(r)` and `cend(r)` produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for `std::vector<int>` and `std::span<int>` and `boost::iterator_range<int*>` and even `std::ranges::filter_view` (the third step &mdash; wrapping the result of `begin` and `end` without first going through `as_const` &mdash; is to handle views that are iterable but not `const`-iterable, that you might nevertheless want const iterators for).
+Here, `cbegin(r)` and `cend(r)` produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for `std::vector<int>` and `std::span<int>` and `boost::iterator_range<int*>` and even views like `std::ranges::filter_view` (the third step &mdash; wrapping the result of `begin` and `end` without first going through `as_const` &mdash; is to handle views that are iterable but not `const`-iterable, that you might nevertheless want constant iterators for).
 
 In addition to simply working across all ranges, it has a few other features worth noting:
 
