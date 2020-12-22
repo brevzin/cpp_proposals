@@ -455,5 +455,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/79qjEE
+    URL: https://godbolt.org/z/aj5KsT
 ---
