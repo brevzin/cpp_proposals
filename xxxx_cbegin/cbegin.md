@@ -401,9 +401,13 @@ auto val = *it++;
 
 But in C++20, an input iterator's postfix increment operator need not return a copy of itself. All the ones in the standard library return `void`. This is the safer design, since any use of postfix increment that isn't either ignoring the result or exactly the above expression are simply wrong for input iterators. 
 
-Trying to be backwards compatible with pre-C++20 iterators is quite hard (again, see [@P2259R0]), and the `const_iterator<It>` implementation provided in this paper would _not_ be a valid C++17 input iterator. 
+Trying to be backwards compatible with pre-C++20 iterators is quite hard (again, see [@P2259R0]), and the `const_iterator<It>` implementation provided in this paper would _not_ be a valid C++17 input iterator. Additionally, C++20 input iterators are required to be default constructible while C++17 input iterators were not. 
 
-Additionally, the C++20 iterator concepts require default construction and not all C++17 iterators in the wild have this functionality, so we cannot impose it retroactively. Would we really want to introduce a second `const_iterator` type to improve `std::cbegin`? Moreover, would we want to extend `std::cbegin` to also handle non-`const`-iterable ranges? This is technically doable:
+On the other hand, is it critically important to have a constant iterator for a C++17 input iterator? You're not going to mutate anything meaningful anyway.
+
+A simple solution could have `std::cbegin(c)` pass through C++17 input iterators unconditionally, and otherwise do `make_const_iterator(as_const(c).begin())` (i.e. the `std::ranges::cbegin` described above) for all iterators that are either C++20 iterators or C++17 forward iterators. This probably addresses the majority of the use-cases with minimal fuss. 
+
+Moreover, would we want to extend `std::cbegin` to also handle non-`const`-iterable ranges? This is technically doable:
 
 ```cpp
 template <typename C>
