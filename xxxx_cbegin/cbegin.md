@@ -1,5 +1,5 @@
 ---
-title: "`cbegin` on views"
+title: "`cbegin` should always return a constant iterator"
 document: DxxxxR0
 date: today
 audience: LEWG
@@ -51,7 +51,7 @@ for (auto it = v.cbegin(), end = v.cend(); it != end; ++it)  {
 
 ## Act II: Rise of Non-Member `cbegin`
 
-C++11 thus added the free functions `std::begin` and `std::end`, and member functions `c.cbegin()` and `c.cend()`. But it did not yet have free functions to fetch `iterators` to `const`: those were added in 2013 by way of [@LWG2128].
+C++11 thus added the free functions `std::begin` and `std::end`, and member functions `c.cbegin()` and `c.cend()`. But it did not yet have free functions to fetch constant iterators: those were added in 2013 by way of [@LWG2128].
 
 While, `std::begin(c)` always calls `c.begin()` (except for C arrays), `std::cbegin(c)` was not specified to call `c.cbegin()`. Instead it, too, called `std::begin(c)` (not even `c.begin()`):
 
@@ -68,7 +68,7 @@ There are two important goals here to highlight.
 
 First, the goal is still to provide constant iterators, not just call `begin() const`. The latter is an implementation strategy for the former.
 
-Second, the goal is to avoid boilerplate. An implementation where `std::cbegin(c)` called `c.cbegin()` would require `c.cbegin()` to exist, which, as is clear from the list above, is not the for a lot of useful types. 
+Second, the goal is to avoid boilerplate. An implementation where `std::cbegin(c)` called `c.cbegin()` would require `c.cbegin()` to exist, which, as is clear from the list above, is not the case for a lot of useful types. 
 
 As a result, `std::cbegin(c)` is basically specified to be `std::begin(as_const(c))` (although, again, predating `std::as_const`) which is basically `as_const(c).begin()`. 
 
@@ -99,7 +99,7 @@ This leaves us in a state where:
 
 - for all the standard library containers, `r.cbegin()` and `std::cbegin(r)` are equivalent, both meaning `as_const(r).begin()`, and both yielding a constant iterator. This is likely true for many containers defined outside of the standard library as well.
 
-- for most the standard library views, `r.cbegin()` does not exist and `std::cbegin(r)` is a valid expression that could yield a mutable iterator (e.g. `std::span<T>`). There are three different kinds of exceptions:
+- for most of the standard library views, `r.cbegin()` does not exist and `std::cbegin(r)` is a valid expression that could yield a mutable iterator (e.g. `std::span<T>`). There are three different kinds of exceptions:
 
     1. `std::string_view::cbegin()` exists and is a constant iterator (since it is `const`-only). `std::initializer_list<T>::cbegin()` does _not_ exist, but `std::cbegin(il)` also yields a constant iterator.
     2. `std::ranges::single_view<T>` is an owning view and is actually thus deep `const`. While it does not have a `cbegin()` member function, `std::cbegin(v)` nevertheless yields a constant iterator (the proposed `views::maybe` in [@P1255R6] would also fit into this category).
@@ -180,6 +180,7 @@ A generic `const_iterator<It>` at first seems much less complicated. _Every_ ope
 |-|-|-|-|
 |`vector<int>`|`int`|`int&`|`int const&`|
 |`vector<int> const`|`int`|`int const&`|`int const&`|
+|`array<int const, N>`|`int`|`int const&`|`int const&`|
 |a range of prvalue `int`|`int`|`int`|`int`|
 |`vector<bool> const`|`bool`|`bool`|`bool`|
 |`vector<bool>`|`bool`|`vector<bool>::reference`|`bool`|
@@ -205,9 +206,19 @@ This does not yield the correct result for the last row in my table at the momen
 Avoiding unnecessary wrapping can be achieved through a factory function that checks to see if such wrapping would change type:
 
 ```cpp
+// a type is a constant iterator if its an iterator whose reference type is
+// the same as the type that const_ref_for would pick for it
+template <typename It>
+concept @_constant-iterator_@ = std::input_iterator<It>
+                         && std::same_as<const_ref_for<It>, std::iter_reference_t<It>>;
+
+// a type is a constant range if it is a range whose iterator is a constant iterator
+template <typename R>
+concept @_constant-range_@ = std::ranges::range<R> && @_constant-iterator_@<std::ranges::iterator_t<R>>;
+
 template <std::input_iterator It>
 constexpr auto make_const_iterator(It it) {
-    if constexpr (std::same_as<const_ref_for<It>, std::iter_reference_t<It>>) {
+    if constexpr (@_constant-iterator_@<It>) {
         // already a constant iterator
         return it;
     } else {
@@ -281,20 +292,35 @@ public:
 
 One of the changes in C++20 Ranges as compared to C++17 Ranges is the introduction of the Sentinel concept. A range is no longer a pair of two `iterator`s, it is an `iterator`/`sentinel` pair. The `sentinel` could be the same type as the `iterator`, such a range is known as a `common_range` but it need not be. 
 
-We would need to handle producing a wrapped `sentinel` in addition to producing a wrapped `iterator`. Thankfully, `sentinel` only has a single associated operation: `==`. As a result, while there are more cases to consider, the implementation is much less code:
+We would need to handle producing a wrapped `sentinel` in addition to producing a wrapped `iterator`. Thankfully, `sentinel` only has two associated operation: `==` with its iterator (unconditionaly) and `-` for computing a difference from its iterator (conditionally). As a result, while there are more cases to consider, the implementation is much less code:
 
 ```cpp
 template <std::input_iterator It, std::sentinel_for<It> S>
-struct const_sentinel {
+class const_sentinel {
     S s;
+public:
+    const_sentinel(S s) : s(std::move(s)) { }
+    
     bool operator==(const_iterator<It> const& rhs) const {
         return rhs.base() == s;
     }
+    
+    auto operator-(const_iterator<It> const& rhs) const -> std::iter_difference_t<It>
+            requires std::sized_sentinel_for<S, It>
+    {
+        return s - rhs.base();
+    }
+
+    friend auto operator-(const_iterator<It> const& lhs, const_sentinel const& rhs) -> std::iter_difference_t<It>
+            requires std::sized_sentinel_for<S, It>
+    {
+        return -(rhs - lhs);
+    }    
 };
 
 template <std::input_iterator It, std::sentinel_for<It> S>
 constexpr auto make_const_sentinel(S s) {
-    if constexpr (std::same_as<const_ref_for<It>, std::iter_reference_t<It>>) {
+    if constexpr (@_constant-iterator_@<It>) {
         // if the iterator is already a constant iterator, pass it through
         return s;
     } else if constexpr (std::same_as<It, S>) {
@@ -308,6 +334,8 @@ constexpr auto make_const_sentinel(S s) {
 
 Note that we need the iterator type as a template parameter here.
 
+There's a question as to whether we need to wrap the sentinel at all (in the case where it is distinct from the iterator type). It's possible that we do not, but following [@LWG3386], I don't have much confidence that we won't come up with an example later that demonstrates the need for such in the future. Are we especially worried about the wrapping cost? 
+
 ## Better Algorithms for `std::ranges::cbegin` and `std::ranges::end`
 
 `std::ranges::cbegin` today ([range.access.cbegin]{.sref}), similar `std::begin`, unconditionally calls `ranges::begin`. While `std::ranges::rbegin(E)` does conditionally call `E.rbegin()`, I wonder to what extent this facility actually needs to be customizeable. The goal is to provide a constant iterator version of `begin()`.
@@ -315,30 +343,33 @@ Note that we need the iterator type as a template parameter here.
 With the above pieces, we can do precisely that (see full implementation [@const-impl]):
 
 ```cpp
+inline constexpr auto possibly_const = []<std::ranges::range R>(R& r) -> auto& {
+    if constexpr (std::ranges::range<R const> and not std::ranges::view<std::remove_const_t<R>>) {
+        return const_cast<R const&>(r);
+    } else {
+        return r;
+    }
+};
+
 inline constexpr auto cbegin = first_of(
     // 1. non-borrowed rvalue
     delete_if_nonborrowed_rvalue,
-    // 2. make_const_iterator(begin(as_const(E)))
+    // 2. possibly-wrapped begin of possibly-const r
     [](std::ranges::range auto&& r) 
-        RETURNS(make_const_iterator(std::ranges::begin(std::as_const(r)))),
-    // 3. make_const_iterator(begin(E))
-    [](std::ranges::range auto&& r)
-        RETURNS(make_const_iterator(std::ranges::begin(r)))
+        RETURNS(make_const_iterator(std::ranges::begin(possibly_const(r))))
 );
 
 inline constexpr auto cend = first_of(
     // 1. non-borrowed rvalue
     delete_if_nonborrowed_rvalue,
-    // 2. make_const_sentinel<iterator_t<decltype(as_const(E))>>(end(as_const(E)))
+    // 2. possibly-wrapped end of possibly-const r
     [](std::ranges::range auto&& r) 
-        RETURNS(make_const_sentinel<decltype(std::ranges::begin(std::as_const(r)))>(std::ranges::end(std::as_const(r)))),
-    // 3. make_const_sentinel<iterator_t<decltype(E)>(end(E))
-    []<std::ranges::range R>(R&& r) 
-        RETURNS(make_const_sentinel<std::ranges::iterator_t<R>>(std::ranges::end(r)))
+        RETURNS(make_const_sentinel<decltype(std::ranges::begin(possibly_const(r)))>(
+            std::ranges::end(possibly_const(r))))
 );
 ```
 
-Here, `cbegin(r)` and `cend(r)` produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for `std::vector<int>` and `std::span<int>` and `boost::iterator_range<int*>` and even views like `std::ranges::filter_view` (the third step &mdash; wrapping the result of `begin` and `end` without first going through `as_const` &mdash; is to handle views that are iterable but not `const`-iterable, that you might nevertheless want constant iterators for).
+Here, `cbegin(r)` and `cend(r)` produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for `std::vector<int>` and `std::span<int>` and `boost::iterator_range<int*>` and even views like `std::ranges::filter_view` (`possibly_const` ensures that if get passed a non-`const` `vector<int>`, we treat it as `const` first &mdash; which is both valid and necessary &mdash; while `filter_view const` isn't a `range` so we cannot treat it as `const` first).
 
 In addition to simply working across all ranges, it has a few other features worth noting:
 
@@ -358,8 +389,8 @@ public:
     constexpr const_view() = default;
     constexpr const_view(V base) : base(std::move(base)) { }
 
-    constexpr auto begin() { return cbegin(base); }
-    constexpr auto end() { return cend(base); }
+    constexpr auto begin() requires (!@_simple-view_@<V>) { return cbegin(base); }
+    constexpr auto end() requires (!@_simple-view_@<V>) { return cend(base); }
     constexpr auto size() requires std::ranges::sized_range<V> { return std::ranges::size(base); }
 
     constexpr auto begin() const requires std::ranges::range<V const> { return cbegin(base); }
@@ -371,21 +402,38 @@ public:
 inline constexpr std::views::__adaptor::_RangeAdaptorClosure const_ =
     []<std::ranges::viewable_range R>(R&& r)
     {
-        if constexpr (std::same_as<const_ref_for<std::ranges::iterator_t<R>>, std::ranges::range_reference_t<R>>) {
-            return std::views::all(FWD(r));
+        if constexpr (@_constant-range_@<R>) {
+            return std::views::all(r);
+        } else if constexpr (@_constant-range_@<std::remove_reference_t<R> const>) {
+            return std::views::all(std::as_const(r));
         } else if constexpr (std::ranges::enable_borrowed_range<std::remove_cvref_t<R>>) {
-            return std::ranges::subrange(cbegin(FWD(r)), cend(FWD(r)));
+            return std::ranges::subrange(cbegin(r), cend(r));
         } else {
-            return const_view<std::views::all_t<R>>(std::views::all(FWD(r)));
+            return const_view<std::views::all_t<R>>(std::views::all(r));
         }
     };
 ```
 
-To me, this is the ultimate goal for this problem, since it's the one that guarantees correctness even in the presence of a range-based for statement:
+The four cases here are:
+
+1. `r` is already a constant range, no need to do anything, pass it through. Examples are `std::span<T const>` or `std::vector<T> const` or `std::set<T>`.
+2. `r` is not a constant range but `std::as_const(r)` would be. Rather than do any wrapping ourselves, we defer to `std::as_const`. Example is `std::vector<T>`.
+3. `r` is a borrowed range, so we can rip away its iterator/sentinel and wrap them independently. Examples are `std::span<T>` or a `views::reverse`-ed `std::vector<T>` or taking the `views::values` of a `std::map<K, V>`.
+4. `r` is neither a constant range nor a borrowed range, so we need to preserve it along with the iterators. Examples are `views::transform(f)`-ed `std::vector<T>` (for an `f` that doesn't produce constants).
+
+To me, being able to provide a `views::const_` is the ultimate solution for this problem, since it's the one that guarantees correctness even in the presence of a range-based for statement:
 
 ```cpp
 for (auto const& e : r | views::const_) { ... }
 ```
+
+Or passing a constant range to an algorithm:
+
+```cpp
+dont_touch_me(views::const_(r));
+```
+
+As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `const_`, but there's a few other good name options here like `views::as_const` or `views::to_const`.
 
 ## What About `std::cbegin` and `std::cend`?
 
@@ -428,7 +476,63 @@ constexpr auto cbegin(C& c) {
 
 I negated the constraint to prefer the `const C&` overload even for non-const arguments. 
 
-But we didn't introduce a C++20 iteration model to then go back and give us more work to keep two models in lock-step. The C++20 one on its own is hard enough, and is a better model. We should just commit to it. 
+But we didn't introduce a C++20 iteration model to then go back and give us more work to keep two models in lock-step. The C++20 one on its own is hard enough, and is a better model. We should just commit to it.
+
+It'd probably just be good enough to do something like:
+
+```cpp
+template <class C>
+constexpr auto cbegin(C const& c)
+    requires requires { std::begin(c); }
+{
+    if consetxpr (std::forward_iterator<decltype(std::begin(c))>) {
+        return make_const_iterator(std::begin(c));
+    } else {
+        // leave input iterators (or... whatever) alone
+        return std::begin(c);
+    }
+}
+```
+
+And similarly for `std::cend`. This isn't entirely without peril: currently we say nothing about the constraints for `std::cbegin(r)`; just that it calls `r.begin()`, _whatever that is_. There isn't a requirement that this ends up giving an iterator and there's no requirement that any of the operations that `std::forward_iterator` would check are SFINAE-friendly. I don't know if we necessarily care about such (mis)uses of `std::cbegin`, but it is worth nothing.
+
+## Now Reverse It
+
+Now that we can produce a constant iterator for a range, producing a reversed constant iterator is a matter of composing operations. We don't have to worry about sentinels in this case:
+
+```cpp
+inline constexpr auto crbegin = first_of(
+    // 1. non-borrowed rvalue
+    delete_if_nonborrowed_rvalue,
+    // 2. possibly-wrapped reversed begin of possibly-const range
+    [](std::ranges::range auto&& r) RETURNS(make_const_iterator(std::ranges::rbegin(possibly_const(r))))
+);
+
+inline constexpr auto crend = first_of(
+    // 1. non-borrowed rvalue
+    delete_if_nonborrowed_rvalue,
+    // 2. possibly-wrapped reversed end of possibly-const range
+    [](std::ranges::range auto&& r) RETURNS(make_const_iterator(std::ranges::rend(possibly_const(r))))
+);
+```
+
+Notably here, `ranges::rbegin` and `ranges::rend` already themselves will try to produce a `std::reverse_iterator` if the underlying range is bidirectional. Similarly, we're ourselves trying to produce a `std::const_iterator`. 
+
+The extension to `std::crbegin` and `std::crend` mirrors the similar extension to `std::cbegin` and `std::cend`:
+
+```cpp
+template <class C>
+constexpr auto crbegin(C const& c)
+    requires requires { std::rbegin(c); }
+{
+    if consetxpr (std::forward_iterator<decltype(std::rbegin(c))>) {
+        return make_const_iterator(std::rbegin(c));
+    } else {
+        // leave input iterators (or... whatever) alone
+        return std::rbegin(c);
+    }
+}
+```
 
 # Act V: A Concluding Proposal
 
@@ -444,7 +548,7 @@ Ultimately, the question is where in the Ranges Plan for C++23 [@P2214R0] such a
 
 # Epilogue
 
-Thanks to Tim Song for helping me work through the design and implementation details of this paper. Thanks to Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs). Thanks to Eric Niebler for having already solved the problem of how to come up with the right reference type for a `const_iterator<It>` in range-v3.
+Thanks to Tim Song for helping me work through the design and implementation details of this paper. Thanks to Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs) and providing feedback. Thanks to Eric Niebler for having already solved the problem of how to come up with the right reference type for a `const_iterator<It>` in range-v3.
 
 ---
 references:
@@ -455,5 +559,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/aj5KsT
+    URL: https://godbolt.org/z/avbPG8
 ---

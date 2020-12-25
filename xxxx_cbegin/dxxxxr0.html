@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-12-22" />
-  <title>`cbegin` on views</title>
+  <meta name="dcterms.date" content="2020-12-24" />
+  <title>`cbegin` should always return a constant iterator</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center"><code class="sourceCode cpp">cbegin</code> on views</h1>
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp">cbegin</code> should always return a constant iterator</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-12-22</td>
+    <td>2020-12-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -581,6 +581,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#better-algorithms-for-stdrangescbegin-and-stdrangesend"><span class="toc-section-number">2.5</span> Better Algorithms for <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>end</code><span></span></a></li>
 <li><a href="#a-viewsconst_"><span class="toc-section-number">2.6</span> A <code class="sourceCode cpp">views<span class="op">::</span>const_</code><span></span></a></li>
 <li><a href="#what-about-stdcbegin-and-stdcend"><span class="toc-section-number">2.7</span> What About <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>cend</code>?<span></span></a></li>
+<li><a href="#now-reverse-it"><span class="toc-section-number">2.8</span> Now Reverse It<span></span></a></li>
 </ul></li>
 <li><a href="#act-v-a-concluding-proposal"><span class="toc-section-number">3</span> Act V: A Concluding Proposal<span></span></a></li>
 <li><a href="#epilogue"><span class="toc-section-number">4</span> Epilogue<span></span></a></li>
@@ -611,7 +612,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-3"><a href="#cb1-3"></a><span class="op">}</span></span></code></pre></div>
 <p><code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> was specified in all of these containers to perform <code class="sourceCode cpp">as_const<span class="op">(</span>c<span class="op">).</span>begin<span class="op">()</span></code>. Although <code class="sourceCode cpp">std<span class="op">::</span>as_const</code> itself was not added until much later - it is a C++17 feature, first proposed in <span class="citation" data-cites="N4380">[<a href="#ref-N4380" role="doc-biblioref">N4380</a>]</span>.</p>
 <h2 data-number="1.3" id="act-ii-rise-of-non-member-cbegin"><span class="header-section-number">1.3</span> Act II: Rise of Non-Member <code class="sourceCode cpp">cbegin</code><a href="#act-ii-rise-of-non-member-cbegin" class="self-link"></a></h2>
-<p>C++11 thus added the free functions <code class="sourceCode cpp">std<span class="op">::</span>begin</code> and <code class="sourceCode cpp">std<span class="op">::</span>end</code>, and member functions <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> and <code class="sourceCode cpp">c<span class="op">.</span>cend<span class="op">()</span></code>. But it did not yet have free functions to fetch <code class="sourceCode cpp">iterators</code> to <code class="sourceCode cpp"><span class="kw">const</span></code>: those were added in 2013 by way of <span class="citation" data-cites="LWG2128">[<a href="#ref-LWG2128" role="doc-biblioref">LWG2128</a>]</span>.</p>
+<p>C++11 thus added the free functions <code class="sourceCode cpp">std<span class="op">::</span>begin</code> and <code class="sourceCode cpp">std<span class="op">::</span>end</code>, and member functions <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> and <code class="sourceCode cpp">c<span class="op">.</span>cend<span class="op">()</span></code>. But it did not yet have free functions to fetch constant iterators: those were added in 2013 by way of <span class="citation" data-cites="LWG2128">[<a href="#ref-LWG2128" role="doc-biblioref">LWG2128</a>]</span>.</p>
 <p>While, <code class="sourceCode cpp">std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span></code> always calls <code class="sourceCode cpp">c<span class="op">.</span>begin<span class="op">()</span></code> (except for C arrays), <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> was not specified to call <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code>. Instead it, too, called <code class="sourceCode cpp">std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span></code> (not even <code class="sourceCode cpp">c<span class="op">.</span>begin<span class="op">()</span></code>):</p>
 <div class="quote">
 <p>Implement <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code>/<code class="sourceCode cpp">cend<span class="op">()</span></code> by calling <code class="sourceCode cpp">std<span class="op">::</span>begin</code>/<code class="sourceCode cpp">end<span class="op">()</span></code>. This has numerous advantages:</p>
@@ -624,7 +625,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p>There are two important goals here to highlight.</p>
 <p>First, the goal is still to provide constant iterators, not just call <code class="sourceCode cpp">begin<span class="op">()</span> <span class="kw">const</span></code>. The latter is an implementation strategy for the former.</p>
-<p>Second, the goal is to avoid boilerplate. An implementation where <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> called <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> would require <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> to exist, which, as is clear from the list above, is not the for a lot of useful types.</p>
+<p>Second, the goal is to avoid boilerplate. An implementation where <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> called <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> would require <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code> to exist, which, as is clear from the list above, is not the case for a lot of useful types.</p>
 <p>As a result, <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> is basically specified to be <code class="sourceCode cpp">std<span class="op">::</span>begin<span class="op">(</span>as_const<span class="op">(</span>c<span class="op">))</span></code> (although, again, predating <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>) which is basically <code class="sourceCode cpp">as_const<span class="op">(</span>c<span class="op">).</span>begin<span class="op">()</span></code>.</p>
 <p>The status quo at this point is that <code class="sourceCode cpp">c<span class="op">.</span>cbegin<span class="op">()</span></code>, <code class="sourceCode cpp">as_const<span class="op">(</span>c<span class="op">).</span>begin<span class="op">()</span></code>, and <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> are all equivalent (where they are all valid) and all yield constant iterators.</p>
 <h2 data-number="1.4" id="act-iii-climax-of-the-views"><span class="header-section-number">1.4</span> Act III: Climax of the Views<a href="#act-iii-climax-of-the-views" class="self-link"></a></h2>
@@ -643,7 +644,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This leaves us in a state where:</p>
 <ul>
 <li><p>for all the standard library containers, <code class="sourceCode cpp">r<span class="op">.</span>cbegin<span class="op">()</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>r<span class="op">)</span></code> are equivalent, both meaning <code class="sourceCode cpp">as_const<span class="op">(</span>r<span class="op">).</span>begin<span class="op">()</span></code>, and both yielding a constant iterator. This is likely true for many containers defined outside of the standard library as well.</p></li>
-<li><p>for most the standard library views, <code class="sourceCode cpp">r<span class="op">.</span>cbegin<span class="op">()</span></code> does not exist and <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>r<span class="op">)</span></code> is a valid expression that could yield a mutable iterator (e.g. <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T<span class="op">&gt;</span></code>). There are three different kinds of exceptions:</p>
+<li><p>for most of the standard library views, <code class="sourceCode cpp">r<span class="op">.</span>cbegin<span class="op">()</span></code> does not exist and <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>r<span class="op">)</span></code> is a valid expression that could yield a mutable iterator (e.g. <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T<span class="op">&gt;</span></code>). There are three different kinds of exceptions:</p>
 <ol type="1">
 <li><code class="sourceCode cpp">std<span class="op">::</span>string_view<span class="op">::</span>cbegin<span class="op">()</span></code> exists and is a constant iterator (since it is <code class="sourceCode cpp"><span class="kw">const</span></code>-only). <code class="sourceCode cpp">std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;::</span>cbegin<span class="op">()</span></code> does <em>not</em> exist, but <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>il<span class="op">)</span></code> also yields a constant iterator.</li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>single_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is an owning view and is actually thus deep <code class="sourceCode cpp"><span class="kw">const</span></code>. While it does not have a <code class="sourceCode cpp">cbegin<span class="op">()</span></code> member function, <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>v<span class="op">)</span></code> nevertheless yields a constant iterator (the proposed <code class="sourceCode cpp">views<span class="op">::</span>maybe</code> in <span class="citation" data-cites="P1255R6">[<a href="#ref-P1255R6" role="doc-biblioref">P1255R6</a>]</span> would also fit into this category).</li>
@@ -732,24 +733,30 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code></td>
 </tr>
 <tr class="odd">
+<td><code class="sourceCode cpp">array<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span>, N<span class="op">&gt;</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code></td>
+</tr>
+<tr class="even">
 <td>a range of prvalue <code class="sourceCode cpp"><span class="dt">int</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">int</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">int</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">int</span></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> <span class="kw">const</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">bool</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">bool</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">bool</span></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code></td>
 <td><code class="sourceCode cpp"><span class="dt">bool</span></code></td>
 <td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code></td>
 <td><code class="sourceCode cpp"><span class="dt">bool</span></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>zipping a <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span>U<span class="op">&gt;</span></code></td>
 <td><code class="sourceCode cpp">tuple<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code></td>
 <td><code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">&amp;</span>, U<span class="op">&amp;&gt;</span></code></td>
@@ -770,15 +777,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-4"><a href="#cb4-4"></a>    std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;</span>;</span></code></pre></div>
 <p>This does not yield the correct result for the last row in my table at the moment, but if we make the changes to <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> prescribed in <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>, then it would.</p>
 <p>Avoiding unnecessary wrapping can be achieved through a factory function that checks to see if such wrapping would change type:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It<span class="op">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> make_const_iterator<span class="op">(</span>It it<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>const_ref_for<span class="op">&lt;</span>It<span class="op">&gt;</span>, std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>        <span class="co">// already a constant iterator</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a>        <span class="cf">return</span> it;</span>
-<span id="cb5-6"><a href="#cb5-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a>        <span class="cf">return</span> const_iterator<span class="op">&lt;</span>It<span class="op">&gt;(</span>it<span class="op">)</span>;</span>
-<span id="cb5-8"><a href="#cb5-8"></a>    <span class="op">}</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">// a type is a constant iterator if its an iterator whose reference type is</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">// the same as the type that const_ref_for would pick for it</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> It<span class="op">&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="kw">concept</span> <em>constant-iterator</em> <span class="op">=</span> std<span class="op">::</span>input_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>                         <span class="op">&amp;&amp;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>const_ref_for<span class="op">&lt;</span>It<span class="op">&gt;</span>, std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co">// a type is a constant range if it is a range whose iterator is a constant iterator</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">concept</span> <em>constant-range</em> <span class="op">=</span> std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <em>constant-iterator</em><span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It<span class="op">&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="kw">constexpr</span> <span class="kw">auto</span> make_const_iterator<span class="op">(</span>It it<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>constant-iterator</em><span class="op">&lt;</span>It<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>        <span class="co">// already a constant iterator</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>        <span class="cf">return</span> it;</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>        <span class="cf">return</span> const_iterator<span class="op">&lt;</span>It<span class="op">&gt;(</span>it<span class="op">)</span>;</span>
+<span id="cb5-18"><a href="#cb5-18"></a>    <span class="op">}</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="op">}</span></span></code></pre></div>
 <h2 data-number="2.3" id="implementing-stdconst_iteratorit"><span class="header-section-number">2.3</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span></code><a href="#implementing-stdconst_iteratorit" class="self-link"></a></h2>
 <p>There’s a lot of boilerplate in implementing a C++20 iterator. And especially for <code class="sourceCode cpp">const_iterator</code> where every single operation but one is simply pass-through to the underlying iterator. Every function here is a one-liner, there are really only three interesting things in this whole implementation:</p>
 <ol type="1">
@@ -838,54 +855,73 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-50"><a href="#cb6-50"></a><span class="op">}</span>;</span></code></pre></div>
 <h2 data-number="2.4" id="implementing-const_sentineli-s"><span class="header-section-number">2.4</span> Implementing <code class="sourceCode cpp">const_sentinel<span class="op">&lt;</span>I, S<span class="op">&gt;</span></code><a href="#implementing-const_sentineli-s" class="self-link"></a></h2>
 <p>One of the changes in C++20 Ranges as compared to C++17 Ranges is the introduction of the Sentinel concept. A range is no longer a pair of two <code class="sourceCode cpp">iterator</code>s, it is an <code class="sourceCode cpp">iterator</code>/<code class="sourceCode cpp">sentinel</code> pair. The <code class="sourceCode cpp">sentinel</code> could be the same type as the <code class="sourceCode cpp">iterator</code>, such a range is known as a <code class="sourceCode cpp">common_range</code> but it need not be.</p>
-<p>We would need to handle producing a wrapped <code class="sourceCode cpp">sentinel</code> in addition to producing a wrapped <code class="sourceCode cpp">iterator</code>. Thankfully, <code class="sourceCode cpp">sentinel</code> only has a single associated operation: <code class="sourceCode cpp"><span class="op">==</span></code>. As a result, while there are more cases to consider, the implementation is much less code:</p>
+<p>We would need to handle producing a wrapped <code class="sourceCode cpp">sentinel</code> in addition to producing a wrapped <code class="sourceCode cpp">iterator</code>. Thankfully, <code class="sourceCode cpp">sentinel</code> only has two associated operation: <code class="sourceCode cpp"><span class="op">==</span></code> with its iterator (unconditionaly) and <code class="sourceCode cpp"><span class="op">-</span></code> for computing a difference from its iterator (conditionally). As a result, while there are more cases to consider, the implementation is much less code:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It, std<span class="op">::</span>sentinel_for<span class="op">&lt;</span>It<span class="op">&gt;</span> S<span class="op">&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">struct</span> const_sentinel <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">class</span> const_sentinel <span class="op">{</span></span>
 <span id="cb7-3"><a href="#cb7-3"></a>    S s;</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>        <span class="cf">return</span> rhs<span class="op">.</span>base<span class="op">()</span> <span class="op">==</span> s;</span>
-<span id="cb7-6"><a href="#cb7-6"></a>    <span class="op">}</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="op">}</span>;</span>
-<span id="cb7-8"><a href="#cb7-8"></a></span>
-<span id="cb7-9"><a href="#cb7-9"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It, std<span class="op">::</span>sentinel_for<span class="op">&lt;</span>It<span class="op">&gt;</span> S<span class="op">&gt;</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a><span class="kw">constexpr</span> <span class="kw">auto</span> make_const_sentinel<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>const_ref_for<span class="op">&lt;</span>It<span class="op">&gt;</span>, std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
-<span id="cb7-12"><a href="#cb7-12"></a>        <span class="co">// if the iterator is already a constant iterator, pass it through</span></span>
-<span id="cb7-13"><a href="#cb7-13"></a>        <span class="cf">return</span> s;</span>
-<span id="cb7-14"><a href="#cb7-14"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>It, S<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb7-15"><a href="#cb7-15"></a>        <span class="co">// we have an iterator pair, so we wrap it the same way</span></span>
-<span id="cb7-16"><a href="#cb7-16"></a>        <span class="cf">return</span> const_iterator<span class="op">&lt;</span>It<span class="op">&gt;(</span>s<span class="op">)</span>;</span>
-<span id="cb7-17"><a href="#cb7-17"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb7-18"><a href="#cb7-18"></a>        <span class="cf">return</span> const_sentinel<span class="op">&lt;</span>It, S<span class="op">&gt;{</span>s<span class="op">}</span>;</span>
-<span id="cb7-19"><a href="#cb7-19"></a>    <span class="op">}</span></span>
-<span id="cb7-20"><a href="#cb7-20"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    const_sentinel<span class="op">(</span>S s<span class="op">)</span> <span class="op">:</span> s<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>s<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    </span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>        <span class="cf">return</span> rhs<span class="op">.</span>base<span class="op">()</span> <span class="op">==</span> s;</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    <span class="op">}</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    </span>
+<span id="cb7-11"><a href="#cb7-11"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">-(</span>const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>iter_difference_t<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>            <span class="kw">requires</span> std<span class="op">::</span>sized_sentinel_for<span class="op">&lt;</span>S, It<span class="op">&gt;</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>        <span class="cf">return</span> s <span class="op">-</span> rhs<span class="op">.</span>base<span class="op">()</span>;</span>
+<span id="cb7-15"><a href="#cb7-15"></a>    <span class="op">}</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a></span>
+<span id="cb7-17"><a href="#cb7-17"></a>    <span class="kw">friend</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">-(</span>const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, const_sentinel <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>iter_difference_t<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a>            <span class="kw">requires</span> std<span class="op">::</span>sized_sentinel_for<span class="op">&lt;</span>S, It<span class="op">&gt;</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a>    <span class="op">{</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a>        <span class="cf">return</span> <span class="op">-(</span>rhs <span class="op">-</span> lhs<span class="op">)</span>;</span>
+<span id="cb7-21"><a href="#cb7-21"></a>    <span class="op">}</span>    </span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="op">}</span>;</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It, std<span class="op">::</span>sentinel_for<span class="op">&lt;</span>It<span class="op">&gt;</span> S<span class="op">&gt;</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="kw">constexpr</span> <span class="kw">auto</span> make_const_sentinel<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>constant-iterator</em><span class="op">&lt;</span>It<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-27"><a href="#cb7-27"></a>        <span class="co">// if the iterator is already a constant iterator, pass it through</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a>        <span class="cf">return</span> s;</span>
+<span id="cb7-29"><a href="#cb7-29"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>It, S<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a>        <span class="co">// we have an iterator pair, so we wrap it the same way</span></span>
+<span id="cb7-31"><a href="#cb7-31"></a>        <span class="cf">return</span> const_iterator<span class="op">&lt;</span>It<span class="op">&gt;(</span>s<span class="op">)</span>;</span>
+<span id="cb7-32"><a href="#cb7-32"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-33"><a href="#cb7-33"></a>        <span class="cf">return</span> const_sentinel<span class="op">&lt;</span>It, S<span class="op">&gt;{</span>s<span class="op">}</span>;</span>
+<span id="cb7-34"><a href="#cb7-34"></a>    <span class="op">}</span></span>
+<span id="cb7-35"><a href="#cb7-35"></a><span class="op">}</span></span></code></pre></div>
 <p>Note that we need the iterator type as a template parameter here.</p>
+<p>There’s a question as to whether we need to wrap the sentinel at all (in the case where it is distinct from the iterator type). It’s possible that we do not, but following <span class="citation" data-cites="LWG3386">[<a href="#ref-LWG3386" role="doc-biblioref">LWG3386</a>]</span>, I don’t have much confidence that we won’t come up with an example later that demonstrates the need for such in the future. Are we especially worried about the wrapping cost?</p>
 <h2 data-number="2.5" id="better-algorithms-for-stdrangescbegin-and-stdrangesend"><span class="header-section-number">2.5</span> Better Algorithms for <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>end</code><a href="#better-algorithms-for-stdrangescbegin-and-stdrangesend" class="self-link"></a></h2>
 <p><code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> today (<span>24.3.4
  <a href="https://wg21.link/range.access.cbegin">[range.access.cbegin]</a></span>), similar <code class="sourceCode cpp">std<span class="op">::</span>begin</code>, unconditionally calls <code class="sourceCode cpp">ranges<span class="op">::</span>begin</code>. While <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>rbegin<span class="op">(</span>E<span class="op">)</span></code> does conditionally call <code class="sourceCode cpp">E<span class="op">.</span>rbegin<span class="op">()</span></code>, I wonder to what extent this facility actually needs to be customizeable. The goal is to provide a constant iterator version of <code class="sourceCode cpp">begin<span class="op">()</span></code>.</p>
 <p>With the above pieces, we can do precisely that (see full implementation <span class="citation" data-cites="const-impl">[<a href="#ref-const-impl" role="doc-biblioref">const-impl</a>]</span>):</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cbegin <span class="op">=</span> first_of<span class="op">(</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a>    delete_if_nonborrowed_rvalue,</span>
-<span id="cb8-4"><a href="#cb8-4"></a>    <span class="co">// 2. make_const_iterator(begin(as_const(E)))</span></span>
-<span id="cb8-5"><a href="#cb8-5"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> </span>
-<span id="cb8-6"><a href="#cb8-6"></a>        RETURNS<span class="op">(</span>make_const_iterator<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">(</span>r<span class="op">))))</span>,</span>
-<span id="cb8-7"><a href="#cb8-7"></a>    <span class="co">// 3. make_const_iterator(begin(E))</span></span>
-<span id="cb8-8"><a href="#cb8-8"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span></span>
-<span id="cb8-9"><a href="#cb8-9"></a>        RETURNS<span class="op">(</span>make_const_iterator<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)))</span></span>
-<span id="cb8-10"><a href="#cb8-10"></a><span class="op">)</span>;</span>
-<span id="cb8-11"><a href="#cb8-11"></a></span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cend <span class="op">=</span> first_of<span class="op">(</span></span>
-<span id="cb8-13"><a href="#cb8-13"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
-<span id="cb8-14"><a href="#cb8-14"></a>    delete_if_nonborrowed_rvalue,</span>
-<span id="cb8-15"><a href="#cb8-15"></a>    <span class="co">// 2. make_const_sentinel&lt;iterator_t&lt;decltype(as_const(E))&gt;&gt;(end(as_const(E)))</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> </span>
-<span id="cb8-17"><a href="#cb8-17"></a>        RETURNS<span class="op">(</span>make_const_sentinel<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">(</span>r<span class="op">)))&gt;(</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">(</span>r<span class="op">))))</span>,</span>
-<span id="cb8-18"><a href="#cb8-18"></a>    <span class="co">// 3. make_const_sentinel&lt;iterator_t&lt;decltype(E)&gt;(end(E))</span></span>
-<span id="cb8-19"><a href="#cb8-19"></a>    <span class="op">[]&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> </span>
-<span id="cb8-20"><a href="#cb8-20"></a>        RETURNS<span class="op">(</span>make_const_sentinel<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;(</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)))</span></span>
-<span id="cb8-21"><a href="#cb8-21"></a><span class="op">)</span>;</span></code></pre></div>
-<p>Here, <code class="sourceCode cpp">cbegin<span class="op">(</span>r<span class="op">)</span></code> and <code class="sourceCode cpp">cend<span class="op">(</span>r<span class="op">)</span></code> produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">boost<span class="op">::</span>iterator_range<span class="op">&lt;</span><span class="dt">int</span><span class="op">*&gt;</span></code> and even views like <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>filter_view</code> (the third step — wrapping the result of <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> without first going through <code class="sourceCode cpp">as_const</code> — is to handle views that are iterable but not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable, that you might nevertheless want constant iterators for).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> possibly_const <span class="op">=</span> <span class="op">[]&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range R<span class="op">&gt;(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>R <span class="kw">const</span><span class="op">&gt;</span> <span class="kw">and</span> <span class="kw">not</span> std<span class="op">::</span>ranges<span class="op">::</span>view<span class="op">&lt;</span>std<span class="op">::</span>remove_const_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>        <span class="cf">return</span> <span class="kw">const_cast</span><span class="op">&lt;</span>R <span class="kw">const</span><span class="op">&amp;&gt;(</span>r<span class="op">)</span>;</span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>        <span class="cf">return</span> r;</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="op">}</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="op">}</span>;</span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cbegin <span class="op">=</span> first_of<span class="op">(</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a>    delete_if_nonborrowed_rvalue,</span>
+<span id="cb8-12"><a href="#cb8-12"></a>    <span class="co">// 2. possibly-wrapped begin of possibly-const r</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> </span>
+<span id="cb8-14"><a href="#cb8-14"></a>        RETURNS<span class="op">(</span>make_const_iterator<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>possibly_const<span class="op">(</span>r<span class="op">))))</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="op">)</span>;</span>
+<span id="cb8-16"><a href="#cb8-16"></a></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cend <span class="op">=</span> first_of<span class="op">(</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>    delete_if_nonborrowed_rvalue,</span>
+<span id="cb8-20"><a href="#cb8-20"></a>    <span class="co">// 2. possibly-wrapped end of possibly-const r</span></span>
+<span id="cb8-21"><a href="#cb8-21"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> </span>
+<span id="cb8-22"><a href="#cb8-22"></a>        RETURNS<span class="op">(</span>make_const_sentinel<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>possibly_const<span class="op">(</span>r<span class="op">)))&gt;(</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a>            std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>possibly_const<span class="op">(</span>r<span class="op">))))</span></span>
+<span id="cb8-24"><a href="#cb8-24"></a><span class="op">)</span>;</span></code></pre></div>
+<p>Here, <code class="sourceCode cpp">cbegin<span class="op">(</span>r<span class="op">)</span></code> and <code class="sourceCode cpp">cend<span class="op">(</span>r<span class="op">)</span></code> produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">boost<span class="op">::</span>iterator_range<span class="op">&lt;</span><span class="dt">int</span><span class="op">*&gt;</span></code> and even views like <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>filter_view</code> (<code class="sourceCode cpp">possibly_const</code> ensures that if get passed a non-<code class="sourceCode cpp"><span class="kw">const</span></code> <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, we treat it as <code class="sourceCode cpp"><span class="kw">const</span></code> first — which is both valid and necessary — while <code class="sourceCode cpp">filter_view <span class="kw">const</span></code> isn’t a <code class="sourceCode cpp">range</code> so we cannot treat it as <code class="sourceCode cpp"><span class="kw">const</span></code> first).</p>
 <p>In addition to simply working across all ranges, it has a few other features worth noting:</p>
 <ul>
 <li>For a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v</code>, <code class="sourceCode cpp">cbegin<span class="op">(</span>v<span class="op">)</span></code> gives precisely the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>const_iterator</code> (not <code class="sourceCode cpp">const_iterator<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>iterator<span class="op">&gt;</span></code>).</li>
@@ -901,8 +937,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-6"><a href="#cb9-6"></a>    <span class="kw">constexpr</span> const_view<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb9-7"><a href="#cb9-7"></a>    <span class="kw">constexpr</span> const_view<span class="op">(</span>V base<span class="op">)</span> <span class="op">:</span> base<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>base<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb9-8"><a href="#cb9-8"></a></span>
-<span id="cb9-9"><a href="#cb9-9"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> cbegin<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb9-10"><a href="#cb9-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> cend<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span> <span class="cf">return</span> cbegin<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span> <span class="cf">return</span> cend<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
 <span id="cb9-11"><a href="#cb9-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">requires</span> std<span class="op">::</span>ranges<span class="op">::</span>sized_range<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
 <span id="cb9-12"><a href="#cb9-12"></a></span>
 <span id="cb9-13"><a href="#cb9-13"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>V <span class="kw">const</span><span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> cbegin<span class="op">(</span>base<span class="op">)</span>; <span class="op">}</span></span>
@@ -914,42 +950,95 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-19"><a href="#cb9-19"></a><span class="kw">inline</span> <span class="kw">constexpr</span> std<span class="op">::</span>views<span class="op">::</span>__adaptor<span class="op">::</span>_RangeAdaptorClosure const_ <span class="op">=</span></span>
 <span id="cb9-20"><a href="#cb9-20"></a>    <span class="op">[]&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>viewable_range R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span></span>
 <span id="cb9-21"><a href="#cb9-21"></a>    <span class="op">{</span></span>
-<span id="cb9-22"><a href="#cb9-22"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>const_ref_for<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
-<span id="cb9-23"><a href="#cb9-23"></a>            <span class="cf">return</span> std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
-<span id="cb9-24"><a href="#cb9-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>enable_borrowed_range<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
-<span id="cb9-25"><a href="#cb9-25"></a>            <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>subrange<span class="op">(</span>cbegin<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>, cend<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)))</span>;</span>
-<span id="cb9-26"><a href="#cb9-26"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb9-27"><a href="#cb9-27"></a>            <span class="cf">return</span> const_view<span class="op">&lt;</span>std<span class="op">::</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;(</span>std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)))</span>;</span>
-<span id="cb9-28"><a href="#cb9-28"></a>        <span class="op">}</span></span>
-<span id="cb9-29"><a href="#cb9-29"></a>    <span class="op">}</span>;</span></code></pre></div>
-<p>To me, this is the ultimate goal for this problem, since it’s the one that guarantees correctness even in the presence of a range-based for statement:</p>
+<span id="cb9-22"><a href="#cb9-22"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>constant-range</em><span class="op">&lt;</span>R<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb9-23"><a href="#cb9-23"></a>            <span class="cf">return</span> std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb9-24"><a href="#cb9-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>constant-range</em><span class="op">&lt;</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb9-25"><a href="#cb9-25"></a>            <span class="cf">return</span> std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb9-26"><a href="#cb9-26"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>enable_borrowed_range<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb9-27"><a href="#cb9-27"></a>            <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>subrange<span class="op">(</span>cbegin<span class="op">(</span>r<span class="op">)</span>, cend<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb9-28"><a href="#cb9-28"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-29"><a href="#cb9-29"></a>            <span class="cf">return</span> const_view<span class="op">&lt;</span>std<span class="op">::</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;(</span>std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb9-30"><a href="#cb9-30"></a>        <span class="op">}</span></span>
+<span id="cb9-31"><a href="#cb9-31"></a>    <span class="op">}</span>;</span></code></pre></div>
+<p>The four cases here are:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">r</code> is already a constant range, no need to do anything, pass it through. Examples are <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&gt;</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>set<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</li>
+<li><code class="sourceCode cpp">r</code> is not a constant range but <code class="sourceCode cpp">std<span class="op">::</span>as_const<span class="op">(</span>r<span class="op">)</span></code> would be. Rather than do any wrapping ourselves, we defer to <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>. Example is <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</li>
+<li><code class="sourceCode cpp">r</code> is a borrowed range, so we can rip away its iterator/sentinel and wrap them independently. Examples are <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or a <code class="sourceCode cpp">views<span class="op">::</span>reverse</code>-ed <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or taking the <code class="sourceCode cpp">views<span class="op">::</span>values</code> of a <code class="sourceCode cpp">std<span class="op">::</span>map<span class="op">&lt;</span>K, V<span class="op">&gt;</span></code>.</li>
+<li><code class="sourceCode cpp">r</code> is neither a constant range nor a borrowed range, so we need to preserve it along with the iterators. Examples are <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span></code>-ed <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> (for an <code class="sourceCode cpp">f</code> that doesn’t produce constants).</li>
+</ol>
+<p>To me, being able to provide a <code class="sourceCode cpp">views<span class="op">::</span>const_</code> is the ultimate solution for this problem, since it’s the one that guarantees correctness even in the presence of a range-based for statement:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> e <span class="op">:</span> r <span class="op">|</span> views<span class="op">::</span>const_<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span></code></pre></div>
+<p>Or passing a constant range to an algorithm:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a>dont_touch_me<span class="op">(</span>views<span class="op">::</span>const_<span class="op">(</span>r<span class="op">))</span>;</span></code></pre></div>
+<p>As far as naming goes, obviously we can’t just call it <code class="sourceCode cpp">views<span class="op">::</span><span class="kw">const</span></code>. range-v3 calls it <code class="sourceCode cpp">const_</code>, but there’s a few other good name options here like <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> or <code class="sourceCode cpp">views<span class="op">::</span>to_const</code>.</p>
 <h2 data-number="2.7" id="what-about-stdcbegin-and-stdcend"><span class="header-section-number">2.7</span> What About <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>cend</code>?<a href="#what-about-stdcbegin-and-stdcend" class="self-link"></a></h2>
 <p>The above presents an implementation strategy for <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cend</code>.</p>
 <p>But what about <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>cend</code>? The problem is, while the former is C++20 technology and so can make use of the C++20 iterator model, <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> is C++11 technology and so has to remain fixed with the C++11 iterator model. The biggest difference for these purposes has to do with input iterators.</p>
 <p>In C++11, even for an input iterator, this is valid code:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> val <span class="op">=</span> <span class="op">*</span>it<span class="op">++</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> val <span class="op">=</span> <span class="op">*</span>it<span class="op">++</span>;</span></code></pre></div>
 <p>But in C++20, an input iterator’s postfix increment operator need not return a copy of itself. All the ones in the standard library return <code class="sourceCode cpp"><span class="dt">void</span></code>. This is the safer design, since any use of postfix increment that isn’t either ignoring the result or exactly the above expression are simply wrong for input iterators.</p>
 <p>Trying to be backwards compatible with pre-C++20 iterators is quite hard (again, see <span class="citation" data-cites="P2259R0">[<a href="#ref-P2259R0" role="doc-biblioref">P2259R0</a>]</span>), and the <code class="sourceCode cpp">const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span></code> implementation provided in this paper would <em>not</em> be a valid C++17 input iterator. Additionally, C++20 input iterators are required to be default constructible while C++17 input iterators were not.</p>
 <p>On the other hand, is it critically important to have a constant iterator for a C++17 input iterator? You’re not going to mutate anything meaningful anyway.</p>
 <p>A simple solution could have <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>c<span class="op">)</span></code> pass through C++17 input iterators unconditionally, and otherwise do <code class="sourceCode cpp">make_const_iterator<span class="op">(</span>as_const<span class="op">(</span>c<span class="op">).</span>begin<span class="op">())</span></code> (i.e. the <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> described above) for all iterators that are either C++20 iterators or C++17 forward iterators. This probably addresses the majority of the use-cases with minimal fuss.</p>
 <p>Moreover, would we want to extend <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> to also handle non-<code class="sourceCode cpp"><span class="kw">const</span></code>-iterable ranges? This is technically doable:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C<span class="op">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">concept</span> can_begin <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span> std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a></span>
-<span id="cb12-4"><a href="#cb12-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5"></a>    <span class="kw">requires</span> can_begin<span class="op">&lt;</span><span class="kw">const</span> C<span class="op">&gt;</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a><span class="kw">constexpr</span> <span class="kw">auto</span> cbegin<span class="op">(</span><span class="kw">const</span> C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a>    <span class="co">// today&#39;s overload, but also conditionally wrap</span></span>
-<span id="cb12-8"><a href="#cb12-8"></a><span class="op">}</span></span>
-<span id="cb12-9"><a href="#cb12-9"></a></span>
-<span id="cb12-10"><a href="#cb12-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
-<span id="cb12-11"><a href="#cb12-11"></a>    <span class="kw">requires</span> <span class="op">(</span>can_begin<span class="op">&lt;</span>C<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>can_begin<span class="op">&lt;</span><span class="kw">const</span> C<span class="op">&gt;)</span></span>
-<span id="cb12-12"><a href="#cb12-12"></a><span class="kw">constexpr</span> <span class="kw">auto</span> cbegin<span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-13"><a href="#cb12-13"></a>    <span class="co">// fallback for non-const-iterable ranges</span></span>
-<span id="cb12-14"><a href="#cb12-14"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">concept</span> can_begin <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span> std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>    <span class="kw">requires</span> can_begin<span class="op">&lt;</span><span class="kw">const</span> C<span class="op">&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="kw">constexpr</span> <span class="kw">auto</span> cbegin<span class="op">(</span><span class="kw">const</span> C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>    <span class="co">// today&#39;s overload, but also conditionally wrap</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="op">}</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>    <span class="kw">requires</span> <span class="op">(</span>can_begin<span class="op">&lt;</span>C<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>can_begin<span class="op">&lt;</span><span class="kw">const</span> C<span class="op">&gt;)</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="kw">constexpr</span> <span class="kw">auto</span> cbegin<span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>    <span class="co">// fallback for non-const-iterable ranges</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a><span class="op">}</span></span></code></pre></div>
 <p>I negated the constraint to prefer the <code class="sourceCode cpp"><span class="kw">const</span> C<span class="op">&amp;</span></code> overload even for non-const arguments.</p>
 <p>But we didn’t introduce a C++20 iteration model to then go back and give us more work to keep two models in lock-step. The C++20 one on its own is hard enough, and is a better model. We should just commit to it.</p>
+<p>It’d probably just be good enough to do something like:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> cbegin<span class="op">(</span>C <span class="kw">const</span><span class="op">&amp;</span> c<span class="op">)</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="op">{</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>    <span class="cf">if</span> consetxpr <span class="op">(</span>std<span class="op">::</span>forward_iterator<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">))&gt;)</span> <span class="op">{</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>        <span class="cf">return</span> make_const_iterator<span class="op">(</span>std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">))</span>;</span>
+<span id="cb14-7"><a href="#cb14-7"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a>        <span class="co">// leave input iterators (or... whatever) alone</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>        <span class="cf">return</span> std<span class="op">::</span>begin<span class="op">(</span>c<span class="op">)</span>;</span>
+<span id="cb14-10"><a href="#cb14-10"></a>    <span class="op">}</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="op">}</span></span></code></pre></div>
+<p>And similarly for <code class="sourceCode cpp">std<span class="op">::</span>cend</code>. This isn’t entirely without peril: currently we say nothing about the constraints for <code class="sourceCode cpp">std<span class="op">::</span>cbegin<span class="op">(</span>r<span class="op">)</span></code>; just that it calls <code class="sourceCode cpp">r<span class="op">.</span>begin<span class="op">()</span></code>, <em>whatever that is</em>. There isn’t a requirement that this ends up giving an iterator and there’s no requirement that any of the operations that <code class="sourceCode cpp">std<span class="op">::</span>forward_iterator</code> would check are SFINAE-friendly. I don’t know if we necessarily care about such (mis)uses of <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code>, but it is worth nothing.</p>
+<h2 data-number="2.8" id="now-reverse-it"><span class="header-section-number">2.8</span> Now Reverse It<a href="#now-reverse-it" class="self-link"></a></h2>
+<p>Now that we can produce a constant iterator for a range, producing a reversed constant iterator is a matter of composing operations. We don’t have to worry about sentinels in this case:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> crbegin <span class="op">=</span> first_of<span class="op">(</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>    delete_if_nonborrowed_rvalue,</span>
+<span id="cb15-4"><a href="#cb15-4"></a>    <span class="co">// 2. possibly-wrapped reversed begin of possibly-const range</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> RETURNS<span class="op">(</span>make_const_iterator<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>rbegin<span class="op">(</span>possibly_const<span class="op">(</span>r<span class="op">))))</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="op">)</span>;</span>
+<span id="cb15-7"><a href="#cb15-7"></a></span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> crend <span class="op">=</span> first_of<span class="op">(</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>    <span class="co">// 1. non-borrowed rvalue</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>    delete_if_nonborrowed_rvalue,</span>
+<span id="cb15-11"><a href="#cb15-11"></a>    <span class="co">// 2. possibly-wrapped reversed end of possibly-const range</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a>    <span class="op">[](</span>std<span class="op">::</span>ranges<span class="op">::</span>range <span class="kw">auto</span><span class="op">&amp;&amp;</span> r<span class="op">)</span> RETURNS<span class="op">(</span>make_const_iterator<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>rend<span class="op">(</span>possibly_const<span class="op">(</span>r<span class="op">))))</span></span>
+<span id="cb15-13"><a href="#cb15-13"></a><span class="op">)</span>;</span></code></pre></div>
+<p>Notably here, <code class="sourceCode cpp">ranges<span class="op">::</span>rbegin</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>rend</code> already themselves will try to produce a <code class="sourceCode cpp">std<span class="op">::</span>reverse_iterator</code> if the underlying range is bidirectional. Similarly, we’re ourselves trying to produce a <code class="sourceCode cpp">std<span class="op">::</span>const_iterator</code>.</p>
+<p>The extension to <code class="sourceCode cpp">std<span class="op">::</span>crbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>crend</code> mirrors the similar extension to <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>cend</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> C<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> crbegin<span class="op">(</span>C <span class="kw">const</span><span class="op">&amp;</span> c<span class="op">)</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> std<span class="op">::</span>rbegin<span class="op">(</span>c<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="op">{</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="cf">if</span> consetxpr <span class="op">(</span>std<span class="op">::</span>forward_iterator<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>rbegin<span class="op">(</span>c<span class="op">))&gt;)</span> <span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>        <span class="cf">return</span> make_const_iterator<span class="op">(</span>std<span class="op">::</span>rbegin<span class="op">(</span>c<span class="op">))</span>;</span>
+<span id="cb16-7"><a href="#cb16-7"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>        <span class="co">// leave input iterators (or... whatever) alone</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>        <span class="cf">return</span> std<span class="op">::</span>rbegin<span class="op">(</span>c<span class="op">)</span>;</span>
+<span id="cb16-10"><a href="#cb16-10"></a>    <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a><span class="op">}</span></span></code></pre></div>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="act-v-a-concluding-proposal"><span class="header-section-number">3</span> Act V: A Concluding Proposal<a href="#act-v-a-concluding-proposal" class="self-link"></a></h1>
 <p>The status quo is that we have an algorithm named <code class="sourceCode cpp">cbegin</code> whose job is to provide a constant iterator, but it does not always do that, and sometimes it doesn’t even provide a mutable iterator. This is an unfortunate situation.</p>
 <p>We can resolve this by extending <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cbegin</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>cend</code> to conditionally wrap their provided range’s <code class="sourceCode cpp">iterator</code>/<code class="sourceCode cpp">sentinel</code> pairs to ensure that the result is a constant iterator, and use these tools to build up a <code class="sourceCode cpp">views<span class="op">::</span>const_</code> range adapter. This completely solves the problem without any imposed boilerplate per range.</p>
@@ -957,12 +1046,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Would it be worth making such a change to <code class="sourceCode cpp">std<span class="op">::</span>cbegin</code>?</p>
 <p>Ultimately, the question is where in the Ranges Plan for C++23 <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span> such an improvement would fit in? That paper is focused exclusively on providing a large amount of new functionality to users. The facility proposed in this paper, while an improvement over the status quo, does not seem more important than any of that paper. I just want us to keep that in mind - I do not consider this problem in the top tier of ranges-related problems that need solving.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="epilogue"><span class="header-section-number">4</span> Epilogue<a href="#epilogue" class="self-link"></a></h1>
-<p>Thanks to Tim Song for helping me work through the design and implementation details of this paper. Thanks to Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs). Thanks to Eric Niebler for having already solved the problem of how to come up with the right reference type for a <code class="sourceCode cpp">const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span></code> in range-v3.</p>
+<p>Thanks to Tim Song for helping me work through the design and implementation details of this paper. Thanks to Peter Dimov and Tomasz Kamiński for insisting on design sanity (even as they insisted on different designs) and providing feedback. Thanks to Eric Niebler for having already solved the problem of how to come up with the right reference type for a <code class="sourceCode cpp">const_iterator<span class="op">&lt;</span>It<span class="op">&gt;</span></code> in range-v3.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-const-impl">
 <p>[const-impl] Barry Revzin. 2020. Implementing <code class="sourceCode cpp">cbegin</code>, <code class="sourceCode cpp">cend</code>, and <code class="sourceCode cpp">const_view</code>. <br />
-<a href="https://godbolt.org/z/aj5KsT">https://godbolt.org/z/aj5KsT</a></p>
+<a href="https://godbolt.org/z/avbPG8">https://godbolt.org/z/avbPG8</a></p>
 </div>
 <div id="ref-LWG2128">
 <p>[LWG2128] Dmitry Polukhin. Absence of global functions cbegin/cend. <br />
@@ -971,6 +1060,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-LWG3320">
 <p>[LWG3320] Poland. span::cbegin/cend methods produce different results than std::[ranges::]cbegin/cend. <br />
 <a href="https://wg21.link/lwg3320">https://wg21.link/lwg3320</a></p>
+</div>
+<div id="ref-LWG3386">
+<p>[LWG3386] Tim Song. elements_view needs its own sentinel type. <br />
+<a href="https://wg21.link/lwg3386">https://wg21.link/lwg3386</a></p>
 </div>
 <div id="ref-N1674">
 <p>[N1674] Walter E. Brown. 2004-08-31. A Proposal to Improve const_iterator Use from C++0X Containers. <br />
