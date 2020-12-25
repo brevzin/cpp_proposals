@@ -288,59 +288,132 @@ public:
 };
 ```
 
-## Implementing `const_sentinel<I, S>`
+## Implementing `const_sentinel<I, S>`?
 
-One of the changes in C++20 Ranges as compared to C++17 Ranges is the introduction of the Sentinel concept. A range is no longer a pair of two `iterator`s, it is an `iterator`/`sentinel` pair. The `sentinel` could be the same type as the `iterator`, such a range is known as a `common_range` but it need not be. 
+One of the changes in C++20 Ranges as compared to C++17 Ranges is the introduction of the Sentinel concept. A range is no longer a pair of two `iterator`s, it is an `iterator`/`sentinel` pair. The `sentinel` could be the same type as the `iterator`, such a range is known as a `common_range` but it need not be. We would need to handle producing a wrapped `sentinel` in addition to producing a wrapped `iterator`.
 
-We would need to handle producing a wrapped `sentinel` in addition to producing a wrapped `iterator`. Thankfully, `sentinel` only has two associated operation: `==` with its iterator (unconditionaly) and `-` for computing a difference from its iterator (conditionally). As a result, while there are more cases to consider, the implementation is much less code:
+However, the question of what to do about sentinels is a bit more complicated than what to do about iterators, because we have to deal with convertability.
+
+We have this expectation that a range's mutable iterator is convertible to its constant iterator. That is, given any type `R` such `range<R>` and `range<R const>` both hold, that `iterator_t<R>` is convertible to `iterator_t<R const>`. For example, we expect `vector<T>::iterator` to be convertible to `vector<T>::const_iterator`, and likewise for any other container or view.
+
+Adding the concept of a `const_iterator` further complicates matters because now we have the following cross-convertibility and cross-comparability graph:
+
+
+```{.graphviz}
+digraph G {
+	
+	size="8,8"
+    node [fontname = "consolas"];
+    
+    "iterator_t<R>" -> "iterator_t<R const>"
+    "iterator_t<R>" -> "const_iterator<iterator_t<R>>"
+    "const_iterator<iterator_t<R>>" -> "const_iterator<iterator_t<R const>>"
+    "iterator_t<R const>" -> "const_iterator<iterator_t<R const>>"
+    "iterator_t<R>" -> "const_iterator<iterator_t<R const>>"
+    
+    "iterator_t<R>" -> "iterator_t<R const>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+    "iterator_t<R>" -> "const_iterator<iterator_t<R>>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+    "iterator_t<R>" -> "const_iterator<iterator_t<R const>>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+    "iterator_t<R const>" -> "const_iterator<iterator_t<R>>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+    "iterator_t<R const>" -> "const_iterator<iterator_t<R const>>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+    "const_iterator<iterator_t<R>>" -> "const_iterator<iterator_t<R const>>" [dir=both, color=blue, style=dotted, arrowhead=vee, arrowtail=vee]
+}
+```
+
+A black arrow from `T` to `U` indicates that `T` needs to be convertible to `U`, while the blue bidirectional arrows between `T` and `U` indicate that `equality_comparable_with<T, U>` holds (i.e. not only that the types can be compared with `==` and `!=` but also that there is a common type between them). That is, every pair of types here needs to model `equality_comparable_with`.
+
+Even though `iterator_t<R const>` and `const_iterator<iterator_t<R>>` are not convertible to each other, they still have a `common_type`: `const_iterator<iterator_t<R const>>`. 
+
+The complexity of the above graph, and the need for all the cross-comparisons and cross-conversions anyway, suggests that there isn't much point in having a `const_sentinel<I, S>` type at best. At worst, it's a complex interplay of types to get right. We need to ensure that `sentinel_for<const_iterator<I>, S>` holds anyway, regardless of whether we pursue a `const_sentinel<I, S>` type, so wrapping doesn't really do much for us. Hopefully, we don't find a problem that necessitates wrapping in the future (c.f. [@LWG3386]).
+
+As such, what we need for `make_const_sentinel` is:
 
 ```cpp
-template <std::input_iterator It, std::sentinel_for<It> S>
-class const_sentinel {
-    S s;
-public:
-    const_sentinel(S s) : s(std::move(s)) { }
-    
-    bool operator==(const_iterator<It> const& rhs) const {
-        return rhs.base() == s;
-    }
-    
-    auto operator-(const_iterator<It> const& rhs) const -> std::iter_difference_t<It>
-            requires std::sized_sentinel_for<S, It>
-    {
-        return s - rhs.base();
-    }
-
-    friend auto operator-(const_iterator<It> const& lhs, const_sentinel const& rhs) -> std::iter_difference_t<It>
-            requires std::sized_sentinel_for<S, It>
-    {
-        return -(rhs - lhs);
-    }    
-};
-
-template <std::input_iterator It, std::sentinel_for<It> S>
+template <typename S>
 constexpr auto make_const_sentinel(S s) {
-    if constexpr (@_constant-iterator_@<It>) {
-        // if the iterator is already a constant iterator, pass it through
-        return s;
-    } else if constexpr (std::same_as<It, S>) {
-        // we have an iterator pair, so we wrap it the same way
-        return const_iterator<It>(s);
+    if constexpr (std::input_iterator<S>) {
+        // the sentinel here is an iterator in its own right, so we need to (possibly) wrap it the same way
+        return make_const_iterator(std::move(s));
     } else {
-        return const_sentinel<It, S>{s};
+        return s;
     }
 }
 ```
 
-Note that we need the iterator type as a template parameter here.
+We could take the iterator type as a template parameter to enforce that `S` satisfies `sentinel_for<I>`, but this function is only used as a building block of an algorithm that would already enforce this, so it's probably not necessary.
 
-There's a question as to whether we need to wrap the sentinel at all (in the case where it is distinct from the iterator type). It's possible that we do not, but following [@LWG3386], I don't have much confidence that we won't come up with an example later that demonstrates the need for such in the future. Are we especially worried about the wrapping cost? 
+But to make `const_iterator<I>` satisfy the graph illustrated above, we have to make several changes to what I showed in the previous section:
+
+```diff
+  template <std::input_iterator It>
+  class const_iterator : public iterator_concept_for<It>
+                       , public iterator_category_for<It>
+  {
+      It it;
+  
+  public:
+      using value_type = std::iter_value_t<It>;
+      using difference_type = std::iter_difference_t<It>;
+      using reference = const_ref_for<It>;
+  
+      const_iterator() = default;
+      const_iterator(It it) : it(std::move(it)) { }
++     template <std::convertible_to<It> U>
++     const_iterator(const_iterator<U> c) : it(std::move(c.base())) { }
++     const_iterator(std::convertible_to<It> auto&& c) : it(FWD(c)) { }
+
+      // ...
+      
+-     auto operator==(const_iterator const& rhs) const  -> bool requires std::equality_comparable<It> {  return it == rhs.it; }
+-     auto operator<=>(const_iterator const& rhs) const requires std::random_access_iterator<It> { return it <=> rhs.it; }    
++     template <std::sentinel_for<It> S>
++     auto operator==(S const& s) const -> bool {
++         return it == s;
++     }
++ 
++     template <std::sentinel_for<It> S>
++         requires std::random_access_iterator<It> && requires (It const& it, S s) { it <=> s; }
++     auto operator<=>(S const& s) const {
++         return it <=> s;
++     }
++ 
++     template <std::sized_sentinel_for<It> S>
++     auto operator-(S const& s) const -> std::iter_difference_t<It> {
++         return it - s;
++     }
+  
+      auto base() -> It& { return it; }
+      auto base() const -> It const& { return it; }
+  };
+  
++ template <std::input_iterator It, std::sized_sentinel_for<It> S>
++ auto operator-(S const& s, const_iterator<It> const& rhs) -> std::iter_difference_t<It> {
++     return s - rhs.it;
++ }
++ 
++ template <typename T, std::common_with<T> U>
++ struct std::common_type<const_iterator<T>, U> {
++     using type = const_iterator<std::common_type_t<T, U>>;
++ };
++ template <typename T, std::common_with<T> U>
++ struct std::common_type<U, const_iterator<T>> {
++     using type = const_iterator<std::common_type_t<T, U>>;
++ };
++ template <typename T, std::common_with<T> U>
++ struct std::common_type<const_iterator<T>, const_iterator<U>> {
++     using type = const_iterator<std::common_type_t<T, U>>;
++ };      
+```
+
+The added converting constructors satisfy the conversion rules, the extended comparisons cover the other types we need to compare against, the `common_type` specializations cover the cases where we might not be convertible in either direction but still need to have a common type. The remainder, the two `operator-()` overloads are to handle the `sized_sentinel_for` cases.
+
+With all of that, we have a `const_iterator<I>` that satisfies the intricate web of comparisons, conversions, and common types that we would expect for constant iterators.
 
 ## Better Algorithms for `std::ranges::cbegin` and `std::ranges::end`
 
 `std::ranges::cbegin` today ([range.access.cbegin]{.sref}), similar `std::begin`, unconditionally calls `ranges::begin`. While `std::ranges::rbegin(E)` does conditionally call `E.rbegin()`, I wonder to what extent this facility actually needs to be customizeable. The goal is to provide a constant iterator version of `begin()`.
 
-With the above pieces, we can do precisely that (see full implementation [@const-impl]):
+With the above pieces, we can do precisely that (see full implementation [@const-impl], complete with many tests):
 
 ```cpp
 inline constexpr auto possibly_const = []<std::ranges::range R>(R& r) -> auto& {
@@ -364,8 +437,7 @@ inline constexpr auto cend = first_of(
     delete_if_nonborrowed_rvalue,
     // 2. possibly-wrapped end of possibly-const r
     [](std::ranges::range auto&& r) 
-        RETURNS(make_const_sentinel<decltype(std::ranges::begin(possibly_const(r)))>(
-            std::ranges::end(possibly_const(r))))
+        RETURNS(make_const_sentinel(std::ranges::end(possibly_const(r))))
 );
 ```
 
@@ -375,6 +447,8 @@ In addition to simply working across all ranges, it has a few other features wor
 
 * For a `vector<int> v`, `cbegin(v)` gives precisely the type `vector<int>::const_iterator` (not `const_iterator<vector<int>::iterator>`).
 * For a `span<int> s`, `cbegin(s)` provides a contiguous iterator over `int const&`, not just any kind of iterator.
+
+Note that here, `ranges::end` already checks that the type returned is a `sentinel` for the type returned by `ranges::begin`. Given that fact, the implementation here already ensures that `sentinel_for<decltype(cbegin(r)), decltype(cend(r))>`  holds.
 
 ## A `views::const_`
 
@@ -399,7 +473,8 @@ public:
 };
 
 template <typename V>
-inline constexpr bool enable_borrowed_range<const_view<V>> = enable_borrowed_range<V>;
+inline constexpr bool ::std::ranges::enable_borrowed_range<const_view<V>> =
+    std::ranges::enable_borrowed_range<V>;
 
 // libstdc++ specific (hopefully standard version coming soon!)
 inline constexpr std::views::__adaptor::_RangeAdaptorClosure const_ =
@@ -559,5 +634,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/odcYc8
+    URL: https://godbolt.org/z/YnYsfK
 ---
