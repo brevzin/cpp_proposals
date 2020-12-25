@@ -398,6 +398,9 @@ public:
     constexpr auto size() const requires std::ranges::sized_range<V const> { return std::ranges::size(base); }
 };
 
+template <typename V>
+inline constexpr bool enable_borrowed_range<const_view<V>> = enable_borrowed_range<V>;
+
 // libstdc++ specific (hopefully standard version coming soon!)
 inline constexpr std::views::__adaptor::_RangeAdaptorClosure const_ =
     []<std::ranges::viewable_range R>(R&& r)
@@ -406,8 +409,6 @@ inline constexpr std::views::__adaptor::_RangeAdaptorClosure const_ =
             return std::views::all(r);
         } else if constexpr (@_constant-range_@<std::remove_reference_t<R> const>) {
             return std::views::all(std::as_const(r));
-        } else if constexpr (std::ranges::enable_borrowed_range<std::remove_cvref_t<R>>) {
-            return std::ranges::subrange(cbegin(r), cend(r));
         } else {
             return const_view<std::views::all_t<R>>(std::views::all(r));
         }
@@ -418,8 +419,7 @@ The four cases here are:
 
 1. `r` is already a constant range, no need to do anything, pass it through. Examples are `std::span<T const>` or `std::vector<T> const` or `std::set<T>`.
 2. `r` is not a constant range but `std::as_const(r)` would be. Rather than do any wrapping ourselves, we defer to `std::as_const`. Example is `std::vector<T>`.
-3. `r` is a borrowed range, so we can rip away its iterator/sentinel and wrap them independently. Examples are `std::span<T>` or a `views::reverse`-ed `std::vector<T>` or taking the `views::values` of a `std::map<K, V>`.
-4. `r` is neither a constant range nor a borrowed range, so we need to preserve it along with the iterators. Examples are `views::transform(f)`-ed `std::vector<T>` (for an `f` that doesn't produce constants).
+3. `r` is neither a constant range nor can easily be made one, so we have to wrap ourselves. Examples are basically any mutable view. 
 
 To me, being able to provide a `views::const_` is the ultimate solution for this problem, since it's the one that guarantees correctness even in the presence of a range-based for statement:
 
@@ -559,5 +559,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/avbPG8
+    URL: https://godbolt.org/z/odcYc8
 ---
