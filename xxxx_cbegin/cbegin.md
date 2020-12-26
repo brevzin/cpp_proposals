@@ -446,9 +446,9 @@ We could take the iterator type as a template parameter to enforce that `S` sati
 
 ## Better Algorithms for `std::ranges::cbegin` and `std::ranges::end`
 
-`std::ranges::cbegin` today ([range.access.cbegin]{.sref}), similar `std::begin`, unconditionally calls `ranges::begin`. While `std::ranges::rbegin(E)` does conditionally call `E.rbegin()`, I wonder to what extent this facility actually needs to be customizeable. The goal is to provide a constant iterator version of `begin()`.
+`std::ranges::cbegin` today ([range.access.cbegin]{.sref}) unconditionally calls `std::ranges::begin`. Similar `std::cbegin` today ([iterator.range]{.sref}) unconditionally calls `std::begin`. The status quo in the library is that nothing anywhere invokes _member_ `cbegin`. The goal is to provide a constant iterator version of `begin()` &mdash; we have not had a customization point for this facility in the past and we can achieve this goal without having to add a customization point for the future.
 
-With the above pieces, we can do precisely that (see full implementation [@const-impl], complete with many tests):
+With the above pieces, we implement a `ranges::cbegin` and `ranges::end` to ensure that we get a constant iterator (see full implementation [@const-impl], complete with many tests):
 
 ```cpp
 inline constexpr auto possibly_const = []<std::ranges::range R>(R& r) -> auto& {
@@ -478,6 +478,8 @@ inline constexpr auto cend = first_of(
 ```
 
 Here, `cbegin(r)` and `cend(r)` produce a range that is top-level const over any underlying range, without having to modify any of those underlying ranges to opt in to this behavior. This works for `std::vector<int>` and `std::span<int>` and `boost::iterator_range<int*>` and even views like `std::ranges::filter_view` (`possibly_const` ensures that if get passed a non-`const` `vector<int>`, we treat it as `const` first &mdash; which is both valid and necessary &mdash; while `filter_view const` isn't a `range` so we cannot treat it as `const` first).
+
+Avoiding a customization point here let's us give an easy answer to the question of whether or not types should provide a member `cbegin` going forward: no, they shouldn't. Users that want a constant iterator can this facility, which will work for all ranges. 
 
 In addition to simply working across all ranges, it has a few other features worth noting:
 
@@ -608,7 +610,7 @@ constexpr auto cbegin(C const& c)
 }
 ```
 
-And similarly for `std::cend`. This isn't entirely without peril: currently we say nothing about the constraints for `std::cbegin(r)`; just that it calls `r.begin()`, _whatever that is_. There isn't a requirement that this ends up giving an iterator and there's no requirement that any of the operations that `std::forward_iterator` would check are SFINAE-friendly. I don't know if we necessarily care about such (mis)uses of `std::cbegin`, but it is worth nothing.
+And similarly for `std::cend`. This isn't entirely without peril: currently we say nothing about the constraints for `std::cbegin(r)`; just that it calls `r.begin()`, _whatever that is_. There isn't a requirement that this ends up giving an iterator and there's no requirement that any of the operations that `std::forward_iterator` would check are SFINAE-friendly. I don't know if we necessarily care about such (mis)uses of `std::cbegin`, but it is worth noting.
 
 ## Now Reverse It
 
