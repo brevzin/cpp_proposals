@@ -2,7 +2,6 @@
 import panflute as pf
 import os
 import sys
-# sys.path.append('/home/brevzin/.local/lib/python3.6/site-packages')
 import pygraphviz
 import hashlib
 
@@ -29,20 +28,21 @@ def bq(elem, doc):
     if elem.classes == ['bq']:
         return pf.BlockQuote(*elem.content)
 
-def graphviz(elem, doc):
-    def sha1(x):
-        return hashlib.sha1(x.encode(sys.getfilesystemencoding())).hexdigest()
+def sha1(x):
+    return hashlib.sha1(x.encode(sys.getfilesystemencoding())).hexdigest()
+    
+MD_DIR = os.path.dirname(__file__)
 
+def graphviz(elem, doc):
     if isinstance(elem, pf.CodeBlock) and 'graphviz' in elem.classes:
         code = elem.text
-        caption = "caption"
         G = pygraphviz.AGraph(string=code)
         G.layout()
 
         filename = sha1(code)
         filetype = {'html': 'png', 'latex': 'pdf'}.get(doc.format, 'png')
-        alt = pf.Str(caption)
-        imagedir = 'graphviz-images'
+        caption = elem.attributes.get('caption', '')
+        imagedir = f'{MD_DIR}/graphviz-images'
         src = f'{imagedir}/{filename}.{filetype}'
         if not os.path.isfile(src):
             try:
@@ -50,9 +50,9 @@ def graphviz(elem, doc):
                 sys.stderr.write(f'Created directory {imagedir}\n')
             except OSError:
                 pass
-            G.draw(src, prog='dot')
+            G.draw(src)
             sys.stderr.write(f'Created image {src}\n')
-        return pf.Para(pf.Image(alt, url=src, title=''))
+        return pf.Para(pf.Image(pf.Str(caption), url=src, title=caption))
 
 if __name__ == '__main__':
     pf.run_filters([h1hr, bq, graphviz])
