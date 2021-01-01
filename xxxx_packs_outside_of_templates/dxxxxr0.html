@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-12-16" />
+  <meta name="dcterms.date" content="2021-01-01" />
   <title>Packs outside of Templates</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-12-16</td>
+    <td>2021-01-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -560,8 +560,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 
 </header>
 <div style="clear:both">
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>There are several papers currently in-flight which introduce or rely on a facility that C++ does not currently have: the ability to use packs outside of templates. Those papers are:</p>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>There are several papers currently in-flight which introduce or rely on a facility that C++ does not currently have: the ability to use packs not just outside of variadic templates but also outside of templates entirely. Those papers are:</p>
 <ul>
 <li><span class="citation" data-cites="P1061R1">[<a href="#ref-P1061R1" role="doc-biblioref">P1061R1</a>]</span> Structured Bindings can introduce a Pack</li>
 <li><span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> Generalized pack declaration and usage</li>
@@ -596,7 +596,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-24"><a href="#cb1-24"></a>    <span class="co">// from P2237: decltype(zs) is simple_tuple&lt;int, int&gt;</span></span>
 <span id="cb1-25"><a href="#cb1-25"></a>    simple_tuple<span class="op">&lt;|</span>params<span class="op">|...&gt;</span> zs <span class="op">=</span> xs;</span>
 <span id="cb1-26"><a href="#cb1-26"></a><span class="op">}</span></span></code></pre></div>
-<p><code class="sourceCode cpp">f</code> here is <em>not</em> a template, yet we see five places where we’re using a pack in some way (on lines 9, 10, 13, 20, and 23).</p>
+<p><code class="sourceCode cpp">f</code> here is <em>not</em> a template, yet we see five places where we’re using a pack in some way (on lines 11, 12, 15, 22, and 25).</p>
 <p>While the two reflection-based usages look similar, there’s a significant distinction between the two. In <span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span>, the <code class="sourceCode cpp"><span class="kw">typename</span><span class="op">(...</span>range<span class="op">)</span></code> transformation may look like a pack expansion, but it is not. We do not have access to each underlying element of the pack to be able to do further transformations on. But with <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>, we do have a proper pack expansion, and can make such transformations we please. For example, if we wanted to make a <code class="sourceCode cpp">simple_tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;</span>, <span class="dt">int</span><span class="op">&amp;&gt;</span></code> that refers to the underlying elements of <code class="sourceCode cpp">xs</code>, that involves taking the template parameters range (<code class="sourceCode cpp">params</code> from the above example) and adding an lvalue reference to each type. This is how we would do it with the two papers:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">// with P1240</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> refs <span class="op">=</span> params</span>
@@ -605,7 +605,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-5"><a href="#cb2-5"></a></span>
 <span id="cb2-6"><a href="#cb2-6"></a><span class="co">// with P2237</span></span>
 <span id="cb2-7"><a href="#cb2-7"></a>simple_tuple<span class="op">&lt;|</span>params<span class="op">|&amp;...&gt;</span> zs_ref<span class="op">{</span>a<span class="op">...}</span>;</span></code></pre></div>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="paper-response" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Paper Response<a href="#paper-response" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="paper-response"><span class="header-section-number">2</span> Paper Response<a href="#paper-response" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P1061R1">[<a href="#ref-P1061R1" role="doc-biblioref">P1061R1</a>]</span> was last seen in Belfast, where Evolution approved the direction 12-5-2-0-1.</p>
 <p><span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> was discussed discussed on a telecon in October 2020. That paper is larger in scope and consists basically of three different sections, but the only relevant section as far as this paper is concerned is the question of exploring packs in more places (as in the example earlier). That section was received very favorably: 9-13-2-1-1. Other papers of the paper had less support (pack indexing slightly less at 7-11-6-2-0, and packifying much less so at 3-7-8-6-1), but the ability to simply have packs in more places is fundamental in that paper and already directly exposes having packs outside of templates.</p>
 <p>In both cases, the source of opposition was implementation concern, along two axes:</p>
@@ -613,67 +613,85 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>implementation effort (and to a lesser extent, specification effort)</li>
 <li>compilation latency</li>
 </ul>
-<p>The first bullet point speaks for itself, but the second bears some elaboration. Right now, in order to handle packs properly, implementations have to cache expressions as they go. Since a <code class="sourceCode cpp"><span class="op">...</span></code> can appear arbitrarily late in an expression, and is only a suffix rather than a prefix, compilers just don’t know if something will eventually become a pack expansion or not. This machinery only has to exist in templates today, since that’s the only place where we can get pack expansions today.</p>
-<p>But if we added packs outside of templates, suddenly every function anywhere could potentially have a pack expansion in it, and compilers need to be able to handle that, which means more work. Even existing C++20 code that does not use any of these features could see its compile times increase.</p>
-<p><span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span> avoids this problem by only allowing very specific kinds of expansion, as demonstrated earlier. Notably, those specific kinds of expansions have identifiable prefixes, so that compilers can know in advance that a pack expansion is coming, and won’t have additional overhead for parsing regular functions that don’t use the new features.</p>
+<p>The first bullet point speaks for itself, but the second bears some elaboration. Right now, in order to handle packs properly, implementations have to cache expressions as they go. Since a <code class="sourceCode cpp"><span class="op">...</span></code> can appear arbitrarily late in an expression, and is only a suffix rather than a prefix, compilers just don’t know if something will eventually become a pack expansion or not. This machinery only has to exist in <em>specifically</em> variadic templates today, since that’s the only place where we can get pack expansions today.</p>
+<p>But if we addded the facilities described in these papers, suddenly every function and even every declaration, could potentially have a pack expansion in it. Even at namespace scope!</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
+<span id="cb3-2"><a href="#cb3-2"></a>simple_tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">*</span>, <span class="dt">int</span><span class="op">*&gt;</span> ptrs <span class="op">=</span> <span class="op">{&amp;</span>xs<span class="op">.</span>elems<span class="op">...}</span>;</span></code></pre></div>
+<p>Compilers would need to be able to handle all of this, which means they have to necessarily do more work. Even existing C++20 code that does not use any of these new language features could see its compile times increase.</p>
+<p><span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span> avoids this problem by only allowing very specific kinds of expansion, as demonstrated earlier. Notably, those specific kinds of expansions have identifiable prefixes, so that compilers can know in advance that a pack expansion is coming, and won’t have additional overhead for parsing regular functions (or arbitrary declarations) that don’t use the new features.</p>
 <p>If we have a reflection-range of types, with <span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span> we can explode it into a template with those specific types as parameters. But that’s it. Any deviation from specific prescribes shapes requires more work from the user.</p>
 <p><span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span> does not have this restriction, and so runs into the same issue as my papers: implementation complexity and added compilation latency.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="what-do-we-do-about-it" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> What Do We Do About It?<a href="#what-do-we-do-about-it" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="what-do-we-do-about-it"><span class="header-section-number">3</span> What Do We Do About It?<a href="#what-do-we-do-about-it" class="self-link"></a></h1>
 <p>I think there are three choices we can make about how to address this problem, but we have to make the decision holistically.</p>
 <ol type="1">
 <li><p>We allow packs outside of templates, understanding the necessary cost (both in time and latency) to make that work.</p></li>
-<li><p>We allow packs outside of templates, but come up with a pack-expansion prefix or something to that effect. The prefixed expansion would be valid in both templates and non-templates, but only the suffixed expansion would be valid in templates. And encourage people to start using prefixed expansion for compiler latency purposes.</p></li>
-<li><p>We do not allow packs outside of templates at all. If you want to use packs, you need to have a template.</p></li>
+<li><p>We allow packs outside of templates, but come up with a pack-expansion prefix or something to that effect. The prefixed expansion would be valid in both templates and non-templates, but only the suffixed expansion we already have would be valid in variadic templates. We also encourage people to start using prefixed expansion for compiler latency purposes.</p></li>
+<li><p>We do not allow packs outside of variadic templates at all. If you want to use packs, you need to have a variadic template.</p></li>
 </ol>
 <p>I think we should choose Option 1 (my preference here is probably not surprising, given that I’ve written two papers on extending pack usage). It’s useful functionality to have, and from a language perspective, it seems to make a lot of sense. Such examples arguably have very clear meaning.</p>
-<p>Not all code is templates. People do still, on occasion, I am told, write functions. Some problems lead themselves very well to pack expansion and we should give users all the tools available to solve their problems.</p>
-<p>Barring that, Option 2 would kind of be jarringly weird. The obvious choice is probably just prefix ellipsis, so we end up with like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="dt">void</span> some_func<span class="op">(</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="dt">void</span> f<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    some_func<span class="op">(...</span> xs<span class="op">.</span>elems<span class="op">)</span>;</span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="op">}</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a><span class="dt">void</span> g<span class="op">(</span>Ts<span class="op">...</span> elems<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>    some_func<span class="op">(</span>elems <span class="op">...)</span>;</span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="op">}</span></span></code></pre></div>
-<p>Same idea, two syntaxes? Delightful. Way better than one syntax, two ideas though.</p>
-<p>Option 3 leads silly looking workarounds:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">void</span> f<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="co">// we disallow this</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    <span class="dt">int</span> product_bad <span class="op">=</span> <span class="op">(</span><span class="dv">1</span> <span class="op">*</span> <span class="op">...</span> <span class="op">*</span> xs<span class="op">.</span>elems<span class="op">)</span>;</span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a>    <span class="co">// ... but allow this</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>    <span class="dt">int</span> product_good <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;</span> xs<span class="op">){</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>        <span class="co">// need to disambiguate here, since now</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>        <span class="co">// xs.elems is dependent</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>        <span class="cf">return</span> <span class="op">(</span><span class="dv">1</span> <span class="op">*</span> <span class="op">...</span> <span class="op">*</span> xs<span class="op">.</span> <span class="op">...</span>elems<span class="op">)</span>;</span>
-<span id="cb4-10"><a href="#cb4-10"></a>    <span class="op">}(</span>xs<span class="op">)</span>;</span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="op">}</span></span></code></pre></div>
-<p>Which are precisely the sorts of workarounds that <span class="citation" data-cites="P1061R1">[<a href="#ref-P1061R1" role="doc-biblioref">P1061R1</a>]</span> and <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> sought to avoid to begin with. On the plus side, we would not need such workarounds in templates — just non-templates.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Not all code is variadic templates. People do still, on occasion, I am told, write functions. Some problems lead themselves very well to pack expansion and we should give users all the tools available to solve their problems.</p>
+<p>Barring that, Option 2 would be a little weird. One choice for a prefix annotation would be to use ellipsis (kind of makes sense in keeping with the theme), so we end up with like:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">void</span> some_func<span class="op">(</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="dt">void</span> f<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    some_func<span class="op">(...</span> xs<span class="op">.</span>elems<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    some_func<span class="op">(</span>xs<span class="op">.</span>elems <span class="op">...)</span>; <span class="co">// error</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="op">}</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="dt">void</span> g<span class="op">(</span>Ts<span class="op">...</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>    some_func<span class="op">(...</span> elems<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>    some_func<span class="op">(</span>elems <span class="op">...)</span>; <span class="co">// ok</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="op">}</span></span></code></pre></div>
+<p>Same idea, two syntaxes? Delightful. Way better than one syntax, two ideas though. And as an idea it at least seems tolerable — at least the prefix syntax would be universally applicable.</p>
+<p>Although option 2 might not necessary completely solve the issue anyway due to the existence of fold expressions. There, the ellipsis placement is driven by the form of expansion desired. <code class="sourceCode cpp"><span class="op">(</span>E <em>op</em> <span class="op">...)</span></code> and <code class="sourceCode cpp"><span class="op">(...</span> <em>op</em> E<span class="op">)</span></code> might mean different things, and the expression <code class="sourceCode cpp">E</code> could be arbitrarily involved. Does this imply the need for a prefix annotation indicating that a fold expression is coming? Not sure.</p>
+<p>Option 3 is largely a decision to abandon <span class="citation" data-cites="P1061R1">[<a href="#ref-P1061R1" role="doc-biblioref">P1061R1</a>]</span> and most of <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span>. The goal of these papers is to avoid the sorts of complex workarounds necessary to write today. A less-strict version of option 3 might be to allow introducing packs into non-variadic templates but not outside of templates. That is, allow <code class="sourceCode cpp">g</code> below but not <code class="sourceCode cpp">f</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">void</span> f<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">auto</span> <span class="op">[...</span>elems<span class="op">]</span> <span class="op">=</span> xs; <span class="co">// error: pack outside of template</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="op">}</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Tuple<span class="op">&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="dt">void</span> g<span class="op">(</span>Tuple ys<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="kw">auto</span> <span class="op">[...</span>elems<span class="op">]</span> <span class="op">=</span> ys; <span class="co">// ok: even if not a variadic template</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span></span></code></pre></div>
+<p>But this leads to especially silly-looking workarounds, where we have to wrap code in generic lambdas… just because:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">void</span> h<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    <span class="co">// we disallow this</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="dt">int</span> product_bad <span class="op">=</span> <span class="op">(</span><span class="dv">1</span> <span class="op">*</span> <span class="op">...</span> <span class="op">*</span> xs<span class="op">.</span>elems<span class="op">)</span>;</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="co">// ... but we allow this</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="dt">int</span> product_good <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;</span> xs<span class="op">){</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>        <span class="co">// need to disambiguate here, since now</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>        <span class="co">// xs.elems is dependent</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>        <span class="cf">return</span> <span class="op">(</span><span class="dv">1</span> <span class="op">*</span> <span class="op">...</span> <span class="op">*</span> xs<span class="op">.</span> <span class="op">...</span>elems<span class="op">)</span>;</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="op">}(</span>xs<span class="op">)</span>;</span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="op">}</span></span></code></pre></div>
+<p>Which itself doesn’t seem like a great place to end up. On the plus side, we would not need such workarounds in templates — only in non-templates.</p>
+<p>To be clear, I don’t think any of these options is an easy choice to just pick and go on a victory parade.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper isn’t a proposal in of itself. We already have four different proposals in front of us solving four different problems.</p>
-<p>But those proposals between them expose a common new language feature: the ability to have and use packs outside of templates.</p>
+<p>But those proposals between them expose a common new language feature: the ability to have and use packs not just outside of variadic templates, but even outside of templates entirely.</p>
 <p>The problem is: this is a difficult piece of functionality for implementations.</p>
 <p>The question we have to answer is: Does the benefit of packs outside of templates (arguably fewer rules to think about and more straightforward code to write) outweigh the cost (large implementation effort and likely compile-time performance hit)? Or is the trade-off not there — we would rather invest implementation effort on <em>other</em> features even if it means that users will have to write the kinds of silly workarounds presented earlier?</p>
 <p>While I have my personal preference (easy for me to claim, as not an implementor), I do think it would be valuable for Evolution to provide clear direction on this question earlier rather than later.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography" data-number="5" style="border-bottom:1px solid #cccccc"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Daveed Vandevoorde for explaining the issues here to me, and then explaining them a few more times because I didn’t understand them the first time.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1061R1">
-<p>[P1061R1] Barry Revzin, Jonathan Wakely. 2019. Structured Bindings can introduce a Pack. <br />
+<p>[P1061R1] Barry Revzin, Jonathan Wakely. 2019-10-07. Structured Bindings can introduce a Pack. <br />
 <a href="https://wg21.link/p1061r1">https://wg21.link/p1061r1</a></p>
 </div>
 <div id="ref-P1240R1">
-<p>[P1240R1] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2019. Scalable Reflection in C++. <br />
+<p>[P1240R1] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2019-10-08. Scalable Reflection in C++. <br />
 <a href="https://wg21.link/p1240r1">https://wg21.link/p1240r1</a></p>
 </div>
 <div id="ref-P1858R2">
-<p>[P1858R2] Barry Revzin. 2020. Generalized pack declaration and usage. <br />
+<p>[P1858R2] Barry Revzin. 2020-03-01. Generalized pack declaration and usage. <br />
 <a href="https://wg21.link/p1858r2">https://wg21.link/p1858r2</a></p>
 </div>
 <div id="ref-P2237R0">
-<p>[P2237R0] Andrew Sutton. 2020. Metaprogramming. <br />
+<p>[P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <br />
 <a href="https://wg21.link/p2237r0">https://wg21.link/p2237r0</a></p>
 </div>
 </div>
