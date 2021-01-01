@@ -283,38 +283,58 @@ to resolve.
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
 
-Insert a new clause after paragraph 3 and before pargraph 4:
+Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
 
 ::: bq
-[3]{.pnum} A _lambda-expression_ shall not have a _capture-default_ or _simple-capture_ in its _lambda-introducer_ unless its
-innermost enclosing scope is a block scope (6.4.3) or it appears within a default member initializer and its
-innermost enclosing scope is the corresponding class scope (6.4.6).
+[*Example 1:*
+```diff
+  void f() {
+    float x, &r = x;
+-   [=] {
++   [=]() -> decltype((x)) {      // lambda returns float const& because this lambda
++                                 // is not mutable and x is an lvalue
+      decltype(x) y1;             // y1 has type float
+-     decltype((x)) y2 = y1;      // y2 has type float const& @[because this lambda]{.diffdel}@
+-                                 // @[is not mutable and x is an lvalue]{.diffdel}@
++     decltype((x)) y2 = y1;      // y2 has type float const&
+      decltype(r) r1 = y1;        // r1 has type float&
+      decltype((r)) r2 = y2;      // r2 has type float const&
++     return y2;
+    };
+  }
+```
+*- end example*]
+:::
 
+Insert a new clause at the end of [expr.prim.lambda.general]{.sref}
+
+::: bq
 ::: addu
-[3.5]{.pnum} [Each _lambda-capture_ inhabits the function parameter scope of the _lambda-expression_'s _parameter-declaration-clause_]{.addu}.
-
-[*Example 1.5*:
-```
-auto f = [i=0](int j) -> decltype(i+j) {    // ok: returns int
-    return i+j;
-};
-
-int i = 0;
-auto g = [i]() -> decltype((i)) {           // ok: returns const int&
-    return i;
-};
-auto h = [=]() -> decltype((i)) {           // ok: returns const int&
-    return i;
-};
-```
-*-end example*]
+[6]{.pnum} A _lambda-expression_ `E` introduces a _lambda scope_ that includes `E` and extends to the end of the _compound-statement_ in `E`. A lambda scope is a block scope.
+:::
 :::
 
-[4]{.pnum} The _identifier_ in a _simple-capture_ shall denote a local entity (6.5.3). The <i>simple-capture</i>s `this` and `* this` denote the local entity `*this`. An entity that is designated by a _simple-capture_ is said to be _explicitly captured_. 
-:::
-
-Remove the opening sentence of [expr.prim.lambda.capture]{.sref}/6, it's now covered by the previous clause.
+Change [expr.prim.lambda.capture]{.sref}/6:
 
 ::: bq
-[6]{.pnum} [An _init-capture_ inhabits the scope of the _lambda-expression_’s _compound-statement_]{.rm}. An _init-capture_ without ellipsis behaves as if it declares and explicitly captures a variable of the form [...]
+[6]{.pnum} An _init-capture_ inhabits the [function parameter]{.addu} scope of the _lambda-expression_’s [_compound-statement_]{.rm} [_parameter-declaration-clause_]{.addu}. An _init-capture_ without ellipsis behaves as if it declares and explicitly captures a variable of the form [...]
 :::
+
+And adjust the example to demonstrate this usage:
+
+::: bq
+```diff
+  int x = 4;
+- auto y = [&r = x, x = x+1]()->@[int]{.diffdel}@ {
++ auto y = [&r = x, x = x+1]()->@[decltype(x)]{.diffins}@ {
+              r += 2;
+              return x+2;
+           }();                               // Updates ​::​x to 6, and initializes y to 7.
+           
+  auto z = [a = 42](int a) { return 1; };     // error: parameter and local variable have the same name
+```
+:::
+
+# Acknowledgements
+
+Thanks to Davis Herring for all of his work, just in general. 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2020-12-12" />
+  <meta name="dcterms.date" content="2021-01-01" />
   <title>Change scope of lambda *trailing-return-type*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2020-12-12</td>
+    <td>2021-01-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -574,9 +574,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction" data-number="1" style="border-bottom:1px solid #cccccc"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>There’s a surprising aspect to the way that name lookup works in lambdas: it behaves differently in the <em>trailing-return-type</em> than it does in the lambda body. Consider the simple lambda implementing a counter:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">auto</span> counter1 <span class="op">=</span> <span class="op">[</span>j<span class="op">=</span><span class="dv">0</span><span class="op">]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>j<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a>    <span class="cf">return</span> j<span class="op">++</span>;</span>
@@ -609,7 +611,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This implementation is buggy. The problem is the <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">g</code> from the body of the lambda are accessed as <code class="sourceCode cpp"><span class="kw">const</span></code>, but from the <em>trailing-return-type</em> are not. Pass in a callable that’s intended to be non-<code class="sourceCode cpp"><span class="kw">const</span></code>-invocable (like, say, a <code class="sourceCode cpp"><span class="kw">mutable</span></code> lambda), and we end up with a hard error when we finally instantiate the body.</p>
 <p>For the <em>trailing-return-type</em> case, this problem only surfaces with <em>init-capture</em> (which can introduce new names) and any kind of copy capture (which may change the const qualification on some names). With reference capture (specifically either just <code class="sourceCode cpp"><span class="op">[&amp;]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">]</span></code>), both the inner and outer uses of names are equivalent so there is no issue.</p>
 <p>While it is possible (and quite easy) to produce examples that demonstrate this sort of different behavior, it’s quite difficult to come up with examples in which this difference is actually desired and intended. I wrote a clang-tidy check to find any uses of problematic captures (those that are come from a copy capture or <em>init-capture</em>) and ran it on multiple code bases and could not find one. I would love to see a real world example.</p>
-<p>This issue (the potentially-different interpretations of the same name in the <em>trailing-return-type</em> and lambda body) was one of (but not the only) reason that <span class="citation" data-cites="P0573R2">[<span class="citeproc-not-found" data-reference-id="P0573R2"><strong>???</strong></span>]</span> was rejected. Consider this equivalent formulation of the earlier example, but with the abbreviated lambda:</p>
+<p>This issue (the potentially-different interpretations of the same name in the <em>trailing-return-type</em> and lambda body) was one of (but not the only) reason that <span class="citation" data-cites="P0573R2">[<a href="#ref-P0573R2" role="doc-biblioref">P0573R2</a>]</span> was rejected. Consider this equivalent formulation of the earlier example, but with the abbreviated lambda:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> bar<span class="op">(</span><span class="dt">int</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>;        <span class="co">// #1</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> bar<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>; <span class="co">// #2</span></span>
 <span id="cb5-3"><a href="#cb5-3"></a></span>
@@ -619,24 +621,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Here, we still error, for all the same reasons, because this lambda is defined to be equivalent to the previous one. But here, we only have one single <code class="sourceCode cpp">bar<span class="op">(</span>i, x<span class="op">)</span></code> expression which nevertheless is interpreted two different ways.</p>
 <p>As pointed out in that paper, it is quite common for users to “hack” this kind of lambda expression by using a macro that does the de-duplication for them. Such lambdas are broken if they use any kind of copy or init-capture. Or, more likely, somebody tried to write such a lambda, became confused when it didn’t compile, flipped over a table, and then wrote it the long way.</p>
 <p>This is one of those incredibly subtle aspects of the language today that are just needlessly confounding. It seems to me that whenever the meaning of an <em>id-expression</em> differs between the two contexts, it’s a bug. I think we should just remove this corner case. It’s also blocking reasonable future language evolution, and is likely a source of subtle bugs and preexisting user frustration.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="potential-impact" data-number="2" style="border-bottom:1px solid #cccccc"><span class="header-section-number">2</span> Potential Impact<a href="#potential-impact" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="potential-impact"><span class="header-section-number">2</span> Potential Impact<a href="#potential-impact" class="self-link"></a></h1>
 <p>Let’s go through the various types of capture and see what the impact of this proposed change would be on usage and implementation.</p>
-<h3 class="unnumbered" data-number id="no-capture" class="unnumbered" data-number>No capture: <code class="sourceCode cpp"><span class="op">[]</span></code><a href="#no-capture" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="no-capture">No capture: <code class="sourceCode cpp"><span class="op">[]</span></code><a href="#no-capture" class="self-link"></a></h3>
 <p>There is no capture, so there is no new thing to find. No change.</p>
-<h3 class="unnumbered" data-number id="init-capture-aexpr-or-aexpr" class="unnumbered" data-number><em>init-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>a<span class="op">=</span>expr<span class="op">]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>expr<span class="op">]</span></code><a href="#init-capture-aexpr-or-aexpr" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="init-capture-aexpr-or-aexpr"><em>init-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>a<span class="op">=</span>expr<span class="op">]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>expr<span class="op">]</span></code><a href="#init-capture-aexpr-or-aexpr" class="self-link"></a></h3>
 <p>By the time we get to the <em>trailing-return-type</em>, we know the types of all the <em>init-capture</em> and we know whether the lambda is <code class="sourceCode cpp"><span class="kw">mutable</span></code> or not, which means that we will know how to correctly interpret uses of <code class="sourceCode cpp">a</code> in the <em>trailing-return-type</em>. This will likely change the meaning of such code, if such code exists today. But note that such code seems fundamentally questionable so it’s unlikely that much such code exists today.</p>
-<h3 class="unnumbered" data-number id="simple-capture-b-b-this-or-this" class="unnumbered" data-number><em>simple-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[&amp;</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[</span><span class="kw">this</span><span class="op">]</span></code>, or <code class="sourceCode cpp"><span class="op">[*</span><span class="kw">this</span><span class="op">]</span></code><a href="#simple-capture-b-b-this-or-this" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="simple-capture-b-b-this-or-this"><em>simple-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[&amp;</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[</span><span class="kw">this</span><span class="op">]</span></code>, or <code class="sourceCode cpp"><span class="op">[*</span><span class="kw">this</span><span class="op">]</span></code><a href="#simple-capture-b-b-this-or-this" class="self-link"></a></h3>
 <p>This is basically the same result as the <em>init-capture</em> case: we know the types by the time we get to the beginning of the <em>trailing-return-type</em>, so there are no issues determining what it should be.</p>
 <p>With the reference capture cases (as well the <em>init-capture</em> spelling <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>a<span class="op">]</span></code>), there is actually no difference in interpretation anyway.</p>
-<h3 class="unnumbered" data-number id="capture-default-with" class="unnumbered" data-number><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[&amp;]</span></code><a href="#capture-default-with" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="capture-default-with"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[&amp;]</span></code><a href="#capture-default-with" class="self-link"></a></h3>
 <p>With reference captures, there is no difference in interpretation between considered the capture and considering the outer scope variable. This paper would change nothing.</p>
-<h3 class="unnumbered" data-number id="capture-default-with-1" class="unnumbered" data-number><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[=]</span></code><a href="#capture-default-with-1" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="capture-default-with-1"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[=]</span></code><a href="#capture-default-with-1" class="self-link"></a></h3>
 <p>This is the sad case. Specifically, in the case where:</p>
 <ol type="1">
 <li>We have a <em>capture-default</em> of <code class="sourceCode cpp"><span class="op">=</span></code>, and</li>
 <li>We have a <em>trailing-return-type</em>, and</li>
 <li>That <em>trailing-return-type</em> has an <em>id-expression</em> which is not otherwise covered by any other kind of capture, and</li>
-<li>The use of that <em>id-expression</em>, if it appeared in the body, would be affected by the rule in <span>7.5.4.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 (that is, it’s not just <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span></code> but has to be either <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span></code> or something like <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>), and</li>
+<li>The use of that <em>id-expression</em>, if it appeared in the body, would be affected by the rule in <span>7.5.4.2
+ <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 (that is, it’s not just <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span></code> but has to be either <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span></code> or something like <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>), and</li>
 <li>The lambda is not <code class="sourceCode cpp"><span class="kw">mutable</span></code>, and</li>
 <li>The variable is not <code class="sourceCode cpp"><span class="kw">const</span></code></li>
 </ol>
@@ -665,7 +668,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Today, both lambdas return <code class="sourceCode cpp"><span class="dt">int</span></code>. With the suggested change, the <em>trailing-return-type</em> needs to consider the capture, so we need to delay parsing it until we see what the lambda bodies actually look like. And then, we might determine that the lambda <code class="sourceCode cpp">should_capture</code> actually returns a <code class="sourceCode cpp"><span class="dt">double</span></code>.</p>
 <p>How can we handle this case?</p>
 <ol type="1">
-<li>We can, in this specific scenario (capture has an <code class="sourceCode cpp"><span class="op">=</span></code> and the lambda is <code class="sourceCode cpp"><span class="kw">const</span></code>) just treat the <em>trailing-return-type</em> as token soup. The simplified rules for capture aren’t based on return type <span class="citation" data-cites="P0588R1">[<span class="citeproc-not-found" data-reference-id="P0588R1"><strong>???</strong></span>]</span> in any way, so this can work.</li>
+<li>We can, in this specific scenario (capture has an <code class="sourceCode cpp"><span class="op">=</span></code> and the lambda is <code class="sourceCode cpp"><span class="kw">const</span></code>) just treat the <em>trailing-return-type</em> as token soup. The simplified rules for capture aren’t based on return type <span class="citation" data-cites="P0588R1">[<a href="#ref-P0588R1" role="doc-biblioref">P0588R1</a>]</span> in any way, so this can work.</li>
 <li>We can, in this specific scenario, just say that <code class="sourceCode cpp">i</code> is captured when used this way and that if it would not have been captured following the usual rules that the lambda is ill-formed.</li>
 <li>We can say generally that any capturable entity in the <em>trailing-return-type</em> will behave as if it’s captured (regardless of if it ends up being captured or not).</li>
 </ol>
@@ -677,38 +680,77 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-5"><a href="#cb8-5"></a>    <span class="cf">return</span> j;</span>
 <span id="cb8-6"><a href="#cb8-6"></a><span class="op">}</span>;</span></code></pre></div>
 <p>But it is difficult to come up with actual real-world examples that would break. And easy to come up with real-world examples that would be fixed by this change. The lambda <code class="sourceCode cpp">should_capture</code> would change to return a <code class="sourceCode cpp"><span class="dt">double</span></code>, which seems more likely to be correct, and much more realistic an example than <code class="sourceCode cpp">f</code>.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal" data-number="3" style="border-bottom:1px solid #cccccc"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes that name lookup in the <em>trailing-return-type</em> of a lambda first consider that lambda’s captures before looking further outward. We may not know at the time of parsing the return type which names actually are captured, so this paper proposes to treat all capturable entities as if they were captured.</p>
 <p>That is, treat the <em>trailing-return-type</em> like the function body rather than treating it like a function parameter.</p>
 <p>Such a change fixes the lambda in a way that almost certainly matches user intent, fixes the <code class="sourceCode cpp">counter</code> and <code class="sourceCode cpp">compose</code> lambdas presented earlier, and fixes all current and future lambdas that use a macro to de-duplicate the <em>trailing-return-type</em> from the body.</p>
 <p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording" data-number="4" style="border-bottom:1px solid #cccccc"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<span class="citeproc-not-found" data-reference-id="P1787R6"><strong>???</strong></span>]</span> was merged.</p>
-<p>Insert a new clause after paragraph 3 and before pargraph 4:</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged.</p>
+<p>Extend the example in <span>7.5.4.2
+ <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> A <em>lambda-expression</em> shall not have a <em>capture-default</em> or <em>simple-capture</em> in its <em>lambda-introducer</em> unless its innermost enclosing scope is a block scope (6.4.3) or it appears within a default member initializer and its innermost enclosing scope is the corresponding class scope (6.4.6).</p>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">(3.5)</a></span> <span class="addu">Each <em>lambda-capture</em> inhabits the function parameter scope of the <em>lambda-expression</em>’s <em>parameter-declaration-clause</em></span>.</p>
-<p>[<em>Example 1.5</em>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>auto f = [i=0](int j) -&gt; decltype(i+j) {    // ok: returns int</span>
-<span id="cb9-2"><a href="#cb9-2"></a>    return i+j;</span>
-<span id="cb9-3"><a href="#cb9-3"></a>};</span>
-<span id="cb9-4"><a href="#cb9-4"></a></span>
-<span id="cb9-5"><a href="#cb9-5"></a>int i = 0;</span>
-<span id="cb9-6"><a href="#cb9-6"></a>auto g = [i]() -&gt; decltype((i)) {           // ok: returns const int&amp;</span>
-<span id="cb9-7"><a href="#cb9-7"></a>    return i;</span>
-<span id="cb9-8"><a href="#cb9-8"></a>};</span>
-<span id="cb9-9"><a href="#cb9-9"></a>auto h = [=]() -&gt; decltype((i)) {           // ok: returns const int&amp;</span>
-<span id="cb9-10"><a href="#cb9-10"></a>    return i;</span>
-<span id="cb9-11"><a href="#cb9-11"></a>};</span></code></pre></div>
-<p><em>-end example</em>]</p>
+<p>[<em>Example 1:</em></p>
+<div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>  void f() {</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    float x, &amp;r = x;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="st">-   [=] {</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>      decltype(x) y1;             // y1 has type float</span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="va">+     return y2;</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>    };</span>
+<span id="cb9-14"><a href="#cb9-14"></a>  }</span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized">4</a></span> The <em>identifier</em> in a <em>simple-capture</em> shall denote a local entity (6.5.3). The <i>simple-capture</i>s <code class="sourceCode cpp"><span class="kw">this</span></code> and <code class="sourceCode cpp"><span class="op">*</span> <span class="kw">this</span></code> denote the local entity <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. An entity that is designated by a <em>simple-capture</em> is said to be <em>explicitly captured</em>.</p>
+<p><em>- end example</em>]</p>
 </blockquote>
-<p>Remove the opening sentence of <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/6, it’s now covered by the previous clause.</p>
+<p>Insert a new clause at the end of <span>7.5.5.1
+ <a href="https://wg21.link/expr.prim.lambda.general">[expr.prim.lambda.general]</a></span></p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <span class="rm" style="color: #bf0303"><del>An <em>init-capture</em> inhabits the scope of the <em>lambda-expression</em>’s <em>compound-statement</em></del></span>. An <em>init-capture</em> without ellipsis behaves as if it declares and explicitly captures a variable of the form […]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> A <em>lambda-expression</em> <code class="sourceCode cpp">E</code> introduces a <em>lambda scope</em> that includes <code class="sourceCode cpp">E</code> and extends to the end of the <em>compound-statement</em> in <code class="sourceCode cpp">E</code>. A lambda scope is a block scope.</p>
+</div>
 </blockquote>
+<p>Change <span>7.5.5.3
+ <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/6:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> An <em>init-capture</em> inhabits the <span class="addu">function parameter</span> scope of the <em>lambda-expression</em>’s <span class="rm" style="color: #bf0303"><del><em>compound-statement</em></del></span> <span class="addu"><em>parameter-declaration-clause</em></span>. An <em>init-capture</em> without ellipsis behaves as if it declares and explicitly captures a variable of the form […]</p>
+</blockquote>
+<p>And adjust the example to demonstrate this usage:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  int x = 4;</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="st">- auto y = [&amp;r = x, x = x+1]()-&gt;<span class="diffdel">int</span> {</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="va">+ auto y = [&amp;r = x, x = x+1]()-&gt;<span class="diffins">decltype(x)</span> {</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>              r += 2;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>              return x+2;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>           }();                               // Updates ​::​x to 6, and initializes y to 7.</span>
+<span id="cb10-7"><a href="#cb10-7"></a>           </span>
+<span id="cb10-8"><a href="#cb10-8"></a>  auto z = [a = 42](int a) { return 1; };     // error: parameter and local variable have the same name</span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Davis Herring for all of his work, just in general.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0573R2">
+<p>[P0573R2] Barry Revzin, Tomasz Kamiński. 2017-10-08. Abbreviated Lambdas for Fun and Profit. <br />
+<a href="https://wg21.link/p0573r2">https://wg21.link/p0573r2</a></p>
+</div>
+<div id="ref-P0588R1">
+<p>[P0588R1] Richard Smith. 2017-11-07. Simplifying implicit lambda capture. <br />
+<a href="https://wg21.link/p0588r1">https://wg21.link/p0588r1</a></p>
+</div>
+<div id="ref-P1787R6">
+<p>[P1787R6] S. Davis Herring. 2020-10-28. Declarations and where to find them. <br />
+<a href="https://wg21.link/p1787r6">https://wg21.link/p1787r6</a></p>
+</div>
+</div>
 </div>
 </div>
 </body>
