@@ -687,21 +687,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged.</p>
-<p>Remove the lambda case from <span>6.4.3
- <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/2, since it’s no longer valid. This paper changes the target scope of init-capture from the <em>compound-statement</em> to the function parameter scope, which means there is no longer any declaration whose target scope is a lambda’s <em>compound-statement</em>. The conflict this rule is forbidding is already forbidden by <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a>/4. A lambda like:</p>
-<blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">auto</span> z <span class="op">=</span> <span class="op">[</span>a <span class="op">=</span> <span class="dv">42</span><span class="op">](</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span>;</span></code></pre></div>
-</blockquote>
-<p>would be declaring two things named <code class="sourceCode cpp">a</code> in the function parameter scope, which is what this rule is intending to avoid.</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> If a declaration whose target scope is the block scope <code class="sourceCode cpp">S</code> of a</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(2.1)</a></span> <em>compound-statement</em> of a <span class="rm" style="color: #bf0303"><del><em>lambda-expression</em>,</del></span> _function-body<span class="rm" style="color: #bf0303"><del>,</del></span> or <em>function-try-block</em>,</li>
-<li><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> substatement of a selection or iteration statement, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(2.3)</a></span> <em>handler</em> of a <em>function-try-block</em></li>
-</ul>
-<p>potentially conflicts with a declaration whose target scope is the parent scope of <code class="sourceCode cpp">S</code>, the program is ill-formed.</p>
-</blockquote>
 <p>Insert a clause in front of <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 defining what a “intervening <em>lambda-expression</em>” means, in a way that ensures that the <em>lambda-expression</em> intervenes between a local entity and the lambda’s <em>trailing-return-type</em>:</p>
 <blockquote>
@@ -715,20 +700,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p>[<em>Example 1:</em></p>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  void f() {</span>
-<span id="cb10-2"><a href="#cb10-2"></a>    float x, &amp;r = x;</span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="st">-   [=] {</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>      decltype(x) y1;             // y1 has type float</span>
-<span id="cb10-7"><a href="#cb10-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
-<span id="cb10-8"><a href="#cb10-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
-<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
-<span id="cb10-10"><a href="#cb10-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
-<span id="cb10-11"><a href="#cb10-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
-<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+     return y2;</span></span>
-<span id="cb10-13"><a href="#cb10-13"></a>    };</span>
-<span id="cb10-14"><a href="#cb10-14"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>  void f() {</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    float x, &amp;r = x;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="st">-   [=] {</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>      decltype(x) y1;             // y1 has type float</span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="va">+     return y2;</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>    };</span>
+<span id="cb9-14"><a href="#cb9-14"></a>  }</span></code></pre></div>
 </div>
 <p><em>- end example</em>]</p>
 </blockquote>
@@ -740,17 +725,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And extend the example to demonstrate this usage (now we do have an <code class="sourceCode cpp">i</code> in scope for <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>i<span class="op">)</span></code> to find):</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>  int x = 4;</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
-<span id="cb11-3"><a href="#cb11-3"></a>              r += 2;</span>
-<span id="cb11-4"><a href="#cb11-4"></a>              return x+2;</span>
-<span id="cb11-5"><a href="#cb11-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
-<span id="cb11-6"><a href="#cb11-6"></a>           </span>
-<span id="cb11-7"><a href="#cb11-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
-<span id="cb11-8"><a href="#cb11-8"></a>  </span>
-<span id="cb11-9"><a href="#cb11-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
-<span id="cb11-10"><a href="#cb11-10"></a><span class="va">+   return i++;</span></span>
-<span id="cb11-11"><a href="#cb11-11"></a><span class="va">+ };</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  int x = 4;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
+<span id="cb10-3"><a href="#cb10-3"></a>              r += 2;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>              return x+2;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
+<span id="cb10-6"><a href="#cb10-6"></a>           </span>
+<span id="cb10-7"><a href="#cb10-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
+<span id="cb10-8"><a href="#cb10-8"></a>  </span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="va">+   return i++;</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+ };</span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
