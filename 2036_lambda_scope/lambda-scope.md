@@ -287,10 +287,7 @@ Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "inte
 
 ::: bq
 ::: addu
-[`e`]{.pnum} A _lambda-expression_ `E` ([expr.prim.lambda]) intervenes between a local entity and a program point `P` if either
-
-- [`e`.1]{.pnum} `E`'s function parameter scope (if any) encloses `P`, or
-- [`e`.2]{.pnum} the scope of `E`'s _compound-statement_ encloses `P`.
+[`e`]{.pnum} A _lambda-expression_ ([expr.prim.lambda]) intervenes between a local entity and a program point `P` if the _lambda-expression_'s function parameter scope encloses `P`.
 :::
 
 [3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]).
