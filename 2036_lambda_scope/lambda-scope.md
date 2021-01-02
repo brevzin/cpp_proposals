@@ -320,18 +320,21 @@ Change [expr.prim.lambda.capture]{.sref}/6:
 [6]{.pnum} An _init-capture_ inhabits the [function parameter]{.addu} scope of the _lambda-expression_’s [_compound-statement_]{.rm} [_parameter-declaration-clause_]{.addu}. An _init-capture_ without ellipsis behaves as if it declares and explicitly captures a variable of the form [...]
 :::
 
-And adjust the example to demonstrate this usage:
+And extend the example to demonstrate this usage (now we do have an `i` in scope for `decltype(i)` to find):
 
 ::: bq
 ```diff
   int x = 4;
-- auto y = [&r = x, x = x+1]()->@[int]{.diffdel}@ {
-+ auto y = [&r = x, x = x+1]()->@[decltype(x)]{.diffins}@ {
+  auto y = [&r = x, x = x+1]()->int {
               r += 2;
               return x+2;
-           }();                               // Updates ​::​x to 6, and initializes y to 7.
+           }();                                    // Updates ​::​x to 6, and initializes y to 7.
            
-  auto z = [a = 42](int a) { return 1; };     // error: parameter and local variable have the same name
+  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name
+  
++ auto counter = [i=0]() mutable -> decltype(i) {  // ok: returns int
++   return i++;
++ };
 ```
 :::
 

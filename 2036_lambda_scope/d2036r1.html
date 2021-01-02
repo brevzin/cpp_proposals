@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-01" />
+  <meta name="dcterms.date" content="2021-01-02" />
   <title>Change scope of lambda *trailing-return-type*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-01</td>
+    <td>2021-01-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -721,17 +721,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">6</a></span> An <em>init-capture</em> inhabits the <span class="addu">function parameter</span> scope of the <em>lambda-expression</em>’s <span class="rm" style="color: #bf0303"><del><em>compound-statement</em></del></span> <span class="addu"><em>parameter-declaration-clause</em></span>. An <em>init-capture</em> without ellipsis behaves as if it declares and explicitly captures a variable of the form […]</p>
 </blockquote>
-<p>And adjust the example to demonstrate this usage:</p>
+<p>And extend the example to demonstrate this usage (now we do have an <code class="sourceCode cpp">i</code> in scope for <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>i<span class="op">)</span></code> to find):</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  int x = 4;</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="st">- auto y = [&amp;r = x, x = x+1]()-&gt;<span class="diffdel">int</span> {</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="va">+ auto y = [&amp;r = x, x = x+1]()-&gt;<span class="diffins">decltype(x)</span> {</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a>              r += 2;</span>
-<span id="cb10-5"><a href="#cb10-5"></a>              return x+2;</span>
-<span id="cb10-6"><a href="#cb10-6"></a>           }();                               // Updates ​::​x to 6, and initializes y to 7.</span>
-<span id="cb10-7"><a href="#cb10-7"></a>           </span>
-<span id="cb10-8"><a href="#cb10-8"></a>  auto z = [a = 42](int a) { return 1; };     // error: parameter and local variable have the same name</span></code></pre></div>
+<span id="cb10-2"><a href="#cb10-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
+<span id="cb10-3"><a href="#cb10-3"></a>              r += 2;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>              return x+2;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
+<span id="cb10-6"><a href="#cb10-6"></a>           </span>
+<span id="cb10-7"><a href="#cb10-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
+<span id="cb10-8"><a href="#cb10-8"></a>  </span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="va">+   return i++;</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+ };</span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
