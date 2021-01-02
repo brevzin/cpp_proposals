@@ -687,6 +687,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged.</p>
+<p>Insert a clause in front of <span>7.5.4.2
+ <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 defining what a “intervening <em>lambda-expression</em>” means, in a way that ensures that the <em>lambda-expression</em> intervenes between a local entity and the lambda’s <em>trailing-return-type</em>:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">e</a></span> A <em>lambda-expression</em> <code class="sourceCode cpp">E</code> ([expr.prim.lambda]) intervenes between a local entity and a program point <code class="sourceCode cpp">P</code> if either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(e.1)</a></span> <code class="sourceCode cpp">E</code>’s function parameter scope (if any) encloses <code class="sourceCode cpp">P</code>, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(e.2)</a></span> the scope of <code class="sourceCode cpp">E</code>’s <em>compound-statement</em> encloses <code class="sourceCode cpp">P</code>.</li>
+</ul>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the <em>unqualified-id</em> appears would result in some intervening <em>lambda-expression</em> capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening <em>lambda-expression</em>.</p>
+</blockquote>
 <p>Extend the example in <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>
 <blockquote>
@@ -708,13 +720,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-14"><a href="#cb9-14"></a>  }</span></code></pre></div>
 </div>
 <p><em>- end example</em>]</p>
-</blockquote>
-<p>Insert a new clause at the end of <span>7.5.5.1
- <a href="https://wg21.link/expr.prim.lambda.general">[expr.prim.lambda.general]</a></span></p>
-<blockquote>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">6</a></span> A <em>lambda-expression</em> <code class="sourceCode cpp">E</code> introduces a <em>lambda scope</em> that includes <code class="sourceCode cpp">E</code> and extends to the end of the <em>compound-statement</em> in <code class="sourceCode cpp">E</code>. A lambda scope is a block scope.</p>
-</div>
 </blockquote>
 <p>Change <span>7.5.5.3
  <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/6:</p>

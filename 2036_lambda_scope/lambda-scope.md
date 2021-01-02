@@ -283,6 +283,20 @@ to resolve.
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
 
+Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "intervening _lambda-expression_" means, in a way that ensures that the _lambda-expression_ intervenes between a local entity and the lambda's _trailing-return-type_:
+
+::: bq
+::: addu
+[`e`]{.pnum} A _lambda-expression_ `E` ([expr.prim.lambda]) intervenes between a local entity and a program point `P` if either
+
+- [`e`.1]{.pnum} `E`'s function parameter scope (if any) encloses `P`, or
+- [`e`.2]{.pnum} the scope of `E`'s _compound-statement_ encloses `P`.
+:::
+
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]).
+If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
+:::
+
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
 
 ::: bq
@@ -304,14 +318,6 @@ Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
   }
 ```
 *- end example*]
-:::
-
-Insert a new clause at the end of [expr.prim.lambda.general]{.sref}
-
-::: bq
-::: addu
-[6]{.pnum} A _lambda-expression_ `E` introduces a _lambda scope_ that includes `E` and extends to the end of the _compound-statement_ in `E`. A lambda scope is a block scope.
-:::
 :::
 
 Change [expr.prim.lambda.capture]{.sref}/6:
