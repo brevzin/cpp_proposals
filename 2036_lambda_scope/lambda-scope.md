@@ -283,6 +283,26 @@ to resolve.
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
 
+Remove the lambda case from [basic.scope.block]{.sref}/2, since it's no longer valid. This paper changes the target scope of init-capture from the _compound-statement_ to the function parameter scope, which means there is no longer any declaration whose target scope is a lambda's _compound-statement_. The conflict this rule is forbidding is already forbidden by [basic.scope.scope]{.sref}/4. A lambda like:
+
+::: bq
+```cpp
+auto z = [a = 42](int a) { return 1; };
+```
+:::
+
+would be declaring two things named `a` in the function parameter scope, which is what this rule is intending to avoid. 
+
+::: bq
+[2]{.pnum} If a declaration whose target scope is the block scope `S` of a 
+
+- [2.1]{.pnum} _compound-statement_ of a [_lambda-expression_,]{.rm} _function-body[,]{.rm} or _function-try-block_,
+- [2.2]{.pnum} substatement of a selection or iteration statement, or
+- [2.3]{.pnum} _handler_ of a _function-try-block_
+
+ potentially conflicts with a declaration whose target scope is the parent scope of `S`, the program is ill-formed.
+:::
+
 Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "intervening _lambda-expression_" means, in a way that ensures that the _lambda-expression_ intervenes between a local entity and the lambda's _trailing-return-type_:
 
 ::: bq
