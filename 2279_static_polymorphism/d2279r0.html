@@ -1885,7 +1885,8 @@ Associated Types
 <span id="cb19-14"><a href="#cb19-14"></a>            ne<span class="op">(</span>t, t<span class="op">)</span>;</span>
 <span id="cb19-15"><a href="#cb19-15"></a>        <span class="op">}</span>;    </span>
 <span id="cb19-16"><a href="#cb19-16"></a><span class="op">}</span></span></code></pre></div>
-<p>Where we would opt-in to this facility by providing an <code class="sourceCode cpp"><span class="kw">override</span></code>:</p>
+<p>Which is now just 16 lines of code.</p>
+<p>We would opt-in to this facility by providing an <code class="sourceCode cpp"><span class="kw">override</span></code>:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
 <span id="cb20-2"><a href="#cb20-2"></a>    <span class="dt">int</span> i;</span>
 <span id="cb20-3"><a href="#cb20-3"></a><span class="op">}</span>;</span>
@@ -2186,7 +2187,7 @@ Associated Types
 <span id="cb21-22"><a href="#cb21-22"></a>        <span class="op">}</span></span>
 <span id="cb21-23"><a href="#cb21-23"></a>    <span class="op">}</span></span>
 <span id="cb21-24"><a href="#cb21-24"></a><span class="op">}</span></span></code></pre></div>
-<p>Lewis Baker (one of the <code class="sourceCode cpp">tag_invoke</code> authors) suggests an extension to this direction that allows deducing the the customization point being overriden. As in (the following example is reduced somewhat from a similar one in <span class="citation" data-cites="P2175R0">[<span class="citeproc-not-found" data-reference-id="P2175R0"><strong>???</strong></span>]</span>, and takes the liberty of assuming we can implement customization point functions as members — an idea which does not appear in Matt’s paper at all):</p>
+<p>Lewis Baker (one of the <code class="sourceCode cpp">tag_invoke</code> authors) suggests an extension to this direction that allows deducing the the customization point being overriden. As in (the following example is reduced somewhat from a similar one in <span class="citation" data-cites="P2175R0">[<a href="#ref-P2175R0" role="doc-biblioref">P2175R0</a>]</span>, and takes the liberty of assuming we can implement customization point functions as members — an idea which does not appear in Matt’s paper at all):</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Receiver<span class="op">&gt;</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="kw">struct</span> receiver <span class="op">{</span></span>
 <span id="cb22-3"><a href="#cb22-3"></a>    Receiver inner;</span>
@@ -2241,7 +2242,7 @@ C++0x
 </td>
 </tr>
 </table>
-<p>The differences here are completely aesthetic; this solution performs just as well as the Rust one.</p>
+<p>The differences here are completely aesthetic; this solution performs just as well as the Rust one. Were I to be consistent with the other examples and stash this in <code class="sourceCode cpp"><span class="kw">namespace</span> N</code>, this would be just 10 lines of code (compared to 16 with customization point functions, 36 with <code class="sourceCode cpp">tag_invoke</code>, and 42 with customization point objects).</p>
 <table>
 <thead>
 <tr class="header">
@@ -2764,6 +2765,10 @@ Forwarding Customizations
 <div id="ref-P1895R0">
 <p>[P1895R0] Lewis Baker, Eric Niebler, Kirk Shoop. 2019-10-08. tag_invoke: A general pattern for supporting customisable functions. <br />
 <a href="https://wg21.link/p1895r0">https://wg21.link/p1895r0</a></p>
+</div>
+<div id="ref-P2175R0">
+<p>[P2175R0] Lewis Baker. 2020-12-15. Composable cancellation for sender-based async operations. <br />
+<a href="https://wg21.link/p2175r0">https://wg21.link/p2175r0</a></p>
 </div>
 </div>
 </div>

@@ -860,7 +860,9 @@ namespace N {
 }
 ```
 
-Where we would opt-in to this facility by providing an `override`:
+Which is now just 16 lines of code. 
+
+We would opt-in to this facility by providing an `override`:
 
 ```cpp
 struct Widget {
@@ -993,7 +995,7 @@ concept PartialEq {
 </tr>
 </table>
 
-The differences here are completely aesthetic; this solution performs just as well as the Rust one.
+The differences here are completely aesthetic; this solution performs just as well as the Rust one. Were I to be consistent with the other examples and stash this in `namespace N`, this would be just 10 lines of code (compared to 16 with customization point functions, 36 with `tag_invoke`, and 42 with customization point objects).
 
 <table>
 <thead>
