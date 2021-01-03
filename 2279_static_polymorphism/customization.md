@@ -965,11 +965,8 @@ Definitely something to seriously consider. One issue might be how to figure out
 
 Rust is hardly the only language that can solve this problem. Indeed, C++0x Concepts [@N1758] gave us a solution that is nearly identical to the Rust one (this appears in the paper under the name `EqualityComparable`, I'm just changing it to match the names used throughout the paper):
 
-<table>
-<thead>
-<tr class="header"><th>Rust</th><th>C++0x</th></tr>
-<tr>
-<td>
+::: cmptable
+### Rust
 ```rust
 trait PartialEq {
     fn eq(&self, rhs: &Self) -> bool;
@@ -979,8 +976,8 @@ trait PartialEq {
     }
 }
 ```
-</td>
-<td>
+
+### C++0x
 ```cpp
 template <typeid T>
 concept PartialEq {
@@ -991,9 +988,7 @@ concept PartialEq {
     }
 };
 ```
-</td>
-</tr>
-</table>
+:::
 
 The differences here are completely aesthetic; this solution performs just as well as the Rust one. Were I to be consistent with the other examples and stash this in `namespace N`, this would be just 10 lines of code (compared to 16 with customization point functions, 36 with `tag_invoke`, and 42 with customization point objects).
 

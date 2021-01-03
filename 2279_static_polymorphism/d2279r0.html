@@ -2213,34 +2213,33 @@ Associated Types
 <table>
 <thead>
 <tr class="header">
-<th>
-Rust
-</th>
-<th>
-C++0x
-</th>
+<th><div style="text-align:center">
+<strong>Rust</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>C++0x</strong>
+</div></th>
 </tr>
-<tr>
-<td>
-<div class="sourceCode" id="cb2"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">trait</span> <span class="bu">PartialEq</span> <span class="op">{</span></span>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb2"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">trait</span> <span class="bu">PartialEq</span> <span class="op">{</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">fn</span> eq(<span class="op">&amp;</span><span class="kw">self</span><span class="op">,</span> rhs<span class="op">:</span> <span class="op">&amp;</span><span class="dt">Self</span>) <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">;</span></span>
 <span id="cb2-3"><a href="#cb2-3"></a>    </span>
 <span id="cb2-4"><a href="#cb2-4"></a>    <span class="kw">fn</span> ne(<span class="op">&amp;</span><span class="kw">self</span><span class="op">,</span> rhs<span class="op">:</span> <span class="op">&amp;</span><span class="dt">Self</span>) <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
 <span id="cb2-5"><a href="#cb2-5"></a>        <span class="op">!</span><span class="kw">self</span><span class="op">.</span>eq(rhs)</span>
 <span id="cb2-6"><a href="#cb2-6"></a>    <span class="op">}</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="op">}</span></span></code></pre></div>
-</td>
-<td>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typeid</span> T<span class="op">&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typeid</span> T<span class="op">&gt;</span></span>
 <span id="cb23-2"><a href="#cb23-2"></a><span class="kw">concept</span> PartialEq <span class="op">{</span></span>
 <span id="cb23-3"><a href="#cb23-3"></a>    <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb23-4"><a href="#cb23-4"></a>    </span>
 <span id="cb23-5"><a href="#cb23-5"></a>    <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
 <span id="cb23-6"><a href="#cb23-6"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
 <span id="cb23-7"><a href="#cb23-7"></a>    <span class="op">}</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a><span class="op">}</span>;</span></code></pre></div>
-</td>
+<span id="cb23-8"><a href="#cb23-8"></a><span class="op">}</span>;</span></code></pre></div></td>
 </tr>
+</tbody>
 </table>
 <p>The differences here are completely aesthetic; this solution performs just as well as the Rust one. Were I to be consistent with the other examples and stash this in <code class="sourceCode cpp"><span class="kw">namespace</span> N</code>, this would be just 10 lines of code (compared to 16 with customization point functions, 36 with <code class="sourceCode cpp">tag_invoke</code>, and 42 with customization point objects).</p>
 <table>
