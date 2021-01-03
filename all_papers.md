@@ -38,8 +38,9 @@
 - 2210 Superior String Splitting: [p2210r0](2210_string_split/p2210r0.html) [p2210r1](2210_string_split/p2210r1.html)
 - 2214 A Plan for C++23 Ranges: [p2214r0](2214_ranges_plan/p2214r0.html)
 - 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html)
+- 2277 Packs outside of Templates: [p2277r0](2277_packs_outside_of_templates/p2277r0.html)
+- 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [d2278r0](2278_cbegin/d2278r0.html)
+- 2279 We need a language mechanism for static polymorphism: [d2279r0](2279_static_polymorphism/d2279r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
-- <code class="sourceCode cpp">cbegin</code>  on views: [dxxxxr0.html](xxxx_cbegin/dxxxxr0.html)
-- Packs outside of Templates: [dxxxxr0.html](xxxx_packs_outside_of_templates/dxxxxr0.html)
