@@ -1,6 +1,6 @@
 ---
 title: "Packs outside of Templates"
-document: DxxxxR0
+document: P2277R0
 date: today
 audience: EWG
 author:
