@@ -800,7 +800,7 @@ trait PartialEq {
 }
 ```
 
-This is 7 lines of code, even including the empty line and the two lines containing a single close brace. This trivial implementation, which you probably understand even if you don't know Rust, _easily_ meets all of the criteria prestend thus far. And unlike CPOs and `tag_invoke`, where the extent of the ability to protect the user from faulty implementations or provide them with interface checks is dependent on the class author writing them correctly, here these checks are handled by and provided by the language. As a result, the checks are more robust, and the interface author doesn’t have to do anything.
+This is 7 lines of code, even including the empty line and the two lines containing a single close brace. This trivial implementation, which you probably understand even if you don't know Rust, _easily_ meets all of the criteria presented thus far. And unlike CPOs and `tag_invoke`, where the extent of the ability to protect the user from faulty implementations or provide them with interface checks is dependent on the class author writing them correctly, here these checks are handled by and provided by the language. As a result, the checks are more robust, and the interface author doesn’t have to do anything.
 
 Moreover, it even meets one of `tag_invoke`’s stated criteria: it does not globally reserve names. Though it does not meet the other: you cannot transparently implement and pass-through a trait that you do not know about.
 
@@ -902,7 +902,7 @@ This is a far, far simpler implementation for the library author, that is easier
 </tbody>
 </table>
 
-While customization point functions have several clear benefits, they still don't address all the issues here. In particular, when dealing with an interface that logically has multiple customization points, there's no way of aggregating them together (short of providing a concept that has to unify them), and so there's nothing to prevent a user from doing something like providing an override for `ne` but for `eq`.
+While customization point functions have several clear benefits, they still don't address all the issues here. In particular, when dealing with an interface that logically has multiple customization points, there's no way of aggregating them together (short of providing a concept that has to unify them), and so there's nothing to prevent a user from doing something like providing an override for `ne` but not for `eq`.
 
 And customization point functions are limited to the kinds of things that functions can do, so they likewise don't provide any added benefit where associated types are concerned as compared to CPOs or `tag_invoke`. They still require type traits for everything interesting.
 
