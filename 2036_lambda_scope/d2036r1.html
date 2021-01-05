@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-02" />
+  <meta name="dcterms.date" content="2021-01-05" />
   <title>Change scope of lambda *trailing-return-type*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-02</td>
+    <td>2021-01-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -686,7 +686,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Such a change fixes the lambda in a way that almost certainly matches user intent, fixes the <code class="sourceCode cpp">counter</code> and <code class="sourceCode cpp">compose</code> lambdas presented earlier, and fixes all current and future lambdas that use a macro to de-duplicate the <em>trailing-return-type</em> from the body.</p>
 <p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged.</p>
+<p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged (i.e. <span class="citation" data-cites="N4878">[<a href="#ref-N4878" role="doc-biblioref">N4878</a>]</span>).</p>
 <p>Insert a clause in front of <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 defining what a “intervening <em>lambda-expression</em>” means, in a way that ensures that the <em>lambda-expression</em> intervenes between a local entity and the lambda’s <em>trailing-return-type</em>:</p>
 <blockquote>
@@ -742,6 +742,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Thanks to Davis Herring for all of his work, just in general.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-N4878">
+<p>[N4878] Thomas Köppe. 2020-12-15. Working Draft, Standard for Programming Language C++. <br />
+<a href="https://wg21.link/n4878">https://wg21.link/n4878</a></p>
+</div>
 <div id="ref-P0573R2">
 <p>[P0573R2] Barry Revzin, Tomasz Kamiński. 2017-10-08. Abbreviated Lambdas for Fun and Profit. <br />
 <a href="https://wg21.link/p0573r2">https://wg21.link/p0573r2</a></p>

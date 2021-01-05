@@ -281,7 +281,7 @@ to resolve.
 
 # Wording
 
-This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged.
+This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged (i.e. [@N4878]).
 
 Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "intervening _lambda-expression_" means, in a way that ensures that the _lambda-expression_ intervenes between a local entity and the lambda's _trailing-return-type_:
 
