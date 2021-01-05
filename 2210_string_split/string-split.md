@@ -780,8 +780,10 @@ if (@*cur_*@ != ranges::end(@*parent_*@->@*base_*@)) {
     @*cur_*@ = @*next_*@.end();
     if (@*cur_*@ == ranges::end(@*parent_*@->@*base_*@)) {
         @*trailing_empty_*@ = true;
+        @*next_*@ = {@*cur_*@, @*cur_*@};
+    } else {
+        @*next_*@ = @*parent_*@->@*find-next*@(@*cur_*@);
     }
-    @*next_*@ = @*parent_*@->@*find-next*@(@*cur_*@);
 } else {
     @*trailing_empty_*@ = false;
 }
