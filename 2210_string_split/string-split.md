@@ -664,8 +664,7 @@ for (span<char const> word : split(str, ' ')) {
                constructible_from<Pattern, single_view<range_value_t<R>>>
     constexpr split_view(R&& r, range_value_t<R> e);
 
-    constexpr V base() const& requires copy_constructible<V> { return @*base_*@; }
-    constexpr V base() && { return std::move(@*base_*@); }
+    constexpr V base() const { return @*base_*@; }
 
     constexpr @_iterator_@ begin();
     
@@ -689,13 +688,13 @@ for (span<char const> word : split(str, ' ')) {
 }
 ```
 
-```
+```cpp
 constexpr split_view(V base, Pattern pattern);
 ```
 
 [1]{.pnum} *Effects*: Initializes `@*base_*@` with `std​::​move(base)`, and `@*pattern_*@` with `std​::​move(pattern)`.
 
-```
+```cpp
 template<forward_range R>
   requires constructible_from<V, views::all_t<R>> &&
            constructible_from<Pattern, single_view<range_value_t<R>>>
@@ -704,14 +703,14 @@ constexpr split_view(R&& r, range_value_t<R> e);
 
 [2]{.pnum} *Effects*: Initializes `@*base_*@` with `views​::​all(std​::​forward<R>(r))`, and `@*pattern_*@` with `single_view{​std​::​move(e)}`.
 
-```
+```cpp
 constexpr iterator begin();
 ```
 [3]{.pnum} *Returns*: `{*this, ranges::begin(@*base_*@), @*find-next*@(ranges::begin(@*base_*@))}`.
 
 [4]{.pnum} *Remarks*: In order to provide the amortized constant time complexity required by the `range` concept, this function caches the result within the `split_view` for use on subsequent calls.
 
-```
+```cpp
 constexpr iterator_t<V> @*find-next*@(iterator_t<V> it); // exposition only
 ```
 [5]{.pnum} *Effects*: Equivalent to:
@@ -748,9 +747,7 @@ return n;
     @_iterator_@() = default;
     constexpr iterator(split_view& parent, iterator_t<V> current, iterator_t<V> next);
 
-    constexpr iterator_t<V> base() const &
-      requires copyable<iterator_t<V>>;
-    constexpr iterator_t<V> base() &&;
+    constexpr iterator_t<V> base() const;
     constexpr value_type operator*() const;
 
     constexpr @_iterator_@& operator++();
@@ -765,23 +762,18 @@ constexpr iterator(split_view& parent, iterator_t<V> current, iterator_t<V> next
 ```
 [1]{.pnum} *Effects*: Initializes `@*parent_*@` with `addressof(parent)`, `@*cur_*@` with `std::move(current)`, and `@*next_*@` with `std::move(next)`.
 
-```
-constexpr iterator_t<V> base() const &
-  requires copyable<iterator_t<V>>;
+```cpp
+constexpr iterator_t<V> base() const;
 ```
 [2]{.pnum} *Effects*: Equivalent to `return @*cur_*@;`
-```
-constexpr iterator_t<V> base() &&;
-```
-[3]{.pnum} *Effects*: Equivalent to `return std::move(@*cur_*@);`
-```
+```cpp
 constexpr value_type operator*() const;
 ```
-[4]{.pnum} *Effects*: Equivalent to `return {@*cur_*@, @*next_*@};`
-```
+[3]{.pnum} *Effects*: Equivalent to `return {@*cur_*@, @*next_*@};`
+```cpp
 constexpr @_iterator_@& operator++();
 ```
-[5]{.pnum} *Effects*: Equivalent to:
+[4]{.pnum} *Effects*: Equivalent to:
 ```cpp
 @*cur_*@ = @*next_*@;
 if (@*cur_*@ != ranges::end(@*parent_*@->@*base_*@)) {
@@ -795,19 +787,19 @@ if (@*cur_*@ != ranges::end(@*parent_*@->@*base_*@)) {
 }
 return *this;
 ```
-```
+```cpp
 constexpr @_iterator_@ operator++(int);
 ```
-[6]{.pnum} *Effects*: Equivalent to:
+[5]{.pnum} *Effects*: Equivalent to:
 ```cpp
 auto tmp = *this;
 ++*this;
 return tmp;
 ```
-```
+```cpp
 friend constexpr bool operator==(const @_iterator_@& x, const @_iterator_@& y)
 ```
-[7]{.pnum} *Effects*: Equivalent to: 
+[6]{.pnum} *Effects*: Equivalent to: 
 ```cpp
 return x.@*cur_*@ == y.@*cur_*@ && x.@*trailing_empty_*@ == y.@*trailing_empty_*@;
 ```
@@ -833,12 +825,12 @@ return x.@*cur_*@ == y.@*cur_*@ && x.@*trailing_empty_*@ == y.@*trailing_empty_*
   };
 ```
 
-```
+```cpp
 constexpr explicit @_sentinel_@(split_view& parent);
 ```
 [1]{.pnum} *Effects*: Initializes `@*end_*@` with `ranges​::​end(parent.@*base_*@)`.
 
-```
+```cpp
 friend constexpr bool operator==(const @_iterator_@& x, const @_sentinel_@& y);
 ```
 [2]{.pnum} *Effects*: Equivalent to: `return x.@*cur_*@ == y.@*end_*@ && !x.@*trailing_empty_*@;`
