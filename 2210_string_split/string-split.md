@@ -621,7 +621,7 @@ constexpr @_inner-iterator_@& operator++();
 [1]{.pnum} `split_view` takes a `view` and a delimiter, and splits the `view` into `subrange`s on the delimiter. The delimiter can be a single element or a `view` of elements. [NB: code font on `subrange` since they are, specifically, `subrange`s]{.ednote}
 
 [2]{.pnum} The name `views​::​split` denotes a range adaptor object ([range.adaptor.object]).
-Given subexpressions `E` and `F`, the expression `views​::​split(E, F)` is expression-equivalent to `split_view{E, F}`.
+Given subexpressions `E` and `F`, the expression `views​::​split(E, F)` is expression-equivalent to `split_view(E, F)`.
 
 [3]{.pnum} [*Example 1*:
 
@@ -659,7 +659,7 @@ for (span<char const> word : split(str, ' ')) {
     split_view() = default;
     constexpr split_view(V base, Pattern pattern);
 
-    template<input_range R>
+    template<forward_range R>
       requires constructible_from<V, views::all_t<R>> &&
                constructible_from<Pattern, single_view<range_value_t<R>>>
     constexpr split_view(R&& r, range_value_t<R> e);
@@ -677,13 +677,13 @@ for (span<char const> word : split(str, ' ')) {
         }
     }
     
-    constexpr iterator_t<V> @_find_next_@(iterator_t<V>); // exposition only
+    constexpr iterator_t<V> @_find-next_@(iterator_t<V>); // exposition only
   };
 
   template<class R, class P>
     split_view(R&&, P&&) -> split_view<views::all_t<R>, views::all_t<P>>;
 
-  template<input_range R>
+  template<forward_range R>
     split_view(R&&, range_value_t<R>)
       -> split_view<views::all_t<R>, single_view<range_value_t<R>>>;
 }
@@ -696,7 +696,7 @@ constexpr split_view(V base, Pattern pattern);
 [1]{.pnum} *Effects*: Initializes `@*base_*@` with `std​::​move(base)`, and `@*pattern_*@` with `std​::​move(pattern)`.
 
 ```
-template<input_range R>
+template<forward_range R>
   requires constructible_from<V, views::all_t<R>> &&
            constructible_from<Pattern, single_view<range_value_t<R>>>
 constexpr split_view(R&& r, range_value_t<R> e);
@@ -707,15 +707,15 @@ constexpr split_view(R&& r, range_value_t<R> e);
 ```
 constexpr iterator begin();
 ```
-[3]{.pnum} *Returns*: `{*this, ranges::begin(@*base_*@), @*find_next*@(ranges::begin(@*base_*@))}`.
+[3]{.pnum} *Returns*: `{*this, ranges::begin(@*base_*@), @*find-next*@(ranges::begin(@*base_*@))}`.
 
 [4]{.pnum} *Remarks*: In order to provide the amortized constant time complexity required by the `range` concept, this function caches the result within the `split_view` for use on subsequent calls.
 
 ```
-constexpr iterator_t<V> @*find_next*@(iterator_t<V> it); // exposition only
+constexpr iterator_t<V> @*find-next*@(iterator_t<V> it); // exposition only
 ```
 [5]{.pnum} *Effects*: Equivalent to:
-```
+```cpp
 auto n = ranges::search(subrange(it, ranges::end(@*base_*@)), @*pattern_*@).begin();
 if (n != ranges::end(@*base_*@) && ranges::empty(@*pattern_*@)) {
     ++n;
@@ -741,7 +741,7 @@ return n;
     
   public:
     using iterator_concept = forward_iterator_tag;
-    using iterator_category = forward_iterator_tag;
+    using iterator_category = input_iterator_tag;
     using value_type = subrange<iterator_t<V>>;
     using difference_type = range_difference_t<V>;
     
@@ -789,7 +789,7 @@ if (@*cur_*@ != ranges::end(@*parent_*@->@*base_*@)) {
     if (@*cur_*@ == ranges::end(@*parent_*@->@*base_*@)) {
         @*trailing_empty_*@ = true;
     }
-    @*next_*@ = @*parent_*@->@*find_next*@(@*cur_*@);
+    @*next_*@ = @*parent_*@->@*find-next*@(@*cur_*@);
 } else {
     @*trailing_empty_*@ = false;
 }
