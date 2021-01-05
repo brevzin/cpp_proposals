@@ -529,7 +529,7 @@ Change [ranges.syn]{.sref} to add the new view:
 
 ## Wording for `split` -> `lazy_split`
 
-Rename all references to `split_view` in [range.split]{.sref} to `lazy_split_view`, and rename all the clauses from [range.split.meow] to [range.lazy.split.meow].
+Rename all references to `split` and `split_view` in [range.split]{.sref} to `lazy_split` and `lazy_split_view`, respectively, and rename all the clauses from [range.split.meow] to [range.lazy.split.meow].
 
 Add `base()` overloads to `@[lazy_]{.addu}@split_view::@_inner-iterator_@`' in [range.split.inner]{.sref}:
 
@@ -594,18 +594,18 @@ And add text describing those two new functions, just before `operator++`:
 
 ::: bq
 ::: addu
-```
+```cpp
 constexpr iterator_t<@_Base_@> base() const&
     requires copyable<iterator_t<@_Base_@>>;
 ```
 [a]{.pnum} *Effects*: Equivalent to: `return @*i_*@.@_current_@;`
 
-```
+```cpp
 constexpr iterator_t<@_Base_@> base() &&;
 ```
 [b]{.pnum} *Effects*: Equivalent to: `return std::move(@*i_*@.@_current_@);`
 :::
-```
+```cpp
 constexpr @_inner-iterator_@& operator++();
 ```
 [3]{.pnum} *Effects*: [...]
@@ -711,15 +711,15 @@ constexpr iterator begin();
 [4]{.pnum} *Remarks*: In order to provide the amortized constant time complexity required by the `range` concept, this function caches the result within the `split_view` for use on subsequent calls.
 
 ```cpp
-constexpr iterator_t<V> @*find-next*@(iterator_t<V> it); // exposition only
+constexpr subrange<iterator_t<V>> @*find-next*@(iterator_t<V> it); // exposition only
 ```
 [5]{.pnum} *Effects*: Equivalent to:
 ```cpp
-auto n = ranges::search(subrange(it, ranges::end(@*base_*@)), @*pattern_*@).begin();
-if (n != ranges::end(@*base_*@) && ranges::empty(@*pattern_*@)) {
-    ++n;
+auto [b,e] = ranges::search(subrange(it, ranges::end(@*base_*@)), @*pattern_*@);
+if (b != ranges::end(@*base_*@) && ranges::empty(@*pattern_*@)) {
+    ++b;
 }
-return n;
+return {b,e};
 ```
 :::
 
@@ -733,10 +733,10 @@ return n;
              indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
   class split_view<V, Pattern>::@_iterator_@ {
   private:
-    split_view* @*parent_*@ = nullptr;          // exposition only
-    iterator_t<V> @*cur_*@ = iterator_t<V>();   // exposition only
-    iterator_t<V> @*next_*@ = iterator_t<V>();  // exposition only
-    bool @*trailing_empty_*@ = false;           // exposition only
+    split_view* @*parent_*@ = nullptr;                              // exposition only
+    iterator_t<V> @*cur_*@ = iterator_t<V>();                       // exposition only
+    subrange<iterator_t<V>> @*next_*@ = subrange<iterator_t<V>>();  // exposition only
+    bool @*trailing_empty_*@ = false;                               // exposition only
     
   public:
     using iterator_concept = forward_iterator_tag;
@@ -745,7 +745,7 @@ return n;
     using difference_type = range_difference_t<V>;
     
     @_iterator_@() = default;
-    constexpr iterator(split_view& parent, iterator_t<V> current, iterator_t<V> next);
+    constexpr iterator(split_view& parent, iterator_t<V> current, subrange<iterator_t<V>> next);
 
     constexpr iterator_t<V> base() const;
     constexpr value_type operator*() const;
@@ -757,8 +757,8 @@ return n;
   };
 ```
 
-```
-constexpr iterator(split_view& parent, iterator_t<V> current, iterator_t<V> next);
+```cpp
+constexpr iterator(split_view& parent, iterator_t<V> current, subrange<iterator_t<V>> next);
 ```
 [1]{.pnum} *Effects*: Initializes `@*parent_*@` with `addressof(parent)`, `@*cur_*@` with `std::move(current)`, and `@*next_*@` with `std::move(next)`.
 
@@ -769,15 +769,15 @@ constexpr iterator_t<V> base() const;
 ```cpp
 constexpr value_type operator*() const;
 ```
-[3]{.pnum} *Effects*: Equivalent to `return {@*cur_*@, @*next_*@};`
+[3]{.pnum} *Effects*: Equivalent to `return {@*cur_*@, @*next_*@.begin()};`
 ```cpp
 constexpr @_iterator_@& operator++();
 ```
 [4]{.pnum} *Effects*: Equivalent to:
 ```cpp
-@*cur_*@ = @*next_*@;
+@*cur_*@ = @*next_*@.begin();
 if (@*cur_*@ != ranges::end(@*parent_*@->@*base_*@)) {
-    ranges::advance(@*cur_*@, ranges::distance(@*parent_*@->@*pattern_*@));
+    @*cur_*@ = @*next_*@.end();
     if (@*cur_*@ == ranges::end(@*parent_*@->@*base_*@)) {
         @*trailing_empty_*@ = true;
     }
@@ -835,6 +835,10 @@ friend constexpr bool operator==(const @_iterator_@& x, const @_sentinel_@& y);
 ```
 [2]{.pnum} *Effects*: Equivalent to: `return x.@*cur_*@ == y.@*end_*@ && !x.@*trailing_empty_*@;`
 :::
+
+# Acknowledgments
+
+Thanks to Tim Song for help with implementation and wording.
 
 ---
 references:

@@ -590,7 +590,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#class-template-split_view_sentinel_-range.split2.sentinel"><span class="toc-section-number">5.2.4</span> Class template <code class="sourceCode cpp">split_view​<span class="op">::</span><em>​sentinel</em></code> [range.split2.sentinel]<span></span></a></li>
 </ul></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">6</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
@@ -936,8 +937,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-21"><a href="#cb11-21"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
 <h2 data-number="5.1" id="wording-for-split---lazy_split"><span class="header-section-number">5.1</span> Wording for <code class="sourceCode cpp">split</code> -&gt; <code class="sourceCode cpp">lazy_split</code><a href="#wording-for-split---lazy_split" class="self-link"></a></h2>
-<p>Rename all references to <code class="sourceCode cpp">split_view</code> in <span>24.7.12
- <a href="https://wg21.link/range.split">[range.split]</a></span> to <code class="sourceCode cpp">lazy_split_view</code>, and rename all the clauses from [range.split.meow] to [range.lazy.split.meow].</p>
+<p>Rename all references to <code class="sourceCode cpp">split</code> and <code class="sourceCode cpp">split_view</code> in <span>24.7.12
+ <a href="https://wg21.link/range.split">[range.split]</a></span> to <code class="sourceCode cpp">lazy_split</code> and <code class="sourceCode cpp">lazy_split_view</code>, respectively, and rename all the clauses from [range.split.meow] to [range.lazy.split.meow].</p>
 <p>Add <code class="sourceCode cpp">base<span class="op">()</span></code> overloads to <code class="sourceCode cpp"><span class="addu">lazy_</span>split_view<span class="op">::</span><em>inner-iterator</em></code>’ in <span>24.7.12.5
  <a href="https://wg21.link/range.split.inner">[range.split.inner]</a></span>:</p>
 <blockquote>
@@ -999,13 +1000,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And add text describing those two new functions, just before <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++</span></code>:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>constexpr iterator_t&lt;<em>Base</em>&gt; base() const&amp;</span>
-<span id="cb13-2"><a href="#cb13-2"></a>    requires copyable&lt;iterator_t&lt;<em>Base</em>&gt;&gt;;</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span><em>Base</em><span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>    <span class="kw">requires</span> copyable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span><em>Base</em><span class="op">&gt;&gt;</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">a</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <em>i_</em><span class="op">.</span><em>current</em>;</code></p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>constexpr iterator_t&lt;<em>Base</em>&gt; base() &amp;&amp;;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span><em>Base</em><span class="op">&gt;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">b</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span><em>i_</em><span class="op">.</span><em>current</em><span class="op">)</span>;</code></p>
 </div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1"></a>constexpr <em>inner-iterator</em>&amp; operator++();</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <em>inner-iterator</em><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: […]</p>
 </blockquote>
 <h2 data-number="5.2" id="wording-for-new-split"><span class="header-section-number">5.2</span> Wording for new <code class="sourceCode cpp">split</code><a href="#wording-for-new-split" class="self-link"></a></h2>
@@ -1081,13 +1082,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">constexpr</span> iterator begin<span class="op">()</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">{*</span><span class="kw">this</span>, ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">)</span>, <em>find-next</em><span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">))}</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Remarks</em>: In order to provide the amortized constant time complexity required by the <code class="sourceCode cpp">range</code> concept, this function caches the result within the <code class="sourceCode cpp">split_view</code> for use on subsequent calls.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>find-next</em><span class="op">(</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> it<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">constexpr</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>find-next</em><span class="op">(</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> it<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">auto</span> n <span class="op">=</span> ranges<span class="op">::</span>search<span class="op">(</span>subrange<span class="op">(</span>it, ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>, <em>pattern_</em><span class="op">).</span>begin<span class="op">()</span>;</span>
-<span id="cb22-2"><a href="#cb22-2"></a><span class="cf">if</span> <span class="op">(</span>n <span class="op">!=</span> ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">)</span> <span class="op">&amp;&amp;</span> ranges<span class="op">::</span>empty<span class="op">(</span><em>pattern_</em><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>    <span class="op">++</span>n;</span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">auto</span> <span class="op">[</span>b,e<span class="op">]</span> <span class="op">=</span> ranges<span class="op">::</span>search<span class="op">(</span>subrange<span class="op">(</span>it, ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>, <em>pattern_</em><span class="op">)</span>;</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="cf">if</span> <span class="op">(</span>b <span class="op">!=</span> ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">)</span> <span class="op">&amp;&amp;</span> ranges<span class="op">::</span>empty<span class="op">(</span><em>pattern_</em><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>    <span class="op">++</span>b;</span>
 <span id="cb22-4"><a href="#cb22-4"></a><span class="op">}</span></span>
-<span id="cb22-5"><a href="#cb22-5"></a><span class="cf">return</span> n;</span></code></pre></div>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="cf">return</span> <span class="op">{</span>b,e<span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <h3 data-number="5.2.3" id="class-template-split_view_iterator_-range.split2.iterator"><span class="header-section-number">5.2.3</span> Class template <code class="sourceCode cpp">split_view​<span class="op">::</span><em>​iterator</em></code> [range.split2.iterator]<a href="#class-template-split_view_iterator_-range.split2.iterator" class="self-link"></a></h3>
 <blockquote>
@@ -1096,10 +1097,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-3"><a href="#cb23-3"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
 <span id="cb23-4"><a href="#cb23-4"></a>  <span class="kw">class</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span><em>iterator</em> <span class="op">{</span></span>
 <span id="cb23-5"><a href="#cb23-5"></a>  <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb23-6"><a href="#cb23-6"></a>    split_view<span class="op">*</span> <em>parent_</em> <span class="op">=</span> <span class="kw">nullptr</span>;          <span class="co">// exposition only</span></span>
-<span id="cb23-7"><a href="#cb23-7"></a>    iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>cur_</em> <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;   <span class="co">// exposition only</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a>    iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>next_</em> <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;  <span class="co">// exposition only</span></span>
-<span id="cb23-9"><a href="#cb23-9"></a>    <span class="dt">bool</span> <em>trailing_empty_</em> <span class="op">=</span> <span class="kw">false</span>;           <span class="co">// exposition only</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a>    split_view<span class="op">*</span> <em>parent_</em> <span class="op">=</span> <span class="kw">nullptr</span>;                              <span class="co">// exposition only</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a>    iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>cur_</em> <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;                       <span class="co">// exposition only</span></span>
+<span id="cb23-8"><a href="#cb23-8"></a>    subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>next_</em> <span class="op">=</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;()</span>;  <span class="co">// exposition only</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a>    <span class="dt">bool</span> <em>trailing_empty_</em> <span class="op">=</span> <span class="kw">false</span>;                               <span class="co">// exposition only</span></span>
 <span id="cb23-10"><a href="#cb23-10"></a>    </span>
 <span id="cb23-11"><a href="#cb23-11"></a>  <span class="kw">public</span><span class="op">:</span></span>
 <span id="cb23-12"><a href="#cb23-12"></a>    <span class="kw">using</span> iterator_concept <span class="op">=</span> forward_iterator_tag;</span>
@@ -1108,7 +1109,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-15"><a href="#cb23-15"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> range_difference_t<span class="op">&lt;</span>V<span class="op">&gt;</span>;</span>
 <span id="cb23-16"><a href="#cb23-16"></a>    </span>
 <span id="cb23-17"><a href="#cb23-17"></a>    <em>iterator</em><span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb23-18"><a href="#cb23-18"></a>    <span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> next<span class="op">)</span>;</span>
+<span id="cb23-18"><a href="#cb23-18"></a>    <span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> next<span class="op">)</span>;</span>
 <span id="cb23-19"><a href="#cb23-19"></a></span>
 <span id="cb23-20"><a href="#cb23-20"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span>;</span>
 <span id="cb23-21"><a href="#cb23-21"></a>    <span class="kw">constexpr</span> value_type <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;</span>
@@ -1118,17 +1119,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-25"><a href="#cb23-25"></a></span>
 <span id="cb23-26"><a href="#cb23-26"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> y<span class="op">)</span></span>
 <span id="cb23-27"><a href="#cb23-27"></a>  <span class="op">}</span>;</span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1"></a>constexpr iterator(split_view&amp; parent, iterator_t&lt;V&gt; current, iterator_t&lt;V&gt; next);</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> next<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>parent_</em></code> with <code class="sourceCode cpp">addressof<span class="op">(</span>parent<span class="op">)</span></code>, <code class="sourceCode cpp"><em>cur_</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>current<span class="op">)</span></code>, and <code class="sourceCode cpp"><em>next_</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>next<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>cur_</em>;</code></p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">constexpr</span> value_type <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">{</span><em>cur_</em>, <em>next_</em><span class="op">}</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">{</span><em>cur_</em>, <em>next_</em><span class="op">.</span>begin<span class="op">()}</span>;</code></p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">constexpr</span> <em>iterator</em><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><em>cur_</em> <span class="op">=</span> <em>next_</em>;</span>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><em>cur_</em> <span class="op">=</span> <em>next_</em><span class="op">.</span>begin<span class="op">()</span>;</span>
 <span id="cb28-2"><a href="#cb28-2"></a><span class="cf">if</span> <span class="op">(</span><em>cur_</em> <span class="op">!=</span> ranges<span class="op">::</span>end<span class="op">(</span><em>parent_</em><span class="op">-&gt;</span><em>base_</em><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb28-3"><a href="#cb28-3"></a>    ranges<span class="op">::</span>advance<span class="op">(</span><em>cur_</em>, ranges<span class="op">::</span>distance<span class="op">(</span><em>parent_</em><span class="op">-&gt;</span><em>pattern_</em><span class="op">))</span>;</span>
+<span id="cb28-3"><a href="#cb28-3"></a>    <em>cur_</em> <span class="op">=</span> <em>next_</em><span class="op">.</span>end<span class="op">()</span>;</span>
 <span id="cb28-4"><a href="#cb28-4"></a>    <span class="cf">if</span> <span class="op">(</span><em>cur_</em> <span class="op">==</span> ranges<span class="op">::</span>end<span class="op">(</span><em>parent_</em><span class="op">-&gt;</span><em>base_</em><span class="op">))</span> <span class="op">{</span></span>
 <span id="cb28-5"><a href="#cb28-5"></a>        <em>trailing_empty_</em> <span class="op">=</span> <span class="kw">true</span>;</span>
 <span id="cb28-6"><a href="#cb28-6"></a>    <span class="op">}</span></span>
@@ -1166,7 +1167,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>sentinel</em><span class="op">&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> x<span class="op">.</span><em>cur_</em> <span class="op">==</span> y<span class="op">.</span><em>end_</em> <span class="op">&amp;&amp;</span> <span class="op">!</span>x<span class="op">.</span><em>trailing_empty_</em>;</code></p>
 </blockquote>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Thanks to Tim Song for help with implementation and wording.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-issue385">
 <p>[issue385] Casey Carter. 2016. <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of view operations. <br />
