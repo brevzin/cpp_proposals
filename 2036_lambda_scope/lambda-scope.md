@@ -283,17 +283,13 @@ to resolve.
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged (i.e. [@N4878]).
 
-Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "intervening _lambda-expression_" means, in a way that ensures that the _lambda-expression_ intervenes between a local entity and the lambda's _trailing-return-type_:
+Change [expr.prim.id.unqual]{.sref}/3 to handle the case where we name a capture from either the _trailing-return-type_ or the _noexcept-specifier_. These spots aren't odr-usable so they wouldn't result in a a capture, but we do need this transformation to take place anyway:
 
 ::: bq
-::: addu
-[`e`]{.pnum} A _lambda-expression_ ([expr.prim.lambda]) intervenes between a local entity and a program point `P` if the _lambda-expression_'s function parameter scope encloses `P`.
-:::
-
 [3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and [either]{.addu}
 
 - [3.1]{.pnum} naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), [or]{.addu}
-- [3.2]{.pnum} [the _unqualified-id_ appears in a _lambda-declarator_ of a _lambda-expression_ and naming the entity from outside of an unevaluated operand from within the _compound-statement_ of that _lambda-expression_ would result in that _lambda-expression_ capturing the entity by copy, then]{.addu}
+- [3.2]{.pnum} [the _unqualified-id_ appears in a _lambda-declarator_, but not the _parameter-declaration-clause_, of a _lambda-expression_ and naming the entity from outside of an unevaluated operand from within the _compound-statement_ of that _lambda-expression_ would result in that _lambda-expression_ capturing the entity by copy, then]{.addu}
 
 the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
 :::
