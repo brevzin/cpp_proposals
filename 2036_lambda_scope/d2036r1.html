@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-05" />
+  <meta name="dcterms.date" content="2021-01-06" />
   <title>Change scope of lambda *trailing-return-type*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-05</td>
+    <td>2021-01-06</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -693,7 +693,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized">e</a></span> A <em>lambda-expression</em> ([expr.prim.lambda]) intervenes between a local entity and a program point <code class="sourceCode cpp">P</code> if the <em>lambda-expression</em>’s function parameter scope encloses <code class="sourceCode cpp">P</code>.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the <em>unqualified-id</em> appears would result in some intervening <em>lambda-expression</em> capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening <em>lambda-expression</em>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and <span class="addu">either</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> naming it from outside of an unevaluated operand within the scope where the <em>unqualified-id</em> appears would result in some intervening <em>lambda-expression</em> capturing it by copy ([expr.prim.lambda.capture]), <span class="addu">or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> <span class="addu">the <em>unqualified-id</em> appears in a <em>lambda-declarator</em> of a <em>lambda-expression</em> and naming the entity from outside of an unevaluated operand from within the <em>compound-statement</em> of that <em>lambda-expression</em> would result in that <em>lambda-expression</em> capturing the entity by copy, then</span></li>
+</ul>
+<p>the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening <em>lambda-expression</em>.</p>
 </blockquote>
 <p>Extend the example in <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>

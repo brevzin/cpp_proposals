@@ -290,8 +290,12 @@ Insert a clause in front of [expr.prim.id.unqual]{.sref}/3 defining what a "inte
 [`e`]{.pnum} A _lambda-expression_ ([expr.prim.lambda]) intervenes between a local entity and a program point `P` if the _lambda-expression_'s function parameter scope encloses `P`.
 :::
 
-[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]).
-If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and [either]{.addu}
+
+- [3.1]{.pnum} naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), [or]{.addu}
+- [3.2]{.pnum} [the _unqualified-id_ appears in a _lambda-declarator_ of a _lambda-expression_ and naming the entity from outside of an unevaluated operand from within the _compound-statement_ of that _lambda-expression_ would result in that _lambda-expression_ capturing the entity by copy, then]{.addu}
+
+the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
 :::
 
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
