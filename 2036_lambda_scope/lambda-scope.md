@@ -486,6 +486,7 @@ And extend the example to demonstrate this usage (now we do have an `i` in scope
 +   return i++;
 + };
 ```
+:::
 
 Our earlier bad examples of _init-capture_ should still be rejected:
 
@@ -494,7 +495,6 @@ Our earlier bad examples of _init-capture_ should still be rejected:
 
 Basically, we've just swapped which rule rejects which example, but both examples are still rejected.
 
-:::
 
 # Acknowledgements
 
