@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-06" />
+  <meta name="dcterms.date" content="2021-01-09" />
   <title>Change scope of lambda *trailing-return-type*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-06</td>
+    <td>2021-01-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -572,7 +572,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#capture-default-with"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[&amp;]</span></code><span></span></a></li>
 <li><a href="#capture-default-with-1"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[=]</span></code><span></span></a></li>
 </ul></li>
-<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#parts-of-a-lambda"><span class="toc-section-number">3.1</span> Parts of a Lambda<span></span></a></li>
+<li><a href="#odr-used-when-not-odr-usable"><span class="toc-section-number">3.2</span> odr-used when not odr-usable<span></span></a></li>
+</ul></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
 <li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
@@ -685,37 +689,162 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>That is, treat the <em>trailing-return-type</em> like the function body rather than treating it like a function parameter.</p>
 <p>Such a change fixes the lambda in a way that almost certainly matches user intent, fixes the <code class="sourceCode cpp">counter</code> and <code class="sourceCode cpp">compose</code> lambdas presented earlier, and fixes all current and future lambdas that use a macro to de-duplicate the <em>trailing-return-type</em> from the body.</p>
 <p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
+<h2 data-number="3.1" id="parts-of-a-lambda"><span class="header-section-number">3.1</span> Parts of a Lambda<a href="#parts-of-a-lambda" class="self-link"></a></h2>
+<p>If we write out a lambda that has all the parts that it can have, they would be in the following order (most of these are optional):</p>
+<ol type="1">
+<li><em>lambda-introducer</em></li>
+<li><em>template-parameter-list</em></li>
+<li><em>requires-clause</em> (#1)</li>
+<li><em>lambda-declarator</em>
+<ol type="a">
+<li><em>parameter-declaration-clause</em></li>
+<li><em>decl-specifier-seq</em></li>
+<li><em>noexcept-specifier</em></li>
+<li><em>attribute-specifier-seq</em></li>
+<li><em>trailing-return-type</em></li>
+<li><em>requires-clause</em> (#2)</li>
+</ol></li>
+<li><em>compound-statement</em></li>
+</ol>
+<p>If we have a copy capture (whether it’s a <em>simple-capture</em> or a <em>capture-default</em> of <code class="sourceCode cpp"><span class="op">=</span></code> or an <em>init-capture</em> that isn’t a reference), the issue is we do not know what the type of a capture should be until we’ve seen whether the lambda is <code class="sourceCode cpp"><span class="kw">mutable</span></code> or not (in the <em>decl-specifier-seq</em>).</p>
+<p>What do we want to do about a case like this?</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="dt">double</span> x;</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span> y<span class="op">){</span> <span class="cf">return</span> x; <span class="op">}</span></span></code></pre></div>
+<p>There are four options for what this lambda could mean:</p>
+<ol type="1">
+<li>this is a lambda that takes a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">&amp;</span></code> (status qou).</li>
+<li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code> (lookup could be changed to find the <em>init-capture</em> but not do any member access transformation - even though this lambda ends up being not <code class="sourceCode cpp"><span class="kw">mutable</span></code>)</li>
+<li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> (would require lookahead, highly undesirable)</li>
+<li>this is ill-formed</li>
+</ol>
+<p>While there’s a lot of motivation for the <em>trailing-return-type</em>, I have never seen anybody write this and do not know what the motivation for such a thing would be. (1) isn’t very reasonable since the <em>init-capture</em> is lexically closer to use and it’s just as surprising to find <code class="sourceCode cpp"><span class="op">::</span>x</code> in the <em>parameter-declaration-clause</em> as it is in the <em>trailing-return-type</em>.</p>
+<p>The advantage of (4) is that it guarantees that all uses of <code class="sourceCode cpp">x</code> in the <em>lambda-expression</em> after the <em>lambda-introducer</em> mean the same thing — we reject the cases up front where we are not sure what answer to give without doing lookahead. If motivation arises in the future for using captures in these contexts, we can always change the lookup in these contexts to allow such uses — rejecting now doesn’t cut off that path.</p>
+<p>This paper proposes (4).</p>
+<p>Note that there are potentially <em>two</em> different <em>requires-clause</em>s in a lambda: one that is before the <em>decl-specifier-seq</em> and one that is after. Using a capture would be ill-formed in one but valid in the other:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">double</span> x;</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)*</span> p<span class="op">&gt;</span> <span class="co">// ill-formed</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>        <span class="op">*</span>p <span class="op">=</span> x;      <span class="co">// ill-formed</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span> q<span class="op">)</span>  <span class="co">// ill-formed</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="co">// now we know x is an lvalue of type int const</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>    <span class="kw">noexcept</span><span class="op">(</span><span class="kw">noexcept</span><span class="op">(</span>q<span class="op">+</span>x<span class="op">))</span>     <span class="co">// ok</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>q<span class="op">+</span>x<span class="op">)</span>            <span class="co">// ok</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> q<span class="op">+</span>x; <span class="op">}</span>  <span class="co">// ok</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>    <span class="op">{</span></span>
+<span id="cb10-13"><a href="#cb10-13"></a>        <span class="cf">return</span> q<span class="op">+</span>x;             <span class="co">// ok</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a>    <span class="op">}</span></span></code></pre></div>
+<p>The status quo today is that all uses here are valid, and all of them save for the last one find <code class="sourceCode cpp"><span class="op">::</span>x</code> (the <code class="sourceCode cpp"><span class="dt">double</span></code>) — only in the lambda’s <em>compound-statement</em> does lookup find the <em>init-capture</em> <code class="sourceCode cpp">x</code> (the <code class="sourceCode cpp"><span class="dt">int</span></code>).</p>
+<h2 data-number="3.2" id="odr-used-when-not-odr-usable"><span class="header-section-number">3.2</span> odr-used when not odr-usable<a href="#odr-used-when-not-odr-usable" class="self-link"></a></h2>
+<p>Davis Herring provides the following example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> read<span class="op">(</span><span class="kw">const</span> <span class="dt">int</span> <span class="op">&amp;</span>i<span class="op">)</span> <span class="op">{</span><span class="cf">return</span> i;<span class="op">}</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> value<span class="op">=</span><span class="dv">3</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">return</span> <span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">(*)[</span>read<span class="op">(</span>value<span class="op">)]</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="kw">static</span> <span class="dt">int</span> x<span class="op">[</span>read<span class="op">(</span>value<span class="op">)]</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a>        <span class="cf">return</span> <span class="op">&amp;</span>x;</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="op">}</span>;</span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="op">}</span></span></code></pre></div>
+<p>Today, this example is ill-formed (although no compiler diagnoses it) because <code class="sourceCode cpp">value</code> is odr-used in the <em>trailing-return-type</em>, but it is not odr-usable (<span>6.3
+ <a href="https://wg21.link/basic.def.odr">[basic.def.odr]</a></span>/9) there. It would be consistent with the theme of this paper (having the <em>trailing-return-type</em> have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don’t start capturing more things.</p>
+<p>I’m wary of such a change because I’m very wary of touching the odr rules. Especially because in an example like this, we could easily make <code class="sourceCode cpp">value</code> not odr-used here (either by making <code class="sourceCode cpp">value</code> <code class="sourceCode cpp"><span class="kw">static</span></code> or by changing <code class="sourceCode cpp">read</code> to not take by reference).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged (i.e. <span class="citation" data-cites="N4878">[<a href="#ref-N4878" role="doc-biblioref">N4878</a>]</span>).</p>
-<p>Change <span>7.5.4.2
- <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to handle the case where we name a capture from either the <em>trailing-return-type</em> or the <em>noexcept-specifier</em>. These spots aren’t odr-usable so they wouldn’t result in a a capture, but we do need this transformation to take place anyway:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and <span class="addu">either</span></p>
+<p>The wording strategy here is as follows. We have the following scopes today:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> naming it from outside of an unevaluated operand within the scope where the <em>unqualified-id</em> appears would result in some intervening <em>lambda-expression</em> capturing it by copy ([expr.prim.lambda.capture]), <span class="addu">or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> <span class="addu">the <em>unqualified-id</em> appears in a <em>lambda-declarator</em>, but not the <em>parameter-declaration-clause</em>, of a <em>lambda-expression</em> and naming the entity from outside of an unevaluated operand from within the <em>compound-statement</em> of that <em>lambda-expression</em> would result in that <em>lambda-expression</em> capturing the entity by copy, then</span></li>
+<li><em>lambda-introducer</em></li>
+<li><em>template-parameter-list</em></li>
+<li><em>requires-clause</em> (#1)</li>
+<li><em>lambda-declarator</em>
+<ul>
+<li><em>parameter-declaration-clause</em> (function parameter scope)</li>
+<li><em>decl-specifier-seq</em></li>
+<li><em>noexcept-specifier</em></li>
+<li><em>attribute-specifier-seq</em></li>
+<li><em>trailing-return-type</em></li>
+<li><em>requires-clause</em> (#2)
+<ul>
+<li><em>compound-statement</em> (block scope)</li>
+</ul></li>
+</ul></li>
 </ul>
-<p>the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening <em>lambda-expression</em>.</p>
+<p>We have to move the <em>init-capture</em> to inhabit the function parameter scope, making sure to still reject cases like:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="dt">int</span> x<span class="op">){}</span></code> (currently rejected by <span>6.4.3
+ <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/2, the <em>init-capture</em> targets the <em>compound-statement</em> and the function parameter targets the parent of that)</li>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]{</span> <span class="dt">int</span> x; <span class="op">}</span></code> (currently rejected by <span>6.4.1
+ <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/4, the two declarations of <code class="sourceCode cpp">x</code> potentially conflict in the same scope)</li>
+</ul>
+<p>We then have to change the [expr.prim.id.unqual] rule such that if an <em>unqualified-id</em> names a local entity from a point <code class="sourceCode cpp">S</code> within a lambda-expression, we first consider the point <code class="sourceCode cpp">S<span class="ch">&#39;</span></code> that is within the <em>compound-statement</em> of that innermost lambda. If, from <code class="sourceCode cpp">S<span class="ch">&#39;</span></code>, some intervening lambda (not necessary the innermost lambda from <code class="sourceCode cpp">S<span class="ch">&#39;</span></code>) would capture the local entity by copy then:</p>
+<ul>
+<li>if <code class="sourceCode cpp">S</code> is in that innermost capturing lambda’s function parameter scope but not in the <em>parameter-declaration-clause</em>, then we do the class member access transformation.</li>
+<li>otherwise, we say the access is ill-formed.</li>
+</ul>
+<p>To clarify:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="dt">int</span> x;</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="op">[=]&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)*</span> p<span class="op">)&gt;</span>  <span class="co">// error: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>                      <span class="co">// but not from the function parameter scope</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span> y<span class="op">)</span>   <span class="co">// error: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>                      <span class="co">// from within the function parameter scope, but it&#39;s in the <em>parameter-declaration-clause</em></span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span>  <span class="co">// ok: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>                      <span class="co">// in the function parameter scope, transformed into class access. Yields int const&amp;.</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="op">{</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>        <span class="cf">return</span> x;     <span class="co">// ok: lvalue of type int const</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="op">}</span>;</span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="dt">int</span> j;</span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="op">[=](){</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a>    <span class="op">[]&lt;</span><span class="kw">decltype</span><span class="op">(</span>j<span class="op">)*</span> q<span class="op">&gt;</span> <span class="co">// ok: the innermost lambda that would capture j by copy is the outer lambda</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a>                       <span class="co">// and we are in the outer&#39;s lambda&#39;s function parameter scope, this is int*</span></span>
+<span id="cb12-16"><a href="#cb12-16"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">((</span>j<span class="op">))</span> w<span class="op">)</span>  <span class="co">// ok: as above, &#39;w&#39; is a parameter of type int const&amp;</span></span>
+<span id="cb12-17"><a href="#cb12-17"></a>    <span class="op">{}</span>;</span>
+<span id="cb12-18"><a href="#cb12-18"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Change <span>7.5.4.2
+ <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 as described earlier. It currently reads:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the <em>unqualified-id</em> appears would result in some intervening <em>lambda-expression</em> capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening <em>lambda-expression</em>.</p>
+<p>Otherwise, the type of the expression is the type of the result.</p>
+</blockquote>
+<p>Change it to instead read (I’m trying to add bullets and parentheses to make it clear what branch each case refers to):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). If the entity is a local entity and the <em>unqualified-id</em> appears in a <em>lambda-expression</em> at program point <code class="sourceCode cpp">P</code>, then let <code class="sourceCode cpp">S</code> be <em>compound-expression</em> of the innermost enclosing <em>lambda-expression</em> of <code class="sourceCode cpp">P</code>.</p>
+<p>If naming the local entity from outside of an unevaluated operand in <code class="sourceCode cpp">S</code> would result in some intervening <em>lambda-expression</em> capturing the local entity by copy ([expr.prim.lambda.capture]), then let <code class="sourceCode cpp">E</code> be the innermost such intervening <em>lambda-expression</em>.</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If <code class="sourceCode cpp">P</code> is in <code class="sourceCode cpp">E</code>’s function parameter scope but not its <em>parameter-declaration-clause</em>, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of <code class="sourceCode cpp">E</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> Otherwise (if <code class="sourceCode cpp">P</code> either precedes <code class="sourceCode cpp">E</code>’s function parameter scope or is in <code class="sourceCode cpp">E</code>’s <em>parameter-declaration-clause</em>), the program is ill-formed.</li>
+</ul>
+<p>Otherwise (if there is no such <em>lambda-expression</em> <code class="sourceCode cpp">E</code>), the type of the expression is the type of the result.</p>
 </blockquote>
 <p>Extend the example in <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>
 <blockquote>
 <p>[<em>Example 1:</em></p>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>  void f() {</span>
-<span id="cb9-2"><a href="#cb9-2"></a>    float x, &amp;r = x;</span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="st">-   [=] {</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>      decltype(x) y1;             // y1 has type float</span>
-<span id="cb9-7"><a href="#cb9-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
-<span id="cb9-8"><a href="#cb9-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
-<span id="cb9-9"><a href="#cb9-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
-<span id="cb9-10"><a href="#cb9-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
-<span id="cb9-11"><a href="#cb9-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
-<span id="cb9-12"><a href="#cb9-12"></a><span class="va">+     return y2;</span></span>
-<span id="cb9-13"><a href="#cb9-13"></a>    };</span>
-<span id="cb9-14"><a href="#cb9-14"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>  void f() {</span>
+<span id="cb13-2"><a href="#cb13-2"></a>    float x, &amp;r = x;</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="st">-   [=] {</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>      decltype(x) y1;             // y1 has type float</span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
+<span id="cb13-11"><a href="#cb13-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="va">+     return y2;</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>    };</span>
+<span id="cb13-14"><a href="#cb13-14"></a>    </span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="va">+   [=]&lt;decltype(x) P&gt;{};         // error: x refers to local entity but precedes the</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="va">+                                 // lambda&#39;s function parameter scope</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="va">+   [=](decltype((x)) y){};       // error: x refers to local entity but is in lambda&#39;s</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="va">+                                 // parameter-declaration-clause</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="va">+   [=]{</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a><span class="va">+       []&lt;decltype(x) P&gt;{};      // ok: x is in the outer lambda&#39;s function parameter scope</span></span>
+<span id="cb13-21"><a href="#cb13-21"></a><span class="va">+       [](decltype((x)) y){};    // ok: lambda takes a parameter of type float const&amp;</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a><span class="va">+   };</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a>  }</span></code></pre></div>
 </div>
 <p><em>- end example</em>]</p>
 </blockquote>
@@ -727,21 +856,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And extend the example to demonstrate this usage (now we do have an <code class="sourceCode cpp">i</code> in scope for <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>i<span class="op">)</span></code> to find):</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  int x = 4;</span>
-<span id="cb10-2"><a href="#cb10-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
-<span id="cb10-3"><a href="#cb10-3"></a>              r += 2;</span>
-<span id="cb10-4"><a href="#cb10-4"></a>              return x+2;</span>
-<span id="cb10-5"><a href="#cb10-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
-<span id="cb10-6"><a href="#cb10-6"></a>           </span>
-<span id="cb10-7"><a href="#cb10-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
-<span id="cb10-8"><a href="#cb10-8"></a>  </span>
-<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
-<span id="cb10-10"><a href="#cb10-10"></a><span class="va">+   return i++;</span></span>
-<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+ };</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>  int x = 4;</span>
+<span id="cb14-2"><a href="#cb14-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
+<span id="cb14-3"><a href="#cb14-3"></a>              r += 2;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>              return x+2;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
+<span id="cb14-6"><a href="#cb14-6"></a>           </span>
+<span id="cb14-7"><a href="#cb14-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
+<span id="cb14-8"><a href="#cb14-8"></a>  </span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="va">+   return i++;</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="va">+ };</span></span></code></pre></div>
 </div>
+<p>Our earlier bad examples of <em>init-capture</em> should still be rejected:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="dt">int</span> x<span class="op">){}</span></code> is now rejected by <span>6.4.1
+ <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/4, since we know have two declarations of <code class="sourceCode cpp">x</code> in the function parameter scope of the lambda.</li>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]{</span> <span class="dt">int</span> x; <span class="op">}</span></code> is now rejected by <span>6.4.3
+ <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/2, since the declaration <code class="sourceCode cpp"><span class="dt">int</span> x</code> targets the block scope of the <em>compound-statement</em> of the lambda and <code class="sourceCode cpp">x<span class="op">=</span><span class="dv">1</span></code> is a declaration whose target scope is the function parameter scope, the parent of that <em>compound-statement</em>.</li>
+</ul>
+<p>Basically, we’ve just swapped which rule rejects which example, but both examples are still rejected.</p>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
-<p>Thanks to Davis Herring for all of his work, just in general.</p>
+<p>Thanks to Davis Herring for all of his work, just in general. Thanks to Tim Song for help understand the rules.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-N4878">

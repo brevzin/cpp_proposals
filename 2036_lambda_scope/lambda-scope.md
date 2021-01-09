@@ -279,19 +279,157 @@ unfortunate, but it's an especially strange corner case - one that's much
 more unlikely to appear in real code than the cases that this paper is trying
 to resolve.
 
+## Parts of a Lambda
+
+If we write out a lambda that has all the parts that it can have, they would be in the following order (most of these are optional):
+
+1. _lambda-introducer_
+2. _template-parameter-list_
+3. _requires-clause_ (#1)
+4. _lambda-declarator_
+    a. _parameter-declaration-clause_
+    b. _decl-specifier-seq_
+    c. _noexcept-specifier_
+    d. _attribute-specifier-seq_
+    e. _trailing-return-type_
+    f. _requires-clause_ (#2)
+5. _compound-statement_
+
+If we have a copy capture (whether it's a _simple-capture_ or a _capture-default_ of `=` or an _init-capture_ that isn't a reference), the issue is we do not know what the type of a capture should be until we've seen whether the lambda is `mutable` or not (in the _decl-specifier-seq_).
+
+What do we want to do about a case like this?
+
+```cpp
+double x;
+[x=1](decltype((x)) y){ return x; }
+```
+
+There are four options for what this lambda could mean:
+
+1. this is a lambda that takes a `double&` (status qou).
+2. this is a lambda that takes an `int&` (lookup could be changed to find the _init-capture_ but not do any member access transformation - even though this lambda ends up being not `mutable`)
+3. this is a lambda that takes an `int const&` (would require lookahead, highly undesirable)
+4. this is ill-formed
+
+While there's a lot of motivation for the _trailing-return-type_, I have never seen anybody write this and do not know what the motivation for such a thing would be. (1) isn't very reasonable since the _init-capture_ is lexically closer to use and it's just as surprising to find `::x` in the _parameter-declaration-clause_ as it is in the _trailing-return-type_.
+
+The advantage of (4) is that it guarantees that all uses of `x` in the _lambda-expression_ after the _lambda-introducer_ mean the same thing &mdash; we reject the cases up front where we are not sure what answer to give without doing lookahead. If motivation arises in the future for using captures in these contexts, we can always change the lookup in these contexts to allow such uses &mdash; rejecting now doesn't cut off that path. 
+
+This paper proposes (4).
+
+Note that there are potentially _two_ different *requires-clause*s in a lambda: one that is before the _decl-specifier-seq_ and one that is after. Using a capture would be ill-formed in one but valid in the other:
+
+```cpp
+double x;
+[x=1]
+    <decltype(x)* p> // ill-formed
+    requires requires {
+        *p = x;      // ill-formed
+    }
+    (decltype(x) q)  // ill-formed
+    // now we know x is an lvalue of type int const
+    noexcept(noexcept(q+x))     // ok
+    -> decltype(q+x)            // ok
+    requires requires { q+x; }  // ok
+    {
+        return q+x;             // ok
+    }
+```
+
+The status quo today is that all uses here are valid, and all of them save for the last one find `::x` (the `double`) &mdash; only in the lambda's _compound-statement_ does lookup find the _init-capture_ `x` (the `int`).
+
+## odr-used when not odr-usable
+
+Davis Herring provides the following example:
+
+```cpp
+constexpr int read(const int &i) {return i;}
+
+auto f() {
+    constexpr int value=3;
+    return [=]() -> int(*)[read(value)] {
+        static int x[read(value)];
+        return &x;
+    };
+}
+```
+
+Today, this example is ill-formed (although no compiler diagnoses it) because `value` is odr-used in the _trailing-return-type_, but it is not odr-usable ([basic.def.odr]{.sref}/9) there. It would be consistent with the theme of this paper (having the _trailing-return-type_ have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don't start capturing more things. 
+
+I'm wary of such a change because I'm very wary of touching the odr rules. Especially because in an example like this, we could easily make `value` not odr-used here (either by making `value` `static` or by changing `read` to not take by reference).
+
 # Wording
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged (i.e. [@N4878]).
 
-Change [expr.prim.id.unqual]{.sref}/3 to handle the case where we name a capture from either the _trailing-return-type_ or the _noexcept-specifier_. These spots aren't odr-usable so they wouldn't result in a a capture, but we do need this transformation to take place anyway:
+The wording strategy here is as follows. We have the following scopes today:
+
+- _lambda-introducer_ 
+- _template-parameter-list_
+- _requires-clause_ (#1)
+- _lambda-declarator_
+    - _parameter-declaration-clause_ (function parameter scope)
+    - _decl-specifier-seq_
+    - _noexcept-specifier_
+    - _attribute-specifier-seq_
+    - _trailing-return-type_
+    - _requires-clause_ (#2)
+        - _compound-statement_ (block scope)
+
+We have to move the _init-capture_ to inhabit the function parameter scope, making sure to still reject cases like:
+
+* `[x=1](int x){}` (currently rejected by [basic.scope.block]{.sref}/2, the _init-capture_ targets the _compound-statement_ and the function parameter targets the parent of that)
+* `[x=1]{ int x; }` (currently rejected by [basic.scope.scope]{.sref}/4, the two declarations of `x` potentially conflict in the same scope)
+
+We then have to change the [expr.prim.id.unqual] rule such that if an _unqualified-id_ names a local entity from a point `S` within a lambda-expression, we first consider the point `S'` that is within the _compound-statement_ of that innermost lambda. If, from `S'`, some intervening lambda (not necessary the innermost lambda from `S'`) would capture the local entity by copy then:
+
+- if `S` is in that innermost capturing lambda's function parameter scope but not in the _parameter-declaration-clause_, then we do the class member access transformation.
+- otherwise, we say the access is ill-formed.
+
+
+To clarify:
+```cpp
+int x;
+[=]<decltype(x)* p)>  // error: unqualified-id names a local entity that would be captured by copy
+                      // but not from the function parameter scope
+    (decltype(x) y)   // error: unqualified-id names a local entity that would be captured by copy
+                      // from within the function parameter scope, but it's in the @_parameter-declaration-clause_@
+    -> decltype((x))  // ok: unqualified-id names a local entity that would be captured by copy
+                      // in the function parameter scope, transformed into class access. Yields int const&.
+{
+        return x;     // ok: lvalue of type int const
+};
+
+int j;
+[=](){
+    []<decltype(j)* q> // ok: the innermost lambda that would capture j by copy is the outer lambda
+                       // and we are in the outer's lambda's function parameter scope, this is int*
+    (decltype((j)) w)  // ok: as above, 'w' is a parameter of type int const&
+    {};
+};
+```
+ 
+
+Change [expr.prim.id.unqual]{.sref}/3 as described earlier. It currently reads:
 
 ::: bq
-[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and [either]{.addu}
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
 
-- [3.1]{.pnum} naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), [or]{.addu}
-- [3.2]{.pnum} [the _unqualified-id_ appears in a _lambda-declarator_, but not the _parameter-declaration-clause_, of a _lambda-expression_ and naming the entity from outside of an unevaluated operand from within the _compound-statement_ of that _lambda-expression_ would result in that _lambda-expression_ capturing the entity by copy, then]{.addu}
+Otherwise, the type of the expression is the type of the result.
+:::
 
-the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
+Change it to instead read (I'm trying to add bullets and parentheses to make it clear what branch each case refers to):
+
+::: bq
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and
+the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.
+
+If naming the local entity from outside of an unevaluated operand in `S` would result in some intervening _lambda-expression_ capturing the local entity by copy ([expr.prim.lambda.capture]), then let `E` be the innermost such intervening _lambda-expression_.
+
+- [3.1]{.pnum} If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of `E`. 
+- [3.2]{.pnum} Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.
+
+Otherwise (if there is no such _lambda-expression_ `E`), the type of the expression is the type of the result.
 :::
 
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
@@ -312,6 +450,15 @@ Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
       decltype((r)) r2 = y2;      // r2 has type float const&
 +     return y2;
     };
+    
++   [=]<decltype(x) P>{};         // error: x refers to local entity but precedes the
++                                 // lambda's function parameter scope
++   [=](decltype((x)) y){};       // error: x refers to local entity but is in lambda's
++                                 // parameter-declaration-clause
++   [=]{
++       []<decltype(x) P>{};      // ok: x is in the outer lambda's function parameter scope
++       [](decltype((x)) y){};    // ok: lambda takes a parameter of type float const&
++   };
   }
 ```
 *- end example*]
@@ -339,8 +486,16 @@ And extend the example to demonstrate this usage (now we do have an `i` in scope
 +   return i++;
 + };
 ```
+
+Our earlier bad examples of _init-capture_ should still be rejected:
+
+- `[x=1](int x){}` is now rejected by [basic.scope.scope]{.sref}/4, since we know have two declarations of `x` in the function parameter scope of the lambda.
+- `[x=1]{ int x; }` is now rejected by [basic.scope.block]{.sref}/2, since the declaration `int x` targets the block scope of the _compound-statement_ of the lambda and `x=1` is a declaration whose target scope is the function parameter scope, the parent of that _compound-statement_.
+
+Basically, we've just swapped which rule rejects which example, but both examples are still rejected.
+
 :::
 
 # Acknowledgements
 
-Thanks to Davis Herring for all of his work, just in general. 
+Thanks to Davis Herring for all of his work, just in general. Thanks to Tim Song for help understand the rules.
