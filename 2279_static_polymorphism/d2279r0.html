@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-03" />
+  <meta name="dcterms.date" content="2021-01-09" />
   <title>We need a language mechanism for static polymorphism</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-03</td>
+    <td>2021-01-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -576,12 +576,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#customization-point-objects"><span class="toc-section-number">2.3</span> Customization Point Objects<span></span></a></li>
 <li><a href="#tag_invoke"><span class="toc-section-number">2.4</span> <code class="sourceCode cpp">tag_invoke</code><span></span></a></li>
 <li><a href="#better-enough"><span class="toc-section-number">2.5</span> Better Enough?<span></span></a></li>
+<li><a href="#the-swap-example"><span class="toc-section-number">2.6</span> The swap example<span></span></a></li>
 </ul></li>
 <li><a href="#relevant-work"><span class="toc-section-number">3</span> Relevant Work<span></span></a>
 <ul>
 <li><a href="#customization-point-functions"><span class="toc-section-number">3.1</span> Customization Point Functions<span></span></a></li>
-<li><a href="#c0x-concepts"><span class="toc-section-number">3.2</span> C++0x Concepts<span></span></a></li>
-<li><a href="#the-contenders"><span class="toc-section-number">3.3</span> The contenders<span></span></a></li>
+<li><a href="#reflective-metaprogramming"><span class="toc-section-number">3.2</span> Reflective Metaprogramming<span></span></a></li>
+<li><a href="#c0x-concepts"><span class="toc-section-number">3.3</span> C++0x Concepts<span></span></a></li>
+<li><a href="#the-contenders"><span class="toc-section-number">3.4</span> The contenders<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
@@ -1865,35 +1867,63 @@ Associated Types
 </tr>
 </tbody>
 </table>
+<h2 data-number="2.6" id="the-swap-example"><span class="header-section-number">2.6</span> The swap example<a href="#the-swap-example" class="self-link"></a></h2>
+<p>To help drive home the significance of the diagnostics and the fact that neither CPOs nor <code class="sourceCode cpp">tag_invoke</code> can possibly provide them, consider the following incorrect opt-in to <code class="sourceCode cpp">swap</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>    <span class="kw">struct</span> Widget <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb19-4"><a href="#cb19-4"></a></span>
+<span id="cb19-5"><a href="#cb19-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>    <span class="dt">void</span> swap<span class="op">(</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span>, Widget<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span>;</span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="op">}</span></span></code></pre></div>
+<p>Regardless of if we’re using CPOs or <code class="sourceCode cpp">tag_invoke</code>, what we have here is an incorrect opt-in to <code class="sourceCode cpp">swap</code>. We need a function that takes two <code class="sourceCode cpp">T<span class="op">&amp;</span></code>s but we accidentally made one of them <code class="sourceCode cpp"><span class="kw">const</span></code>. This error is not diagnosable.</p>
+<p>Why not? Both implementations basically detect the customization point by seeing if they can find a valid candidate for <code class="sourceCode cpp">swap<span class="op">(</span>x, x<span class="op">)</span></code> for a <code class="sourceCode cpp">T<span class="op">&amp;</span> x</code>. There’s no mechanism we have to detect the difference between a <code class="sourceCode cpp">swap</code> that exists and is wrong (like the above) and a <code class="sourceCode cpp">swap</code> that doesn’t exist. We just detect that <code class="sourceCode cpp">swap<span class="op">(</span>x, x<span class="op">)</span></code> is an invalid expression. The result is that we fall-back to using the default implementation of <code class="sourceCode cpp">swap</code>, and get no hint that we did something wrong! The only way we’d notice this if actually detected a slow-down of some kind, or were specifically testing the <code class="sourceCode cpp">swap</code> here very carefully.</p>
+<p>A different kind of incorrect opt-in would be if we’d accidentally done this:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="dt">void</span> swap<span class="op">(</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span>, Widget<span class="op">&lt;</span>T<span class="op">&gt;)</span>;</span></code></pre></div>
+<p>That is, take the second parameter by value instead of by lvalue-reference. Here, our candidate <em>would</em> get selected, but just not actually do a proper swap. We’d eventually discover this error by seeing <code class="sourceCode cpp">swap</code> fail to actually <code class="sourceCode cpp">swap</code> one of the arguments.</p>
+<p>A third kind of incorrect opt-in would be if we put it in the wrong namespace:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>    <span class="kw">namespace</span> Inner <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>        <span class="kw">struct</span> Widget <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb21-5"><a href="#cb21-5"></a>    <span class="op">}</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>    </span>
+<span id="cb21-7"><a href="#cb21-7"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a>    <span class="dt">void</span> swap<span class="op">(</span>Inner<span class="op">::</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span>, Inner<span class="op">::</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;&amp;)</span>;</span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="op">}</span></span></code></pre></div>
+<p>Here, we finally got the parameters right. But ADL won’t find this overload, since <code class="sourceCode cpp">N</code> isn’t an associated namespace of <code class="sourceCode cpp">N<span class="op">::</span>Inner<span class="op">::</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, only <code class="sourceCode cpp">N<span class="op">::</span>Inner</code> is.</p>
+<p>The first problem is something that might be guarded against, perhaps by verifying that <code class="sourceCode cpp">swap<span class="op">(</span>c, c<span class="op">)</span></code> for a <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span> c</code> does not find a candidate if <code class="sourceCode cpp">swap<span class="op">(</span>x, x<span class="op">)</span></code> did not, or some other similar implementation heroics. But this basically means doing an extra bout of overload resolution for every swap, even when <em>not</em> providing a custom swap is fairly typical, so seems unlikely to be done. I’m not sure how you could guard against either the second or third problems.</p>
+<p>The problem here is we’re not just writing a function template whose name is <code class="sourceCode cpp">swap</code> - we’re very specifically opting into an interface. It’s just that unlike virtual member functions, we have no way of expressing this intent today. And without that intent, we can’t get diagnostics for such mistakes.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="relevant-work"><span class="header-section-number">3</span> Relevant Work<a href="#relevant-work" class="self-link"></a></h1>
 <p>I don’t want to just point to Rust and ask that we keep up. I also want to highlight existing work in C++ specifically that can address this problem as well.</p>
 <h2 data-number="3.1" id="customization-point-functions"><span class="header-section-number">3.1</span> Customization Point Functions<a href="#customization-point-functions" class="self-link"></a></h2>
 <p>One paper that addresses this topic is Matt Calabrese’s <span class="citation" data-cites="P1292R0">[<a href="#ref-P1292R0" role="doc-biblioref">P1292R0</a>]</span>. This paper proposes a language facility that is a direct translation of C++ virtual member functions from the dynamic polymorphism realm into the static polymorphism realm. We can implement the recurring example in this paper with such a facility as follows:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb19-4"><a href="#cb19-4"></a>    </span>
-<span id="cb19-5"><a href="#cb19-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb19-6"><a href="#cb19-6"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
-<span id="cb19-8"><a href="#cb19-8"></a>    <span class="op">}</span></span>
-<span id="cb19-9"><a href="#cb19-9"></a>    </span>
-<span id="cb19-10"><a href="#cb19-10"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb19-11"><a href="#cb19-11"></a>    <span class="kw">concept</span> equality_comparable <span class="op">=</span></span>
-<span id="cb19-12"><a href="#cb19-12"></a>        <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-13"><a href="#cb19-13"></a>            eq<span class="op">(</span>t, t<span class="op">)</span>;</span>
-<span id="cb19-14"><a href="#cb19-14"></a>            ne<span class="op">(</span>t, t<span class="op">)</span>;</span>
-<span id="cb19-15"><a href="#cb19-15"></a>        <span class="op">}</span>;    </span>
-<span id="cb19-16"><a href="#cb19-16"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb22-4"><a href="#cb22-4"></a>    </span>
+<span id="cb22-5"><a href="#cb22-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb22-8"><a href="#cb22-8"></a>    <span class="op">}</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>    </span>
+<span id="cb22-10"><a href="#cb22-10"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>    <span class="kw">concept</span> equality_comparable <span class="op">=</span></span>
+<span id="cb22-12"><a href="#cb22-12"></a>        <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-13"><a href="#cb22-13"></a>            eq<span class="op">(</span>t, t<span class="op">)</span>;</span>
+<span id="cb22-14"><a href="#cb22-14"></a>            ne<span class="op">(</span>t, t<span class="op">)</span>;</span>
+<span id="cb22-15"><a href="#cb22-15"></a>        <span class="op">}</span>;    </span>
+<span id="cb22-16"><a href="#cb22-16"></a><span class="op">}</span></span></code></pre></div>
 <p>Which is now just 16 lines of code.</p>
 <p>We would opt-in to this facility by providing an <code class="sourceCode cpp"><span class="kw">override</span></code>:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a>    <span class="dt">int</span> i;</span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="op">}</span>;</span>
-<span id="cb20-4"><a href="#cb20-4"></a></span>
-<span id="cb20-5"><a href="#cb20-5"></a><span class="kw">auto</span> eq<span class="op">(</span>Widget <span class="kw">const</span><span class="op">&amp;</span> x, Widget <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="kw">override</span> <span class="op">:</span> N<span class="op">::</span>eq <span class="op">{</span></span>
-<span id="cb20-6"><a href="#cb20-6"></a>    <span class="cf">return</span> x<span class="op">.</span>i <span class="op">==</span> y<span class="op">.</span>i;</span>
-<span id="cb20-7"><a href="#cb20-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>    <span class="dt">int</span> i;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span>;</span>
+<span id="cb23-4"><a href="#cb23-4"></a></span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="kw">auto</span> eq<span class="op">(</span>Widget <span class="kw">const</span><span class="op">&amp;</span> x, Widget <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="kw">override</span> <span class="op">:</span> N<span class="op">::</span>eq <span class="op">{</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a>    <span class="cf">return</span> x<span class="op">.</span>i <span class="op">==</span> y<span class="op">.</span>i;</span>
+<span id="cb23-7"><a href="#cb23-7"></a><span class="op">}</span></span></code></pre></div>
 <p>This is a far, far simpler implementation for the library author, that is easier to understand for the reader, and does a lot more for us, since the language can do more checking for us. It’s definitely a big step between <code class="sourceCode cpp">tag_invoke</code> and Rust:</p>
 <table>
 <thead>
@@ -2163,52 +2193,145 @@ Associated Types
 <p>While customization point functions have several clear benefits, they still don’t address all the issues here. In particular, when dealing with an interface that logically has multiple customization points, there’s no way of aggregating them together (short of providing a concept that has to unify them), and so there’s nothing to prevent a user from doing something like providing an override for <code class="sourceCode cpp">ne</code> but not for <code class="sourceCode cpp">eq</code>.</p>
 <p>And customization point functions are limited to the kinds of things that functions can do, so they likewise don’t provide any added benefit where associated types are concerned as compared to CPOs or <code class="sourceCode cpp">tag_invoke</code>. They still require type traits for everything interesting.</p>
 <p>What customization point functions <em>do</em> provide is an ability to potentially address the other issue <code class="sourceCode cpp">tag_invoke</code> sought to solve: the ability to forward customizations. With P1292, we already have a dissociation between the <em>name</em> of the override and the <em>name</em> of the function that it is overriding. The paper provides the following example:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> It, <span class="kw">class</span> Distance<span class="op">&gt;</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">void</span> advance<span class="op">(</span>It<span class="op">&amp;</span> it, Distance n<span class="op">)</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a>    <span class="kw">requires</span> InputIterator<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="op">{</span></span>
-<span id="cb21-5"><a href="#cb21-5"></a>    <span class="cf">for</span> <span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">--</span>n<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-6"><a href="#cb21-6"></a>        <span class="op">++</span>it;</span>
-<span id="cb21-7"><a href="#cb21-7"></a>    <span class="op">}</span></span>
-<span id="cb21-8"><a href="#cb21-8"></a><span class="op">}</span></span>
-<span id="cb21-9"><a href="#cb21-9"></a></span>
-<span id="cb21-10"><a href="#cb21-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> It, <span class="kw">class</span> Distance<span class="op">&gt;</span></span>
-<span id="cb21-11"><a href="#cb21-11"></a><span class="kw">constexpr</span> <span class="dt">void</span> advance_bidirectional<span class="op">(</span>It<span class="op">&amp;</span> it, Distance n<span class="op">)</span> <span class="kw">override</span></span>
-<span id="cb21-12"><a href="#cb21-12"></a>  <span class="kw">requires</span> BidirectionalIterator<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
-<span id="cb21-13"><a href="#cb21-13"></a>  <span class="op">:</span> advance</span>
-<span id="cb21-14"><a href="#cb21-14"></a><span class="op">{</span></span>
-<span id="cb21-15"><a href="#cb21-15"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-16"><a href="#cb21-16"></a>        <span class="cf">for</span> <span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">--</span>n<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-17"><a href="#cb21-17"></a>            <span class="op">++</span>it;</span>
-<span id="cb21-18"><a href="#cb21-18"></a>        <span class="op">}</span></span>
-<span id="cb21-19"><a href="#cb21-19"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb21-20"><a href="#cb21-20"></a>        <span class="cf">for</span><span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">++</span>n<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-21"><a href="#cb21-21"></a>            <span class="op">--</span>it;</span>
-<span id="cb21-22"><a href="#cb21-22"></a>        <span class="op">}</span></span>
-<span id="cb21-23"><a href="#cb21-23"></a>    <span class="op">}</span></span>
-<span id="cb21-24"><a href="#cb21-24"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> It, <span class="kw">class</span> Distance<span class="op">&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">void</span> advance<span class="op">(</span>It<span class="op">&amp;</span> it, Distance n<span class="op">)</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a>    <span class="kw">requires</span> InputIterator<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="op">{</span></span>
+<span id="cb24-5"><a href="#cb24-5"></a>    <span class="cf">for</span> <span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">--</span>n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a>        <span class="op">++</span>it;</span>
+<span id="cb24-7"><a href="#cb24-7"></a>    <span class="op">}</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="op">}</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a></span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> It, <span class="kw">class</span> Distance<span class="op">&gt;</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a><span class="kw">constexpr</span> <span class="dt">void</span> advance_bidirectional<span class="op">(</span>It<span class="op">&amp;</span> it, Distance n<span class="op">)</span> <span class="kw">override</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a>  <span class="kw">requires</span> BidirectionalIterator<span class="op">&lt;</span>It<span class="op">&gt;</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a>  <span class="op">:</span> advance</span>
+<span id="cb24-14"><a href="#cb24-14"></a><span class="op">{</span></span>
+<span id="cb24-15"><a href="#cb24-15"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-16"><a href="#cb24-16"></a>        <span class="cf">for</span> <span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">--</span>n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-17"><a href="#cb24-17"></a>            <span class="op">++</span>it;</span>
+<span id="cb24-18"><a href="#cb24-18"></a>        <span class="op">}</span></span>
+<span id="cb24-19"><a href="#cb24-19"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb24-20"><a href="#cb24-20"></a>        <span class="cf">for</span><span class="op">(</span>; n <span class="op">!=</span> <span class="dv">0</span>; <span class="op">++</span>n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-21"><a href="#cb24-21"></a>            <span class="op">--</span>it;</span>
+<span id="cb24-22"><a href="#cb24-22"></a>        <span class="op">}</span></span>
+<span id="cb24-23"><a href="#cb24-23"></a>    <span class="op">}</span></span>
+<span id="cb24-24"><a href="#cb24-24"></a><span class="op">}</span></span></code></pre></div>
 <p>Lewis Baker (one of the <code class="sourceCode cpp">tag_invoke</code> authors) suggests an extension to this direction that allows deducing the the customization point being overriden. As in (the following example is reduced somewhat from a similar one in <span class="citation" data-cites="P2175R0">[<a href="#ref-P2175R0" role="doc-biblioref">P2175R0</a>]</span>, and takes the liberty of assuming we can implement customization point functions as members — an idea which does not appear in Matt’s paper at all):</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Receiver<span class="op">&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">struct</span> receiver <span class="op">{</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>    Receiver inner;</span>
-<span id="cb22-4"><a href="#cb22-4"></a>    </span>
-<span id="cb22-5"><a href="#cb22-5"></a>    <span class="co">// Override get_stop_token()</span></span>
-<span id="cb22-6"><a href="#cb22-6"></a>    <span class="kw">auto</span> get_stop_token<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>never_stop_token</span>
-<span id="cb22-7"><a href="#cb22-7"></a>            <span class="kw">override</span> <span class="op">:</span> std<span class="op">::</span>execution<span class="op">::</span>get_stop_token</span>
-<span id="cb22-8"><a href="#cb22-8"></a>    <span class="op">{</span></span>
-<span id="cb22-9"><a href="#cb22-9"></a>        <span class="cf">return</span> <span class="op">{}</span></span>
-<span id="cb22-10"><a href="#cb22-10"></a>    <span class="op">}</span></span>
-<span id="cb22-11"><a href="#cb22-11"></a>    </span>
-<span id="cb22-12"><a href="#cb22-12"></a>    <span class="co">// Pass through other customization points</span></span>
-<span id="cb22-13"><a href="#cb22-13"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> CPO, <span class="kw">typename</span> Self, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb22-14"><a href="#cb22-14"></a>    <span class="kw">auto</span> fwd_cpo<span class="op">(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> self, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>CPO<span class="op">(</span>FWD<span class="op">(</span>self<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...))</span></span>
-<span id="cb22-15"><a href="#cb22-15"></a>            <span class="kw">override</span><span class="op">:</span> CPO</span>
-<span id="cb22-16"><a href="#cb22-16"></a>    <span class="op">{</span></span>
-<span id="cb22-17"><a href="#cb22-17"></a>        <span class="cf">return</span> CPO<span class="op">(</span>FWD<span class="op">(</span>self<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
-<span id="cb22-18"><a href="#cb22-18"></a>    <span class="op">}</span></span>
-<span id="cb22-19"><a href="#cb22-19"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Receiver<span class="op">&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">struct</span> receiver <span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a>    Receiver inner;</span>
+<span id="cb25-4"><a href="#cb25-4"></a>    </span>
+<span id="cb25-5"><a href="#cb25-5"></a>    <span class="co">// Override get_stop_token()</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>    <span class="kw">auto</span> get_stop_token<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>never_stop_token</span>
+<span id="cb25-7"><a href="#cb25-7"></a>            <span class="kw">override</span> <span class="op">:</span> std<span class="op">::</span>execution<span class="op">::</span>get_stop_token</span>
+<span id="cb25-8"><a href="#cb25-8"></a>    <span class="op">{</span></span>
+<span id="cb25-9"><a href="#cb25-9"></a>        <span class="cf">return</span> <span class="op">{}</span></span>
+<span id="cb25-10"><a href="#cb25-10"></a>    <span class="op">}</span></span>
+<span id="cb25-11"><a href="#cb25-11"></a>    </span>
+<span id="cb25-12"><a href="#cb25-12"></a>    <span class="co">// Pass through other customization points</span></span>
+<span id="cb25-13"><a href="#cb25-13"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> CPO, <span class="kw">typename</span> Self, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb25-14"><a href="#cb25-14"></a>    <span class="kw">auto</span> fwd_cpo<span class="op">(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> self, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>CPO<span class="op">(</span>FWD<span class="op">(</span>self<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...))</span></span>
+<span id="cb25-15"><a href="#cb25-15"></a>            <span class="kw">override</span><span class="op">:</span> CPO</span>
+<span id="cb25-16"><a href="#cb25-16"></a>    <span class="op">{</span></span>
+<span id="cb25-17"><a href="#cb25-17"></a>        <span class="cf">return</span> CPO<span class="op">(</span>FWD<span class="op">(</span>self<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb25-18"><a href="#cb25-18"></a>    <span class="op">}</span></span>
+<span id="cb25-19"><a href="#cb25-19"></a><span class="op">}</span>;</span></code></pre></div>
 <p>Definitely something to seriously consider. One issue might be how to figure out how to pick the right overrides. But collecting overrides and relying on them to be constrained seems likely to produce a smaller set of candidates than having to perform name lookup across all associated namespaces and classes.</p>
-<h2 data-number="3.2" id="c0x-concepts"><span class="header-section-number">3.2</span> C++0x Concepts<a href="#c0x-concepts" class="self-link"></a></h2>
+<h2 data-number="3.2" id="reflective-metaprogramming"><span class="header-section-number">3.2</span> Reflective Metaprogramming<a href="#reflective-metaprogramming" class="self-link"></a></h2>
+<p>I’ve pointed out a few times the relative sizes of the solutions presented thus far: that the CPO solution requires 42 lines of code and the <code class="sourceCode cpp">tag_invoke</code> solution requires 36, customization point functions allow us to reduce this to 16, while the Rust traits example only requires 7. One follow-up question to this is: to what extent can reflective metaprogramming address this need?</p>
+<p>Consider a block of code like the following (I’m using the stereotypes suggested in <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>. The particular syntax chosen here might be incorrect, but probably isn’t relevant to the point I’m trying to make):</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a>    <span class="op">&lt;&lt;</span>make_cpo<span class="op">&gt;&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb26-4"><a href="#cb26-4"></a>    </span>
+<span id="cb26-5"><a href="#cb26-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a>    <span class="op">&lt;&lt;</span>make_cpo<span class="op">&gt;&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb26-8"><a href="#cb26-8"></a>    <span class="op">}</span></span>
+<span id="cb26-9"><a href="#cb26-9"></a><span class="op">}</span></span></code></pre></div>
+<p>To turn this into a CPO solution (a similar algorithm could be created for <code class="sourceCode cpp">tag_invoke</code>), for a function template <code class="sourceCode cpp">F</code> annotated by <code class="sourceCode cpp"><span class="op">&lt;&lt;</span>make_cpo<span class="op">&gt;&gt;</span></code>, we introduce a namespace <code class="sourceCode cpp">N<span class="op">::</span>hidden</code> and:</p>
+<ol type="1">
+<li><p>If <code class="sourceCode cpp">F</code> has a definition, introduce an overload of <code class="sourceCode cpp">F</code> into <code class="sourceCode cpp">N<span class="op">::</span>hidden</code> that is constrained on the function body.</p></li>
+<li><p>Introduce a <code class="sourceCode cpp"><span class="kw">concept</span></code> named <code class="sourceCode cpp">has_F</code> into <code class="sourceCode cpp">N<span class="op">::</span>hidden</code> with the same template parameters and parameter declaration as <code class="sourceCode cpp">F</code>, which a single requirement that is invoking <code class="sourceCode cpp">F</code> with those parameters. If <code class="sourceCode cpp">F</code> returns a type <code class="sourceCode cpp">T</code>, require that this expression satisfies <code class="sourceCode cpp">same_as<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. If <code class="sourceCode cpp">F</code> returns <code class="sourceCode cpp">C <span class="kw">auto</span></code>, then require that this expression satisfies <code class="sourceCode cpp">C</code>. Otherwise, no additional requirement on the type of the expression.</p></li>
+<li><p>Introduce a new function object type <code class="sourceCode cpp">F_fn</code> into <code class="sourceCode cpp">N<span class="op">::</span>hidden</code> with the same template parameters as <code class="sourceCode cpp">F</code>, constrained using <code class="sourceCode cpp">has_F</code>, which invokes <code class="sourceCode cpp">F</code> (unqualified) with the arguments.</p></li>
+<li><p>Introduce a function object named <code class="sourceCode cpp">F</code> of type <code class="sourceCode cpp">F_fn</code> into <code class="sourceCode cpp">N</code> inside of an <code class="sourceCode cpp"><span class="kw">inline</span> <span class="kw">namespace</span> cpos</code>.</p></li>
+</ol>
+<p>Something like that. This should generate code that isn’t exactly like what I showed earlier for CPOs:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="co">// for eq</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">namespace</span> N<span class="op">::</span>hidden <span class="op">{</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a>    <span class="co">// 2.</span></span>
+<span id="cb27-4"><a href="#cb27-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb27-5"><a href="#cb27-5"></a>    <span class="kw">concept</span> has_eq <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> a, T <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6"></a>        <span class="op">{</span> eq<span class="op">(</span>x, y<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span>;</span>
+<span id="cb27-7"><a href="#cb27-7"></a>    <span class="op">}</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a>    </span>
+<span id="cb27-9"><a href="#cb27-9"></a>    <span class="co">// 3.</span></span>
+<span id="cb27-10"><a href="#cb27-10"></a>    <span class="kw">struct</span> eq_fn <span class="op">{</span></span>
+<span id="cb27-11"><a href="#cb27-11"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> has_eq<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb27-12"><a href="#cb27-12"></a>        <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb27-13"><a href="#cb27-13"></a>            <span class="cf">return</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb27-14"><a href="#cb27-14"></a>        <span class="op">}</span></span>
+<span id="cb27-15"><a href="#cb27-15"></a>    <span class="op">}</span>;</span>
+<span id="cb27-16"><a href="#cb27-16"></a><span class="op">}</span></span>
+<span id="cb27-17"><a href="#cb27-17"></a></span>
+<span id="cb27-18"><a href="#cb27-18"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb27-19"><a href="#cb27-19"></a>    <span class="co">// 4.</span></span>
+<span id="cb27-20"><a href="#cb27-20"></a>    <span class="kw">inline</span> <span class="kw">namespace</span> cpos <span class="op">{</span></span>
+<span id="cb27-21"><a href="#cb27-21"></a>        <span class="kw">inline</span> <span class="kw">constexpr</span> hidden<span class="op">::</span>eq_fn eq<span class="op">{}</span>;</span>
+<span id="cb27-22"><a href="#cb27-22"></a>    <span class="op">}</span></span>
+<span id="cb27-23"><a href="#cb27-23"></a><span class="op">}</span></span>
+<span id="cb27-24"><a href="#cb27-24"></a></span>
+<span id="cb27-25"><a href="#cb27-25"></a><span class="co">// for ne</span></span>
+<span id="cb27-26"><a href="#cb27-26"></a><span class="kw">namespace</span> N<span class="op">::</span>hidden <span class="op">{</span></span>
+<span id="cb27-27"><a href="#cb27-27"></a>    <span class="co">// 1. </span></span>
+<span id="cb27-28"><a href="#cb27-28"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb27-29"><a href="#cb27-29"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> </span>
+<span id="cb27-30"><a href="#cb27-30"></a>        <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb27-31"><a href="#cb27-31"></a>    <span class="op">{</span></span>
+<span id="cb27-32"><a href="#cb27-32"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb27-33"><a href="#cb27-33"></a>    <span class="op">}</span></span>
+<span id="cb27-34"><a href="#cb27-34"></a>    </span>
+<span id="cb27-35"><a href="#cb27-35"></a>    <span class="co">// 2.</span></span>
+<span id="cb27-36"><a href="#cb27-36"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb27-37"><a href="#cb27-37"></a>    <span class="kw">concept</span> has_ne <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> a, T <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-38"><a href="#cb27-38"></a>        <span class="op">{</span> ne<span class="op">(</span>x, y<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span>;</span>
+<span id="cb27-39"><a href="#cb27-39"></a>    <span class="op">}</span></span>
+<span id="cb27-40"><a href="#cb27-40"></a>    </span>
+<span id="cb27-41"><a href="#cb27-41"></a>    <span class="co">// 3.</span></span>
+<span id="cb27-42"><a href="#cb27-42"></a>    <span class="kw">struct</span> ne_fn <span class="op">{</span></span>
+<span id="cb27-43"><a href="#cb27-43"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> has_ne<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb27-44"><a href="#cb27-44"></a>        <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb27-45"><a href="#cb27-45"></a>            <span class="cf">return</span> ne<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb27-46"><a href="#cb27-46"></a>        <span class="op">}</span></span>
+<span id="cb27-47"><a href="#cb27-47"></a>    <span class="op">}</span>;</span>
+<span id="cb27-48"><a href="#cb27-48"></a><span class="op">}</span></span>
+<span id="cb27-49"><a href="#cb27-49"></a></span>
+<span id="cb27-50"><a href="#cb27-50"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb27-51"><a href="#cb27-51"></a>    <span class="co">// 4.</span></span>
+<span id="cb27-52"><a href="#cb27-52"></a>    <span class="kw">inline</span> <span class="kw">namespace</span> cpos <span class="op">{</span></span>
+<span id="cb27-53"><a href="#cb27-53"></a>        <span class="kw">inline</span> <span class="kw">constexpr</span> hidden<span class="op">::</span>ne_fn ne<span class="op">{}</span>;</span>
+<span id="cb27-54"><a href="#cb27-54"></a>    <span class="op">}</span></span>
+<span id="cb27-55"><a href="#cb27-55"></a><span class="op">}</span></span></code></pre></div>
+<p>This isn’t perfect, since we’d ideally like to constrain the default implementation on <code class="sourceCode cpp">ne</code> on <code class="sourceCode cpp">T</code> satisfying <code class="sourceCode cpp">has_eq</code> and it’s not clear to me how to do that. But it’s most of the way there and seems like it should be doable.</p>
+<p>But while such a generative-metaprogramming-based solution would reduce the amount of code we have to write, does it solve the outstanding problems with either CPOs or <code class="sourceCode cpp">tag_invoke</code> (following a similar algorithm)?</p>
+<p>The interface is certainly now visible in code where it was not before, so that’s a strict improvement over the real CPO implementation (and similarly would be a strict improvement over the equivalent <code class="sourceCode cpp">tag_invoke</code> formulation). What about incorrect opt-ins? We could continue the stereotype approach and provide an <code class="sourceCode cpp"><span class="kw">override</span></code> stereotype akin to the <code class="sourceCode cpp"><span class="kw">override</span></code> facility presented in the customization point functions paper.</p>
+<p>As in:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> Widget <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb28-3"><a href="#cb28-3"></a>    </span>
+<span id="cb28-4"><a href="#cb28-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>    <span class="dt">void</span> swap<span class="op">(</span>Widget<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span>, Widget<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">&lt;&lt;</span>override_tag_invoke<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>swap<span class="op">)&gt;&gt;</span>;</span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="op">}</span></span></code></pre></div>
+<p>Such a stereotype could do all of the following:</p>
+<ol type="1">
+<li>Verify that <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>swap</code> is indeed a <code class="sourceCode cpp">tag_invoke</code> tag (it is not at the moment, so we’d fail here, but let’s pretend it is)</li>
+<li>Verify that this implementation matches the interface of the <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>swap</code> tag, by directly examining the function parameters and the return type (this seems doable with reflection, and this would let us reject the bad opt-in of <code class="sourceCode cpp">swap</code> at its point of declaration — for any of the incorrect opt-ins to swap presented <a href="#the-swap-example">earlier</a>.</li>
+<li>Rewrite the function template here into what <code class="sourceCode cpp">tag_invoke</code> expects.</li>
+</ol>
+<p>Which should allow a library implementation to now accurately diagnose incorrect opt-ins, while providing an explicit opt-in syntax very similar to <span class="citation" data-cites="P1292R0">[<a href="#ref-P1292R0" role="doc-biblioref">P1292R0</a>]</span>.</p>
+<p>Basically, what I’m presenting here is that with generative metaprogramming, if what I’m describing here is actually implementable, I think we could be able to implement customization point functions as a library. With all the benefits that customization point functions offer. But also with their weaknesses — we’re still dealing with independent customization points, so we still have no way to verify that a type implements multiple customization points nor a way of diagnosing when a programmer only opts in to some, but not all, of a group of customization points (e.g. providing a <code class="sourceCode cpp">begin</code> but not an <code class="sourceCode cpp">end</code> for <code class="sourceCode cpp">range</code> makes no sense).</p>
+<h2 data-number="3.3" id="c0x-concepts"><span class="header-section-number">3.3</span> C++0x Concepts<a href="#c0x-concepts" class="self-link"></a></h2>
 <p>Rust is hardly the only language that can solve this problem. Indeed, C++0x Concepts <span class="citation" data-cites="N1758">[<a href="#ref-N1758" role="doc-biblioref">N1758</a>]</span> gave us a solution that is nearly identical to the Rust one (this appears in the paper under the name <code class="sourceCode cpp">EqualityComparable</code>, I’m just changing it to match the names used throughout the paper):</p>
 <table>
 <thead>
@@ -2230,14 +2353,14 @@ Associated Types
 <span id="cb2-5"><a href="#cb2-5"></a>        <span class="op">!</span><span class="kw">self</span><span class="op">.</span>eq(rhs)</span>
 <span id="cb2-6"><a href="#cb2-6"></a>    <span class="op">}</span></span>
 <span id="cb2-7"><a href="#cb2-7"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typeid</span> T<span class="op">&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">concept</span> PartialEq <span class="op">{</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a>    <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb23-4"><a href="#cb23-4"></a>    </span>
-<span id="cb23-5"><a href="#cb23-5"></a>    <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb23-6"><a href="#cb23-6"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
-<span id="cb23-7"><a href="#cb23-7"></a>    <span class="op">}</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typeid</span> T<span class="op">&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">concept</span> PartialEq <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a>    <span class="kw">auto</span> eq<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span>, T <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    </span>
+<span id="cb29-5"><a href="#cb29-5"></a>    <span class="kw">auto</span> ne<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> x, T <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb29-6"><a href="#cb29-6"></a>        <span class="cf">return</span> <span class="kw">not</span> eq<span class="op">(</span>x, y<span class="op">)</span>;</span>
+<span id="cb29-7"><a href="#cb29-7"></a>    <span class="op">}</span></span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="op">}</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -2539,40 +2662,40 @@ Associated Types
 </table>
 <p>What we saw in each example so far - with customization point objects, with <code class="sourceCode cpp">tag_invoke</code>, and with customization point functions - was that we have to take these independent customization points and group them into <code class="sourceCode cpp"><span class="kw">concept</span></code> into order to indicate that they are closely related.</p>
 <p>What C++0x Concepts showed us was that we could simply start from the grouped collection of customization points instead. But the opt-in mechanism for C++0x concepts was a little different: we have concept maps (see <span class="citation" data-cites="N2042">[<a href="#ref-N2042" role="doc-biblioref">N2042</a>]</span>). The <code class="sourceCode cpp">Widget</code> opt-in from earlier would be:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">struct</span> Widget <span class="op">{</span> <span class="dt">int</span> i; <span class="op">}</span>;</span>
-<span id="cb24-2"><a href="#cb24-2"></a></span>
-<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>concept_map PartialEq<span class="op">&lt;</span>Widget<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb24-5"><a href="#cb24-5"></a>    <span class="kw">auto</span> eq<span class="op">(</span>Widget <span class="kw">const</span><span class="op">&amp;</span> x, Widget <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb24-6"><a href="#cb24-6"></a>        <span class="cf">return</span> x<span class="op">.</span>i <span class="op">==</span> y<span class="op">.</span>i;</span>
-<span id="cb24-7"><a href="#cb24-7"></a>    <span class="op">}</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">struct</span> Widget <span class="op">{</span> <span class="dt">int</span> i; <span class="op">}</span>;</span>
+<span id="cb30-2"><a href="#cb30-2"></a></span>
+<span id="cb30-3"><a href="#cb30-3"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb30-4"><a href="#cb30-4"></a>concept_map PartialEq<span class="op">&lt;</span>Widget<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>    <span class="kw">auto</span> eq<span class="op">(</span>Widget <span class="kw">const</span><span class="op">&amp;</span> x, Widget <span class="kw">const</span><span class="op">&amp;</span> y<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>        <span class="cf">return</span> x<span class="op">.</span>i <span class="op">==</span> y<span class="op">.</span>i;</span>
+<span id="cb30-7"><a href="#cb30-7"></a>    <span class="op">}</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a><span class="op">}</span>;</span></code></pre></div>
 <p>The invocation model is quite different too. Using customization point functions, <code class="sourceCode cpp">N<span class="op">::</span>eq</code> is just a function that I can invoke wherever. Indeed it also behaves as an object, so I can pass it as an algorithm to a different algorithm (e.g. <code class="sourceCode cpp">views<span class="op">::</span>group_by<span class="op">(</span>N<span class="op">::</span>eq<span class="op">)</span></code> is perfectly valid). But C++0x Concepts didn’t have this idea that <code class="sourceCode cpp">PartialEq<span class="op">::</span>eq</code> would be any kind of callable. Which makes it entirely non-obvious to figure out how to forward a customization point.</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Receiver<span class="op">&gt;</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">struct</span> receiver <span class="op">{</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a>    Receiver inner;</span>
-<span id="cb25-4"><a href="#cb25-4"></a><span class="op">}</span>;</span>
-<span id="cb25-5"><a href="#cb25-5"></a></span>
-<span id="cb25-6"><a href="#cb25-6"></a><span class="co">// for a concrete concept, fine</span></span>
-<span id="cb25-7"><a href="#cb25-7"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
-<span id="cb25-8"><a href="#cb25-8"></a>concept_map GetStopToken<span class="op">&lt;</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb25-9"><a href="#cb25-9"></a>    <span class="kw">auto</span> get_stop_token<span class="op">(</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>never_stop_token <span class="op">{</span></span>
-<span id="cb25-10"><a href="#cb25-10"></a>        <span class="cf">return</span> <span class="op">{}</span>;</span>
-<span id="cb25-11"><a href="#cb25-11"></a>    <span class="op">}</span></span>
-<span id="cb25-12"><a href="#cb25-12"></a><span class="op">}</span>;</span>
-<span id="cb25-13"><a href="#cb25-13"></a></span>
-<span id="cb25-14"><a href="#cb25-14"></a><span class="co">// for an arbitrary one?? Well, whatever concept this is, C, needs to be satisfies by R</span></span>
-<span id="cb25-15"><a href="#cb25-15"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">concept</span> C, C R<span class="op">&gt;</span></span>
-<span id="cb25-16"><a href="#cb25-16"></a>concept_map C<span class="op">&lt;</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb25-17"><a href="#cb25-17"></a><span class="op">{</span></span>
-<span id="cb25-18"><a href="#cb25-18"></a>    <span class="co">// but what in the world do we put here???</span></span>
-<span id="cb25-19"><a href="#cb25-19"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Self, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb25-20"><a href="#cb25-20"></a>    <span class="kw">auto</span> <span class="op">???(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-21"><a href="#cb25-21"></a>        <span class="cf">return</span> <span class="op">???(</span>FWD<span class="op">(</span>r<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
-<span id="cb25-22"><a href="#cb25-22"></a>    <span class="op">}</span></span>
-<span id="cb25-23"><a href="#cb25-23"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Receiver<span class="op">&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">struct</span> receiver <span class="op">{</span></span>
+<span id="cb31-3"><a href="#cb31-3"></a>    Receiver inner;</span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="op">}</span>;</span>
+<span id="cb31-5"><a href="#cb31-5"></a></span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="co">// for a concrete concept, fine</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>concept_map GetStopToken<span class="op">&lt;</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a>    <span class="kw">auto</span> get_stop_token<span class="op">(</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>never_stop_token <span class="op">{</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a>        <span class="cf">return</span> <span class="op">{}</span>;</span>
+<span id="cb31-11"><a href="#cb31-11"></a>    <span class="op">}</span></span>
+<span id="cb31-12"><a href="#cb31-12"></a><span class="op">}</span>;</span>
+<span id="cb31-13"><a href="#cb31-13"></a></span>
+<span id="cb31-14"><a href="#cb31-14"></a><span class="co">// for an arbitrary one?? Well, whatever concept this is, C, needs to be satisfies by R</span></span>
+<span id="cb31-15"><a href="#cb31-15"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">concept</span> C, C R<span class="op">&gt;</span></span>
+<span id="cb31-16"><a href="#cb31-16"></a>concept_map C<span class="op">&lt;</span>receiver<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb31-17"><a href="#cb31-17"></a><span class="op">{</span></span>
+<span id="cb31-18"><a href="#cb31-18"></a>    <span class="co">// but what in the world do we put here???</span></span>
+<span id="cb31-19"><a href="#cb31-19"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Self, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb31-20"><a href="#cb31-20"></a>    <span class="kw">auto</span> <span class="op">???(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-21"><a href="#cb31-21"></a>        <span class="cf">return</span> <span class="op">???(</span>FWD<span class="op">(</span>r<span class="op">).</span>inner, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb31-22"><a href="#cb31-22"></a>    <span class="op">}</span></span>
+<span id="cb31-23"><a href="#cb31-23"></a><span class="op">}</span></span></code></pre></div>
 <p>Customization point functions give us an aswer - since the customization point function itself is an object that gives us some nice properties. But in this concepts model, not so much.</p>
-<h2 data-number="3.3" id="the-contenders"><span class="header-section-number">3.3</span> The contenders<a href="#the-contenders" class="self-link"></a></h2>
+<h2 data-number="3.4" id="the-contenders"><span class="header-section-number">3.4</span> The contenders<a href="#the-contenders" class="self-link"></a></h2>
 <p>Let’s append customization forwarding to our table and drop all the other options I’ve discussed thus far, save for three:</p>
 <table>
 <thead>
@@ -2768,6 +2891,10 @@ Forwarding Customizations
 <div id="ref-P2175R0">
 <p>[P2175R0] Lewis Baker. 2020-12-15. Composable cancellation for sender-based async operations. <br />
 <a href="https://wg21.link/p2175r0">https://wg21.link/p2175r0</a></p>
+</div>
+<div id="ref-P2237R0">
+<p>[P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <br />
+<a href="https://wg21.link/p2237r0">https://wg21.link/p2237r0</a></p>
 </div>
 </div>
 </div>

@@ -833,6 +833,54 @@ To make this more clear:
 </tbody>
 </table>
 
+## The swap example
+
+To help drive home the significance of the diagnostics and the fact that neither CPOs nor `tag_invoke` can possibly provide them, consider the following incorrect opt-in to `swap`:
+
+```cpp
+namespace N {
+    template <typename T>
+    struct Widget { ... };
+
+    template <typename T>
+    void swap(Widget<T>&, Widget<T> const&);
+}
+```
+
+Regardless of if we're using CPOs or `tag_invoke`, what we have here is an incorrect opt-in to `swap`. We need a function that takes two `T&`s but we accidentally made one of them `const`. This error is not diagnosable.
+
+Why not? Both implementations basically detect the customization point by seeing if they can find a valid candidate for `swap(x, x)` for a `T& x`. There's no mechanism we have to detect the difference between a `swap` that exists and is wrong (like the above) and a `swap` that doesn't exist. We just detect that `swap(x, x)` is an invalid expression. The result is that we fall-back to using the default implementation of `swap`, and get no hint that we did something wrong! The only way we'd notice this if actually detected a slow-down of some kind, or were specifically testing the `swap` here very carefully.
+
+A different kind of incorrect opt-in would be if we'd accidentally done this:
+
+```cpp
+template <typename T>
+void swap(Widget<T>&, Widget<T>);
+```
+
+That is, take the second parameter by value instead of by lvalue-reference. Here, our candidate _would_ get selected, but just not actually do a proper swap. We'd eventually discover this error by seeing `swap` fail to actually `swap` one of the arguments. 
+
+A third kind of incorrect opt-in would be if we put it in the wrong namespace:
+
+```cpp
+namespace N {
+    namespace Inner {
+        template <typename T>
+        struct Widget { ... };
+    }
+    
+    template <typename T>
+    void swap(Inner::Widget<T>&, Inner::Widget<T>&);
+}
+```
+
+Here, we finally got the parameters right. But ADL won't find this overload, since `N` isn't an associated namespace of `N::Inner::Widget<T>`, only `N::Inner` is. 
+
+The first problem is something that might be guarded against, perhaps by verifying that `swap(c, c)` for a `T const& c` does not find a candidate if `swap(x, x)` did not, or some other similar implementation heroics. But this basically means doing an extra bout of overload resolution for every swap, even when _not_ providing a custom swap is fairly typical, so seems unlikely to be done. I'm not sure how you could guard against either the second or third problems. 
+
+The problem here is we're not just writing a function template whose name is `swap` - we're very specifically opting into an interface. It's just that unlike virtual member functions, we have no way of expressing this intent today. And without that intent, we can't get diagnostics for such mistakes.
+
+
 # Relevant Work
 
 I don't want to just point to Rust and ask that we keep up. I also want to highlight existing work in C++ specifically that can address this problem as well.
@@ -960,6 +1008,121 @@ struct receiver {
 ```
 
 Definitely something to seriously consider. One issue might be how to figure out how to pick the right overrides. But collecting overrides and relying on them to be constrained seems likely to produce a smaller set of candidates than having to perform name lookup across all associated namespaces and classes. 
+
+## Reflective Metaprogramming
+
+I've pointed out a few times the relative sizes of the solutions presented thus far: that the CPO solution requires 42 lines of code and the `tag_invoke` solution requires 36, customization point functions allow us to reduce this to 16, while the Rust traits example only requires 7. One follow-up question to this is: to what extent can reflective metaprogramming address this need?
+
+Consider a block of code like the following (I'm using the stereotypes suggested in [@P2237R0]. The particular syntax chosen here might be incorrect, but probably isn't relevant to the point I'm trying to make):
+
+```cpp
+namespace N {
+    template <typename T>
+    <<make_cpo>> constexpr auto eq(T const&, T const&) -> bool;
+    
+    template <typename T>
+    <<make_cpo>> constexpr auto ne(T const& x, T const& y) -> bool {
+        return not eq(x, y);
+    }
+}
+```
+
+To turn this into a CPO solution (a similar algorithm could be created for `tag_invoke`), for a function template `F` annotated by `<<make_cpo>>`, we introduce a namespace `N::hidden` and:
+
+1. If `F` has a definition, introduce an overload of `F` into `N::hidden` that is constrained on the function body.
+
+2. Introduce a `concept` named `has_F` into `N::hidden` with the same template parameters and parameter declaration as `F`, which a single requirement that is invoking `F` with those parameters. If `F` returns a type `T`, require that this expression satisfies `same_as<T>`. If `F` returns `C auto`, then require that this expression satisfies `C`. Otherwise, no additional requirement on the type of the expression.
+    
+3. Introduce a new function object type `F_fn` into `N::hidden` with the same template parameters as `F`, constrained using `has_F`, which invokes `F` (unqualified) with the arguments. 
+    
+4. Introduce a function object named `F` of type `F_fn` into `N` inside of an `inline namespace cpos`.
+
+Something like that. This should generate code that isn't exactly like what I showed earlier for CPOs:
+
+```cpp
+// for eq
+namespace N::hidden {
+    // 2.
+    template <typename T>
+    concept has_eq = requires (T const& a, T const& b) {
+        { eq(x, y) } -> std::same_as<bool>;
+    }
+    
+    // 3.
+    struct eq_fn {
+        template <typename T> requires has_eq<T>
+        constexpr auto operator()(T const& x, T const& y) const -> bool {
+            return eq(x, y);
+        }
+    };
+}
+
+namespace N {
+    // 4.
+    inline namespace cpos {
+        inline constexpr hidden::eq_fn eq{};
+    }
+}
+
+// for ne
+namespace N::hidden {
+    // 1. 
+    template <typename T>
+    constexpr auto ne(T const& x, T const& y) -> bool 
+        requires requires { not eq(x, y); }
+    {
+        return not eq(x, y);
+    }
+    
+    // 2.
+    template <typename T>
+    concept has_ne = requires (T const& a, T const& b) {
+        { ne(x, y) } -> std::same_as<bool>;
+    }
+    
+    // 3.
+    struct ne_fn {
+        template <typename T> requires has_ne<T>
+        constexpr auto operator()(T const& x, T const& y) const -> bool {
+            return ne(x, y);
+        }
+    };
+}
+
+namespace N {
+    // 4.
+    inline namespace cpos {
+        inline constexpr hidden::ne_fn ne{};
+    }
+}
+```
+
+This isn't perfect, since we'd ideally like to constrain the default implementation on `ne` on `T` satisfying `has_eq` and it's not clear to me how to do that. But it's most of the way there and seems like it should be doable.
+
+But while such a generative-metaprogramming-based solution would reduce the amount of code we have to write, does it solve the outstanding problems with either CPOs or `tag_invoke` (following a similar algorithm)?
+
+The interface is certainly now visible in code where it was not before, so that's a strict improvement over the real CPO implementation (and similarly would be a strict improvement over the equivalent `tag_invoke` formulation). What about incorrect opt-ins? We could continue the stereotype approach and provide an `override` stereotype akin to the `override` facility presented in the customization point functions paper.
+
+As in:
+
+```cpp
+namespace N {
+    template <typename T> struct Widget { ... };
+    
+    template <typename T>
+    void swap(Widget<T>&, Widget<T> const&) <<override_tag_invoke(std::ranges::swap)>>;
+}
+```
+
+Such a stereotype could do all of the following:
+
+1. Verify that `std::ranges::swap` is indeed a `tag_invoke` tag (it is not at the moment, so we'd fail here, but let's pretend it is)
+2. Verify that this implementation matches the interface of the `std::ranges::swap` tag, by directly examining the function parameters and the return type (this seems doable with reflection, and this would let us reject the bad opt-in of `swap` at its point of declaration &mdash; for any of the incorrect opt-ins to swap presented [earlier](#the-swap-example).
+3. Rewrite the function template here into what `tag_invoke` expects.
+
+Which should allow a library implementation to now accurately diagnose incorrect opt-ins, while providing an explicit opt-in syntax very similar to [@P1292R0].
+
+Basically, what I'm presenting here is that with generative metaprogramming, if what I'm describing here is actually implementable, I think we could be able to implement customization point functions as a library. With all the benefits that customization point functions offer. But also with their weaknesses &mdash; we're still dealing with independent customization points, so we still have no way to verify that a type implements multiple customization points nor a way of diagnosing when a programmer only opts in to some, but not all, of a group of customization points (e.g. providing a `begin` but not an `end` for `range` makes no sense). 
 
 ## C++0x Concepts
 
