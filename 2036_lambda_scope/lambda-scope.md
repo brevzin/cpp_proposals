@@ -418,18 +418,18 @@ Change [expr.prim.id.unqual]{.sref}/3 as described earlier. It currently reads:
 Otherwise, the type of the expression is the type of the result.
 :::
 
-Change it to instead read (I'm trying to add bullets and parentheses to make it clear what branch each case refers to):
+Change it to instead read (I'm trying to add bullets and parentheses to make it clear what branch each case refers to), and as a drive by fix the issue Tim Song pointed out [here](https://lists.isocpp.org/core/2020/10/9982.php):
 
 ::: bq
-[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is either a local entity or names an _init-capture_ and
 the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.
 
-If naming the local entity from outside of an unevaluated operand in `S` would result in some intervening _lambda-expression_ capturing the local entity by copy ([expr.prim.lambda.capture]), then let `E` be the innermost such intervening _lambda-expression_.
+If naming the local entity or _init-capture_ from outside of an unevaluated operand in `S` would refer to an entity captured by copy in some intervening _lambda-expression_ ([expr.prim.lambda.capture]), then let `E` be the innermost such intervening _lambda-expression_.
 
 - [3.1]{.pnum} If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of `E`. 
 - [3.2]{.pnum} Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.
 
-Otherwise (if there is no such _lambda-expression_ `E` or the entity is not local), the type of the expression is the type of the result.
+Otherwise (if there is no such _lambda-expression_ `E` or the entity is either not local or does not name an _init-capture_), the type of the expression is the type of the result.
 :::
 
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
