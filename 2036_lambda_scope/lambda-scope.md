@@ -306,7 +306,7 @@ double x;
 
 There are four options for what this lambda could mean:
 
-1. this is a lambda that takes a `double&` (status qou).
+1. this is a lambda that takes a `double&` (status quo).
 2. this is a lambda that takes an `int&` (lookup could be changed to find the _init-capture_ but not do any member access transformation - even though this lambda ends up being not `mutable`)
 3. this is a lambda that takes an `int const&` (would require lookahead, highly undesirable)
 4. this is ill-formed
@@ -356,7 +356,7 @@ auto f() {
 
 Today, this example is ill-formed (although no compiler diagnoses it) because `value` is odr-used in the _trailing-return-type_, but it is not odr-usable ([basic.def.odr]{.sref}/9) there. It would be consistent with the theme of this paper (having the _trailing-return-type_ have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don't start capturing more things. 
 
-I'm wary of such a change because I'm very wary of touching the odr rules. Especially because in an example like this, we could easily make `value` not odr-used here (either by making `value` `static` or by changing `read` to not take by reference).
+I'm wary of such a change because I'm very wary of touching anything related to ODR. Especially because in an example like this, we could easily make `value` not odr-used here (either by making `value` `static` or by changing `read` to not take by reference).
 
 # Wording
 
@@ -429,7 +429,7 @@ If naming the local entity from outside of an unevaluated operand in `S` would r
 - [3.1]{.pnum} If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of `E`. 
 - [3.2]{.pnum} Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.
 
-Otherwise (if there is no such _lambda-expression_ `E`), the type of the expression is the type of the result.
+Otherwise (if there is no such _lambda-expression_ `E` or the entity is not local), the type of the expression is the type of the result.
 :::
 
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:

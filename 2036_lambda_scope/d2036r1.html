@@ -712,7 +712,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-2"><a href="#cb9-2"></a><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span> y<span class="op">){</span> <span class="cf">return</span> x; <span class="op">}</span></span></code></pre></div>
 <p>There are four options for what this lambda could mean:</p>
 <ol type="1">
-<li>this is a lambda that takes a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">&amp;</span></code> (status qou).</li>
+<li>this is a lambda that takes a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">&amp;</span></code> (status quo).</li>
 <li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code> (lookup could be changed to find the <em>init-capture</em> but not do any member access transformation - even though this lambda ends up being not <code class="sourceCode cpp"><span class="kw">mutable</span></code>)</li>
 <li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> (would require lookahead, highly undesirable)</li>
 <li>this is ill-formed</li>
@@ -749,7 +749,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-9"><a href="#cb11-9"></a><span class="op">}</span></span></code></pre></div>
 <p>Today, this example is ill-formed (although no compiler diagnoses it) because <code class="sourceCode cpp">value</code> is odr-used in the <em>trailing-return-type</em>, but it is not odr-usable (<span>6.3
  <a href="https://wg21.link/basic.def.odr">[basic.def.odr]</a></span>/9) there. It would be consistent with the theme of this paper (having the <em>trailing-return-type</em> have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don’t start capturing more things.</p>
-<p>I’m wary of such a change because I’m very wary of touching the odr rules. Especially because in an example like this, we could easily make <code class="sourceCode cpp">value</code> not odr-used here (either by making <code class="sourceCode cpp">value</code> <code class="sourceCode cpp"><span class="kw">static</span></code> or by changing <code class="sourceCode cpp">read</code> to not take by reference).</p>
+<p>I’m wary of such a change because I’m very wary of touching anything related to ODR. Especially because in an example like this, we could easily make <code class="sourceCode cpp">value</code> not odr-used here (either by making <code class="sourceCode cpp">value</code> <code class="sourceCode cpp"><span class="kw">static</span></code> or by changing <code class="sourceCode cpp">read</code> to not take by reference).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged (i.e. <span class="citation" data-cites="N4878">[<a href="#ref-N4878" role="doc-biblioref">N4878</a>]</span>).</p>
 <p>The wording strategy here is as follows. We have the following scopes today:</p>
@@ -815,7 +815,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If <code class="sourceCode cpp">P</code> is in <code class="sourceCode cpp">E</code>’s function parameter scope but not its <em>parameter-declaration-clause</em>, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of <code class="sourceCode cpp">E</code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> Otherwise (if <code class="sourceCode cpp">P</code> either precedes <code class="sourceCode cpp">E</code>’s function parameter scope or is in <code class="sourceCode cpp">E</code>’s <em>parameter-declaration-clause</em>), the program is ill-formed.</li>
 </ul>
-<p>Otherwise (if there is no such <em>lambda-expression</em> <code class="sourceCode cpp">E</code>), the type of the expression is the type of the result.</p>
+<p>Otherwise (if there is no such <em>lambda-expression</em> <code class="sourceCode cpp">E</code> or the entity is not local), the type of the expression is the type of the result.</p>
 </blockquote>
 <p>Extend the example in <span>7.5.4.2
  <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>
