@@ -1011,97 +1011,92 @@ Definitely something to seriously consider. One issue might be how to figure out
 
 ## Reflective Metaprogramming
 
-I've pointed out a few times the relative sizes of the solutions presented thus far: that the CPO solution requires 42 lines of code and the `tag_invoke` solution requires 36, customization point functions allow us to reduce this to 16, while the Rust traits example only requires 7. One follow-up question to this is: to what extent can reflective metaprogramming address this need?
+I've pointed out a few times the relative sizes of the solutions presented thus far: that the CPO solution requires 42 lines of code and the `tag_invoke` solution requires 36, customization point functions allow us to reduce this to 16, while the Rust traits example only requires 7. One follow-up question to this is: to what extent can reflective (generative) metaprogramming address this need?
 
 Consider a block of code like the following (I'm using the stereotypes suggested in [@P2237R0]. The particular syntax chosen here might be incorrect, but probably isn't relevant to the point I'm trying to make):
 
 ```cpp
 namespace N {
     template <typename T>
-    <<make_cpo>> constexpr auto eq(T const&, T const&) -> bool;
+    <<virtual_>> constexpr auto eq(T const&, T const&) -> bool;
     
     template <typename T>
-    <<make_cpo>> constexpr auto ne(T const& x, T const& y) -> bool {
+        requires requires (T const& x, T const& y){
+            eq(x, y);
+        }
+    <<virtual_>> constexpr auto ne(T const& x, T const& y) -> bool {
         return not eq(x, y);
     }
 }
 ```
 
-To turn this into a CPO solution (a similar algorithm could be created for `tag_invoke`), for a function template `F` annotated by `<<make_cpo>>`, we introduce a namespace `N::hidden` and:
-
-1. If `F` has a definition, introduce an overload of `F` into `N::hidden` that is constrained on the function body.
-
-2. Introduce a `concept` named `has_F` into `N::hidden` with the same template parameters and parameter declaration as `F`, which a single requirement that is invoking `F` with those parameters. If `F` returns a type `T`, require that this expression satisfies `same_as<T>`. If `F` returns `C auto`, then require that this expression satisfies `C`. Otherwise, no additional requirement on the type of the expression.
-    
-3. Introduce a new function object type `F_fn` into `N::hidden` with the same template parameters as `F`, constrained using `has_F`, which invokes `F` (unqualified) with the arguments. 
-    
-4. Introduce a function object named `F` of type `F_fn` into `N` inside of an `inline namespace cpos`.
-
-Something like that. This should generate code that isn't exactly like what I showed earlier for CPOs:
+This looks quite a bit like the customization point function implementation, right? Let's see what we could do with such a thing. We could implement `virtual_` to produce class templates that look like this:
 
 ```cpp
-// for eq
-namespace N::hidden {
-    // 2.
+namespace N::virtual_ {
     template <typename T>
-    concept has_eq = requires (T const& a, T const& b) {
-        { eq(x, y) } -> std::same_as<bool>;
-    }
+    struct eq_t;
+
+    template <typename T>
+    using eq_parameters = mp_list<T const&, T const&>;
     
-    // 3.
-    struct eq_fn {
-        template <typename T> requires has_eq<T>
+    template <typename T>
+    concept eq_return = std::same_as<T, bool>;
+}
+
+namespace N {    
+    inline constexpr auto eq =
+        []<typename T>
+            requires requires (virtual_::eq_t<T> f, T const& x, T const& y) {
+                { f(x, y) } -> virtual_::eq_return;
+            }
+        (T const& x, T const& y) -> bool {
+            return virtual_::eq_t<T>{}(x, y);
+        };
+}
+
+namespace N::virtual_ {    
+    template <typename T>
+    struct ne_t;
+    
+    template <typename T>
+        requires requires (T const& x, T const& y){
+            eq(x, y);
+        }
+    struct ne_t<T> {
         constexpr auto operator()(T const& x, T const& y) const -> bool {
-            return eq(x, y);
+            return not eq(x, y);
         }
     };
-}
-
-namespace N {
-    // 4.
-    inline namespace cpos {
-        inline constexpr hidden::eq_fn eq{};
-    }
-}
-
-// for ne
-namespace N::hidden {
-    // 1. 
-    template <typename T>
-    constexpr auto ne(T const& x, T const& y) -> bool 
-        requires requires { not eq(x, y); }
-    {
-        return not eq(x, y);
-    }
     
-    // 2.
     template <typename T>
-    concept has_ne = requires (T const& a, T const& b) {
-        { ne(x, y) } -> std::same_as<bool>;
-    }
+    using ne_parameters = mp_list<T const&, T const&>;    
     
-    // 3.
-    struct ne_fn {
-        template <typename T> requires has_ne<T>
-        constexpr auto operator()(T const& x, T const& y) const -> bool {
-            return ne(x, y);
-        }
-    };
+    template <typename T>
+    concept ne_return = std::same_as<T, bool>;    
 }
 
-namespace N {
-    // 4.
-    inline namespace cpos {
-        inline constexpr hidden::ne_fn ne{};
-    }
+namespace N {   
+    inline constexpr auto ne =
+        []<typename T>
+            requires requires (virtual_::ne_t<T> f, T const& x, T const& y) {
+                { f(x, y) } -> virtual_::ne_return;
+            }
+        (T const& x, T const& y) -> bool {
+            return virtual_::ne_t<T>{}(x, y);
+        };   
 }
 ```
 
-This isn't perfect, since we'd ideally like to constrain the default implementation on `ne` on `T` satisfying `has_eq` and it's not clear to me how to do that. But it's most of the way there and seems like it should be doable.
+The algorithm here would be that for each function template `F` annotated by `<<virtual_>>`:
 
-But while such a generative-metaprogramming-based solution would reduce the amount of code we have to write, does it solve the outstanding problems with either CPOs or `tag_invoke` (following a similar algorithm)?
+1. Introduce a class template `F_t` into `N::virtual_` with the same template parameters as `F`. If `F` has no definition, the class template has no definition (as in `eq`). If `F` has a definition, then copy it as the call operator. If `F` has a definition with constraints (as in `ne`), then introduce an empty primary class template and additionally add a constrained specialization, copying the constraints.
 
-The interface is certainly now visible in code where it was not before, so that's a strict improvement over the real CPO implementation (and similarly would be a strict improvement over the equivalent `tag_invoke` formulation). What about incorrect opt-ins? We could continue the stereotype approach and provide an `override` stereotype akin to the `override` facility presented in the customization point functions paper.
+2. Introduce an alias template that stashes the types of the parameters in `F` for a given instantiation. This is probably not the right way to do this, but we do need to store _some_ metadata somewhere about what the parameters need to be for this function in a way to allow us to verify them later. We also introduce a concept for the return type. If `F` returns a type `T` that is not `void`, then that concept is `same_as<T>`. If `F` returns `C auto`, then that constraint is `C`. Otherwise, the constraint is just `true`.
+
+3. Introduce a lambda into `N` that is a transformed version of `F` that invokes `N::virtual_::F_t` when that is a valid expression whose return type satisfies `N::virtual_::F_return`.
+
+Rather than doing CPOs or `tag_invoke`, I'm actually going back to class template specialization here. But I'm trying to use reflection to hide all the problems with it, but keep its benefits (notably, a much smaller lookup space). But if the class template is hidden, how would you opt-in? We continue the stereotype approach and provide `override` stereotype akin to the `override` facility presented in the customization point functions paper.
 
 As in:
 
@@ -1110,19 +1105,60 @@ namespace N {
     template <typename T> struct Widget { ... };
     
     template <typename T>
-    void swap(Widget<T>&, Widget<T> const&) <<override_tag_invoke(std::ranges::swap)>>;
+    <<override(std::ranges::swap)>> void swap(Widget<T>& x, Widget<T> const& y) { ... }
 }
 ```
 
 Such a stereotype could do all of the following:
 
-1. Verify that `std::ranges::swap` is indeed a `tag_invoke` tag (it is not at the moment, so we'd fail here, but let's pretend it is)
-2. Verify that this implementation matches the interface of the `std::ranges::swap` tag, by directly examining the function parameters and the return type (this seems doable with reflection, and this would let us reject the bad opt-in of `swap` at its point of declaration &mdash; for any of the incorrect opt-ins to swap presented [earlier](#the-swap-example).
-3. Rewrite the function template here into what `tag_invoke` expects.
+1. Verify that `std::ranges::swap` is indeed a `virtual_` customization point. It is not at the moment (and this could be diagnosed at the point of declaration here), but let's pretend it is for the sake of argument.
+
+2. Verify that this implementation matches the interface of the `std::ranges::swap` customization point, by directly examining the function parameters and the return type this would let us reject the bad opt-in of `swap` at its point of declaration &mdash; for any of the incorrect opt-ins to swap presented [earlier](#the-swap-example). In this case (based on my guess implementation earlier), the parameters of swap would be `mp_list<T&, T&>`, so we should be able to reject the list `mp_list<Widget<T>&, Widget<T> const&>` as being incompatible. Alternatively, we store the whole function signature and verify that it's more specialized than the original. I may not be 100% sure what the right way to check this might be, but it at least seems to be that it's _possible_ to implement `virtual_` and `override` such that we _could_ check this.
+
+3. Once we do both of those verifications, rewrite the provided definition to be a function template specialization (which is more difficult because we both have to figure out how to perform the specialization and would need to allow ourselves to specialize class templates in a different namespace that doesn't change lookup context?):
+
+    ```cpp
+    template <typename T>
+    struct ::std::ranges::virtual_::swap_t<Widget<T>> {
+        void operator()(Widget<T>& x, Widget<T>& y) const { ... }
+    };
+    ```
 
 Which should allow a library implementation to now accurately diagnose incorrect opt-ins, while providing an explicit opt-in syntax very similar to [@P1292R0].
 
-Basically, what I'm presenting here is that with generative metaprogramming, if what I'm describing here is actually implementable, I think we could be able to implement customization point functions as a library. With all the benefits that customization point functions offer. But also with their weaknesses &mdash; we're still dealing with independent customization points, so we still have no way to verify that a type implements multiple customization points nor a way of diagnosing when a programmer only opts in to some, but not all, of a group of customization points (e.g. providing a `begin` but not an `end` for `range` makes no sense). 
+Arguably the constraints that I illustrated earlier on the function objects aren't actually necessary. That is, I showed `eq` as:
+
+```cpp
+namespace N {    
+    inline constexpr auto eq =
+        []<typename T>
+            requires requires (virtual_::eq_t<T> f, T const& x, T const& y) {
+                { f(x, y) } -> virtual_::eq_return;
+            }
+        (T const& x, T const& y) -> bool {
+            return virtual_::eq_t<T>{}(x, y);
+        };
+}
+```
+
+We don't need to verify the expression `f(x, y)`. The `override` stereotype already does that for us. We just need to validate that `virtual_::eq_t<T>` is a valid type, which should reduce some compile overhead:
+
+```cpp
+namespace N {    
+    inline constexpr auto eq =
+        []<typename T>
+            requires requires {
+                virtual_::eq_t<T>{};
+            }
+        (T const& x, T const& y) -> bool {
+            return virtual_::eq_t<T>{}(x, y);
+        };
+}
+```
+
+The above requires a lot of new language features, but if what I'm describing here is actually implementable (and there are certainly _many_ questions here about that), then we may be able to implement customization point functions exactly as a library. With all of their benefits (as compared to `tag_invoke`: having the implementation visible in code and the ability to diagnose incorrect opt-ins) and their weaknesses (no way of grouping multiple customization points into a cohesive unit, providing an easy verification for that grouping, or support for associated types).
+
+I also haven't the slighest idea how to do forwarding of arbitrary customization points in this model. 
 
 ## C++0x Concepts
 
