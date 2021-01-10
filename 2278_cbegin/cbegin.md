@@ -1,6 +1,6 @@
 ---
 title: "`cbegin` should always return a constant iterator"
-document: D2278R0
+document: P2278R0
 date: today
 audience: LEWG
 author:
@@ -699,14 +699,14 @@ struct zstring {
 };
 ```
 
-You might thing `zentinel` is a strange type (why does it compare to `char*` instead of `char const*` when it clearly does not need mutability), but the important thing is that this is a perfectly valid range. `zsentinel` does model `sentinel_for<char*>`, and `zstring` does model `contiguous_range`. As such, it is important that the facilities in this paper _work_; we need to be able to provide a constant iterator here such that we end up with a constant range.
+You might think `zentinel` is a strange type (why does it compare to `char*` instead of `char const*` when it clearly does not need mutability), but the important thing is that this is a perfectly valid range. `zsentinel` does model `sentinel_for<char*>`, and `zstring` does model `contiguous_range`. As such, it is important that the facilities in this paper _work_; we need to be able to provide a constant iterator here such that we end up with a constant range.
 
 But here, we would end up in a situation where, given a `zstring z`:
 
 - `cbegin(z)` would return a `char const*`
 - `cend(z)` would return a `zsentinel` (`zsentinel` is not an iterator, so we do not wrap it)
 
-But while `zsentinel` models `sentinel_for<char*>` and I can ensure in the implementation that `zsentinel` also models `sentinel_for<const_iterator<char*>>`, it is not the case that `zsentinel` models `sentinel_for<char const*>`. So we would not end up with a range at all!
+But while `zsentinel` models `sentinel_for<char*>` and I can ensure in the implementation of `const_iterator<T>` that `zsentinel` also models `sentinel_for<const_iterator<char*>>`, it is not the case that `zsentinel` models `sentinel_for<char const*>`. So we would not end up with a range at all!
 
 It is possible to work around this problem by adding more complexity.
 
@@ -724,7 +724,9 @@ struct const_zsentinel {
 
 Such a `const_cast` would be safe since we know we must have originated from a `char*` to begin with, if the `char const*` we're comparing originated from the `zstring`. But there are other `char const*`s that don't come from a `zstring`, that may not necessarily be safe to compare against, and now we're supporting those. This also doesn't generalize to any other kind of `make_const_iterator` customization: this implementation is specific to `const_cast`, which is only valid for pointers. We would have to add something like a `const_iterator_cast`.
 
-Let's instead consider adding complexity in the other direction, to `make_const_iterator`. We can pass through the underlying sentinel such that we only turn `char*` into `char const*` if `S` satisfies `sentinel_for<char const*>`, and otherwise turn `char*` into `const_iterator<char*>`. This direction can be made to work and I think, overall, has fewer problems with the other direction. That is, something like this:
+Let's instead consider adding complexity in the other direction, to `make_const_iterator`. We can pass through the underlying sentinel such that we only turn `char*` into `char const*` if `S` satisfies `sentinel_for<char const*>`, and otherwise turn `char*` into `const_iterator<char*>`. We could make this more specific and say that we turn `char* `into `char const*` only if _both_ the `iterator` and `sentinel` types are `char*`, but I don't think the generalization that `sentinel_for<char const*>` is sufficient. 
+
+This direction can be made to work and I think, overall, has fewer problems with the other direction. That is, something like this:
 
 ```cpp
 template <typename S, std::input_iterator It>
@@ -778,7 +780,9 @@ template <std::input_iterator I, std::sentinel_for<I> S = I>
 using const_iterator = decltype(make_const_iterator<S>(std::declval<I>()));
 ```
 
-which still allows `std::const_iterator<int const*>` to be `int const*`. But I'm not sure it's worth it for just the pointer case. I could be convinced otherwise though.
+which still allows `std::const_iterator<int const*>` to be `int const*`. But I'm not sure it's worth it for _just_ the pointer case for _just_ being able to define `simple_span`. In this model, `simple_span` wouldn't even need to define member `cbegin`/`cend`, so why would it do so, and provide something different?
+
+I could be convinced otherwise though.
 
 ## What does this mean for `span<T>`?
 
@@ -808,7 +812,7 @@ The above design ensures that given a `span<int> s` (or really, for any `T` that
 3. `std::ranges::rbegin(s)` and `s.rbegin()` have the same type
 4. `std::ranges::crbegin(s)` and `s.crbegin()` have the same type
 
-All without having to add new customization points to the standard library. 
+All without having to add new customization points to the standard library. Notably, `span<int>::const_iterator` and `span<int const>::iterator` will not be the same type (which arguably a good thing). But `span<int const>::iterator` and `span<int const>::const_iterator` will be the same type (which is important).
 
 The one tricky part here is `const_reverse_iterator`. For all the containers currently in the standard library, we define `const_reverse_iterator` as `std::reverse_iterator<const_iterator>`, but if we did that here, we'd end up with a mismatch in (4): `crbegin(s)` would return a `const_iterator<reverse_iterator<iterator>>` while `s.crbegin()` would return a `reverse_iterator<const_iterator<iterator>>`. We end up applying the layers in a different order.
 
