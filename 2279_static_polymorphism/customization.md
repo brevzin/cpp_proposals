@@ -1160,6 +1160,12 @@ The above requires a lot of new language features, but if what I'm describing he
 
 I also haven't the slighest idea how to do forwarding of arbitrary customization points in this model. 
 
+An important downside to this approach as compared to the customization point functions language feature is prvalue propagation. With `virtual` member functions and the `virtual` "free" functions design, if I have a `virtual` function that takes a prvalue, invoking the customization point _directly_ invokes the most derived implementation with a prvalue. That is, the prvalue is materialized at its target. The same is true of "pure" ADL-based customization points, since we just invoke the target function.
+
+But this is not the case with CPOs, `tag_invoke`, or the above reflection-based implementation of class template specializations. In each of these cases, we invoke a function object that dispatches to the most derived implementation. This means the prvalue must be materialized earlier and then moved. This is a known gotcha with implementing something like `std::function<void(std::string)>` &mdash; it can't quite be as good as you'd want it to be, because you end up with _two_ functions in your call chain taking a `std::string` (or, if you implement it poorly, more than two). 
+
+Perhaps there's yet another language feature that could facilitate efficient prvalue materialization here?
+
 ## C++0x Concepts
 
 Rust is hardly the only language that can solve this problem. Indeed, C++0x Concepts [@N1758] gave us a solution that is nearly identical to the Rust one (this appears in the paper under the name `EqualityComparable`, I'm just changing it to match the names used throughout the paper):
