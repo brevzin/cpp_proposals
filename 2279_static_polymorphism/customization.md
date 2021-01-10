@@ -1164,7 +1164,7 @@ An important downside to this approach as compared to the customization point fu
 
 But this is not the case with CPOs, `tag_invoke`, or the above reflection-based implementation of class template specializations. In each of these cases, we invoke a function object that dispatches to the most derived implementation. This means the prvalue must be materialized earlier and then moved. This is a known gotcha with implementing something like `std::function<void(std::string)>` &mdash; it can't quite be as good as you'd want it to be, because you end up with _two_ functions in your call chain taking a `std::string` (or, if you implement it poorly, more than two). 
 
-Perhaps there's yet another language feature that could facilitate efficient prvalue materialization here?
+Perhaps there's yet another language feature that could facilitate efficient prvalue materialization here? Expression aliases? Lazy parameters?
 
 ## C++0x Concepts
 
