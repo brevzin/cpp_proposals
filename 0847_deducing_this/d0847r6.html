@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-12" />
+  <meta name="dcterms.date" content="2021-01-13" />
   <title>Deducing this</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-12</td>
+    <td>2021-01-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1127,7 +1127,7 @@ Proposed
 <span id="cb25-3"><a href="#cb25-3"></a>    <span class="dt">void</span> foo<span class="op">(</span><span class="kw">this</span> A<span class="op">&amp;)</span>;</span>
 <span id="cb25-4"><a href="#cb25-4"></a>    <span class="dt">void</span> bar<span class="op">(</span><span class="kw">this</span> <span class="dt">int</span><span class="op">)</span>;</span>
 <span id="cb25-5"><a href="#cb25-5"></a><span class="op">}</span>;</span></code></pre></div>
-<p>These are even more unlikely to be actually useful code. In this example, <code class="sourceCode cpp">B</code> is neither convertible to <code class="sourceCode cpp">A</code> nor <code class="sourceCode cpp"><span class="dt">int</span></code>, so neither of these functions is even invocable using normal member syntax. However, they’re still static member functions, so <code class="sourceCode cpp">B<span class="op">::</span>bar<span class="op">(</span><span class="dv">42</span><span class="op">)</span></code> is a valid call.</p>
+<p>These are even more unlikely to be actually useful code. In this example, <code class="sourceCode cpp">B</code> is neither convertible to <code class="sourceCode cpp">A</code> nor <code class="sourceCode cpp"><span class="dt">int</span></code>, so neither of these functions is even invocable using normal member syntax. However, you could take a pointer to such functions and invoke them through that pointer. <code class="sourceCode cpp"><span class="op">(&amp;</span>B<span class="op">::</span>bar<span class="op">)(</span><span class="dv">42</span><span class="op">)</span></code> is a valid, if weird, call.</p>
 <p>We think these declarations can best be left for compilers to warn about if they so choose, rather than coming up with a language rule to reject them.</p>
 <p>Another interesting case, courtesy of Jens Maurer:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">struct</span> D;</span>
@@ -1141,8 +1141,7 @@ Proposed
 <span id="cb26-9"><a href="#cb26-9"></a><span class="dt">int</span> x <span class="op">=</span> D<span class="op">().</span>f1<span class="op">()</span>;  <span class="co">// error: ambiguous lookup</span></span>
 <span id="cb26-10"><a href="#cb26-10"></a><span class="dt">int</span> y <span class="op">=</span> B<span class="op">().</span>f1<span class="op">()</span>;  <span class="co">// error: B is not implicitly convertible to D</span></span>
 <span id="cb26-11"><a href="#cb26-11"></a><span class="kw">auto</span> z <span class="op">=</span> <span class="op">&amp;</span>B<span class="op">::</span>f1;   <span class="co">// ok</span></span>
-<span id="cb26-12"><a href="#cb26-12"></a>z<span class="op">(</span>D<span class="op">())</span>;            <span class="co">// ok</span></span>
-<span id="cb26-13"><a href="#cb26-13"></a>B<span class="op">::</span>f1<span class="op">(</span>D<span class="op">{})</span>;        <span class="co">// ok</span></span></code></pre></div>
+<span id="cb26-12"><a href="#cb26-12"></a>z<span class="op">(</span>D<span class="op">())</span>;            <span class="co">// ok</span></span></code></pre></div>
 <p>Even though both <code class="sourceCode cpp">D<span class="op">().</span>f1<span class="op">()</span></code> and <code class="sourceCode cpp">B<span class="op">().</span>f1<span class="op">()</span></code> are ill-formed, for entirely different reasons, taking a pointer to <code class="sourceCode cpp"><span class="op">&amp;</span>B<span class="op">::</span>f1</code> is acceptable — its type is <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span>D<span class="op">)</span></code> — and that function pointer can be invoked with a <code class="sourceCode cpp">D</code>. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see <a href="#by-value-this">by-value <code class="sourceCode cpp"><span class="kw">this</span></code></a>). The same reasoning holds for the direct function invocation.</p>
 <p>Again, we’re not sure if these formulations are actually useful. More so that they don’t seem harmful and attempting to reject these cases may accidentally reject useful ones.</p>
 <h3 data-number="4.2.8" id="teachability-implications"><span class="header-section-number">4.2.8</span> Teachability Implications<a href="#teachability-implications" class="self-link"></a></h3>

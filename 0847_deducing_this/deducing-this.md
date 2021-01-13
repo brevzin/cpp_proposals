@@ -654,7 +654,7 @@ struct B {
 };
 ```
 
-These are even more unlikely to be actually useful code. In this example, `B` is neither convertible to `A` nor `int`, so neither of these functions is even invocable using normal member syntax. However, they're still static member functions, so `B::bar(42)` is a valid call.
+These are even more unlikely to be actually useful code. In this example, `B` is neither convertible to `A` nor `int`, so neither of these functions is even invocable using normal member syntax. However, you could take a pointer to such functions and invoke them through that pointer.  `(&B::bar)(42)` is a valid, if weird, call.
 
 We think these declarations can best be left for compilers to warn about if they so choose, rather than coming up with a language rule to reject them.
 
@@ -673,7 +673,6 @@ int x = D().f1();  // error: ambiguous lookup
 int y = B().f1();  // error: B is not implicitly convertible to D
 auto z = &B::f1;   // ok
 z(D());            // ok
-B::f1(D{});        // ok
 ```
 
 Even though both `D().f1()` and `B().f1()` are ill-formed, for entirely different reasons, taking a pointer to `&B::f1` is acceptable &mdash; its type is `int(*)(D)` &mdash; and that function pointer can be invoked with a `D`. Actually invoking this function does not require any further name lookup or conversion because by-value member functions do not have an implicit object parameter in this syntax (see [by-value `this`](#by-value-this)). The same reasoning holds for the direct function invocation. 
