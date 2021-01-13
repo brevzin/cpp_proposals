@@ -572,7 +572,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#implementation-experience"><span class="toc-section-number">2.1</span> Implementation Experience<span></span></a></li>
 <li><a href="#other-not-quite-reference-examples"><span class="toc-section-number">2.2</span> Other not-quite-reference examples<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">2.3</span> Wording<span></span></a></li>
+<li><a href="#lifetime-dilemma"><span class="toc-section-number">2.3</span> Lifetime Dilemma<span></span></a></li>
+<li><a href="#still-further-cases"><span class="toc-section-number">2.4</span> Still further cases<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">2.5</span> Wording<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgments"><span class="toc-section-number">3</span> Acknowledgments<span></span></a></li>
 </ul>
@@ -734,20 +736,35 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-3"><a href="#cb18-3"></a><span class="dt">void</span> f2<span class="op">(</span>B2 <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Here, we convert <code class="sourceCode cpp"><span class="op">&amp;</span>b</code> to <code class="sourceCode cpp">A2<span class="op">*</span></code> and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: <code class="sourceCode cpp">b<span class="op">.</span>f<span class="op">()</span></code> <em>is</em> a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.</p>
+<h2 data-number="2.3" id="lifetime-dilemma"><span class="header-section-number">2.3</span> Lifetime Dilemma<a href="#lifetime-dilemma" class="self-link"></a></h2>
+<p>If we go back to this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a>extern B2 <span class="op">&amp;</span>b;</span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>It seems reasonable to allow it, having no idea what the definition of <code class="sourceCode cpp">b</code> is. But what if we <em>do</em> see the definition of <code class="sourceCode cpp">b</code>, and it’s:</p>
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">union</span> U <span class="op">{</span> <span class="dt">char</span> c; B2 b2; <span class="op">}</span>;</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">constexpr</span> U u <span class="op">=</span> <span class="op">{.</span>c <span class="op">=</span> <span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb20-3"><a href="#cb20-3"></a>B2 <span class="op">&amp;</span>b <span class="op">=</span> <span class="kw">const_cast</span><span class="op">&lt;</span>B2<span class="op">&amp;&gt;(</span>u<span class="op">.</span>b2<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Now we <em>know</em> <code class="sourceCode cpp">b</code> isn’t within its lifetime. We added more information, and turned our constant expression into a non-constant expression?</p>
+<p>However, there’s a reasonable principle here: anything that has only one possible interpretation <em>with defined behavior</em> has that defined behavior for constant evaluation purposes. This is true of all the examples presented up until now.</p>
+<h2 data-number="2.4" id="still-further-cases"><span class="header-section-number">2.4</span> Still further cases<a href="#still-further-cases" class="self-link"></a></h2>
 <p>A different case is the following:</p>
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span> a;</span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> a<span class="op">.</span>f<span class="op">()</span>;</span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="op">&amp;</span>ti <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>a<span class="op">)</span>;</span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(&amp;</span>a<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span> a;</span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> a<span class="op">.</span>f<span class="op">()</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="op">&amp;</span>ti <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb21-4"><a href="#cb21-4"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(&amp;</span>a<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>Here, <code class="sourceCode cpp">A<span class="op">::</span>f</code> is <code class="sourceCode cpp"><span class="kw">virtual</span></code>. Which might make it seem constant, but any number of shenanigans could ensue — like placement-new-ing a derived type (of the same size) over <code class="sourceCode cpp">a</code>. So all of these should probably remain non-constant expressions.</p>
 <p>Perhaps the most fun example is this one:</p>
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">extern</span> <span class="kw">const</span> <span class="dt">int</span> arr<span class="op">[]</span>;</span>
-<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">constexpr</span> <span class="kw">const</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> arr <span class="op">+</span> N;</span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> arr<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>;</span>
-<span id="cb20-4"><a href="#cb20-4"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="op">*</span>p;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">extern</span> <span class="kw">const</span> <span class="dt">int</span> arr<span class="op">[]</span>;</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">constexpr</span> <span class="kw">const</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> arr <span class="op">+</span> N;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> arr<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>;</span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="op">*</span>p;</span></code></pre></div>
 </blockquote>
 <p>Which every compiler currently provides different results (in order of most reasonable to least reasonable):</p>
 <ol type="1">
@@ -757,7 +774,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>MSVC says you can’t declare <code class="sourceCode cpp">arr</code> as non-constexpr and define it constexpr, even though there is no such rule</li>
 </ol>
 <p>This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.</p>
-<h2 data-number="2.3" id="wording"><span class="header-section-number">2.3</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="2.5" id="wording"><span class="header-section-number">2.5</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>We need to strike the <span>7.7
  <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.12 rule that disallows using references-to-unknown during constant evaluation:</p>
 <blockquote>

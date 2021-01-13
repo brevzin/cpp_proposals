@@ -270,6 +270,34 @@ void f2(B2 &b) { constexpr int k = b.f(); }
 
 Here, we convert `&b` to `A2*` and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: `b.f()` _is_ a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.
 
+## Lifetime Dilemma
+
+If we go back to this example:
+
+::: bq
+```cpp
+extern B2 &b;
+constexpr int k = b.f();
+```
+:::
+
+It seems reasonable to allow it, having no idea what the definition of `b` is. But what if we _do_ see the definition of `b`, and it's:
+
+::: bq
+```cpp
+union U { char c; B2 b2; };
+constexpr U u = {.c = 0};
+B2 &b = const_cast<B2&>(u.b2);
+```
+:::
+
+Now we _know_ `b` isn't within its lifetime. We added more information, and turned our constant expression into a non-constant expression?
+
+However, there's a reasonable principle here: anything that has only one possible interpretation _with defined behavior_ has that defined behavior for constant evaluation purposes. This is true of all the examples presented up until now. 
+
+
+## Still further cases
+
 A different case is the following:
 
 ::: bq
