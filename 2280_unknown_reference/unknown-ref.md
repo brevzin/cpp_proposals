@@ -231,9 +231,81 @@ This check still must evaluate `g()`, which may or may not be a constant express
 
 I've implemented this in EDG at least to the extent that the test cases prestend in this paper all pass, whereas previously they had all failed. 
 
+## Other not-quite-reference examples
+
+There are a few other closely related examples to consider for how to word this proposal. All of these are courtesy of Richard Smith.
+
+We generally assume the following works:
+
+::: bq
+```cpp
+auto f() {
+  const int n = 5;
+  return [] { int arr[n]; };
+}
+```
+:::
+
+but `n` might not be in its lifetime when it's read in the evaluation of `arr`'s array bound. So we need to add wording to actaully make that work.
+
+Then there are further lifetime questions. The following example is similar to the other examples presented earlier:
+
+::: bq
+```cpp
+struct A { constexpr int f() { return 0; } };
+struct B : A {};
+void f(B &b) { constexpr int k = b.f(); }
+```
+:::
+
+But this one is a bit different:
+
+::: bq
+```cpp
+struct A2 { constexpr int f() { return 0; } };
+struct B2 : @[virtual]{.diffins}@ A2 {};
+void f2(B2 &b) { constexpr int k = b.f(); }
+```
+:::
+
+Here, we convert `&b` to `A2*` and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: `b.f()` _is_ a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.
+
+A different case is the following:
+
+::: bq
+```cpp
+struct A { virtual constexpr int f() { return 0; } } a;
+constexpr int k = a.f();
+constexpr auto &ti = typeid(a);
+constexpr void *p = dynamic_cast<void*>(&a);
+```
+:::
+
+Here, `A::f` is `virtual`. Which might make it seem constant, but any number of shenanigans could ensue &mdash; like placement-new-ing a derived type (of the same size) over `a`. So all of these should probably remain non-constant expressions. 
+
+Perhaps the most fun example is this one:
+
+::: bq
+```cpp
+extern const int arr[];
+constexpr const int *p = arr + N;
+constexpr int arr[2] = {0, 1};
+constexpr int k = *p;
+```
+:::
+
+Which every compiler currently provides different results (in order of most reasonable to least reasonable):
+
+1. Clang says `arr+N` is non-constant if `N != 0`, and accepts with `N == 0`.
+2. GCC says `arr+N` is always constant (even though it sometimes has UB), but rejects reading `*p` if `arr+N` is out of bounds.
+3. ICC says `arr+N` is always constant (even though it sometimes has UB), but always rejects reading `*p` even if `arr+N` is in-bounds.
+4. MSVC says you can't declare `arr` as non-constexpr and define it constexpr, even though there is no such rule
+
+This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.
+
 ## Wording
 
-My impression is that simply removing the offending rule might be sufficient. That is, all the cases that we need to reject should already be rejected by other means (e.g. reading through the reference is already covered, in much the same words, by 5.8, reproduced below for clarity). Perhaps it is enough to simply strike [expr.const]{.sref}/5.12.
+We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation: 
 
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
@@ -253,6 +325,14 @@ My impression is that simply removing the offending rule might be sufficient. Th
 - [5.14]{.pnum} [...]
 :::
 
+And add a new rule to properly handle the lifetime examples shown in the previous section:
+
+::: bq
+::: addu
+[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference with automatic storage duration that is usable in constant expressions are treated as referring to a specific instance of that object or reference whose lifetime includes the entire constant evaluation.
+:::
+:::
+
 # Acknowledgments
 
-Thanks to Daveed Vandevoorde for the encouragement and help. Thanks to Richard Smith for carefully describing the correct rule on the reflector. Thanks to Michael Park for pointing out the issue to me, Tim Song for explaining it, and Jonathan Wakely for suggesting I pursue it. 
+Thanks to Daveed Vandevoorde for the encouragement and help. Thanks to Richard Smith for carefully describing the correct rule on the reflector and helping provide further examples and wording. Thanks to Michael Park for pointing out the issue to me, Tim Song for explaining it, and Jonathan Wakely for suggesting I pursue it. 
