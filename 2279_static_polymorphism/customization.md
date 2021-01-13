@@ -1,6 +1,6 @@
 ---
 title: "We need a language mechanism for static polymorphism"
-document: D2279R0
+document: P2279R0
 date: today
 audience: EWG
 author:

@@ -4,7 +4,7 @@
 - 644 Forward without  <code>forward</code>: [p0644r1](0644_fwd/p0644r1.html)
 - 704 Fixing const-qualified pointers to members: [p0704r0](0704_const_qual_pmfs/p0704r0.html) [p0704r1](0704_const_qual_pmfs/p0704r1.html)
 - 780 Allow pack expansion in lambda init-capture: [p0780r0](0780_lambda_pack_capture/p0780r0.html) [p0780r1](0780_lambda_pack_capture/p0780r1.html) [p0780r2](0780_lambda_pack_capture/p0780r2.html)
-- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [d0847r6](0847_deducing_this/d0847r6.html)
+- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [d0847r6](0847_deducing_this/d0847r6.html) [p0847r6](0847_deducing_this/p0847r6.html)
 - 848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - 892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
@@ -29,7 +29,7 @@
 - 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 - 2011 A pipeline-rewrite operator: [p2011r0](2011_pipeline/p2011r0.html) [p2011r1](2011_pipeline/p2011r1.html) [d2011r2](2011_pipeline/d2011r2.html)
 - 2017 Conditionally borrowed ranges: [p2017r0](2017_safe_range/p2017r0.html) [p2017r1](2017_safe_range/p2017r1.html)
-- 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html) [d2036r1](2036_lambda_scope/d2036r1.html)
+- 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html) [d2036r1](2036_lambda_scope/d2036r1.html) [p2036r1](2036_lambda_scope/p2036r1.html)
 - 2089 Function parameter constraints are fragile: [p2089r0](2089_param_constraints/p2089r0.html)
 - 2095 Resolve lambda init-capture pack grammar (CWG2378): [p2095r0](2095_lambda_pack_cwg/p2095r0.html)
 - 2120 Simplified structured bindings protocol with pack aliases: [p2120r0](1858_generalized_packs/p2120r0.html)
@@ -40,8 +40,8 @@
 - 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html)
 - 2277 Packs outside of Templates: [p2277r0](2277_packs_outside_of_templates/p2277r0.html)
 - 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [p2278r0](2278_cbegin/p2278r0.html)
-- 2279 We need a language mechanism for static polymorphism: [d2279r0](2279_static_polymorphism/d2279r0.html)
-- 2280 Using unknown references in constant expressions: [d2280r0](2280_unknown_reference/d2280r0.html)
+- 2279 We need a language mechanism for static polymorphism: [d2279r0](2279_static_polymorphism/d2279r0.html) [p2279r0](2279_static_polymorphism/p2279r0.html)
+- 2280 Using unknown references in constant expressions: [d2280r0](2280_unknown_reference/d2280r0.html) [p2280r0](2280_unknown_reference/p2280r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)

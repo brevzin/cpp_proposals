@@ -1,6 +1,6 @@
 ---
 title: Deducing this
-document: D0847R6
+document: P0847R6
 date: today
 audience: EWG
 author:

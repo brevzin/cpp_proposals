@@ -1,6 +1,6 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: D2036R1
+document: P2036R1
 date: today
 audience: EWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2036R0], added wording and discussion of issues around getting the lookup correct.
 
 # Introduction
 
