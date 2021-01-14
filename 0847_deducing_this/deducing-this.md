@@ -2023,7 +2023,22 @@ struct B {
 ```
 :::
 
-With Davis' wording, these correspond because exactly one has a *ref-qualifier*. With my wording they do not correspond, because the type of the implicit object parameter is different for the two declarations. There is a follow-on change to [over] to allow `B().f()` to work. I don't know that it's really necessary to mandate a `&`-qualifier for the other overload, and rejecting this case means making the _correspond_ rule more complex.
+With Davis' wording, these correspond because exactly one has a *ref-qualifier*. With my wording they do not correspond, because the type of the implicit object parameter is different for the two declarations. There is a follow-on change to [over] to allow `B().f()` to work. I don't know that it's really necessary to mandate a `&`-qualifier for the other overload, and rejecting this case means making the _correspond_ rule more complex. 
+
+That follow-on change changes the meaning of the following example:
+
+::: bq
+```cpp
+struct B {
+    void f(auto) &&; // #1
+    void f(int);     // #2
+};
+
+B().f(0);
+```
+:::
+
+Today, this calls `#2` (the conversion sequences are equivalent, so the tiebreaker is that we prefer a non-template to a template). But with the wording change here, we would call `#1` (because binding an rvalue to an rvalue reference is preferred). Note that if `#2` was `&`-qualified, we would already call `#1`. 
 
 ### Wording in [expr]{.sref}
 
