@@ -704,7 +704,7 @@ The proposed syntax has no parsings issue that we are aware of.
 
 There are two programmatic issues with this proposal that we are aware of:
 
-1. Inadvertently referencing a shadowing member of a derived object in a base class `this`-annotated member function. There are some use cases where we would want to do this on purposes (see [crtp](#crtp)), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verobse way.
+1. Inadvertently referencing a shadowing member of a derived object in a base class `this`-annotated member function. There are some use cases where we would want to do this on purpose (see [crtp](#crtp)), but for other use-cases the programmer will have to be aware of potential issues and defend against them in a somewhat verbose way.
 
 2. Because there is no way to _just_ deduce `const` vs non-`const`, the only way to deduce the value category would be to take a forwarding reference. This means that potentially we create four instantiations when only two would be minimally necessary to solve the problem. But deferring to a templated implementation is an acceptable option and has been improved by no longer requiring casts. We believe that the problem is minimal.
 
@@ -1950,10 +1950,14 @@ We considered a lot of other terms - self parameter, selector parameter, instanc
 
 ## Wording
 
-[This paper introduces many new terms that are defined in [dcl.dcl] - so even
+::: ednote
+This paper introduces many new terms that are defined in [dcl.dcl] - so even
 though the wording here is presented in standard layout order (we obviously want
 to ensure that `is_standard_layout<P0847>` is `true`), it may be helpful to
-refer to [those definitions](#dcl.dcl) when reviewing the wording]{.ednote}
+refer to [those definitions](#dcl.dcl) when reviewing the wording.
+
+One decision was to introduce the term _object parameter_ as the union of explicit object parameter (new in this paper) and implicit object parameter (preexisting). This is the difference between making changes like "implicit [or explicit]{.addu} object parameter" in a bunch of places vs "[implicit ]{.rm} object parameter" in a bunch of places.
+:::
 
 ### Wording in [basic]{.sref}
 
@@ -1966,8 +1970,8 @@ Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the
 - [3.2]{.pnum} one declares a type (not a _typedef-name_) and the other declares a variable, non-static data member other than of an anonymous union ([class.union.anon]), enumerator, function, or function template, or
 - [3.3]{.pnum} each declares a function or function template, except when
 
-    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [same type of their implicit or explicit object parameter]{.addu}, or
-    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [equivalent type of their implicit or explicit object parameter]{.addu}.
+    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [same type of their object parameter]{.addu}, or
+    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [equivalent type of their object parameter]{.addu}.
 :::
 
 and extend the example:
@@ -2054,7 +2058,7 @@ Change [expr.prim.id]{.sref}/2 to properly account for lambdas with an explicit 
 
 ::: bq
 The result is the entity denoted by the identifier.
-If the entity is a local entity and naming it from outside of an unevaluated operand within the declarative region where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the [closure object]{.rm} [implicit or explicit object parameter ([dcl.fct]) of the function call operator of the]{.addu} innermost such intervening _lambda-expression_.
+If the entity is a local entity and naming it from outside of an unevaluated operand within the declarative region where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the [closure object]{.rm} [object parameter ([dcl.fct]) of the function call operator of the]{.addu} innermost such intervening _lambda-expression_.
 :::
 
 Change [expr.prim.lambda]{.sref}/3:
@@ -2203,7 +2207,9 @@ void test(C c) {
 
 [5c]{.pnum} A function parameter declared with an _explicit-object-parameter-declaration_ is an _explicit object parameter_. An explicit object parameter shall not be a function parameter pack ([temp.variadic]). An _explicit object member function_ is a non-static member function with an explicit object parameter. An _implicit object member function_ is non-static member function without an explicit object parameter.
 
-[5d]{.pnum} An _non-object parameter_ is a function parameter that is not the explicit object parameter. The _non-object-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit object parameter, if any, omitted. [ _Note_: The non-object-parameter-type-list consists of the adjusted types of all the non-object parameters. _-end note_ ]
+[5d]{.pnum} The _object parameter_ of a non-static member function is either the explicit object parameter or the implicit object parameter ([over.match.funcs]).
+
+[5e]{.pnum} An _non-object parameter_ is a function parameter that is not the explicit object parameter. The _non-object-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit object parameter, if any, omitted. [ _Note_: The non-object-parameter-type-list consists of the adjusted types of all the non-object parameters. _-end note_ ]
 
 :::
 :::
@@ -2211,10 +2217,10 @@ void test(C c) {
 Change [dcl.fct.def.coroutine]{.sref}/3-4:
 
 ::: bq
-[3]{.pnum} The _promise type_ of a coroutine is `std​::​coroutine_traits<R, P@~1~@, …, P@~n~@>​::​promise_type`, where `R` is the return type of the function, and `P@~1~@…P@~n~@` are the sequence of types of the [non-object]{.addu} function parameters, preceded by the type of the implicit [or explicit]{.addu} object parameter ([over.match.funcs]) if the coroutine is a non-static member function.
+[3]{.pnum} The _promise type_ of a coroutine is `std​::​coroutine_traits<R, P@~1~@, …, P@~n~@>​::​promise_type`, where `R` is the return type of the function, and `P@~1~@…P@~n~@` are the sequence of types of the [non-object]{.addu} function parameters, preceded by the type of the [implicit ]{.rm} object parameter ([\[over.match.funcs\]]{.rm} [\[dcl.fct\]]{.addu}) if the coroutine is a non-static member function.
 The promise type shall be a class type.
 
-[4]{.pnum} In the following, `p@~i~@` is an lvalue of type `P@~i~@`, where `p@~1~@` denotes [`*this`]{.rm} [the implicit or explicit object parameter]{.addu} and `p@~i+1~@` denotes the _i_^th^ [non-object]{.addu} function parameter for a non-static member function, and `p@~i~@` denotes the _i_^th^ function parameter otherwise.
+[4]{.pnum} In the following, `p@~i~@` is an lvalue of type `P@~i~@`, where `p@~1~@` denotes [`*this`]{.rm} [the object parameter]{.addu} and `p@~i+1~@` denotes the _i_^th^ [non-object]{.addu} function parameter for a non-static member function, and `p@~i~@` denotes the _i_^th^ function parameter otherwise.
 :::
 
 ### Wording in [class]{.sref}
@@ -2241,18 +2247,18 @@ Change [over.match.general]{.sref}/;
 
 ::: bq
 [1]{.pnum} Overload resolution is a mechanism for selecting the best function to call given a list of expressions that are to be the arguments of the call and a set of _candidate functions_ that can be called based on the context of the call.
-The selection criteria for the best function are the number of arguments, how well the arguments match the parameter-type-list of the candidate function, how well (for non-static member functions) the object matches the implicit [or explicit]{.addu} object parameter, and certain other properties of the candidate function.
+The selection criteria for the best function are the number of arguments, how well the arguments match the parameter-type-list of the candidate function, how well (for non-static member functions) the object matches the [implicit]{.rm} object parameter, and certain other properties of the candidate function.
 :::
 
 Change [over.match.funcs]{.sref}/2-5:
 
 ::: bq
 [2]{.pnum} So that argument and parameter lists are comparable within this heterogeneous set, a member function [that does not have an explicit object parameter]{.addu} is considered to have an extra first parameter, called the _implicit object parameter_, which represents the object for which the member function has been called.
-For the purposes of overload resolution, both static and non-static member functions have an implicit [or explicit]{.addu} object parameter, but constructors do not.
+For the purposes of overload resolution, both static and non-static member functions have an [implicit]{.rm} object parameter, but constructors do not.
 
 [3]{.pnum} Similarly, when appropriate, the context can construct an argument list that contains an _implied object argument_ as the first argument in the list to denote the object to be operated on.
 
-[4]{.pnum} For non-static member functions, the type of the implicit object parameter is
+[4]{.pnum} For [non-static]{.rm} [implicit object]{.addu} member functions, the type of the implicit object parameter is
 
 * [4.1]{.pnum} “lvalue reference to *cv* `X`” for functions declared without a _ref-qualifier_ or with the `&` _ref-qualifier_
 * [4.2]{.pnum} “rvalue reference to *cv* `X`” for functions declared with the `&&` _ref-qualifier_
@@ -2316,7 +2322,7 @@ Add to [over.call.object]{.sref}/3:
 ::: bq
 
 [3]{.pnum} The argument list submitted to overload resolution consists of the argument expressions present in the function call syntax preceded by the implied object argument `(E)`.
-[ *Note*: When comparing the call against the function call operators, the implied object argument is compared against [either]{.addu} the implicit [or explicit]{.addu} object parameter of the function call operator.
+[ *Note*: When comparing the call against the function call operators, the implied object argument is compared against the [implicit]{.rm} object parameter of the function call operator.
 When comparing the call against a surrogate call function, the implied object argument is compared against the first parameter of the surrogate call function.
 The conversion function from which the surrogate call function was derived will be used in the conversion sequence for that parameter since it converts the implied object argument to the appropriate function pointer or reference required by that first parameter.
 — *end note*
@@ -2327,7 +2333,7 @@ The conversion function from which the surrogate call function was derived will 
 Change the note in [over.match.oper]{.sref}/3.4:
 
 ::: bq
-[3.4.5]{.pnum} [ *Note*: A candidate synthesized from a member candidate has its implicit [or explicit]{.addu} object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. — *end note*
+[3.4.5]{.pnum} [ *Note*: A candidate synthesized from a member candidate has its [implicit]{.rm} object parameter as the second parameter, thus implicit conversions are considered for the first, but not for the second, parameter. — *end note*
  ]
 :::
 
@@ -2335,7 +2341,7 @@ Change the note in [over.match.copy]{.sref}/2:
 
 ::: bq
 [2]{.pnum} In both cases, the argument list has one argument, which is the initializer expression.
-[ *Note*: This argument will be compared against the first parameter of the constructors and against the implicit [or explicit]{.addu} object parameter of the conversion functions.
+[ *Note*: This argument will be compared against the first parameter of the constructors and against the [implicit]{.rm} object parameter of the conversion functions.
 — end note
  ]
 :::
@@ -2344,7 +2350,7 @@ Change the note in [over.match.conv]{.sref}/2:
 
 ::: bq
 [2]{.pnum} The argument list has one argument, which is the initializer expression.
-[ *Note*: This argument will be compared against the implicit [or explicit]{.addu} object parameter of the conversion functions.
+[ *Note*: This argument will be compared against the [implicit]{.rm} object parameter of the conversion functions.
 — end note
  ]
 :::
@@ -2353,7 +2359,7 @@ Change the note in [over.match.ref]{.sref}/2:
 
 ::: bq
 [2]{.pnum} The argument list has one argument, which is the initializer expression.
-[ *Note*: This argument will be compared against the implicit [or explicit]{.addu} object parameter of the conversion functions.
+[ *Note*: This argument will be compared against the [implicit]{.rm} object parameter of the conversion functions.
 — end note
  ]
 :::
@@ -2364,7 +2370,7 @@ Change [over.best.ics]{.sref}/4:
 [4]{.pnum} However, if the target is
 
 * [4.1]{.pnum} the first parameter of a constructor or
-* [4.2]{.pnum} the implicit [or explicit]{.addu} object parameter of a user-defined conversion function
+* [4.2]{.pnum} the [implicit]{.rm} object parameter of a user-defined conversion function
 
 and the constructor or user-defined conversion function is a candidate by [...]
 :::
@@ -2378,7 +2384,7 @@ Change [over.best.ics]{.sref}/7:
 Change [over.ics.user]{.sref}/1:
 
 ::: bq
-[1]{.pnum} If the user-defined conversion is specified by a conversion function, the initial standard conversion sequence converts the source type to the implicit [or explicit]{.addu} object parameter of the conversion function.
+[1]{.pnum} If the user-defined conversion is specified by a conversion function, the initial standard conversion sequence converts the source type to the [implicit]{.rm} object parameter of the conversion function.
 :::
 
 Change [over.ics.rank]{.sref}/3.2.3 (necessary to allow the case described earlier in the [basic] wording to work):
