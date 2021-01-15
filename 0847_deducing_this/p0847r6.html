@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-01-14" />
+  <meta name="dcterms.date" content="2021-01-15" />
   <title>Deducing this</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-01-14</td>
+    <td>2021-01-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2273,14 +2273,24 @@ With reflection
 <p>Extend the definition of correspond in <span>6.4.1
  <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/3 to check the implicit/explicit object parameter types:</p>
 <blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> Two non-static member functions, <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code>, have <em>corresponding object parameters</em> if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(a.1)</a></span> both or neither are implicit object member functions with no <em>ref-qualifier</em> and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the same type of their object parameter, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(a.2)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em>, the other has an object parameter of reference type, and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the same type of their object parameter after stripping the references.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> Two non-static member function templates, <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code>, have <em>corresponding object parameters</em> if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(b.1)</a></span> both or neither are implicit object member functions with no <em>ref-qualifier</em> and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the equivalent type of their object parameter, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(b.2)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em>, the other has an object parameter of non-dependent reference type, and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the equivalent type of their object parameter after stripping the references.</li>
+</ul>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> Two declarations <em>correspond</em> if they (re)introduce the same name, both declare constructors, or both declare destructors, unless</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> either is a <em>using-declarator</em>, or</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> one declares a type (not a <em>typedef-name</em>) and the other declares a variable, non-static data member other than of an anonymous union ([class.union.anon]), enumerator, function, or function template, or</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(3.3)</a></span> each declares a function or function template, except when</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(3.3.1)</a></span> both declare functions with the same <span class="addu">non-object-</span>parameter-type-list<sup>21</sup>, equivalent ([temp.over.link]) trailing <em>requires-clause</em>s (if any, except as specified in [temp.friend]), and, if both are non-static members, the <span class="rm" style="color: #bf0303"><del>same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">same type of their object parameter</span>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.3.2)</a></span> both declare function templates with equivalent <span class="addu">non-object-</span>parameter-type-lists, return types (if any), <em>template-head</em>s, and trailing <em>requires-clause</em>s (if any), and, if both are non-static members, the <span class="rm" style="color: #bf0303"><del>same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">equivalent type of their object parameter</span>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.1)</a></span> both declare functions with the same <span class="addu">non-object-</span>parameter-type-list<sup>21</sup>, equivalent ([temp.over.link]) trailing <em>requires-clause</em>s (if any, except as specified in [temp.friend]), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">their object parameters correspond</span>, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.2)</a></span> both declare function templates with equivalent <span class="addu">non-object-</span>parameter-type-lists, return types (if any), <em>template-head</em>s, and trailing <em>requires-clause</em>s (if any), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">their object parameters correspond</span>.</li>
 </ul></li>
 </ul>
 </blockquote>
@@ -2304,7 +2314,9 @@ With reflection
 <span id="cb75-15"><a href="#cb75-15"></a><span class="va">+   void h(int) &amp;&amp;;               // OK: another overload</span></span>
 <span id="cb75-16"><a href="#cb75-16"></a><span class="va">+   void j(this const X&amp;);</span></span>
 <span id="cb75-17"><a href="#cb75-17"></a><span class="va">+   void j() const&amp;;              // error: redeclaration</span></span>
-<span id="cb75-18"><a href="#cb75-18"></a>  };</span></code></pre></div>
+<span id="cb75-18"><a href="#cb75-18"></a><span class="va">+   void k();</span></span>
+<span id="cb75-19"><a href="#cb75-19"></a><span class="va">+   void k(this X&amp;);              // error: redeclaration</span></span>
+<span id="cb75-20"><a href="#cb75-20"></a>  };</span></code></pre></div>
 </div>
 </blockquote>
 <p>In the C++17 wording, we had this example <a href="https://timsong-cpp.github.io/cppwp/n4659/over.load#2.3">[over.load]/2.3 in N4659</a>:</p>
@@ -2319,24 +2331,26 @@ With reflection
 <span id="cb76-8"><a href="#cb76-8"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>The <code class="sourceCode cpp">Y<span class="op">::</span>i</code> example actually becomes well-formed after <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> (see <a href="https://lists.isocpp.org/core/2020/11/10201.php">Davis’ email to core</a>), since the prior wording did not consider <em>cv</em>-qualifiers but the new wording does. The wording change above preserves Davis’ change, the above is allowed.</p>
-<p>However, in regards to an example like:</p>
+<p>In regards to examples like:</p>
 <blockquote>
-<div class="sourceCode" id="cb77"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
-<span id="cb77-2"><a href="#cb77-2"></a>    <span class="dt">void</span> f<span class="op">()</span> <span class="op">&amp;&amp;</span>;</span>
-<span id="cb77-3"><a href="#cb77-3"></a>    <span class="dt">void</span> f<span class="op">()</span>;</span>
-<span id="cb77-4"><a href="#cb77-4"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
+<span id="cb77-2"><a href="#cb77-2"></a>    <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb77-3"><a href="#cb77-3"></a>    <span class="dt">void</span> f<span class="op">()</span> <span class="op">&amp;</span>;</span>
+<span id="cb77-4"><a href="#cb77-4"></a><span class="op">}</span>;</span>
+<span id="cb77-5"><a href="#cb77-5"></a></span>
+<span id="cb77-6"><a href="#cb77-6"></a><span class="kw">struct</span> B <span class="op">{</span></span>
+<span id="cb77-7"><a href="#cb77-7"></a>    <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb77-8"><a href="#cb77-8"></a>    <span class="dt">void</span> f<span class="op">()</span> <span class="op">&amp;&amp;</span>;</span>
+<span id="cb77-9"><a href="#cb77-9"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>With Davis’ wording, these correspond because exactly one has a <em>ref-qualifier</em>. With my wording they do not correspond, because the type of the implicit object parameter is different for the two declarations. There is a follow-on change to [over] to allow <code class="sourceCode cpp">B<span class="op">().</span>f<span class="op">()</span></code> to work. I don’t know that it’s really necessary to mandate a <code class="sourceCode cpp"><span class="op">&amp;</span></code>-qualifier for the other overload, and rejecting this case means making the <em>correspond</em> rule more complex.</p>
-<p>That follow-on change changes the meaning of the following example:</p>
-<blockquote>
-<div class="sourceCode" id="cb78"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
-<span id="cb78-2"><a href="#cb78-2"></a>    <span class="dt">void</span> f<span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">&amp;&amp;</span>; <span class="co">// #1</span></span>
-<span id="cb78-3"><a href="#cb78-3"></a>    <span class="dt">void</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;     <span class="co">// #2</span></span>
-<span id="cb78-4"><a href="#cb78-4"></a><span class="op">}</span>;</span>
-<span id="cb78-5"><a href="#cb78-5"></a></span>
-<span id="cb78-6"><a href="#cb78-6"></a>B<span class="op">().</span>f<span class="op">(</span><span class="dv">0</span><span class="op">)</span>;</span></code></pre></div>
-</blockquote>
-<p>Today, this calls <code class="sourceCode cpp"><span class="pp">#2</span></code> (the conversion sequences are equivalent, so the tiebreaker is that we prefer a non-template to a template). But with the wording change here, we would call <code class="sourceCode cpp"><span class="pp">#1</span></code> (because binding an rvalue to an rvalue reference is preferred). Note that if <code class="sourceCode cpp"><span class="pp">#2</span></code> was <code class="sourceCode cpp"><span class="op">&amp;</span></code>-qualified, we would already call <code class="sourceCode cpp"><span class="pp">#1</span></code>.</p>
+<p>There isn’t much reason that the absence of a <em>ref-qualifier</em> is more <code class="sourceCode cpp"><span class="op">&amp;</span></code>-ish than <code class="sourceCode cpp"><span class="op">&amp;&amp;</span></code>-ish. So both of these pairs of function declarations should be rejected. It would be nice to <em>just</em> talk about the type of the object parameter, but this would only reject <code class="sourceCode cpp">A</code> but not <code class="sourceCode cpp">B</code>.</p>
+<p>Hence the whole paragraph about corresponding object parameters. If exactly one is a legacy non-static member function with no <em>ref-qualifier</em>, we have to ignore the reference part of the type. That would end up with both of these corresponding.</p>
+<p>For an example like this:</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb78-2"><a href="#cb78-2"></a>    <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb78-3"><a href="#cb78-3"></a>    <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> C<span class="op">)</span>;</span>
+<span id="cb78-4"><a href="#cb78-4"></a><span class="op">}</span>;</span></code></pre></div>
+<p>This is <em>also</em> not differentiable by overload resolution (<code class="sourceCode cpp">C<span class="op">{}.</span>f<span class="op">()</span></code> is ambiguous) but coming up with a way to <em>also</em> reject this case is a bit much.</p>
 <h3 data-number="9.2.2" id="wording-in-expr"><span class="header-section-number">9.2.2</span> Wording in <span>7
  <a href="https://wg21.link/expr">[expr]</a></span><a href="#wording-in-expr" class="self-link"></a></h3>
 <p>Change <span>7.5.2
@@ -2516,7 +2530,7 @@ With reflection
 <li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> “rvalue reference to <em>cv</em> <code class="sourceCode cpp">X</code>” for functions declared with the <code class="sourceCode cpp"><span class="op">&amp;&amp;</span></code> <em>ref-qualifier</em></li>
 </ul>
 <p>where <code class="sourceCode cpp">X</code> is the class of which the function is a member and <em>cv</em> is the <em>cv</em>-qualification on the member function declaration. [ Example: For a <code class="sourceCode cpp"><span class="kw">const</span></code> member function of class <code class="sourceCode cpp">X</code>, the extra parameter is assumed to have type “<span class="addu">lvalue</span> reference to <code class="sourceCode cpp"><span class="kw">const</span> X</code>”. — <em>end example</em> ] For conversion functions <span class="addu">that are implicit object member functions</span>, the function is considered to be a member of the class of the implied object argument for the purpose of defining the type of the implicit object parameter. For non-conversion functions <span class="addu">that are implicit object member functions</span> introduced by a <em>using-declaration</em> into a derived class, the function is considered to be a member of the derived class for the purpose of defining the type of the implicit object parameter. For static member functions, the implicit object parameter is considered to match any object (since if the function is selected, the object is discarded). [ <em>Note</em>: No actual type is established for the implicit object parameter of a static member function, and no attempt will be made to determine a conversion sequence for that parameter ([over.match.best]). — <em>end note</em> ]</p>
-<p><span class="marginalizedparent"><a class="marginalized">5</a></span> During overload resolution, the implied object argument is indistinguishable from other arguments. The implicit object parameter, however, retains its identity since no user-defined conversions can be applied to achieve a type match with it. For <span class="rm" style="color: #bf0303"><del>non-static</del></span> <span class="addu">implicit object</span> member functions declared without a <em>ref-qualifier</em>, even if the implicit object parameter is not const-qualified, an rvalue can be bound to the parameter as long as in all other respects the argument can be converted to the type of the implicit object parameter. <span class="rm" style="color: #bf0303"><del>[ <em>Note</em>: The fact that such an argument is an rvalue does not affect the ranking of implicit conversion sequences. — <em>end note</em> ]</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> During overload resolution, the implied object argument is indistinguishable from other arguments. The implicit object parameter, however, retains its identity since no user-defined conversions can be applied to achieve a type match with it. For <span class="rm" style="color: #bf0303"><del>non-static</del></span> <span class="addu">implicit object</span> member functions declared without a <em>ref-qualifier</em>, even if the implicit object parameter is not const-qualified, an rvalue can be bound to the parameter as long as in all other respects the argument can be converted to the type of the implicit object parameter. [ <em>Note</em>: The fact that such an argument is an rvalue does not affect the ranking of implicit conversion sequences. — <em>end note</em> ]</p>
 </blockquote>
 <p>Add an example to <span>12.2.2.2.2
  <a href="https://wg21.link/over.call.func">[over.call.func]</a></span>/3:</p>
@@ -2593,14 +2607,6 @@ With reflection
  <a href="https://wg21.link/over.ics.user">[over.ics.user]</a></span>/1:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> If the user-defined conversion is specified by a conversion function, the initial standard conversion sequence converts the source type to the <span class="rm" style="color: #bf0303"><del>implicit</del></span> object parameter of the conversion function.</p>
-</blockquote>
-<p>Change <span>12.2.4.3
- <a href="https://wg21.link/over.ics.rank">[over.ics.rank]</a></span>/3.2.3 (necessary to allow the case described earlier in the [basic] wording to work):</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> Standard conversion sequence <code class="sourceCode cpp">S1</code> is a better conversion sequence than standard conversion sequence <code class="sourceCode cpp">S2</code> if</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(3.2.3)</a></span> <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> include reference bindings ([dcl.init.ref]) <span class="rm" style="color: #bf0303"><del>and neither refers to an implicit object parameter of a non-static member function declared without a <em>ref-qualifier</em></del></span>, and <code class="sourceCode cpp">S1</code> binds an rvalue reference to an rvalue and <code class="sourceCode cpp">S2</code> binds an lvalue reference</li>
-</ul>
 </blockquote>
 <p>Change <span>12.3
  <a href="https://wg21.link/over.over">[over.over]</a></span>/4:</p>

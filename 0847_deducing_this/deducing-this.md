@@ -1964,14 +1964,24 @@ One decision was to introduce the term _object parameter_ as the union of explic
 Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the implicit/explicit object parameter types:
 
 ::: bq
+[a]{.pnum} Two non-static member functions, `S1` and `S2`, have _corresponding object parameters_ if:
+
+- [a.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the same type of their object parameter, or
+- [a.2]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_, the other has an object parameter of reference type, and `S1` and `S2` have the same type of their object parameter after stripping the references.
+
+[b]{.pnum} Two non-static member function templates, `S1` and `S2`, have _corresponding object parameters_ if:
+
+- [b.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the equivalent type of their object parameter, or
+- [b.2]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_, the other has an object parameter of non-dependent reference type, and `S1` and `S2` have the equivalent type of their object parameter after stripping the references.
+
 [3]{.pnum} Two declarations _correspond_ if they (re)introduce the same name, both declare constructors, or both declare destructors, unless
 
 - [3.1]{.pnum} either is a _using-declarator_, or
 - [3.2]{.pnum} one declares a type (not a _typedef-name_) and the other declares a variable, non-static data member other than of an anonymous union ([class.union.anon]), enumerator, function, or function template, or
 - [3.3]{.pnum} each declares a function or function template, except when
 
-    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [same type of their object parameter]{.addu}, or
-    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, the [same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [equivalent type of their object parameter]{.addu}.
+    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [their object parameters correspond]{.addu}, or
+    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [their object parameters correspond]{.addu}.
 :::
 
 and extend the example:
@@ -1995,6 +2005,8 @@ and extend the example:
 +   void h(int) &&;               // OK: another overload
 +   void j(this const X&);
 +   void j() const&;              // error: redeclaration
++   void k();
++   void k(this X&);              // error: redeclaration
   };
 ```
 :::
@@ -2016,33 +2028,36 @@ class Y {
 
 The `Y::i` example actually becomes well-formed after [@P1787R6] (see [Davis' email to core](https://lists.isocpp.org/core/2020/11/10201.php)), since the prior wording did not consider *cv*-qualifiers but the new wording does. The wording change above preserves Davis' change, the above is allowed.
 
-However, in regards to an example like:
+In regards to examples like:
 
 ::: bq
 ```cpp
-struct B {
-    void f() &&;
+struct A {
     void f();
+    void f() &;
 };
-```
-:::
 
-With Davis' wording, these correspond because exactly one has a *ref-qualifier*. With my wording they do not correspond, because the type of the implicit object parameter is different for the two declarations. There is a follow-on change to [over] to allow `B().f()` to work. I don't know that it's really necessary to mandate a `&`-qualifier for the other overload, and rejecting this case means making the _correspond_ rule more complex. 
-
-That follow-on change changes the meaning of the following example:
-
-::: bq
-```cpp
 struct B {
-    void f(auto) &&; // #1
-    void f(int);     // #2
+    void f();
+    void f() &&;
 };
-
-B().f(0);
 ```
 :::
 
-Today, this calls `#2` (the conversion sequences are equivalent, so the tiebreaker is that we prefer a non-template to a template). But with the wording change here, we would call `#1` (because binding an rvalue to an rvalue reference is preferred). Note that if `#2` was `&`-qualified, we would already call `#1`. 
+There isn't much reason that the absence of a *ref-qualifier* is more `&`-ish than `&&`-ish. So both of these pairs of function declarations should be rejected. It would be nice to _just_ talk about the type of the object parameter, but this would only reject `A` but not `B`.
+
+Hence the whole paragraph about corresponding object parameters. If exactly one is a legacy non-static member function with no _ref-qualifier_, we have to ignore the reference part of the type. That would end up with both of these corresponding.
+
+For an example like this:
+
+```cpp
+struct C {
+    void f();
+    void f(this C);
+};
+```
+
+This is _also_ not differentiable by overload resolution (`C{}.f()` is ambiguous) but coming up with a way to _also_ reject this case is a bit much.
 
 ### Wording in [expr]{.sref}
 
@@ -2277,9 +2292,9 @@ For static member functions, the implicit object parameter is considered to matc
 [5]{.pnum} During overload resolution, the implied object argument is indistinguishable from other arguments.
 The implicit object parameter, however, retains its identity since no user-defined conversions can be applied to achieve a type match with it.
 For [non-static]{.rm} [implicit object]{.addu} member functions declared without a _ref-qualifier_, even if the implicit object parameter is not const-qualified, an rvalue can be bound to the parameter as long as in all other respects the argument can be converted to the type of the implicit object parameter.
-[\[ *Note*: The fact that such an argument is an rvalue does not affect the ranking of implicit conversion sequences.
+[ *Note*: The fact that such an argument is an rvalue does not affect the ranking of implicit conversion sequences.
 — *end note*
- \]]{.rm}
+ ]
 :::
 
 Add an example to [over.call.func]{.sref}/3:
@@ -2386,14 +2401,6 @@ Change [over.ics.user]{.sref}/1:
 ::: bq
 [1]{.pnum} If the user-defined conversion is specified by a conversion function, the initial standard conversion sequence converts the source type to the [implicit]{.rm} object parameter of the conversion function.
 :::
-
-Change [over.ics.rank]{.sref}/3.2.3 (necessary to allow the case described earlier in the [basic] wording to work):
-
-::: bq
-[3.2]{.pnum} Standard conversion sequence `S1` is a better conversion sequence than standard conversion sequence `S2` if 
-
-* [3.2.3]{.pnum} `S1` and `S2` include reference bindings ([dcl.init.ref]) [and neither refers to an implicit object parameter of a non-static member function declared without a _ref-qualifier_]{.rm}, and `S1` binds an rvalue reference to an rvalue and `S2` binds an lvalue reference
-::: 
 
 Change [over.over]{.sref}/4:
 
