@@ -166,8 +166,9 @@ Printing is a fairly fundamental and universal mechanism to see what's going on 
 The only mechanisms I have at my disposal to print something like this is either
 
 1. nested loops with hand-written delimiter handling (which are tedious and a bad solution), or
-2. at least replace the inner-most loop with a `ranges::copy` into an output iterator (which is differently bad), or
-3. Use `fmt::format`.
+2. at least replace the inner-most loop with a `ranges::copy` into an output iterator (which is more differently bad), or
+3. Write my own formatting library that I _am_ allowed to specialize (which is not only bad but also ridiculous)
+4. Use `fmt::format`.
 
 ## Implementation Experience
 
