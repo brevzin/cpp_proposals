@@ -1,5 +1,5 @@
 ---
-title: "We need a language mechanism for static polymorphism"
+title: "We need a language mechanism for customization points"
 document: P2279R0
 date: today
 audience: EWG
