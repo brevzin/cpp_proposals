@@ -1964,6 +1964,7 @@ One decision was to introduce the term _object parameter_ as the union of explic
 Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the implicit/explicit object parameter types:
 
 ::: bq
+::: addu
 [a]{.pnum} Two non-static member functions, `S1` and `S2`, have _corresponding object parameters_ if:
 
 - [a.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the same type of their object parameter, or
@@ -1973,6 +1974,7 @@ Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the
 
 - [b.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the equivalent type of their object parameter, or
 - [b.2]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_, the other has an object parameter of non-dependent reference type, and `S1` and `S2` have the equivalent type of their object parameter after stripping the references.
+:::
 
 [3]{.pnum} Two declarations _correspond_ if they (re)introduce the same name, both declare constructors, or both declare destructors, unless
 
