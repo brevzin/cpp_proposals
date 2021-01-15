@@ -2274,15 +2274,15 @@ With reflection
  <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/3 to check the implicit/explicit object parameter types:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">a</a></span> Two non-static member functions, <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code>, have <em>corresponding object parameters</em> if:</p>
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> Two non-static member functions have <em>corresponding object parameters</em> if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(a.1)</a></span> both or neither are implicit object member functions with no <em>ref-qualifier</em> and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the same type of their object parameter, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(a.2)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em>, the other has an object parameter of reference type, and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the same type of their object parameter after stripping the references.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(a.1)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em> and the types of their object parameters, are removing top-level references, are the same, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(a.2)</a></span> their object parameters have the same type.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized">b</a></span> Two non-static member function templates, <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code>, have <em>corresponding object parameters</em> if:</p>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> Two non-static member function templates have <em>corresponding object parameters</em> if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(b.1)</a></span> both or neither are implicit object member functions with no <em>ref-qualifier</em> and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the equivalent type of their object parameter, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(b.2)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em>, the other has an object parameter of non-dependent reference type, and <code class="sourceCode cpp">S1</code> and <code class="sourceCode cpp">S2</code> have the equivalent type of their object parameter after stripping the references.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(b.1)</a></span> exactly one is an implicit object member function with no <em>ref-qualifier</em> and the types of their object parameters, after removing any references, are equivalent, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(b.2)</a></span> the types of their object parameters are equivalent.</li>
 </ul>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> Two declarations <em>correspond</em> if they (re)introduce the same name, both declare constructors, or both declare destructors, unless</p>
@@ -2291,8 +2291,8 @@ With reflection
 <li><p><span class="marginalizedparent"><a class="marginalized">(3.2)</a></span> one declares a type (not a <em>typedef-name</em>) and the other declares a variable, non-static data member other than of an anonymous union ([class.union.anon]), enumerator, function, or function template, or</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized">(3.3)</a></span> each declares a function or function template, except when</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(3.3.1)</a></span> both declare functions with the same <span class="addu">non-object-</span>parameter-type-list<sup>21</sup>, equivalent ([temp.over.link]) trailing <em>requires-clause</em>s (if any, except as specified in [temp.friend]), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">their object parameters correspond</span>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(3.3.2)</a></span> both declare function templates with equivalent <span class="addu">non-object-</span>parameter-type-lists, return types (if any), <em>template-head</em>s, and trailing <em>requires-clause</em>s (if any), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">their object parameters correspond</span>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.1)</a></span> both declare functions with the same <span class="addu">non-object-</span>parameter-type-list<sup>21</sup>, equivalent ([temp.over.link]) trailing <em>requires-clause</em>s (if any, except as specified in [temp.friend]), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">they have corresponding object parameters</span>, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(3.3.2)</a></span> both declare function templates with equivalent <span class="addu">non-object-</span>parameter-type-lists, return types (if any), <em>template-head</em>s, and trailing <em>requires-clause</em>s (if any), and, if both are non-static members, <span class="rm" style="color: #bf0303"><del>the same <em>cv-qualifier</em>s (if any) and <em>ref-qualifier</em> (if both have one)</del></span> <span class="addu">they have corresponding object parameters</span>.</li>
 </ul></li>
 </ul>
 </blockquote>
@@ -2352,7 +2352,14 @@ With reflection
 <span id="cb78-2"><a href="#cb78-2"></a>    <span class="dt">void</span> f<span class="op">()</span>;</span>
 <span id="cb78-3"><a href="#cb78-3"></a>    <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> C<span class="op">)</span>;</span>
 <span id="cb78-4"><a href="#cb78-4"></a><span class="op">}</span>;</span></code></pre></div>
-<p>This is <em>also</em> not differentiable by overload resolution (<code class="sourceCode cpp">C<span class="op">{}.</span>f<span class="op">()</span></code> is ambiguous) but coming up with a way to <em>also</em> reject this case is a bit much.</p>
+<p>This is technically differentiable by overload resolution:</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb79-1"><a href="#cb79-1"></a><span class="kw">struct</span> D <span class="op">:</span> C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb79-2"><a href="#cb79-2"></a></span>
+<span id="cb79-3"><a href="#cb79-3"></a><span class="kw">const</span> C cc;</span>
+<span id="cb79-4"><a href="#cb79-4"></a>cc<span class="op">.</span>f<span class="op">()</span>; <span class="co">// calls second overload</span></span>
+<span id="cb79-5"><a href="#cb79-5"></a>D d;</span>
+<span id="cb79-6"><a href="#cb79-6"></a>d<span class="op">.</span>f<span class="op">()</span>;  <span class="co">// calls first overload</span></span></code></pre></div>
+<p>But doesn’t seem especially meaningful to support either, so should be rejected by the above rule.</p>
 <h3 data-number="9.2.2" id="wording-in-expr"><span class="header-section-number">9.2.2</span> Wording in <span>7
  <a href="https://wg21.link/expr">[expr]</a></span><a href="#wording-in-expr" class="self-link"></a></h3>
 <p>Change <span>7.5.2
@@ -2375,27 +2382,27 @@ With reflection
  <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>/3:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb79"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb79-1"><a href="#cb79-1"></a>  auto glambda = [](auto a, auto&amp;&amp; b) { return a &lt; b; };</span>
-<span id="cb79-2"><a href="#cb79-2"></a>  bool b = glambda(3, 3.14);                                      // OK</span>
-<span id="cb79-3"><a href="#cb79-3"></a>  </span>
-<span id="cb79-4"><a href="#cb79-4"></a>  auto vglambda = [](auto printer) {</span>
-<span id="cb79-5"><a href="#cb79-5"></a>    return [=](auto&amp;&amp; ... ts) {                                   // OK: ts is a function parameter pack</span>
-<span id="cb79-6"><a href="#cb79-6"></a>      printer(std::forward&lt;decltype(ts)&gt;(ts)...);</span>
-<span id="cb79-7"><a href="#cb79-7"></a>  </span>
-<span id="cb79-8"><a href="#cb79-8"></a>      return [=]() {</span>
-<span id="cb79-9"><a href="#cb79-9"></a>        printer(ts ...);</span>
-<span id="cb79-10"><a href="#cb79-10"></a>      };</span>
-<span id="cb79-11"><a href="#cb79-11"></a>    };</span>
-<span id="cb79-12"><a href="#cb79-12"></a>  };</span>
-<span id="cb79-13"><a href="#cb79-13"></a>  auto p = vglambda( [](auto v1, auto v2, auto v3)</span>
-<span id="cb79-14"><a href="#cb79-14"></a>                     { std::cout &lt;&lt; v1 &lt;&lt; v2 &lt;&lt; v3; } );</span>
-<span id="cb79-15"><a href="#cb79-15"></a>  auto q = p(1, &#39;a&#39;, 3.14);                                       // OK: outputs 1a3.14</span>
-<span id="cb79-16"><a href="#cb79-16"></a>  q();                                                            // OK: outputs 1a3.14</span>
-<span id="cb79-17"><a href="#cb79-17"></a><span class="va">+ </span></span>
-<span id="cb79-18"><a href="#cb79-18"></a><span class="va">+ auto fact = [](this auto self, int n) -&gt; int {                  // OK: explicit object parameter</span></span>
-<span id="cb79-19"><a href="#cb79-19"></a><span class="va">+    return (n &lt;= 1) ? 1 : n * self(n-1);</span></span>
-<span id="cb79-20"><a href="#cb79-20"></a><span class="va">+ };</span></span>
-<span id="cb79-21"><a href="#cb79-21"></a><span class="va">+ std::cout &lt;&lt; fact(5);                                           // OK: outputs 120</span></span></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb80-1"><a href="#cb80-1"></a>  auto glambda = [](auto a, auto&amp;&amp; b) { return a &lt; b; };</span>
+<span id="cb80-2"><a href="#cb80-2"></a>  bool b = glambda(3, 3.14);                                      // OK</span>
+<span id="cb80-3"><a href="#cb80-3"></a>  </span>
+<span id="cb80-4"><a href="#cb80-4"></a>  auto vglambda = [](auto printer) {</span>
+<span id="cb80-5"><a href="#cb80-5"></a>    return [=](auto&amp;&amp; ... ts) {                                   // OK: ts is a function parameter pack</span>
+<span id="cb80-6"><a href="#cb80-6"></a>      printer(std::forward&lt;decltype(ts)&gt;(ts)...);</span>
+<span id="cb80-7"><a href="#cb80-7"></a>  </span>
+<span id="cb80-8"><a href="#cb80-8"></a>      return [=]() {</span>
+<span id="cb80-9"><a href="#cb80-9"></a>        printer(ts ...);</span>
+<span id="cb80-10"><a href="#cb80-10"></a>      };</span>
+<span id="cb80-11"><a href="#cb80-11"></a>    };</span>
+<span id="cb80-12"><a href="#cb80-12"></a>  };</span>
+<span id="cb80-13"><a href="#cb80-13"></a>  auto p = vglambda( [](auto v1, auto v2, auto v3)</span>
+<span id="cb80-14"><a href="#cb80-14"></a>                     { std::cout &lt;&lt; v1 &lt;&lt; v2 &lt;&lt; v3; } );</span>
+<span id="cb80-15"><a href="#cb80-15"></a>  auto q = p(1, &#39;a&#39;, 3.14);                                       // OK: outputs 1a3.14</span>
+<span id="cb80-16"><a href="#cb80-16"></a>  q();                                                            // OK: outputs 1a3.14</span>
+<span id="cb80-17"><a href="#cb80-17"></a><span class="va">+ </span></span>
+<span id="cb80-18"><a href="#cb80-18"></a><span class="va">+ auto fact = [](this auto self, int n) -&gt; int {                  // OK: explicit object parameter</span></span>
+<span id="cb80-19"><a href="#cb80-19"></a><span class="va">+    return (n &lt;= 1) ? 1 : n * self(n-1);</span></span>
+<span id="cb80-20"><a href="#cb80-20"></a><span class="va">+ };</span></span>
+<span id="cb80-21"><a href="#cb80-21"></a><span class="va">+ std::cout &lt;&lt; fact(5);                                           // OK: outputs 120</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new paragraph after <span>7.5.5.2
@@ -2409,16 +2416,16 @@ With reflection
 <li><span class="marginalizedparent"><a class="marginalized">(3*.3)</a></span> a reference to a possibly cv-qualified such type.</li>
 </ul>
 <p>[ <em>Example</em>:</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb80-1"><a href="#cb80-1"></a>struct C {</span>
-<span id="cb80-2"><a href="#cb80-2"></a>    template &lt;typename T&gt;</span>
-<span id="cb80-3"><a href="#cb80-3"></a>    C(T);</span>
-<span id="cb80-4"><a href="#cb80-4"></a>};</span>
-<span id="cb80-5"><a href="#cb80-5"></a></span>
-<span id="cb80-6"><a href="#cb80-6"></a>void func(int i) {</span>
-<span id="cb80-7"><a href="#cb80-7"></a>    int x = [=](this auto&amp;&amp;) { return i; }(); // ok</span>
-<span id="cb80-8"><a href="#cb80-8"></a>    int y = [=](this C) { return i; }();      // ill-formed</span>
-<span id="cb80-9"><a href="#cb80-9"></a>    int z = [](this C) { return 42; }();      // ok</span>
-<span id="cb80-10"><a href="#cb80-10"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>struct C {</span>
+<span id="cb81-2"><a href="#cb81-2"></a>    template &lt;typename T&gt;</span>
+<span id="cb81-3"><a href="#cb81-3"></a>    C(T);</span>
+<span id="cb81-4"><a href="#cb81-4"></a>};</span>
+<span id="cb81-5"><a href="#cb81-5"></a></span>
+<span id="cb81-6"><a href="#cb81-6"></a>void func(int i) {</span>
+<span id="cb81-7"><a href="#cb81-7"></a>    int x = [=](this auto&amp;&amp;) { return i; }(); // ok</span>
+<span id="cb81-8"><a href="#cb81-8"></a>    int y = [=](this C) { return i; }();      // ill-formed</span>
+<span id="cb81-9"><a href="#cb81-9"></a>    int z = [](this C) { return 42; }();      // ok</span>
+<span id="cb81-10"><a href="#cb81-10"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -2474,19 +2481,19 @@ With reflection
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized">5b</a></span> A <em>member-declarator</em> with an <em>explicit-object-parameter-declaration</em> shall not include a <em>ref-qualifier</em> or a <em>cv-qualifier-seq</em> and shall not be declared <code class="sourceCode default">static</code> or <code class="sourceCode default">virtual</code>.</p>
 <p>[ <em>Example</em>:</p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>struct C {</span>
-<span id="cb81-2"><a href="#cb81-2"></a>    void f(this C&amp; self);</span>
-<span id="cb81-3"><a href="#cb81-3"></a>    template &lt;typename Self&gt;</span>
-<span id="cb81-4"><a href="#cb81-4"></a>    void g(this Self&amp;&amp; self, int);</span>
-<span id="cb81-5"><a href="#cb81-5"></a>    </span>
-<span id="cb81-6"><a href="#cb81-6"></a>    void h(this C) const; // error: const not allowed here</span>
-<span id="cb81-7"><a href="#cb81-7"></a>};</span>
-<span id="cb81-8"><a href="#cb81-8"></a></span>
-<span id="cb81-9"><a href="#cb81-9"></a>void test(C c) {</span>
-<span id="cb81-10"><a href="#cb81-10"></a>    c.f();               // ok: calls C::f</span>
-<span id="cb81-11"><a href="#cb81-11"></a>    c.g(42);             // ok: calls C::g&lt;C&amp;&gt;</span>
-<span id="cb81-12"><a href="#cb81-12"></a>    std::move(c).g(42);  // ok: calls C::g&lt;C&gt;</span>
-<span id="cb81-13"><a href="#cb81-13"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb82-1"><a href="#cb82-1"></a>struct C {</span>
+<span id="cb82-2"><a href="#cb82-2"></a>    void f(this C&amp; self);</span>
+<span id="cb82-3"><a href="#cb82-3"></a>    template &lt;typename Self&gt;</span>
+<span id="cb82-4"><a href="#cb82-4"></a>    void g(this Self&amp;&amp; self, int);</span>
+<span id="cb82-5"><a href="#cb82-5"></a>    </span>
+<span id="cb82-6"><a href="#cb82-6"></a>    void h(this C) const; // error: const not allowed here</span>
+<span id="cb82-7"><a href="#cb82-7"></a>};</span>
+<span id="cb82-8"><a href="#cb82-8"></a></span>
+<span id="cb82-9"><a href="#cb82-9"></a>void test(C c) {</span>
+<span id="cb82-10"><a href="#cb82-10"></a>    c.f();               // ok: calls C::f</span>
+<span id="cb82-11"><a href="#cb82-11"></a>    c.g(42);             // ok: calls C::g&lt;C&amp;&gt;</span>
+<span id="cb82-12"><a href="#cb82-12"></a>    std::move(c).g(42);  // ok: calls C::g&lt;C&gt;</span>
+<span id="cb82-13"><a href="#cb82-13"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -2540,26 +2547,26 @@ With reflection
 <p><span class="marginalizedparent"><a class="marginalized">3</a></span> Because of the rules for name lookup, the set of candidate functions consists (1) entirely of non-member functions or (2) entirely of member functions of some class T. In case (1), the argument list is the same as the expression-list in the call. In case (2), the argument list is the <em>expression-list</em> in the call augmented by the addition of an implied object argument as in a qualified function call. If the keyword <code class="sourceCode cpp"><span class="kw">this</span></code> is in scope and refers to class <code class="sourceCode cpp">T</code>, or a derived class of <code class="sourceCode cpp">T</code>, then the implied object argument is <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">)</span></code>. If the keyword <code class="sourceCode cpp"><span class="kw">this</span></code> is not in scope or refers to another class, then a contrived object of type <code class="sourceCode cpp">T</code> becomes the implied object argument. <sup>113</sup> If the argument list is augmented by a contrived object and overload resolution selects one of the non-static member functions of <code class="sourceCode cpp">T</code>, the call is ill-formed.</p>
 <div class="addu">
 <p>[ <em>Example</em>:</p>
-<div class="sourceCode" id="cb82"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb82-1"><a href="#cb82-1"></a>struct C {</span>
-<span id="cb82-2"><a href="#cb82-2"></a>    void a();</span>
-<span id="cb82-3"><a href="#cb82-3"></a>    void b() {</span>
-<span id="cb82-4"><a href="#cb82-4"></a>        a(); // ok, (*this).a()</span>
-<span id="cb82-5"><a href="#cb82-5"></a>    }</span>
-<span id="cb82-6"><a href="#cb82-6"></a>    </span>
-<span id="cb82-7"><a href="#cb82-7"></a>    void f(this const C&amp;);</span>
-<span id="cb82-8"><a href="#cb82-8"></a>    void g() const {</span>
-<span id="cb82-9"><a href="#cb82-9"></a>        f();       // ok: (*this).f()</span>
-<span id="cb82-10"><a href="#cb82-10"></a>        f(*this);  // error: no viable candidate for (*this).f(*this)</span>
-<span id="cb82-11"><a href="#cb82-11"></a>        this-&gt;f(); // ok</span>
-<span id="cb82-12"><a href="#cb82-12"></a>    }</span>
-<span id="cb82-13"><a href="#cb82-13"></a>    </span>
-<span id="cb82-14"><a href="#cb82-14"></a>    static void h() {</span>
-<span id="cb82-15"><a href="#cb82-15"></a>        f();       // error: contrived object argument, but overload resolution</span>
-<span id="cb82-16"><a href="#cb82-16"></a>                   // picked a non-static member function</span>
-<span id="cb82-17"><a href="#cb82-17"></a>        f(C{});    // error: no viable candidate</span>
-<span id="cb82-18"><a href="#cb82-18"></a>        C{}.f();   // ok</span>
-<span id="cb82-19"><a href="#cb82-19"></a>    }</span>
-<span id="cb82-20"><a href="#cb82-20"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb83"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb83-1"><a href="#cb83-1"></a>struct C {</span>
+<span id="cb83-2"><a href="#cb83-2"></a>    void a();</span>
+<span id="cb83-3"><a href="#cb83-3"></a>    void b() {</span>
+<span id="cb83-4"><a href="#cb83-4"></a>        a(); // ok, (*this).a()</span>
+<span id="cb83-5"><a href="#cb83-5"></a>    }</span>
+<span id="cb83-6"><a href="#cb83-6"></a>    </span>
+<span id="cb83-7"><a href="#cb83-7"></a>    void f(this const C&amp;);</span>
+<span id="cb83-8"><a href="#cb83-8"></a>    void g() const {</span>
+<span id="cb83-9"><a href="#cb83-9"></a>        f();       // ok: (*this).f()</span>
+<span id="cb83-10"><a href="#cb83-10"></a>        f(*this);  // error: no viable candidate for (*this).f(*this)</span>
+<span id="cb83-11"><a href="#cb83-11"></a>        this-&gt;f(); // ok</span>
+<span id="cb83-12"><a href="#cb83-12"></a>    }</span>
+<span id="cb83-13"><a href="#cb83-13"></a>    </span>
+<span id="cb83-14"><a href="#cb83-14"></a>    static void h() {</span>
+<span id="cb83-15"><a href="#cb83-15"></a>        f();       // error: contrived object argument, but overload resolution</span>
+<span id="cb83-16"><a href="#cb83-16"></a>                   // picked a non-static member function</span>
+<span id="cb83-17"><a href="#cb83-17"></a>        f(C{});    // error: no viable candidate</span>
+<span id="cb83-18"><a href="#cb83-18"></a>        C{}.f();   // ok</span>
+<span id="cb83-19"><a href="#cb83-19"></a>    }</span>
+<span id="cb83-20"><a href="#cb83-20"></a>};</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>

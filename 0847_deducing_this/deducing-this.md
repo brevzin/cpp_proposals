@@ -1965,15 +1965,17 @@ Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the
 
 ::: bq
 ::: addu
-[a]{.pnum} Two non-static member functions, `S1` and `S2`, have _corresponding object parameters_ if:
+[a]{.pnum} Two non-static member functions have _corresponding object parameters_ if:
 
-- [a.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the same type of their object parameter, or
-- [a.2]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_, the other has an object parameter of reference type, and `S1` and `S2` have the same type of their object parameter after stripping the references.
+- [a.1]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_ and the types of their object parameters, are removing top-level references, are the same, or
+- [a.2]{.pnum} their object parameters have the same type.
 
-[b]{.pnum} Two non-static member function templates, `S1` and `S2`, have _corresponding object parameters_ if:
 
-- [b.1]{.pnum} both or neither are implicit object member functions with no _ref-qualifier_ and `S1` and `S2` have the equivalent type of their object parameter, or
-- [b.2]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_, the other has an object parameter of non-dependent reference type, and `S1` and `S2` have the equivalent type of their object parameter after stripping the references.
+[b]{.pnum} Two non-static member function templates have _corresponding object parameters_ if:
+
+- [b.1]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_ and the types of their object parameters, after removing any references, are equivalent, or
+- [b.2]{.pnum} the types of their object parameters are equivalent.
+
 :::
 
 [3]{.pnum} Two declarations _correspond_ if they (re)introduce the same name, both declare constructors, or both declare destructors, unless
@@ -1982,8 +1984,8 @@ Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the
 - [3.2]{.pnum} one declares a type (not a _typedef-name_) and the other declares a variable, non-static data member other than of an anonymous union ([class.union.anon]), enumerator, function, or function template, or
 - [3.3]{.pnum} each declares a function or function template, except when
 
-    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [their object parameters correspond]{.addu}, or
-    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [their object parameters correspond]{.addu}.
+    - [3.3.1]{.pnum} both declare functions with the same [non-object-]{.addu}parameter-type-list^21^, equivalent ([temp.over.link]) trailing *requires-clause*s (if any, except as specified in [temp.friend]), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [they have corresponding object parameters]{.addu}, or
+    - [3.3.2]{.pnum} both declare function templates with equivalent [non-object-]{.addu}parameter-type-lists, return types (if any), *template-head*s, and trailing *requires-clause*s (if any), and, if both are non-static members, [the same *cv-qualifier*s (if any) and *ref-qualifier* (if both have one)]{.rm} [they have corresponding object parameters]{.addu}.
 :::
 
 and extend the example:
@@ -2059,7 +2061,18 @@ struct C {
 };
 ```
 
-This is _also_ not differentiable by overload resolution (`C{}.f()` is ambiguous) but coming up with a way to _also_ reject this case is a bit much.
+This is technically differentiable by overload resolution:
+
+```cpp
+struct D : C { };
+
+const C cc;
+cc.f(); // calls second overload
+D d;
+d.f();  // calls first overload
+```
+
+But doesn't seem especially meaningful to support either, so should be rejected by the above rule. 
 
 ### Wording in [expr]{.sref}
 
