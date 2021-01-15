@@ -180,7 +180,7 @@ That's right, there's a third option for C++ that I haven't shown yet, and that'
 #include <fmt/ranges.h>
 
 int main() {
-    std::string s = "xyx";
+    std::string s = "zxxyx";
     auto parts = s | std::views::split('x');
 
     fmt::print("{}\n", parts);
@@ -189,8 +189,8 @@ int main() {
 ```
 outputting
 ```
-{{}, {'y'}}
-[{},{'y'}]
+{{'z'}, {}, {'y'}}
+[{'z'},{},{'y'}]
 ```
 :::
 
