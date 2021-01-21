@@ -43,6 +43,7 @@
 - 2279 We need a language mechanism for customization points: [d2279r0](2279_static_polymorphism/d2279r0.html) [p2279r0](2279_static_polymorphism/p2279r0.html)
 - 2280 Using unknown references in constant expressions: [d2280r0](2280_unknown_reference/d2280r0.html) [p2280r0](2280_unknown_reference/p2280r0.html)
 - 2286 Formatting Ranges: [p2286r0](2286_fmt_ranges/p2286r0.html)
+- 2287 Designated-initializers for Base Classes: [p2287r0](2287_designated_base/p2287r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
