@@ -23,9 +23,9 @@ struct B : A {
 };
 ```
 
-While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`. An attempt like `B{{1}, .b=2}` runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.
+While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`. An attempt like `B{@{1}@, .b=2}` runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.
 
-Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{{1}, 2}` or `B{1, 2}`. Neither are especially satisfactory. 
+Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{@{1}@, 2}` or `B{1, 2}`. Neither are especially satisfactory. 
 
 The goal of this paper is to extend designated initialization to include base classes. 
 
@@ -41,7 +41,7 @@ B{:A={.a=1}, .b=2}
 
 Using a `:` mimics the way we introduce base classes in class directions and is otherwise unambiguous with the rest of the _designated-initializer_ syntax. It can also prepare the parser for the fact that a more complicated name might be coming.
 
-This paper does not change any of the other existing designated-initialization rules: the initializers must still be all designated or none designated, and the designators must be in order. I'm simply extending the order being matched against with all the base classes. That is, while `B{:A={.a=1}, .b=2}` would be a valid way to initialize a `B`, `B{.b=2, :A={.a=1}}` is ill-formed (out of order), as is `B{{.a=1}, .b=2}` (some designated but not all).
+This paper does not change any of the other existing designated-initialization rules: the initializers must still be all designated or none designated, and the designators must be in order. I'm simply extending the order being matched against with all the base classes. That is, while `B{:A={.a=1}, .b=2}` would be a valid way to initialize a `B`, `B{.b=2, :A={.a=1}}` is ill-formed (out of order), as is `B{@{.a=1}@, .b=2}` (some designated but not all).
 
 This generalizes to more complex aggregates like:
 
