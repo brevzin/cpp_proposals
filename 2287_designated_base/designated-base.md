@@ -33,7 +33,7 @@ The goal of this paper is to extend designated initialization to include base cl
 
 The tricky part here is: how do we name the `A` base class of `B` in the _designated-initializer-list_? While non-static data members have *identifier*s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the `A` base class subobject of a `B` today &mdash; the only way to get there is via a cast. This means there's no corresponding consistent syntax to choose along with the `.` that we already have.
 
-Daveed Vandevoorde makes the suggestion that we can use `:` to introduce an _id-expression_ that names a base class. This would allow the following initialization syntax:
+Daveed Vandevoorde makes the suggestion that we can use `:` to introduce a _class-or-decltype_ that names a base class (that is the grammar term we use when introducing a base class). This would allow the following initialization syntax:
 
 ```cpp
 B{:A={.a=1}, .b=2}
@@ -54,6 +54,20 @@ D{:C<int>={.val=1}, :C<char>={.val='x'}};
 
 Which provides protection against `D{'x', 1}` which compiles fine today but probably isn't what was desired.
 
+## Lookup of base classes
+
+One other thing we need to consider is how we look up base classes exactly. With regular designated initializers, they're just the names of direct members and there's only one way to name them. Not much to talk about. But with base classes, we have an _injected-class-name_ too, so we have to ask the question:
+
+```cpp
+template <typename T> struct C { T val; };
+struct D : C<int> { };
+
+D{:C<int>{.val=0}}; // proposed okay, C<int> is a base class
+D{:C{.val=1}};      // how about this?
+```
+
+From within the scope of `D`, we can use `C` to identify the base class `C<int>`. Likewise `D::C` names that type. Can we do this externally? Designated initializers already sort of look like they're from within the class. This should probably apply to base classes as well. 
+
 # Wording
 
 Change the grammar of a _designator_ in [dcl.init.general]{.sref}/1. Technically this allows a _designated-initializer-list_ like `{.a=1, :A={}}` which we could forbid grammatically, but that seems more complicated than simply extending the ordering rule to forbid it (which has to be done anyway).
@@ -62,27 +76,27 @@ Change the grammar of a _designator_ in [dcl.init.general]{.sref}/1. Technically
 ```diff
   @_designator_@:
       . @_identifier_@
-+     : @_id-expression_@
++     : @_class-or-decltype_@
 ```
 :::
 
 Extend [dcl.init.general]{.sref}/18:
 
 ::: bq
-[18]{.pnum} The same _identifier_ shall not appear in multiple designators of a _designated-initializer-list_. [The same _id-expression_ shall not appear in multiple designators of a _designated-initializer-list_.]{.addu}
+[18]{.pnum} The same _identifier_ shall not appear in multiple designators of a _designated-initializer-list_. [The same _class-or-decltype_ shall not appear in multiple designators of a _designated-initializer-list_.]{.addu}
 :::
 
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: bq
-[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a direct non-static data member of the class, [the _id-expression_ in each designator shall name a direct base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.
+[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a direct non-static data member of the class, [the _class-or-decltype_ in each designator shall name a direct base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.
 :::
 
 Extend [dcl.init.list]{.sref}/3.1:
 
 ::: bq
 [3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
-The ordered [*id-expression*s and]{.addu} *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [direct base classes of `T` and]{.addu} *identifier*s in the direct non-static data members of `T`.
+The ordered [*class-or-decltype*s and]{.addu} *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [direct base classes of `T` and]{.addu} *identifier*s in the direct non-static data members of `T`.
 Aggregate initialization is performed ([dcl.init.aggr]).
 [*Example 2*:
 ```diff
