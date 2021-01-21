@@ -31,7 +31,7 @@ The goal of this paper is to extend designated initialization to include base cl
 
 # Proposal
 
-The tricky part here is: how do we name the `A` base class of `B` in the _designated-initializer-list_? While non-static data members have to *identifier*s, base classes can be much more complicated. We do not actually have a way to name the `A` base class subobject of a `B` today &mdash; the only way to get there is by casting. This means there's no corresponding consistent syntax to choose along with the `.` that we already have.
+The tricky part here is: how do we name the `A` base class of `B` in the _designated-initializer-list_? While non-static data members have *identifier*s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the `A` base class subobject of a `B` today &mdash; the only way to get there is via a cast. This means there's no corresponding consistent syntax to choose along with the `.` that we already have.
 
 Daveed Vandevoorde makes the suggestion that we can use `:` to introduce an _id-expression_ that names a base class. This would allow the following initialization syntax:
 
@@ -52,7 +52,7 @@ struct D : C<int>, C<char> { };
 D{:C<int>={.val=1}, :C<char>={.val='x'}};
 ```
 
-Which provides protection against `D{'x', 1}` which compiles fine but probably isn't what was desired.
+Which provides protection against `D{'x', 1}` which compiles fine today but probably isn't what was desired.
 
 # Wording
 
