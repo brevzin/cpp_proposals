@@ -66,7 +66,21 @@ D{:C<int>{.val=0}}; // proposed okay, C<int> is a base class
 D{:C{.val=1}};      // how about this?
 ```
 
-From within the scope of `D`, we can use `C` to identify the base class `C<int>`. Likewise `D::C` names that type. Can we do this externally? Designated initializers already sort of look like they're from within the class. This should probably apply to base classes as well. 
+From within the scope of `D`, we can use `C` to identify the base class `C<int>`. Likewise `D::C` names that type. Can we do this externally? Designated initializers already sort of look like they're from within the class. This seems like it should probably apply to base classes as well. 
+
+But in order for `:C` to find `D::C<int>::C` there, we'd have to say that lookup is in the context of the body of `D`. But then what if we have:
+
+```cpp
+namespace N { template <typename T> struct C { }; }
+struct D : N::C<int> { };
+using C = N::C<double>;
+
+D{:C{}};
+```
+
+Does `:C` refer to the *injected-class-name* of the `C<int>` base class of `D` (and thus be well-formed), or does `:C` refer to the alias `C` (and thus be ill-formed, since `N::C<double>` is not a base class of `D`)? Arguably, we are initializing a `D` so looking up from the context of `D` is a sensible rule (and is consistent with the rules we have for `x.operator T()` looking up `T` in the context of `x` [basic.lookup.unqual]{.sref}/5).
+
+We just need to make sure that we don't do that kind of lookup for a _decltype-specifier_ as a base class, since that probably makes very little sense to consider from the class' context. 
 
 # Wording
 
@@ -89,7 +103,7 @@ Extend [dcl.init.general]{.sref}/18:
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: bq
-[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a direct non-static data member of the class, [the _class-or-decltype_ in each designator shall name a direct base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.
+[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a direct non-static data member of the class, [the _class-or-decltype_ in each designator shall name a direct base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members. 
 :::
 
 Extend [dcl.init.list]{.sref}/3.1:

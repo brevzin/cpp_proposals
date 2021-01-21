@@ -603,15 +603,24 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-3"><a href="#cb4-3"></a></span>
 <span id="cb4-4"><a href="#cb4-4"></a>D<span class="op">{:</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{.</span>val<span class="op">=</span><span class="dv">0</span><span class="op">}}</span>; <span class="co">// proposed okay, C&lt;int&gt; is a base class</span></span>
 <span id="cb4-5"><a href="#cb4-5"></a>D<span class="op">{:</span>C<span class="op">{.</span>val<span class="op">=</span><span class="dv">1</span><span class="op">}}</span>;      <span class="co">// how about this?</span></span></code></pre></div>
-<p>From within the scope of <code class="sourceCode cpp">D</code>, we can use <code class="sourceCode cpp">C</code> to identify the base class <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>. Likewise <code class="sourceCode cpp">D<span class="op">::</span>C</code> names that type. Can we do this externally? Designated initializers already sort of look like they’re from within the class. This should probably apply to base classes as well.</p>
+<p>From within the scope of <code class="sourceCode cpp">D</code>, we can use <code class="sourceCode cpp">C</code> to identify the base class <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>. Likewise <code class="sourceCode cpp">D<span class="op">::</span>C</code> names that type. Can we do this externally? Designated initializers already sort of look like they’re from within the class. This seems like it should probably apply to base classes as well.</p>
+<p>But in order for <code class="sourceCode cpp"><span class="op">:</span>C</code> to find <code class="sourceCode cpp">D<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>C</code> there, we’d have to say that lookup is in the context of the body of <code class="sourceCode cpp">D</code>. But then what if we have:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">namespace</span> N <span class="op">{</span> <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">struct</span> D <span class="op">:</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">using</span> C <span class="op">=</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a>D<span class="op">{:</span>C<span class="op">{}}</span>;</span></code></pre></div>
+<p>Does <code class="sourceCode cpp"><span class="op">:</span>C</code> refer to the <em>injected-class-name</em> of the <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> base class of <code class="sourceCode cpp">D</code> (and thus be well-formed), or does <code class="sourceCode cpp"><span class="op">:</span>C</code> refer to the alias <code class="sourceCode cpp">C</code> (and thus be ill-formed, since <code class="sourceCode cpp">N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span></code> is not a base class of <code class="sourceCode cpp">D</code>)? Arguably, we are initializing a <code class="sourceCode cpp">D</code> so looking up from the context of <code class="sourceCode cpp">D</code> is a sensible rule (and is consistent with the rules we have for <code class="sourceCode cpp">x<span class="op">.</span><span class="kw">operator</span> T<span class="op">()</span></code> looking up <code class="sourceCode cpp">T</code> in the context of <code class="sourceCode cpp">x</code> <span>6.5.3
+ <a href="https://wg21.link/basic.lookup.unqual">[basic.lookup.unqual]</a></span>/5).</p>
+<p>We just need to make sure that we don’t do that kind of lookup for a <em>decltype-specifier</em> as a base class, since that probably makes very little sense to consider from the class’ context.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Change the grammar of a <em>designator</em> in <span>9.4.1
  <a href="https://wg21.link/dcl.init.general">[dcl.init.general]</a></span>/1. Technically this allows a <em>designated-initializer-list</em> like <code class="sourceCode cpp"><span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">:</span>A<span class="op">={}}</span></code> which we could forbid grammatically, but that seems more complicated than simply extending the ordering rule to forbid it (which has to be done anyway).</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>  <em>designator</em>:</span>
-<span id="cb5-2"><a href="#cb5-2"></a>      . <em>identifier</em></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="va">+     : <em>class-or-decltype</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>  <em>designator</em>:</span>
+<span id="cb6-2"><a href="#cb6-2"></a>      . <em>identifier</em></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="va">+     : <em>class-or-decltype</em></span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Extend <span>9.4.1
@@ -629,13 +638,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered <span class="addu"><em>class-or-decltype</em>s and</span> <em>identifier</em>s in the designators of the <em>designated-initializer-list</em> shall form a subsequence of the ordered <span class="addu">direct base classes of <code class="sourceCode cpp">T</code> and</span> <em>identifier</em>s in the direct non-static data members of <code class="sourceCode cpp">T</code>. Aggregate initialization is performed ([dcl.init.aggr]). [<em>Example 2</em>:</p>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>  struct A { int x; int y; int z; };</span>
-<span id="cb6-2"><a href="#cb6-2"></a>  A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
-<span id="cb6-3"><a href="#cb6-3"></a>  A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
-<span id="cb6-4"><a href="#cb6-4"></a>  </span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="va">+ struct B : A { int q; };</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="va">+ B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="va">+ B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>  struct A { int x; int y; int z; };</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  </span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="va">+ struct B : A { int q; };</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="va">+ B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="va">+ B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
