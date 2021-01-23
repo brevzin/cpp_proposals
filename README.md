@@ -41,16 +41,21 @@ make all of my papers.
 
 ### Pending
 
-- [d0847r6 - Deducing this](0847_deducing_this/d0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
+- [p0847r6 - Deducing this](0847_deducing_this/p0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
 - [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
 - [p1938r2 - `if consteval`](1938_if_consteval/p1938r2.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
-- [d2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/d2036r1.html).
+- [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
 - [d2121r0 - `do not return or else`](2121_do_not_return/d2121r0.html).
 - [p2210r1 - Superior String Splitting](2210_string_split/p2210r1.html).
 - [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
 - [p2231r0 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r0.html).
-
+- [p2277r0 - Packs outside of templates](2277_packs_outside_of_templates/p2277r0.html).
+- [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
+- [p2279r0 - We need a langauge mechanism for customization points](2279_static_polymorphism/p2279r0.html).
+- [p2280r0 - Using unknown references in constant expressions](2280_unknown_reference/p2280r0.html).
+- [p2286r0 - Formatting Ranges](2286_fmt_ranges/p2286r0.html).
+- [p2287r0 - Designated-initializers for Base Classes](2287_designated_base/p2287r0.html).
