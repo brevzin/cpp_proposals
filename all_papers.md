@@ -37,7 +37,7 @@
 - 2162 Inheriting from  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2162r0](2162_inherit_variant/p2162r0.html) [p2162r1](2162_inherit_variant/p2162r1.html) [p2162r2](2162_inherit_variant/p2162r2.html)
 - 2210 Superior String Splitting: [p2210r0](2210_string_split/p2210r0.html) [p2210r1](2210_string_split/p2210r1.html)
 - 2214 A Plan for C++23 Ranges: [p2214r0](2214_ranges_plan/p2214r0.html)
-- 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html)
+- 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html) [p2231r1](2231_constexpr_optional_variant/p2231r1.html)
 - 2277 Packs outside of Templates: [p2277r0](2277_packs_outside_of_templates/p2277r0.html)
 - 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [p2278r0](2278_cbegin/p2278r0.html)
 - 2279 We need a language mechanism for customization points: [p2279r0](2279_static_polymorphism/p2279r0.html)

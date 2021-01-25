@@ -1,6 +1,6 @@
 ---
 title: "Missing `constexpr` in `std::optional` and `std::variant`"
-document: P2231R0
+document: P2231R1
 date: today
 audience: LEWG
 author:
@@ -578,6 +578,23 @@ namespace std {
   };
 }
 ```
+
+## Feature-test macro
+
+The usual policy for constexprification is that we bump the `__cpp_lib_constexpr_@*HEADER*@` macro. In this case, we do not have such a macro for either `optional` or `variant`. Given that this paper finishes marking the entirety of the API as `constexpr`, it also does not make sense to add a new constexpr macro solely for this change.
+
+We do have `__cpp_lib_optional` and `__cpp_lib_variant`, and this does seem like a necessary API change to be reflected in a feature test, so we could instead bump those macros.
+
+Change [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_optional      @[201606L]{.diffdel}@ // also in <optional>
+- #define __cpp_lib_variant       @[201606L]{.diffdel}@ // also in <variant>
++ #define __cpp_lib_optional      @[2021XXL]{.diffins}@ // also in <optional>
++ #define __cpp_lib_variant       @[2021XXL]{.diffins}@ // also in <variant>
+```
+:::
 
 # Acknowledgements
 
