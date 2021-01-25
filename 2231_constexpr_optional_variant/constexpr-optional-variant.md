@@ -2,7 +2,7 @@
 title: "Missing `constexpr` in `std::optional` and `std::variant`"
 document: D2231R1
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
