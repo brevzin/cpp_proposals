@@ -560,10 +560,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 
 </header>
 <div style="clear:both">
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2231R0">[<a href="#ref-P2231R0" role="doc-biblioref">P2231R0</a>]</span>, added a section about feature-test macros for this change.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Each new language standard has increased the kinds of operations that we can do during constant evaluation time. C++20 was no different. With the adoption of <span class="citation" data-cites="P1330R0">[<a href="#ref-P1330R0" role="doc-biblioref">P1330R0</a>]</span>, C++20 added the ability to change the active member of a union inside constexpr (the paper specifically mentions <code class="sourceCode cpp">std<span class="op">::</span>optional</code>). And with the adoption of <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>, C++20 added the ability to do placement new inside constexpr (by way of <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>).</p>
 <p>But even though the language provided the tools to make <code class="sourceCode cpp">std<span class="op">::</span>optional</code> and <code class="sourceCode cpp">std<span class="op">::</span>variant</code> completely constexpr-able, there was no such update to the library. This paper seeks to remedy that omission by simply adding <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to all the relevant places.</p>
-<h2 data-number="1.1" id="implementing-stdoptional"><span class="header-section-number">1.1</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>optional</code><a href="#implementing-stdoptional" class="self-link"></a></h2>
+<h2 data-number="2.1" id="implementing-stdoptional"><span class="header-section-number">2.1</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>optional</code><a href="#implementing-stdoptional" class="self-link"></a></h2>
 <p>I updated libstdc++’s implementation of <code class="sourceCode cpp">std<span class="op">::</span>optional</code> to add these <code class="sourceCode cpp"><span class="kw">constexpr</span></code>s (and replace the placement <code class="sourceCode cpp"><span class="kw">new</span></code> calls with calls to <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>) as follows, which compiles with both gcc and clang (<a href="https://godbolt.org/z/fE6aob">demo</a>):</p>
 <div>
 <div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">-13,6 +11,7</span></span>
@@ -707,7 +709,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-139"><a href="#cb1-139"></a> noexcept(noexcept(__lhs.swap(__rhs))) {</span>
 <span id="cb1-140"><a href="#cb1-140"></a>     __lhs.swap(__rhs);</span></code></pre></div>
 </div>
-<h2 data-number="1.2" id="implementing-stdvariant"><span class="header-section-number">1.2</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>variant</code><a href="#implementing-stdvariant" class="self-link"></a></h2>
+<h2 data-number="2.2" id="implementing-stdvariant"><span class="header-section-number">2.2</span> Implementing <code class="sourceCode cpp">std<span class="op">::</span>variant</code><a href="#implementing-stdvariant" class="self-link"></a></h2>
 <p>And likewise, here is a diff against libstdc++’s implementation of <code class="sourceCode cpp">std<span class="op">::</span>variant</code> for the changes proposed in this paper, which also compiles on both gcc and clang (<a href="https://godbolt.org/z/E5dcj9">demo</a>). This is slightly more complicated as we have to take more care with constructing and accessing the recursive union:</p>
 <div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">-121,7 +121,7</span></span>
@@ -932,7 +934,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-220"><a href="#cb2-220"></a>     noexcept((__is_nothrow_swappable&lt;_Types&gt;::value &amp;&amp; ...)</span>
 <span id="cb2-221"><a href="#cb2-221"></a>              &amp;&amp; is_nothrow_move_constructible_v&lt;variant&gt;)</span></code></pre></div>
 </div>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">2</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The wording here just shows the added <code class="sourceCode default">constexpr</code>s in the synopses. They all need to be repeated in the specific wording for each function. ]</span></p>
 <p>Add <code class="sourceCode cpp"><span class="kw">constexpr</span></code> to the <code class="sourceCode cpp">swap</code> in <span>20.6.2
  <a href="https://wg21.link/optional.syn">[optional.syn]</a></span> (and in <span>20.6.9
@@ -1125,7 +1127,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-59"><a href="#cb6-59"></a>  };</span>
 <span id="cb6-60"><a href="#cb6-60"></a>}</span></code></pre></div>
 </div>
-<h2 data-number="2.1" id="feature-test-macro"><span class="header-section-number">2.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>The usual policy for constexprification is that we bump the <code class="sourceCode cpp">__cpp_lib_constexpr_<em>HEADER</em></code> macro. In this case, we do not have such a macro for either <code class="sourceCode cpp">optional</code> or <code class="sourceCode cpp">variant</code>. Given that this paper finishes marking the entirety of the API as <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, it also does not make sense to add a new constexpr macro solely for this change.</p>
 <p>We do have <code class="sourceCode cpp">__cpp_lib_optional</code> and <code class="sourceCode cpp">__cpp_lib_variant</code>, and this does seem like a necessary API change to be reflected in a feature test, so we could instead bump those macros.</p>
 <p>Change <span>17.3.2
@@ -1138,9 +1140,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-4"><a href="#cb7-4"></a><span class="va">+ #define __cpp_lib_variant       <span class="diffins">2021XXL</span> // also in &lt;variant&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">3</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Tim Song for all the help. Thanks to Jonathan Wakely for looking over the paper, pointing out how repetitive the introduction was, and pointing out how repetitive the introduction was.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
@@ -1149,6 +1151,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P1330R0">
 <p>[P1330R0] Louis Dionne, David Vandevoorde. 2018-11-10. Changing the active member of a union inside constexpr. <br />
 <a href="https://wg21.link/p1330r0">https://wg21.link/p1330r0</a></p>
+</div>
+<div id="ref-P2231R0">
+<p>[P2231R0] Barry Revzin. 2020-10-14. Add further constexpr support for optional/variant. <br />
+<a href="https://wg21.link/p2231r0">https://wg21.link/p2231r0</a></p>
 </div>
 </div>
 </div>

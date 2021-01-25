@@ -9,6 +9,10 @@ author:
 toc: false
 ---
 
+# Revision History
+
+Since [@P2231R0], added a section about feature-test macros for this change.
+
 # Introduction
 
 Each new language standard has increased the kinds of operations that we can do during constant evaluation time. C++20 was no different. With the adoption of [@P1330R0], C++20 added the ability to change the active member of a union inside constexpr (the paper specifically mentions `std::optional`). And with the adoption of [@P0784R7], C++20 added the ability to do placement new inside constexpr (by way of `std::construct_at`).
