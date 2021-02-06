@@ -397,7 +397,7 @@ constexpr size_t array_size(T (&)[N]) {
     return N;
 }
 
-void check(int const (&param)[3]) {
+void use_array(int const (&param)[3]) {
     constexpr auto s1 = array_size(param); // ok
 }
 
@@ -412,7 +412,7 @@ struct Swim {
     virtual contexpr int lochte() { return 1; }
 };
 
-void dynamic(Swim& s) {
+void splash(Swim& s) {
     static_assert(s.phelps() == 0);     // ok
     static_assert((&s)->phelps() == 0); // error: taking address of reference to unknown
     static_assert(s.lochte() == 1);     // error: invoking virtual function on reference 
