@@ -46,6 +46,7 @@ make all of my papers.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2210r1 - Superior String Splitting](2210_string_split/p2210r1.html).
 - [d2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/d2231r1.html).
+- [d2280r1 - Using unknown references in constant expressions](2280_unknown_reference/d2280r1.html).
 
 ### Pending EWG/LEWG Review
 
@@ -58,6 +59,5 @@ make all of my papers.
 - [p2277r0 - Packs outside of templates](2277_packs_outside_of_templates/p2277r0.html).
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
 - [p2279r0 - We need a langauge mechanism for customization points](2279_static_polymorphism/p2279r0.html).
-- [p2280r0 - Using unknown references in constant expressions](2280_unknown_reference/p2280r0.html).
 - [p2286r0 - Formatting Ranges](2286_fmt_ranges/p2286r0.html).
 - [p2287r0 - Designated-initializers for Base Classes](2287_designated_base/p2287r0.html).

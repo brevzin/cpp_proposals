@@ -409,7 +409,7 @@ static_assert(olympic_mile()() == 1500); // ok
 
 struct Swim {
     constexpr int phelps() { return 0; }
-    virtual contexpr int lochte() { return 1; }
+    virtual constexpr int lochte() { return 1; }
 };
 
 void splash(Swim& swam) {
