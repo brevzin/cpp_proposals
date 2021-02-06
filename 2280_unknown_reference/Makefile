@@ -1,2 +1,2 @@
-p2280r0.html : unknown-ref.md
+d2280r1.html : unknown-ref.md
 include ../md/mpark-wg21.mk

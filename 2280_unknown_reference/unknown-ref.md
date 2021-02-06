@@ -1,6 +1,6 @@
 ---
 title: "Using unknown references in constant expressions"
-document: P2280R0
+document: D2280R1
 date: today
 audience: EWG
 author:
@@ -8,6 +8,32 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+[@P2280R0] was discussed at the EWG telecon on Feb 3, 2021. The following polls were taken:
+
+::: bq
+The use cases presented in P2280 are problems in C++’s specification of constexpr, and we would like to fix these problems, ideally in C++23.
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|3|14|2|0|0|
+
+This should be a Defect Report against C++20, C++17, C++14, and C++11.
+
+| SF | F  | N  | A  | SA |
+|-|-|-|-|-|
+| 3  | 11 | 4  | 0  | 0  |
+
+Send P2280 to Electronic Polling, with the intent of going to Core, after getting input from MSVC and GCC implementors.
+
+| SF | F  | N  | A  | SA |
+|-|-|-|-|-|
+| 8  | 10 | 1  | 0  | 0  |
+:::
+
+This revision updates wording.
 
 # Introduction
 
@@ -333,12 +359,15 @@ This, to me, seems like there should be an added rule in [expr.const] that rejec
 
 ## Wording
 
-We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation: 
+We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:
 
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
 - [5.1]{.pnum} [...]
+- [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
+    - [5.5.1]{.pnum} the object is usable in constant expressions or
+    - [5.5.2]{.pnum} its lifetime began within the evaluation of `E`;
 - [5.7]{.pnum} [...]
 - [5.8]{.pnum} an lvalue-to-rvalue conversion unless it is applied to 
     - [5.8.1]{.pnum} a non-volatile glvalue that refers to an object that is usable in constant expressions, or
@@ -349,16 +378,24 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 - [5.12]{.pnum} [an _id-expression_ that refers to a variable or data member of reference type unless the reference has a preceding initialization and either]{.rm}
     - [5.12.1]{.pnum} [it is usable in constant expressions or]{.rm}
     - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm}
+- [5.12]{.pnum} [a _unary-expression_ which takes the address of a glvalue that refers to an unspecified object;]{.addu}
 - [5.13]{.pnum} in a _lambda-expression_, a reference to `this` or to a variable with automatic storage duration defined outside that _lambda-expression_, where the reference would be an odr-use; 
 - [5.14]{.pnum} [...]
+- [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
 :::
 
 And add a new rule to properly handle the lifetime examples shown in the previous section:
 
 ::: bq
 ::: addu
-[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference with automatic storage duration that is usable in constant expressions are treated as referring to a specific instance of that object or reference whose lifetime includes the entire constant evaluation.
+[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
 :::
+:::
+
+Add a note to [expr.const]/11 to make it clear that these are not permitted results:
+
+::: bq
+[11]{.pnum} An entity is a _permitted result of a constant expression_ if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function. [\[ *Note*: A glvalue core constant expression that refers to an unspecified object is not a constant expression. *- end note*\]]{.addu}
 :::
 
 # Acknowledgments
