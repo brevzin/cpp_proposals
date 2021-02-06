@@ -412,11 +412,11 @@ struct Swim {
     virtual contexpr int lochte() { return 1; }
 };
 
-void splash(Swim& s) {
-    static_assert(s.phelps() == 0);     // ok
-    static_assert((&s)->phelps() == 0); // error: taking address of reference to unknown
-    static_assert(s.lochte() == 1);     // error: invoking virtual function on reference 
-                                        // with unknown dynamic type
+void splash(Swim& swam) {
+    static_assert(swam.phelps() == 0);     // ok
+    static_assert((&swam)->phelps() == 0); // error: taking address of reference to unknown
+    static_assert(swam.lochte() == 1);     // error: invoking virtual function on reference 
+                                           // with unknown dynamic type
 }
 ```
 - *end example*]
