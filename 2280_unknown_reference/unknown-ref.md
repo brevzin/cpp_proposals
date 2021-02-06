@@ -389,6 +389,37 @@ And add a new rule to properly handle the lifetime examples shown in the previou
 ::: bq
 ::: addu
 [*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
+
+[*Example*:
+```cpp
+template <typename T, size_t N>
+constexpr size_t array_size(T (&)[N]) {
+    return N;
+}
+
+void check(int const (&param)[3]) {
+    constexpr auto s1 = array_size(param); // ok
+}
+
+constexpr auto olympic_mile() {
+  const int ledecky = 1500;
+  return []{ return ledecky; };
+}
+static_assert(olympic_mile()() == 1500); // ok
+
+struct Swim {
+    constexpr int phelps() { return 0; }
+    virtual contexpr int lochte() { return 1; }
+};
+
+void dynamic(Swim& s) {
+    static_assert(s.phelps() == 0);     // ok
+    static_assert((&s)->phelps() == 0); // error: taking address of reference to unknown
+    static_assert(s.lochte() == 1);     // error: invoking virtual function on reference 
+                                        // with unknown dynamic type
+}
+```
+- *end example*]
 :::
 :::
 
