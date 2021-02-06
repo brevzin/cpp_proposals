@@ -397,8 +397,8 @@ constexpr size_t array_size(T (&)[N]) {
     return N;
 }
 
-void use_array(int const (&param)[3]) {
-    constexpr auto s1 = array_size(param); // ok
+void use_array(int const (&gold_medal_mel)[2]) {
+    constexpr auto gold = array_size(gold_medal_mel); // ok
 }
 
 constexpr auto olympic_mile() {
