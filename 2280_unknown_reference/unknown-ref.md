@@ -408,15 +408,15 @@ constexpr auto olympic_mile() {
 static_assert(olympic_mile()() == 1500); // ok
 
 struct Swim {
-    constexpr int phelps() { return 0; }
-    virtual constexpr int lochte() { return 1; }
+    constexpr int phelps() { return 28; }
+    virtual constexpr int lochte() { return 12; }
 };
 
 void splash(Swim& swam) {
-    static_assert(swam.phelps() == 0);     // ok
-    static_assert((&swam)->phelps() == 0); // error: taking address of reference to unknown
-    static_assert(swam.lochte() == 1);     // error: invoking virtual function on reference 
-                                           // with unknown dynamic type
+    static_assert(swam.phelps() == 28);     // ok
+    static_assert((&swam)->phelps() == 28); // error: taking address of reference to unknown
+    static_assert(swam.lochte() == 12);     // error: invoking virtual function on reference
+                                            // with unknown dynamic type
 }
 
 extern Swim dc;
