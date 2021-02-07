@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-02-06" />
+  <meta name="dcterms.date" content="2021-02-07" />
   <title>Using unknown references in constant expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-02-06</td>
+    <td>2021-02-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -936,7 +936,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-23"><a href="#cb23-23"></a>    <span class="kw">static_assert</span><span class="op">((&amp;</span>swam<span class="op">)-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>; <span class="co">// error: taking address of reference to unknown</span></span>
 <span id="cb23-24"><a href="#cb23-24"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference </span></span>
 <span id="cb23-25"><a href="#cb23-25"></a>                                           <span class="co">// with unknown dynamic type</span></span>
-<span id="cb23-26"><a href="#cb23-26"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb23-26"><a href="#cb23-26"></a><span class="op">}</span></span>
+<span id="cb23-27"><a href="#cb23-27"></a></span>
+<span id="cb23-28"><a href="#cb23-28"></a><span class="kw">extern</span> Swim dc;</span>
+<span id="cb23-29"><a href="#cb23-29"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb23-30"><a href="#cb23-30"></a></span>
+<span id="cb23-31"><a href="#cb23-31"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
+<span id="cb23-32"><a href="#cb23-32"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>

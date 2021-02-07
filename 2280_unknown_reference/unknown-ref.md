@@ -418,6 +418,12 @@ void splash(Swim& swam) {
     static_assert(swam.lochte() == 1);     // error: invoking virtual function on reference 
                                            // with unknown dynamic type
 }
+
+extern Swim dc;
+extern Swim& trident;
+
+constexpr auto& x = typeid(dc);         // ok: can only be typeid(Swim)
+constexpr auto& y = typeid(trident);    // error: unknown dynamic type
 ```
 - *end example*]
 :::
