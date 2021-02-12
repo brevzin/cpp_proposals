@@ -45,7 +45,7 @@ make all of my papers.
 - [p1938r2 - `if consteval`](1938_if_consteval/p1938r2.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2210r1 - Superior String Splitting](2210_string_split/p2210r1.html).
-- [d2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/d2231r1.html).
+- [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 - [d2280r1 - Using unknown references in constant expressions](2280_unknown_reference/d2280r1.html).
 
 ### Pending EWG/LEWG Review
