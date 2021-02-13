@@ -435,7 +435,9 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
-- [5.1]{.pnum} [`this`, except in a constexpr function that is being evaluated as part of `E`;]{.rm}
+- [5.1]{.pnum} `this`, except in
+    - [5.1.1]{.pnum} a constexpr function that is being evaluated as part of `E` [;]{.rm} [or]{.addu}
+    - [5.1.2]{.pnum} [as part of an explicit or implicit class member access expression;]{.addu}
 - [5.2]{.pnum} [...]
 - [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
     - [5.5.1]{.pnum} the object is usable in constant expressions or
