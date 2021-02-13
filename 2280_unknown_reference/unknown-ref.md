@@ -398,10 +398,10 @@ struct Widget {
 The example on the left is ill-formed, even if we extend the rule to allow references-to-unknown. Because we don't even have a reference here exactly, we're accessing through `this`, and one of the things we're not allowed to evaluate as part of constant evaluation is the first bullet from [expr.const]/5:
 
 ::: bq
-`this`, except in a constexpr function that is being evaluated as part of `E`;
+- [5.1]{.pnum} `this`, except in a constexpr function that is being evaluated as part of `E`;
 :::
 
-And here, `Widget<V>::f` is not a `constexpr` function. However, the example on the right is valid with the suggested rule change. Here, `self` is a reference-to-unknown and `value` ends up being a constexpr variable that we can read. So this works. This example wasn't exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper... it seem like a meaningful solution to the problem. It seems pretty unsatisfactory that `self.config.value` is okay while `(*this).config.value` is not, when `self` and `(*this)` mean the same thing in this context. 
+And here, `Widget<V>::f` is not a `constexpr` function. However, the example on the right is valid with the suggested rule change. Here, `self` is a reference-to-unknown and `value` ends up being a constexpr variable that we can read. So this works. This example wasn't exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper... it doesn't exactly seem like a meaningful solution to the problem. It seems pretty unsatisfactory that `self.config.value` is okay while `(*this).config.value` is not, when `self` and `(*this)` mean the same thing in this context. 
 
 It seems like there is a hierarchy of expressions in this space, which go roughly like:
 
