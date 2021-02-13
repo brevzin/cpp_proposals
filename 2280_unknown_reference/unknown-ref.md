@@ -1,5 +1,5 @@
 ---
-title: "Using unknown references in constant expressions"
+title: "Using unknown references and pointers in constant expressions"
 document: D2280R1
 date: today
 audience: EWG
@@ -33,7 +33,7 @@ Send P2280 to Electronic Polling, with the intent of going to Core, after gettin
 | 8  | 10 | 1  | 0  | 0  |
 :::
 
-This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer).
+This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer), and extends the proposal to additional cover pointers (and not just references).
 
 # Introduction
 
@@ -238,11 +238,81 @@ Which is not really "better."
 
 What all of these examples have in common is that they are using a reference to an object of type `T` but do not care at all about the identity of that object. We're either querying properties of the type, invoking static member functions, or even when invoking a non-static member function (as in `std::array::size`), not actually accessing any non-static data members. The result would be the same for every object of type `T`... so if the identity doesn't change the result, why does the lack of identity cause the result to be non-constant? It's very much constant. 
 
+## The `this` pointer
+
+Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, and we write our member function two different ways (the latter using [@P0847R6]):
+
+::: cmptable
+### Regular non-static member function
+```cpp
+template <bool V>
+struct Widget {
+   struct Config {
+      static constexpr bool value = V;
+   } config;
+
+   void f() {
+       if constexpr (config.value) {
+          // ...
+       }
+   }
+};
+```
+
+### With deducing this
+```cpp
+template <bool V>
+struct Widget {
+   struct Config {
+      static constexpr bool value = V;
+   } config;
+
+   void f(this Widget& self) {
+       if constexpr (self.config.value) {
+          // ...
+       }
+   }
+};
+``` 
+:::
+
+The example on the left is ill-formed, even if we extend the rule to allow references-to-unknown. Because we don't even have a reference here exactly, we're accessing through `this`, and one of the things we're not allowed to evaluate as part of constant evaluation is the first bullet from [expr.const]/5:
+
+::: bq
+- [5.1]{.pnum} `this`, except in a constexpr function that is being evaluated as part of `E`;
+:::
+
+And here, `Widget<V>::f` is not a `constexpr` function. However, the example on the right is valid with the suggested rule change. Here, `self` is a reference-to-unknown and `value` ends up being a constexpr variable that we can read. So this works. This example wasn't exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper... it doesn't exactly seem like a meaningful solution to the problem. It seems pretty unsatisfactory that `self.config.value` is okay while `(*this).config.value` is not, when `self` and `(*this)` mean the same thing in this context. 
+
+It seems like there is a hierarchy of expressions in this space, which go roughly like:
+
+1. The ability to use references (what [@P2280R0] proposed)
+2. The ability to dereference _specifically_ the `this` pointer
+3. The ability to copy and dereference any pointer
+4. The ability to do more complex operations with pointers (e.g. addition, comparison, indexing, etc.)
+
+For instance:
+
+```cpp
+void f(std::array<int, 3>& r, std::array<int, 4>* p) {
+    static_assert(r.size() == 3);    // #1
+    static_assert(p->size() == 4);   // #2
+    static_assert(p[3].size() == 4); // #3
+    static_assert(&r == &r);         // #4
+}
+```
+
+`#1` is one of the motivating examples in the paper. `#2` would require dereferencing a pointer, which is similar to accessing through a reference yet isn't exactly the same. `#3` additionally requires array access and we have no idea if `p` actually points to an array, much less what the size of that array would be. But both `#2` and `#3` generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior, although `#2` only requires that `p` be a pointer to unknown object while `#3` requires `p` be a pointer to an unknown array of objects. 
+
+`#4` is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that `&r` is "pointer to known `array<int, 3>`", we have to additionally track that it is specifically a pointer to `r`. This, at least in EDG, is a much bigger change (with much less commensurate value).
+
+As such, I think the right line to draw for this paper is to allow references-to-unknown and pointers-to-unknown (including `this`), while treating pointers-to-unknown as pointers to a specific object (rather than an array). This would allow the example on the left at the beginning of this section as well as `#1` and `#2` above but reject `#3` and `#4` above.
+
 # Proposal
 
-The proposal is to allow these cases to just work. That is, if during constant evaluation, we run into a reference with unknown origin, this is still okay, we keep going. If we ever perform an operation that actually _needs_ this address, fail at that point. 
+The proposal is to allow these cases to just work. That is, if during constant evaluation, we run into a reference or pointer with unknown origin, this is still okay, we keep going.
 
-Some operations are allowed to propagate a reference-to-unknown node (such as class member access or derived-to-non-virtual-base conversions). But most operations are definitely non-constant (such as lvalue-to-rvalue conversion, assignment, any polymorphic operations, conversion to a virtual base class, etc.). This paper is _just_ proposing allowing those cases that work irrespective of the value of the reference (i.e. those that are truly constant), so any operation that depends on the value in any way needs to continue to be forbidden.
+Some operations are allowed to propagate a reference-to-unknown node (such as class member access or derived-to-non-virtual-base conversions). But most operations are definitely non-constant (such as lvalue-to-rvalue conversion, assignment, any polymorphic operations, conversion to a virtual base class, etc.). This paper is _just_ proposing allowing those cases that work irrespective of the value of the reference or pointer (i.e. those that are truly constant), so any operation that depends on the value in any way needs to continue to be forbidden.
 
 Notably, this paper is definitively _not_ proposing any kind of short-circuiting evaluation. For example:
 
@@ -251,7 +321,7 @@ constexpr auto g() -> std::array<int, 10>&;
 static_assert(g().size() == 10);
 ```
 
-This check still must evaluate `g()`, which may or may not be a constant expression in its own right, even if `g().size()` is "obviously" 10. This paper is focused solely on those cases where we have an _id-expression_ of reference type.
+This check still must evaluate `g()`, which may or may not be a constant expression in its own right, even if `g().size()` is "obviously" 10. This paper is focused solely on those cases where we have an _id-expression_ of reference or pointer type.
 
 ## Implementation Experience
 
@@ -357,77 +427,6 @@ Which every compiler currently provides different results (in order of most reas
 
 This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.
 
-## The `this` pointer
-
-Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, and we write our member function two different ways (the latter using [@P0847R6]):
-
-::: cmptable
-### Regular non-static member function
-```cpp
-template <bool V>
-struct Widget {
-   struct Config {
-      static constexpr bool value = V;
-   } config;
-
-   void f() {
-       if constexpr (config.value) {
-          // ...
-       }
-   }
-};
-```
-
-### With deducing this
-```cpp
-template <bool V>
-struct Widget {
-   struct Config {
-      static constexpr bool value = V;
-   } config;
-
-   void f(this Widget& self) {
-       if constexpr (self.config.value) {
-          // ...
-       }
-   }
-};
-``` 
-:::
-
-The example on the left is ill-formed, even if we extend the rule to allow references-to-unknown. Because we don't even have a reference here exactly, we're accessing through `this`, and one of the things we're not allowed to evaluate as part of constant evaluation is the first bullet from [expr.const]/5:
-
-::: bq
-- [5.1]{.pnum} `this`, except in a constexpr function that is being evaluated as part of `E`;
-:::
-
-And here, `Widget<V>::f` is not a `constexpr` function. However, the example on the right is valid with the suggested rule change. Here, `self` is a reference-to-unknown and `value` ends up being a constexpr variable that we can read. So this works. This example wasn't exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper... it doesn't exactly seem like a meaningful solution to the problem. It seems pretty unsatisfactory that `self.config.value` is okay while `(*this).config.value` is not, when `self` and `(*this)` mean the same thing in this context. 
-
-It seems like there is a hierarchy of expressions in this space, which go roughly like:
-
-1. The ability to use references (what [@P2280R0] proposed)
-2. The ability to dereference _specifically_ the `this` pointer
-3. The ability to copy and dereference any pointer
-4. The ability to do more complex operations with pointers (e.g. addition, comparison, indexing, etc.)
-
-For instance:
-
-```cpp
-void f(std::array<int, 3>& r, std::array<int, 4>* p) {
-    static_assert(r.size() == 3);    // #1
-    static_assert(p->size() == 4);   // #2
-    static_assert(p[3].size() == 4); // #3
-    static_assert(&r == &r);         // #4
-}
-```
-
-`#1` is one of the motivating examples in the paper. `#2` would require dereferencing a pointer, which is similar to accessing through a reference yet isn't exactly the same. `#3` additionally requires array access and we have no idea if `p` actually points to an array, much less what the size of that array would be. But both `#2` and `#3` generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior.
-
-`#4` is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that `&r` is "pointer to known `array<int, 3>`", we have to additionally track that it is specifically a pointer to `r`. This, at least in EDG, is a much bigger change (with much less commensurate value).
-
-As such, I think the right line to draw for this paper is to allow both references-to-unknown and, specifically, the `this` pointer (which conceptually is a lot more like a reference than a pointer anyway) but continue to reject any use of pointers that isn't already allowed. That is, allow the example on the left at the begining of this section but continue to reject `#2`, `#3`, and `#4` above.
-
-
 ## Wording
 
 We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:
@@ -435,9 +434,7 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
-- [5.1]{.pnum} `this`, except in
-    - [5.1.1]{.pnum} a constexpr function that is being evaluated as part of `E` [;]{.rm} [or]{.addu}
-    - [5.1.2]{.pnum} [as part of an explicit or implicit class member access expression;]{.addu}
+- [5.1]{.pnum} [`this`, except in a constexpr function that is being evaluated as part of `E`;]{.rm}
 - [5.2]{.pnum} [...]
 - [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
     - [5.5.1]{.pnum} the object is usable in constant expressions or
@@ -445,14 +442,14 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 - [5.7]{.pnum} [...]
 - [5.8]{.pnum} an lvalue-to-rvalue conversion unless it is applied to 
     - [5.8.1]{.pnum} a non-volatile glvalue that refers to an object that is usable in constant expressions, or
-    - [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`
+    - [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`[, or]{.addu}
+    - [5.8.3]{.pnum} [a non-volatile glvalue of pointer type [*Note*: An lvalue-to-rvalue conversion on a pointer that is not usable in constant expressions yields the address of an unspecified object of the type pointed to. *-end note*]]{.addu}
 - [5.9]{.pnum} [...]
 - [5.10]{.pnum} [...]
 - [5.11]{.pnum} an invocation of an implicitly-defined copy/move constructor or copy/move assignment operator for a union whose active member (if any) is mutable, unless the lifetime of the union object began within the evaluation of `E`;
 - [5.12]{.pnum} [an _id-expression_ that refers to a variable or data member of reference type unless the reference has a preceding initialization and either]{.rm}
     - [5.12.1]{.pnum} [it is usable in constant expressions or]{.rm}
     - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm}
-- [5.12]{.pnum} [a _unary-expression_ which takes the address of a glvalue that refers to an unspecified object;]{.addu}
 - [5.13]{.pnum} in a _lambda-expression_, a reference to `this` or to a variable with automatic storage duration defined outside that _lambda-expression_, where the reference would be an odr-use; 
 - [5.14]{.pnum} [...]
 - [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
@@ -462,7 +459,7 @@ And add a new rule to properly handle the lifetime examples shown in the previou
 
 ::: bq
 ::: addu
-[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
+[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. For such a pointer that is not usable in constant expressions, the pointer is treated as pointing to an unspecified object of the type pointed to whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
 
 [*Example*:
 ```cpp
@@ -486,9 +483,12 @@ struct Swim {
     virtual constexpr int lochte() { return 12; }
 };
 
-void splash(Swim& swam) {
+void splash(Swim& swam, Swim* p) {
     static_assert(swam.phelps() == 28);     // ok
-    static_assert((&swam)->phelps() == 28); // error: taking address of reference to unknown
+    static_assert((&swam)->phelps() == 28); // ok    
+    static_assert(p->phelps() == 28);       // ok    
+    static_assert(p[3].phelps() == 28);     // error: p points to an unspecified object, not
+                                            // an unspecified array, p[3] is undefined behavior
     static_assert(swam.lochte() == 12);     // error: invoking virtual function on reference
                                             // with unknown dynamic type
 }

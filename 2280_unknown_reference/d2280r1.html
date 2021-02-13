@@ -5,7 +5,7 @@
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="dcterms.date" content="2021-02-13" />
-  <title>Using unknown references in constant expressions</title>
+  <title>Using unknown references and pointers in constant expressions</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Using unknown references in constant expressions</h1>
+<h1 class="title" style="text-align:center">Using unknown references and pointers in constant expressions</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -568,6 +568,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#wait-why"><span class="toc-section-number">2.1</span> Wait, why?<span></span></a></li>
 <li><a href="#other-examples"><span class="toc-section-number">2.2</span> Other Examples<span></span></a></li>
+<li><a href="#the-this-pointer"><span class="toc-section-number">2.3</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<span></span></a></li>
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
@@ -575,8 +576,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#other-not-quite-reference-examples"><span class="toc-section-number">3.2</span> Other not-quite-reference examples<span></span></a></li>
 <li><a href="#lifetime-dilemma"><span class="toc-section-number">3.3</span> Lifetime Dilemma<span></span></a></li>
 <li><a href="#still-further-cases"><span class="toc-section-number">3.4</span> Still further cases<span></span></a></li>
-<li><a href="#the-this-pointer"><span class="toc-section-number">3.5</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">3.6</span> Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3.5</span> Wording<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgments"><span class="toc-section-number">4</span> Acknowledgments<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -679,7 +679,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 </blockquote>
-<p>This revision updates wording. This revision also adds discussion of <a href="#the-this-pointer">the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer</a>.</p>
+<p>This revision updates wording. This revision also adds discussion of <a href="#the-this-pointer">the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer</a>, and extends the proposal to additional cover pointers (and not just references).</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Let’s say I have an array and want to get its size as a constant expression. In C, I had to write a macro:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#define ARRAY_SIZE</span><span class="op">(</span>a<span class="op">)</span><span class="pp"> </span><span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>a<span class="op">)/</span><span class="kw">sizeof</span><span class="op">(</span>a<span class="op">[</span><span class="dv">0</span><span class="op">]))</span></span></code></pre></div>
@@ -805,77 +805,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Which is not really “better.”</p>
 </blockquote>
 <p>What all of these examples have in common is that they are using a reference to an object of type <code class="sourceCode cpp">T</code> but do not care at all about the identity of that object. We’re either querying properties of the type, invoking static member functions, or even when invoking a non-static member function (as in <code class="sourceCode cpp">std<span class="op">::</span>array<span class="op">::</span>size</code>), not actually accessing any non-static data members. The result would be the same for every object of type <code class="sourceCode cpp">T</code>… so if the identity doesn’t change the result, why does the lack of identity cause the result to be non-constant? It’s very much constant.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>The proposal is to allow these cases to just work. That is, if during constant evaluation, we run into a reference with unknown origin, this is still okay, we keep going. If we ever perform an operation that actually <em>needs</em> this address, fail at that point.</p>
-<p>Some operations are allowed to propagate a reference-to-unknown node (such as class member access or derived-to-non-virtual-base conversions). But most operations are definitely non-constant (such as lvalue-to-rvalue conversion, assignment, any polymorphic operations, conversion to a virtual base class, etc.). This paper is <em>just</em> proposing allowing those cases that work irrespective of the value of the reference (i.e. those that are truly constant), so any operation that depends on the value in any way needs to continue to be forbidden.</p>
-<p>Notably, this paper is definitively <em>not</em> proposing any kind of short-circuiting evaluation. For example:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">10</span><span class="op">&gt;&amp;</span>;</span>
-<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">static_assert</span><span class="op">(</span>g<span class="op">().</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span></code></pre></div>
-<p>This check still must evaluate <code class="sourceCode cpp">g<span class="op">()</span></code>, which may or may not be a constant expression in its own right, even if <code class="sourceCode cpp">g<span class="op">().</span>size<span class="op">()</span></code> is “obviously” 10. This paper is focused solely on those cases where we have an <em>id-expression</em> of reference type.</p>
-<h2 data-number="3.1" id="implementation-experience"><span class="header-section-number">3.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
-<p>I’ve implemented this in EDG at least to the extent that the test cases prestend in this paper all pass, whereas previously they had all failed.</p>
-<h2 data-number="3.2" id="other-not-quite-reference-examples"><span class="header-section-number">3.2</span> Other not-quite-reference examples<a href="#other-not-quite-reference-examples" class="self-link"></a></h2>
-<p>There are a few other closely related examples to consider for how to word this proposal. All of these are courtesy of Richard Smith.</p>
-<p>We generally assume the following works:</p>
-<blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>  <span class="kw">const</span> <span class="dt">int</span> n <span class="op">=</span> <span class="dv">5</span>;</span>
-<span id="cb16-3"><a href="#cb16-3"></a>  <span class="cf">return</span> <span class="op">[]</span> <span class="op">{</span> <span class="dt">int</span> arr<span class="op">[</span>n<span class="op">]</span>; <span class="op">}</span>;</span>
-<span id="cb16-4"><a href="#cb16-4"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-<p>but <code class="sourceCode cpp">n</code> might not be in its lifetime when it’s read in the evaluation of <code class="sourceCode cpp">arr</code>’s array bound. So we need to add wording to actaully make that work.</p>
-<p>Then there are further lifetime questions. The following example is similar to the other examples presented earlier:</p>
-<blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
-<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{}</span>;</span>
-<span id="cb17-3"><a href="#cb17-3"></a><span class="dt">void</span> f<span class="op">(</span>B <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
-</blockquote>
-<p>But this one is a bit different:</p>
-<blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">struct</span> A2 <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">struct</span> B2 <span class="op">:</span> <span class="diffins">virtual</span> A2 <span class="op">{}</span>;</span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="dt">void</span> f2<span class="op">(</span>B2 <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
-</blockquote>
-<p>Here, we convert <code class="sourceCode cpp"><span class="op">&amp;</span>b</code> to <code class="sourceCode cpp">A2<span class="op">*</span></code> and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: <code class="sourceCode cpp">b<span class="op">.</span>f<span class="op">()</span></code> <em>is</em> a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.</p>
-<h2 data-number="3.3" id="lifetime-dilemma"><span class="header-section-number">3.3</span> Lifetime Dilemma<a href="#lifetime-dilemma" class="self-link"></a></h2>
-<p>If we go back to this example:</p>
-<blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a>extern B2 <span class="op">&amp;</span>b;</span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>;</span></code></pre></div>
-</blockquote>
-<p>It seems reasonable to allow it, having no idea what the definition of <code class="sourceCode cpp">b</code> is. But what if we <em>do</em> see the definition of <code class="sourceCode cpp">b</code>, and it’s:</p>
-<blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">union</span> U <span class="op">{</span> <span class="dt">char</span> c; B2 b2; <span class="op">}</span>;</span>
-<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">constexpr</span> U u <span class="op">=</span> <span class="op">{.</span>c <span class="op">=</span> <span class="dv">0</span><span class="op">}</span>;</span>
-<span id="cb20-3"><a href="#cb20-3"></a>B2 <span class="op">&amp;</span>b <span class="op">=</span> <span class="kw">const_cast</span><span class="op">&lt;</span>B2<span class="op">&amp;&gt;(</span>u<span class="op">.</span>b2<span class="op">)</span>;</span></code></pre></div>
-</blockquote>
-<p>Now we <em>know</em> <code class="sourceCode cpp">b</code> isn’t within its lifetime. We added more information, and turned our constant expression into a non-constant expression?</p>
-<p>However, there’s a reasonable principle here: anything that has only one possible interpretation <em>with defined behavior</em> has that defined behavior for constant evaluation purposes. This is true of all the examples presented up until now.</p>
-<h2 data-number="3.4" id="still-further-cases"><span class="header-section-number">3.4</span> Still further cases<a href="#still-further-cases" class="self-link"></a></h2>
-<p>A different case is the following:</p>
-<blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span> a;</span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> a<span class="op">.</span>f<span class="op">()</span>;</span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="op">&amp;</span>ti <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>a<span class="op">)</span>;</span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(&amp;</span>a<span class="op">)</span>;</span></code></pre></div>
-</blockquote>
-<p>Here, <code class="sourceCode cpp">A<span class="op">::</span>f</code> is <code class="sourceCode cpp"><span class="kw">virtual</span></code>. Which might make it seem constant, but any number of shenanigans could ensue — like placement-new-ing a derived type (of the same size) over <code class="sourceCode cpp">a</code>. So all of these should probably remain non-constant expressions.</p>
-<p>Perhaps the most fun example is this one:</p>
-<blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">extern</span> <span class="kw">const</span> <span class="dt">int</span> arr<span class="op">[]</span>;</span>
-<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">constexpr</span> <span class="kw">const</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> arr <span class="op">+</span> N;</span>
-<span id="cb22-3"><a href="#cb22-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> arr<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>;</span>
-<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="op">*</span>p;</span></code></pre></div>
-</blockquote>
-<p>Which every compiler currently provides different results (in order of most reasonable to least reasonable):</p>
-<ol type="1">
-<li>Clang says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is non-constant if <code class="sourceCode cpp">N <span class="op">!=</span> <span class="dv">0</span></code>, and accepts with <code class="sourceCode cpp">N <span class="op">==</span> <span class="dv">0</span></code>.</li>
-<li>GCC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is out of bounds.</li>
-<li>ICC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but always rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> even if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is in-bounds.</li>
-<li>MSVC says you can’t declare <code class="sourceCode cpp">arr</code> as non-constexpr and define it constexpr, even though there is no such rule</li>
-</ol>
-<p>This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.</p>
-<h2 data-number="3.5" id="the-this-pointer"><span class="header-section-number">3.5</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<a href="#the-this-pointer" class="self-link"></a></h2>
+<h2 data-number="2.3" id="the-this-pointer"><span class="header-section-number">2.3</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<a href="#the-this-pointer" class="self-link"></a></h2>
 <p>Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, and we write our member function two different ways (the latter using <span class="citation" data-cites="P0847R6">[<a href="#ref-P0847R6" role="doc-biblioref">P0847R6</a>]</span>):</p>
 <table>
 <thead>
@@ -890,30 +820,30 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
-<span id="cb23-4"><a href="#cb23-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
-<span id="cb23-5"><a href="#cb23-5"></a>   <span class="op">}</span> config;</span>
-<span id="cb23-6"><a href="#cb23-6"></a></span>
-<span id="cb23-7"><a href="#cb23-7"></a>   <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-9"><a href="#cb23-9"></a>          <span class="co">// ...</span></span>
-<span id="cb23-10"><a href="#cb23-10"></a>       <span class="op">}</span></span>
-<span id="cb23-11"><a href="#cb23-11"></a>   <span class="op">}</span></span>
-<span id="cb23-12"><a href="#cb23-12"></a><span class="op">}</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
-<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
-<span id="cb24-5"><a href="#cb24-5"></a>   <span class="op">}</span> config;</span>
-<span id="cb24-6"><a href="#cb24-6"></a></span>
-<span id="cb24-7"><a href="#cb24-7"></a>   <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> Widget<span class="op">&amp;</span> self<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>self<span class="op">.</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-9"><a href="#cb24-9"></a>          <span class="co">// ...</span></span>
-<span id="cb24-10"><a href="#cb24-10"></a>       <span class="op">}</span></span>
-<span id="cb24-11"><a href="#cb24-11"></a>   <span class="op">}</span></span>
-<span id="cb24-12"><a href="#cb24-12"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>   <span class="op">}</span> config;</span>
+<span id="cb15-6"><a href="#cb15-6"></a></span>
+<span id="cb15-7"><a href="#cb15-7"></a>   <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>          <span class="co">// ...</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>       <span class="op">}</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a>   <span class="op">}</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
+<span id="cb16-5"><a href="#cb16-5"></a>   <span class="op">}</span> config;</span>
+<span id="cb16-6"><a href="#cb16-6"></a></span>
+<span id="cb16-7"><a href="#cb16-7"></a>   <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> Widget<span class="op">&amp;</span> self<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>self<span class="op">.</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>          <span class="co">// ...</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>       <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>   <span class="op">}</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="op">}</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -932,26 +862,92 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>The ability to do more complex operations with pointers (e.g. addition, comparison, indexing, etc.)</li>
 </ol>
 <p>For instance:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;&amp;</span> r, std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a>    <span class="kw">static_assert</span><span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;    <span class="co">// #1</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;   <span class="co">// #2</span></span>
-<span id="cb25-4"><a href="#cb25-4"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">[</span><span class="dv">3</span><span class="op">].</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>; <span class="co">// #3</span></span>
-<span id="cb25-5"><a href="#cb25-5"></a>    <span class="kw">static_assert</span><span class="op">(&amp;</span>r <span class="op">==</span> <span class="op">&amp;</span>r<span class="op">)</span>;         <span class="co">// #4</span></span>
-<span id="cb25-6"><a href="#cb25-6"></a><span class="op">}</span></span></code></pre></div>
-<p><code class="sourceCode cpp"><span class="pp">#1</span></code> is one of the motivating examples in the paper. <code class="sourceCode cpp"><span class="pp">#2</span></code> would require dereferencing a pointer, which is similar to accessing through a reference yet isn’t exactly the same. <code class="sourceCode cpp"><span class="pp">#3</span></code> additionally requires array access and we have no idea if <code class="sourceCode cpp">p</code> actually points to an array, much less what the size of that array would be. But both <code class="sourceCode cpp"><span class="pp">#2</span></code> and <code class="sourceCode cpp"><span class="pp">#3</span></code> generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;&amp;</span> r, std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>    <span class="kw">static_assert</span><span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;    <span class="co">// #1</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;   <span class="co">// #2</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">[</span><span class="dv">3</span><span class="op">].</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>; <span class="co">// #3</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="kw">static_assert</span><span class="op">(&amp;</span>r <span class="op">==</span> <span class="op">&amp;</span>r<span class="op">)</span>;         <span class="co">// #4</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="op">}</span></span></code></pre></div>
+<p><code class="sourceCode cpp"><span class="pp">#1</span></code> is one of the motivating examples in the paper. <code class="sourceCode cpp"><span class="pp">#2</span></code> would require dereferencing a pointer, which is similar to accessing through a reference yet isn’t exactly the same. <code class="sourceCode cpp"><span class="pp">#3</span></code> additionally requires array access and we have no idea if <code class="sourceCode cpp">p</code> actually points to an array, much less what the size of that array would be. But both <code class="sourceCode cpp"><span class="pp">#2</span></code> and <code class="sourceCode cpp"><span class="pp">#3</span></code> generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior, although <code class="sourceCode cpp"><span class="pp">#2</span></code> only requires that <code class="sourceCode cpp">p</code> be a pointer to unknown object while <code class="sourceCode cpp"><span class="pp">#3</span></code> requires <code class="sourceCode cpp">p</code> be a pointer to an unknown array of objects.</p>
 <p><code class="sourceCode cpp"><span class="pp">#4</span></code> is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that <code class="sourceCode cpp"><span class="op">&amp;</span>r</code> is “pointer to known <code class="sourceCode cpp">array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span></code>”, we have to additionally track that it is specifically a pointer to <code class="sourceCode cpp">r</code>. This, at least in EDG, is a much bigger change (with much less commensurate value).</p>
-<p>As such, I think the right line to draw for this paper is to allow both references-to-unknown and, specifically, the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer (which conceptually is a lot more like a reference than a pointer anyway) but continue to reject any use of pointers that isn’t already allowed. That is, allow the example on the left at the begining of this section but continue to reject <code class="sourceCode cpp"><span class="pp">#2</span></code>, <code class="sourceCode cpp"><span class="pp">#3</span></code>, and <code class="sourceCode cpp"><span class="pp">#4</span></code> above.</p>
-<h2 data-number="3.6" id="wording"><span class="header-section-number">3.6</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>As such, I think the right line to draw for this paper is to allow references-to-unknown and pointers-to-unknown (including <code class="sourceCode cpp"><span class="kw">this</span></code>), while treating pointers-to-unknown as pointers to a specific object (rather than an array). This would allow the example on the left at the beginning of this section as well as <code class="sourceCode cpp"><span class="pp">#1</span></code> and <code class="sourceCode cpp"><span class="pp">#2</span></code> above but reject <code class="sourceCode cpp"><span class="pp">#3</span></code> and <code class="sourceCode cpp"><span class="pp">#4</span></code> above.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The proposal is to allow these cases to just work. That is, if during constant evaluation, we run into a reference or pointer with unknown origin, this is still okay, we keep going.</p>
+<p>Some operations are allowed to propagate a reference-to-unknown node (such as class member access or derived-to-non-virtual-base conversions). But most operations are definitely non-constant (such as lvalue-to-rvalue conversion, assignment, any polymorphic operations, conversion to a virtual base class, etc.). This paper is <em>just</em> proposing allowing those cases that work irrespective of the value of the reference or pointer (i.e. those that are truly constant), so any operation that depends on the value in any way needs to continue to be forbidden.</p>
+<p>Notably, this paper is definitively <em>not</em> proposing any kind of short-circuiting evaluation. For example:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">10</span><span class="op">&gt;&amp;</span>;</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">static_assert</span><span class="op">(</span>g<span class="op">().</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span></code></pre></div>
+<p>This check still must evaluate <code class="sourceCode cpp">g<span class="op">()</span></code>, which may or may not be a constant expression in its own right, even if <code class="sourceCode cpp">g<span class="op">().</span>size<span class="op">()</span></code> is “obviously” 10. This paper is focused solely on those cases where we have an <em>id-expression</em> of reference or pointer type.</p>
+<h2 data-number="3.1" id="implementation-experience"><span class="header-section-number">3.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>I’ve implemented this in EDG at least to the extent that the test cases prestend in this paper all pass, whereas previously they had all failed.</p>
+<h2 data-number="3.2" id="other-not-quite-reference-examples"><span class="header-section-number">3.2</span> Other not-quite-reference examples<a href="#other-not-quite-reference-examples" class="self-link"></a></h2>
+<p>There are a few other closely related examples to consider for how to word this proposal. All of these are courtesy of Richard Smith.</p>
+<p>We generally assume the following works:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <span class="kw">const</span> <span class="dt">int</span> n <span class="op">=</span> <span class="dv">5</span>;</span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="cf">return</span> <span class="op">[]</span> <span class="op">{</span> <span class="dt">int</span> arr<span class="op">[</span>n<span class="op">]</span>; <span class="op">}</span>;</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>but <code class="sourceCode cpp">n</code> might not be in its lifetime when it’s read in the evaluation of <code class="sourceCode cpp">arr</code>’s array bound. So we need to add wording to actaully make that work.</p>
+<p>Then there are further lifetime questions. The following example is similar to the other examples presented earlier:</p>
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{}</span>;</span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="dt">void</span> f<span class="op">(</span>B <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>But this one is a bit different:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> A2 <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">struct</span> B2 <span class="op">:</span> <span class="diffins">virtual</span> A2 <span class="op">{}</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="dt">void</span> f2<span class="op">(</span>B2 <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, we convert <code class="sourceCode cpp"><span class="op">&amp;</span>b</code> to <code class="sourceCode cpp">A2<span class="op">*</span></code> and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: <code class="sourceCode cpp">b<span class="op">.</span>f<span class="op">()</span></code> <em>is</em> a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.</p>
+<h2 data-number="3.3" id="lifetime-dilemma"><span class="header-section-number">3.3</span> Lifetime Dilemma<a href="#lifetime-dilemma" class="self-link"></a></h2>
+<p>If we go back to this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>extern B2 <span class="op">&amp;</span>b;</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>It seems reasonable to allow it, having no idea what the definition of <code class="sourceCode cpp">b</code> is. But what if we <em>do</em> see the definition of <code class="sourceCode cpp">b</code>, and it’s:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">union</span> U <span class="op">{</span> <span class="dt">char</span> c; B2 b2; <span class="op">}</span>;</span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">constexpr</span> U u <span class="op">=</span> <span class="op">{.</span>c <span class="op">=</span> <span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a>B2 <span class="op">&amp;</span>b <span class="op">=</span> <span class="kw">const_cast</span><span class="op">&lt;</span>B2<span class="op">&amp;&gt;(</span>u<span class="op">.</span>b2<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Now we <em>know</em> <code class="sourceCode cpp">b</code> isn’t within its lifetime. We added more information, and turned our constant expression into a non-constant expression?</p>
+<p>However, there’s a reasonable principle here: anything that has only one possible interpretation <em>with defined behavior</em> has that defined behavior for constant evaluation purposes. This is true of all the examples presented up until now.</p>
+<h2 data-number="3.4" id="still-further-cases"><span class="header-section-number">3.4</span> Still further cases<a href="#still-further-cases" class="self-link"></a></h2>
+<p>A different case is the following:</p>
+<blockquote>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span> a;</span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> a<span class="op">.</span>f<span class="op">()</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="op">&amp;</span>ti <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(&amp;</span>a<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">A<span class="op">::</span>f</code> is <code class="sourceCode cpp"><span class="kw">virtual</span></code>. Which might make it seem constant, but any number of shenanigans could ensue — like placement-new-ing a derived type (of the same size) over <code class="sourceCode cpp">a</code>. So all of these should probably remain non-constant expressions.</p>
+<p>Perhaps the most fun example is this one:</p>
+<blockquote>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">extern</span> <span class="kw">const</span> <span class="dt">int</span> arr<span class="op">[]</span>;</span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">constexpr</span> <span class="kw">const</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> arr <span class="op">+</span> N;</span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> arr<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>;</span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="op">*</span>p;</span></code></pre></div>
+</blockquote>
+<p>Which every compiler currently provides different results (in order of most reasonable to least reasonable):</p>
+<ol type="1">
+<li>Clang says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is non-constant if <code class="sourceCode cpp">N <span class="op">!=</span> <span class="dv">0</span></code>, and accepts with <code class="sourceCode cpp">N <span class="op">==</span> <span class="dv">0</span></code>.</li>
+<li>GCC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is out of bounds.</li>
+<li>ICC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but always rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> even if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is in-bounds.</li>
+<li>MSVC says you can’t declare <code class="sourceCode cpp">arr</code> as non-constexpr and define it constexpr, even though there is no such rule</li>
+</ol>
+<p>This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.</p>
+<h2 data-number="3.5" id="wording"><span class="header-section-number">3.5</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>We need to strike the <span>7.7
  <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> An expression <code class="sourceCode cpp">E</code> is a <em>core constant expression</em> unless the evaluation of <code class="sourceCode cpp">E</code>, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> <code class="sourceCode cpp"><span class="kw">this</span></code>, except in
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5.1.1)</a></span> a constexpr function that is being evaluated as part of <code class="sourceCode cpp">E</code> <span class="rm" style="color: #bf0303"><del>;</del></span> <span class="addu">or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.1.2)</a></span> <span class="addu">as part of an explicit or implicit class member access expression;</span></li>
-</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">this</code></span>, except in a constexpr function that is being evaluated as part of <span><code class="sourceCode default">E</code></span>;</del></span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> […]</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.5)</a></span> an invocation of a virtual function for an object unless <span class="addu">the object’s dynamic type is known and either</span>
 <ul>
@@ -962,7 +958,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(5.8)</a></span> an lvalue-to-rvalue conversion unless it is applied to
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(5.8.1)</a></span> a non-volatile glvalue that refers to an object that is usable in constant expressions, or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.8.2)</a></span> a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of <code class="sourceCode cpp">E</code></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.8.2)</a></span> a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of <code class="sourceCode cpp">E</code><span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.8.3)</a></span> <span class="addu">a non-volatile glvalue of pointer type [<em>Note</em>: An lvalue-to-rvalue conversion on a pointer that is not usable in constant expressions yields the address of an unspecified object of the type pointed to. <em>-end note</em>]</span></li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.9)</a></span> […]</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.10)</a></span> […]</li>
@@ -972,7 +969,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized">(5.12.1)</a></span> <span class="rm" style="color: #bf0303"><del>it is usable in constant expressions or</del></span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.12.2)</a></span> <span class="rm" style="color: #bf0303"><del>its lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>;</del></span></li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.12)</a></span> <span class="addu">a <em>unary-expression</em> which takes the address of a glvalue that refers to an unspecified object;</span></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.13)</a></span> in a <em>lambda-expression</em>, a reference to <code class="sourceCode cpp"><span class="kw">this</span></code> or to a variable with automatic storage duration defined outside that <em>lambda-expression</em>, where the reference would be an odr-use;</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.14)</a></span> […]</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.26)</a></span> a <code class="sourceCode cpp"><span class="kw">dynamic_cast</span></code> ([expr.dynamic.cast]) or <code class="sourceCode cpp"><span class="kw">typeid</span></code> ([expr.typeid]) expression <span class="addu">on a reference bound to an object whose dynamic type is unknown or</span> that would throw an exception;</li>
@@ -981,7 +977,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And add a new rule to properly handle the lifetime examples shown in the previous section:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s that refer to an object or reference whose lifetime did not begin with the evalution of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
+<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s that refer to an object or reference whose lifetime did not begin with the evalution of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. For such a pointer that is not usable in constant expressions, the pointer is treated as pointing to an unspecified object of the type pointed to whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
 <p>[<em>Example</em>:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
 <span id="cb26-2"><a href="#cb26-2"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> array_size<span class="op">(</span>T <span class="op">(&amp;)[</span>N<span class="op">])</span> <span class="op">{</span></span>
@@ -1003,18 +999,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb26-18"><a href="#cb26-18"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> lochte<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">12</span>; <span class="op">}</span></span>
 <span id="cb26-19"><a href="#cb26-19"></a><span class="op">}</span>;</span>
 <span id="cb26-20"><a href="#cb26-20"></a></span>
-<span id="cb26-21"><a href="#cb26-21"></a><span class="dt">void</span> splash<span class="op">(</span>Swim<span class="op">&amp;</span> swam<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-21"><a href="#cb26-21"></a><span class="dt">void</span> splash<span class="op">(</span>Swim<span class="op">&amp;</span> swam, Swim<span class="op">*</span> p<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb26-22"><a href="#cb26-22"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>;     <span class="co">// ok</span></span>
-<span id="cb26-23"><a href="#cb26-23"></a>    <span class="kw">static_assert</span><span class="op">((&amp;</span>swam<span class="op">)-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>; <span class="co">// error: taking address of reference to unknown</span></span>
-<span id="cb26-24"><a href="#cb26-24"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference</span></span>
-<span id="cb26-25"><a href="#cb26-25"></a>                                            <span class="co">// with unknown dynamic type</span></span>
-<span id="cb26-26"><a href="#cb26-26"></a><span class="op">}</span></span>
-<span id="cb26-27"><a href="#cb26-27"></a></span>
-<span id="cb26-28"><a href="#cb26-28"></a><span class="kw">extern</span> Swim dc;</span>
-<span id="cb26-29"><a href="#cb26-29"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb26-23"><a href="#cb26-23"></a>    <span class="kw">static_assert</span><span class="op">((&amp;</span>swam<span class="op">)-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>; <span class="co">// ok    </span></span>
+<span id="cb26-24"><a href="#cb26-24"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>;       <span class="co">// ok    </span></span>
+<span id="cb26-25"><a href="#cb26-25"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">[</span><span class="dv">3</span><span class="op">].</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>;     <span class="co">// error: p points to an unspecified object, not</span></span>
+<span id="cb26-26"><a href="#cb26-26"></a>                                            <span class="co">// an unspecified array, p[3] is undefined behavior</span></span>
+<span id="cb26-27"><a href="#cb26-27"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference</span></span>
+<span id="cb26-28"><a href="#cb26-28"></a>                                            <span class="co">// with unknown dynamic type</span></span>
+<span id="cb26-29"><a href="#cb26-29"></a><span class="op">}</span></span>
 <span id="cb26-30"><a href="#cb26-30"></a></span>
-<span id="cb26-31"><a href="#cb26-31"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
-<span id="cb26-32"><a href="#cb26-32"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
+<span id="cb26-31"><a href="#cb26-31"></a><span class="kw">extern</span> Swim dc;</span>
+<span id="cb26-32"><a href="#cb26-32"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb26-33"><a href="#cb26-33"></a></span>
+<span id="cb26-34"><a href="#cb26-34"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
+<span id="cb26-35"><a href="#cb26-35"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>
