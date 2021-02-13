@@ -33,7 +33,7 @@ Send P2280 to Electronic Polling, with the intent of going to Core, after gettin
 | 8  | 10 | 1  | 0  | 0  |
 :::
 
-This revision updates wording.
+This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer).
 
 # Introduction
 
@@ -357,6 +357,77 @@ Which every compiler currently provides different results (in order of most reas
 
 This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.
 
+## The `this` pointer
+
+Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, and we write our member function two different ways (the latter using [@P0847R6]):
+
+::: cmptable
+### Regular non-static member function
+```cpp
+template <bool V>
+struct Widget {
+   struct Config {
+      static constexpr bool value = V;
+   } config;
+
+   void f() {
+       if constexpr (config.value) {
+          // ...
+       }
+   }
+};
+```
+
+### With deducing this
+```cpp
+template <bool V>
+struct Widget {
+   struct Config {
+      static constexpr bool value = V;
+   } config;
+
+   void f(this Widget& self) {
+       if constexpr (self.config.value) {
+          // ...
+       }
+   }
+};
+``` 
+:::
+
+The example on the left is ill-formed, even if we extend the rule to allow references-to-unknown. Because we don't even have a reference here exactly, we're accessing through `this`, and one of the things we're not allowed to evaluate as part of constant evaluation is the first bullet from [expr.const]/5:
+
+::: bq
+`this`, except in a constexpr function that is being evaluated as part of `E`;
+:::
+
+And here, `Widget<V>::f` is not a `constexpr` function. However, the example on the right is valid with the suggested rule change. Here, `self` is a reference-to-unknown and `value` ends up being a constexpr variable that we can read. So this works. This example wasn't exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper... it seem like a meaningful solution to the problem. It seems pretty unsatisfactory that `self.config.value` is okay while `(*this).config.value` is not, when `self` and `(*this)` mean the same thing in this context. 
+
+It seems like there is a hierarchy of expressions in this space, which go roughly like:
+
+1. The ability to use references (what [@P2280R0] proposed)
+2. The ability to dereference _specifically_ the `this` pointer
+3. The ability to copy and dereference any pointer
+4. The ability to do more complex operations with pointers (e.g. addition, comparison, indexing, etc.)
+
+For instance:
+
+```cpp
+void f(std::array<int, 3>& r, std::array<int, 4>* p) {
+    static_assert(r.size() == 3);    // #1
+    static_assert(p->size() == 4);   // #2
+    static_assert(p[3].size() == 4); // #3
+    static_assert(&r == &r);         // #4
+}
+```
+
+`#1` is one of the motivating examples in the paper. `#2` would require dereferencing a pointer, which is similar to accessing through a reference yet isn't exactly the same. `#3` additionally requires array access and we have no idea if `p` actually points to an array, much less what the size of that array would be. But both `#2` and `#3` generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior.
+
+`#4` is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that `&r` is "pointer to known `array<int, 3>`", we have to additionally track that it is specifically a pointer to `r`. This, at least in EDG, is a much bigger change (with much less commensurate value).
+
+As such, I think the right line to draw for this paper is to allow both references-to-unknown and, specifically, the `this` pointer (which conceptually is a lot more like a reference than a pointer anyway) but continue to reject any use of pointers that isn't already allowed. That is, allow the example on the left at the begining of this section but continue to reject `#2`, `#3`, and `#4` above.
+
+
 ## Wording
 
 We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:
@@ -364,7 +435,8 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
-- [5.1]{.pnum} [...]
+- [5.1]{.pnum} [`this`, except in a constexpr function that is being evaluated as part of `E`;]{.rm}
+- [5.2]{.pnum} [...]
 - [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
     - [5.5.1]{.pnum} the object is usable in constant expressions or
     - [5.5.2]{.pnum} its lifetime began within the evaluation of `E`;
