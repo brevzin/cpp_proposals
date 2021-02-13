@@ -506,7 +506,7 @@ constexpr auto& y = typeid(trident);    // error: unknown dynamic type
 Add a note to [expr.const]/11 to make it clear that these are not permitted results:
 
 ::: bq
-[11]{.pnum} An entity is a _permitted result of a constant expression_ if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function. [\[ *Note*: A glvalue core constant expression that refers to an unspecified object is not a constant expression. *- end note*\]]{.addu}
+[11]{.pnum} An entity is a _permitted result of a constant expression_ if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function. [\[ *Note*: A glvalue core constant expression that either refers to or points to an unspecified object is not a constant expression. *- end note*\]]{.addu}
 :::
 
 # Acknowledgments
