@@ -31,9 +31,9 @@ While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`
 
 Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{@{1}@, 2}` or `B{1, 2}`. Neither are especially satisfactory. 
 
-The goal of this paper is to extend designated initialization to include base classes and base class members.
-
 # Proposal
+
+This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members.
 
 The tricky part here is: how do we name the `A` base class of `B` in the _designated-initializer-list_? While non-static data members have *identifier*s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the `A` base class subobject of a `B` today &mdash; the only way to get there is via a cast. This means there's no corresponding consistent syntax to choose along with the `.` that we already have.
 
@@ -162,9 +162,9 @@ Change the grammar of a _designator_ in [dcl.init.general]{.sref}/1. Technically
 
 ::: bq
 ```diff
-  @_designator_@:
-      . @_identifier_@
-+     : @_class-or-decltype_@
+    @_designator_@:
+        . @_identifier_@
++       : @_class-or-decltype_@
 ```
 :::
 
@@ -188,20 +188,20 @@ The ordered [*class-or-decltype*s and]{.addu} *identifier*s in the designators o
 Aggregate initialization is performed ([dcl.init.aggr]).
 [*Example 2*:
 ```diff
-  struct A { int x; int y; int z; };
-  A a{.y = 2, .x = 1};                // error: designator order does not match declaration order
-  A b{.x = 1, .z = 2};                // OK, b.y initialized to 0
-  
-+ struct B : A { int q; };
-+ B c{.q = 3, :A{}};                  // error: designator order does not match declaration order
-+ B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0
-+ B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0
-+ B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list
-
-+ struct NonAggr { int na; NonAggr(int); };
-+ struct D : NonAggr { int d; };
-+ D g{:NonAggr{1}, .d=2};             // OK
-+ D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate
+    struct A { int x; int y; int z; };
+    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order
+    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0
+    
++   struct B : A { int q; };
++   B c{.q = 3, :A{}};                  // error: designator order does not match declaration order
++   B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0
++   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0
++   B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list
+    
++   struct NonAggr { int na; NonAggr(int); };
++   struct D : NonAggr { int d; };
++   D g{:NonAggr{1}, .d=2};             // OK
++   D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate
 ```
 — *end example*]
 :::

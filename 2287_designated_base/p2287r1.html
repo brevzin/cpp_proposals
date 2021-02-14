@@ -587,8 +587,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-7"><a href="#cb1-7"></a><span class="op">}</span>;</span></code></pre></div>
 <p>While I can initialize an <code class="sourceCode cpp">A</code> like <code class="sourceCode cpp">A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span></code>, I cannot designated-initialize <code class="sourceCode cpp">B</code>. An attempt like <code class="sourceCode cpp">B<span class="op">{</span>{1}, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.</p>
 <p>Which means that my only options for initializing a <code class="sourceCode cpp">B</code> are to fall-back to regular aggregate initialization and write either <code class="sourceCode cpp">B<span class="op">{</span>{1}, <span class="dv">2</span><span class="op">}</span></code> or <code class="sourceCode cpp">B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></code>. Neither are especially satisfactory.</p>
-<p>The goal of this paper is to extend designated initialization to include base classes and base class members.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members.</p>
 <p>The tricky part here is: how do we name the <code class="sourceCode cpp">A</code> base class of <code class="sourceCode cpp">B</code> in the <em>designated-initializer-list</em>? While non-static data members have <em>identifier</em>s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the <code class="sourceCode cpp">A</code> base class subobject of a <code class="sourceCode cpp">B</code> today — the only way to get there is via a cast. This means there’s no corresponding consistent syntax to choose along with the <code class="sourceCode cpp"><span class="op">.</span></code> that we already have.</p>
 <p>Daveed Vandevoorde makes the suggestion that we can use <code class="sourceCode cpp"><span class="op">:</span></code> to introduce a <em>class-or-decltype</em> that names a base class (that is the grammar term we use when introducing a base class). This would allow the following initialization syntax:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></span></code></pre></div>
@@ -676,9 +676,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
  <a href="https://wg21.link/dcl.init.general">[dcl.init.general]</a></span>/1. Technically this allows a <em>designated-initializer-list</em> like <code class="sourceCode cpp"><span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">:</span>A<span class="op">={}}</span></code> which we could forbid grammatically, but that seems more complicated than simply extending the ordering rule to forbid it (which has to be done anyway).</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>  <em>designator</em>:</span>
-<span id="cb9-2"><a href="#cb9-2"></a>      . <em>identifier</em></span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="va">+     : <em>class-or-decltype</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>    <em>designator</em>:</span>
+<span id="cb9-2"><a href="#cb9-2"></a>        . <em>identifier</em></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="va">+       : <em>class-or-decltype</em></span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Extend <span>9.4.1
@@ -696,20 +696,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered <span class="addu"><em>class-or-decltype</em>s and</span> <em>identifier</em>s in the designators of the <em>designated-initializer-list</em> shall form a subsequence of the ordered <span class="addu">base classes of <code class="sourceCode cpp">T</code> and</span> <em>identifier</em>s in the <span class="rm" style="color: #bf0303"><del>direct</del></span> non-static data members of <code class="sourceCode cpp">T</code>. Aggregate initialization is performed ([dcl.init.aggr]). [<em>Example 2</em>:</p>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  struct A { int x; int y; int z; };</span>
-<span id="cb10-2"><a href="#cb10-2"></a>  A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
-<span id="cb10-3"><a href="#cb10-3"></a>  A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  </span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="va">+ struct B : A { int q; };</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a><span class="va">+ B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a><span class="va">+ B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span>
-<span id="cb10-8"><a href="#cb10-8"></a><span class="va">+ B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
-<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+ B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list</span></span>
-<span id="cb10-10"><a href="#cb10-10"></a></span>
-<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+ struct NonAggr { int na; NonAggr(int); };</span></span>
-<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+ struct D : NonAggr { int d; };</span></span>
-<span id="cb10-13"><a href="#cb10-13"></a><span class="va">+ D g{:NonAggr{1}, .d=2};             // OK</span></span>
-<span id="cb10-14"><a href="#cb10-14"></a><span class="va">+ D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>    struct A { int x; int y; int z; };</span>
+<span id="cb10-2"><a href="#cb10-2"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
+<span id="cb10-3"><a href="#cb10-3"></a>    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    </span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="va">+   struct B : A { int q; };</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="va">+   B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="va">+   B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="va">+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+   B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a>    </span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+   struct D : NonAggr { int d; };</span></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="va">+   D g{:NonAggr{1}, .d=2};             // OK</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="va">+   D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
