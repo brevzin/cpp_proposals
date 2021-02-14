@@ -60,4 +60,4 @@ make all of my papers.
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
 - [p2279r0 - We need a language mechanism for customization points](2279_static_polymorphism/p2279r0.html).
 - [p2286r0 - Formatting Ranges](2286_fmt_ranges/p2286r0.html).
-- [p2287r0 - Designated-initializers for Base Classes](2287_designated_base/p2287r0.html).
+- [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
