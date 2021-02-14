@@ -1,6 +1,6 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: P2287R0
+document: P2287R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+[@P2287R0] proposed a single syntax for a _designated-initializer_ that identifies a base class. Based on a reflector suggestion from Matthias Stearn, this revision extends the syntax to allow the brace-elision version of _designated-initializer_: allow naming base members as well.
 
 # Introduction
 
@@ -27,7 +31,7 @@ While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`
 
 Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{@{1}@, 2}` or `B{1, 2}`. Neither are especially satisfactory. 
 
-The goal of this paper is to extend designated initialization to include base classes. 
+The goal of this paper is to extend designated initialization to include base classes and base class members.
 
 # Proposal
 
@@ -53,6 +57,52 @@ D{:C<int>={.val=1}, :C<char>={.val='x'}};
 ```
 
 Which provides protection against `D{'x', 1}` which compiles fine today but probably isn't what was desired.
+
+## Directly name base-class members
+
+In most use-cases, while an aggregate may have base classes (which may themselves have further base classes), all the names of all the members all the way down will be distinct. The initial example here is just such a case: `B` has two members, `a` and `b`. We already have brace elision, which allows for `B{1, 2}`. But the designated initializer model is a lot safer: you have to name the members, so you can't really do the wrong thing. So it seems like a logic extension to support `B{.a=1, .b=2}`. 
+
+We still preserve all the rules around designated initializers: members need to be named _in order_. It's just that we remove the restriction that all the members have to be direct members of the class we're initializing. 
+
+That is:
+
+```cpp
+B{:A={.a=1}, .b=2};      // fully explicit
+B{:A={1}, .b=2};         // ok
+B{.a=1, .b=2};           // ok
+
+B{.b=2, .a=1};           // error: out of order
+B{.b=2, :A{1}};          // error: out of order
+B{:A{.a=1}, .a=2, .b=3}; // error: both A and a are named
+```
+
+The last row there has to be ill-formed. If an indirect member is named, you can't also name any class that contains it. But there's also another issue to consider here:
+
+```cpp
+class string {
+    char* begin;
+    char* end;
+    char* capacity;
+public:
+    string();
+    string(char const*);
+};
+
+struct D : string {
+    int index;
+};
+
+D{"hello", 42};                 // already ok
+D{:string("hello"), .index=42}; // ok
+
+char storage[10];
+D{.begin=storage, .end=storage, .capacity=storage+10, .index=17}; // definitely error
+```
+
+This obviously has to be an error. `string` isn't an aggregate, so this feature can't give us magic aggregate-initialization powers. So the rule for naming indirect members has to be both that:
+
+1. the indirect member is not a (direct or indirect) member of any base class also named in the designated-initializer-list, and
+2. the indirect member is not a (direct or indirect) member of any base class that is not an aggregate.
 
 ## Lookup of base classes
 
@@ -84,6 +134,30 @@ We just need to make sure that we don't do that kind of lookup for a _decltype-s
 
 # Wording
 
+Add a rule for looking up unqualified names used in designators  in [basic.lookup.unqual]{.sref}:
+
+::: bq
+[5]{.pnum} An unqualified name that is a component name ([expr.prim.id.unqual]) of a _type-specifier_ or _ptr-operator_ of a _conversion-type-id_ is looked up in the same fashion as the _conversion-function-id_ in which it appears. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.
+
+::: addu
+[*]{.pnum} An unqualified name that appears as the _class-or-decltype_ in a _designator_ in a _designated-initializer_list_ ([dcl.init.general]) is looked up in the same fashion as if it were a _conversion-function-id_ in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.
+
+[*Example*:
+```
+namespace N {
+  struct A { int a; };
+  template <typename T> struct B : T { int b; };
+}
+
+using C = N::A;
+
+N::B<A>{:A{.a=1}, .b=2}; // ok, lookup for A in N::B<A> finds the injected-class-name A
+N::B<A>{:C{.a=1}, .b=2}; // ok, lookup for A in N::B<A> finds nothing, regular unqualified lookup finds C
+```
+*-end example*]
+::: 
+:::
+
 Change the grammar of a _designator_ in [dcl.init.general]{.sref}/1. Technically this allows a _designated-initializer-list_ like `{.a=1, :A={}}` which we could forbid grammatically, but that seems more complicated than simply extending the ordering rule to forbid it (which has to be done anyway).
 
 ::: bq
@@ -103,14 +177,14 @@ Extend [dcl.init.general]{.sref}/18:
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: bq
-[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a direct non-static data member of the class, [the _class-or-decltype_ in each designator shall name a direct base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members. 
+[3.1]{.pnum} If the initializer list is a _designated-initializer-list_, the aggregate shall be of class type, the _identifier_ in each designator shall name a [direct]{.rm} non-static data member of the class, [the _class-or-decltype_ in each designator shall name a base class of the class,]{.addu} and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members. [If any _identifier_ in a designator names a (direct or indirect) non-static data member of a base class that is either named by a _class-or-decltype_ in a different designator or that is not an aggregate, the initialization is ill-formed.]{.addu}
 :::
 
 Extend [dcl.init.list]{.sref}/3.1:
 
 ::: bq
 [3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
-The ordered [*class-or-decltype*s and]{.addu} *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [direct base classes of `T` and]{.addu} *identifier*s in the direct non-static data members of `T`.
+The ordered [*class-or-decltype*s and]{.addu} *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [base classes of `T` and]{.addu} *identifier*s in the [direct]{.rm} non-static data members of `T`.
 Aggregate initialization is performed ([dcl.init.aggr]).
 [*Example 2*:
 ```diff
@@ -121,6 +195,13 @@ Aggregate initialization is performed ([dcl.init.aggr]).
 + struct B : A { int q; };
 + B c{.q = 3, :A{}};                  // error: designator order does not match declaration order
 + B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0
++ B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0
++ B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list
+
++ struct NonAggr { int na; NonAggr(int); };
++ struct D : NonAggr { int d; };
++ D g{:NonAggr{1}, .d=2};             // OK
++ D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate
 ```
 — *end example*]
 :::
