@@ -448,8 +448,7 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 - [5.7]{.pnum} [...]
 - [5.8]{.pnum} an lvalue-to-rvalue conversion unless it is applied to 
     - [5.8.1]{.pnum} a non-volatile glvalue that refers to an object that is usable in constant expressions, or
-    - [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`[, or]{.addu}
-    - [5.8.3]{.pnum} [`this`]{.addu}
+    - [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`
 - [5.9]{.pnum} [...]
 - [5.10]{.pnum} [...]
 - [5.11]{.pnum} an invocation of an implicitly-defined copy/move constructor or copy/move assignment operator for a union whose active member (if any) is mutable, unless the lifetime of the union object began within the evaluation of `E`;
