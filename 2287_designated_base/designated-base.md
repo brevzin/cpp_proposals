@@ -36,13 +36,13 @@ Which means that my only options for initializing a `B` are to fall-back to regu
 This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members. In short, based on the above declarations of `A` and `B`, this proposal allows all of the following declarations:
 
 ```cpp
-B{{1}, 2}         // already valid in C++17
+B{@{1}@, 2}         // already valid in C++17
 B{1, 2}           // already valid in C++17
 B{:A={.a=1}, b=2} // proposed
 B{:A{.a=1}, b=2}  // proposed
-B{:A{1}, .b{2}}   // proposed
+B{:A{1}, .b@{2}@}   // proposed
 B{.a=1, .b=2}     // proposed
-B{.a{1}, .b{2}}   // proposed
+B{.a{1}, .b@{2}@}   // proposed
 ```
 
 ## Naming the base classes
