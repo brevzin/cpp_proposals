@@ -2,7 +2,7 @@
 title: "Designated-initializers for Base Classes"
 document: P2287R1
 date: today
-audience: LEWG
+audience: EWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-[@P2287R0] proposed a single syntax for a _designated-initializer_ that identifies a base class. Based on a reflector suggestion from Matthias Stearn, this revision extends the syntax to allow the brace-elision version of _designated-initializer_: allow naming base members as well.
+[@P2287R0] proposed a single syntax for a _designated-initializer_ that identifies a base class. Based on a reflector suggestion from Matthias Stearn, this revision extends the syntax to allow the brace-elision version of _designated-initializer_: allow naming indirect non-static data members as well. Also actually correctly targeting EWG this time.
 
 # Introduction
 
@@ -140,7 +140,7 @@ Add a rule for looking up unqualified names used in designators  in [basic.looku
 [5]{.pnum} An unqualified name that is a component name ([expr.prim.id.unqual]) of a _type-specifier_ or _ptr-operator_ of a _conversion-type-id_ is looked up in the same fashion as the _conversion-function-id_ in which it appears. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.
 
 ::: addu
-[*]{.pnum} An unqualified name that appears as the _class-or-decltype_ in a _designator_ in a _designated-initializer_list_ ([dcl.init.general]) is looked up in the same fashion as if it were a _conversion-function-id_ in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.
+[*]{.pnum} An unqualified name that appears as the _class-or-decltype_ in a _designator_ in a _designated-initializer-list_ ([dcl.init.general]) is looked up in the same fashion as if it were a _conversion-function-id_ in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.
 
 [*Example*:
 ```

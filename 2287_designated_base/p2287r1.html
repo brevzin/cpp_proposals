@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      LEWG<br>
+      EWG<br>
     </td>
   </tr>
   <tr>
@@ -575,7 +575,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P2287R0">[<a href="#ref-P2287R0" role="doc-biblioref">P2287R0</a>]</span> proposed a single syntax for a <em>designated-initializer</em> that identifies a base class. Based on a reflector suggestion from Matthias Stearn, this revision extends the syntax to allow the brace-elision version of <em>designated-initializer</em>: allow naming base members as well.</p>
+<p><span class="citation" data-cites="P2287R0">[<a href="#ref-P2287R0" role="doc-biblioref">P2287R0</a>]</span> proposed a single syntax for a <em>designated-initializer</em> that identifies a base class. Based on a reflector suggestion from Matthias Stearn, this revision extends the syntax to allow the brace-elision version of <em>designated-initializer</em>: allow naming indirect non-static data members as well. Also actually correctly targeting EWG this time.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P0017R1">[<a href="#ref-P0017R1" role="doc-biblioref">P0017R1</a>]</span> extended aggregates to allow an aggregate to have a base class. <span class="citation" data-cites="P0329R4">[<a href="#ref-P0329R4" role="doc-biblioref">P0329R4</a>]</span> gave us designated initializers, which allow for much more expressive and functional initialization of aggregates. However, the two do not mix: a designated initializer can currently only refer to a direct non-static data members. This means that if I have a type like:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
@@ -658,7 +658,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> An unqualified name that is a component name ([expr.prim.id.unqual]) of a <em>type-specifier</em> or <em>ptr-operator</em> of a <em>conversion-type-id</em> is looked up in the same fashion as the <em>conversion-function-id</em> in which it appears. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">*</a></span> An unqualified name that appears as the <em>class-or-decltype</em> in a <em>designator</em> in a <em>designated-initializer_list</em> ([dcl.init.general]) is looked up in the same fashion as if it were a <em>conversion-function-id</em> in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.</p>
+<p><span class="marginalizedparent"><a class="marginalized">*</a></span> An unqualified name that appears as the <em>class-or-decltype</em> in a <em>designator</em> in a <em>designated-initializer-list</em> ([dcl.init.general]) is looked up in the same fashion as if it were a <em>conversion-function-id</em> in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.</p>
 <p>[<em>Example</em>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>namespace N {</span>
 <span id="cb8-2"><a href="#cb8-2"></a>  struct A { int a; };</span>
