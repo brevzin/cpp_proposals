@@ -33,7 +33,7 @@ Send P2280 to Electronic Polling, with the intent of going to Core, after gettin
 | 8  | 10 | 1  | 0  | 0  |
 :::
 
-This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer), and extends the proposal to additional cover pointers (and not just references).
+This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer), and extends the proposal to additional cover `this` and arbitrary pointers (but only in certain contexts).
 
 # Introduction
 
@@ -240,7 +240,7 @@ What all of these examples have in common is that they are using a reference to 
 
 ## The `this` pointer
 
-Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, and we write our member function two different ways (the latter using [@P0847R6]):
+Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, so we write our member function two different ways (the latter using [@P0847R6]):
 
 ::: cmptable
 ### Regular non-static member function
@@ -306,7 +306,11 @@ void f(std::array<int, 3>& r, std::array<int, 4>* p) {
 
 `#4` is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that `&r` is "pointer to known `array<int, 3>`", we have to additionally track that it is specifically a pointer to `r`. This, at least in EDG, is a much bigger change (with much less commensurate value).
 
-As such, I think the right line to draw for this paper is to allow references-to-unknown and pointers-to-unknown (including `this`), while treating pointers-to-unknown as pointers to a specific object (rather than an array). This would allow the example on the left at the beginning of this section as well as `#1` and `#2` above but reject `#3` and `#4` above.
+The problem is, while changing the specification to support `#1` is largely around _not_ rejecting the case, supporting `#2` is a much more involved process. We not only have to introduce the concept of pointer-to-unknown but we also have to specify what all the operations mean. We have to say what a pointer-to-unknown means. That it dereferences into a reference-to-unknown and likewise that taking the address of a reference-to-unknown yields a pointer-to-unknown.
+
+But then we also have to define what the various other operations on pointers to references are. What about addition and subtraction and indexing (i.e. `#3`)? Equality (i.e. `#4`)? Ordering?
+
+The direction I'm proposing in this paper is what I think to be the minimum sound and useful floor: basically the only thing you can do with pointers- and references-to-unknown is to go back and forth between and them and access through them (as long as you don't have to read any non-constant data). That is, allow `#2` (and its differently-spelled cousin `(&r)->size()` as well) but neither `#3` nor `#4`.
 
 # Proposal
 
@@ -449,17 +453,20 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 - [5.11]{.pnum} an invocation of an implicitly-defined copy/move constructor or copy/move assignment operator for a union whose active member (if any) is mutable, unless the lifetime of the union object began within the evaluation of `E`;
 - [5.12]{.pnum} [an _id-expression_ that refers to a variable or data member of reference type unless the reference has a preceding initialization and either]{.rm}
     - [5.12.1]{.pnum} [it is usable in constant expressions or]{.rm}
-    - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm}
+    - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm} 
 - [5.13]{.pnum} in a _lambda-expression_, a reference to `this` or to a variable with automatic storage duration defined outside that _lambda-expression_, where the reference would be an odr-use; 
 - [5.14]{.pnum} [...]
 - [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
+- [5.a]{.pnum} [a pointer to an unknown object, except as part of an indirection or class member access;]{.addu}
 :::
 
 And add a new rule to properly handle the lifetime examples shown in the previous section:
 
 ::: bq
 ::: addu
-[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. For such a pointer that is not usable in constant expressions, the pointer is treated as pointing to an unspecified object of the type pointed to whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
+[a]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evalution of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation.
+
+[b]{.pnum} For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. For such an object of pointer type that has that is not usable in constant expressions, the pointer is treated as pointing to an unspecified object of the type pointed to whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. The result of taking the address of a reference to an unspecified object is a pointer to an unspecified object. The result of indirection through a pointer to an unspecified object is a reference to an unspecified object.
 
 [*Example*:
 ```cpp
@@ -481,6 +488,7 @@ static_assert(olympic_mile()() == 1500); // ok
 struct Swim {
     constexpr int phelps() { return 28; }
     virtual constexpr int lochte() { return 12; }
+    int coughlin = 12;
 };
 
 void splash(Swim& swam, Swim* p) {
@@ -491,6 +499,8 @@ void splash(Swim& swam, Swim* p) {
                                             // an unspecified array, p[3] is undefined behavior
     static_assert(swam.lochte() == 12);     // error: invoking virtual function on reference
                                             // with unknown dynamic type
+    static_assert(swam.coughlin == 12);     // error: lvalue-to-rvalue conversion on an object
+                                            // not usable in constant expressions
 }
 
 extern Swim dc;
