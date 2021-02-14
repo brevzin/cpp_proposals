@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R0
+document: P2286R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+[@P2286R0] suggested making all the formatting implementation-defined. Several people reached out to me suggesting in no uncertain terms that this is unacceptable. This revision lays out options for such formatting.
 
 # Introduction
 
@@ -238,13 +242,46 @@ However, the point here isn't necessarily to produce the best possible represent
 
 ## What representation?
 
-Should `vector<int>{1, 2, 3}` be printed as `{1, 2, 3}` (as `fmt` currently does and as the type is constructed in C++) or `[1, 2, 3]` (as is typical representationally outside of C++)? 
+There are several questions to ask about what the representation should be for printing.
 
-Should `pair<int, char>{3, 'x'}` be printed as `{3, 'x'}` (as the type is constructed) or as `(3, 'x')` (as `fmt` currently does and is typical representationally outside of C++)?
+1. Should `vector<int>{1, 2, 3}` be printed as `{1, 2, 3}` (as `fmt` currently does and as the type is constructed in C++) or `[1, 2, 3]` (as is typical representationally outside of C++)? 
+2. Should `pair<int, int>{3, 4}` be printed as `{3, 4}` (as the type is constructed) or as `(3, 4)` (as `fmt` currently does and is typical representationally outside of C++)?
+3. Should `char` and `string` in the context of ranges and tuples be printed as quoted (as `fmt` currently does) or unquoted (as these types are typically formatted)?
 
-I think the specific choice of formatting result matters a lot less than the fact that there is a formatting result at all, and would be happy to leave it up to the implementation.
+What I'm proposing is the following:
 
-Following that, I would prefer if a range was represented in a way that was identifiably distinct from a tuple.
+::: bq
+```cpp
+std::vector<int> v = {1, 2, 3};
+std::map<std::string, char> m = {{"hello", 'h'}, {"world", 'w'}};
+
+std::print("v={}. m={}\n", v, m);
+```
+:::
+
+print:
+
+::: bq
+```
+v=[1, 2, 3]. m=[("hello", 'h'), ("world", 'w')]
+```
+:::
+
+That is: ranges are surrounded with `[]`s and delimited with `", "`. Pairs and tuples are surrounded with `()`s and delimited with `", "`. Types like `char`, `string`, and `string_view` are printed quoted.
+
+It is more important to me that ranges and tuples are visually distinct (in this case `[]` vs `()`, but the way that `fmt` currently does it as `{}` vs `()` is also okay) than it would be to quote the string-y types. My rank order of the possible options for the map `m` above is:
+
+<table>
+<tr><th>Ranges</th><th>Tuples</th><th>Quoted?</th><th>Formatted Result</th></td>
+<tr><td>`[]`</td><td>`()`</td><td>✔️</td><td>`[("hello", 'h'), ("world", 'w')]`{.x}</td></tr>
+<tr><td>`{}`</td><td>`()`</td><td>✔️</td><td>`{("hello", 'h'), ("world", 'w')}`{.x}</td></tr>
+<tr><td>`[]`</td><td>`()`</td><td>❌</td><td>`[(hello, h), (world, w)]`{.x}</td></tr>
+<tr><td>`{}`</td><td>`()`</td><td>❌</td><td>`{(hello, h), (world, w)}`{.x}</td></tr>
+<tr><td>`{}`</td><td>`{}`</td><td>❌</td><td>`{{hello, h}, {world, w}}`{.x}</td></tr>
+</table>
+
+My preference for avoiding `{}` in the formatting is largely because it's unlikely the results here can be used directly for copying and pasting directly into initialization anyway, so the priority is simply having visual distinction for the various cases.
+
 
 ## What additional functionality?
 
@@ -339,7 +376,7 @@ The standard library should add specializations of `formatter` for:
 * `tuple<Ts...>` if all of `Ts...` are formattable,
 * `vector<bool>::reference` (which does as `bool` does).
 
-The choice of formatting is implementation defined (though implementors are encouraged to format ranges and tuples differently).
+Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted. 
 
 The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted.
 
