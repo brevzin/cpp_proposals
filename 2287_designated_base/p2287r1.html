@@ -567,8 +567,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
-<li><a href="#directly-name-base-class-members"><span class="toc-section-number">3.1</span> Directly name base-class members<span></span></a></li>
-<li><a href="#lookup-of-base-classes"><span class="toc-section-number">3.2</span> Lookup of base classes<span></span></a></li>
+<li><a href="#naming-the-base-classes"><span class="toc-section-number">3.1</span> Naming the base classes<span></span></a></li>
+<li><a href="#directly-name-base-class-members"><span class="toc-section-number">3.2</span> Directly name base-class members<span></span></a></li>
+<li><a href="#lookup-of-base-classes"><span class="toc-section-number">3.3</span> Lookup of base classes<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -588,67 +589,75 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>While I can initialize an <code class="sourceCode cpp">A</code> like <code class="sourceCode cpp">A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span></code>, I cannot designated-initialize <code class="sourceCode cpp">B</code>. An attempt like <code class="sourceCode cpp">B<span class="op">{</span>{1}, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.</p>
 <p>Which means that my only options for initializing a <code class="sourceCode cpp">B</code> are to fall-back to regular aggregate initialization and write either <code class="sourceCode cpp">B<span class="op">{</span>{1}, <span class="dv">2</span><span class="op">}</span></code> or <code class="sourceCode cpp">B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></code>. Neither are especially satisfactory.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members.</p>
+<p>This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members. In short, based on the above declarations of <code class="sourceCode cpp">A</code> and <code class="sourceCode cpp">B</code>, this proposal allows all of the following declarations:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>B<span class="op">{{</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span><span class="op">}</span>         <span class="co">// already valid in C++17</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>           <span class="co">// already valid in C++17</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, b<span class="op">=</span><span class="dv">2</span><span class="op">}</span> <span class="co">// proposed</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>B<span class="op">{:</span>A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>  <span class="co">// proposed</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>B<span class="op">{:</span>A<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">{</span><span class="dv">2</span><span class="op">}}</span>   <span class="co">// proposed</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>     <span class="co">// proposed</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>B<span class="op">{.</span>a<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">{</span><span class="dv">2</span><span class="op">}}</span>   <span class="co">// proposed</span></span></code></pre></div>
+<h2 data-number="3.1" id="naming-the-base-classes"><span class="header-section-number">3.1</span> Naming the base classes<a href="#naming-the-base-classes" class="self-link"></a></h2>
 <p>The tricky part here is: how do we name the <code class="sourceCode cpp">A</code> base class of <code class="sourceCode cpp">B</code> in the <em>designated-initializer-list</em>? While non-static data members have <em>identifier</em>s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the <code class="sourceCode cpp">A</code> base class subobject of a <code class="sourceCode cpp">B</code> today — the only way to get there is via a cast. This means there’s no corresponding consistent syntax to choose along with the <code class="sourceCode cpp"><span class="op">.</span></code> that we already have.</p>
 <p>Daveed Vandevoorde makes the suggestion that we can use <code class="sourceCode cpp"><span class="op">:</span></code> to introduce a <em>class-or-decltype</em> that names a base class (that is the grammar term we use when introducing a base class). This would allow the following initialization syntax:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></span></code></pre></div>
 <p>Using a <code class="sourceCode cpp"><span class="op">:</span></code> mimics the way we introduce base classes in class directions and is otherwise unambiguous with the rest of the <em>designated-initializer</em> syntax. It can also prepare the parser for the fact that a more complicated name might be coming.</p>
 <p>This paper does not change any of the other existing designated-initialization rules: the initializers must still be all designated or none designated, and the designators must be in order. I’m simply extending the order being matched against with all the base classes. That is, while <code class="sourceCode cpp">B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> would be a valid way to initialize a <code class="sourceCode cpp">B</code>, <code class="sourceCode cpp">B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}}</span></code> is ill-formed (out of order), as is <code class="sourceCode cpp">B<span class="op">{</span>{.a=1}, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> (some designated but not all).</p>
 <p>This generalizes to more complex aggregates like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> T val; <span class="op">}</span>;</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">struct</span> D <span class="op">:</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, C<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a>D<span class="op">{:</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;={.</span>val<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">:</span>C<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;={.</span>val<span class="op">=</span><span class="ch">&#39;x&#39;</span><span class="op">}}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> T val; <span class="op">}</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> D <span class="op">:</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, C<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a></span>
+<span id="cb4-4"><a href="#cb4-4"></a>D<span class="op">{:</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;={.</span>val<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">:</span>C<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;={.</span>val<span class="op">=</span><span class="ch">&#39;x&#39;</span><span class="op">}}</span>;</span></code></pre></div>
 <p>Which provides protection against <code class="sourceCode cpp">D<span class="op">{</span><span class="ch">&#39;x&#39;</span>, <span class="dv">1</span><span class="op">}</span></code> which compiles fine today but probably isn’t what was desired.</p>
-<h2 data-number="3.1" id="directly-name-base-class-members"><span class="header-section-number">3.1</span> Directly name base-class members<a href="#directly-name-base-class-members" class="self-link"></a></h2>
+<h2 data-number="3.2" id="directly-name-base-class-members"><span class="header-section-number">3.2</span> Directly name base-class members<a href="#directly-name-base-class-members" class="self-link"></a></h2>
 <p>In most use-cases, while an aggregate may have base classes (which may themselves have further base classes), all the names of all the members all the way down will be distinct. The initial example here is just such a case: <code class="sourceCode cpp">B</code> has two members, <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code>. We already have brace elision, which allows for <code class="sourceCode cpp">B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></code>. But the designated initializer model is a lot safer: you have to name the members, so you can’t really do the wrong thing. So it seems like a logic extension to support <code class="sourceCode cpp">B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>.</p>
 <p>We still preserve all the rules around designated initializers: members need to be named <em>in order</em>. It’s just that we remove the restriction that all the members have to be direct members of the class we’re initializing.</p>
 <p>That is:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;      <span class="co">// fully explicit</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>B<span class="op">{:</span>A<span class="op">={</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;         <span class="co">// ok</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;           <span class="co">// ok</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a>B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;           <span class="co">// error: out of order</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">:</span>A<span class="op">{</span><span class="dv">1</span><span class="op">}}</span>;          <span class="co">// error: out of order</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>B<span class="op">{:</span>A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>a<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">3</span><span class="op">}</span>; <span class="co">// error: both A and a are named</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a>B<span class="op">{:</span>A<span class="op">={.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;      <span class="co">// fully explicit</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>B<span class="op">{:</span>A<span class="op">={</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;         <span class="co">// ok</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;           <span class="co">// ok</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a>B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;           <span class="co">// error: out of order</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">:</span>A<span class="op">{</span><span class="dv">1</span><span class="op">}}</span>;          <span class="co">// error: out of order</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>B<span class="op">{:</span>A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>a<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">3</span><span class="op">}</span>; <span class="co">// error: both A and a are named</span></span></code></pre></div>
 <p>The last row there has to be ill-formed. If an indirect member is named, you can’t also name any class that contains it. But there’s also another issue to consider here:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> string <span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>    <span class="dt">char</span><span class="op">*</span> begin;</span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="dt">char</span><span class="op">*</span> end;</span>
-<span id="cb5-4"><a href="#cb5-4"></a>    <span class="dt">char</span><span class="op">*</span> capacity;</span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    string<span class="op">()</span>;</span>
-<span id="cb5-7"><a href="#cb5-7"></a>    string<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*)</span>;</span>
-<span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span>;</span>
-<span id="cb5-9"><a href="#cb5-9"></a></span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="kw">struct</span> D <span class="op">:</span> string <span class="op">{</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a>    <span class="dt">int</span> index;</span>
-<span id="cb5-12"><a href="#cb5-12"></a><span class="op">}</span>;</span>
-<span id="cb5-13"><a href="#cb5-13"></a></span>
-<span id="cb5-14"><a href="#cb5-14"></a>D<span class="op">{</span><span class="st">&quot;hello&quot;</span>, <span class="dv">42</span><span class="op">}</span>;                 <span class="co">// already ok</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a>D<span class="op">{:</span>string<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span>, <span class="op">.</span>index<span class="op">=</span><span class="dv">42</span><span class="op">}</span>; <span class="co">// ok</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a></span>
-<span id="cb5-17"><a href="#cb5-17"></a><span class="dt">char</span> storage<span class="op">[</span><span class="dv">10</span><span class="op">]</span>;</span>
-<span id="cb5-18"><a href="#cb5-18"></a>D<span class="op">{.</span>begin<span class="op">=</span>storage, <span class="op">.</span>end<span class="op">=</span>storage, <span class="op">.</span>capacity<span class="op">=</span>storage<span class="op">+</span><span class="dv">10</span>, <span class="op">.</span>index<span class="op">=</span><span class="dv">17</span><span class="op">}</span>; <span class="co">// definitely error</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span> string <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    <span class="dt">char</span><span class="op">*</span> begin;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="dt">char</span><span class="op">*</span> end;</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="dt">char</span><span class="op">*</span> capacity;</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>    string<span class="op">()</span>;</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    string<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*)</span>;</span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="op">}</span>;</span>
+<span id="cb6-9"><a href="#cb6-9"></a></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="kw">struct</span> D <span class="op">:</span> string <span class="op">{</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a>    <span class="dt">int</span> index;</span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="op">}</span>;</span>
+<span id="cb6-13"><a href="#cb6-13"></a></span>
+<span id="cb6-14"><a href="#cb6-14"></a>D<span class="op">{</span><span class="st">&quot;hello&quot;</span>, <span class="dv">42</span><span class="op">}</span>;                 <span class="co">// already ok</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a>D<span class="op">{:</span>string<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span>, <span class="op">.</span>index<span class="op">=</span><span class="dv">42</span><span class="op">}</span>; <span class="co">// ok</span></span>
+<span id="cb6-16"><a href="#cb6-16"></a></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="dt">char</span> storage<span class="op">[</span><span class="dv">10</span><span class="op">]</span>;</span>
+<span id="cb6-18"><a href="#cb6-18"></a>D<span class="op">{.</span>begin<span class="op">=</span>storage, <span class="op">.</span>end<span class="op">=</span>storage, <span class="op">.</span>capacity<span class="op">=</span>storage<span class="op">+</span><span class="dv">10</span>, <span class="op">.</span>index<span class="op">=</span><span class="dv">17</span><span class="op">}</span>; <span class="co">// definitely error</span></span></code></pre></div>
 <p>This obviously has to be an error. <code class="sourceCode cpp">string</code> isn’t an aggregate, so this feature can’t give us magic aggregate-initialization powers. So the rule for naming indirect members has to be both that:</p>
 <ol type="1">
 <li>the indirect member is not a (direct or indirect) member of any base class also named in the designated-initializer-list, and</li>
 <li>the indirect member is not a (direct or indirect) member of any base class that is not an aggregate.</li>
 </ol>
-<h2 data-number="3.2" id="lookup-of-base-classes"><span class="header-section-number">3.2</span> Lookup of base classes<a href="#lookup-of-base-classes" class="self-link"></a></h2>
+<h2 data-number="3.3" id="lookup-of-base-classes"><span class="header-section-number">3.3</span> Lookup of base classes<a href="#lookup-of-base-classes" class="self-link"></a></h2>
 <p>One other thing we need to consider is how we look up base classes exactly. With regular designated initializers, they’re just the names of direct members and there’s only one way to name them. Not much to talk about. But with base classes, we have an <em>injected-class-name</em> too, so we have to ask the question:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> T val; <span class="op">}</span>;</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">struct</span> D <span class="op">:</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb6-3"><a href="#cb6-3"></a></span>
-<span id="cb6-4"><a href="#cb6-4"></a>D<span class="op">{:</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{.</span>val<span class="op">=</span><span class="dv">0</span><span class="op">}}</span>; <span class="co">// proposed okay, C&lt;int&gt; is a base class</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a>D<span class="op">{:</span>C<span class="op">{.</span>val<span class="op">=</span><span class="dv">1</span><span class="op">}}</span>;      <span class="co">// how about this?</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> T val; <span class="op">}</span>;</span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">struct</span> D <span class="op">:</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a>D<span class="op">{:</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{.</span>val<span class="op">=</span><span class="dv">0</span><span class="op">}}</span>; <span class="co">// proposed okay, C&lt;int&gt; is a base class</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>D<span class="op">{:</span>C<span class="op">{.</span>val<span class="op">=</span><span class="dv">1</span><span class="op">}}</span>;      <span class="co">// how about this?</span></span></code></pre></div>
 <p>From within the scope of <code class="sourceCode cpp">D</code>, we can use <code class="sourceCode cpp">C</code> to identify the base class <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>. Likewise <code class="sourceCode cpp">D<span class="op">::</span>C</code> names that type. Can we do this externally? Designated initializers already sort of look like they’re from within the class. This seems like it should probably apply to base classes as well.</p>
 <p>But in order for <code class="sourceCode cpp"><span class="op">:</span>C</code> to find <code class="sourceCode cpp">D<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>C</code> there, we’d have to say that lookup is in the context of the body of <code class="sourceCode cpp">D</code>. But then what if we have:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">namespace</span> N <span class="op">{</span> <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>; <span class="op">}</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">struct</span> D <span class="op">:</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">using</span> C <span class="op">=</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span>;</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>D<span class="op">{:</span>C<span class="op">{}}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">namespace</span> N <span class="op">{</span> <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">struct</span> D <span class="op">:</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">using</span> C <span class="op">=</span> N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span>;</span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a>D<span class="op">{:</span>C<span class="op">{}}</span>;</span></code></pre></div>
 <p>Does <code class="sourceCode cpp"><span class="op">:</span>C</code> refer to the <em>injected-class-name</em> of the <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> base class of <code class="sourceCode cpp">D</code> (and thus be well-formed), or does <code class="sourceCode cpp"><span class="op">:</span>C</code> refer to the alias <code class="sourceCode cpp">C</code> (and thus be ill-formed, since <code class="sourceCode cpp">N<span class="op">::</span>C<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span></code> is not a base class of <code class="sourceCode cpp">D</code>)? Arguably, we are initializing a <code class="sourceCode cpp">D</code> so looking up from the context of <code class="sourceCode cpp">D</code> is a sensible rule (and is consistent with the rules we have for <code class="sourceCode cpp">x<span class="op">.</span><span class="kw">operator</span> T<span class="op">()</span></code> looking up <code class="sourceCode cpp">T</code> in the context of <code class="sourceCode cpp">x</code> <span>6.5.3
  <a href="https://wg21.link/basic.lookup.unqual">[basic.lookup.unqual]</a></span>/5).</p>
 <p>We just need to make sure that we don’t do that kind of lookup for a <em>decltype-specifier</em> as a base class, since that probably makes very little sense to consider from the class’ context.</p>
@@ -660,15 +669,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized">*</a></span> An unqualified name that appears as the <em>class-or-decltype</em> in a <em>designator</em> in a <em>designated-initializer-list</em> ([dcl.init.general]) is looked up in the same fashion as if it were a <em>conversion-function-id</em> in the same context. If that lookup finds nothing, it undergoes unqualified name lookup; in each case, only names that denote types or templates whose specializations are types are considered.</p>
 <p>[<em>Example</em>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>namespace N {</span>
-<span id="cb8-2"><a href="#cb8-2"></a>  struct A { int a; };</span>
-<span id="cb8-3"><a href="#cb8-3"></a>  template &lt;typename T&gt; struct B : T { int b; };</span>
-<span id="cb8-4"><a href="#cb8-4"></a>}</span>
-<span id="cb8-5"><a href="#cb8-5"></a></span>
-<span id="cb8-6"><a href="#cb8-6"></a>using C = N::A;</span>
-<span id="cb8-7"><a href="#cb8-7"></a></span>
-<span id="cb8-8"><a href="#cb8-8"></a>N::B&lt;A&gt;{:A{.a=1}, .b=2}; // ok, lookup for A in N::B&lt;A&gt; finds the injected-class-name A</span>
-<span id="cb8-9"><a href="#cb8-9"></a>N::B&lt;A&gt;{:C{.a=1}, .b=2}; // ok, lookup for A in N::B&lt;A&gt; finds nothing, regular unqualified lookup finds C</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>namespace N {</span>
+<span id="cb9-2"><a href="#cb9-2"></a>  struct A { int a; };</span>
+<span id="cb9-3"><a href="#cb9-3"></a>  template &lt;typename T&gt; struct B : T { int b; };</span>
+<span id="cb9-4"><a href="#cb9-4"></a>}</span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a>using C = N::A;</span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a>N::B&lt;A&gt;{:A{.a=1}, .b=2}; // ok, lookup for A in N::B&lt;A&gt; finds the injected-class-name A</span>
+<span id="cb9-9"><a href="#cb9-9"></a>N::B&lt;A&gt;{:C{.a=1}, .b=2}; // ok, lookup for A in N::B&lt;A&gt; finds nothing, regular unqualified lookup finds C</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </div>
 </blockquote>
@@ -676,9 +685,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
  <a href="https://wg21.link/dcl.init.general">[dcl.init.general]</a></span>/1. Technically this allows a <em>designated-initializer-list</em> like <code class="sourceCode cpp"><span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">:</span>A<span class="op">={}}</span></code> which we could forbid grammatically, but that seems more complicated than simply extending the ordering rule to forbid it (which has to be done anyway).</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>    <em>designator</em>:</span>
-<span id="cb9-2"><a href="#cb9-2"></a>        . <em>identifier</em></span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="va">+       : <em>class-or-decltype</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>    <em>designator</em>:</span>
+<span id="cb10-2"><a href="#cb10-2"></a>        . <em>identifier</em></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="va">+       : <em>class-or-decltype</em></span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Extend <span>9.4.1
@@ -696,20 +705,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered <span class="addu"><em>class-or-decltype</em>s and</span> <em>identifier</em>s in the designators of the <em>designated-initializer-list</em> shall form a subsequence of the ordered <span class="addu">base classes of <code class="sourceCode cpp">T</code> and</span> <em>identifier</em>s in the <span class="rm" style="color: #bf0303"><del>direct</del></span> non-static data members of <code class="sourceCode cpp">T</code>. Aggregate initialization is performed ([dcl.init.aggr]). [<em>Example 2</em>:</p>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>    struct A { int x; int y; int z; };</span>
-<span id="cb10-2"><a href="#cb10-2"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
-<span id="cb10-3"><a href="#cb10-3"></a>    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
-<span id="cb10-4"><a href="#cb10-4"></a>    </span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="va">+   struct B : A { int q; };</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a><span class="va">+   B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a><span class="va">+   B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span>
-<span id="cb10-8"><a href="#cb10-8"></a><span class="va">+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
-<span id="cb10-9"><a href="#cb10-9"></a><span class="va">+   B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list</span></span>
-<span id="cb10-10"><a href="#cb10-10"></a>    </span>
-<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
-<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+   struct D : NonAggr { int d; };</span></span>
-<span id="cb10-13"><a href="#cb10-13"></a><span class="va">+   D g{:NonAggr{1}, .d=2};             // OK</span></span>
-<span id="cb10-14"><a href="#cb10-14"></a><span class="va">+   D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>    struct A { int x; int y; int z; };</span>
+<span id="cb11-2"><a href="#cb11-2"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
+<span id="cb11-3"><a href="#cb11-3"></a>    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    </span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="va">+   struct B : A { int q; };</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="va">+   B c{.q = 3, :A{}};                  // error: designator order does not match declaration order</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="va">+   B d{:A{}, .q = 3};                  // OK, d.x, d.y, and d.z all initialized to 0</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="va">+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="va">+   B f{:A{}, .x = 1, .q = 3};          // error: x is a member of A, which also appears in the designated-initializer-list</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a>    </span>
+<span id="cb11-11"><a href="#cb11-11"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
+<span id="cb11-12"><a href="#cb11-12"></a><span class="va">+   struct D : NonAggr { int d; };</span></span>
+<span id="cb11-13"><a href="#cb11-13"></a><span class="va">+   D g{:NonAggr{1}, .d=2};             // OK</span></span>
+<span id="cb11-14"><a href="#cb11-14"></a><span class="va">+   D h{.na=1, .d=2};                   // error: na is a member of a class that is not an aggregate</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>

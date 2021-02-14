@@ -33,7 +33,19 @@ Which means that my only options for initializing a `B` are to fall-back to regu
 
 # Proposal
 
-This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members.
+This paper proposes extending designated initialization syntax to include both the ability to name base classes and also the ability to name base class members. In short, based on the above declarations of `A` and `B`, this proposal allows all of the following declarations:
+
+```cpp
+B{{1}, 2}         // already valid in C++17
+B{1, 2}           // already valid in C++17
+B{:A={.a=1}, b=2} // proposed
+B{:A{.a=1}, b=2}  // proposed
+B{:A{1}, .b{2}}   // proposed
+B{.a=1, .b=2}     // proposed
+B{.a{1}, .b{2}}   // proposed
+```
+
+## Naming the base classes
 
 The tricky part here is: how do we name the `A` base class of `B` in the _designated-initializer-list_? While non-static data members have *identifier*s, base classes can be much more complicated. They can be qualified names, they can have template arguments, etc. We also do not actually have a way to name the `A` base class subobject of a `B` today &mdash; the only way to get there is via a cast. This means there's no corresponding consistent syntax to choose along with the `.` that we already have.
 
