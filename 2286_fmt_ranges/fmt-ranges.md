@@ -176,7 +176,7 @@ The only mechanisms I have at my disposal to print something like this is either
 
 ## Implementation Experience
 
-That's right, there's a third option for C++ that I haven't shown yet, and that's this:
+That's right, there's a fourth option for C++ that I haven't shown yet, and that's this:
 
 ::: bq
 ```cpp
