@@ -277,7 +277,7 @@ It is more important to me that ranges and tuples are visually distinct (in this
 <tr><td>`{}`</td><td>`()`</td><td>✔️</td><td>`{("hello", 'h'), ("world", 'w')}`{.x}</td></tr>
 <tr><td>`[]`</td><td>`()`</td><td>❌</td><td>`[(hello, h), (world, w)]`{.x}</td></tr>
 <tr><td>`{}`</td><td>`()`</td><td>❌</td><td>`{(hello, h), (world, w)}`{.x}</td></tr>
-<tr><td>`{}`</td><td>`{}`</td><td>❌</td><td>`{@{@hello, h}, {world, w}}`{.x}</td></tr>
+<tr><td>`{}`</td><td>`{}`</td><td>❌</td><td>`{{hello, h}, {world, w}}`{.x}</td></tr>
 </table>
 
 My preference for avoiding `{}` in the formatting is largely because it's unlikely the results here can be used directly for copying and pasting directly into initialization anyway, so the priority is simply having visual distinction for the various cases.
