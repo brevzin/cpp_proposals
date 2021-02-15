@@ -116,6 +116,27 @@ This obviously has to be an error. `string` isn't an aggregate, so this feature 
 1. the indirect member is not a (direct or indirect) member of any base class also named in the designated-initializer-list, and
 2. the indirect member is not a (direct or indirect) member of any base class that is not an aggregate.
 
+I'd also have to handle the case where the same named member appears in multiple base classes:
+
+```cpp
+struct X { int x; };
+struct Y : X { int x; };
+Y{.x=1};
+```
+
+This is already valid today and clearly needs to remain valid: the direct `Y::x` member is initialized to `1` and the base `X::x` member is initialized to `0`. The rule for _which_ member is named would have to be adjusted to make it clear that it's based on class member access. `Y::x` names the `Y` member, not the `X` member, so that's the one that gets initialized. 
+
+Likewise, this nonsense:
+
+```cpp
+struct X { int x; };
+struct Y { int x; };
+struct Z : X, Y { };
+Z{.x=1};
+```
+
+would be ill-formed on the basis that `Z::x` is ambiguous.
+
 ## Lookup of base classes
 
 One other thing we need to consider is how we look up base classes exactly. With regular designated initializers, they're just the names of direct members and there's only one way to name them. Not much to talk about. But with base classes, we have an _injected-class-name_ too, so we have to ask the question:
