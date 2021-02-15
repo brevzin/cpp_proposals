@@ -46,7 +46,7 @@ make all of my papers.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2210r1 - Superior String Splitting](2210_string_split/p2210r1.html).
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
-- [d2280r1 - Using unknown references in constant expressions](2280_unknown_reference/d2280r1.html).
+- [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
 
 ### Pending EWG/LEWG Review
 

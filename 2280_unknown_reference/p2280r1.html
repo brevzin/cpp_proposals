@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2021-02-15" />
+  <title>Using unknown references in constant expressions</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Using unknown references in constant expressions</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2280R1</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2021-02-15</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#wait-why"><span class="toc-section-number">2.1</span> Wait, why?<span></span></a></li>
+<li><a href="#other-examples"><span class="toc-section-number">2.2</span> Other Examples<span></span></a></li>
+<li><a href="#the-this-pointer"><span class="toc-section-number">2.3</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#implementation-experience"><span class="toc-section-number">3.1</span> Implementation Experience<span></span></a></li>
+<li><a href="#other-not-quite-reference-examples"><span class="toc-section-number">3.2</span> Other not-quite-reference examples<span></span></a></li>
+<li><a href="#lifetime-dilemma"><span class="toc-section-number">3.3</span> Lifetime Dilemma<span></span></a></li>
+<li><a href="#still-further-cases"><span class="toc-section-number">3.4</span> Still further cases<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3.5</span> Wording<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">4</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P2280R0">[<a href="#ref-P2280R0" role="doc-biblioref">P2280R0</a>]</span> was discussed at the EWG telecon on Feb 3, 2021. The following polls were taken:</p>
+<blockquote>
+<p>The use cases presented in P2280 are problems in C++’s specification of constexpr, and we would like to fix these problems, ideally in C++23.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>3</td>
+<td>14</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>This should be a Defect Report against C++20, C++17, C++14, and C++11.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>3</td>
+<td>11</td>
+<td>4</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Send P2280 to Electronic Polling, with the intent of going to Core, after getting input from MSVC and GCC implementors.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>8</td>
+<td>10</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p>This revision updates wording. This revision also adds discussion of <a href="#the-this-pointer">the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer</a>, and extends the proposal to additional cover <code class="sourceCode cpp"><span class="kw">this</span></code> (but not arbitrary pointers)</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Let’s say I have an array and want to get its size as a constant expression. In C, I had to write a macro:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#define ARRAY_SIZE</span><span class="op">(</span>a<span class="op">)</span><span class="pp"> </span><span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>a<span class="op">)/</span><span class="kw">sizeof</span><span class="op">(</span>a<span class="op">[</span><span class="dv">0</span><span class="op">]))</span></span></code></pre></div>
+<p>But in C++, we should be able to do better. We have <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and templates, so we can use them:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> array_size<span class="op">(</span>T <span class="op">(&amp;)[</span>N<span class="op">])</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="cf">return</span> N;</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="op">}</span></span></code></pre></div>
+<p>This seems like it should be a substantial improvement, yet it has surprising limitations:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="dt">void</span> check<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span> <span class="op">(&amp;</span>param<span class="op">)[</span><span class="dv">3</span><span class="op">])</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="dt">int</span> local<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> s0 <span class="op">=</span> array_size<span class="op">(</span>local<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> s1 <span class="op">=</span> array_size<span class="op">(</span>param<span class="op">)</span>; <span class="co">// error</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="op">}</span></span></code></pre></div>
+<p>The goal of this paper is to make that second case, and others like it, valid.</p>
+<h2 data-number="2.1" id="wait-why"><span class="header-section-number">2.1</span> Wait, why?<a href="#wait-why" class="self-link"></a></h2>
+<p>The reason is that in order for <code class="sourceCode cpp">array_size<span class="op">(</span>param<span class="op">)</span></code> to work, we have to pass that reference to param into array_size - and that involves “reading” the reference. The specific rule we’re violating is <span>7.7
+ <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.12:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> An expression <code class="sourceCode cpp">E</code> is a <em>core constant expression</em> unless the evaluation of <code class="sourceCode cpp">E</code>, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12)</a></span> an <em>id-expression</em> that refers to a variable or data member of reference type unless the reference has a preceding initialization and either
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12.1)</a></span> it is usable in constant expressions or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12.2)</a></span> its lifetime began within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+</ul></li>
+</ul>
+</blockquote>
+<p>The reason we violate the reference rule is due to the underlying principle that the constant evaluator has to reject all undefined behavior, so the compiler has to check that all references are valid.</p>
+<p>This would be more obvious if our situation used pointers instead of references:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> array_size<span class="op">(</span>T <span class="op">(*)[</span>N<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> N;</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="op">}</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="dt">void</span> check<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span> <span class="op">(*</span>param<span class="op">)[</span><span class="dv">3</span><span class="op">])</span> <span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> s2 <span class="op">=</span> array_size<span class="op">(</span>param<span class="op">)</span>; <span class="co">// error</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="op">}</span></span></code></pre></div>
+<p>This case <em>has</em> to be ill-formed, copying a function parameter during constant evaluation means it has to itself be a constant expression, and function parameters are not constant expressions - even in <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions.</p>
+<p>But if the <code class="sourceCode cpp">param</code> case is ill-formed, why does the <code class="sourceCode cpp">local</code> case work? An unsatisfying answer is that… there just isn’t any rule in [expr.const] that we’re violating. There’s no lvalue-to-rvalue conversion (we’re not reading through the reference in any way yet) and we’re not referring to a reference (that’s the previous rule we ran afoul of). With the <code class="sourceCode cpp">param</code> case, the compiler cannot know whether the reference is valid, so it must reject. With the <code class="sourceCode cpp">local</code> case, the compiler can see for sure that the reference to <code class="sourceCode cpp">local</code> would be a valid reference, so it’s happy.</p>
+<p>Notably, the rule we’re violating is only about <em>references</em>. We can’t write a function that takes an array by value, so let’s use the next-best thing: <code class="sourceCode cpp">std<span class="op">::</span>array</code> and use the standard library’s <code class="sourceCode cpp">std<span class="op">::</span>size</code> (cppref):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">void</span> check_arr_val<span class="op">(</span>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span> <span class="kw">const</span> param<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span> local <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> s3 <span class="op">=</span> std<span class="op">::</span>size<span class="op">(</span>local<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> s4 <span class="op">=</span> std<span class="op">::</span>size<span class="op">(</span>param<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="op">}</span></span></code></pre></div>
+<p>If <code class="sourceCode cpp">param</code> were a reference, the initialization of <code class="sourceCode cpp">s4</code> would be ill-formed (for the same reason as previously), but because it’s a value, this is totally fine.</p>
+<p>So as long as you pass all your containers around by value, you’re able to use get and use the size as a constant expression. Which is the kind of thing that’s intellectually interesting, but also wildly impractical because obviously nobody’s about to start passing all their containers around <em>by value</em>.</p>
+<h2 data-number="2.2" id="other-examples"><span class="header-section-number">2.2</span> Other Examples<a href="#other-examples" class="self-link"></a></h2>
+<p>Here are few other cases, which currently are ill-formed because of this reference-to-unknown rule.</p>
+<p>From Andrzej Krzemienski:</p>
+<blockquote>
+<p>Another situation where being able to use a reference to a non-core-constant object is wen I am only interested in the type of the reference rather than the value of the object:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">constexpr</span> <span class="dt">bool</span> is_type<span class="op">(</span>U <span class="op">&amp;&amp;)</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="cf">return</span> std<span class="op">::</span>is_same_v<span class="op">&lt;</span>T, std<span class="op">::</span>decay_t<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span>;</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="op">}</span></span></code></pre></div>
+<p>So that I can use it like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">auto</span> visitor <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span><span class="op">(</span>is_type<span class="op">&lt;</span>Alternative1<span class="op">&gt;(</span>v<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>        <span class="co">// ...</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span><span class="op">(</span>is_type<span class="op">&lt;</span>Alternative2<span class="op">&gt;(</span>v<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>        <span class="co">// ...</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    <span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="op">}</span>; </span></code></pre></div>
+<p>I can do it with a macro:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="pp">#define IS_TYPE</span><span class="op">(</span>TYPE,<span class="pp"> </span>EXPR<span class="op">)</span><span class="pp"> </span><span class="op">(</span>std<span class="op">::</span>is_same_v<span class="op">&lt;</span>TYPE,<span class="pp"> </span>std<span class="op">::</span>decay_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>EXPR<span class="op">)&gt;&gt;)</span></span></code></pre></div>
+</blockquote>
+<p>From Jonathan Wakely:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">auto</span> rando<span class="op">(</span>std<span class="op">::</span>uniform_random_bit_generator <span class="kw">auto</span><span class="op">&amp;</span> g<span class="op">)</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>has_single_bit<span class="op">(</span>g<span class="op">.</span>max<span class="op">()</span> <span class="op">-</span> g<span class="op">.</span>min<span class="op">()))</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    <span class="co">// ...</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>  <span class="cf">else</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="co">// ...</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span> </span></code></pre></div>
+<p>The concept requires that <code class="sourceCode cpp">g<span class="op">.</span>max<span class="op">()</span></code> and <code class="sourceCode cpp">g<span class="op">.</span>min<span class="op">()</span></code> are constexpr static member functions, so this should work. And if I did it with an object of that type, it would work. But because <code class="sourceCode cpp">g</code> is a reference, it’s not usable in a constant expression. That makes it awkward to refactor code into a function (or function template), because what worked on the object itself doesn’t work in a function that binds a reference to that object.</p>
+<p>I can rewrite it as something like:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">using</span> G <span class="op">=</span> remove_reference_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>g<span class="op">)&gt;</span>;</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>has_single_bit<span class="op">(</span>G<span class="op">::</span>max<span class="op">()</span> <span class="op">-</span> G<span class="op">::</span>min<span class="op">()))</span></span></code></pre></div>
+<p>Or avoid abbreviated function syntax so I have a name for the type:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span><span class="op">&lt;</span>std<span class="op">::</span>uniform_random_bit_generator G<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">auto</span> rando<span class="op">(</span>G<span class="op">&amp;</span> g<span class="op">)</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>has_single_bit<span class="op">(</span>G<span class="op">::</span>max<span class="op">()</span> <span class="op">-</span> G<span class="op">::</span>min<span class="op">()))</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="op">}</span></span></code></pre></div>
+<p>But it’s awkward that the first version doesn’t Just Work.</p>
+</blockquote>
+<p>Another from me:</p>
+<blockquote>
+<p>I have a project that has a structure like:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Types<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="kw">struct</span> Config <span class="op">:</span> Types<span class="op">::</span>config<span class="op">...</span> <span class="op">{</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> sends<span class="op">(</span>T<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>            <span class="cf">return</span> std<span class="op">::</span>is_base_of_v<span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">::</span>config, Config<span class="op">&gt;</span>;</span>
+<span id="cb12-7"><a href="#cb12-7"></a>        <span class="op">}</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    <span class="op">}</span>;</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    </span>
+<span id="cb12-10"><a href="#cb12-10"></a>    Config config;</span>
+<span id="cb12-11"><a href="#cb12-11"></a><span class="op">}</span>;</span></code></pre></div>
+<p>With the intent that this function makes for a nice and readable way of doing dispatch:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="dt">void</span> do_configuration<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> config<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>    <span class="co">// the actual type of config is... complicated</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    </span>
+<span id="cb13-4"><a href="#cb13-4"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>config<span class="op">.</span>sends<span class="op">(</span>Goomba<span class="op">{}))</span> <span class="op">{</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>        <span class="co">// do something</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    <span class="op">}</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>config<span class="op">.</span>sends<span class="op">(</span>Paratroopa<span class="op">{}))</span> <span class="op">{</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>        <span class="co">// do something else</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a>    <span class="op">}</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="op">}</span></span></code></pre></div>
+<p>Except this doesn’t work, and I have to write:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="dt">void</span> do_configuration<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> config<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>    <span class="kw">using</span> Config <span class="op">=</span> std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>config<span class="op">)&gt;</span>;</span>
+<span id="cb14-3"><a href="#cb14-3"></a>    </span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>Config<span class="op">::</span>sends<span class="op">(</span>Goomba<span class="op">{}))</span> <span class="op">{</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>        <span class="co">// ...</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>    <span class="op">}</span></span></code></pre></div>
+<p>Which is not really “better.”</p>
+</blockquote>
+<p>What all of these examples have in common is that they are using a reference to an object of type <code class="sourceCode cpp">T</code> but do not care at all about the identity of that object. We’re either querying properties of the type, invoking static member functions, or even when invoking a non-static member function (as in <code class="sourceCode cpp">std<span class="op">::</span>array<span class="op">::</span>size</code>), not actually accessing any non-static data members. The result would be the same for every object of type <code class="sourceCode cpp">T</code>… so if the identity doesn’t change the result, why does the lack of identity cause the result to be non-constant? It’s very much constant.</p>
+<h2 data-number="2.3" id="the-this-pointer"><span class="header-section-number">2.3</span> The <code class="sourceCode cpp"><span class="kw">this</span></code> pointer<a href="#the-this-pointer" class="self-link"></a></h2>
+<p>Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, so we write our member function two different ways (the latter using <span class="citation" data-cites="P0847R6">[<a href="#ref-P0847R6" role="doc-biblioref">P0847R6</a>]</span>):</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Regular non-static member function</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>With deducing this</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>   <span class="op">}</span> config;</span>
+<span id="cb15-6"><a href="#cb15-6"></a></span>
+<span id="cb15-7"><a href="#cb15-7"></a>   <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>          <span class="co">// ...</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>       <span class="op">}</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a>   <span class="op">}</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> V<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">struct</span> Widget <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>   <span class="kw">struct</span> Config <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>      <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> value <span class="op">=</span> V;</span>
+<span id="cb16-5"><a href="#cb16-5"></a>   <span class="op">}</span> config;</span>
+<span id="cb16-6"><a href="#cb16-6"></a></span>
+<span id="cb16-7"><a href="#cb16-7"></a>   <span class="dt">void</span> f<span class="op">(</span><span class="kw">this</span> Widget<span class="op">&amp;</span> self<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>       <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>self<span class="op">.</span>config<span class="op">.</span>value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>          <span class="co">// ...</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>       <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>   <span class="op">}</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>The example on the left is ill-formed, even if we extend the rule to allow references-to-unknown. Because we don’t even have a reference here exactly, we’re accessing through <code class="sourceCode cpp"><span class="kw">this</span></code>, and one of the things we’re not allowed to evaluate as part of constant evaluation is the first bullet from [expr.const]/5:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> <code class="sourceCode cpp"><span class="kw">this</span></code>, except in a constexpr function that is being evaluated as part of <code class="sourceCode cpp">E</code>;</li>
+</ul>
+</blockquote>
+<p>And here, <code class="sourceCode cpp">Widget<span class="op">&lt;</span>V<span class="op">&gt;::</span>f</code> is not a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function. However, the example on the right is valid with the suggested rule change. Here, <code class="sourceCode cpp">self</code> is a reference-to-unknown and <code class="sourceCode cpp">value</code> ends up being a constexpr variable that we can read. So this works. This example wasn’t exactly what we had in mind when we wrote that paper though, and while we would be happy to keep dumping motivating use-cases into that paper… it doesn’t exactly seem like a meaningful solution to the problem. It seems pretty unsatisfactory that <code class="sourceCode cpp">self<span class="op">.</span>config<span class="op">.</span>value</code> is okay while <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">).</span>config<span class="op">.</span>value</code> is not, when <code class="sourceCode cpp">self</code> and <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">)</span></code> mean the same thing in this context.</p>
+<p>It seems like there is a hierarchy of expressions in this space, which go roughly like:</p>
+<ol type="1">
+<li>The ability to use references (what <span class="citation" data-cites="P2280R0">[<a href="#ref-P2280R0" role="doc-biblioref">P2280R0</a>]</span> proposed)</li>
+<li>The ability to dereference <em>specifically</em> the <code class="sourceCode cpp"><span class="kw">this</span></code> pointer</li>
+<li>The ability to copy and dereference any pointer</li>
+<li>The ability to do more complex operations with pointers (e.g. addition, comparison, indexing, etc.)</li>
+</ol>
+<p>For instance:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;&amp;</span> r, std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>    <span class="kw">static_assert</span><span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;    <span class="co">// #1</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;   <span class="co">// #2</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="kw">static_assert</span><span class="op">(</span>p<span class="op">[</span><span class="dv">3</span><span class="op">].</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>; <span class="co">// #3</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="kw">static_assert</span><span class="op">(&amp;</span>r <span class="op">==</span> <span class="op">&amp;</span>r<span class="op">)</span>;         <span class="co">// #4</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="op">}</span></span></code></pre></div>
+<p><code class="sourceCode cpp"><span class="pp">#1</span></code> is one of the motivating examples in the paper. <code class="sourceCode cpp"><span class="pp">#2</span></code> would require dereferencing a pointer, which is similar to accessing through a reference yet isn’t exactly the same. <code class="sourceCode cpp"><span class="pp">#3</span></code> additionally requires array access and we have no idea if <code class="sourceCode cpp">p</code> actually points to an array, much less what the size of that array would be. But both <code class="sourceCode cpp"><span class="pp">#2</span></code> and <code class="sourceCode cpp"><span class="pp">#3</span></code> generally fit the notion that these are expressions that either have a particular constant value or are undefined behavior, although <code class="sourceCode cpp"><span class="pp">#2</span></code> only requires that <code class="sourceCode cpp">p</code> be a pointer to unknown object while <code class="sourceCode cpp"><span class="pp">#3</span></code> requires <code class="sourceCode cpp">p</code> be a pointer to an unknown array of objects.</p>
+<p><code class="sourceCode cpp"><span class="pp">#4</span></code> is interesting in a different way: here this actually has to be true, but in order support that, rather than simply tracking that <code class="sourceCode cpp"><span class="op">&amp;</span>r</code> is “pointer to known <code class="sourceCode cpp">array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span></code>”, we have to additionally track that it is specifically a pointer to <code class="sourceCode cpp">r</code>. This, at least in EDG, is a much bigger change (with much less commensurate value).</p>
+<p>The problem is, while changing the specification to support <code class="sourceCode cpp"><span class="pp">#1</span></code> is largely around <em>not</em> rejecting the case, supporting <code class="sourceCode cpp"><span class="pp">#2</span></code> is a much more involved process. We not only have to introduce the concept of pointer-to-unknown but we also have to specify what all the operations mean. We have to say what a pointer-to-unknown means. That it dereferences into a reference-to-unknown and likewise that taking the address of a reference-to-unknown yields a pointer-to-unknown.</p>
+<p>But then we also have to define what the various other operations on pointers to references are. What about addition and subtraction and indexing (i.e. <code class="sourceCode cpp"><span class="pp">#3</span></code>)? Equality (i.e. <code class="sourceCode cpp"><span class="pp">#4</span></code>)? Ordering? If we reject indexing, what about <code class="sourceCode cpp">p<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>?</p>
+<p>Basically, I think supporting references-to-unknown is largely about <em>not</em> rejecting those cases. Similarly, supporting <code class="sourceCode cpp"><span class="kw">this</span></code> in the context of (implicit or explicit) class member access is likewise simply about not rejecting. But in order to support arbitrary pointers, there’s a whole lot of things that need to be specified. As such, the line I’m trying with this paper is to support references and <em>specifically</em> class member access through <code class="sourceCode cpp"><span class="kw">this</span></code>, but not arbitrary pointers.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The proposal is to allow these cases to just work. That is, if during constant evaluation, we run into a reference with unknown origin, this is still okay, we keep going. Similarly, class member access through <code class="sourceCode cpp"><span class="kw">this</span></code>.</p>
+<p>Some operations are allowed to propagate a reference-to-unknown node (such as class member access or derived-to-non-virtual-base conversions). But most operations are definitely non-constant (such as lvalue-to-rvalue conversion, assignment, any polymorphic operations, conversion to a virtual base class, etc.). This paper is <em>just</em> proposing allowing those cases that work irrespective of the value of the reference or pointer (i.e. those that are truly constant), so any operation that depends on the value in any way needs to continue to be forbidden.</p>
+<p>Notably, this paper is definitively <em>not</em> proposing any kind of short-circuiting evaluation. For example:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">10</span><span class="op">&gt;&amp;</span>;</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">static_assert</span><span class="op">(</span>g<span class="op">().</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span></code></pre></div>
+<p>This check still must evaluate <code class="sourceCode cpp">g<span class="op">()</span></code>, which may or may not be a constant expression in its own right, even if <code class="sourceCode cpp">g<span class="op">().</span>size<span class="op">()</span></code> is “obviously” 10. This paper is focused solely on those cases where we have an <em>id-expression</em> of reference or pointer type.</p>
+<h2 data-number="3.1" id="implementation-experience"><span class="header-section-number">3.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>I’ve implemented this in EDG at least to the extent that the test cases prestend in this paper all pass, whereas previously they had all failed.</p>
+<h2 data-number="3.2" id="other-not-quite-reference-examples"><span class="header-section-number">3.2</span> Other not-quite-reference examples<a href="#other-not-quite-reference-examples" class="self-link"></a></h2>
+<p>There are a few other closely related examples to consider for how to word this proposal. All of these are courtesy of Richard Smith.</p>
+<p>We generally assume the following works:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <span class="kw">const</span> <span class="dt">int</span> n <span class="op">=</span> <span class="dv">5</span>;</span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="cf">return</span> <span class="op">[]</span> <span class="op">{</span> <span class="dt">int</span> arr<span class="op">[</span>n<span class="op">]</span>; <span class="op">}</span>;</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>but <code class="sourceCode cpp">n</code> might not be in its lifetime when it’s read in the evaluation of <code class="sourceCode cpp">arr</code>’s array bound. So we need to add wording to actaully make that work.</p>
+<p>Then there are further lifetime questions. The following example is similar to the other examples presented earlier:</p>
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{}</span>;</span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="dt">void</span> f<span class="op">(</span>B <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>But this one is a bit different:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">struct</span> A2 <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span>;</span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">struct</span> B2 <span class="op">:</span> <span class="diffins">virtual</span> A2 <span class="op">{}</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="dt">void</span> f2<span class="op">(</span>B2 <span class="op">&amp;</span>b<span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, we convert <code class="sourceCode cpp"><span class="op">&amp;</span>b</code> to <code class="sourceCode cpp">A2<span class="op">*</span></code> and that might be undefined behavior (as per [class.cdtor]/3). But this case seems similar enough to the earlier cases and should be allowed: <code class="sourceCode cpp">b<span class="op">.</span>f<span class="op">()</span></code> <em>is</em> a constant, even with a virtual base. We need to ensure then that we consider references as within their lifetimes.</p>
+<h2 data-number="3.3" id="lifetime-dilemma"><span class="header-section-number">3.3</span> Lifetime Dilemma<a href="#lifetime-dilemma" class="self-link"></a></h2>
+<p>If we go back to this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>extern B2 <span class="op">&amp;</span>b;</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> b<span class="op">.</span>f<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>It seems reasonable to allow it, having no idea what the definition of <code class="sourceCode cpp">b</code> is. But what if we <em>do</em> see the definition of <code class="sourceCode cpp">b</code>, and it’s:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">union</span> U <span class="op">{</span> <span class="dt">char</span> c; B2 b2; <span class="op">}</span>;</span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">constexpr</span> U u <span class="op">=</span> <span class="op">{.</span>c <span class="op">=</span> <span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a>B2 <span class="op">&amp;</span>b <span class="op">=</span> <span class="kw">const_cast</span><span class="op">&lt;</span>B2<span class="op">&amp;&gt;(</span>u<span class="op">.</span>b2<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Now we <em>know</em> <code class="sourceCode cpp">b</code> isn’t within its lifetime. We added more information, and turned our constant expression into a non-constant expression?</p>
+<p>However, there’s a reasonable principle here: anything that has only one possible interpretation <em>with defined behavior</em> has that defined behavior for constant evaluation purposes. This is true of all the examples presented up until now.</p>
+<h2 data-number="3.4" id="still-further-cases"><span class="header-section-number">3.4</span> Still further cases<a href="#still-further-cases" class="self-link"></a></h2>
+<p>A different case is the following:</p>
+<blockquote>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span>; <span class="op">}</span> <span class="op">}</span> a;</span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> a<span class="op">.</span>f<span class="op">()</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="op">&amp;</span>ti <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(&amp;</span>a<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">A<span class="op">::</span>f</code> is <code class="sourceCode cpp"><span class="kw">virtual</span></code>. Which might make it seem constant, but any number of shenanigans could ensue — like placement-new-ing a derived type (of the same size) over <code class="sourceCode cpp">a</code>. So all of these should probably remain non-constant expressions.</p>
+<p>Perhaps the most fun example is this one:</p>
+<blockquote>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">extern</span> <span class="kw">const</span> <span class="dt">int</span> arr<span class="op">[]</span>;</span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">constexpr</span> <span class="kw">const</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> arr <span class="op">+</span> N;</span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> arr<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>;</span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="op">*</span>p;</span></code></pre></div>
+</blockquote>
+<p>Which every compiler currently provides different results (in order of most reasonable to least reasonable):</p>
+<ol type="1">
+<li>Clang says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is non-constant if <code class="sourceCode cpp">N <span class="op">!=</span> <span class="dv">0</span></code>, and accepts with <code class="sourceCode cpp">N <span class="op">==</span> <span class="dv">0</span></code>.</li>
+<li>GCC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is out of bounds.</li>
+<li>ICC says <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is always constant (even though it sometimes has UB), but always rejects reading <code class="sourceCode cpp"><span class="op">*</span>p</code> even if <code class="sourceCode cpp">arr<span class="op">+</span>N</code> is in-bounds.</li>
+<li>MSVC says you can’t declare <code class="sourceCode cpp">arr</code> as non-constexpr and define it constexpr, even though there is no such rule</li>
+</ol>
+<p>This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.</p>
+<h2 data-number="3.5" id="wording"><span class="header-section-number">3.5</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>We need to strike the <span>7.7
+ <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> An expression <code class="sourceCode cpp">E</code> is a <em>core constant expression</em> unless the evaluation of <code class="sourceCode cpp">E</code>, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> <code class="sourceCode cpp"><span class="kw">this</span></code>, except
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1.1)</a></span> in a constexpr function that is being evaluated as part of <code class="sourceCode cpp">E</code> <span class="addu">or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1.2)</a></span> <span class="addu">as part of an implicit or explicit class member access expression</span>;</li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5)</a></span> an invocation of a virtual function for an object unless <span class="addu">the object’s dynamic type is known and either</span>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5.1)</a></span> the object is usable in constant expressions or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5.2)</a></span> its lifetime began within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.7)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.8)</a></span> an lvalue-to-rvalue conversion unless it is applied to
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.8.1)</a></span> a non-volatile glvalue that refers to an object that is usable in constant expressions, or</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.8.2)</a></span> a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of <code class="sourceCode cpp">E</code></li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.9)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.10)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.11)</a></span> an invocation of an implicitly-defined copy/move constructor or copy/move assignment operator for a union whose active member (if any) is mutable, unless the lifetime of the union object began within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12)</a></span> <span class="rm" style="color: #bf0303"><del>an <em>id-expression</em> that refers to a variable or data member of reference type unless the reference has a preceding initialization and either</del></span>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12.1)</a></span> <span class="rm" style="color: #bf0303"><del>it is usable in constant expressions or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.12.2)</a></span> <span class="rm" style="color: #bf0303"><del>its lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>;</del></span></li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.13)</a></span> in a <em>lambda-expression</em>, a reference to <code class="sourceCode cpp"><span class="kw">this</span></code> or to a variable with automatic storage duration defined outside that <em>lambda-expression</em>, where the reference would be an odr-use;</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.14)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.26)</a></span> a <code class="sourceCode cpp"><span class="kw">dynamic_cast</span></code> ([expr.dynamic.cast]) or <code class="sourceCode cpp"><span class="kw">typeid</span></code> ([expr.typeid]) expression <span class="addu">on a reference bound to an object whose dynamic type is unknown or</span> that would throw an exception;</li>
+</ul>
+</blockquote>
+<p>And add a new rule to properly handle the lifetime examples shown in the previous section:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s and uses of <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> that refer to an object or reference whose lifetime did not begin with the evaluation of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
+<p>[<em>Example</em>:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> array_size<span class="op">(</span>T <span class="op">(&amp;)[</span>N<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a>    <span class="cf">return</span> N;</span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="op">}</span></span>
+<span id="cb26-5"><a href="#cb26-5"></a></span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="dt">void</span> use_array<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span> <span class="op">(&amp;</span>gold_medal_mel<span class="op">)[</span><span class="dv">2</span><span class="op">])</span> <span class="op">{</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> gold <span class="op">=</span> array_size<span class="op">(</span>gold_medal_mel<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a><span class="op">}</span></span>
+<span id="cb26-9"><a href="#cb26-9"></a></span>
+<span id="cb26-10"><a href="#cb26-10"></a><span class="kw">constexpr</span> <span class="kw">auto</span> olympic_mile<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb26-11"><a href="#cb26-11"></a>  <span class="kw">const</span> <span class="dt">int</span> ledecky <span class="op">=</span> <span class="dv">1500</span>;</span>
+<span id="cb26-12"><a href="#cb26-12"></a>  <span class="cf">return</span> <span class="op">[]{</span> <span class="cf">return</span> ledecky; <span class="op">}</span>;</span>
+<span id="cb26-13"><a href="#cb26-13"></a><span class="op">}</span></span>
+<span id="cb26-14"><a href="#cb26-14"></a><span class="kw">static_assert</span><span class="op">(</span>olympic_mile<span class="op">()()</span> <span class="op">==</span> <span class="dv">1500</span><span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb26-15"><a href="#cb26-15"></a></span>
+<span id="cb26-16"><a href="#cb26-16"></a><span class="kw">struct</span> Swim <span class="op">{</span></span>
+<span id="cb26-17"><a href="#cb26-17"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> phelps<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">28</span>; <span class="op">}</span></span>
+<span id="cb26-18"><a href="#cb26-18"></a>    <span class="kw">virtual</span> <span class="kw">constexpr</span> <span class="dt">int</span> lochte<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">12</span>; <span class="op">}</span></span>
+<span id="cb26-19"><a href="#cb26-19"></a>    <span class="dt">int</span> coughlin <span class="op">=</span> <span class="dv">12</span>;</span>
+<span id="cb26-20"><a href="#cb26-20"></a><span class="op">}</span>;</span>
+<span id="cb26-21"><a href="#cb26-21"></a></span>
+<span id="cb26-22"><a href="#cb26-22"></a><span class="dt">void</span> splash<span class="op">(</span>Swim<span class="op">&amp;</span> swam<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-23"><a href="#cb26-23"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>;     <span class="co">// ok</span></span>
+<span id="cb26-24"><a href="#cb26-24"></a>    <span class="kw">static_assert</span><span class="op">((&amp;</span>swam<span class="op">)-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>; <span class="co">// error: lvalue-to-conversion on a pointer not</span></span>
+<span id="cb26-25"><a href="#cb26-25"></a>                                            <span class="co">// usable in constant expressions    </span></span>
+<span id="cb26-26"><a href="#cb26-26"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference</span></span>
+<span id="cb26-27"><a href="#cb26-27"></a>                                            <span class="co">// with unknown dynamic type</span></span>
+<span id="cb26-28"><a href="#cb26-28"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>coughlin <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: lvalue-to-rvalue conversion on an object</span></span>
+<span id="cb26-29"><a href="#cb26-29"></a>                                            <span class="co">// not usable in constant expressions</span></span>
+<span id="cb26-30"><a href="#cb26-30"></a><span class="op">}</span></span>
+<span id="cb26-31"><a href="#cb26-31"></a></span>
+<span id="cb26-32"><a href="#cb26-32"></a><span class="kw">extern</span> Swim dc;</span>
+<span id="cb26-33"><a href="#cb26-33"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb26-34"><a href="#cb26-34"></a></span>
+<span id="cb26-35"><a href="#cb26-35"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
+<span id="cb26-36"><a href="#cb26-36"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
+<ul>
+<li><em>end example</em>]</li>
+</ul>
+</div>
+</blockquote>
+<p>Add a note to [expr.const]/11 to make it clear that these are not permitted results:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">11</a></span> An entity is a <em>permitted result of a constant expression</em> if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function. <span class="addu">[ <em>Note</em>: A glvalue core constant expression that either refers to or points to an unspecified object is not a constant expression. <em>- end note</em>]</span></p>
+</blockquote>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">4</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Thanks to Daveed Vandevoorde for the encouragement and help. Thanks to Richard Smith for carefully describing the correct rule on the reflector and helping provide further examples and wording. Thanks to Michael Park for pointing out the issue to me, Tim Song for explaining it, and Jonathan Wakely for suggesting I pursue it.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0847R6">
+<p>[P0847R6] Barry Revzin, Gašper Ažman, Sy Brand, Ben Deane. 2021-01-15. Deducing this. <br />
+<a href="https://wg21.link/p0847r6">https://wg21.link/p0847r6</a></p>
+</div>
+<div id="ref-P2280R0">
+<p>[P2280R0] Barry Revzin. 2021-01-13. Using unknown references in constant expressions. <br />
+<a href="https://wg21.link/p2280r0">https://wg21.link/p2280r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

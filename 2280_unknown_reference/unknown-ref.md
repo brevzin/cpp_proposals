@@ -1,6 +1,6 @@
 ---
 title: "Using unknown references in constant expressions"
-document: D2280R1
+document: P2280R1
 date: today
 audience: EWG
 author:
