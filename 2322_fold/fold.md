@@ -149,7 +149,7 @@ constexpr T ranges::fold(R&& r, T init, BinaryOperation binary_op, Proj proj = {
 ::: bq
 ```cpp
 while (first != last) {
-    init = invoke(binary_op, std::move(init), proj(*first));
+    init = invoke(binary_op, std::move(init), invoke(proj, *first));
     ++first;
 }
 return init;
@@ -188,7 +188,7 @@ constexpr T ranges::fold_right(R&& r, T init, BinaryOperation binary_op, Proj pr
 ```cpp
 I tail = ranges::next(first, last);
 while (first != tail) {
-    init = invoke(binary_op, proj(*--tail), std::move(init));
+    init = invoke(binary_op, invoke(proj, *--tail), std::move(init));
 }
 return init;
 ```
