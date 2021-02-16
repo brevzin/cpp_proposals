@@ -61,3 +61,4 @@ make all of my papers.
 - [p2279r0 - We need a language mechanism for customization points](2279_static_polymorphism/p2279r0.html).
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
+- [p2322r0 - `ranges::fold`](2322_fold/p2322r0.html).

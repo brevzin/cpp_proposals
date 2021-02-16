@@ -40,10 +40,11 @@
 - 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html) [p2231r1](2231_constexpr_optional_variant/p2231r1.html)
 - 2277 Packs outside of Templates: [p2277r0](2277_packs_outside_of_templates/p2277r0.html)
 - 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [p2278r0](2278_cbegin/p2278r0.html)
-- 2279 We need a language mechanism for customization points: [p2279r0](2279_static_polymorphism/p2279r0.html)
+- 2279 We need a language mechanism for customization points: [p2279r0](2279_static_polymorphism/p2279r0.html) [d2279r1](2279_static_polymorphism/d2279r1.html)
 - 2280 Using unknown references in constant expressions: [p2280r0](2280_unknown_reference/p2280r0.html) [d2280r1](2280_unknown_reference/d2280r1.html) [p2280r1](2280_unknown_reference/p2280r1.html)
 - 2286 Formatting Ranges: [p2286r0](2286_fmt_ranges/p2286r0.html) [p2286r1](2286_fmt_ranges/p2286r1.html)
 - 2287 Designated-initializers for Base Classes: [p2287r0](2287_designated_base/p2287r0.html) [p2287r1](2287_designated_base/p2287r1.html)
+- 2322 <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>: [p2322r0](2322_fold/p2322r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
