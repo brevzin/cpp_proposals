@@ -212,7 +212,7 @@ constexpr range_value_t<R> fold_right_last(R&& r, BinaryOperation binary_op, Pro
 
 ::: bq
 ```cpp
-I tail = ranges::prev(ranges::next(std::move(first), last));
+I tail = ranges::prev(ranges::next(first), std::move(last));
 return ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), binary_op, proj);
 ```
 :::
