@@ -1,6 +1,6 @@
 ---
 title: "We need a language mechanism for customization points"
-document: P2279R0
+document: D2279R1
 date: today
 audience: EWG
 author:
@@ -50,7 +50,7 @@ C++ has precisely one language feature that meets all of these criteria: `virtua
 
 5. Given a pointer to the interface, just invoking the function you want will automatically do virtual dispatch per the language rules, which automatically invokes the most derived implementation. This requires no additional work on the part of either the interface author or interface user ✔️. 
 
-6. Checking if a type `T` implements an interace `I` is as easy as checking if `derived_from<T, I>` holds ✔️. 
+6. Checking if a type `T` implements an interface `I` is as easy as checking if `derived_from<T, I>` holds ✔️. 
 
 7. If there is an interface has two pure `virtual` member functions, there cannot be an implementation of that interface that only implements one of them. You must implement both, otherwise you cannot even construct an instance of the implementation type ✔️.
 
@@ -75,7 +75,7 @@ struct InputIterator {
 
 We basically cannot make this as an interface. One problem is that we really don't want to make any two input iterators equality comparable to each other, regardless of what they iterate. But the even bigger problem is: what would `operator*` return here? There is no useful type we can put there that satisfies all input_iterators - we might want to return `int&` for some iterators, `std::string const&` for others, `double*` for others, etc.
 
-What this example demonstrates is that `InputIterator` is a parameterized interface. And with virtual functions, the only we can provide those parameters is by adding template parameters. We take our interface and turn it into an interface template:
+What this example demonstrates is that `InputIterator` is a parameterized interface. And with virtual functions, the only way we can provide those parameters is by adding template parameters. We take our interface and turn it into an interface template:
 
 ```cpp
 template <typename R,
@@ -153,7 +153,7 @@ struct MyContainer {
 };
 ```
 
-The author here may not have know about `std::erase(container, value)` and it would certainly be surprising to them (and other users) if `std::erase(container, 42)` on a `MyContainer<int>` instead of erasing those objects that have value `42` instead erased the object at index `42`. 
+The author here may not have known about `std::erase(container, value)` and it would certainly be surprising to them (and other users) if `std::erase(container, 42)` on a `MyContainer<int>` instead of erasing those objects that have value `42` instead erased the object at index `42`. 
 
 The fact that we already even have this conflict in the standard library means that it's quite imperative to be vigilant with concept checks (and hopefully also demonstrates why any kind of unified function call syntax doesn't really help).
 
@@ -186,13 +186,13 @@ struct formatter {
 };
 ```
 
-This tells us nothing at all ❌. You can certainly tell from this definition that is intended to be specialized by _somebody_ (between the `Enable` template parameter and the fact that this class template is otherwise completely useless?) but you can’t tell if it’s intended to be specialized by the library author for the library’s types or by the user for the user’s types.
+This tells us nothing at all ❌. You can certainly tell from this definition that it is intended to be specialized by _somebody_ (between the `Enable` template parameter and the fact that this class template is otherwise completely useless?) but you can’t tell if it’s intended to be specialized by the library author for the library’s types or by the user for the user’s types.
 
 In this case, there is no “default” formatter - so it makes sense that the primary template doesn’t have any functionality. But the downside is, I have no idea what the functionality should be.
 
 Now, yes, I probably have to read the docs anyway to understand the nuance of the library, but it’s still noteworthy that there is zero information in the code. This isn’t indicative of bad code either, the language facility doesn’t actually allow you to provide such.
 
-The only real way to provide this information is with a concept. In this case, that concept could look like this. But the concept for this interface is actually fairly difficult to express (see [formatter.requirements]{.sref}).
+The only real way to provide this information is with a concept. But the concept for this interface is actually fairly difficult to express (see [formatter.requirements]{.sref}).
 
 Second, do we have the ability to provide default implementations that can be overridden? ❌ No, not really. 
 
