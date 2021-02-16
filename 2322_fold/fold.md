@@ -35,7 +35,7 @@ ranges::fold(ranges::next(b), e, *b, ranges::min);
 
 But this is both tedious to write, and subtly wrong for input ranges anyway since if the `next(b)` is evaluated before `*b`, we have a dangling iterator. This comes up enough that this paper proposes a version of `fold` that uses the first element in the range as the initial value (and thus has a precondition that the range is not empty).
 
-This algorithm exists in Rust (under the name `fold_first` as a nightly-only experimental API and `fold1` in the `Itertools` crate) and Haskell (under the name `foldl1`). This paper proposes the name `fold_first` rather than deal with the question of if we can sufficiently constrain our overloads to avoid ambiguity.
+This algorithm exists in Rust (under the name `fold_first` as a nightly-only experimental API and `fold1` in the `Itertools` crate) and Haskell (under the name `foldl1`). This paper proposes the name `fold_first` rather than deal with the question of if we can sufficiently constrain our overloads to avoid ambiguity. Plus, the fact that `fold` has no preconditions but `fold_first` does suggests that they should have different names. 
 
 ## `fold_right`
 
@@ -91,36 +91,40 @@ namespace std {
       indirectly_readable<I> &&
       @*foldable*@<F, T, iter_reference_t<I>, T>;      
 
-    template<input_iterator I, sentinel_for<I> S, movable T, class Proj = identity,
+    template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> BinaryOperation>
     constexpr T fold(I first, S last, T init, BinaryOperation binary_op, Proj proj = {});
 
-    template<input_range R, movable T, class Proj = identity,
+    template<input_range R, class T, class Proj = identity,
       @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> BinaryOperation>
     constexpr T fold(R&& r, T init, BinaryOperation binary_op, Proj proj = {});
 
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> BinaryOperation>
+      requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
     constexpr iter_value_t<I> fold_first(I first, S last, BinaryOperation binary_op, Proj proj = {});
 
     template <input_range R, class Proj = identity,
       @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> BinaryOperation>
+      requires constructible_from<range_value_t<I>, range_reference_t<I>>
     constexpr range_value_t<R> fold_first(R&& r, BinaryOperation binary_op, Proj proj = {});
     
-    template<bidirectional_iterator I, sentinel_for<I> S, movable T, class Proj = identity,
+    template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-binary-right-foldable*@<T, projected<I, Proj>> BinaryOperation>
     constexpr T fold_right(I first, S last, T init, BinaryOperation binary_op, Proj proj = {});
 
-    template<bidirectional_range R, movable T, class Proj = identity,
+    template<bidirectional_range R, class T, class Proj = identity,
       @*indirectly-binary-right-foldable*@<T, projected<iterator_t<R>, Proj>> BinaryOperation>
     constexpr T fold_right(R&& r, T init, BinaryOperation binary_op, Proj proj = {});
 
     template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-binary-right-foldable*@<iter_value_t<I>, projected<I, Proj>> BinaryOperation>
+      requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
     constexpr iter_value_t<I> fold_right_last(I first, S last, BinaryOperation binary_op, Proj proj = {});
 
     template <bidirectional_range R, class Proj = identity,
       @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> BinaryOperation>
+      requires constructible_from<range_value_t<I>, range_reference_t<I>>
     constexpr range_value_t<R> fold_right_last(R&& r, BinaryOperation binary_op, Proj proj = {});    
   }
 }
@@ -131,50 +135,74 @@ And add a new clause, [alg.fold]:
 
 ::: bq
 ```cpp
-template<input_iterator I, sentinel_for<I> S, movable T, class Proj = identity,
+template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
   @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> BinaryOperation>
 constexpr T ranges::fold(I first, S last, T init, BinaryOperation binary_op, Proj proj = {});
 
-template<input_range R, movable T, class Proj = identity,
+template<input_range R, class T, class Proj = identity,
   @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> BinaryOperation>
 constexpr T ranges::fold(R&& r, T init, BinaryOperation binary_op, Proj proj = {});
 ```
 
-[1]{.pnum} *Effects*: Computes its result by initializing the accumulator `acc` with the initial value `init` and then modifies it with `acc = binary_op(std::move(acc), proj(*i))` for every iterator `i` in the range `[first, last)` in order.
+[1]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```cpp
+while (first != last) {
+    init = invoke(binary_op, std::move(init), proj(*first));
+    ++first;
+}
+return init;
+```
+:::
 
 ```cpp
 template <input_iterator I, sentinel_for<I> S, class Proj = identity,
   @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> BinaryOperation>
+  requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
 constexpr iter_value_t<I> ranges::fold_first(I first, S last, BinaryOperation binary_op, Proj proj = {});
 
 template <input_range R, class Proj = identity,
   @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> BinaryOperation>
+  requires constructible_from<range_value_t<I>, range_reference_t<I>>
 constexpr range_value_t<R> ranges::fold_first(R&& r, BinaryOperation binary_op, Proj proj = {});
 ```
 
 [2]{.pnum} *Preconditions*: `first != last` is `true`.
 
-[3]{.pnum} *Effects*: Equivalent to `return ranges::fold(ranges::next(first), last, iter_value_t<I>(*first), binary_op, proj)` except ensuring that the initial value is constructed before the iterator is incremented if `first` is an input iterator.
+[3]{.pnum} *Effects*: Equivalent to `return ranges::fold(ranges::next(std::move(first)), std::move(last), iter_value_t<I>(*first), binary_op, proj)` except ensuring that the initial value is constructed before the iterator is incremented if `first` is an input iterator.
 
 ```cpp
-template<bidirectional_iterator I, sentinel_for<I> S, movable T, class Proj = identity,
+template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
   @*indirectly-binary-right-foldable*@<T, projected<I, Proj>> BinaryOperation>
 constexpr T ranges::fold_right(I first, S last, T init, BinaryOperation binary_op, Proj proj = {});
 
-template<bidirectional_range R, movable T, class Proj = identity,
+template<bidirectional_range R, class T, class Proj = identity,
   @*indirectly-binary-right-foldable*@<T, projected<iterator_t<R>, Proj>> BinaryOperation>
 constexpr T ranges::fold_right(R&& r, T init, BinaryOperation binary_op, Proj proj = {});
 ```
 
-[4]{.pnum} *Effects*: Computes its result by initializing the accumulator `acc` with the initial value `init` and then modifies it with `acc = binary_op(proj(*i), std::move(acc))` for every iterator `i` in the range `[first, last)` in reverse order.
+[4]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```cpp
+I tail = ranges::next(first, last);
+while (first != tail) {
+    init = invoke(binary_op, proj(*--tail), std::move(init));
+}
+return init;
+```
+:::
 
 ```cpp
 template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
   @*indirectly-binary-right-foldable*@<iter_value_t<I>, projected<I, Proj>> BinaryOperation>
+  requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
 constexpr iter_value_t<I> fold_right_last(I first, S last, BinaryOperation binary_op, Proj proj = {});
 
 template <bidirectional_range R, class Proj = identity,
   @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> BinaryOperation>
+  requires constructible_from<range_value_t<I>, range_reference_t<I>>
 constexpr range_value_t<R> fold_right_last(R&& r, BinaryOperation binary_op, Proj proj = {});  
 ```
 
@@ -182,8 +210,10 @@ constexpr range_value_t<R> fold_right_last(R&& r, BinaryOperation binary_op, Pro
 
 [6]{.pnum} *Effects*: Equivalent to:
 
+::: bq
 ```cpp
-I tail = ranges::prev(ranges::next(first, last));
-return ranges::fold_right(first, tail, iter_value_t<I>(*tail), binary_op, proj);
+I tail = ranges::prev(ranges::next(std::move(first), last));
+return ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), binary_op, proj);
 ```
+:::
 :::
