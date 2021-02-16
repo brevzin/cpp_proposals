@@ -166,7 +166,7 @@ template<bidirectional_range R, movable T, class Proj = identity,
 constexpr T ranges::fold_right(R&& r, T init, BinaryOperation binary_op, Proj proj = {});
 ```
 
-[4]{.pnum} *Effects*: ???
+[4]{.pnum} *Effects*: Computes its result by initializing the accumulator `acc` with the initial value `init` and then modifies it with `acc = binary_op(proj(*i), std::move(acc))` for every iterator `i` in the range `[first, last)` in reverse order.
 
 ```cpp
 template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
@@ -180,5 +180,10 @@ constexpr range_value_t<R> fold_right_last(R&& r, BinaryOperation binary_op, Pro
 
 [5]{.pnum} *Preconditions*: `first != last` is `true`.
 
-[6]{.pnum} *Effects*: ???
+[6]{.pnum} *Effects*: Equivalent to:
+
+```cpp
+I tail = ranges::prev(ranges::next(first, last));
+return ranges::fold_right(first, tail, iter_value_t<I>(*tail), binary_op, proj);
+```
 :::
