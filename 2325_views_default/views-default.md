@@ -98,13 +98,11 @@ concept view =
     enable_view<T>;
 ```
 
-Remove the default constructors from the standard library views in which they only exist to satisfy the requirement (`ref_view`, `istream_view`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
+Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`). It also removes the default constructible requirement on the `W` parameter for `iota_view`.
 
-For `iota_view`, remove the default constructible requirement from the `W` parameter.
+Remove the default constructors from the standard library views for which they only exist to satisfy the requirement (`ref_view`, `istream_view`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
 
 For `join_view`, store the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
-
-Move the default constructible requirement from `input_or_output_iterator` into `forward_iterator`, so that it no longer applies to input-only iterators or output iterators. 
 
 We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [range.semi.wrap]{.sref}), which we use to wrap function objects throughout. We can do a little bit better by introducing a `@*copyable-box*@<T>` such that:
 
