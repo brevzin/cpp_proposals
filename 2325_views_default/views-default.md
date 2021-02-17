@@ -104,6 +104,8 @@ Remove the default constructors from the standard library views and iterators fo
 
 For `join_view`, store the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
 
+Make `span<ElementType, Extent>` a `view` regardless of `Extent`. Currently, it is only a `view` when `Extent == 0 || Extent == dynamic_extent`.
+
 We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [range.semi.wrap]{.sref}), which we use to wrap function objects throughout. We can do a little bit better by introducing a `@*copyable-box*@<T>` such that:
 
 * If `T` is `copyable`, then `@*copyable-box*@<T>` is basically just `T`
