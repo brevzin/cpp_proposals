@@ -66,7 +66,7 @@ And the answer is... not much. The commit can be found here: [@range-v3-no-dflt]
 
 2. `views::ints` and `views::indices` are interesting in range-v3 because it's not just that `ints(0, 4)` gives you the range `[0,4)` but also that `ints` by itself is also a range (from `0` to infinity). These two inherit from iota, so once I removed the default constructor from iota, these uses break. So I added default constructors to `ints` and `indices`.
 
-3. One of range-v3's mechanisms for easier implementation of views and iterators is called `view_facade`. I don't understand how it works, but in order for the iterator produced from `view_facade` to be default constructible (a requirement of forward iterator), the `view` itself has to be default constructible. So `linear_distribute_view` and `chunk_view` (the specialization for input ranges) kept their defaulted default constructors. This would break if you tried to chunk a non-default-constructible input view (chunk would also have to wrap its underlying view in semiregular_box or something), but there's no such test in range-v3. 
+3. One of range-v3's mechanisms for easier implementation of views and iterators is called `view_facade`. This is an implementation strategy that uses the view as part of the iterator as an implementation detail. As such, because the iterator has to be default constructible, the view must be as well. So `linear_distribute_view` and `chunk_view` (the specialization for input ranges) kept their defaulted default constructors. But this is simply an implementation strategy, there's nothing inherent to these views that requires this approach.
 
 4. There's one test for `any_view` that just tests that it's default constructible. 
 
