@@ -100,7 +100,7 @@ concept view =
 
 Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`). It also removes the default constructible requirement on the `W` parameter for `iota_view`.
 
-Remove the default constructors from the standard library views for which they only exist to satisfy the requirement (`ref_view`, `istream_view`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
+Remove the default constructors from the standard library views and iterators for which they only exist to satisfy the requirement (`ref_view`, `istream_view`, `ostream_iterator`, `back_insert_iterator`, `front_insert_iterator`, `insert_iterator`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
 
 For `join_view`, store the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
 
