@@ -72,7 +72,7 @@ And the answer is... not much. The commit can be found here: [@range-v3-no-dflt]
 
 That's it. Broadly, just a few views that actually need default construction that can easily provide it, most simply don't need this constraint.
 
-## Does this requirement case harm?
+## Does this requirement cause harm?
 
 Rather than providing a benefit, it seems like the default construction requirement causes harm.
 
@@ -98,13 +98,15 @@ concept view =
     enable_view<T>;
 ```
 
-Remove all the default constructors from all the standard library views. For `iota_view`, this would also require removing the default constructible requirement from the `W` parameter. For `join_view`, this would require storing the inner view in a `@*semiregular-box*<views::all_t<@*InnerRng*@>>`.
+Remove all the default constructors from all the standard library views. For `iota_view`, this would also require removing the default constructible requirement from the `W` parameter. For `join_view`, this would require storing the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
+
+Remove the default constructible requirement from `input_or_output_iterator` into `forward_iterator`, so that it no longer applies to input-only iterators or output iterators. 
 
 We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [range.semi.wrap]{.sref}), which we use to wrap function objects throughout. Instead, introduce a new `@*copyable-box*@<T>` that behaves like `T` except that copy assignment performs a destroy-then-construct if `T` isn't copy-assignable. This is like `optional<T>` except there is no empty state, we always have a `T`. Replace all function object `@*semiregular-box*@<F>` wrappers throughout `<ranges>` with `@*copyable-box*@<F>` wrappers.
 
 ## Timeline
 
-At the moment, only libstdc++ provides an implementation of ranges. We either have to make now and soon, or never.
+At the moment, only libstdc++ provides an implementation of ranges. We either have to make this change now and soon, or never.
 
 ---
 references:
