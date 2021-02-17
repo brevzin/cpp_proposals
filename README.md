@@ -62,3 +62,4 @@ make all of my papers.
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2322r0 - `ranges::fold`](2322_fold/p2322r0.html).
+- [p2325r0 - Views should not be required to be default constructible](2325_views_default/p2325r0.html).
