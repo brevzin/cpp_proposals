@@ -98,7 +98,9 @@ concept view =
     enable_view<T>;
 ```
 
-Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`). It also removes the default constructible requirement on the `W` parameter for `iota_view`.
+Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`). 
+
+For `iota_view`, replace the `semiregular<W>` constraint with `copyable<W>`, and add a constraint on `iota_view<W, Bound>::iterator`'s default constructor. This allows an input-only `iota_view` with a non-default-constructible `W` while preserving the current behavior for all forward-or-better `iota_view`s. 
 
 Remove the default constructors from the standard library views and iterators for which they only exist to satisfy the requirement (`ref_view`, `istream_view`, `ostream_iterator`, `ostreambuf_iterator`, `back_insert_iterator`, `front_insert_iterator`, `insert_iterator`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
 
