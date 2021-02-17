@@ -98,15 +98,25 @@ concept view =
     enable_view<T>;
 ```
 
-Remove all the default constructors from all the standard library views. For `iota_view`, this would also require removing the default constructible requirement from the `W` parameter. For `join_view`, this would require storing the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
+Remove the default constructors from the standard library views in which they only exist to satisfy the requirement (`ref_view`, `istream_view`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
 
-Remove the default constructible requirement from `input_or_output_iterator` into `forward_iterator`, so that it no longer applies to input-only iterators or output iterators. 
+For `iota_view`, remove the default constructible requirement from the `W` parameter.
 
-We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [range.semi.wrap]{.sref}), which we use to wrap function objects throughout. Instead, introduce a new `@*copyable-box*@<T>` that behaves like `T` except that copy assignment performs a destroy-then-construct if `T` isn't copy-assignable. This is like `optional<T>` except there is no empty state, we always have a `T`. Replace all function object `@*semiregular-box*@<F>` wrappers throughout `<ranges>` with `@*copyable-box*@<F>` wrappers.
+For `join_view`, store the inner view in a `@*semiregular-box*@<views::all_t<@*InnerRng*@>>`.
+
+Move the default constructible requirement from `input_or_output_iterator` into `forward_iterator`, so that it no longer applies to input-only iterators or output iterators. 
+
+We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [range.semi.wrap]{.sref}), which we use to wrap function objects throughout. We can do a little bit better by introducing a `@*copyable-box*@<T>` such that:
+
+* If `T` is `copyable`, then `@*copyable-box*@<T>` is basically just `T`
+* Otherwise, if `T` is `nothrow_copy_constructible` but not `copy_assignable`, then `@*copyable-box*@<T>` can be a thin wrapper around `T` that adds a copy assignment operator that does destroy-then-copy-construct.
+* Otherwise, `@*copyable-box*@<T>` is `@*semiregular-box*@<T>` (we still need `optional<T>`'s empty state here to handle the case where copy construction can throw, to avoid double-destruction).
+
+Replace all function object `@*semiregular-box*@<F>` wrappers throughout `<ranges>` with `@*copyable-box*@<F>` wrappers.
 
 ## Timeline
 
-At the moment, only libstdc++ provides an implementation of ranges. We either have to make this change now and soon, or never.
+At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC's is incomplete). We either have to make this change now and soon, or never.
 
 ---
 references:
