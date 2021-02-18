@@ -53,7 +53,7 @@ This paper picks the latter (that is `fold_right` as the order of arguments flip
 
 Second, supporting bidirectional ranges is straightforward. Supporting forward ranges involves recursion of the size of the range. Supporting input ranges involves recursion and also copying the whole range first. Are either of these worth supporting? The paper simply supports bidirectional ranges. 
 
-Third, the naming question. Given that we have `fold_right`, should the other one be named `fold_left`? Or we could take Haskell's names of `foldl` and `foldr`? In my experience, left-folds are more common than right-folds, so this paper proposes the names `fold`/`fold_first` and `fold_right`/`fold_right_first`.
+Third, the naming question. Given that we have `fold_right`, should the other one be named `fold_left`? Or we could take Haskell's names of `foldl` and `foldr`? In my experience, left-folds are more common than right-folds, so this paper proposes the names `fold`/`fold_first` and `fold_right`/`fold_right_last`.
 
 # Wording
 
