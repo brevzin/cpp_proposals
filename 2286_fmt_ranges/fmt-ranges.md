@@ -282,6 +282,7 @@ It is more important to me that ranges and tuples are visually distinct (in this
 
 My preference for avoiding `{}` in the formatting is largely because it's unlikely the results here can be used directly for copying and pasting directly into initialization anyway, so the priority is simply having visual distinction for the various cases.
 
+With quoting, the question is how does the library choose if something is string-like and thus needs to be quoted. Currently, fmtlib makes this determination by checking for the presence of certain operations (`p->length()`, `p->find('a')`, and `p->data()`). We could instead add a variable template called `enable_formatting_as_string` to allow for opting into this kind of formatting.
 
 ## What additional functionality?
 
@@ -411,7 +412,7 @@ The standard library should add specializations of `formatter` for:
 * `tuple<Ts...>` if all of `Ts...` are formattable,
 * `vector<bool>::reference` (which does as `bool` does).
 
-Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted. 
+Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted (with string-like being determined via variable template trait). 
 
 Formatting ranges does not support any additional format specifiers. 
 
