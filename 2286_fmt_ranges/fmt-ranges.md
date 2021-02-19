@@ -303,6 +303,14 @@ There's three layers of potential functionality:
     
 This paper suggests the first two and encourages research into the third.
 
+## What about format specifiers?
+
+The implementation experience in `fmt` is that directly formatting ranges does _not_ support any format specifiers, but `fmt::join` supports providing a specifier per element as well as providing the delimiter and wrapping brackets.
+
+We could add the same format specifier support for direct formatting of ranges as `fmt::join` supports, but it doesn't seem especially worthwhile. If you don't care about formatting, `"{}"` is all you need. If you do care about formatting, it's likely that you care about more than just the formatting of each individual element &mdash; you probably care about other things do. At which point, you'd likely need to use `fmt::join` anyway. 
+
+That seems like the right mix of functionality to me. 
+
 ## How to support those views which are not `const`-iterable?
 
 There are several C++20 range adapters which are not `const`-iterable. These include `views::filter` and `views::drop_while`. But `std::format` takes its arguments by `Args const&...`, so how could they be printable?
@@ -327,9 +335,30 @@ struct formatter<R, Char>
 
 But, this still doesn't cover all the cases. If `R` is a type such that `R const` is a `view` but `R` is move-only, that won't compile. We can work around this case. But if `R` is a type that such that `view<R> and not range<R const> and not copyable<R>`, there's really no way of getting this to work without changing the API.
 
-If we do want to support this case (and `fmt` does not), then we will need to change the API of `format` to take by forwarding reference. Notably, the proposed `std::generator<T>` is one such type [@P2168R0]. The workaround here is to use `fmt::join` instead (which does take by forwarding reference).
+Notably, the proposed `std::generator<T>` is one such type [@P2168R0]
 
-Do we care about supporting this use-case directly?
+If we do want to support this case (and `fmt` does not), then we will need to change the API of `format` to take by forwarding reference instead of by const reference. That is, replace
+
+```cpp
+template<class... Args>
+string format(string_view fmt, const Args&... args);
+```
+
+with:
+
+```cpp
+template<class... Args>
+string format(string_view fmt, Args&&... args);
+```
+
+But it's not that easy. While we would need `std::generator<T>` to bind to `Args&&` rather than `Args const&`, there are other cases which have the exact opposite problem: bit-fields need to bind to `Args const&` and cannot bind to `Args&&`.
+
+So we can't really change the API to support this use-case without breaking other use-cases. But there are workarounds for this case:
+
+* `fmt::join`, which does take by forwarding reference
+* `ranges::ref_view` can wrap an lvalue of such a view, the resulting view would be `const`-iterable.
+
+For example:
 
 ::: bq
 ```cpp
@@ -341,10 +370,16 @@ auto ints_coro(int n) -> std::generator<int> {
 
 fmt::print("{}", ints_coro(10)); // error
 fmt::print("[{}]", fmt::join(ints_coro(10), ", ")); // ok
+
+auto v = ints_coro(10);
+fmt::print("{}", std::ranges::ref_view(v)); // ok, if tedious
+
 fmt::print("{}", ints_coro(10) | ranges::to<std::vector>); // ok, but expensive
 fmt::print("{}", views::iota(0, 10)); // ok, but harder to implement
 ```
 :::
+
+You can see an example of formatting a move-only, non-`const`-iterable range on compiler explorer [@fmt-non-const].
 
 ## Specifying formatters for ranges
 
@@ -378,6 +413,20 @@ The standard library should add specializations of `formatter` for:
 
 Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted. 
 
+Formatting ranges does not support any additional format specifiers. 
+
 The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted.
 
-For types like `std::generator<T>` (which are move-only, non-const-iterable ranges), users will have to use `std::format_join` facility.
+For types like `std::generator<T>` (which are move-only, non-const-iterable ranges), users will have to either use `std::format_join` facility or use something like `ranges::ref_view` as shown earlier.
+
+---
+references:
+    - id: fmt-non-const
+      citation-label: fmt-non-const
+      title: "Formatting a move-only non-const-iterable range"
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2021
+      URL: https://godbolt.org/z/149YqW
+---
