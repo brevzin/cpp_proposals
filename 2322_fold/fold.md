@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: P2322R0
+document: P2322R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+[@P2322R0] used `regular_invocable` as the constraint in the `@*foldable*@` concept, but we don't need that for this algorithm and it prohibits reasonable uses like a mutating operation. `invocable` is the sufficient constraint here (in the same way that it is for `for_each`).
 
 # Introduction
 
@@ -78,7 +82,7 @@ namespace std {
     concept @*foldable*@ =                        // exposition only
       movable<R> &&
       copy_constructible<F> &&
-      regular_invocable<F&, Args...> &&
+      invocable<F&, Args...> &&
       @*weakly-assignable-from*@<R&, invoke_result_t<F&, Args...>>;
   
     template<class F, class T, class I>
