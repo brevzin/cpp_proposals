@@ -1,6 +1,6 @@
 ---
 title: "Superior String Splitting"
-document: P2210R1
+document: P2210R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2210R1], wording improvements.
 
 Since [@P2210R0], corrected the explanation of `const`-iteration and corrected that it is sort of possible to build a better `split` on top of the existing one. Changed the proposal to keep the preexisting `split` with its semantics under a different name instead. 
 
@@ -676,7 +678,7 @@ for (span<char const> word : split(str, ' ')) {
         }
     }
     
-    constexpr iterator_t<V> @_find-next_@(iterator_t<V>); // exposition only
+    constexpr subrange<iterator_t<V>> @_find-next_@(iterator_t<V>); // exposition only
   };
 
   template<class R, class P>

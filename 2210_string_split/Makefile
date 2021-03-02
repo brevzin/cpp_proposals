@@ -1,2 +1,2 @@
-p2210r1.html : string-split.md
+p2210r2.html : string-split.md
 include ../md/mpark-wg21.mk
