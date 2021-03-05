@@ -568,7 +568,7 @@ constexpr @*outer-iterator*@& operator++();
         @*current*@ = b;
 +       if (@*current*@ == end) {
 +         @*trailing_empty_*@ = true;
-+       }        
++       }
         break;            // The pattern matched; skip it
       }
     } while (++@*current*@ != end);
