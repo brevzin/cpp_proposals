@@ -704,6 +704,7 @@ for (span<char const> word : split(str, ' ')) {
 
 ::: bq
 ```cpp
+namespace std::ranges {
   template<forward_range V, forward_range Pattern>
     requires view<V> && view<Pattern> &&
              indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
@@ -790,6 +791,7 @@ return {b,e};
 
 ::: bq
 ```cpp
+namespace std::ranges {
   template<forward_range V, forward_range Pattern>
     requires view<V> && view<Pattern> &&
              indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
@@ -817,6 +819,7 @@ return {b,e};
 
     friend constexpr bool operator==(const @_iterator_@& x, const @_iterator_@& y)
   };
+}
 ```
 
 ```cpp
@@ -874,6 +877,7 @@ return x.@*cur_*@ == y.@*cur_*@ && x.@*trailing_empty_*@ == y.@*trailing_empty_*
 
 ::: bq
 ```cpp
+namespace std::ranges {
   template<forward_range V, forward_range Pattern>
     requires view<V> && view<Pattern> &&
              indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
@@ -887,6 +891,7 @@ return x.@*cur_*@ == y.@*cur_*@ && x.@*trailing_empty_*@ == y.@*trailing_empty_*
     
     friend constexpr bool operator==(const @_iterator_@& x, const @_sentinel_@& y);
   };
+}
 ```
 
 ```cpp

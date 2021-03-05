@@ -1079,49 +1079,50 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h3 data-number="5.2.2" id="class-template-split_view-range.split2.view"><span class="header-section-number">5.2.2</span> Class template <code class="sourceCode cpp">split_view</code> [range.split2.view]<a href="#class-template-split_view-range.split2.view" class="self-link"></a></h3>
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a>  <span class="kw">class</span> split_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb22-5"><a href="#cb22-5"></a>  <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb22-6"><a href="#cb22-6"></a>    V <em>base_</em> <span class="op">=</span> V<span class="op">()</span>;                              <span class="co">// exposition only</span></span>
-<span id="cb22-7"><a href="#cb22-7"></a>    Pattern <em>pattern_</em> <span class="op">=</span> Pattern<span class="op">()</span>;               <span class="co">// exposition only</span></span>
-<span id="cb22-8"><a href="#cb22-8"></a>    <span class="co">// [range.split2.iterator], class split_view​::​<em>iterator</em></span></span>
-<span id="cb22-9"><a href="#cb22-9"></a>    <span class="kw">struct</span> <em>iterator</em>;                            <span class="co">// exposition only</span></span>
-<span id="cb22-10"><a href="#cb22-10"></a>    <span class="co">// [range.split2.sentinel], class split_view​::<em>sentinel</em></span></span>
-<span id="cb22-11"><a href="#cb22-11"></a>    <span class="kw">struct</span> <em>sentinel</em>;                            <span class="co">// exposition only</span></span>
-<span id="cb22-12"><a href="#cb22-12"></a>  <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb22-13"><a href="#cb22-13"></a>    split_view<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb22-14"><a href="#cb22-14"></a>    <span class="kw">constexpr</span> split_view<span class="op">(</span>V base, Pattern pattern<span class="op">)</span>;</span>
-<span id="cb22-15"><a href="#cb22-15"></a></span>
-<span id="cb22-16"><a href="#cb22-16"></a>    <span class="kw">template</span><span class="op">&lt;</span>forward_range R<span class="op">&gt;</span></span>
-<span id="cb22-17"><a href="#cb22-17"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>V, views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb22-18"><a href="#cb22-18"></a>               constructible_from<span class="op">&lt;</span>Pattern, single_view<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb22-19"><a href="#cb22-19"></a>    <span class="kw">constexpr</span> split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> e<span class="op">)</span>;</span>
-<span id="cb22-20"><a href="#cb22-20"></a></span>
-<span id="cb22-21"><a href="#cb22-21"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="kw">requires</span> copyable<span class="op">&lt;</span>V<span class="op">&gt;{</span> <span class="cf">return</span> <em>base_</em>; <span class="op">}</span></span>
-<span id="cb22-22"><a href="#cb22-22"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb22-23"><a href="#cb22-23"></a></span>
-<span id="cb22-24"><a href="#cb22-24"></a>    <span class="kw">constexpr</span> <em>iterator</em> begin<span class="op">()</span>;</span>
-<span id="cb22-25"><a href="#cb22-25"></a>    </span>
-<span id="cb22-26"><a href="#cb22-26"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb22-27"><a href="#cb22-27"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb22-28"><a href="#cb22-28"></a>            <span class="cf">return</span> <em>iterator</em><span class="op">{*</span><span class="kw">this</span>, ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">)</span>, <span class="op">{}}</span>;</span>
-<span id="cb22-29"><a href="#cb22-29"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb22-30"><a href="#cb22-30"></a>            <span class="cf">return</span> <em>sentinel</em><span class="op">{*</span><span class="kw">this</span><span class="op">}</span>;</span>
-<span id="cb22-31"><a href="#cb22-31"></a>        <span class="op">}</span></span>
-<span id="cb22-32"><a href="#cb22-32"></a>    <span class="op">}</span></span>
-<span id="cb22-33"><a href="#cb22-33"></a>    </span>
-<span id="cb22-34"><a href="#cb22-34"></a>    <span class="kw">constexpr</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>find-next</em><span class="op">(</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;)</span>; <span class="co">// exposition only</span></span>
-<span id="cb22-35"><a href="#cb22-35"></a>  <span class="op">}</span>;</span>
-<span id="cb22-36"><a href="#cb22-36"></a></span>
-<span id="cb22-37"><a href="#cb22-37"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> P<span class="op">&gt;</span></span>
-<span id="cb22-38"><a href="#cb22-38"></a>    split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span>, P<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> split_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, views<span class="op">::</span>all_t<span class="op">&lt;</span>P<span class="op">&gt;&gt;</span>;</span>
-<span id="cb22-39"><a href="#cb22-39"></a></span>
-<span id="cb22-40"><a href="#cb22-40"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range R<span class="op">&gt;</span></span>
-<span id="cb22-41"><a href="#cb22-41"></a>    split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;)</span></span>
-<span id="cb22-42"><a href="#cb22-42"></a>      <span class="op">-&gt;</span> split_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, single_view<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span>;</span>
-<span id="cb22-43"><a href="#cb22-43"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>  <span class="kw">class</span> split_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>  <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a>    V <em>base_</em> <span class="op">=</span> V<span class="op">()</span>;                              <span class="co">// exposition only</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>    Pattern <em>pattern_</em> <span class="op">=</span> Pattern<span class="op">()</span>;               <span class="co">// exposition only</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>    <span class="co">// [range.split2.iterator], class split_view​::​<em>iterator</em></span></span>
+<span id="cb22-10"><a href="#cb22-10"></a>    <span class="kw">struct</span> <em>iterator</em>;                            <span class="co">// exposition only</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>    <span class="co">// [range.split2.sentinel], class split_view​::<em>sentinel</em></span></span>
+<span id="cb22-12"><a href="#cb22-12"></a>    <span class="kw">struct</span> <em>sentinel</em>;                            <span class="co">// exposition only</span></span>
+<span id="cb22-13"><a href="#cb22-13"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb22-14"><a href="#cb22-14"></a>    split_view<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb22-15"><a href="#cb22-15"></a>    <span class="kw">constexpr</span> split_view<span class="op">(</span>V base, Pattern pattern<span class="op">)</span>;</span>
+<span id="cb22-16"><a href="#cb22-16"></a></span>
+<span id="cb22-17"><a href="#cb22-17"></a>    <span class="kw">template</span><span class="op">&lt;</span>forward_range R<span class="op">&gt;</span></span>
+<span id="cb22-18"><a href="#cb22-18"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>V, views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb22-19"><a href="#cb22-19"></a>               constructible_from<span class="op">&lt;</span>Pattern, single_view<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb22-20"><a href="#cb22-20"></a>    <span class="kw">constexpr</span> split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> e<span class="op">)</span>;</span>
+<span id="cb22-21"><a href="#cb22-21"></a></span>
+<span id="cb22-22"><a href="#cb22-22"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="kw">requires</span> copyable<span class="op">&lt;</span>V<span class="op">&gt;{</span> <span class="cf">return</span> <em>base_</em>; <span class="op">}</span></span>
+<span id="cb22-23"><a href="#cb22-23"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb22-24"><a href="#cb22-24"></a></span>
+<span id="cb22-25"><a href="#cb22-25"></a>    <span class="kw">constexpr</span> <em>iterator</em> begin<span class="op">()</span>;</span>
+<span id="cb22-26"><a href="#cb22-26"></a>    </span>
+<span id="cb22-27"><a href="#cb22-27"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb22-28"><a href="#cb22-28"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb22-29"><a href="#cb22-29"></a>            <span class="cf">return</span> <em>iterator</em><span class="op">{*</span><span class="kw">this</span>, ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">)</span>, <span class="op">{}}</span>;</span>
+<span id="cb22-30"><a href="#cb22-30"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb22-31"><a href="#cb22-31"></a>            <span class="cf">return</span> <em>sentinel</em><span class="op">{*</span><span class="kw">this</span><span class="op">}</span>;</span>
+<span id="cb22-32"><a href="#cb22-32"></a>        <span class="op">}</span></span>
+<span id="cb22-33"><a href="#cb22-33"></a>    <span class="op">}</span></span>
+<span id="cb22-34"><a href="#cb22-34"></a>    </span>
+<span id="cb22-35"><a href="#cb22-35"></a>    <span class="kw">constexpr</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>find-next</em><span class="op">(</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;)</span>; <span class="co">// exposition only</span></span>
+<span id="cb22-36"><a href="#cb22-36"></a>  <span class="op">}</span>;</span>
+<span id="cb22-37"><a href="#cb22-37"></a></span>
+<span id="cb22-38"><a href="#cb22-38"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> P<span class="op">&gt;</span></span>
+<span id="cb22-39"><a href="#cb22-39"></a>    split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span>, P<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> split_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, views<span class="op">::</span>all_t<span class="op">&lt;</span>P<span class="op">&gt;&gt;</span>;</span>
+<span id="cb22-40"><a href="#cb22-40"></a></span>
+<span id="cb22-41"><a href="#cb22-41"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range R<span class="op">&gt;</span></span>
+<span id="cb22-42"><a href="#cb22-42"></a>    split_view<span class="op">(</span>R<span class="op">&amp;&amp;</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;)</span></span>
+<span id="cb22-43"><a href="#cb22-43"></a>      <span class="op">-&gt;</span> split_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, single_view<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span>;</span>
+<span id="cb22-44"><a href="#cb22-44"></a><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">constexpr</span> split_view<span class="op">(</span>V base, Pattern pattern<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>base_</em></code> with <code class="sourceCode cpp">std​<span class="op">::</span>​move<span class="op">(</span>base<span class="op">)</span></code>, and <code class="sourceCode cpp"><em>pattern_</em></code> with <code class="sourceCode cpp">std​<span class="op">::</span>​move<span class="op">(</span>pattern<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span><span class="op">&lt;</span>forward_range R<span class="op">&gt;</span></span>
@@ -1143,33 +1144,35 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h3 data-number="5.2.3" id="class-template-split_view_iterator_-range.split2.iterator"><span class="header-section-number">5.2.3</span> Class template <code class="sourceCode cpp">split_view​<span class="op">::</span><em>​iterator</em></code> [range.split2.iterator]<a href="#class-template-split_view_iterator_-range.split2.iterator" class="self-link"></a></h3>
 <blockquote>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
-<span id="cb28-2"><a href="#cb28-2"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb28-3"><a href="#cb28-3"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
-<span id="cb28-4"><a href="#cb28-4"></a>  <span class="kw">class</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span><em>iterator</em> <span class="op">{</span></span>
-<span id="cb28-5"><a href="#cb28-5"></a>  <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb28-6"><a href="#cb28-6"></a>    split_view<span class="op">*</span> <em>parent_</em> <span class="op">=</span> <span class="kw">nullptr</span>;                              <span class="co">// exposition only</span></span>
-<span id="cb28-7"><a href="#cb28-7"></a>    iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>cur_</em> <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;                       <span class="co">// exposition only</span></span>
-<span id="cb28-8"><a href="#cb28-8"></a>    subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>next_</em> <span class="op">=</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;()</span>;  <span class="co">// exposition only</span></span>
-<span id="cb28-9"><a href="#cb28-9"></a>    <span class="dt">bool</span> <em>trailing_empty_</em> <span class="op">=</span> <span class="kw">false</span>;                               <span class="co">// exposition only</span></span>
-<span id="cb28-10"><a href="#cb28-10"></a>    </span>
-<span id="cb28-11"><a href="#cb28-11"></a>  <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb28-12"><a href="#cb28-12"></a>    <span class="kw">using</span> iterator_concept <span class="op">=</span> forward_iterator_tag;</span>
-<span id="cb28-13"><a href="#cb28-13"></a>    <span class="kw">using</span> iterator_category <span class="op">=</span> input_iterator_tag;</span>
-<span id="cb28-14"><a href="#cb28-14"></a>    <span class="kw">using</span> value_type <span class="op">=</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span>;</span>
-<span id="cb28-15"><a href="#cb28-15"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> range_difference_t<span class="op">&lt;</span>V<span class="op">&gt;</span>;</span>
-<span id="cb28-16"><a href="#cb28-16"></a>    </span>
-<span id="cb28-17"><a href="#cb28-17"></a>    <em>iterator</em><span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb28-18"><a href="#cb28-18"></a>    <span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> next<span class="op">)</span>;</span>
-<span id="cb28-19"><a href="#cb28-19"></a></span>
-<span id="cb28-20"><a href="#cb28-20"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span>;</span>
-<span id="cb28-21"><a href="#cb28-21"></a>    <span class="kw">constexpr</span> value_type <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;</span>
-<span id="cb28-22"><a href="#cb28-22"></a></span>
-<span id="cb28-23"><a href="#cb28-23"></a>    <span class="kw">constexpr</span> <em>iterator</em><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span>;</span>
-<span id="cb28-24"><a href="#cb28-24"></a>    <span class="kw">constexpr</span> <em>iterator</em> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb28-25"><a href="#cb28-25"></a></span>
-<span id="cb28-26"><a href="#cb28-26"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> y<span class="op">)</span></span>
-<span id="cb28-27"><a href="#cb28-27"></a>  <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>  <span class="kw">class</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span><em>iterator</em> <span class="op">{</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a>  <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a>    split_view<span class="op">*</span> <em>parent_</em> <span class="op">=</span> <span class="kw">nullptr</span>;                              <span class="co">// exposition only</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a>    iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>cur_</em> <span class="op">=</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>;                       <span class="co">// exposition only</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a>    subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <em>next_</em> <span class="op">=</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;()</span>;  <span class="co">// exposition only</span></span>
+<span id="cb28-10"><a href="#cb28-10"></a>    <span class="dt">bool</span> <em>trailing_empty_</em> <span class="op">=</span> <span class="kw">false</span>;                               <span class="co">// exposition only</span></span>
+<span id="cb28-11"><a href="#cb28-11"></a>    </span>
+<span id="cb28-12"><a href="#cb28-12"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb28-13"><a href="#cb28-13"></a>    <span class="kw">using</span> iterator_concept <span class="op">=</span> forward_iterator_tag;</span>
+<span id="cb28-14"><a href="#cb28-14"></a>    <span class="kw">using</span> iterator_category <span class="op">=</span> input_iterator_tag;</span>
+<span id="cb28-15"><a href="#cb28-15"></a>    <span class="kw">using</span> value_type <span class="op">=</span> subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span>;</span>
+<span id="cb28-16"><a href="#cb28-16"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> range_difference_t<span class="op">&lt;</span>V<span class="op">&gt;</span>;</span>
+<span id="cb28-17"><a href="#cb28-17"></a>    </span>
+<span id="cb28-18"><a href="#cb28-18"></a>    <em>iterator</em><span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb28-19"><a href="#cb28-19"></a>    <span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> next<span class="op">)</span>;</span>
+<span id="cb28-20"><a href="#cb28-20"></a></span>
+<span id="cb28-21"><a href="#cb28-21"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb28-22"><a href="#cb28-22"></a>    <span class="kw">constexpr</span> value_type <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;</span>
+<span id="cb28-23"><a href="#cb28-23"></a></span>
+<span id="cb28-24"><a href="#cb28-24"></a>    <span class="kw">constexpr</span> <em>iterator</em><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span>;</span>
+<span id="cb28-25"><a href="#cb28-25"></a>    <span class="kw">constexpr</span> <em>iterator</em> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb28-26"><a href="#cb28-26"></a></span>
+<span id="cb28-27"><a href="#cb28-27"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> y<span class="op">)</span></span>
+<span id="cb28-28"><a href="#cb28-28"></a>  <span class="op">}</span>;</span>
+<span id="cb28-29"><a href="#cb28-29"></a><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">constexpr</span> iterator<span class="op">(</span>split_view<span class="op">&amp;</span> parent, iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> current, subrange<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> next<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>parent_</em></code> with <code class="sourceCode cpp">addressof<span class="op">(</span>parent<span class="op">)</span></code>, <code class="sourceCode cpp"><em>cur_</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>current<span class="op">)</span></code>, and <code class="sourceCode cpp"><em>next_</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>next<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> base<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
@@ -1202,19 +1205,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h3 data-number="5.2.4" id="class-template-split_view_sentinel_-range.split2.sentinel"><span class="header-section-number">5.2.4</span> Class template <code class="sourceCode cpp">split_view​<span class="op">::</span><em>​sentinel</em></code> [range.split2.sentinel]<a href="#class-template-split_view_sentinel_-range.split2.sentinel" class="self-link"></a></h3>
 <blockquote>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
-<span id="cb38-2"><a href="#cb38-2"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb38-3"><a href="#cb38-3"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
-<span id="cb38-4"><a href="#cb38-4"></a>  <span class="kw">struct</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span><em>sentinel</em> <span class="op">{</span></span>
-<span id="cb38-5"><a href="#cb38-5"></a>  <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb38-6"><a href="#cb38-6"></a>    sentinel_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>end_</em> <span class="op">=</span> sentinel_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>; <span class="co">// exposition only</span></span>
-<span id="cb38-7"><a href="#cb38-7"></a>    </span>
-<span id="cb38-8"><a href="#cb38-8"></a>  <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb38-9"><a href="#cb38-9"></a>    <em>sentinel</em><span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb38-10"><a href="#cb38-10"></a>    <span class="kw">constexpr</span> <span class="kw">explicit</span> <em>sentinel</em><span class="op">(</span>split_view<span class="op">&amp;</span> parent<span class="op">)</span>;</span>
-<span id="cb38-11"><a href="#cb38-11"></a>    </span>
-<span id="cb38-12"><a href="#cb38-12"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>sentinel</em><span class="op">&amp;</span> y<span class="op">)</span>;</span>
-<span id="cb38-13"><a href="#cb38-13"></a>  <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>forward_range V, forward_range Pattern<span class="op">&gt;</span></span>
+<span id="cb38-3"><a href="#cb38-3"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> view<span class="op">&lt;</span>Pattern<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb38-4"><a href="#cb38-4"></a>             indirectly_comparable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>Pattern<span class="op">&gt;</span>, ranges<span class="op">::</span>equal_to<span class="op">&gt;</span></span>
+<span id="cb38-5"><a href="#cb38-5"></a>  <span class="kw">struct</span> split_view<span class="op">&lt;</span>V, Pattern<span class="op">&gt;::</span><em>sentinel</em> <span class="op">{</span></span>
+<span id="cb38-6"><a href="#cb38-6"></a>  <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb38-7"><a href="#cb38-7"></a>    sentinel_t<span class="op">&lt;</span>V<span class="op">&gt;</span> <em>end_</em> <span class="op">=</span> sentinel_t<span class="op">&lt;</span>V<span class="op">&gt;()</span>; <span class="co">// exposition only</span></span>
+<span id="cb38-8"><a href="#cb38-8"></a>    </span>
+<span id="cb38-9"><a href="#cb38-9"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb38-10"><a href="#cb38-10"></a>    <em>sentinel</em><span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb38-11"><a href="#cb38-11"></a>    <span class="kw">constexpr</span> <span class="kw">explicit</span> <em>sentinel</em><span class="op">(</span>split_view<span class="op">&amp;</span> parent<span class="op">)</span>;</span>
+<span id="cb38-12"><a href="#cb38-12"></a>    </span>
+<span id="cb38-13"><a href="#cb38-13"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>sentinel</em><span class="op">&amp;</span> y<span class="op">)</span>;</span>
+<span id="cb38-14"><a href="#cb38-14"></a>  <span class="op">}</span>;</span>
+<span id="cb38-15"><a href="#cb38-15"></a><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">constexpr</span> <span class="kw">explicit</span> <em>sentinel</em><span class="op">(</span>split_view<span class="op">&amp;</span> parent<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>end_</em></code> with <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>parent<span class="op">.</span><em>base_</em><span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">friend</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span><span class="kw">const</span> <em>iterator</em><span class="op">&amp;</span> x, <span class="kw">const</span> <em>sentinel</em><span class="op">&amp;</span> y<span class="op">)</span>;</span></code></pre></div>
