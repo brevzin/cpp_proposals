@@ -521,7 +521,8 @@ Add `trailing_empty` to [range.split.outer]{.sref} in order to resolve [@LWG3478
                indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to> &&
                (forward_range<V> || @*tiny-range*@<Pattern>)
     template<bool Const>
-    struct split_view<V, Pattern>::@*outer-iterator*@ {
+-   struct split_view<V, Pattern>::@*outer-iterator*@ {
++   struct @[lazy_]{.diffins}@split_view<V, Pattern>::@*outer-iterator*@ {
     private:
       using Parent = @*maybe-const*@<Const, split_view>;      // exposition only
       using Base = @*maybe-const*@<Const, V>;                 // exposition only

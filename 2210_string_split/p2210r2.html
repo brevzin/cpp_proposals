@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-03-04" />
+  <meta name="dcterms.date" content="2021-03-05" />
   <title>Superior String Splitting</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-03-04</td>
+    <td>2021-03-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -931,18 +931,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb12-4"><a href="#cb12-4"></a>               indirectly_comparable&lt;iterator_t&lt;V&gt;, iterator_t&lt;Pattern&gt;, ranges::equal_to&gt; &amp;&amp;</span>
 <span id="cb12-5"><a href="#cb12-5"></a>               (forward_range&lt;V&gt; || <em>tiny-range</em>&lt;Pattern&gt;)</span>
 <span id="cb12-6"><a href="#cb12-6"></a>    template&lt;bool Const&gt;</span>
-<span id="cb12-7"><a href="#cb12-7"></a>    struct split_view&lt;V, Pattern&gt;::<em>outer-iterator</em> {</span>
-<span id="cb12-8"><a href="#cb12-8"></a>    private:</span>
-<span id="cb12-9"><a href="#cb12-9"></a>      using Parent = <em>maybe-const</em>&lt;Const, split_view&gt;;      // exposition only</span>
-<span id="cb12-10"><a href="#cb12-10"></a>      using Base = <em>maybe-const</em>&lt;Const, V&gt;;                 // exposition only</span>
-<span id="cb12-11"><a href="#cb12-11"></a>      Parent* <em>parent_</em> = nullptr;                          // exposition only</span>
-<span id="cb12-12"><a href="#cb12-12"></a>      iterator_t&lt;Base&gt; <em>current_</em> = iterator_t&lt;Base&gt;();     // exposition only, present only if V models forward_range</span>
-<span id="cb12-13"><a href="#cb12-13"></a><span class="va">+     bool <em>trailing_empty_</em> = false;                       // exposition only</span></span>
-<span id="cb12-14"><a href="#cb12-14"></a></span>
-<span id="cb12-15"><a href="#cb12-15"></a>    public:</span>
-<span id="cb12-16"><a href="#cb12-16"></a>      // ...</span>
-<span id="cb12-17"><a href="#cb12-17"></a>    };</span>
-<span id="cb12-18"><a href="#cb12-18"></a>  }</span></code></pre></div>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="st">-   struct split_view&lt;V, Pattern&gt;::<em>outer-iterator</em> {</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="va">+   struct <span class="diffins">lazy_</span>split_view&lt;V, Pattern&gt;::<em>outer-iterator</em> {</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>    private:</span>
+<span id="cb12-10"><a href="#cb12-10"></a>      using Parent = <em>maybe-const</em>&lt;Const, split_view&gt;;      // exposition only</span>
+<span id="cb12-11"><a href="#cb12-11"></a>      using Base = <em>maybe-const</em>&lt;Const, V&gt;;                 // exposition only</span>
+<span id="cb12-12"><a href="#cb12-12"></a>      Parent* <em>parent_</em> = nullptr;                          // exposition only</span>
+<span id="cb12-13"><a href="#cb12-13"></a>      iterator_t&lt;Base&gt; <em>current_</em> = iterator_t&lt;Base&gt;();     // exposition only, present only if V models forward_range</span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="va">+     bool <em>trailing_empty_</em> = false;                       // exposition only</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a></span>
+<span id="cb12-16"><a href="#cb12-16"></a>    public:</span>
+<span id="cb12-17"><a href="#cb12-17"></a>      // ...</span>
+<span id="cb12-18"><a href="#cb12-18"></a>    };</span>
+<span id="cb12-19"><a href="#cb12-19"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 <p>Change the implementation of <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++</span></code> and <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code> of <code class="sourceCode cpp"><em>outer-iterator</em></code> in <span>24.7.12.3
