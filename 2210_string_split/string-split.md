@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2210R1], wording improvements, resolving [@LWG3478] for the existing `lazy_split`, and having the implementation section actually refer to the implementation of the proposal.
+Since [@P2210R1], wording improvements, resolving [@LWG3478] for the existing `lazy_split` (and rebasing on [@LWG3505]), and having the implementation section actually refer to the implementation of the proposal.
 
 Since [@P2210R0], corrected the explanation of `const`-iteration and corrected that it is sort of possible to build a better `split` on top of the existing one. Changed the proposal to keep the preexisting `split` with its semantics under a different name instead. 
 
@@ -357,21 +357,19 @@ requires view<V> && view<Pattern> &&
     indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to>
 class split_view2 : public view_interface<split_view2<V, Pattern>> {
  private:
-  V base_ = V();                 // exposition only
-  Pattern pattern_ = Pattern();  // exposition only
-  // [range.split2.iterator], class split_view​::​iterator
-  struct iterator;  // exposition only
-  // [range.split2.sentinel], class split_view​::sentinel
-  struct sentinel;  // exposition only
+  V base_ = V();
+  Pattern pattern_ = Pattern();
+  struct iterator;
+  struct sentinel;
 
   struct iterator {
   private:
     friend sentinel;
-    split_view2* parent_ = nullptr;        // exposition only
-    iterator_t<V> cur_ = iterator_t<V>();  // exposition only
+    split_view2* parent_ = nullptr;
+    iterator_t<V> cur_ = iterator_t<V>();
     subrange<iterator_t<V>> next_ =
-        subrange<iterator_t<V>>();  // exposition only
-    bool trailing_empty_ = false;   // exposition only
+        subrange<iterator_t<V>>();
+    bool trailing_empty_ = false;
 
    public:
     using iterator_concept = forward_iterator_tag;
@@ -415,7 +413,7 @@ class split_view2 : public view_interface<split_view2<V, Pattern>> {
 
   struct sentinel {
   private:
-    sentinel_t<V> end_ = sentinel_t<V>(); // exposition only
+    sentinel_t<V> end_ = sentinel_t<V>();
     
   public:
     sentinel() = default;
@@ -538,7 +536,7 @@ Add `trailing_empty` to [range.split.outer]{.sref} in order to resolve [@LWG3478
 ```
 :::
 
-Change the implementation of `operator++` and `operator==` of `@*outer-iterator*@` in [range.split.outer]{.sref}:
+Change the implementation of `operator++` and `operator==` of `@*outer-iterator*@` in [range.split.outer]{.sref}. This wording already takes into account the resolution of [@LWG3505]:
 
 ::: bq
 ```
@@ -554,11 +552,20 @@ constexpr @*outer-iterator*@& operator++();
   }
   const auto [pbegin, pend] = subrange{@*parent_*@->@*pattern_*@};
   if (pbegin == pend) ++@*current*@;
+  else if constexpr (@*tiny-range*@<Pattern>) {
+    @*current*@ = ranges::find(std::move(@*current*@), end, *pbegin);
+    if (@*current*@ != end) {
+      ++@*current*@;
++     if (@*current*@ == end) {
++       @*trailing_empty_*@ = true;
++     }
+    }
+  }
   else {
     do {
-      auto [b, p] = ranges::mismatch(std::move(@*current*@), end, pbegin, pend);
-      @*current*@ = std::move(b);
-      if (p == pend) 
+      auto [b, p] = ranges::mismatch(@*current*@, end, pbegin, pend);
+      if (p == pend) {
+        @*current*@ = b;
 +       if (@*current*@ == end) {
 +         @*trailing_empty_*@ = true;
 +       }        
@@ -913,7 +920,7 @@ references:
         - family: Barry Revzin
     issued:
         - year: 2021    
-    URL: https://godbolt.org/z/hTar93
+    URL: https://godbolt.org/z/Khz9dT
   - id: issue385
     citation-label: issue385
     title: "`const`-ness of view operations"
