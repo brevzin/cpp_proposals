@@ -539,6 +539,8 @@ void splash(Swim& swam) {
                                             // with unknown dynamic type
     static_assert(swam.coughlin == 12);     // error: lvalue-to-rvalue conversion on an object
                                             // not usable in constant expressions
+    static_assert(&swam == &swam);          // error: performing a comparison operation involving
+                                            // a pointer to unspecified object
 }
 
 extern Swim dc;

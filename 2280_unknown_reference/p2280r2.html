@@ -1050,13 +1050,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb28-26"><a href="#cb28-26"></a>                                            <span class="co">// with unknown dynamic type</span></span>
 <span id="cb28-27"><a href="#cb28-27"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>coughlin <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: lvalue-to-rvalue conversion on an object</span></span>
 <span id="cb28-28"><a href="#cb28-28"></a>                                            <span class="co">// not usable in constant expressions</span></span>
-<span id="cb28-29"><a href="#cb28-29"></a><span class="op">}</span></span>
-<span id="cb28-30"><a href="#cb28-30"></a></span>
-<span id="cb28-31"><a href="#cb28-31"></a><span class="kw">extern</span> Swim dc;</span>
-<span id="cb28-32"><a href="#cb28-32"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
-<span id="cb28-33"><a href="#cb28-33"></a></span>
-<span id="cb28-34"><a href="#cb28-34"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
-<span id="cb28-35"><a href="#cb28-35"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
+<span id="cb28-29"><a href="#cb28-29"></a>    <span class="kw">static_assert</span><span class="op">(&amp;</span>swam <span class="op">==</span> <span class="op">&amp;</span>swam<span class="op">)</span>;          <span class="co">// error: performing a comparison operation involving</span></span>
+<span id="cb28-30"><a href="#cb28-30"></a>                                            <span class="co">// a pointer to unspecified object</span></span>
+<span id="cb28-31"><a href="#cb28-31"></a><span class="op">}</span></span>
+<span id="cb28-32"><a href="#cb28-32"></a></span>
+<span id="cb28-33"><a href="#cb28-33"></a><span class="kw">extern</span> Swim dc;</span>
+<span id="cb28-34"><a href="#cb28-34"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb28-35"><a href="#cb28-35"></a></span>
+<span id="cb28-36"><a href="#cb28-36"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
+<span id="cb28-37"><a href="#cb28-37"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>
