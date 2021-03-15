@@ -367,7 +367,7 @@ This check still must evaluate `g()`, which may or may not be a constant express
 
 ## Implementation Experience
 
-I've implemented this in EDG at least to the extent that the test cases prestend in this paper all pass, whereas previously they had all failed. 
+I've implemented this in EDG at least to the extent that the test cases presented in this paper all pass, whereas previously they had all failed. 
 
 ## Other not-quite-reference examples
 
