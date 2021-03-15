@@ -533,14 +533,19 @@ struct Swim {
 };
 
 void splash(Swim& swam) {
-    static_assert(swam.phelps() == 28);     // ok
-    static_assert((&swam)->phelps() == 28); // ok
-    static_assert(swam.lochte() == 12);     // error: invoking virtual function on reference
-                                            // with unknown dynamic type
-    static_assert(swam.coughlin == 12);     // error: lvalue-to-rvalue conversion on an object
-                                            // not usable in constant expressions
-    static_assert(&swam == &swam);          // error: performing a comparison operation involving
-                                            // a pointer to unspecified object
+    static_assert(swam.phelps() == 28);      // ok
+    static_assert((&swam)->phelps() == 28);  // ok
+    static_assert(swam.lochte() == 12);      // error: invoking virtual function on reference
+                                             // with unknown dynamic type
+    static_assert(swam.coughlin == 12);      // error: lvalue-to-rvalue conversion on an object
+                                             // not usable in constant expressions
+    static_assert(&swam == &swam);           // error: performing a comparison operation involving
+                                             // a pointer to unspecified object
+    
+    constexpr int a = (&swam + 0)->phelps(); // error: performing an addition on a pointer to
+                                             // unspecified object
+    constexpr Swim* swim = &swam;            // error: a pointer to unspecified object is not a
+                                             // permitted result of a constant expression
 }
 
 extern Swim dc;
