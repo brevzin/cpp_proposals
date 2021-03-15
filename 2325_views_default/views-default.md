@@ -1,6 +1,6 @@
 ---
 title: "Views should not be required to be default constructible"
-document: P2325R0
+document: P2325R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2325R0], added discussion of the different treatments of lvalue vs rvalue fixed-extent `span` in pipelines.
 
 # Introduction
 
@@ -80,7 +84,25 @@ If the argument for default construction is that it enables efficient deferred i
 
 My impression right now is that the default construction requirement actually adds storage cost to range adapters on the whole rather than removing storage cost.
 
-Furthermore, there's the question of _requiring_ a partially formed state to types even they didn't want to do that. This goes against the general advice of making bad states unrepresentable. Consider a type like `span<int, 5>`. This _should_ be a view: it's a non-owning, O(1)-everything range. But it's not default constructible, for good reason. If we were to add a default constructor that would make `span<int, 5>` partially formed, this adds an extra state that needs to be carefully checked by users, and suddenly every operation has additional preconditions that need to be documented. But this is true for every other view, too!
+Furthermore, there's the question of _requiring_ a partially formed state to types even they didn't want to do that. This goes against the general advice of making bad states unrepresentable. Consider a type like `span<int, 5>`. This _should_ be a `view`: it's a non-owning, O(1)-everything range. But it's not default constructible, so it's not a `view`. The consequence of this choice is the difference in behavior when using fixed-extent `span` in pipelines that start with an lvalue vs an rvalue:
+
+```cpp
+std::span<int, 5> s = /* ... */;
+
+// Because span<int, 5> is not a view, rather than copying s into
+// the resulting transform_view, this instead takes a
+// ref_view<span<int, 5>>. If s goes out of scope, this will dangle.
+auto lvalue = s | views::transform(f);
+
+// Because span<int, 5> is a borrowed range, this compiles. We still
+// don't copy the span<int, 5> directly, instead we end up with a
+// subrange<span<int, 5>::iterator>.
+auto rvalue = std::move(s) | views::transform(f);
+```
+
+Both alternatives are less efficient than they could be. The lvalue case requires an extra indirection and exposes an opportunity for a dangling range. The rvalue case won't dangle, but ends up requiring storing two iterators, which requires twice the storage as storing the single `span` would have. Either case is strictly worse than the behavior that would result from `span<int, 5>` having been a `view`.
+
+But fixed-extent `span` isn't default-constructible for good reason: if we were to add a default constructor that would make `span<int, 5>` partially formed, this adds an extra state that needs to be carefully checked by users, and suddenly every operation has additional preconditions that need to be documented. But this is true for every other view, too!
 
 `ranges::ref_view` (see [range.ref.view]{.sref}) is another such view. In the same way that `std::reference_wrapper<T>` is a rebindable reference to `T`, `ref_view<R>` is a rebindable reference to the range `R`. Except `reference_wrapper<T>` isn't default constructible, but `ref_view<R>` is &mdash; it's just that as a user, I have no way to check to see if a particular `ref_view<R>` is fully formed or not. All of its member functions have this precondition that it really does refer to a range that I as the user can't check. This is broadly true of all the range adapters: you can't do _anything_ with a default constructed range adapter except assign to it.
 
