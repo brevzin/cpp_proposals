@@ -477,7 +477,7 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
 - [5.1]{.pnum} [`this`, except in a constexpr function that is being evaluated as part of `E`;]{.rm}
-- [5.1]{.pnum} [an operation which has an operand that is an expression of pointer type that points to an unspecified object, if that operation is one of the following:]{.addu}
+- [5.1]{.pnum} [an operation which has an operand that is an expression of pointer type that points to an unspecified object within the evaluation of `E`, if that operation is one of the following:]{.addu}
     - [5.1.1]{.pnum} [addition or subtraction ([expr.add]),]{.addu}
     - [5.1.2]{.pnum} [comparison ([expr.eq], [expr.rel]),]{.addu}
     - [5.1.3]{.pnum} [increment or decrement ([expr.pre.incr]), or]{.addu}
@@ -505,9 +505,9 @@ And add a new rule to properly handle the lifetime examples shown in the previou
 
 ::: bq
 ::: addu
-[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s that refer to an object or reference whose lifetime did not begin with the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. For such a pointer that is not usable in constant expressions, the pointer is treated as pointing to an unspecified object of the type pointed to whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.
+[*]{.pnum} An object or reference is called unspecified within the evaluation of a core constant expression `E` if it is not usable in constant expressions and its lifetime did not begin with the evaluation of `E`. During the evaluation of an expression `E` as a core constant expression, any objects or references that are unspecified within the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. 
 
-[*]{.pnum} The result of performing indirection on a pointer to unspecified object is a glvalue denoting an unknown object of the type pointed to. The result of taking the address of a reference to an unspecified object is a prvalue denoting a pointer to an unknown object of the type referred to.
+[*]{.pnum} The dynamic type of an object that is unspecified within the evaluation of `E` is unknown. A pointer that is unspecified within the evaluation of `E` is treated as pointing to an object of the type pointed to that is unspecified within the evaluation of `E`. A reference that is unspecified within the evaluation of `E` is treated as being bound to an object of the referenced type that is unspecified within the evaluation of `E`.
 
 [*Example*:
 ```cpp
