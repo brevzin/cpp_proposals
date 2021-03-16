@@ -60,8 +60,10 @@ This works with either interpretation. It either just returns `first` (the lambd
 There might be a situation that is actually useful in which there is an ambiguity in these cases. But if one arises, it is fairly straightforward to force the correct interpretation by coercing the last argument to be either a binary or unary function:
 
 ```cpp
-inline constexpr auto as_unary = std::bind(f, _1);
-inline constexpr auto as_binary = std::bind(f, _1, _2);
+#define FWD(x) static_cast<decltype(x)&&>(x)
+#define RETURNS(e) -> decltype((e)) { return e; }
+inline constexpr auto as_unary = [](auto f){ return [=](auto&& x) RETURNS(f(FWD(x))); };
+inline constexpr auto as_binary = [](auto f){ return [=](auto&& x, auto&& y) RETURNS(f(FWD(x), FWD(y))); };
 
 fold(xs, first, as_binary(first)); // definitely interpretation #1
 fold(xs, first, as_unary(first));  // definitely interpretation #2
