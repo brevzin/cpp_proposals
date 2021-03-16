@@ -55,7 +55,7 @@ inline constexpr auto first = [](auto x, auto... ){ return x; };
 auto r = fold(xs, first, first);
 ```
 
-This works with either interpretation. It either just returns `first` (the lambda) in the first case or the first element of the range in the second case, which makes it either completely useless or just mostly useless.
+This call is ambiguous! This works with either interpretation. It would either just return `first` (the lambda) in the first case or the first element of the range in the second case, which makes it either completely useless or just mostly useless.
 
 There might be a situation that is actually useful in which there is an ambiguity in these cases. But if one arises, it is fairly straightforward to force the correct interpretation by coercing the last argument to be either a binary or unary function:
 
