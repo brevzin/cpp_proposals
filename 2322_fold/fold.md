@@ -39,7 +39,7 @@ ranges::fold(ranges::next(b), e, *b, ranges::min);
 
 But this is both tedious to write, and subtly wrong for input ranges anyway since if the `next(b)` is evaluated before `*b`, we have a dangling iterator. This comes up enough that this paper proposes a version of `fold` that uses the first element in the range as the initial value (and thus has a precondition that the range is not empty).
 
-This algorithm exists in Rust (under the name `fold_first` as a nightly-only experimental API and `fold1` in the `Itertools` crate) and Haskell (under the name `foldl1`).
+This algorithm exists in Rust (under the name `fold_first` as a nightly-only experimental API and `fold1` in the `Itertools` crate) and Haskell (under the name `foldl1`) and Scala and Kotlin (which call it `reduce`, while the version that takes an initial value is called `fold`).
 
 The question is: should we give this algorithm a different name (e.g. `fold_first`) or provide a distinct overload of `fold`? To answer that question, we have to deal with the question of ambiguity. For two arguments, `fold(xs, a)` can only be interpreted as a `fold` with no initial value using `a` as the binary operator. For four arguments, `fold(xs, a, b, c)` can only be interpreted as a `fold` with `a` as the initial value, `b` as the binary operation that is the reduction function, and `c` as a unary projection.
 
@@ -97,9 +97,9 @@ There are roughly three different choices that we could make here:
 2. Provide the algorithms `fold_left` and `fold_right`.
 3. Provide the algorithms `fold_left` and `fold_right` and also provide an alias `fold` which is also `fold_left`.
 
-Left-folds are more common than right-folds. Some languages only provide a left-fold operation (though that's because those languages don't have a concept of bidirectional iteration) and name it simply `fold` (Rust) or `reduce` (Python). But other languages that provide both do provide a suffix on both, whether Haskell/Elm (`foldl` and `foldr`) or OCaml (`fold_left` and `fold_right`). Scala provides a `foldLeft` and `foldRight` while also providing a `fold` which means `foldLeft`.
+There's language precedents for any of these cases. F# and Kotlin both provide `fold` as a left-fold and suffixed right-fold (`foldBack` in F#, `foldRight` in Kotlin). Elm, Haskell, and OCaml provide symmetrically named algorithms (`fold`/`foldr` for the first two and `fold_left`/`fold_right` for the third). Scala provides a `foldLeft` and `foldRight` while also providing `fold` to also mean `foldLeft`.
 
-We don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`), although those algorithms are not as symmetric as `fold_left` and `fold_right`... while we do also have `shift_left` and `shift_right`.
+In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`), although those algorithms are not as symmetric as `fold_left` and `fold_right`... while we do also have `shift_left` and `shift_right`.
 
 All of which is to say, I don't think there's a clear answer to this question. I would be quite happy with any of the three options. This paper picks (2). 
 
