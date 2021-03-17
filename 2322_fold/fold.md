@@ -97,7 +97,7 @@ There are roughly three different choices that we could make here:
 2. Provide the algorithms `fold_left` and `fold_right`.
 3. Provide the algorithms `fold_left` and `fold_right` and also provide an alias `fold` which is also `fold_left`.
 
-There's language precedents for any of these cases. F# and Kotlin both provide `fold` as a left-fold and suffixed right-fold (`foldBack` in F#, `foldRight` in Kotlin). Elm, Haskell, and OCaml provide symmetrically named algorithms (`fold`/`foldr` for the first two and `fold_left`/`fold_right` for the third). Scala provides a `foldLeft` and `foldRight` while also providing `fold` to also mean `foldLeft`.
+There's language precedents for any of these cases. F# and Kotlin both provide `fold` as a left-fold and suffixed right-fold (`foldBack` in F#, `foldRight` in Kotlin). Elm, Haskell, and OCaml provide symmetrically named algorithms (`foldl`/`foldr` for the first two and `fold_left`/`fold_right` for the third). Scala provides a `foldLeft` and `foldRight` while also providing `fold` to also mean `foldLeft`.
 
 In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`), although those algorithms are not as symmetric as `fold_left` and `fold_right`... while we do also have `shift_left` and `shift_right`.
 
