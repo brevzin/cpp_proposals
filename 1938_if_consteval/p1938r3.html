@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2021-03-22" />
+  <title>`if consteval`</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code></h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P1938R3</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2021-03-22</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      CWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Richard Smith<br>&lt;<a href="mailto:richard@metafoo.co.uk" class="email">richard@metafoo.co.uk</a>&gt;<br>
+      Andrew Sutton<br>&lt;<a href="mailto:asutton@lock3software.com" class="email">asutton@lock3software.com</a>&gt;<br>
+      Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision history<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#problems-with-status-quo"><span class="toc-section-number">3</span> Problems with Status Quo<span></span></a>
+<ul>
+<li><a href="#interaction-between-constexpr-and-consteval"><span class="toc-section-number">3.1</span> Interaction between <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and <code class="sourceCode cpp"><span class="kw">consteval</span></code><span></span></a></li>
+<li><a href="#the-if-constexpr-stdis_constant_evaluated-problem"><span class="toc-section-number">3.2</span> The <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span></code> problem<span></span></a>
+<ul>
+<li><a href="#compiler-warnings"><span class="toc-section-number">3.2.1</span> Compiler warnings<span></span></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#negated-form"><span class="toc-section-number">4.1</span> Negated form<span></span></a></li>
+<li><a href="#conditioned-form"><span class="toc-section-number">4.2</span> Conditioned Form<span></span></a></li>
+<li><a href="#deprecating-stdis_constant_evaluated"><span class="toc-section-number">4.3</span> Deprecating <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code><span></span></a></li>
+<li><a href="#why-braces"><span class="toc-section-number">4.4</span> Why braces?<span></span></a></li>
+<li><a href="#examples"><span class="toc-section-number">4.5</span> Examples<span></span></a></li>
+</ul></li>
+<li><a href="#history"><span class="toc-section-number">5</span> History<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">6</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">6.1</span> Feature test macro<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">7</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision history<a href="#revision-history" class="self-link"></a></h1>
+<p>R2 to R3: Wording changes.</p>
+<p>R1 to R2: R1 <span class="citation" data-cites="P1938R1">[<a href="#ref-P1938R1" role="doc-biblioref">P1938R1</a>]</span> of this paper originally mandated the use of braces in <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> (see <a href="#why-braces">why braces</a>, also new in this revision) grammatically. Davis Herring pointed out in an EWG telecon that this causes some issues:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> </span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span> s0; <span class="op">}</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="cf">else</span> s1;</span></code></pre></div>
+<p>If the grammar for <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> has <em>compound-statement</em>, then the <code class="sourceCode cpp"><span class="cf">else</span></code> here <em>cannot</em> be associated with the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>, it must be associated with the outer <code class="sourceCode cpp"><span class="cf">if</span></code>. Rather than that, we want this to a compile error due to the lack of braces around <code class="sourceCode cpp">s1</code>.</p>
+<p>R0 to R1: R0 <span class="citation" data-cites="P1938R0">[<a href="#ref-P1938R0" role="doc-biblioref">P1938R0</a>]</span> of this paper initially contained only a positive form: <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>. This paper additionally adds a negated form, <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span></code>.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Despite this paper missing both our respective NB comment deadlines and the mailing deadline, we still believe it provides a significant enough improvement to the status quo that it should be considered for C++20.</p>
+<p>C++20 will have several new features to aid programmers in writing code during constant evaluation. Two of these are <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> <span class="citation" data-cites="P0595R2">[<a href="#ref-P0595R2" role="doc-biblioref">P0595R2</a>]</span> and <code class="sourceCode cpp"><span class="kw">consteval</span></code> <span class="citation" data-cites="P1073R3">[<a href="#ref-P1073R3" role="doc-biblioref">P1073R3</a>]</span>, both adopted in San Diego 2018. <code class="sourceCode cpp"><span class="kw">consteval</span></code> is for functions that can only be invoked during constant evaluation. <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> is a magic library function to check if the current evaluation is constant evaluation to provide, for instance, a valid implementation of an algorithm for constant evaluation time and a better implementation for runtime.</p>
+<p>However, despite being adopted at the same meeting, these features interact poorly with each other and have other issues that make them ripe for confusion.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="problems-with-status-quo"><span class="header-section-number">3</span> Problems with Status Quo<a href="#problems-with-status-quo" class="self-link"></a></h1>
+<p>There are two problems this paper wishes to address.</p>
+<h2 data-number="3.1" id="interaction-between-constexpr-and-consteval"><span class="header-section-number">3.1</span> Interaction between <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and <code class="sourceCode cpp"><span class="kw">consteval</span></code><a href="#interaction-between-constexpr-and-consteval" class="self-link"></a></h2>
+<p>The first problem is the interplay between this magic library function and the new <code class="sourceCode cpp"><span class="kw">consteval</span></code>. Consider the example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="co">// &lt;==</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>        <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">}</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="op">}</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">consteval</span> <span class="dt">int</span> h<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>;</span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="op">}</span></span></code></pre></div>
+<p>The function <code class="sourceCode cpp">h</code> here is basically a lifted, constant-evaluation-only version of the function <code class="sourceCode cpp">g</code>. At constant evaluation time, they do the same thing, except that during runtime, you cannot call <code class="sourceCode cpp">h</code>, and <code class="sourceCode cpp">g</code> has this extra path. Maybe this code started with just <code class="sourceCode cpp">h</code> and someone decided a runtime version would also be useful and turned it into <code class="sourceCode cpp">g</code>.</p>
+<p>Unfortunately, <code class="sourceCode cpp">h</code> is well-formed while <code class="sourceCode cpp">g</code> is ill-formed. You cannot make that call to <code class="sourceCode cpp">f</code> (that is ominously marked with an arrow) in that location. Even though that call will <em>only</em> happen during constant evaluation, that’s still not enough.</p>
+<p>With specific terms, the call to <code class="sourceCode cpp">f<span class="op">()</span></code> inside of <code class="sourceCode cpp">g<span class="op">()</span></code> is an <em>immediate invocation</em> and needs to be a constant expression and it is not. Whereas the call to <code class="sourceCode cpp">f<span class="op">()</span></code> inside of <code class="sourceCode cpp">h<span class="op">()</span></code> is <em>not</em> considered an <em>immediate invocation</em> because it is in an <em>immediate function context</em> (i.e. it’s invoked from another immediate function), so it has a weaker set of restrictions that it needs to follow.</p>
+<p>In other words, this kind of construction of conditionally invoking a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function from a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function just Does Not Work (modulo the really trivial cases - one could call <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">42</span><span class="op">)</span></code> for instance, just never <code class="sourceCode cpp">f<span class="op">(</span>i<span class="op">)</span></code>).</p>
+<p>We find this lack of composability of features to be problematic and think it can be improved.</p>
+<h2 data-number="3.2" id="the-if-constexpr-stdis_constant_evaluated-problem"><span class="header-section-number">3.2</span> The <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span></code> problem<a href="#the-if-constexpr-stdis_constant_evaluated-problem" class="self-link"></a></h2>
+<p>The second problem is specific to <code class="sourceCode cpp">is_constant_evaluated</code>. Once you learn what this magic function is for, the obvious usage of it is:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> strlen<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> s; ; <span class="op">++</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>            <span class="cf">if</span> <span class="op">(*</span>p <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>                <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span><span class="dt">size_t</span><span class="op">&gt;(</span>p <span class="op">-</span> s<span class="op">)</span>;</span>
+<span id="cb3-6"><a href="#cb3-6"></a>            <span class="op">}</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>        <span class="op">}</span>    </span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>        <span class="ex">__asm__</span><span class="op">(</span><span class="st">&quot;SSE 4.2 insanity&quot;</span><span class="op">)</span>;        </span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="op">}</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="op">}</span></span></code></pre></div>
+<p>This example, inspired by <span class="citation" data-cites="P1045R0">[<a href="#ref-P1045R0" role="doc-biblioref">P1045R0</a>]</span>, has a bug: it uses <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> to check the conditional <code class="sourceCode cpp">is_constant_evaluated<span class="op">()</span></code> rather than a simple <code class="sourceCode cpp"><span class="cf">if</span></code>. You have to really deeply understand a lot about how constant evaluation works in C++ to understand that this is in fact not only <em>not</em> “obviously correct” but is in fact “obviously incorrect,” for some definition of obvious. This is such a likely source of error that Barry submitted bugs to both <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91428">gcc</a> and <a href="https://bugs.llvm.org/show_bug.cgi?id=42977">clang</a> to encourage the compilers to warn on such improper usage. gcc 10.1 will provide a warning for the <a href="https://godbolt.org/z/LiiZoW">simple case</a>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1"></a>&lt;source&gt;: In function &#39;constexpr int f(int)&#39;:</span>
+<span id="cb4-2"><a href="#cb4-2"></a>&lt;source&gt;:4:45: warning: &#39;std::is_constant_evaluated&#39; always evaluates to true in &#39;if constexpr&#39; [-Wtautological-compare]</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    4 |     if constexpr (std::is_constant_evaluated()) {</span>
+<span id="cb4-4"><a href="#cb4-4"></a>      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span></code></pre></div>
+<p>But then people have to understand why this is a warning, and what this even means. Nevertheless, a compiler warning is substantially better than silently wrong code, but it is problematic to have an API in which many users are drawn to a usage that is tautologically incorrect.</p>
+<h3 data-number="3.2.1" id="compiler-warnings"><span class="header-section-number">3.2.1</span> Compiler warnings<a href="#compiler-warnings" class="self-link"></a></h3>
+<p>When R0 of this paper was presented in Belfast, the implementers assured that all the compilers would properly warn on all tautological uses of <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> - both in the always-<code class="sourceCode cpp"><span class="kw">true</span></code> and always-<code class="sourceCode cpp"><span class="kw">false</span></code> cases.</p>
+<p>As of this writing, for instance, EDG warns on all of the following:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f1<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(!</span>std<span class="op">::</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span> <span class="op">{</span> <span class="co">// warning: always true</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="op">}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span> <span class="co">// warning: always true</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a>      <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a>    <span class="op">}</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a>  <span class="op">}</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="cf">return</span> <span class="dv">7</span>;</span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a></span>
+<span id="cb5-15"><a href="#cb5-15"></a></span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="kw">consteval</span> <span class="dt">int</span> f2<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> f1<span class="op">())</span> <span class="op">{</span> <span class="co">// warning: always true</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb5-19"><a href="#cb5-19"></a>  <span class="op">}</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a>  <span class="cf">return</span> <span class="dv">7</span>;</span>
+<span id="cb5-21"><a href="#cb5-21"></a><span class="op">}</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a></span>
+<span id="cb5-23"><a href="#cb5-23"></a></span>
+<span id="cb5-24"><a href="#cb5-24"></a><span class="dt">int</span> f3<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-25"><a href="#cb5-25"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> f1<span class="op">())</span> <span class="op">{</span> <span class="co">// warning: always false</span></span>
+<span id="cb5-26"><a href="#cb5-26"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb5-27"><a href="#cb5-27"></a>  <span class="op">}</span></span>
+<span id="cb5-28"><a href="#cb5-28"></a>  <span class="cf">return</span> <span class="dv">7</span>;</span>
+<span id="cb5-29"><a href="#cb5-29"></a><span class="op">}</span></span></code></pre></div>
+<p>We expect the other compilers to follow suit.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>We propose a new form of <code class="sourceCode cpp"><span class="cf">if</span></code> statement which is spelled:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
+<p>The braces (in both the <code class="sourceCode cpp"><span class="cf">if</span></code> and the optional <code class="sourceCode cpp"><span class="cf">else</span></code>) are mandatory and there is no condition. If evaluation of this statement occurs during constant evaluation, the first substatement is executed. Otherwise, the second substatement (if there is one) is executed.</p>
+<p>This behaves exactly as today’s:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
+<p>except with three differences:</p>
+<ol type="1">
+<li>No header include is necessary.</li>
+<li>The syntax is different, which completely sidesteps the confusion over the proper way to check if we’re in constant evaluation. You simply cannot misuse the syntax.</li>
+<li>We can use <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> to allow invoking immediate functions.</li>
+</ol>
+<p>To explain the last point a bit more, the current language rules allow you to invoke a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function from inside of another <code class="sourceCode cpp"><span class="kw">consteval</span></code> function (<a href="http://eel.is/c++draft/expr.const#13">[expr.const]/13</a>) - we can do this by construction:</p>
+<blockquote>
+<p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and its innermost non-block scope is a function parameter scope of an immediate function. An expression or conversion is an <em>immediate invocation</em> if it is an explicit or implicit invocation of an immediate function and is not in an immediate function context. An immediate invocation shall be a constant expression.</p>
+</blockquote>
+<p>By extending the term <em>immediate function context</em> to also include an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> block, we can allow the second example to work:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>        <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="co">// ok: immediate function context</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>        <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb8-8"><a href="#cb8-8"></a>    <span class="op">}</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="op">}</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="kw">consteval</span> <span class="dt">int</span> h<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>    <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span>; <span class="co">// ok: immediate function context</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="op">}</span></span></code></pre></div>
+<p>Additionally, such a feature would allow for an easy implementation of the original <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> is_constant_evaluated<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>        <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb9-4"><a href="#cb9-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>        <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="op">}</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span></span></code></pre></div>
+<p>Although this paper does not suggest removing the library function.</p>
+<h2 data-number="4.1" id="negated-form"><span class="header-section-number">4.1</span> Negated form<a href="#negated-form" class="self-link"></a></h2>
+<p>Many people have expressed the view that a negated form is also useful. That form is also proposed here, spelled:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></span></code></pre></div>
+<p>With the semantics that the first substatement is executed if the context is <em>not</em> manifestly constant evaluated, otherwise the second substatement (if any) is executed.</p>
+<h2 data-number="4.2" id="conditioned-form"><span class="header-section-number">4.2</span> Conditioned Form<a href="#conditioned-form" class="self-link"></a></h2>
+<p>As proposed, this new form of <code class="sourceCode cpp"><span class="cf">if</span></code> does not have a condition - unlike the other two we already have. While there are certainly cases where an added condition would be useful, this paper is deliberately not including such a thing. The vast majority of uses are expected to be just of the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> or <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span></code> form and we do not want to clutter future design space in this area.</p>
+<p>There are currently two uses in libstdc++ that are of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> cond<span class="op">)</span></code>. <a href="https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/range_access.h#L1025-L1028">One example</a>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">()</span> <span class="op">&amp;&amp;</span> __n <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>  <span class="cf">throw</span> <span class="st">&quot;attempt to decrement a non-bidirectional iterator&quot;</span>;</span></code></pre></div>
+<p>This usage is perfectly fine and doesn’t necessary need special support from this proposal. Or it could also be written as:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>  <span class="cf">if</span> <span class="op">(</span>__n <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">throw</span> <span class="st">&quot;attempt to decrement a non-bidirectional iterator&quot;</span>;</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="op">}</span></span></code></pre></div>
+<p>Or factored into a function like:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>  consteval_assert<span class="op">(</span>__n <span class="op">&gt;=</span> <span class="dv">0</span>,</span>
+<span id="cb14-3"><a href="#cb14-3"></a>    <span class="st">&quot;attempt to decrement a non-bidirectional iterator&quot;</span><span class="op">)</span>;</span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="op">}</span></span></code></pre></div>
+<p>Either way, the condition form doesn’t feel strongly motivated except for consistency with <code class="sourceCode cpp"><span class="cf">if</span></code> and <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code>.</p>
+<h2 data-number="4.3" id="deprecating-stdis_constant_evaluated"><span class="header-section-number">4.3</span> Deprecating <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code><a href="#deprecating-stdis_constant_evaluated" class="self-link"></a></h2>
+<p>One of the questions that comes up regularly in discussing this paper is: if we had <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>, we do we even need <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code>, and can we just deprecate it?</p>
+<p>This paper proposes no such deprecation. The reason is that this function is actually still occasionally useful (as in the previous section). If the standard library does not provide it, users will write their own. We’re not concerned about the implementation difficulty of it - the users that need this will definitely be able to write it correctly - but we are concerned with a proliferation of exactly this function. The advantage of having the one <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> is both that it becomes actually teachable and also that it becomes warnable: the warnings discussed can happen only because we know what this name means. Maybe it’s still possible to warn on <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>your<span class="op">::</span>is_constant_evaluated<span class="op">())</span></code> but that’s a much harder problem.</p>
+<p>And note that libstdc++ already has <a href="https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/char_traits.h#L236">some</a> <a href="https://github.com/gcc-mirror/gcc/blob/abe13e1847fb91d43f02b5579c4230214d4369f4/libstdc%2B%2B-v3/include/bits/char_traits.h#L260">uses</a> that do require the function form.</p>
+<h2 data-number="4.4" id="why-braces"><span class="header-section-number">4.4</span> Why braces?<a href="#why-braces" class="self-link"></a></h2>
+<p>The braces in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> statement are mandatory:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>   f<span class="op">(</span>i<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="op">}</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="cf">if</span> <span class="kw">consteval</span> f<span class="op">(</span>i<span class="op">)</span>; <span class="co">// ill-formed</span></span></code></pre></div>
+<p>There is no technical reason to mandate braces. Our reason for them is to emphasize visually that we’re dropping into an entirely different context. In this sense, it’s similar to <code class="sourceCode cpp"><span class="cf">try</span></code> and <code class="sourceCode cpp"><span class="cf">catch</span></code> mandating braces. It’s also quite unlike <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> in that the language rules in the taken statement actually change, so we think it merits the different rules.</p>
+<p>Without braces, we have no separation between the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> introducer and the statement being executed. This becomes especially important if the statement being executed itself includes some sort of keyword:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="cf">for</span> <span class="op">(</span>; it <span class="op">!=</span> end; <span class="op">++</span>it<span class="op">)</span> ;</span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="cf">if</span> <span class="op">(</span>it <span class="op">!=</span> end<span class="op">)</span>;</span></code></pre></div>
+<p>A normal <code class="sourceCode cpp"><span class="cf">if</span></code> statement has a parenthesized condition, which functions as such a separator, and we think such visual separation is important:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> f<span class="op">(</span>i<span class="op">)</span>;</span></code></pre></div>
+<p>An alternate syntax suggested was <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span></code>, with no requirement on braces, to look more like a regular <code class="sourceCode cpp"><span class="cf">if</span></code> statement. But this syntax suggests that other forms might be valid, which we either cannot support due to the implementation heroics necessary to so:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span> <span class="op">&amp;&amp;</span> n <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  <span class="co">// We would need to take an arbitrary boolean condition, C, and</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="co">// be able to prove that (not is_constant_evaluated) implies (not C).</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>  <span class="co">// That&#39;s an arbitrarily complex problem.</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>  some_consteval_fun<span class="op">(</span>n<span class="op">)</span>;</span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="op">}</span></span></code></pre></div>
+<p>Or suggests that other forms might be valid that make little sense to even want to support:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="cf">while</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="cf">switch</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span></code></pre></div>
+<p>Overall, we think the fact that <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> looks different from a regular <code class="sourceCode cpp"><span class="cf">if</span></code> statement is arguably a benefit.</p>
+<p>This question of syntax was discussed on the October 8th EWG telecon <span class="citation" data-cites="github.p1938">[<a href="#ref-github.p1938" role="doc-biblioref">github.p1938</a>]</span>, where the following polls were taken (note that the first two polls are phrased as changes from the status quo as proposed in this paper):</p>
+<div class="quote">
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> should be parenthesized as <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">consteval</span><span class="op">)</span></code></p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>1</td>
+<td>3</td>
+<td>10</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> should not require braces, making this valid: <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span> boom<span class="op">()</span>; <span class="cf">else</span> bam<span class="op">()</span>;</code></p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>3</td>
+<td>5</td>
+<td>7</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p><code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> is tentatively ready to be voted on to forward to Core, after updating the paper as discussed</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10</td>
+<td>11</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 data-number="4.5" id="examples"><span class="header-section-number">4.5</span> Examples<a href="#examples" class="self-link"></a></h2>
+<p>Here are a few examples from libstdc++. Today, they’re implemented uses a builtin function, and how they would look with <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>. It’s not a big difference, just spelling.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>From libstdc++</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="cf">if</span> <span class="op">(!</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>   __glibcxx_assert<span class="op">(</span> __shift_exponent <span class="op">!=</span> numeric_limits<span class="op">&lt;</span>_Tp<span class="op">&gt;::</span>digits <span class="op">)</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="cf">if</span> <span class="op">(</span><span class="fu">__builtin_is_constant_evaluated</span><span class="op">())</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>  <span class="cf">return</span> __x <span class="op">&lt;</span> __y;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>  <span class="cf">return</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__x <span class="op">&gt;</span> <span class="op">(</span><span class="ot">__UINTPTR_TYPE__</span><span class="op">)</span>__y;</span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>As of this writing, libstdc++ has 23 uses that could be replaced by <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>, 2 that could be replaced by <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">not</span> <span class="kw">consteval</span></code>, and 2 that require an extra condition on the comparison.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="history"><span class="header-section-number">5</span> History<a href="#history" class="self-link"></a></h1>
+<p>The initial revision of the <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> proposal <span class="citation" data-cites="P0595R0">[<a href="#ref-P0595R0" role="doc-biblioref">P0595R0</a>]</span> was actually targeted as a language feature rather than a library feature. The original spelling was <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">(</span><span class="kw">constexpr</span><span class="op">())</span></code>. The paper was presented in Kona 2017 and was received very favorably in the form it was presented (17-4). The poll to consider a magic library alternative was only marginally more preferred (17-3). We believe that in the two years since these polls were taken, having a dedicated language feature with an impossible-to-misuse API, that can coexist with the rest of the constant ecosystem, is the right direction.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">6</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Extend the definition of immediate function context in <span>7.7
+ <a href="https://wg21.link/expr.const">[expr.const]</a></span> (and use bullet points):</p>
+<blockquote>
+<p>An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and <span class="addu">either</span>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(13.1)</a></span> its innermost non-block scope is a function parameter scope of an immediate function<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(13.2)</a></span> <span class="addu">its enclosing statement is enclosed ([stmt.pre]) by the <em>compound-statement</em> of a consteval if statement ([stmt.if]).</span></li>
+</ul>
+</blockquote>
+<p>Change <span>8.5
+ <a href="https://wg21.link/stmt.select">[stmt.select]</a></span> to add the new grammar:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>  <em>selection-statement</em>:</span>
+<span id="cb24-2"><a href="#cb24-2"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span>
+<span id="cb24-3"><a href="#cb24-3"></a>     if constexpr<sub>opt</sub> ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em> else <em>statement</em></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="va">+    if !<sub>opt</sub> consteval <em>compound-statement</em></span></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="va">+    if !<sub>opt</sub> consteval <em>compound-statement</em> else <em>statement</em></span></span>
+<span id="cb24-6"><a href="#cb24-6"></a>     switch ( <em>init-statement</em><sub>opt</sub> <em>condition</em> ) <em>statement</em></span></code></pre></div>
+</div>
+</blockquote>
+<p>Add a new clause to <span>8.5.2
+ <a href="https://wg21.link/stmt.if">[stmt.if]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">a</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> is called a <em>consteval if</em> statement. The <em>statement</em>, if any, in a consteval if statement shall be a <em>compound-statement</em>. [ <em>Example</em> -</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>constexpr void f(bool b) {</span>
+<span id="cb25-2"><a href="#cb25-2"></a>  if (true)</span>
+<span id="cb25-3"><a href="#cb25-3"></a>    if consteval { }</span>
+<span id="cb25-4"><a href="#cb25-4"></a>    else ; // error: not a compound-statement</span>
+<span id="cb25-5"><a href="#cb25-5"></a>           // &quot;else&quot; not associated with outer if</span>
+<span id="cb25-6"><a href="#cb25-6"></a>}</span></code></pre></div>
+<ul>
+<li><em>end example</em> ]</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">b</a></span> If a consteval if statement is evaluated in a context that is manifestly constant-evaluated ([expr.const]), the first substatement is executed. [<em>Note</em>: The first substatement is an immediate function context - <em>end note</em> ] Otherwise, if the <code class="sourceCode cpp"><span class="cf">else</span></code> part of the selection statement is present, then the second substatement is executed. A <code class="sourceCode cpp"><span class="cf">case</span></code> or <code class="sourceCode cpp"><span class="cf">default</span></code> label appearing within such an <code class="sourceCode cpp"><span class="cf">if</span></code> statement shall be associated with a <code class="sourceCode cpp"><span class="cf">switch</span></code> statement within the same <code class="sourceCode cpp"><span class="cf">if</span></code> statement. A label declared in a substatement of a consteval if statement shall only be referred to by a statement in the same substatement.</p>
+<p><span class="marginalizedparent"><a class="marginalized">c</a></span> An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>compound-statement</em></code> is not itself a consteval if statement, but is equivalent to the consteval if statement</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>if consteval { } else <em>compound-statement</em></span></code></pre></div>
+<p>An <code class="sourceCode cpp"><span class="cf">if</span></code> statement of the form <code class="sourceCode cpp"><span class="cf">if</span> <span class="op">!</span> <span class="kw">consteval</span> <em>compound-statement</em><sub>1</sub> <span class="cf">else</span> <em>statement</em><sub>2</sub></code> is not itself a consteval if statement, but is equivalent to the consteval if statement</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>if consteval <em>statement</em><sub>2</sub> else <em>compound-statement</em><sub>1</sub></span></code></pre></div>
+</div>
+</blockquote>
+<p>Change <span>20.15.11
+ <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> to use this new functionality:</p>
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Returns</em>: <code class="sourceCode default">true</code> if and only if evaluation of the call occurs within the evaluation of an expression or conversion that is manifestly constant-evaluated ([expr.const]).</p>
+</div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>if consteval {</span>
+<span id="cb29-2"><a href="#cb29-2"></a>    return true;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>} else {</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    return false;</span>
+<span id="cb29-5"><a href="#cb29-5"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="6.1" id="feature-test-macro"><span class="header-section-number">6.1</span> Feature test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Add the macro <code class="sourceCode cpp">__cpp_if_consteval</code>.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">7</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Thank you to David Stone and Tim Song for working through these examples. Thank you to Davis Herring for helping improve the grammar to remove a potential source of error, and Jens Maurer with help wording it properly.</p>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-github.p1938">
+<p>[github.p1938] WG21. 2019. P1938 if consteval. <br />
+<a href="https://github.com/cplusplus/papers/issues/677#issuecomment-705817492">https://github.com/cplusplus/papers/issues/677#issuecomment-705817492</a></p>
+</div>
+<div id="ref-P0595R0">
+<p>[P0595R0] Daveed Vandevoorde. 2017-02-02. The “constexpr” Operator. <br />
+<a href="https://wg21.link/p0595r0">https://wg21.link/p0595r0</a></p>
+</div>
+<div id="ref-P0595R2">
+<p>[P0595R2] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-09. std::is_constant_evaluated. <br />
+<a href="https://wg21.link/p0595r2">https://wg21.link/p0595r2</a></p>
+</div>
+<div id="ref-P1045R0">
+<p>[P1045R0] David Stone. 2018-04-29. constexpr Function Parameters. <br />
+<a href="https://wg21.link/p1045r0">https://wg21.link/p1045r0</a></p>
+</div>
+<div id="ref-P1073R3">
+<p>[P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-06. Immediate functions. <br />
+<a href="https://wg21.link/p1073r3">https://wg21.link/p1073r3</a></p>
+</div>
+<div id="ref-P1938R0">
+<p>[P1938R0] Barry Revzin, Daveed Vandevoorde, Richard Smith. 2019-10-10. if consteval. <br />
+<a href="https://wg21.link/p1938r0">https://wg21.link/p1938r0</a></p>
+</div>
+<div id="ref-P1938R1">
+<p>[P1938R1] Barry Revzin, Daveed Vandevoorde, Richard Smith, Andrew Sutton. 2020-03-02. if consteval. <br />
+<a href="https://wg21.link/p1938r1">https://wg21.link/p1938r1</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

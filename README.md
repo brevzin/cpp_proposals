@@ -41,11 +41,11 @@ make all of my papers.
 
 ### Pending Plenary
 
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 
 ### Pending CWG/LWG Review
 
-- [p1938r2 - `if consteval`](1938_if_consteval/p1938r2.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
 

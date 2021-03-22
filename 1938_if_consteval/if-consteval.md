@@ -1,6 +1,6 @@
 ---
 title: "`if consteval`"
-document: P1938R2
+document: P1938R3
 date: today
 audience: CWG
 author:
@@ -17,7 +17,9 @@ toc: true
 
 # Revision history
 
-R1 [@P1938R1] of this paper originally mandated the use of braces in `if consteval` (see [why braces](#why-braces), also new in this revision) grammatically. Davis Herring pointed out in an EWG telecon that this causes some issues:
+R2 to R3: Wording changes.
+
+R1 to R2: R1 [@P1938R1] of this paper originally mandated the use of braces in `if consteval` (see [why braces](#why-braces), also new in this revision) grammatically. Davis Herring pointed out in an EWG telecon that this causes some issues:
 
 ```cpp
 if (cond) 
@@ -27,7 +29,7 @@ if (cond)
 
 If the grammar for `if consteval` has _compound-statement_, then the `else` here _cannot_ be associated with the `if consteval`, it must be associated with the outer `if`. Rather than that, we want this to a compile error due to the lack of braces around `s1`. 
 
-R0 [@P1938R0] of this paper initially contained only a positive form: `if consteval`. This paper additionally adds a negated form, `if not consteval`.
+R0 to R1: R0 [@P1938R0] of this paper initially contained only a positive form: `if consteval`. This paper additionally adds a negated form, `if not consteval`.
 
 # Introduction
 
@@ -463,7 +465,7 @@ potentially evaluated and [either]{.addu}:
 
 - [13.1]{.pnum} its innermost non-block scope is a function parameter scope of an
 immediate function[.]{.rm} [, or]{.addu}
-- [13.2]{.pnum} [it appears in the _compound-statement_ of a
+- [13.2]{.pnum} [its enclosing statement is enclosed ([stmt.pre]) by the _compound-statement_ of a
 consteval if statement ([stmt.if]).]{.addu}
 :::
 
@@ -507,14 +509,14 @@ A label declared in a substatement of a consteval if statement shall only be
 referred to by a statement in the same substatement.
 
 [c]{.pnum} An `if` statement of the form `if ! consteval @_compound-statement_@`
-is equivalent to
+is not itself a consteval if statement, but is equivalent to the consteval if statement
 
 ```
 if consteval { } else @_compound-statement_@
 ```
 
 An `if` statement of the form `if ! consteval @_compound-statement_~1~@ else @_statement_~2~@`
-is equivalent to
+is not itself a consteval if statement, but is equivalent to the consteval if statement
 
 ```
 if consteval @_statement_~2~@ else @_compound-statement_~1~@
