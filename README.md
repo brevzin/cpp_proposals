@@ -41,18 +41,18 @@ make all of my papers.
 
 ### Pending Plenary
 
-- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 
 ### Pending CWG/LWG Review
 
-- [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
-- [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde. CWG approved, needs LWG review.
 
 ### Pending EWG/LEWG Voting
 
-- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html). Already approved by LWG.
 - [p0847r6 - Deducing this](0847_deducing_this/p0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
+- [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
+- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html). Already approved by LWG.
+- [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
 
 ### Pending EWG/LEWG Review
 
@@ -68,4 +68,4 @@ make all of my papers.
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2322r1 - `ranges::fold`](2322_fold/p2322r1.html).
-- [p2325r0 - Views should not be required to be default constructible](2325_views_default/p2325r0.html).
+- [p2325r1 - Views should not be required to be default constructible](2325_views_default/p2325r1.html).
