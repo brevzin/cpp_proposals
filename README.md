@@ -56,16 +56,27 @@ make all of my papers.
 
 ### Pending EWG/LEWG Review
 
+#### Figure out packs outside of templates?
+
 - [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
-- [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
-- [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
-- [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
-- [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
 - [p2277r0 - Packs outside of templates](2277_packs_outside_of_templates/p2277r0.html).
+- [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
+
+#### Ranges
+
+- [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
-- [p2279r0 - We need a language mechanism for customization points](2279_static_polymorphism/p2279r0.html).
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
-- [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2322r1 - `ranges::fold`](2322_fold/p2322r1.html).
-- [p2325r1 - Views should not be required to be default constructible](2325_views_default/p2325r1.html).
+- [p2325r1 - Views should not be required to be default constructible](2325_views_default/p2325r1.html). Needs wording.
+
+#### Concepts
+
+- [p1900r0 - Concepts-adjacent problems](1900_concepts/p1900r0.html).
+- [p2279r0 - We need a language mechanism for customization points](2279_static_polymorphism/p2279r0.html).
+
+#### Other
+
+- [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
+- [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
