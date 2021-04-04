@@ -33,7 +33,6 @@ make all of my papers.
 - [p0573r2 - Abbreviated Lambdas](0573_abbrev_lambdas/p0573r2.html), with Tomasz Kamiński. Rejected in Albuquerque.
 - [p0644r1 - Forward without forward](0644_fwd/p0644r1.html). Rejected in Albuquerque.
 - [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter. Rejected in San Diego.
-- [p1169r0 - static `operator()`](1169_static_call/p1169r0.html), with Casey Carter. Rejected in San Diego.
 
 ### On Hold
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
@@ -78,5 +77,6 @@ make all of my papers.
 
 #### Other
 
+- [p1169r1 - static `operator()`](1169_static_call/p1169r1.html), with Casey Carter. Rejected in San Diego.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
