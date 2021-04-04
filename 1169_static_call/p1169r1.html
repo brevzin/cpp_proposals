@@ -710,15 +710,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>desugar into:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">struct</span> __unique <span class="op">{</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()()</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">4</span>; <span class="op">}</span>;</span>
-<span id="cb7-3"><a href="#cb7-3"></a>    consetxpr <span class="kw">auto</span> <span class="kw">operator</span> std<span class="op">::</span>add_pointer_t<span class="op">&lt;</span><span class="dt">int</span><span class="op">()&gt;()</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">operator</span><span class="op">()</span>; <span class="op">}</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="op">}</span>;</span>
-<span id="cb7-5"><a href="#cb7-5"></a></span>
-<span id="cb7-6"><a href="#cb7-6"></a>__unique four<span class="op">{}</span>;</span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3"></a>    </span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="kw">using</span> P <span class="op">=</span> <span class="dt">int</span><span class="op">()</span>;</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> P<span class="op">*()</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">operator</span><span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="op">}</span>;</span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a>__unique four<span class="op">{}</span>;</span></code></pre></div>
 <p>Rather than desugaring to a type that has a non-static call operator along with a conversion function that has to return some other function.</p>
 <p>However, we can’t simply change such lambdas because this would be a language ABI break. While lambdas shouldn’t show up in your ABI anyway, we can’t with confidence state that such code doesn’t exist nor that such code deserves to be broken.</p>
-<p>Instead, we propose that this can be opt-in: a lambda is allowed to be declared <code class="sourceCode cpp"><span class="kw">static</span></code>:</p>
+<p>Instead, we propose that this can be opt-in: a lambda is allowed to be declared <code class="sourceCode cpp"><span class="kw">static</span></code>, which will then cause the call operator (or call operator template) of the lambda to be a static member function rather than a non-static member function:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">auto</span> four <span class="op">=</span> <span class="op">[]()</span> <span class="kw">static</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">4</span>; <span class="op">}</span>;</span></code></pre></div>
-<p>Ensuring that a lambda cannot be declared <code class="sourceCode cpp"><span class="kw">static</span></code> if it is declared <code class="sourceCode cpp"><span class="kw">mutable</span></code> (an inherently non-static property) or has any capture (as that would be fairly pointless, since you could not access any of that capture).</p>
+<p>We then also need to ensure that a lambda cannot be declared <code class="sourceCode cpp"><span class="kw">static</span></code> if it is declared <code class="sourceCode cpp"><span class="kw">mutable</span></code> (an inherently non-static property) or has any capture (as that would be fairly pointless, since you could not access any of that capture).</p>
 <h2 data-number="3.3" id="deduction-guides"><span class="header-section-number">3.3</span> Deduction Guides<a href="#deduction-guides" class="self-link"></a></h2>
 <p>Consider the following, assuming a version of <code class="sourceCode cpp">less</code> that uses a static call operator:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>

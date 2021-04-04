@@ -166,7 +166,9 @@ desugar into:
 ```cpp
 struct __unique {
     static constexpr auto operator()() { return 4; };
-    consetxpr auto operator std::add_pointer_t<int()>() { return operator(); }
+    
+    using P = int();
+    constexpr auto operator P*() { return operator(); }
 };
 
 __unique four{};
@@ -176,13 +178,13 @@ Rather than desugaring to a type that has a non-static call operator along with 
 
 However, we can't simply change such lambdas because this would be a language ABI break. While lambdas shouldn't show up in your ABI anyway, we can't with confidence state that such code doesn't exist nor that such code deserves to be broken.
 
-Instead, we propose that this can be opt-in: a lambda is allowed to be declared `static`:
+Instead, we propose that this can be opt-in: a lambda is allowed to be declared `static`, which will then cause the call operator (or call operator template) of the lambda to be a static member function rather than a non-static member function:
 
 ```cpp
 auto four = []() static { return 4; };
 ```
 
-Ensuring that a lambda cannot be declared `static` if it is declared `mutable` (an inherently non-static property) or has any capture (as that would be fairly pointless, since you could not access any of that capture).
+We then also need to ensure that a lambda cannot be declared `static` if it is declared `mutable` (an inherently non-static property) or has any capture (as that would be fairly pointless, since you could not access any of that capture).
 
 ## Deduction Guides
 
