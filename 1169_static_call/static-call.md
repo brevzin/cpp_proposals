@@ -5,7 +5,7 @@ date: today
 audience: EWG
 author:
     - name: Barry Revzin
-      email: barry.revzin@gmail.com
+      email: <barry.revzin@gmail.com>
     - name: Casey Carter
       email: <casey@carter.net>
 toc: true
