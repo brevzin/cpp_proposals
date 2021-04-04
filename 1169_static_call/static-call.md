@@ -261,7 +261,7 @@ Add to [over.best.ics.general]{.sref} a way to compare this static member functi
 Change [over.oper]{.sref} paragraph 6:
 
 ::: bq
-[6]{.pnum} An operator function shall either be a [non-static]{.rm} member function or be a non-member function that has at least one parameter whose type is a class, a reference to a class, an enumeration, or a reference to an enumeration. It is not possible to change the precedence, grouping, or number of operands of operators. The meaning of the operators `=`, (unary) `&`, and `,` (comma), predefined for each type, can be changed for specific class and enumeration types by defining operator functions that implement these operators. Operator functions are inherited in the same manner as other base class functions.
+[6]{.pnum} An operator function shall [either be a non-static member function or be a non-member function]{.rm} [be a function]{.addu} that has at least one parameter whose type is a class, a reference to a class, an enumeration, or a reference to an enumeration. It is not possible to change the precedence, grouping, or number of operands of operators. The meaning of the operators `=`, (unary) `&`, and `,` (comma), predefined for each type, can be changed for specific class and enumeration types by defining operator functions that implement these operators. Operator functions are inherited in the same manner as other base class functions.
 :::
 
 Change [over.call]{.sref} paragraph 1:
