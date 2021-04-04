@@ -168,7 +168,7 @@ struct __unique {
     static constexpr auto operator()() { return 4; };
     
     using P = int();
-    constexpr auto operator P*() { return operator(); }
+    constexpr operator P*() { return operator(); }
 };
 
 __unique four{};
