@@ -217,7 +217,9 @@ There is a separate paper proposing multi-argument subscripting [@P2128R3] alrea
 
 The language changes have been implemented in EDG.
 
-# Language Wording
+# Wording
+
+## Language Wording
 
 Change [expr.prim.lambda.general]{.sref}/3:
 
