@@ -13,7 +13,7 @@ toc: true
 
 # Revision History
 
-[@P1169R0] was presented to EWGI in San Diego, where there was no consensus to pursue the paper. However, recent discussion has caused renewed interest in this paper so it has been resurfaced. R0 of this paper additionally proposed implicitly changing capture-less lambdas to have static function call operators, which would be an ABI breaking change. That part of this paper has been changed to instead allow for an explicit opt-in to static. Additionally, this language change has been implemented. 
+[@P1169R0] was presented to EWGI in San Diego, where there was no consensus to pursue the paper. However, recent discussion has caused renewed interest in this paper so it has been resurfaced. R0 of this paper additionally proposed implicitly changing capture-less lambdas to have static function call operators, which would be an breaking change. That part of this paper has been changed to instead allow for an explicit opt-in to static. Additionally, this language change has been implemented. 
 
 # Motivation
 
@@ -176,7 +176,7 @@ __unique four{};
 
 Rather than desugaring to a type that has a non-static call operator along with a conversion function that has to return some other function. 
 
-However, we can't simply change such lambdas because this would be a language ABI break. While lambdas shouldn't show up in your ABI anyway, we can't with confidence state that such code doesn't exist nor that such code deserves to be broken.
+However, we can't simply change such lambdas because this could break code. There exists code that takes a template parameter of callable type and does `decltype(&F::operator())`, expecting the resulting type to be a pointer to member type (which is the only thing it can be right now). If we change captureless lambdas to have a static call operator implicitly, all such code would break for captureless lambdas. Additionally, this would be a language ABI break. While lambdas shouldn't show up in your ABI anyway, we can't with confidence state that such code doesn't exist nor that such code deserves to be broken.
 
 Instead, we propose that this can be opt-in: a lambda is allowed to be declared `static`, which will then cause the call operator (or call operator template) of the lambda to be a static member function rather than a non-static member function:
 
