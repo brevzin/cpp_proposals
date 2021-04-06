@@ -260,10 +260,15 @@ Add to [over.best.ics.general]{.sref} a way to compare this static member functi
 [*]{.pnum} [When the parameter is the implicit object parameter of a static member function, the implicit conversion sequence is a standard conversion sequence that is neither better nor worse than any other standard conversion sequence.]{.addu}
 :::
 
-Change [over.oper]{.sref} paragraph 6:
+Change [over.oper]{.sref} paragraph 6 and introduce bullets to clarify the parsing. `static void operator()() { }` is a valid function call operator that has no parameters with this proposal, so needs to be clear that the "has at least one parameter" part refers to the non-member function part of the clause. 
 
 ::: bq
-[6]{.pnum} An operator function shall [either be a non-static member function or be a non-member function]{.rm} [be a function]{.addu} that has at least one parameter whose type is a class, a reference to a class, an enumeration, or a reference to an enumeration. It is not possible to change the precedence, grouping, or number of operands of operators. The meaning of the operators `=`, (unary) `&`, and `,` (comma), predefined for each type, can be changed for specific class and enumeration types by defining operator functions that implement these operators. Operator functions are inherited in the same manner as other base class functions.
+[6]{.pnum} An operator function shall either
+
+* [6.1]{.pnum} be a [non-static]{.rm} member function or
+* [6.2]{.pnum} be a non-member function that has at least one parameter whose type is a class, a reference to a class, an enumeration, or a reference to an enumeration.
+
+It is not possible to change the precedence, grouping, or number of operands of operators. The meaning of the operators `=`, (unary) `&`, and `,` (comma), predefined for each type, can be changed for specific class and enumeration types by defining operator functions that implement these operators. Operator functions are inherited in the same manner as other base class functions.
 :::
 
 Change [over.call]{.sref} paragraph 1:
