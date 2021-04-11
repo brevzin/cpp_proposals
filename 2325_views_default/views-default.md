@@ -566,7 +566,7 @@ namespace std::ranges {
 ```
 :::
 
-Remove having the handle the case where `parent_ == nullptr` from all the iterator operations in [range.istream.iterator]{.sref}:
+Remove having to handle the case where `parent_ == nullptr` from all the iterator operations in [range.istream.iterator]{.sref} as this state is no longer representable:
 
 ::: bq
 ```
@@ -603,7 +603,7 @@ friend bool operator==(const iterator& x, default_sentinel_t);
 [8]{.pnum} *Effects*: Equivalent to: `return @[x.parent_ == nullptr ||]{.diffdel}@ !*x.parent_->stream_`;
 :::
 
-Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}, and also resolves [@LWG3479]:
+Replace the subclause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new subclause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}, and also resolves [@LWG3479]:
 
 ::: bq
 [1]{.pnum} Many types in this subclause are specified in terms of an exposition-only class template [_`semiregular-box`_]{.rm} [_`copyable-box`_]{.addu}. [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu}  behaves exactly like `optional<T>` with the following differences:
