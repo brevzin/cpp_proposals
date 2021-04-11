@@ -636,7 +636,7 @@ Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are re
 + @*copyable-box*@& operator=(@*copyable-box*@&& that)
     noexcept(is_nothrow_move_constructible_v<T>)
   {
-+   if (this != addressof(that)) {    
++   if (this != addressof(that)) {
       if (that) emplace(std::move(*that));
       else reset();
 +   }
@@ -959,7 +959,7 @@ namespace std::ranges {
 ```
 :::
 
-Update the implementation parts of `join_view::iterator` now that `inner_` is an `optional` in [range.join.iterator]{.sref} (dereferencing `parent_->inner_` in both `satisfy()` and `operator++()`):
+Update the implementation parts of `join_view::iterator` now that `inner_` is an `optional` in [range.join.iterator]{.sref} (dereferencing `parent_->inner_` in both `satisfy()` and `operator++()`) [Don't apply these changes if [@P2328R0] is adopted]{.ednote}:
 
 ::: bq
 ```
@@ -1007,7 +1007,7 @@ return *this;
 :::
 
 
-Constrain the defaulted default constructor in [range.split.view]{.sref} and change the implementation to use `optional<iterator_t<V>>` instead of a defaulted `iterator_t<V>` (same as `join`) [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft. The use of `optional`s here should also be changed to _`non-propagating-cache`_ with the adoption of [@P2328R0].]{.ednote}:
+Constrain the defaulted default constructor in [range.split.view]{.sref} and change the implementation to use `optional<iterator_t<V>>` instead of a defaulted `iterator_t<V>` (same as `join`) [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft. The use of `optional` here should also be changed to _`non-propagating-cache`_ with the adoption of [@P2328R0].]{.ednote}:
 
 ::: bq
 ```diff
@@ -1046,32 +1046,12 @@ namespace std::ranges {
 ```
 :::
 
-Change the implementation of `current_` in [range.split.outer]{.sref}:
+Change the description to dereference what is now an `optional` in [range.split.outer]{.sref}:
 
 ::: bq
-```diff
-namespace std::ranges {
-  template<input_range V, forward_range Pattern>
-    requires view<V> && view<Pattern> &&
-             indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to> &&
-             (forward_range<V> || tiny-range<Pattern>)
-  template<bool Const>
-  struct split_view<V, Pattern>::@*outer-iterator*@ {
-  private:
-    using @*Parent*@ = @*maybe-const*@<Const, split_view>;      // exposition only
-    using @*Base*@ = @*maybe-const*@<Const, V>;                 // exposition only
-    @*Parent*@* parent_ = nullptr;                          // exposition only
--   iterator_t<@*Base*@> current_ = iterator_t<@*Base*@>();     // exposition only, present only if V models forward_range
-+   optional<iterator_t<@*Base*@>> current_;     // exposition only, present only if V models forward_range
-
-  public:
-    // ...
-  };
-}
-```
 
 [1]{.pnum} Many of the specifications in [range.split] refer to the notional member `@*current*@` of `@*outer-iterator*@`.
-`@*current*@` is equivalent to `@[*]{.addu}@@*current_*@` if `V` models `forward_range`, and `@[*]{.addu}@@*parent_*@->@*current_*@` otherwise.
+`@*current*@` is equivalent to `@*current_*@` if `V` models `forward_range`, and `@[*]{.addu}@@*parent_*@->@*current_*@` otherwise.
 :::
 
 Constrain the defaulted default constructor in [range.common.view]{.sref}:
