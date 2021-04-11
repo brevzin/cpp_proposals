@@ -344,7 +344,34 @@ namespace std {
 :::
 
 
-Change [range.view]{.sref}/1:
+Adjust the `iota_view` constraints in [ranges.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+#include <iterator>             // see [iterator.synopsis]
+
+namespace std::ranges {
+  // ...
+  
+  // [range.iota], iota view
+  template<weakly_incrementable W, semiregular Bound = unreachable_sentinel_t>
+-   requires weakly-equality-comparable-with<W, Bound> && @[semiregular]{.diffdel}@<W>
++   requires weakly-equality-comparable-with<W, Bound> && @[copyable]{.diffins}@<W>
+  class iota_view;
+
+  template<class W, class Bound>
+    inline constexpr bool enable_borrowed_range<iota_view<W, Bound>> = true;
+
+  namespace views { inline constexpr @*unspecified*@ iota = @*unspecified*@; }
+
+  // ...  
+}
+```
+:::
+
+Remove `default_initializable` from the `view` concept in [range.view]{.sref}/1:
 
 ::: bq
 ```diff
@@ -438,7 +465,7 @@ Change the synopsis in [range.iota.view]{.sref}:
 ```
 :::
 
-Change [range.iota.iterator]{.sref}:
+Constrain the defaulted default constructor and adjust the constraint in [range.iota.iterator]{.sref}:
 
 ::: bq
 ```diff
@@ -464,7 +491,22 @@ namespace std::ranges {
 ```
 :::
 
-Remove the default constructor and default member initializers from [range.istream.view]{.sref}:
+Adjust the constraint in [range.iota.sentinel]{.sref}:
+
+::: bq
+```diff
+namespace std::ranges {
+  template<weakly_incrementable W, semiregular Bound>
+-   requires weakly-equality-comparable-with<W, Bound> && @[semiregular]{.diffdel}@<W>
++   requires weakly-equality-comparable-with<W, Bound> && @[copyable]{.diffins}@<W>
+  struct iota_view<W, Bound>::sentinel {
+    // ...
+  };
+}
+```
+:::
+
+Remove the default constructor and default member initializers, as well as the `if` from [range.istream.view]{.sref}:
 
 ::: bq
 ```diff
@@ -477,15 +519,24 @@ namespace std::ranges {
   class basic_istream_view : public view_interface<basic_istream_view<Val, CharT, Traits>> {
   public:
 -   basic_istream_view() = default;
-    
-    // ...
+    constexpr explicit basic_istream_view(basic_istream<CharT, Traits>& stream);
+
+    constexpr auto begin()
+    {
+-     if (@*stream_*@) {
+        *@*stream_*@ >> @*value_*@;
+-     }
+      return iterator{*this};
+    }
+
+    constexpr default_sentinel_t end() const noexcept;
 
   private:
     struct iterator;                                    // exposition only
--   basic_istream<CharT, Traits>* stream_ @[= nullptr]{.diffdel}@;    // exposition only
--   Val value_ @[= Val()]{.diffdel}@;                                 // exposition only
-+   basic_istream<CharT, Traits>* stream_;              // exposition only
-+   Val value_;                                         // exposition only
+-   basic_istream<CharT, Traits>* @*stream_*@ @[= nullptr]{.diffdel}@;    // exposition only
+-   Val @*value_*@ @[= Val()]{.diffdel}@;                                 // exposition only
++   basic_istream<CharT, Traits>* @*stream_*@;              // exposition only
++   Val @*value_*@;                                         // exposition only
   };
 }
 ```
@@ -515,13 +566,50 @@ namespace std::ranges {
 ```
 :::
 
+Remove having the handle the case where `parent_ == nullptr` from all the iterator operations in [range.istream.iterator]{.sref}:
+
+::: bq
+```
+iterator& operator++();
+```
+::: rm
+[2]{.pnum} Preconditions: `parent_->stream_ != nullptr` is `true`.
+:::
+
+[3]{.pnum} Effects: Equivalent to:
+    ```
+    *parent_->stream_ >> parent_->value_;
+    return *this;
+    ```
+```
+void operator++(int);
+```
+::: rm
+[4]{.pnum} *Preconditions*: `parent_->stream_ != nullptr` is `true`.
+:::
+
+[5]{.pnum} *Effects*: Equivalent to ++*this.
+```
+Val& operator*() const;
+```
+::: rm
+[6]{.pnum} *Preconditions*: `parent_->stream_ != nullptr` is `true`.
+:::
+
+[7]{.pnum} *Effects*: Equivalent to: return `parent_->value_`;
+```
+friend bool operator==(const iterator& x, default_sentinel_t);
+```
+[8]{.pnum} *Effects*: Equivalent to: `return @[x.parent_ == nullptr ||]{.diffdel}@ !*x.parent_->stream_`;
+:::
+
 Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}:
 
 ::: bq
-[1]{.pnum} Many types in this subclause are specified in terms of an exposition-only class template [_`semiregular-box`_]{.rm} [_`copyable-box`_]{.addu}. [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu}  behaves exactly like optional<T> with the following differences:
+[1]{.pnum} Many types in this subclause are specified in terms of an exposition-only class template [_`semiregular-box`_]{.rm} [_`copyable-box`_]{.addu}. [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu}  behaves exactly like `optional<T>` with the following differences:
 
 * [1.1]{.pnum} [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu} constrains its type parameter `T` with `copy_constructible<T>` && `is_object_v<T>`.
-* [1.2]{.pnum} [If T models default_­initializable, the]{.rm} [The]{.addu} default constructor of [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu} is equivalent to:
+* [1.2]{.pnum} [If T models default_initializable, the]{.rm} [The]{.addu} default constructor of [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu} is equivalent to:
 ```diff
 - constexpr @*semiregular-box*@() noexcept(is_nothrow_default_constructible_v<T>)
 -    : @*semiregular-box*@{in_place}
@@ -1052,7 +1140,7 @@ Constrain the defaulted default constructor in [range.elements.view]{.sref}:
 namespace std::ranges {
   // ...
 
-  template<input_­range V, size_t N>
+  template<input_range V, size_t N>
     requires view<V> && has-tuple-element<range_value_t<V>, N> &&
              has-tuple-element<remove_reference_t<range_reference_t<V>>, N> &&
              returnable-element<range_reference_t<V>, N>
@@ -1064,9 +1152,9 @@ namespace std::ranges {
     // ...
 
   private:
-    // [range.elements.iterator], class template elements_­view​::​iterator
+    // [range.elements.iterator], class template elements_view​::​iterator
     template<bool> struct iterator;                     // exposition only
-    // [range.elements.sentinel], class template elements_­view​::​sentinel
+    // [range.elements.sentinel], class template elements_view​::​sentinel
     template<bool> struct sentinel;                     // exposition only
     V base_ = V();                                      // exposition only
   };
@@ -1079,7 +1167,7 @@ Constrain the defaulted default constructor in [range.elements.iterator]{.sref}:
 ::: bq
 ```diff
 namespace std::ranges {
-  template<input_­range V, size_t N>
+  template<input_range V, size_t N>
     requires view<V> && has-tuple-element<range_value_t<V>, N> &&
              has-tuple-element<remove_reference_t<range_reference_t<V>>, N> &&
              returnable-element<range_reference_t<V>, N>
