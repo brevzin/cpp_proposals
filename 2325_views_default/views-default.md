@@ -603,7 +603,7 @@ friend bool operator==(const iterator& x, default_sentinel_t);
 [8]{.pnum} *Effects*: Equivalent to: `return @[x.parent_ == nullptr ||]{.diffdel}@ !*x.parent_->stream_`;
 :::
 
-Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}, and also resolves [@LWG3479] (in a slightly different formulation: we need to preserve that `@*copyable-box*@<T>` always holds a `T`:
+Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}, and also resolves [@LWG3479]:
 
 ::: bq
 [1]{.pnum} Many types in this subclause are specified in terms of an exposition-only class template [_`semiregular-box`_]{.rm} [_`copyable-box`_]{.addu}. [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu}  behaves exactly like `optional<T>` with the following differences:
