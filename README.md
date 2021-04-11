@@ -68,7 +68,7 @@ make all of my papers.
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
 - [p2322r1 - `ranges::fold`](2322_fold/p2322r1.html).
-- [p2325r1 - Views should not be required to be default constructible](2325_views_default/p2325r1.html). Needs wording.
+- [p2325r2 - Views should not be required to be default constructible](2325_views_default/p2325r2.html).
 
 #### Concepts
 
