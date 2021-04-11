@@ -603,7 +603,7 @@ friend bool operator==(const iterator& x, default_sentinel_t);
 [8]{.pnum} *Effects*: Equivalent to: `return @[x.parent_ == nullptr ||]{.diffdel}@ !*x.parent_->stream_`;
 :::
 
-Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}:
+Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are removed with this paper) with a new clause "Copyable wrapper" with stable name [range.copy.wrap]. The following is presented as a diff against the current [range.semi.wrap]{.sref}, and also resolves [@LWG3479] (in a slightly different formulation: we need to preserve that `@*copyable-box*@<T>` always holds a `T`:
 
 ::: bq
 [1]{.pnum} Many types in this subclause are specified in terms of an exposition-only class template [_`semiregular-box`_]{.rm} [_`copyable-box`_]{.addu}. [`@*semiregular-box*@<T>`]{.rm} [`@*copyable-box*@<T>`]{.addu}  behaves exactly like `optional<T>` with the following differences:
@@ -623,8 +623,10 @@ Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are re
 + @*copyable-box*@& operator=(const @*copyable-box*@& that)
     noexcept(is_nothrow_copy_constructible_v<T>)
   {
-    if (that) emplace(*that);
-    else reset();
++   if (this != addressof(that)) {  
+      if (that) emplace(*that);
+      else reset();
++   }
     return *this;
   }
 ```
@@ -634,14 +636,16 @@ Remove the clause [range.semi.wrap] (all the uses of `semiregular-box<T>` are re
 + @*copyable-box*@& operator=(@*copyable-box*@&& that)
     noexcept(is_nothrow_move_constructible_v<T>)
   {
-    if (that) emplace(std::move(*that));
-    else reset();
++   if (this != addressof(that)) {    
+      if (that) emplace(std::move(*that));
+      else reset();
++   }
     return *this;
   }
 ```
 
 ::: addu
-[2]{.pnum} *Recommended Practice*: `@*copyable-box*@<T>` should just store a `T` if `T` either models `copyable` or `is_nothrow_copy_constructible_v<T>` is `true`.
+[2]{.pnum} *Recommended Practice*: `@*copyable-box*@<T>` should just store a `T` if either `T` models `copyable` or `is_nothrow_copy_constructible_v<T> && is_nothrow_copy_constructible_v<T>` is `true`.
 :::
 :::
 
