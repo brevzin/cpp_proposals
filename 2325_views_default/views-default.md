@@ -955,7 +955,7 @@ namespace std::ranges {
 ```
 :::
 
-Update the implementation parts of `join_view::iterator` now that `inner_` is an `optional` in [range.forward.iterator]{.sref} (dereferencing `parent_->inner_` in both `satisfy()` and `operator++()`):
+Update the implementation parts of `join_view::iterator` now that `inner_` is an `optional` in [range.join.iterator]{.sref} (dereferencing `parent_->inner_` in both `satisfy()` and `operator++()`):
 
 ::: bq
 ```
@@ -1003,7 +1003,7 @@ return *this;
 :::
 
 
-Constrain the defaulted default constructor in [range.split.view]{.sref} and change the implementation to use `optional<iterator_t<V>>` instead of a defaulted `iterator_t<V>` (same as `join`) [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft]{.ednote}:
+Constrain the defaulted default constructor in [range.split.view]{.sref} and change the implementation to use `optional<iterator_t<V>>` instead of a defaulted `iterator_t<V>` (same as `join`) [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft. The use of `optional`s here should also be changed to _`non-propagating-cache`_ with the adoption of [@P2328R0].]{.ednote}:
 
 ::: bq
 ```diff
