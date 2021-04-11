@@ -570,11 +570,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#uses-of-default-construction"><span class="toc-section-number">2.2</span> Uses of default construction<span></span></a></li>
 <li><a href="#does-this-requirement-cause-harm"><span class="toc-section-number">2.3</span> Does this requirement cause harm?<span></span></a></li>
 </ul></li>
-<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
-<li><a href="#timeline"><span class="toc-section-number">4.1</span> Timeline<span></span></a></li>
+<li><a href="#timeline"><span class="toc-section-number">3.1</span> Timeline<span></span></a></li>
 </ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
@@ -660,7 +660,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Otherwise, if <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">nothrow_copy_constructible</code> but not <code class="sourceCode cpp">copy_assignable</code>, then <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> can be a thin wrapper around <code class="sourceCode cpp">T</code> that adds a copy assignment operator that does destroy-then-copy-construct.</li>
 <li>Otherwise, <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> (we still need <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>’s empty state here to handle the case where copy construction can throw, to avoid double-destruction).</li>
 </ul>
-<p>Replace all function object <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers throughout <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> with <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers.</p>
+<p>Replace all function object <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers throughout <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> with <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers. At this point, there are no uses of <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> left, so remove it.</p>
+<h2 data-number="3.1" id="timeline"><span class="header-section-number">3.1</span> Timeline<a href="#timeline" class="self-link"></a></h2>
+<p>At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC’s is incomplete). We either have to make this change now and soon, or never.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Make <code class="sourceCode cpp">span</code> unconditionally a view in <span>22.7.2
  <a href="https://wg21.link/span.syn">[span.syn]</a></span>:</p>
@@ -1584,8 +1586,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb41-22"><a href="#cb41-22"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h2 data-number="4.1" id="timeline"><span class="header-section-number">4.1</span> Timeline<a href="#timeline" class="self-link"></a></h2>
-<p>At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC’s is incomplete). We either have to make this change now and soon, or never.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-EoP">

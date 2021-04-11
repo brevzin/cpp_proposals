@@ -138,7 +138,11 @@ We currently use `@*semiregular-box*@<T>` to make types `semiregular` (see [rang
 * Otherwise, if `T` is `nothrow_copy_constructible` but not `copy_assignable`, then `@*copyable-box*@<T>` can be a thin wrapper around `T` that adds a copy assignment operator that does destroy-then-copy-construct.
 * Otherwise, `@*copyable-box*@<T>` is `@*semiregular-box*@<T>` (we still need `optional<T>`'s empty state here to handle the case where copy construction can throw, to avoid double-destruction).
 
-Replace all function object `@*semiregular-box*@<F>` wrappers throughout `<ranges>` with `@*copyable-box*@<F>` wrappers.
+Replace all function object `@*semiregular-box*@<F>` wrappers throughout `<ranges>` with `@*copyable-box*@<F>` wrappers. At this point, there are no uses of `@*semiregular-box*@<F>` left, so remove it.
+
+## Timeline
+
+At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC's is incomplete). We either have to make this change now and soon, or never.
 
 # Wording
 
@@ -1098,12 +1102,6 @@ namespace std::ranges {
 }
 ```
 :::
-
-
-
-## Timeline
-
-At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC's is incomplete). We either have to make this change now and soon, or never.
 
 ---
 references:
