@@ -882,7 +882,7 @@ namespace std::ranges {
 ```
 :::
 
-Constrain the defaulted default constructor and switch to _`semiregular-box`_ in [range.join.view]{.sref} [This change conflicts with the proposed change in [@P2328R0]. If that change is applied, only the constraint on the default constructor needs to be added]{.ednote}:
+Constrain the defaulted default constructor and switch to `optional` in [range.join.view]{.sref} [This change conflicts with the proposed change in [@P2328R0]. If that change is applied, only the constraint on the default constructor needs to be added]{.ednote}:
 
 ::: bq
 ```diff
@@ -955,7 +955,55 @@ namespace std::ranges {
 ```
 :::
 
-Constrain the defaulted default constructor in [range.split.view]{.sref} [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft]{.ednote}:
+Update the implementation parts of `join_view::iterator` now that `inner_` is an `optional` in [range.forward.iterator]{.sref} (dereferencing `parent_->inner_` in both `satisfy()` and `operator++()`):
+
+::: bq
+```
+constexpr void @*satisfy*@();       // exposition only
+```
+[5]{.pnum} *Effects*: Equivalent to:
+```diff
+  auto update_inner = [this](range_reference_t<@*Base*@> x) -> auto& {
+    if constexpr (@*ref-is-glvalue*@) // x is a reference
+      return x;
+    else
+-     return (@*parent_*@->@*inner_*@ = views::all(std::move(x)));
++     @*parent_*@->@*inner_*@ = views::all(std::move(x));
++     return *@*parent_*@->@*inner_*@;
+  };
+  
+  for (; outer_ != ranges::end(@*parent_*@->@*base_*@); ++@*outer_*@) {
+    auto& inner = update_inner(*@*outer_*@);
+    @*inner_*@ = ranges::begin(inner);
+    if (@*inner_*@ != ranges::end(inner))
+      return;
+  }
+  
+  if constexpr (@*ref-is-glvalue*@)
+    @*inner_*@ = @*InnerIter*@();
+```
+
+```
+constexpr @*iterator*@& operator++();
+```
+[9]{.pnum} Let `@*inner-range*@` be:
+
+* [9.1]{.pnum} If `@*ref-is-glvalue*@` is `true`, `*@*outer_*@`.
+* [9.2]{.pnum} Otherwise, `@[*]{.addu}@@*parent_*@->@*inner_*@`.
+
+[10]{.pnum} *Effects*: Equivalent to:
+```
+auto&& inner_rng = @*inner-range*@;
+if (++@*inner_*@ == ranges::end(inner_rng)) {
+  ++@*outer_*@;
+  @*satisfy*@();
+}
+return *this;
+```
+:::
+
+
+Constrain the defaulted default constructor in [range.split.view]{.sref} and change the implementation to use `optional<iterator_t<V>>` instead of a defaulted `iterator_t<V>` (same as `join`) [The same kind of change needs to be applied to [@P2210R2] which is not yet in the working draft]{.ednote}:
 
 ::: bq
 ```diff
@@ -976,19 +1024,15 @@ namespace std::ranges {
   private:
     V base_ = V();                              // exposition only
     Pattern pattern_ = Pattern();               // exposition only
-    iterator_t<V> current_ = iterator_t<V>();   // exposition only, present only if !forward_range<V>
+-   iterator_t<V> current_ = iterator_t<V>();   // exposition only, present only if !forward_range<V>
++   optional<iterator_t<V>> current_;           // exposition only, present only if !forward_range<V>
     // [range.split.outer], class template split_view​::​outer-iterator
     template<bool> struct outer-iterator;       // exposition only
     // [range.split.inner], class template split_view​::​inner-iterator
     template<bool> struct inner-iterator;       // exposition only
   public:
 -   split_view() = default;
-+   split_view()
-+       requires default_initializable<V> &&
-+           default_initializable<Pattern> &&
-+           (forward_range<V> || default_initializable<iterator_t<V>>)
-+       = default;
-    constexpr split_view(V base, Pattern pattern);
++   split_view() @[requires default_initializable&lt;*V*> && default_initializable&lt;*Pattern*>]{.diffins}@ = default;
     
     // ...
   };
@@ -998,7 +1042,7 @@ namespace std::ranges {
 ```
 :::
 
-Constrain the defaulted default constructor in [range.split.outer]{.sref}:
+Change the implementation of `current_` in [range.split.outer]{.sref}:
 
 ::: bq
 ```diff
@@ -1013,79 +1057,17 @@ namespace std::ranges {
     using @*Parent*@ = @*maybe-const*@<Const, split_view>;      // exposition only
     using @*Base*@ = @*maybe-const*@<Const, V>;                 // exposition only
     @*Parent*@* parent_ = nullptr;                          // exposition only
-    iterator_t<@*Base*@> current_ = iterator_t<@*Base*@>();     // exposition only, present only if V models forward_range
+-   iterator_t<@*Base*@> current_ = iterator_t<@*Base*@>();     // exposition only, present only if V models forward_range
++   optional<iterator_t<@*Base*@>> current_;     // exposition only, present only if V models forward_range
 
   public:
-    using iterator_concept  =
-      conditional_t<forward_range<@*Base*@>, forward_iterator_tag, input_iterator_tag>;
-    using iterator_category = input_iterator_tag;       // present only if Base models forward_range
-    // [range.split.outer.value], class split_view​::​@*outer-iterator​*@::​value_type
-    struct value_type;
-    using difference_type   = range_difference_t<Base>;
-
--   @*outer-iterator*@() = default;
-+   @*outer-iterator*@()
-+       requires (!forward_range<V> || default_initializable<iterator_t<@*Base*@>>)
-+       = default;
-    
     // ...
   };
 }
 ```
-:::
 
-Constrain the defaulted default constructor in [range.split.outer.value]{.sref}:
-
-::: bq
-```diff
-namespace std::ranges {
-  template<input_range V, forward_range Pattern>
-    requires view<V> && view<Pattern> &&
-             indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to> &&
-             (forward_range<V> || tiny-range<Pattern>)
-  template<bool Const>
-  struct split_view<V, Pattern>::@*outer-iterator*@<Const>::value_type
-    : view_interface<value_type> {
-  private:
-    @*outer-iterator*@ i_ = @*outer-iterator*@();               // exposition only
-  public:
--   value_type() = default;
-+   value_type() @[requires default_initializable&lt;*outer-iterator*>]{.diffins}@ = default;
-    
-    // ...
-  };
-}
-```
-:::
-
-Constrain the defaulted default constructor in [range.split.inner]{.sref}:
-
-::: bq
-```diff
-namespace std::ranges {
-  template<input_range V, forward_range Pattern>
-    requires view<V> && view<Pattern> &&
-             indirectly_comparable<iterator_t<V>, iterator_t<Pattern>, ranges::equal_to> &&
-             (forward_range<V> || tiny-range<Pattern>)
-  template<bool Const>
-  struct split_view<V, Pattern>::@*inner-iterator*@ {
-  private:
-    using @*Base*@ = @*maybe-const*@<Const, V>;                 // exposition only
-    @*outer-iterator*@<Const> i_ = @*outer-iterator*@<Const>(); // exposition only
-    bool @*incremented_*@ = false;                          // exposition only
-  public:
-    using iterator_concept  = typename outer-iterator<Const>::iterator_concept;
-    using iterator_category = see below;              // present only if Base models forward_range
-    using value_type        = range_value_t<Base>;
-    using difference_type   = range_difference_t<Base>;
-
--   @*inner-iterator*@() = default;
-+   @*inner-iterator*@() @[requires default_initializable&lt;*outer-iterator*&lt;Const>>]{.diffins}@ = default;
-    
-    // ...
-  };
-}
-```
+[1]{.pnum} Many of the specifications in [range.split] refer to the notional member `@*current*@` of `@*outer-iterator*@`.
+`@*current*@` is equivalent to `@[*]{.addu}@@*current_*@` if `V` models `forward_range`, and `@[*]{.addu}@@*parent_*@->@*current_*@` otherwise.
 :::
 
 Constrain the defaulted default constructor in [range.common.view]{.sref}:
