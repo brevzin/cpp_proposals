@@ -242,10 +242,12 @@ namespace std {
         copy_constructible<F> &&
         indirectly_readable<I> &&
         invocable<F&, T, iter_reference_t<I>> &&
+        convertible_to<invoke_result_t<F&, T, iter_reference_t<I>>,
+               decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>> &&
         @*indirectly-binary-left-foldable-impl*@<F, T, I, decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>>; 
 
     template <class F, class T, class I>
-    concept @*indirectly_binary_right_foldable*@ =    // exposition only
+    concept @*indirectly-binary-right-foldable*@ =    // exposition only
         @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;    
   
     template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
@@ -367,12 +369,12 @@ return accum;
 template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
   @*indirectly-binary-right-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto fold_right(I first, S last, F f, Proj proj = {});
+constexpr auto ranges::fold_right(I first, S last, F f, Proj proj = {});
 
 template <bidirectional_range R, class Proj = identity,
   @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
   requires constructible_from<range_value_t<I>, range_reference_t<I>>
-constexpr auto fold_right(R&& r, F f, Proj proj = {});  
+constexpr auto ranges::fold_right(R&& r, F f, Proj proj = {});  
 ```
 
 [5]{.pnum} *Preconditions*: `first != last` is `true`.
@@ -381,7 +383,7 @@ constexpr auto fold_right(R&& r, F f, Proj proj = {});
 
 ::: bq
 ```cpp
-I tail = ranges::prev(ranges::next(first, std::move(last));
+I tail = ranges::prev(ranges::next(first, std::move(last)));
 return ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), f, proj);
 ```
 :::
