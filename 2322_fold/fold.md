@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: P2322R1
+document: P2322R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+[@P2322R1] used _`weakly-assignable-from`_ as the constraint, this elevates it to `assignable_from`. This revision also adds a discussion on what the return type of `fold` should be. 
 
 [@P2322R0] used `regular_invocable` as the constraint in the `@*foldable*@` concept, but we don't need that for this algorithm and it prohibits reasonable uses like a mutating operation. `invocable` is the sufficient constraint here (in the same way that it is for `for_each`). Also restructured the API to overload on providing the initial value instead of having differently named algorithms. 
 
@@ -22,6 +24,78 @@ While we do have an iterator-based version of `fold` in the standard library, it
 Also as described in the linked paper, it is important to avoid over-constraining `fold` in a way that prevents using it for heterogeneous folds. As such, the `fold` specified in this paper only requires one particular invocation of the binary operator and there is no `common_reference` requirement between any of the types involved.
 
 Lastly, the `fold` here is proposed to go into `<algorithm>` rather than `<numeric>` since there is nothing especially numeric about it.
+
+# Return Type
+
+Consider the example:
+
+```cpp
+std::vector<double> v = {0.25, 0.75};
+auto r = ranges::fold(v, 1, std::plus());
+```
+
+What is the type and value of `r`? There are two choices:
+
+1. We preserve the type of the initial value. In this case, `1` is an `int`, so `r` is an `int` with value `1`.
+2. We return the type of `f(init, *first)`. In this case, that means `r` is a `double` with value `2.0`.
+
+The advantage of option (1) is that it is simpler to specify (we just return `T`), it is easier to control as the user, and it is consistent with `std::accumulate`. The advantage of option (2) is that this is a common gotcha with `std::accumulate` and deducing the return type like this is more likely to be what the user might intend. It's also more consistent with the mathematical definition of fold, where we want to define this operation as `f(f(f(f(init, x1), x2), ...), xn)`. 
+
+However, option (2) has some quirks of its own. To start with, a hypothetical `f` could actually change its type every time so we can't exactly mirror the mathematical definition regardless. But let's just put that aside as being fairly silly.
+
+There are two ways to implement this approach. In both cases, we define `U` to be the decayed result of invoking the binary operation with `T` (the initial value) and the reference type of the range (omitted for brevity):
+
+::: cmptable
+### Two invocation kinds
+```cpp
+template <range R, movable T, typename BinaryOp,
+            typename U = /* ... */>
+auto fold(R&& r, T init, BinaryOp binary_op) -> U
+{
+    ranges::iterator_t<R> first = ranges::begin(r);
+    ranges::sentinel_t<R> last = ranges::end(r);
+    
+    if (first == last) {
+        return move(init);
+    }
+    
+    U accum = invoke(binary_op, move(init), *first);
+    for (++first; first != last; ++first) {
+        accum = invoke(binary_op, move(accum), *first);
+    }
+    return accum;
+}
+```
+
+
+### One invocation kind
+```cpp
+template <range R, movable T, typename BinaryOp,
+            typename U = /* ... */>
+auto fold(R&& r, T init, BinaryOp binary_op) -> U
+{
+    ranges::iterator_t<R> first = ranges::begin(r);
+    ranges::sentinel_t<R> last = ranges::end(r);
+    
+    U accum = std::move(init);
+    for (; first != last; ++first) {
+        accum = invoke(binary_op, move(accum), *first);
+    }
+    return accum;
+}
+```
+:::
+
+Either way, our set of requirements is:
+
+* `regular_invocable<BinaryOp&, T, range_reference_t<R>>` (even though the implementation on the right does not actually invoke the function using these arguments, we still need this to determine the type `U`)
+* `regular_invocable<BinaryOp&, U, range_reference_t<R>>`
+* `convertible_to<T, U>`
+* `assignable_from<U&, invoke_result_t<BinaryOp&, U, range_reference_t<R>>`
+
+While the left-hand side also needs `convertible_to<invoke_result_t<BinaryOp&, T, range_reference_t<R>>, U>`.
+
+This is a fairly complicated set of requirements. Even if in the typical case, `T` and `U` might be the same type. I'm not sure this direction is actually worth pursuing, there is value in having the algorithm be easy to understand: if you pass an initial value of `T`, you get a result of type `T`. As such, this paper proposes option (1).
 
 # Other `fold` algorithms
 
@@ -116,18 +190,12 @@ namespace std {
     
   // [alg.fold], folds
   namespace ranges {
-    template<class LHS, class RHS>
-    concept @*weakly-assignable-from*@ =          // exposition only
-      requires(LHS lhs, RHS&& rhs) {
-        { lhs = std::forward<RHS>(rhs); } -> same_as<LHS>;
-      };
-      
     template<class F, class R, class... Args>
     concept @*foldable*@ =                        // exposition only
       movable<R> &&
       copy_constructible<F> &&
       invocable<F&, Args...> &&
-      @*weakly-assignable-from*@<R&, invoke_result_t<F&, Args...>>;
+      assignable_from<R&, invoke_result_t<F&, Args...>>;
   
     template<class F, class T, class I>
     concept @*indirectly-binary-left-foldable*@ = // exposition only
