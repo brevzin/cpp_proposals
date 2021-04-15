@@ -245,7 +245,7 @@ namespace std {
 
     template <class F, class T, class I>
     concept @*indirectly_binary_right_foldable*@ =    // exposition only
-        @*indirectly-binary-left-foldable@*<@*flipped*@<F>, T, I>;    
+        @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;    
   
     template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> BinaryOperation>
