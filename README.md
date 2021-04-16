@@ -40,11 +40,12 @@ make all of my papers.
 
 ### Pending Plenary
 
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde. CWG approved, needs LWG review.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 
 ### Pending CWG/LWG Review
 
-- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde. CWG approved, needs LWG review.
+- Nothing.
 
 ### Pending EWG/LEWG Voting
 
