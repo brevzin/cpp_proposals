@@ -1157,6 +1157,17 @@ namespace std::ranges {
 ```
 :::
 
+## Feature-test macro
+
+Bump the Ranges feature-test macro in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_ranges @[201911L]{.diffdel}@ // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
++ #define __cpp_lib_ranges @[2021XXL]{.diffins}@ // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
+```
+:::
+
 ---
 references:
     - id: EoP
