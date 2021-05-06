@@ -1,6 +1,6 @@
 ---
 title: "Using unknown pointers and references in constant expressions"
-document: P2280R2
+document: D2280R2
 date: today
 audience: EWG
 author:
@@ -468,6 +468,52 @@ Which every compiler currently provides different results (in order of most reas
 4. MSVC says you can't declare `arr` as non-constexpr and define it constexpr, even though there is no such rule
 
 This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.
+
+## What about `nullptr`?
+
+Consider this example from David Stone:
+
+```cpp
+constexpr void a(array<int, 1>* p) {
+    constexpr int x = p->size();
+}
+
+constexpr bool f() {
+    a(nullptr);
+    return true;
+}
+
+static_assert(f());
+
+int b(array<int, 1>* p) {
+    return p->size();
+}
+
+int main() {
+    return b(nullptr);
+}
+```
+
+Here we have two pieces of code that each try to invoke a member function on a null pointer: one as a constant expression and one at runtime. With this paper as worded, the former may be well-defined (declaring `x` begins a new constant evaluation in which `p` has already started its lifetime and is not itself a constant expression, and so we have a pointer-to-unknown... which we can then invoke a non-static member on just fine because at no point do we read through the pointer or do anything else that involves knowing anything about the actual array object). But the latter would still be undefined behavior (invoking a non-static member function on a null pointer). This presents a fairly odd and unsatisfying situation where we have some code that is undefined behavior at runtime but... well-defined at compile time? That's the opposite of the way this usually works!
+
+This kind of example suggests four possible directions:
+
+1. Go back to [@P2280R0] which only suggested allowing references to unknown, which sidesteps this question entirely.
+2. Go back to [@P2280R1] which only suggested allowing references to unknown and `this`, which _mostly_ sidesteps this question in a way that's much more palatable since by the time you enter a member function and `this` would be used, we're kind of in a different situations where this question just isn't in your face. 
+3. Accept the situation proposed in this paper, where we introduce this potential duality in scenarios like this.
+4. Go further in the other direction and actually make David Stone's example well-formed at runtime. That is, define invoking a member function on a null pointer as being okay as long as you don't actually have to read any non-static data members (i.e. the same conditions that would other prevent equivalent code from being a constant expression). In other words, we widen both the allowed code during constant evaluation time and also the allowed code during runtime.
+
+This paper is currently worded going in the direction of (3), but based on the EWG Telecon on May 6th, 2021, it may be more palatable to go in one of the other directions. Note that even option (1) isn't necessarily a panacea here since I can rewrite David Stone's example as:
+
+```cpp
+constexpr void a(array<int, 1>* p) {
+    array<int, 1>& r = *p;
+    constexpr int x = r.size();
+}
+```
+
+Is this really that different? Here, the cause of the undefined behavior is in a slightly different place: dereferencing the potentially-null pointer rather than directly invoking a function on it. But the end result is kind of the same: R0 of this paper proposes this to be well-formed, and if we adopt either direction (1) or (2) then users would have to work around using pointers by introducing named references. Which doesn't seem like it makes the code better. 
+
 
 ## Wording
 
