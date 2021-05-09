@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-07" />
+  <meta name="dcterms.date" content="2021-05-09" />
   <title>Pipe support for user-defined range adaptors</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-07</td>
+    <td>2021-05-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -787,11 +787,138 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </table>
 <p>Compared to NanoRange, this looks very similar. We have to manually write both overloads for <code class="sourceCode cpp">transform</code>, where the partial overload returns some kind of special library closure object (<code class="sourceCode cpp">view_closure</code> vs <code class="sourceCode cpp">rao_proxy</code>). The primary difference here is that with NanoRange, <code class="sourceCode cpp">join_view_fn</code> needed to be defined in the <code class="sourceCode cpp">nano<span class="op">::</span>detail</code> namespace and then the variable template <code class="sourceCode cpp">is_raco</code> needed to be specialized to <code class="sourceCode cpp"><span class="kw">true</span></code>, while in range-v3, <code class="sourceCode cpp">join_view_fn</code> can actually be in any namespace as long as the <code class="sourceCode cpp">join</code> object itself has type <code class="sourceCode cpp">view_closure<span class="op">&lt;</span>join_view_fn<span class="op">&gt;</span></code>.</p>
 <h2 data-number="0.3" id="gcc-10"><span class="header-section-number">0.3</span> gcc 10<a href="#gcc-10" class="self-link"></a></h2>
-<p>TODO</p>
+<p>The implementation of pipe support in <span class="citation" data-cites="gcc-10">[<a href="#ref-gcc-10" role="doc-biblioref">gcc-10</a>]</span> is quite different from either NanoRange or range-v3. There, we had two class templates: <code class="sourceCode cpp">__adaptor<span class="op">::</span>_RangeAdaptorClosure<span class="op">&lt;</span>F<span class="op">&gt;</span></code> and <code class="sourceCode cpp">__adaptor<span class="op">::</span>_RangeAdaptor<span class="op">&lt;</span>F<span class="op">&gt;</span></code>, which represent range adaptor closure objects and range adaptors, respectively.</p>
+<p>The latter either invokes <code class="sourceCode cpp">F</code> if possible (to handle the <code class="sourceCode cpp">adaptor<span class="op">(</span>range, args<span class="op">...)</span></code> case) or, if not, returns a <code class="sourceCode cpp">_RangeAdaptorClosure</code> specialization (to handle the <code class="sourceCode cpp">adaptor<span class="op">(</span>args<span class="op">...)</span></code> case). The following implementation is reduced a bit, to simply convey how it works (and to use non-uglified names):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Callable<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">struct</span> _RangeAdaptor <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span> Callable callable;</span>
+<span id="cb9-4"><a href="#cb9-4"></a>    </span>
+<span id="cb9-5"><a href="#cb9-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>        <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Args<span class="op">)</span> <span class="op">&gt;=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>invocable<span class="op">&lt;</span>Callable, Args<span class="op">...&gt;)</span> <span class="op">{</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>            <span class="co">// The adaptor(range, args...) case</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>            <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb9-11"><a href="#cb9-11"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a>            <span class="co">// The adaptor(args...)(range) case</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>            <span class="cf">return</span> _RangeAdaptorClosure<span class="op">(</span></span>
+<span id="cb9-14"><a href="#cb9-14"></a>                <span class="op">[...</span>args<span class="op">=</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)</span>, callable<span class="op">]&lt;</span><span class="kw">typename</span> R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">){</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>                    <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, args<span class="op">...)</span>;</span>
+<span id="cb9-16"><a href="#cb9-16"></a>                <span class="op">})</span>;</span>
+<span id="cb9-17"><a href="#cb9-17"></a>        <span class="op">}</span></span>
+<span id="cb9-18"><a href="#cb9-18"></a>    <span class="op">}</span></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="op">}</span>;</span></code></pre></div>
+<p>The former provides piping support:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Callable<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">struct</span> _RangeAdaptorClosure <span class="op">:</span> _RangeAdaptor<span class="op">&lt;</span>Callable<span class="op">&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="co">// support for C(R)</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> invocable<span class="op">&lt;</span>Callable, R<span class="op">&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>        <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>    </span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="co">// support for R | C to evaluate as C(R)</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> invocable<span class="op">&lt;</span>Callable, R<span class="op">&gt;</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>R<span class="op">&amp;&amp;</span> r, _RangeAdaptorClosure <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-13"><a href="#cb10-13"></a>        <span class="cf">return</span> o<span class="op">.</span>callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb10-14"><a href="#cb10-14"></a>    <span class="op">}</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    </span>
+<span id="cb10-16"><a href="#cb10-16"></a>    <span class="co">// support for C | D to produce a new Range Adaptor Closure Object</span></span>
+<span id="cb10-17"><a href="#cb10-17"></a>    <span class="co">// so that (R | C) | D and R | (C | D) can be equivalent    </span></span>
+<span id="cb10-18"><a href="#cb10-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb10-19"><a href="#cb10-19"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>_RangeAdaptorClosure<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, _RangeAdaptorClosure <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-20"><a href="#cb10-20"></a>        <span class="cf">return</span> _RangeAdaptorClosure<span class="op">([</span>lhs, rhs<span class="op">]&lt;</span><span class="kw">typename</span> R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">){</span></span>
+<span id="cb10-21"><a href="#cb10-21"></a>            <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">|</span> lhs <span class="op">|</span> rhs;</span>
+<span id="cb10-22"><a href="#cb10-22"></a>        <span class="op">})</span>;</span>
+<span id="cb10-23"><a href="#cb10-23"></a>    <span class="op">}</span></span>
+<span id="cb10-24"><a href="#cb10-24"></a><span class="op">}</span>;</span></code></pre></div>
+<p>And with that, we can implement <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">transform</code> as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">join</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">transform</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>  <span class="co">// for user consumption</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptorClosure join</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="cf">return</span> join_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a>      <span class="op">}</span>;</span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>  <span class="co">// for user consumption</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptor transform</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">))</span>;</span>
+<span id="cb12-7"><a href="#cb12-7"></a>      <span class="op">}</span>;</span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Compared to either NanoRange or range-v3, this implementation strategy has the significant advantage that we don’t have to write both overloads of <code class="sourceCode cpp">transform</code> manually: we just write a single lambda and use class template argument deduction to wrap its type in the right facility (<code class="sourceCode cpp">_RangeAdaptorClosure</code> for <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">_RangeAdaptor</code> for <code class="sourceCode cpp">transform</code>) to provide <code class="sourceCode cpp"><span class="op">|</span></code> support.</p>
+<p>This becomes clearer if we look at gcc 10’s implementation of <code class="sourceCode cpp">views<span class="op">::</span>transform</code> vs range-v3’s directly:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>range-v3</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>gcc 10</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">namespace</span> ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>  <span class="kw">struct</span> transform_view_fn <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    <span class="co">// the overload that has all the information</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range E, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>        <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>E<span class="op">&amp;&amp;</span> e, F<span class="op">&amp;&amp;</span> f<span class="op">)</span> <span class="kw">const</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>        <span class="op">-&gt;</span> transform_view<span class="op">&lt;</span>all_t<span class="op">&lt;</span>E<span class="op">&gt;</span>, decay_t<span class="op">&lt;</span>F<span class="op">&gt;&gt;</span>;</span>
+<span id="cb13-8"><a href="#cb13-8"></a>    </span>
+<span id="cb13-9"><a href="#cb13-9"></a>    <span class="co">// the partial overload</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>F f<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>      <span class="cf">return</span> view_closure<span class="op">(</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>        bind_back<span class="op">(</span>transform_view_fn<span class="op">{}</span>, std<span class="op">::</span>move<span class="op">(</span>f<span class="op">)))</span>;</span>
+<span id="cb13-14"><a href="#cb13-14"></a>    <span class="op">}</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a>  <span class="op">}</span>;</span>
+<span id="cb13-16"><a href="#cb13-16"></a>  </span>
+<span id="cb13-17"><a href="#cb13-17"></a>  <span class="co">// for user consumption</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> transform_view_fn transform<span class="op">{}</span>;</span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>  <span class="co">// for user consumption</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptor transform</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">))</span>;</span>
+<span id="cb14-7"><a href="#cb14-7"></a>      <span class="op">}</span>;</span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
 <h2 data-number="0.4" id="gcc-11"><span class="header-section-number">0.4</span> gcc 11<a href="#gcc-11" class="self-link"></a></h2>
 <p>TODO</p>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">1</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-gcc-10">
+<p>[gcc-10] Jonathan Wakely. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 10. <br />
+<a href="https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges">https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges</a></p>
+</div>
 <div id="ref-NanoRange">
 <p>[NanoRange] Tristan Brindle. 2017. NanoRange. <br />
 <a href="https://github.com/tcbrindle/nanorange">https://github.com/tcbrindle/nanorange</a></p>

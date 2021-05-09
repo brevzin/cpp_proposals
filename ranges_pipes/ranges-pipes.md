@@ -237,7 +237,130 @@ Compared to NanoRange, this looks very similar. We have to manually write both o
 
 ## gcc 10
 
-TODO
+The implementation of pipe support in [@gcc-10] is quite different from either NanoRange or range-v3. There, we had two class templates: `__adaptor::_RangeAdaptorClosure<F>` and `__adaptor::_RangeAdaptor<F>`, which represent range adaptor closure objects and range adaptors, respectively. 
+
+The latter either invokes `F` if possible (to handle the `adaptor(range, args...)` case) or, if not, returns a `_RangeAdaptorClosure` specialization (to handle the `adaptor(args...)` case). The following implementation is reduced a bit, to simply convey how it works (and to use non-uglified names):
+
+```cpp
+template <typename Callable>
+struct _RangeAdaptor {
+    [[no_unique_address]] Callable callable;
+    
+    template <typename... Args>
+        requires (sizeof...(Args) >= 1)
+    constexpr auto operator()(Args&&... args) const {
+        if constexpr (invocable<Callable, Args...>) {
+            // The adaptor(range, args...) case
+            return callable(std::forward<Args>(args)...);
+        } else {
+            // The adaptor(args...)(range) case
+            return _RangeAdaptorClosure(
+                [...args=std::forward<Args>(args), callable]<typename R>(R&& r){
+                    return callable(std::forward<R>(r), args...);
+                });
+        }
+    }
+};
+```
+
+The former provides piping support:
+
+```cpp
+template <typename Callable>
+struct _RangeAdaptorClosure : _RangeAdaptor<Callable>
+{
+    // support for C(R)
+    template <viewable_range R> requires invocable<Callable, R>
+    constexpr auto operator()(R&& r) const {
+        return callable(std::forward<R>(r));
+    }
+    
+    // support for R | C to evaluate as C(R)
+    template <viewable_range R> requires invocable<Callable, R>
+    friend constexpr auto operator|(R&& r, _RangeAdaptorClosure const& o) {
+        return o.callable(std::forward<R>(r));
+    }
+    
+    // support for C | D to produce a new Range Adaptor Closure Object
+    // so that (R | C) | D and R | (C | D) can be equivalent    
+    template <typename T>
+    friend constexpr auto operator|(_RangeAdaptorClosure<T> const& lhs, _RangeAdaptorClosure const& rhs) {
+        return _RangeAdaptorClosure([lhs, rhs]<typename R>(R&& r){
+            return std::forward<R>(r) | lhs | rhs;
+        });
+    }
+};
+```
+
+And with that, we can implement `join` and `transform` as follows:
+
+::: cmptable
+### `join`
+```cpp
+namespace std::ranges::views {
+  // for user consumption
+  inline constexpr __adaptor::_RangeAdaptorClosure join
+    = []<viewable_range R> requires /* ... */
+      (R&& r) {
+        return join_view(std::forward<R>(r));
+      };
+}
+```
+
+### `transform`
+```cpp
+namespace std::ranges::views {
+  // for user consumption
+  inline constexpr __adaptor::_RangeAdaptor transform
+    = []<viewable_range R, typename F> requires /* ... */
+      (R&& r, F&& f){
+        return transform_view(std::forward<R>(r), std::forward<F>(f));
+      };
+}
+```
+:::
+
+Compared to either NanoRange or range-v3, this implementation strategy has the significant advantage that we don't have to write both overloads of `transform` manually: we just write a single lambda and use class template argument deduction to wrap its type in the right facility (`_RangeAdaptorClosure` for `join` and `_RangeAdaptor` for `transform`) to provide `|` support. 
+
+This becomes clearer if we look at gcc 10's implementation of `views::transform` vs range-v3's directly:
+
+::: cmptable
+### range-v3
+```cpp
+namespace ranges::views {
+  struct transform_view_fn {
+    // the overload that has all the information
+    template <viewable_range E, typename F>
+        requires /* ... */
+    constexpr auto operator()(E&& e, F&& f) const
+        -> transform_view<all_t<E>, decay_t<F>>;
+    
+    // the partial overload
+    template <typename F>
+    constexpr auto operator()(F f) const {
+      return view_closure(
+        bind_back(transform_view_fn{}, std::move(f)));
+    }
+  };
+  
+  // for user consumption
+  inline constexpr transform_view_fn transform{};
+}
+```
+
+### gcc 10
+```cpp
+namespace std::ranges::views {
+  // for user consumption
+  inline constexpr __adaptor::_RangeAdaptor transform
+    = []<viewable_range R, typename F> requires /* ... */
+      (R&& r, F&& f){
+        return transform_view(std::forward<R>(r), std::forward<F>(f));
+      };
+}
+```
+:::
+
 
 ## gcc 11
 
@@ -261,4 +384,20 @@ references:
       issued:
           - year: 2013
       URL: https://github.com/ericniebler/range-v3/
+    - id: gcc-10
+      citation-label: gcc-10
+      title: "`<ranges>` in gcc 10"
+      author:
+          - family: Jonathan Wakely
+      issued:
+          - year: 2020
+      URL: https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges
+    - id: gcc-11
+      citation-label: gcc-11
+      title: "`<ranges>` in gcc 11"
+      author:
+          - family: Patrick Palka
+      issued:
+          - year: 2021
+      URL: https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges
 ---
