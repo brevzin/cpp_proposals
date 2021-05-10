@@ -343,7 +343,19 @@ namespace ranges::views {
         -> transform_view<all_t<E>, decay_t<F>>;
   };
     
- 
+  struct transform_view_fn
+    : transform_view_fn_base
+  {
+    using transform_view_fn_base::operator();
+  
+    // the partial overload
+    template <typename F>
+    constexpr auto operator()(F f) const {
+      return view_closure(bind_back(
+        transform_view_fn_base(), std::move(f)));
+    }
+  };
+  
   // for user consumption
   inline constexpr transform_view_fn transform{};
 }
