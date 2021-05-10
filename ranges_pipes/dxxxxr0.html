@@ -889,30 +889,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <tbody>
 <tr class="odd">
 <td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">namespace</span> ranges<span class="op">::</span>views <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>  <span class="kw">struct</span> transform_view_fn_base <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>    <span class="co">// the overload that has all the information</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range E, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a>        <span class="kw">requires</span> <span class="co">/* ... */</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>E<span class="op">&amp;&amp;</span> e, F<span class="op">&amp;&amp;</span> f<span class="op">)</span> <span class="kw">const</span></span>
-<span id="cb13-7"><a href="#cb13-7"></a>        <span class="op">-&gt;</span> transform_view<span class="op">&lt;</span>all_t<span class="op">&lt;</span>E<span class="op">&gt;</span>, decay_t<span class="op">&lt;</span>F<span class="op">&gt;&gt;</span>;</span>
-<span id="cb13-8"><a href="#cb13-8"></a>  <span class="op">}</span>;</span>
-<span id="cb13-9"><a href="#cb13-9"></a>    </span>
-<span id="cb13-10"><a href="#cb13-10"></a>  <span class="kw">struct</span> transform_view_fn</span>
-<span id="cb13-11"><a href="#cb13-11"></a>    <span class="op">:</span> transform_view_fn_base</span>
-<span id="cb13-12"><a href="#cb13-12"></a>  <span class="op">{</span></span>
-<span id="cb13-13"><a href="#cb13-13"></a>    <span class="kw">using</span> transform_view_fn_base<span class="op">::</span><span class="kw">operator</span><span class="op">()</span>;</span>
-<span id="cb13-14"><a href="#cb13-14"></a>  </span>
-<span id="cb13-15"><a href="#cb13-15"></a>    <span class="co">// the partial overload</span></span>
-<span id="cb13-16"><a href="#cb13-16"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F<span class="op">&gt;</span></span>
-<span id="cb13-17"><a href="#cb13-17"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>F f<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb13-18"><a href="#cb13-18"></a>      <span class="cf">return</span> view_closure<span class="op">(</span>bind_back<span class="op">(</span></span>
-<span id="cb13-19"><a href="#cb13-19"></a>        transform_view_fn_base<span class="op">{}</span>, std<span class="op">::</span>move<span class="op">(</span>f<span class="op">)))</span>;</span>
-<span id="cb13-20"><a href="#cb13-20"></a>    <span class="op">}</span></span>
-<span id="cb13-21"><a href="#cb13-21"></a>  <span class="op">}</span>;</span>
-<span id="cb13-22"><a href="#cb13-22"></a>  </span>
-<span id="cb13-23"><a href="#cb13-23"></a>  <span class="co">// for user consumption</span></span>
-<span id="cb13-24"><a href="#cb13-24"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> transform_view_fn transform<span class="op">{}</span>;</span>
-<span id="cb13-25"><a href="#cb13-25"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb13-2"><a href="#cb13-2"></a></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a>  <span class="co">// for user consumption</span></span>
 <span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptor transform</span>
