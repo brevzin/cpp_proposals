@@ -583,7 +583,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-8"><a href="#cb1-8"></a>        <span class="kw">requires</span> is_raco<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>C<span class="op">&gt;&gt;</span></span>
 <span id="cb1-9"><a href="#cb1-9"></a>              <span class="op">&amp;&amp;</span> invocable<span class="op">&lt;</span>C, R<span class="op">&gt;</span></span>
 <span id="cb1-10"><a href="#cb1-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>R<span class="op">&amp;&amp;</span> lhs, C<span class="op">&amp;&amp;</span> rhs<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>        <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>C<span class="op">&gt;(</span>rhs<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>lhs<span class="op">))</span>;</span>
+<span id="cb1-11"><a href="#cb1-11"></a>        <span class="cf">return</span> FWD<span class="op">(</span>rhs<span class="op">)(</span>FWD<span class="op">(</span>lhs<span class="op">))</span>;</span>
 <span id="cb1-12"><a href="#cb1-12"></a>    <span class="op">}</span></span>
 <span id="cb1-13"><a href="#cb1-13"></a>    </span>
 <span id="cb1-14"><a href="#cb1-14"></a>    <span class="co">// a type to handle merging two Range Adaptor Closure Objects together</span></span>
@@ -598,7 +598,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-23"><a href="#cb1-23"></a>            <span class="kw">requires</span> invocable<span class="op">&lt;</span>LHS<span class="op">&amp;</span>, R<span class="op">&gt;</span></span>
 <span id="cb1-24"><a href="#cb1-24"></a>                  <span class="op">&amp;&amp;</span> invocable<span class="op">&lt;</span>RHS<span class="op">&amp;</span>, invoke_result_t<span class="op">&lt;</span>LHS<span class="op">&amp;</span>, R<span class="op">&gt;&gt;</span></span>
 <span id="cb1-25"><a href="#cb1-25"></a>        <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb1-26"><a href="#cb1-26"></a>            <span class="cf">return</span> rhs<span class="op">(</span>lhs<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)))</span>;</span>
+<span id="cb1-26"><a href="#cb1-26"></a>            <span class="cf">return</span> rhs<span class="op">(</span>lhs<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)))</span>;</span>
 <span id="cb1-27"><a href="#cb1-27"></a>        <span class="op">}</span></span>
 <span id="cb1-28"><a href="#cb1-28"></a>        </span>
 <span id="cb1-29"><a href="#cb1-29"></a>        <span class="co">// ...</span></span>
@@ -614,7 +614,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-39"><a href="#cb1-39"></a>        <span class="kw">requires</span> is_raco<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>LHS<span class="op">&gt;&gt;</span></span>
 <span id="cb1-40"><a href="#cb1-40"></a>              <span class="op">&amp;&amp;</span> is_raco<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>RHS<span class="op">&gt;&gt;</span></span>
 <span id="cb1-41"><a href="#cb1-41"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>LHS<span class="op">&amp;&amp;</span>, RHS<span class="op">&amp;&amp;)</span> <span class="op">{</span></span>
-<span id="cb1-42"><a href="#cb1-42"></a>        <span class="cf">return</span> raco_pipe<span class="op">&lt;</span>decay_t<span class="op">&lt;</span>LHS<span class="op">&gt;</span>, decay_t<span class="op">&lt;</span>RHS<span class="op">&gt;&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>LHS<span class="op">&gt;(</span>lhs<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>RHS<span class="op">&gt;(</span>rhs<span class="op">))</span>;</span>
+<span id="cb1-42"><a href="#cb1-42"></a>        <span class="cf">return</span> raco_pipe<span class="op">&lt;</span>decay_t<span class="op">&lt;</span>LHS<span class="op">&gt;</span>, decay_t<span class="op">&lt;</span>RHS<span class="op">&gt;&gt;(</span>FWD<span class="op">(</span>lhs<span class="op">)</span>, FWD<span class="op">(</span>rhs<span class="op">))</span>;</span>
 <span id="cb1-43"><a href="#cb1-43"></a>    <span class="op">}</span></span>
 <span id="cb1-44"><a href="#cb1-44"></a>    </span>
 <span id="cb1-45"><a href="#cb1-45"></a>    <span class="co">// ... and a convenience type for creating range adaptor objects</span></span>
@@ -688,9 +688,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">struct</span> join_view_fn <span class="op">{</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> E<span class="op">&gt;</span></span>
 <span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>E<span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="kw">const</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>        <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>join_view<span class="op">{</span>std<span class="op">::</span>forward<span class="op">&lt;</span>E<span class="op">&gt;(</span>e<span class="op">)})</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>join_view<span class="op">{</span>FWD<span class="op">(</span>e<span class="op">)})</span></span>
 <span id="cb4-5"><a href="#cb4-5"></a>    <span class="op">{</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>        <span class="cf">return</span> join_view<span class="op">{</span>std<span class="op">::</span>forward<span class="op">&lt;</span>E<span class="op">&gt;(</span>e<span class="op">)}</span>;</span>
+<span id="cb4-6"><a href="#cb4-6"></a>        <span class="cf">return</span> join_view<span class="op">{</span>FWD<span class="op">(</span>e<span class="op">)}</span>;</span>
 <span id="cb4-7"><a href="#cb4-7"></a>    <span class="op">}</span></span>
 <span id="cb4-8"><a href="#cb4-8"></a><span class="op">}</span>;</span></code></pre></div>
 <h2 data-number="0.2" id="range-v3"><span class="header-section-number">0.2</span> range-v3<a href="#range-v3" class="self-link"></a></h2>
@@ -720,7 +720,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-14"><a href="#cb6-14"></a>        <span class="co">// support for R | C to evaluate as C(R)</span></span>
 <span id="cb6-15"><a href="#cb6-15"></a>        <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R, invocable_view_closure<span class="op">&lt;</span>R<span class="op">&gt;</span> ViewFn<span class="op">&gt;</span></span>
 <span id="cb6-16"><a href="#cb6-16"></a>        <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>R<span class="op">&amp;&amp;</span> rng, view_closure<span class="op">&lt;</span>ViewFn<span class="op">&gt;</span> vw<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-17"><a href="#cb6-17"></a>            <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>vw<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>rng<span class="op">))</span>;</span>
+<span id="cb6-17"><a href="#cb6-17"></a>            <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>vw<span class="op">)(</span>FWD<span class="op">(</span>rng<span class="op">))</span>;</span>
 <span id="cb6-18"><a href="#cb6-18"></a>        <span class="op">}</span></span>
 <span id="cb6-19"><a href="#cb6-19"></a>        </span>
 <span id="cb6-20"><a href="#cb6-20"></a>        <span class="co">// for diagnostic purposes, we delete the overload for R | C</span></span>
@@ -798,12 +798,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-7"><a href="#cb9-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
 <span id="cb9-8"><a href="#cb9-8"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>invocable<span class="op">&lt;</span>Callable, Args<span class="op">...&gt;)</span> <span class="op">{</span></span>
 <span id="cb9-9"><a href="#cb9-9"></a>            <span class="co">// The adaptor(range, args...) case</span></span>
-<span id="cb9-10"><a href="#cb9-10"></a>            <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb9-10"><a href="#cb9-10"></a>            <span class="cf">return</span> callable<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
 <span id="cb9-11"><a href="#cb9-11"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
 <span id="cb9-12"><a href="#cb9-12"></a>            <span class="co">// The adaptor(args...)(range) case</span></span>
 <span id="cb9-13"><a href="#cb9-13"></a>            <span class="cf">return</span> _RangeAdaptorClosure<span class="op">(</span></span>
-<span id="cb9-14"><a href="#cb9-14"></a>                <span class="op">[...</span>args<span class="op">=</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)</span>, callable<span class="op">]&lt;</span><span class="kw">typename</span> R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">){</span></span>
-<span id="cb9-15"><a href="#cb9-15"></a>                    <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, args<span class="op">...)</span>;</span>
+<span id="cb9-14"><a href="#cb9-14"></a>                <span class="op">[...</span>args<span class="op">=</span>FWD<span class="op">(</span>args<span class="op">)</span>, callable<span class="op">]&lt;</span><span class="kw">typename</span> R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">){</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>                    <span class="cf">return</span> callable<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, args<span class="op">...)</span>;</span>
 <span id="cb9-16"><a href="#cb9-16"></a>                <span class="op">})</span>;</span>
 <span id="cb9-17"><a href="#cb9-17"></a>        <span class="op">}</span></span>
 <span id="cb9-18"><a href="#cb9-18"></a>    <span class="op">}</span></span>
@@ -815,13 +815,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-4"><a href="#cb10-4"></a>    <span class="co">// support for C(R)</span></span>
 <span id="cb10-5"><a href="#cb10-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> invocable<span class="op">&lt;</span>Callable, R<span class="op">&gt;</span></span>
 <span id="cb10-6"><a href="#cb10-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a>        <span class="cf">return</span> callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>        <span class="cf">return</span> callable<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb10-8"><a href="#cb10-8"></a>    <span class="op">}</span></span>
 <span id="cb10-9"><a href="#cb10-9"></a>    </span>
 <span id="cb10-10"><a href="#cb10-10"></a>    <span class="co">// support for R | C to evaluate as C(R)</span></span>
 <span id="cb10-11"><a href="#cb10-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> invocable<span class="op">&lt;</span>Callable, R<span class="op">&gt;</span></span>
 <span id="cb10-12"><a href="#cb10-12"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>R<span class="op">&amp;&amp;</span> r, _RangeAdaptorClosure <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb10-13"><a href="#cb10-13"></a>        <span class="cf">return</span> o<span class="op">.</span>callable<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb10-13"><a href="#cb10-13"></a>        <span class="cf">return</span> o<span class="op">.</span>callable<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb10-14"><a href="#cb10-14"></a>    <span class="op">}</span></span>
 <span id="cb10-15"><a href="#cb10-15"></a>    </span>
 <span id="cb10-16"><a href="#cb10-16"></a>    <span class="co">// support for C | D to produce a new Range Adaptor Closure Object</span></span>
@@ -829,7 +829,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-18"><a href="#cb10-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb10-19"><a href="#cb10-19"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>_RangeAdaptorClosure<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> lhs, _RangeAdaptorClosure <span class="kw">const</span><span class="op">&amp;</span> rhs<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb10-20"><a href="#cb10-20"></a>        <span class="cf">return</span> _RangeAdaptorClosure<span class="op">([</span>lhs, rhs<span class="op">]&lt;</span><span class="kw">typename</span> R<span class="op">&gt;(</span>R<span class="op">&amp;&amp;</span> r<span class="op">){</span></span>
-<span id="cb10-21"><a href="#cb10-21"></a>            <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">|</span> lhs <span class="op">|</span> rhs;</span>
+<span id="cb10-21"><a href="#cb10-21"></a>            <span class="cf">return</span> FWD<span class="op">(</span>r<span class="op">)</span> <span class="op">|</span> lhs <span class="op">|</span> rhs;</span>
 <span id="cb10-22"><a href="#cb10-22"></a>        <span class="op">})</span>;</span>
 <span id="cb10-23"><a href="#cb10-23"></a>    <span class="op">}</span></span>
 <span id="cb10-24"><a href="#cb10-24"></a><span class="op">}</span>;</span></code></pre></div>
@@ -852,17 +852,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-3"><a href="#cb11-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptorClosure join</span>
 <span id="cb11-4"><a href="#cb11-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
 <span id="cb11-5"><a href="#cb11-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-6"><a href="#cb11-6"></a>        <span class="cf">return</span> join_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="cf">return</span> join_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb11-7"><a href="#cb11-7"></a>      <span class="op">}</span>;</span>
 <span id="cb11-8"><a href="#cb11-8"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a>  <span class="co">// for user consumption</span></span>
 <span id="cb12-3"><a href="#cb12-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptor transform</span>
-<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
-<span id="cb12-5"><a href="#cb12-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">))</span>;</span>
-<span id="cb12-7"><a href="#cb12-7"></a>      <span class="op">}</span>;</span>
-<span id="cb12-8"><a href="#cb12-8"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>        <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb12-8"><a href="#cb12-8"></a>      <span class="op">}</span>;</span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -903,11 +904,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a>  <span class="co">// for user consumption</span></span>
 <span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> __adaptor<span class="op">::</span>_RangeAdaptor transform</span>
-<span id="cb14-4"><a href="#cb14-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
-<span id="cb14-5"><a href="#cb14-5"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
-<span id="cb14-6"><a href="#cb14-6"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>F<span class="op">&gt;(</span>f<span class="op">))</span>;</span>
-<span id="cb14-7"><a href="#cb14-7"></a>      <span class="op">}</span>;</span>
-<span id="cb14-8"><a href="#cb14-8"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>        <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb14-8"><a href="#cb14-8"></a>      <span class="op">}</span>;</span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -920,7 +922,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-4"><a href="#cb15-4"></a>        <span class="kw">requires</span> derived_from<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>Self<span class="op">&gt;</span>, _RangeAdaptorClosure<span class="op">&gt;</span></span>
 <span id="cb15-5"><a href="#cb15-5"></a>              <span class="op">&amp;&amp;</span> invocable<span class="op">&lt;</span>Self, Range<span class="op">&gt;</span></span>
 <span id="cb15-6"><a href="#cb15-6"></a>    <span class="kw">friend</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">|(</span>Range<span class="op">&amp;&amp;</span> r, Self<span class="op">&amp;&amp;</span> self<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb15-7"><a href="#cb15-7"></a>        <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>Self<span class="op">&gt;(</span>self<span class="op">)(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Range<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb15-7"><a href="#cb15-7"></a>        <span class="cf">return</span> FWD<span class="op">(</span>self<span class="op">)(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb15-8"><a href="#cb15-8"></a>    <span class="op">}</span></span>
 <span id="cb15-9"><a href="#cb15-9"></a>    </span>
 <span id="cb15-10"><a href="#cb15-10"></a>    <span class="co">// support for C | D to produce a new Range Adaptor Closure Object</span></span>
@@ -943,11 +945,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb16-8"><a href="#cb16-8"></a>              <span class="op">&amp;&amp;</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Args<span class="op">)</span> <span class="op">==</span> Derived<span class="op">::</span>arity <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></span>
 <span id="cb16-9"><a href="#cb16-9"></a>              <span class="op">&amp;&amp;</span> <span class="op">(</span>constructible_from<span class="op">&lt;</span>decay_t<span class="op">&lt;</span>Args<span class="op">&gt;</span>, Args<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></span>
 <span id="cb16-10"><a href="#cb16-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb16-11"><a href="#cb16-11"></a>        <span class="cf">return</span> _Partial<span class="op">&lt;</span>Derived, decay_t<span class="op">&lt;</span>Args<span class="op">&gt;...&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb16-11"><a href="#cb16-11"></a>        <span class="cf">return</span> _Partial<span class="op">&lt;</span>Derived, decay_t<span class="op">&lt;</span>Args<span class="op">&gt;...&gt;(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
 <span id="cb16-12"><a href="#cb16-12"></a>    <span class="op">}</span></span>
 <span id="cb16-13"><a href="#cb16-13"></a><span class="op">}</span>;</span></code></pre></div>
 <p>The interesting point here is that every adaptor has to specify an <code class="sourceCode cpp">arity</code>, and the partial call must take all but one of those arguments. As we’ll see shortly, <code class="sourceCode cpp">transform</code> has arity <code class="sourceCode cpp"><span class="dv">2</span></code> and so this call operator is only viable for a single argument. As such, the library still implements every partial call, but it requires more input from the adaptor declaration itself.</p>
-<p>The types <code class="sourceCode cpp">_Pipe<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> and <code class="sourceCode cpp">_Partial<span class="op">&lt;</span>D, Args<span class="op">...&gt;</span></code> are both <code class="sourceCode cpp">_RangeAdaptorClosure</code>s that provide call operators that accept a <code class="sourceCode cpp">viewable_range</code> and eagerly invoke the appropriate functions (both, in the case of <code class="sourceCode cpp">_Pipe</code>, and a <code class="sourceCode cpp">bind_back</code>, in the case of <code class="sourceCode cpp">_Partial</code>).</p>
+<p>The types <code class="sourceCode cpp">_Pipe<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> and <code class="sourceCode cpp">_Partial<span class="op">&lt;</span>D, Args<span class="op">...&gt;</span></code> are both <code class="sourceCode cpp">_RangeAdaptorClosure</code>s that provide call operators that accept a <code class="sourceCode cpp">viewable_range</code> and eagerly invoke the appropriate functions (both, in the case of <code class="sourceCode cpp">_Pipe</code>, and a <code class="sourceCode cpp">bind_back</code>, in the case of <code class="sourceCode cpp">_Partial</code>). Both types have appeared in other implementations already.</p>
 <p>And with that, we can implement <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">transform</code> as follows:</p>
 <table>
 <thead>

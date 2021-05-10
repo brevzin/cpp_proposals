@@ -24,7 +24,7 @@ namespace nano::detail {
         requires is_raco<remove_cvref_t<C>>
               && invocable<C, R>
     constexpr auto operator|(R&& lhs, C&& rhs) -> decltype(auto) {
-        return std::forward<C>(rhs)(std::forward<R>(lhs));
+        return FWD(rhs)(FWD(lhs));
     }
     
     // a type to handle merging two Range Adaptor Closure Objects together
@@ -39,7 +39,7 @@ namespace nano::detail {
             requires invocable<LHS&, R>
                   && invocable<RHS&, invoke_result_t<LHS&, R>>
         constexpr auto operator()(R&& r) const {
-            return rhs(lhs(std::forward<R>(r)));
+            return rhs(lhs(FWD(r)));
         }
         
         // ...
@@ -55,7 +55,7 @@ namespace nano::detail {
         requires is_raco<remove_cvref_t<LHS>>
               && is_raco<remove_cvref_t<RHS>>
     constexpr auto operator|(LHS&&, RHS&&) {
-        return raco_pipe<decay_t<LHS>, decay_t<RHS>>(std::forward<LHS>(lhs), std::forward<RHS>(rhs));
+        return raco_pipe<decay_t<LHS>, decay_t<RHS>>(FWD(lhs), FWD(rhs));
     }
     
     // ... and a convenience type for creating range adaptor objects
@@ -128,9 +128,9 @@ Although practically speaking, users will not just copy again the constraints fo
 struct join_view_fn {
     template <typename E>
     constexpr auto operator()(E&& e) const
-        -> decltype(join_view{std::forward<E>(e)})
+        -> decltype(join_view{FWD(e)})
     {
-        return join_view{std::forward<E>(e)};
+        return join_view{FWD(e)};
     }
 };
 ```
@@ -171,7 +171,7 @@ namespace ranges::views {
         // support for R | C to evaluate as C(R)
         template <viewable_range R, invocable_view_closure<R> ViewFn>
         friend constexpr auto operator|(R&& rng, view_closure<ViewFn> vw) {
-            return std::move(vw)(std::forward<R>(rng));
+            return std::move(vw)(FWD(rng));
         }
         
         // for diagnostic purposes, we delete the overload for R | C
@@ -251,12 +251,12 @@ struct _RangeAdaptor {
     constexpr auto operator()(Args&&... args) const {
         if constexpr (invocable<Callable, Args...>) {
             // The adaptor(range, args...) case
-            return callable(std::forward<Args>(args)...);
+            return callable(FWD(args)...);
         } else {
             // The adaptor(args...)(range) case
             return _RangeAdaptorClosure(
-                [...args=std::forward<Args>(args), callable]<typename R>(R&& r){
-                    return callable(std::forward<R>(r), args...);
+                [...args=FWD(args), callable]<typename R>(R&& r){
+                    return callable(FWD(r), args...);
                 });
         }
     }
@@ -272,13 +272,13 @@ struct _RangeAdaptorClosure : _RangeAdaptor<Callable>
     // support for C(R)
     template <viewable_range R> requires invocable<Callable, R>
     constexpr auto operator()(R&& r) const {
-        return callable(std::forward<R>(r));
+        return callable(FWD(r));
     }
     
     // support for R | C to evaluate as C(R)
     template <viewable_range R> requires invocable<Callable, R>
     friend constexpr auto operator|(R&& r, _RangeAdaptorClosure const& o) {
-        return o.callable(std::forward<R>(r));
+        return o.callable(FWD(r));
     }
     
     // support for C | D to produce a new Range Adaptor Closure Object
@@ -286,7 +286,7 @@ struct _RangeAdaptorClosure : _RangeAdaptor<Callable>
     template <typename T>
     friend constexpr auto operator|(_RangeAdaptorClosure<T> const& lhs, _RangeAdaptorClosure const& rhs) {
         return _RangeAdaptorClosure([lhs, rhs]<typename R>(R&& r){
-            return std::forward<R>(r) | lhs | rhs;
+            return FWD(r) | lhs | rhs;
         });
     }
 };
@@ -302,7 +302,7 @@ namespace std::ranges::views {
   inline constexpr __adaptor::_RangeAdaptorClosure join
     = []<viewable_range R> requires /* ... */
       (R&& r) {
-        return join_view(std::forward<R>(r));
+        return join_view(FWD(r));
       };
 }
 ```
@@ -312,9 +312,10 @@ namespace std::ranges::views {
 namespace std::ranges::views {
   // for user consumption
   inline constexpr __adaptor::_RangeAdaptor transform
-    = []<viewable_range R, typename F> requires /* ... */
+    = []<viewable_range R, typename F>
+        requires /* ... */
       (R&& r, F&& f){
-        return transform_view(std::forward<R>(r), std::forward<F>(f));
+        return transform_view(FWD(r), FWD(f));
       };
 }
 ```
@@ -353,9 +354,10 @@ namespace ranges::views {
 namespace std::ranges::views {
   // for user consumption
   inline constexpr __adaptor::_RangeAdaptor transform
-    = []<viewable_range R, typename F> requires /* ... */
+    = []<viewable_range R, typename F>
+        requires /* ... */
       (R&& r, F&& f){
-        return transform_view(std::forward<R>(r), std::forward<F>(f));
+        return transform_view(FWD(r), FWD(f));
       };
 }
 ```
@@ -375,7 +377,7 @@ struct _RangeAdaptorClosure {
         requires derived_from<remove_cvref_t<Self>, _RangeAdaptorClosure>
               && invocable<Self, Range>
     friend constexpr auto operator|(Range&& r, Self&& self) {
-        return std::forward<Self>(self)(std::forward<Range>(r));
+        return FWD(self)(FWD(r));
     }
     
     // support for C | D to produce a new Range Adaptor Closure Object
@@ -402,14 +404,14 @@ struct _RangeAdaptor {
               && (sizeof...(Args) == Derived::arity - 1)
               && (constructible_from<decay_t<Args>, Args> && ...)
     constexpr auto operator()(Args&&... args) const {
-        return _Partial<Derived, decay_t<Args>...>(std::forward<Args>(args)...);
+        return _Partial<Derived, decay_t<Args>...>(FWD(args)...);
     }
 };
 ```
 
 The interesting point here is that every adaptor has to specify an `arity`, and the partial call must take all but one of those arguments. As we'll see shortly, `transform` has arity `2` and so this call operator is only viable for a single argument. As such, the library still implements every partial call, but it requires more input from the adaptor declaration itself.
 
-The types `_Pipe<T, U>` and `_Partial<D, Args...>` are both `_RangeAdaptorClosure`s that provide call operators that accept a `viewable_range` and eagerly invoke the appropriate functions (both, in the case of `_Pipe`, and a `bind_back`, in the case of `_Partial`).
+The types `_Pipe<T, U>` and `_Partial<D, Args...>` are both `_RangeAdaptorClosure`s that provide call operators that accept a `viewable_range` and eagerly invoke the appropriate functions (both, in the case of `_Pipe`, and a `bind_back`, in the case of `_Partial`). Both types have appeared in other implementations already. 
 
 And with that, we can implement `join` and `transform` as follows:
 
