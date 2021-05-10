@@ -95,7 +95,7 @@ namespace nano::views {
 ### `transform`
 ```cpp
 namespace nano::detail {
-  struct transform_view_fn {
+  struct transform_view_fn_base {
     // the overload that has all the information
     template <viewable_range E, typename F>
         requires /* ... */
@@ -212,18 +212,24 @@ namespace ranges::views {
 ### `transform`
 ```cpp
 namespace ranges::views {
-  struct transform_view_fn {
+  struct transform_view_fn_base {
     // the overload that has all the information
     template <viewable_range E, typename F>
         requires /* ... */
     constexpr auto operator()(E&& e, F&& f) const
         -> transform_view<all_t<E>, decay_t<F>>;
+  };
     
+  struct transform_view_fn
+    : transform_view_fn_base
+  {
+    using transform_view_fn_base::operator();
+  
     // the partial overload
     template <typename F>
     constexpr auto operator()(F f) const {
-      return view_closure(
-        bind_back(transform_view_fn{}, std::move(f)));
+      return view_closure(bind_back(
+        transform_view_fn_base{}, std::move(f)));
     }
   };
   
@@ -329,18 +335,24 @@ This becomes clearer if we look at gcc 10's implementation of `views::transform`
 ### range-v3
 ```cpp
 namespace ranges::views {
-  struct transform_view_fn {
+  struct transform_view_fn_base {
     // the overload that has all the information
     template <viewable_range E, typename F>
         requires /* ... */
     constexpr auto operator()(E&& e, F&& f) const
         -> transform_view<all_t<E>, decay_t<F>>;
+  };
     
+  struct transform_view_fn
+    : transform_view_fn_base
+  {
+    using transform_view_fn_base::operator();
+  
     // the partial overload
     template <typename F>
     constexpr auto operator()(F f) const {
-      return view_closure(
-        bind_back(transform_view_fn{}, std::move(f)));
+      return view_closure(bind_back(
+        transform_view_fn_base{}, std::move(f)));
     }
   };
   
