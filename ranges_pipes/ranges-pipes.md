@@ -464,6 +464,72 @@ namespace std::ranges::views {
 
 This is longer than the gcc 10 implementation in that we need both a type and a variable, whereas before we only needed the lambda. But it's still shorter than either the NanoRange or range-v3 implementations in that we do not need to manually implement the partial overload. The library does that for us, we simply have to provide the _using-declaration_ to bring in the partial `operator()` as well as declare our `arity`.
 
+## msvc
+
+The [@msvc] implementation is also worth sharing as it is probably the most manual of all the implementations. While range-v3 and NanoRange require you to manually write the partial calls yourself, they both provide library wrappers that do the binding for you (`bind_back` and `rao_proxy`, respectively), in the msvc implementation, each range adaptor actually has its own private partial call implementation. 
+
+As such, the implementations of just `join` and `transform` look like (slightly reduced for paper-ware):
+
+::: cmptable
+### `join`
+```cpp
+namespace std::ranges::views {
+  struct _Join_fn : _Pipe::_Base<_Join_fn> {
+    template <viewable_range R>
+      requires /* ... */
+    constexpr auto operator()(R&& r)
+      -> join_view<all_t<R>>;
+  };
+  
+  inline constexpr _Join_fn join;
+}
+```
+
+### `transform`
+```cpp
+namespace std::ranges::views {
+  class _Transform_fn {
+    template <class F>
+    struct Partial : _Pipe::_Base<_Partial<F>> {
+      F f;
+      
+      template <viewable_range R>
+      constexpr auto operator()(R&& r) const&
+        -> decltype(transform_view(FWD(r), f))
+      {
+        return transform_view(FWD(r), f);
+      }
+      
+      template <viewable_range R>
+      constexpr auto operator()(R&& r) &&
+        -> decltype(transform_view(FWD(r), move(f)))
+      {
+        return transform_view(FWD(r), move(f));
+      }      
+    };
+    
+  public:
+    // the overload that has all the information
+    template <viewable_range R, class F>
+    constexpr auto operator()(R&& r, F f)
+      -> decltype(transform_view(FWD(r), move(f)))
+    {
+      return transform_view(FWD(r), move(f));
+    }
+    
+    // the partial overload
+    template <copy_constructible F>
+    constexpr auto operator()(F f) {
+      return Partial<F>{.f=move(f)};
+    }
+  };
+  
+  inline constexpr _Transform_fn transform;
+}
+```
+:::
+
+
 ---
 references:
     - id: NanoRange
@@ -498,4 +564,12 @@ references:
       issued:
           - year: 2021
       URL: https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges
+    - id: msvc
+      citation-label: msvc
+      title: "`<ranges>` in msvc"
+      author:
+          - family: Casey Carter
+      issued:
+          - year: 2020
+      URL: https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges      
 ---

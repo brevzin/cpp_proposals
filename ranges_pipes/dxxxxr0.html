@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-09" />
+  <meta name="dcterms.date" content="2021-05-10" />
   <title>Pipe support for user-defined range adaptors</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-09</td>
+    <td>2021-05-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -567,6 +567,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#range-v3"><span class="toc-section-number">0.2</span> range-v3<span></span></a></li>
 <li><a href="#gcc-10"><span class="toc-section-number">0.3</span> gcc 10<span></span></a></li>
 <li><a href="#gcc-11"><span class="toc-section-number">0.4</span> gcc 11<span></span></a></li>
+<li><a href="#msvc"><span class="toc-section-number">0.5</span> msvc<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">1</span> References<span></span></a></li>
 </ul>
 </div>
@@ -1005,6 +1006,74 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>This is longer than the gcc 10 implementation in that we need both a type and a variable, whereas before we only needed the lambda. But it’s still shorter than either the NanoRange or range-v3 implementations in that we do not need to manually implement the partial overload. The library does that for us, we simply have to provide the <em>using-declaration</em> to bring in the partial <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code> as well as declare our <code class="sourceCode cpp">arity</code>.</p>
+<h2 data-number="0.5" id="msvc"><span class="header-section-number">0.5</span> msvc<a href="#msvc" class="self-link"></a></h2>
+<p>The <span class="citation" data-cites="msvc">[<a href="#ref-msvc" role="doc-biblioref">msvc</a>]</span> implementation is also worth sharing as it is probably the most manual of all the implementations. While range-v3 and NanoRange require you to manually write the partial calls yourself, they both provide library wrappers that do the binding for you (<code class="sourceCode cpp">bind_back</code> and <code class="sourceCode cpp">rao_proxy</code>, respectively), in the msvc implementation, each range adaptor actually has its own private partial call implementation.</p>
+<p>As such, the implementations of just <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">transform</code> look like (slightly reduced for paper-ware):</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">join</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">transform</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <span class="kw">struct</span> _Join_fn <span class="op">:</span> _Pipe<span class="op">::</span>_Base<span class="op">&lt;</span>_Join_fn<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>      <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>      <span class="op">-&gt;</span> join_view<span class="op">&lt;</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span>
+<span id="cb19-7"><a href="#cb19-7"></a>  <span class="op">}</span>;</span>
+<span id="cb19-8"><a href="#cb19-8"></a>  </span>
+<span id="cb19-9"><a href="#cb19-9"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> _Join_fn join;</span>
+<span id="cb19-10"><a href="#cb19-10"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges<span class="op">::</span>views <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  <span class="kw">class</span> _Transform_fn <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>    <span class="kw">struct</span> Partial <span class="op">:</span> _Pipe<span class="op">::</span>_Base<span class="op">&lt;</span>_Partial<span class="op">&lt;</span>F<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a>      F f;</span>
+<span id="cb20-6"><a href="#cb20-6"></a>      </span>
+<span id="cb20-7"><a href="#cb20-7"></a>      <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>      <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span></span>
+<span id="cb20-9"><a href="#cb20-9"></a>        <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, f<span class="op">))</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>      <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, f<span class="op">)</span>;</span>
+<span id="cb20-12"><a href="#cb20-12"></a>      <span class="op">}</span></span>
+<span id="cb20-13"><a href="#cb20-13"></a>      </span>
+<span id="cb20-14"><a href="#cb20-14"></a>      <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb20-15"><a href="#cb20-15"></a>      <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb20-16"><a href="#cb20-16"></a>        <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, move<span class="op">(</span>f<span class="op">)))</span></span>
+<span id="cb20-17"><a href="#cb20-17"></a>      <span class="op">{</span></span>
+<span id="cb20-18"><a href="#cb20-18"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, move<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb20-19"><a href="#cb20-19"></a>      <span class="op">}</span>      </span>
+<span id="cb20-20"><a href="#cb20-20"></a>    <span class="op">}</span>;</span>
+<span id="cb20-21"><a href="#cb20-21"></a>    </span>
+<span id="cb20-22"><a href="#cb20-22"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb20-23"><a href="#cb20-23"></a>    <span class="co">// the overload that has all the information</span></span>
+<span id="cb20-24"><a href="#cb20-24"></a>    <span class="kw">template</span> <span class="op">&lt;</span>viewable_range R, <span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb20-25"><a href="#cb20-25"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r, F f<span class="op">)</span></span>
+<span id="cb20-26"><a href="#cb20-26"></a>      <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, move<span class="op">(</span>f<span class="op">)))</span></span>
+<span id="cb20-27"><a href="#cb20-27"></a>    <span class="op">{</span></span>
+<span id="cb20-28"><a href="#cb20-28"></a>      <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, move<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb20-29"><a href="#cb20-29"></a>    <span class="op">}</span></span>
+<span id="cb20-30"><a href="#cb20-30"></a>    </span>
+<span id="cb20-31"><a href="#cb20-31"></a>    <span class="co">// the partial overload</span></span>
+<span id="cb20-32"><a href="#cb20-32"></a>    <span class="kw">template</span> <span class="op">&lt;</span>copy_constructible F<span class="op">&gt;</span></span>
+<span id="cb20-33"><a href="#cb20-33"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span>F f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-34"><a href="#cb20-34"></a>      <span class="cf">return</span> Partial<span class="op">&lt;</span>F<span class="op">&gt;{.</span>f<span class="op">=</span>move<span class="op">(</span>f<span class="op">)}</span>;</span>
+<span id="cb20-35"><a href="#cb20-35"></a>    <span class="op">}</span></span>
+<span id="cb20-36"><a href="#cb20-36"></a>  <span class="op">}</span>;</span>
+<span id="cb20-37"><a href="#cb20-37"></a>  </span>
+<span id="cb20-38"><a href="#cb20-38"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> _Transform_fn transform;</span>
+<span id="cb20-39"><a href="#cb20-39"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">1</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-gcc-10">
@@ -1014,6 +1083,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-gcc-11">
 <p>[gcc-11] Patrick Palka. 2021. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 11. <br />
 <a href="https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges">https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges</a></p>
+</div>
+<div id="ref-msvc">
+<p>[msvc] Casey Carter. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in msvc. <br />
+<a href="https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges">https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges</a></p>
 </div>
 <div id="ref-NanoRange">
 <p>[NanoRange] Tristan Brindle. 2017. NanoRange. <br />
