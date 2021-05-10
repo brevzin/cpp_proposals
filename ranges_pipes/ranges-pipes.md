@@ -335,7 +335,17 @@ This becomes clearer if we look at gcc 10's implementation of `views::transform`
 ### range-v3
 ```cpp
 namespace ranges::views {
-
+  struct transform_view_fn_base {
+    // the overload that has all the information
+    template <viewable_range E, typename F>
+        requires /* ... */
+    constexpr auto operator()(E&& e, F&& f) const
+        -> transform_view<all_t<E>, decay_t<F>>;
+  };
+    
+ 
+  // for user consumption
+  inline constexpr transform_view_fn transform{};
 }
 ```
 
