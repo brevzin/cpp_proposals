@@ -364,7 +364,91 @@ namespace std::ranges::views {
 
 ## gcc 11
 
-TODO
+The implementation of pipe support in [@gcc-11] is closer to the range-v3/NanoRange implementations than the gcc 10 one. 
+
+In this implementation, `_RangeAdaptorClosure` is an empty type that is the base class of every range adaptor closure, equivalent to range-v3's `view_closure_base`:
+
+```cpp
+struct _RangeAdaptorClosure {
+    // support for R | C to evaluate as C(R)
+    template <typename Range, typename Self>
+        requires derived_from<remove_cvref_t<Self>, _RangeAdaptorClosure>
+              && invocable<Self, Range>
+    friend constexpr auto operator|(Range&& r, Self&& self) {
+        return std::forward<Self>(self)(std::forward<Range>(r));
+    }
+    
+    // support for C | D to produce a new Range Adaptor Closure Object
+    // so that (R | C) | D and R | (C | D) can be equivalent    
+    template <typename Lhs, typename Rhs>
+        requires derived_from<Lhs, _RangeAdaptorClosure>
+              && derived_from<Rhs, _RangeAdaptorClosure>
+    friend constexpr auto operator|(Lhs lhs, Rhs rhs) {
+        return _Pipe<Lhs, Rhs>(std::move(lhs), std::move(rhs));
+    }
+};
+```
+
+`_RangeAdaptor` is a CRTP template that is a base class of every range adaptor object (not range adaptor closure):
+
+```cpp
+template <typename Derived>
+struct _RangeAdaptor {
+    // provides the partial overload
+    // such that adaptor(args...)(range) is equivalent to adaptor(range, args...)
+    // _Partial<Adaptor, Args...> is a _RangeAdaptorClosure
+    template <typename... Args>
+        requires (Derived::arity > 1)
+              && (sizeof...(Args) == Derived::arity - 1)
+              && (constructible_from<decay_t<Args>, Args> && ...)
+    constexpr auto operator()(Args&&... args) const {
+        return _Partial<Derived, decay_t<Args>...>(std::forward<Args>(args)...);
+    }
+};
+```
+
+The interesting point here is that every adaptor has to specify an `arity`, and the partial call must take all but one of those arguments. As we'll see shortly, `transform` has arity `2` and so this call operator is only viable for a single argument. As such, the library still implements every partial call, but it requires more input from the adaptor declaration itself.
+
+The types `_Pipe<T, U>` and `_Partial<D, Args...>` are both `_RangeAdaptorClosure`s that provide call operators that accept a `viewable_range` and eagerly invoke the appropriate functions (both, in the case of `_Pipe`, and a `bind_back`, in the case of `_Partial`).
+
+And with that, we can implement `join` and `transform` as follows:
+
+::: cmptable
+### `join`
+```cpp
+namespace std::ranges::views {
+  struct Join : _RangeAdaptorClosure {
+    template <viewable_range R>
+        requires /* ... */
+    constexpr auto operator()(R&& r) const
+        -> join_view<all_t<R>>;
+  };
+  
+  // for user consumption
+  inline constexpr Join join;
+}
+```
+
+### `transform`
+```cpp
+namespace std::ranges::views {
+  struct Transform : _RangeAdaptor<Transform> {
+    template <viewable_range R, typeanme F>
+      requires /* ... */
+    constexpr auto operator()(R&& r, F&& f) const
+      -> transform_view<all_t<R>, F>;
+      
+    using _RangeAdaptor<Transform>::operator();
+    static constexpr int arity = 2;
+  };
+  
+  // for user consumption
+  inline constexpr Transform transform;
+}
+```
+:::
+
+This is longer than the gcc 10 implementation in that we need both a type and a variable, whereas before we only needed the lambda. But it's still shorter than either the NanoRange or range-v3 implementations in that we do not need to manually implement the partial overload. The library does that for us, we simply have to provide the _using-declaration_ to bring in the partial `operator()` as well as declare our `arity`.
 
 ---
 references:
