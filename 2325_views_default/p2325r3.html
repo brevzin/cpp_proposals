@@ -1256,15 +1256,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb34-6"><a href="#cb34-6"></a>  template&lt;bool Const&gt;</span>
 <span id="cb34-7"><a href="#cb34-7"></a>  class transform_view&lt;V, F&gt;::iterator {</span>
 <span id="cb34-8"><a href="#cb34-8"></a>  private:</span>
-<span id="cb34-9"><a href="#cb34-9"></a>    using Parent = <em>maybe-const</em>&lt;Const, transform_view&gt;;          // exposition only</span>
-<span id="cb34-10"><a href="#cb34-10"></a>    using Base = <em>maybe-const</em>&lt;Const, V&gt;;                         // exposition only</span>
-<span id="cb34-11"><a href="#cb34-11"></a>    iterator_t&lt;Base&gt; current_ = iterator_t&lt;Base&gt;();             // exposition only</span>
-<span id="cb34-12"><a href="#cb34-12"></a>    Parent* parent_ = nullptr;                                  // exposition only</span>
+<span id="cb34-9"><a href="#cb34-9"></a>    using <em>Parent</em> = <em>maybe-const</em>&lt;Const, transform_view&gt;;          // exposition only</span>
+<span id="cb34-10"><a href="#cb34-10"></a>    using <em>Base</em> = <em>maybe-const</em>&lt;Const, V&gt;;                         // exposition only</span>
+<span id="cb34-11"><a href="#cb34-11"></a>    iterator_t&lt;<em>Base</em>&gt; current_ = iterator_t&lt;<em>Base</em>&gt;();             // exposition only</span>
+<span id="cb34-12"><a href="#cb34-12"></a>    <em>Parent</em>* parent_ = nullptr;                                  // exposition only</span>
 <span id="cb34-13"><a href="#cb34-13"></a>  public:</span>
 <span id="cb34-14"><a href="#cb34-14"></a>    // ...</span>
 <span id="cb34-15"><a href="#cb34-15"></a></span>
 <span id="cb34-16"><a href="#cb34-16"></a><span class="st">-   iterator() = default;</span></span>
-<span id="cb34-17"><a href="#cb34-17"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;iterator_t&lt;Base&gt;&gt;</span> = default;</span></span>
+<span id="cb34-17"><a href="#cb34-17"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;iterator_t&lt;<em>Base</em>&gt;&gt;</span> = default;</span></span>
 <span id="cb34-18"><a href="#cb34-18"></a>    </span>
 <span id="cb34-19"><a href="#cb34-19"></a>    // ...</span>
 <span id="cb34-20"><a href="#cb34-20"></a>  };</span>
@@ -1448,21 +1448,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb42"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb42-1"><a href="#cb42-1"></a>  auto update_inner = [this](range_reference_t&lt;<em>Base</em>&gt; x) -&gt; auto&amp; {</span>
 <span id="cb42-2"><a href="#cb42-2"></a>    if constexpr (<em>ref-is-glvalue</em>) // x is a reference</span>
 <span id="cb42-3"><a href="#cb42-3"></a>      return x;</span>
-<span id="cb42-4"><a href="#cb42-4"></a>    else</span>
+<span id="cb42-4"><a href="#cb42-4"></a><span class="st">-   else</span></span>
 <span id="cb42-5"><a href="#cb42-5"></a><span class="st">-     return (<em>parent_</em>-&gt;<em>inner_</em> = views::all(std::move(x)));</span></span>
-<span id="cb42-6"><a href="#cb42-6"></a><span class="va">+     <em>parent_</em>-&gt;<em>inner_</em> = views::all(std::move(x));</span></span>
-<span id="cb42-7"><a href="#cb42-7"></a><span class="va">+     return *<em>parent_</em>-&gt;<em>inner_</em>;</span></span>
-<span id="cb42-8"><a href="#cb42-8"></a>  };</span>
-<span id="cb42-9"><a href="#cb42-9"></a>  </span>
-<span id="cb42-10"><a href="#cb42-10"></a>  for (; outer_ != ranges::end(<em>parent_</em>-&gt;<em>base_</em>); ++<em>outer_</em>) {</span>
-<span id="cb42-11"><a href="#cb42-11"></a>    auto&amp; inner = update_inner(*<em>outer_</em>);</span>
-<span id="cb42-12"><a href="#cb42-12"></a>    <em>inner_</em> = ranges::begin(inner);</span>
-<span id="cb42-13"><a href="#cb42-13"></a>    if (<em>inner_</em> != ranges::end(inner))</span>
-<span id="cb42-14"><a href="#cb42-14"></a>      return;</span>
-<span id="cb42-15"><a href="#cb42-15"></a>  }</span>
-<span id="cb42-16"><a href="#cb42-16"></a>  </span>
-<span id="cb42-17"><a href="#cb42-17"></a>  if constexpr (<em>ref-is-glvalue</em>)</span>
-<span id="cb42-18"><a href="#cb42-18"></a>    <em>inner_</em> = <em>InnerIter</em>();</span></code></pre></div>
+<span id="cb42-6"><a href="#cb42-6"></a><span class="va">+   else {</span></span>
+<span id="cb42-7"><a href="#cb42-7"></a><span class="va">+     <em>parent_</em>-&gt;<em>inner_</em> = views::all(std::move(x));</span></span>
+<span id="cb42-8"><a href="#cb42-8"></a><span class="va">+     return *<em>parent_</em>-&gt;<em>inner_</em>;</span></span>
+<span id="cb42-9"><a href="#cb42-9"></a><span class="va">+   }</span></span>
+<span id="cb42-10"><a href="#cb42-10"></a>  };</span>
+<span id="cb42-11"><a href="#cb42-11"></a>  </span>
+<span id="cb42-12"><a href="#cb42-12"></a>  for (; outer_ != ranges::end(<em>parent_</em>-&gt;<em>base_</em>); ++<em>outer_</em>) {</span>
+<span id="cb42-13"><a href="#cb42-13"></a>    auto&amp; inner = update_inner(*<em>outer_</em>);</span>
+<span id="cb42-14"><a href="#cb42-14"></a>    <em>inner_</em> = ranges::begin(inner);</span>
+<span id="cb42-15"><a href="#cb42-15"></a>    if (<em>inner_</em> != ranges::end(inner))</span>
+<span id="cb42-16"><a href="#cb42-16"></a>      return;</span>
+<span id="cb42-17"><a href="#cb42-17"></a>  }</span>
+<span id="cb42-18"><a href="#cb42-18"></a>  </span>
+<span id="cb42-19"><a href="#cb42-19"></a>  if constexpr (<em>ref-is-glvalue</em>)</span>
+<span id="cb42-20"><a href="#cb42-20"></a>    <em>inner_</em> = <em>InnerIter</em>();</span></code></pre></div>
 </div>
 <div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>constexpr <em>iterator</em>&amp; operator++();</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">9</a></span> Let <code class="sourceCode cpp"><em>inner-range</em></code> be:</p>
@@ -1507,7 +1509,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb45-23"><a href="#cb45-23"></a>    template&lt;bool&gt; struct inner-iterator;       // exposition only</span>
 <span id="cb45-24"><a href="#cb45-24"></a>  public:</span>
 <span id="cb45-25"><a href="#cb45-25"></a><span class="st">-   split_view() = default;</span></span>
-<span id="cb45-26"><a href="#cb45-26"></a><span class="va">+   split_view() <span class="diffins">requires default_initializable&lt;<em>V</em>&gt; &amp;&amp; default_initializable&lt;<em>Pattern</em>&gt;</span> = default;</span></span>
+<span id="cb45-26"><a href="#cb45-26"></a><span class="va">+   split_view() <span class="diffins">requires default_initializable&lt;V&gt; &amp;&amp; default_initializable&lt;Pattern&gt;</span> = default;</span></span>
 <span id="cb45-27"><a href="#cb45-27"></a>    </span>
 <span id="cb45-28"><a href="#cb45-28"></a>    // ...</span>
 <span id="cb45-29"><a href="#cb45-29"></a>  };</span>

@@ -772,15 +772,15 @@ namespace std::ranges {
   template<bool Const>
   class transform_view<V, F>::iterator {
   private:
-    using Parent = @*maybe-const*@<Const, transform_view>;          // exposition only
-    using Base = @*maybe-const*@<Const, V>;                         // exposition only
-    iterator_t<Base> current_ = iterator_t<Base>();             // exposition only
-    Parent* parent_ = nullptr;                                  // exposition only
+    using @*Parent*@ = @*maybe-const*@<Const, transform_view>;          // exposition only
+    using @*Base*@ = @*maybe-const*@<Const, V>;                         // exposition only
+    iterator_t<@*Base*@> current_ = iterator_t<@*Base*@>();             // exposition only
+    @*Parent*@* parent_ = nullptr;                                  // exposition only
   public:
     // ...
 
 -   iterator() = default;
-+   iterator() @[requires default_initializable&lt;iterator_t&lt;Base>>]{.diffins}@ = default;
++   iterator() @[requires default_initializable&lt;iterator_t&lt;*Base*>>]{.diffins}@ = default;
     
     // ...
   };
@@ -973,10 +973,12 @@ constexpr void @*satisfy*@();       // exposition only
   auto update_inner = [this](range_reference_t<@*Base*@> x) -> auto& {
     if constexpr (@*ref-is-glvalue*@) // x is a reference
       return x;
-    else
+-   else
 -     return (@*parent_*@->@*inner_*@ = views::all(std::move(x)));
++   else {
 +     @*parent_*@->@*inner_*@ = views::all(std::move(x));
 +     return *@*parent_*@->@*inner_*@;
++   }
   };
   
   for (; outer_ != ranges::end(@*parent_*@->@*base_*@); ++@*outer_*@) {
@@ -1039,7 +1041,7 @@ namespace std::ranges {
     template<bool> struct inner-iterator;       // exposition only
   public:
 -   split_view() = default;
-+   split_view() @[requires default_initializable&lt;*V*> && default_initializable&lt;*Pattern*>]{.diffins}@ = default;
++   split_view() @[requires default_initializable&lt;V> && default_initializable&lt;Pattern>]{.diffins}@ = default;
     
     // ...
   };
