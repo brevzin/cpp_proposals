@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2021-05-14" />
+  <title>Views should not be required to be default constructible</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Views should not be required to be default constructible</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2325R3</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2021-05-14</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#history"><span class="toc-section-number">2.1</span> History<span></span></a></li>
+<li><a href="#uses-of-default-construction"><span class="toc-section-number">2.2</span> Uses of default construction<span></span></a></li>
+<li><a href="#does-this-requirement-cause-harm"><span class="toc-section-number">2.3</span> Does this requirement cause harm?<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#timeline"><span class="toc-section-number">3.1</span> Timeline<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">4.1</span> Feature-test macro<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2325R2">[<a href="#ref-P2325R2" role="doc-biblioref">P2325R2</a>]</span>, updating wording.</p>
+<p>Since <span class="citation" data-cites="P2325R1">[<a href="#ref-P2325R1" role="doc-biblioref">P2325R1</a>]</span>, added wording.</p>
+<p>Since <span class="citation" data-cites="P2325R0">[<a href="#ref-P2325R0" role="doc-biblioref">P2325R0</a>]</span>, added discussion of the different treatments of lvalue vs rvalue fixed-extent <code class="sourceCode cpp">span</code> in pipelines.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Currently, the <code class="sourceCode cpp">view</code> concept is defined in <span>24.4.4
+ <a href="https://wg21.link/range.view">[range.view]</a></span> as:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">concept</span> view <span class="op">=</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    movable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    default_initializable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span></code></pre></div>
+<p>Three of these four criteria, I understand. A <code class="sourceCode cpp">view</code> clearly needs to be a <code class="sourceCode cpp">range</code>, and it’s important that they be <code class="sourceCode cpp">movable</code> for various operations to work. And the difference between a <code class="sourceCode cpp">view</code> and <code class="sourceCode cpp">range</code> is largely semantic, and so there needs to be an explicit opt-in in the form of <code class="sourceCode cpp">enable_view</code>.</p>
+<p>But why does a view need to be <code class="sourceCode cpp">default_initializable</code>?</p>
+<h2 data-number="2.1" id="history"><span class="header-section-number">2.1</span> History<a href="#history" class="self-link"></a></h2>
+<p>The history of the design of Ranges is split between many papers and github issues in both the range-v3 <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span> and stl2 <span class="citation" data-cites="stl2">[<a href="#ref-stl2" role="doc-biblioref">stl2</a>]</span> libraries. However, I simply am unable to find much information that motivates this particular choice.</p>
+<p>In <span class="citation" data-cites="N4128">[<a href="#ref-N4128" role="doc-biblioref">N4128</a>]</span>, we have (this paper predates the term <code class="sourceCode cpp">view</code>, at the time the term “range” instead was used to refer to what is now called a <code class="sourceCode cpp">view</code>. To alleviate confusion, I have editted this paragraph accordingly):</p>
+<blockquote>
+<p>We’ve already decided that [Views] are copyable and assignable. They are, in the terminology of <span class="citation" data-cites="EoP">[<a href="#ref-EoP" role="doc-biblioref">EoP</a>]</span> and <span class="citation" data-cites="N3351">[<a href="#ref-N3351" role="doc-biblioref">N3351</a>]</span>, Semiregular types. It follows that copies are independent, even though the copies are both aliases of the same underlying elements. The [views] are independent in the same way that a copy of a pointer or an iterator is independent from the original. Likewise, iterators from two [views] that are copies of each other are also independent. When the source [view] goes out of scope, it does not invalidate an iterator into the destination [view].</p>
+<p>Semiregular also requires DefaultConstructible in <span class="citation" data-cites="N3351">[<a href="#ref-N3351" role="doc-biblioref">N3351</a>]</span>. We follow suit and require all [Views] to be DefaultConstructible. Although this complicates the implementation of some range types, it has proven useful in practice, so we have kept this requirement.</p>
+</blockquote>
+<p>There is also <span class="citation" data-cites="stl2-179">[<a href="#ref-stl2-179" role="doc-biblioref">stl2-179</a>]</span>, titled “Consider relaxing the DefaultConstructible requirements,” in which Casey Carter states (although the issue is about iterators rather than views):</p>
+<blockquote>
+<p>There’s concern in the community that relaxing type invariants to allow for default construction of a type that would not otherwise provide it is a horrible idea.</p>
+<p>Relaxing the default construction requirement for iterators would also remove one of the few “breaking” differences between input and output iterators in the Standard (which do not require default construction) and Ranges (which currently do require default construction).</p>
+</blockquote>
+<p>Though, importantly, Casey points out one concern:</p>
+<blockquote>
+<p>The recent trend of making everything in the standard library <code class="sourceCode cpp"><span class="kw">constexpr</span></code> is in conflict with the desire to not require default construction. The traditional workaround for delayed initialization of a non-default-constructible <code class="sourceCode cpp">T</code> is to instead store an <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. Changing an <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> from the empty to filled states is not possible in a constant expression</p>
+</blockquote>
+<p>This was true at the time of the writing of the issue, but has since been resolved first at the core language level by <span class="citation" data-cites="P1330R0">[<a href="#ref-P1330R0" role="doc-biblioref">P1330R0</a>]</span> and then at the library level by <span class="citation" data-cites="P2231R1">[<a href="#ref-P2231R1" role="doc-biblioref">P2231R1</a>]</span>. As such, I’m simply unsure what the motivation is for requiring default construction of views.</p>
+<p>The motivation for default construction of <em>iterators</em> comes from <span class="citation" data-cites="N3644">[<a href="#ref-N3644" role="doc-biblioref">N3644</a>]</span>, although this doesn’t really apply to <em>output</em> iterators (which are also currently required to be default constructible).</p>
+<h2 data-number="2.2" id="uses-of-default-construction"><span class="header-section-number">2.2</span> Uses of default construction<a href="#uses-of-default-construction" class="self-link"></a></h2>
+<p>I couldn’t find any other motivation for default construction of views from the paper trail, so I tried to discover the motivation for it in range-v3. I did this with a large hammer: I removed all the default constructors and saw what broke.</p>
+<p>And the answer is… not much. The commit can be found here: <span class="citation" data-cites="range-v3-no-dflt">[<a href="#ref-range-v3-no-dflt" role="doc-biblioref">range-v3-no-dflt</a>]</span>. The full list of breakage is:</p>
+<ol type="1">
+<li><p><code class="sourceCode cpp">join_view</code> and <code class="sourceCode cpp">join_with_view</code> need a default-constructed inner view. This clearly breaks if that view isn’t default constructible. I wrapped them in semiregular_box.</p></li>
+<li><p><code class="sourceCode cpp">views<span class="op">::</span>ints</code> and <code class="sourceCode cpp">views<span class="op">::</span>indices</code> are interesting in range-v3 because it’s not just that <code class="sourceCode cpp">ints<span class="op">(</span><span class="dv">0</span>, <span class="dv">4</span><span class="op">)</span></code> gives you the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span><span class="op">)</span></code> but also that <code class="sourceCode cpp">ints</code> by itself is also a range (from <code class="sourceCode cpp"><span class="dv">0</span></code> to infinity). These two inherit from iota, so once I removed the default constructor from iota, these uses break. So I added default constructors to <code class="sourceCode cpp">ints</code> and <code class="sourceCode cpp">indices</code>.</p></li>
+<li><p>One of range-v3’s mechanisms for easier implementation of views and iterators is called <code class="sourceCode cpp">view_facade</code>. This is an implementation strategy that uses the view as part of the iterator as an implementation detail. As such, because the iterator has to be default constructible, the view must be as well. So <code class="sourceCode cpp">linear_distribute_view</code> and <code class="sourceCode cpp">chunk_view</code> (the specialization for input ranges) kept their defaulted default constructors. But this is simply an implementation strategy, there’s nothing inherent to these views that requires this approach.</p></li>
+<li><p>There’s one test for <code class="sourceCode cpp">any_view</code> that just tests that it’s default constructible.</p></li>
+</ol>
+<p>That’s it. Broadly, just a few views that actually need default construction that can easily provide it, most simply don’t need this constraint.</p>
+<h2 data-number="2.3" id="does-this-requirement-cause-harm"><span class="header-section-number">2.3</span> Does this requirement cause harm?<a href="#does-this-requirement-cause-harm" class="self-link"></a></h2>
+<p>Rather than providing a benefit, it seems like the default construction requirement causes harm.</p>
+<p>If the argument for default construction is that it enables efficient deferred initialization during view composition, then I’m not sure I buy that argument. <code class="sourceCode cpp">join_view</code> would have to use an optional where it wouldn’t have before, which makes it a little bigger. But conversely, right now, every range adaptor that takes a function has to use an optional: <code class="sourceCode cpp">transform_view</code>, <code class="sourceCode cpp">filter_view</code>, etc. all need to be default constructible so they have to wrap their callables in <code class="sourceCode cpp"><em>semiregular-box</em></code> to make them default constructible. If views didn’t have to be constructible, they wouldn’t have to do this. Or rather, they would still have to do some wrapping, but we’d only need the assignment parts of <code class="sourceCode cpp"><em>semiregular-box</em></code>, and not the default construction part, which means that <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;)</span></code> would be equal to <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span></code>, whereas <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span><em>semiregular-box</em><span class="op">&lt;</span>T<span class="op">&gt;)</span></code> could be larger.</p>
+<p>My impression right now is that the default construction requirement actually adds storage cost to range adapters on the whole rather than removing storage cost.</p>
+<p>Furthermore, there’s the question of <em>requiring</em> a partially formed state to types even they didn’t want to do that. This goes against the general advice of making bad states unrepresentable. Consider a type like <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span></code>. This <em>should</em> be a <code class="sourceCode cpp">view</code>: it’s a non-owning, O(1)-everything range. But it’s not default constructible, so it’s not a <code class="sourceCode cpp">view</code>. The consequence of this choice is the difference in behavior when using fixed-extent <code class="sourceCode cpp">span</code> in pipelines that start with an lvalue vs an rvalue:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span> s <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="co">// Because span&lt;int, 5&gt; is not a view, rather than copying s into</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="co">// the resulting transform_view, this instead takes a</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="co">// ref_view&lt;span&lt;int, 5&gt;&gt;. If s goes out of scope, this will dangle.</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">auto</span> lvalue <span class="op">=</span> s <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span>;</span>
+<span id="cb2-7"><a href="#cb2-7"></a></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="co">// Because span&lt;int, 5&gt; is a borrowed range, this compiles. We still</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="co">// don&#39;t copy the span&lt;int, 5&gt; directly, instead we end up with a</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="co">// subrange&lt;span&lt;int, 5&gt;::iterator&gt;.</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">auto</span> rvalue <span class="op">=</span> std<span class="op">::</span>move<span class="op">(</span>s<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span>;</span></code></pre></div>
+<p>Both alternatives are less efficient than they could be. The lvalue case requires an extra indirection and exposes an opportunity for a dangling range. The rvalue case won’t dangle, but ends up requiring storing two iterators, which requires twice the storage as storing the single <code class="sourceCode cpp">span</code> would have. Either case is strictly worse than the behavior that would result from <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span></code> having been a <code class="sourceCode cpp">view</code>.</p>
+<p>But fixed-extent <code class="sourceCode cpp">span</code> isn’t default-constructible for good reason: if we were to add a default constructor that would make <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span></code> partially formed, this adds an extra state that needs to be carefully checked by users, and suddenly every operation has additional preconditions that need to be documented. But this is true for every other view, too!</p>
+<p><code class="sourceCode cpp">ranges<span class="op">::</span>ref_view</code> (see <span>24.7.4.2
+ <a href="https://wg21.link/range.ref.view">[range.ref.view]</a></span>) is another such view. In the same way that <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is a rebindable reference to <code class="sourceCode cpp">T</code>, <code class="sourceCode cpp">ref_view<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is a rebindable reference to the range <code class="sourceCode cpp">R</code>. Except <code class="sourceCode cpp">reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> isn’t default constructible, but <code class="sourceCode cpp">ref_view<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is — it’s just that as a user, I have no way to check to see if a particular <code class="sourceCode cpp">ref_view<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is fully formed or not. All of its member functions have this precondition that it really does refer to a range that I as the user can’t check. This is broadly true of all the range adapters: you can’t do <em>anything</em> with a default constructed range adapter except assign to it.</p>
+<p>If the default construction requirement doesn’t add benefit (and I’m not sure that it does) and it causes harm (both in the sense of requiring invalid states on types and adding to the storage requirements on all range adapters and further adding to user confusion when their types fail to model <code class="sourceCode cpp">view</code>), maybe we should get rid of it?</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Remove the <code class="sourceCode cpp">default_initializable</code> constraint from <code class="sourceCode cpp">view</code>, such that the concept becomes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">concept</span> view <span class="op">=</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    range<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    movable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>    enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span></code></pre></div>
+<p>Remove the <code class="sourceCode cpp">default_initializable</code> constraint from <code class="sourceCode cpp">weakly_incrementable</code>. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (<code class="sourceCode cpp">forward_iterator</code> requires <code class="sourceCode cpp">incrementable</code> which requires <code class="sourceCode cpp">regular</code>).</p>
+<p>For <code class="sourceCode cpp">iota_view</code>, replace the <code class="sourceCode cpp">semiregular<span class="op">&lt;</span>W<span class="op">&gt;</span></code> constraint with <code class="sourceCode cpp">copyable<span class="op">&lt;</span>W<span class="op">&gt;</span></code>, and add a constraint on <code class="sourceCode cpp">iota_view<span class="op">&lt;</span>W, Bound<span class="op">&gt;::</span>iterator</code>’s default constructor. This allows an input-only <code class="sourceCode cpp">iota_view</code> with a non-default-constructible <code class="sourceCode cpp">W</code> while preserving the current behavior for all forward-or-better <code class="sourceCode cpp">iota_view</code>s.</p>
+<p>Remove the default constructors from the standard library views and iterators for which they only exist to satisfy the requirement (<code class="sourceCode cpp">ref_view</code>, <code class="sourceCode cpp">istream_view</code>, <code class="sourceCode cpp">ostream_iterator</code>, <code class="sourceCode cpp">ostreambuf_iterator</code>, <code class="sourceCode cpp">back_insert_iterator</code>, <code class="sourceCode cpp">front_insert_iterator</code>, <code class="sourceCode cpp">insert_iterator</code>). Constrain the other standard library views’ default constructors on the underlying types being default constructible.</p>
+<p>For <code class="sourceCode cpp">join_view</code>, store the inner view in a <code class="sourceCode cpp">optional<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span><em>InnerRng</em><span class="op">&gt;&gt;</span></code>.</p>
+<p>Make <code class="sourceCode cpp">span<span class="op">&lt;</span>ElementType, Extent<span class="op">&gt;</span></code> a <code class="sourceCode cpp">view</code> regardless of <code class="sourceCode cpp">Extent</code>. Currently, it is only a <code class="sourceCode cpp">view</code> when <code class="sourceCode cpp">Extent <span class="op">==</span> <span class="dv">0</span> <span class="op">||</span> Extent <span class="op">==</span> dynamic_extent</code>.</p>
+<p>We currently use <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> to make types <code class="sourceCode cpp">semiregular</code> (see <span>24.7.3
+ <a href="https://wg21.link/range.semi.wrap">[range.semi.wrap]</a></span>), which we use to wrap function objects throughout. We can do a little bit better by introducing a <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> such that:</p>
+<ul>
+<li>If <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">copyable</code>, then <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is basically just <code class="sourceCode cpp">T</code></li>
+<li>Otherwise, if <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">nothrow_copy_constructible</code> but not <code class="sourceCode cpp">copy_assignable</code>, then <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> can be a thin wrapper around <code class="sourceCode cpp">T</code> that adds a copy assignment operator that does destroy-then-copy-construct.</li>
+<li>Otherwise, <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> (we still need <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>’s empty state here to handle the case where copy construction can throw, to avoid double-destruction).</li>
+</ul>
+<p>Replace all function object <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers throughout <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> with <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> wrappers. At this point, there are no uses of <code class="sourceCode cpp"><em>semiregular-box</em><span class="op">&lt;</span>F<span class="op">&gt;</span></code> left, so remove it.</p>
+<h2 data-number="3.1" id="timeline"><span class="header-section-number">3.1</span> Timeline<a href="#timeline" class="self-link"></a></h2>
+<p>At the moment, only libstdc++ and MSVC provide an implementation of ranges (and MSVC’s is incomplete). We either have to make this change now and soon, or never.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Make <code class="sourceCode cpp">span</code> unconditionally a view in <span>22.7.2
+ <a href="https://wg21.link/span.syn">[span.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>namespace std {</span>
+<span id="cb4-2"><a href="#cb4-2"></a>  // ...</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  </span>
+<span id="cb4-4"><a href="#cb4-4"></a>  // [views.span], class template span</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  template&lt;class ElementType, size_t Extent = dynamic_extent&gt;</span>
+<span id="cb4-6"><a href="#cb4-6"></a>    class span;</span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a>  template&lt;class ElementType, size_t Extent&gt;</span>
+<span id="cb4-9"><a href="#cb4-9"></a>    inline constexpr bool ranges::enable_view&lt;span&lt;ElementType, Extent&gt;&gt; =</span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="st">-     Extent == 0 || Extent == dynamic_extent;</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="va">+     true;</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a>  // ...</span>
+<span id="cb4-14"><a href="#cb4-14"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change <span>23.3.4.4
+ <a href="https://wg21.link/iterator.concept.winc">[iterator.concept.winc]</a></span>/1:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>template&lt;class I&gt;</span>
+<span id="cb5-2"><a href="#cb5-2"></a>  concept weakly_incrementable =</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="st">-   <span class="diffdel">default_initializable&lt;I&gt; &amp;&amp;</span> movable&lt;I&gt; &amp;&amp;</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="va">+   movable&lt;I&gt; &amp;&amp;</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>    requires(I i) {</span>
+<span id="cb5-6"><a href="#cb5-6"></a>      typename iter_difference_t&lt;I&gt;;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>      requires <em>is-signed-integer-like</em>&lt;iter_difference_t&lt;I&gt;&gt;;</span>
+<span id="cb5-8"><a href="#cb5-8"></a>      { ++i } -&gt; same_as&lt;I&amp;&gt;;   // not required to be equality-preserving</span>
+<span id="cb5-9"><a href="#cb5-9"></a>      i++;                      // not required to be equality-preserving</span>
+<span id="cb5-10"><a href="#cb5-10"></a>    };</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializer from <span>23.5.2.2
+ <a href="https://wg21.link/back.insert.iterator">[back.insert.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>namespace std {</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  template&lt;class Container&gt;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>  class back_insert_iterator {</span>
+<span id="cb6-4"><a href="#cb6-4"></a>  protected:</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="st">-   Container* container <span class="diffdel">= nullptr</span>;</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="va">+   Container* container;</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a></span>
+<span id="cb6-8"><a href="#cb6-8"></a>  public:</span>
+<span id="cb6-9"><a href="#cb6-9"></a>    // ...</span>
+<span id="cb6-10"><a href="#cb6-10"></a></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="st">-   constexpr back_insert_iterator() noexcept = default;</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>    </span>
+<span id="cb6-13"><a href="#cb6-13"></a>    // ...</span>
+<span id="cb6-14"><a href="#cb6-14"></a>  };</span>
+<span id="cb6-15"><a href="#cb6-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializer from <span>23.5.2.3
+ <a href="https://wg21.link/front.insert.iterator">[front.insert.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>namespace std {</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  template&lt;class Container&gt;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  class front_insert_iterator {</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  protected:</span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="st">-   Container* container <span class="diffdel">= nullptr</span>;</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="va">+   Container* container;</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a>  public:</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    // ...</span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="st">-   constexpr front_insert_iterator() noexcept = default;</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>    </span>
+<span id="cb7-13"><a href="#cb7-13"></a>    // ...</span>
+<span id="cb7-14"><a href="#cb7-14"></a>  };</span>
+<span id="cb7-15"><a href="#cb7-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializers from <span>23.5.2.4
+ <a href="https://wg21.link/insert.iterator">[insert.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1"></a>namespace std {</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  template&lt;class Container&gt;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>  class insert_iterator {</span>
+<span id="cb8-4"><a href="#cb8-4"></a>  protected:</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="st">-   Container* container <span class="diffdel">= nullptr</span>;</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="st">-   ranges::iterator_t&lt;Container&gt; iter <span class="diffdel">= ranges::iterator_t&lt;Container&gt;()</span>;</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="va">+   Container* container;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="va">+   ranges::iterator_t&lt;Container&gt; iter;</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a>  public:</span>
+<span id="cb8-11"><a href="#cb8-11"></a>    // ...</span>
+<span id="cb8-12"><a href="#cb8-12"></a></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="st">-   insert_iterator() = default;</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a>    </span>
+<span id="cb8-15"><a href="#cb8-15"></a>    // ...</span>
+<span id="cb8-16"><a href="#cb8-16"></a>  };</span>
+<span id="cb8-17"><a href="#cb8-17"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>23.5.4.1
+ <a href="https://wg21.link/common.iterator">[common.iterator]</a></span> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: This is not strictly necessary since <code class="sourceCode default">variant&lt;I, S&gt;</code> is not default constructible when <code class="sourceCode default">I</code> is not and so the default constructor would already be defined as deleted, but I think it just adds clarity to do this for consistency ]</span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>namespace std {</span>
+<span id="cb9-2"><a href="#cb9-2"></a>  template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S&gt;</span>
+<span id="cb9-3"><a href="#cb9-3"></a>    requires (!same_as&lt;I, S&gt; &amp;&amp; copyable&lt;I&gt;)</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  class common_iterator {</span>
+<span id="cb9-5"><a href="#cb9-5"></a>  public:</span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="st">-   constexpr common_iterator() = default;</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="va">+   constexpr common_iterator() <span class="diffins">requires default_initializable&lt;I&gt;</span> = default;</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    </span>
+<span id="cb9-9"><a href="#cb9-9"></a>    // ...</span>
+<span id="cb9-10"><a href="#cb9-10"></a></span>
+<span id="cb9-11"><a href="#cb9-11"></a>  private:</span>
+<span id="cb9-12"><a href="#cb9-12"></a>    variant&lt;I, S&gt; v_;   // exposition only</span>
+<span id="cb9-13"><a href="#cb9-13"></a>  };</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>23.5.6.1
+ <a href="https://wg21.link/counted.iterator">[counted.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;input_or_output_iterator I&gt;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>  class counted_iterator {</span>
+<span id="cb10-4"><a href="#cb10-4"></a>  public:</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    // ...</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    </span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="st">-   constexpr counted_iterator() = default;</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="va">+   constexpr counted_iterator() <span class="diffins">requires default_initializable&lt;I&gt;</span> = default;</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>    </span>
+<span id="cb10-10"><a href="#cb10-10"></a>    // ...</span>
+<span id="cb10-11"><a href="#cb10-11"></a></span>
+<span id="cb10-12"><a href="#cb10-12"></a>  private:</span>
+<span id="cb10-13"><a href="#cb10-13"></a>    I current = I();                    // exposition only</span>
+<span id="cb10-14"><a href="#cb10-14"></a>    iter_difference_t&lt;I&gt; length = 0;    // exposition only</span>
+<span id="cb10-15"><a href="#cb10-15"></a>  };</span>
+<span id="cb10-16"><a href="#cb10-16"></a></span>
+<span id="cb10-17"><a href="#cb10-17"></a>  // ...</span>
+<span id="cb10-18"><a href="#cb10-18"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializers from <span>23.6.3.1
+ <a href="https://wg21.link/ostream.iterator.general">[ostream.iterator.general]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class T, class charT = char, class traits = char_traits&lt;charT&gt;&gt;</span>
+<span id="cb11-3"><a href="#cb11-3"></a>  class ostream_iterator {</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  public:</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    // ...</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="st">-   constexpr ostream_iterator() noexcept = default;</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>    </span>
+<span id="cb11-9"><a href="#cb11-9"></a>    // ...</span>
+<span id="cb11-10"><a href="#cb11-10"></a></span>
+<span id="cb11-11"><a href="#cb11-11"></a>  private:</span>
+<span id="cb11-12"><a href="#cb11-12"></a><span class="st">-   basic_ostream&lt;charT,traits&gt;* out_stream <span class="diffdel">= nullptr</span>;          // exposition only</span></span>
+<span id="cb11-13"><a href="#cb11-13"></a><span class="st">-   const charT* delim <span class="diffdel">= nullptr</span>;                               // exposition only</span></span>
+<span id="cb11-14"><a href="#cb11-14"></a><span class="va">+   basic_ostream&lt;charT,traits&gt;* out_stream;                    // exposition only</span></span>
+<span id="cb11-15"><a href="#cb11-15"></a><span class="va">+   const charT* delim;                                         // exposition only</span></span>
+<span id="cb11-16"><a href="#cb11-16"></a>  };</span>
+<span id="cb11-17"><a href="#cb11-17"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializer from <span>23.6.5.1
+ <a href="https://wg21.link/ostreambuf.iterator.general">[ostreambuf.iterator.general]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class charT, class traits = char_traits&lt;charT&gt;&gt;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  class ostreambuf_iterator {</span>
+<span id="cb12-4"><a href="#cb12-4"></a>  public:</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    // ...</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="st">-   constexpr ostreambuf_iterator() noexcept = default;</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    </span>
+<span id="cb12-9"><a href="#cb12-9"></a>    // ...</span>
+<span id="cb12-10"><a href="#cb12-10"></a></span>
+<span id="cb12-11"><a href="#cb12-11"></a>  private:</span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="st">-   streambuf_type* sbuf_ <span class="diffdel">= nullptr</span>;    // exposition only</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="va">+   streambuf_type* sbuf_;              // exposition only</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a>  };</span>
+<span id="cb12-15"><a href="#cb12-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Adjust the <code class="sourceCode cpp">iota_view</code> constraints in <span>24.2
+ <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>#include &lt;compare&gt;              // see [compare.syn]</span>
+<span id="cb13-2"><a href="#cb13-2"></a>#include &lt;initializer_list&gt;     // see [initializer.list.syn]</span>
+<span id="cb13-3"><a href="#cb13-3"></a>#include &lt;iterator&gt;             // see [iterator.synopsis]</span>
+<span id="cb13-4"><a href="#cb13-4"></a></span>
+<span id="cb13-5"><a href="#cb13-5"></a>namespace std::ranges {</span>
+<span id="cb13-6"><a href="#cb13-6"></a>  // ...</span>
+<span id="cb13-7"><a href="#cb13-7"></a>  </span>
+<span id="cb13-8"><a href="#cb13-8"></a>  // [range.iota], iota view</span>
+<span id="cb13-9"><a href="#cb13-9"></a>  template&lt;weakly_incrementable W, semiregular Bound = unreachable_sentinel_t&gt;</span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="st">-   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffdel">semiregular</span>&lt;W&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="va">+   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffins">copyable</span>&lt;W&gt;</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>  class iota_view;</span>
+<span id="cb13-13"><a href="#cb13-13"></a></span>
+<span id="cb13-14"><a href="#cb13-14"></a>  template&lt;class W, class Bound&gt;</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    inline constexpr bool enable_borrowed_range&lt;iota_view&lt;W, Bound&gt;&gt; = true;</span>
+<span id="cb13-16"><a href="#cb13-16"></a></span>
+<span id="cb13-17"><a href="#cb13-17"></a>  namespace views { inline constexpr <em>unspecified</em> iota = <em>unspecified</em>; }</span>
+<span id="cb13-18"><a href="#cb13-18"></a></span>
+<span id="cb13-19"><a href="#cb13-19"></a>  // ...  </span>
+<span id="cb13-20"><a href="#cb13-20"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove <code class="sourceCode cpp">default_initializable</code> from the <code class="sourceCode cpp">view</code> concept in <span>24.4.4
+ <a href="https://wg21.link/range.view">[range.view]</a></span>/1:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>template&lt;class T&gt;</span>
+<span id="cb14-2"><a href="#cb14-2"></a>  concept view =</span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="st">-   range&lt;T&gt; &amp;&amp; movable&lt;T&gt; &amp;&amp; <span class="diffdel">default_initializable&lt;T&gt; &amp;&amp;</span> enable_view&lt;T&gt;;</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="va">+   range&lt;T&gt; &amp;&amp; movable&lt;T&gt; &amp;&amp; enable_view&lt;T&gt;;</span></span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.5.4.1
+ <a href="https://wg21.link/range.subrange.general">[range.subrange.general]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>namespace std::ranges {</span>
+<span id="cb15-2"><a href="#cb15-2"></a>  // ...</span>
+<span id="cb15-3"><a href="#cb15-3"></a>  </span>
+<span id="cb15-4"><a href="#cb15-4"></a>  template&lt;input_or_output_iterator I, sentinel_for&lt;I&gt; S = I, subrange_kind K =</span>
+<span id="cb15-5"><a href="#cb15-5"></a>      sized_sentinel_for&lt;S, I&gt; ? subrange_kind::sized : subrange_kind::unsized&gt;</span>
+<span id="cb15-6"><a href="#cb15-6"></a>    requires (K == subrange_kind::sized || !sized_sentinel_for&lt;S, I&gt;)</span>
+<span id="cb15-7"><a href="#cb15-7"></a>  class subrange : public view_interface&lt;subrange&lt;I, S, K&gt;&gt; {</span>
+<span id="cb15-8"><a href="#cb15-8"></a>  private:</span>
+<span id="cb15-9"><a href="#cb15-9"></a>    static constexpr bool StoreSize =                           // exposition only</span>
+<span id="cb15-10"><a href="#cb15-10"></a>      K == subrange_kind::sized &amp;&amp; !sized_sentinel_for&lt;S, I&gt;;</span>
+<span id="cb15-11"><a href="#cb15-11"></a>    I begin_ = I();                                             // exposition only</span>
+<span id="cb15-12"><a href="#cb15-12"></a>    S end_ = S();                                               // exposition only</span>
+<span id="cb15-13"><a href="#cb15-13"></a>    make-unsigned-like-t&lt;iter_difference_t&lt;I&gt;&gt; size_ = 0;       // exposition only; present only</span>
+<span id="cb15-14"><a href="#cb15-14"></a>                                                                // when StoreSize is true</span>
+<span id="cb15-15"><a href="#cb15-15"></a>  public:</span>
+<span id="cb15-16"><a href="#cb15-16"></a><span class="st">-   subrange() = default;</span></span>
+<span id="cb15-17"><a href="#cb15-17"></a><span class="va">+   subrange() <span class="diffins">requires default_initializable&lt;I&gt;</span> = default;</span></span>
+<span id="cb15-18"><a href="#cb15-18"></a>  </span>
+<span id="cb15-19"><a href="#cb15-19"></a>    // ...</span>
+<span id="cb15-20"><a href="#cb15-20"></a>  };</span>
+<span id="cb15-21"><a href="#cb15-21"></a>  </span>
+<span id="cb15-22"><a href="#cb15-22"></a>  // ...</span>
+<span id="cb15-23"><a href="#cb15-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em> in <span>24.6.3.2
+ <a href="https://wg21.link/range.single.view">[range.single.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a>namespace std::ranges {</span>
+<span id="cb16-2"><a href="#cb16-2"></a>  template&lt;copy_constructible T&gt;</span>
+<span id="cb16-3"><a href="#cb16-3"></a>    requires is_object_v&lt;T&gt;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>  class single_view : public view_interface&lt;single_view&lt;T&gt;&gt; {</span>
+<span id="cb16-5"><a href="#cb16-5"></a>  private:</span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="st">-   <span class="diffdel"><em>semiregular-box</em></span>&lt;T&gt; value_;   // exposition only (see [range.semi.wrap])</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="va">+   <span class="diffins"><em>copyable-box</em></span>&lt;T&gt; value_;      // exposition only (see [range.copy.wrap])</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>  public:</span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="st">-   single_view() = default;</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="va">+   single_view() <span class="diffins">requires default_initializable&lt;T&gt;</span> = default;</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>    </span>
+<span id="cb16-12"><a href="#cb16-12"></a>    // ...</span>
+<span id="cb16-13"><a href="#cb16-13"></a>  };</span>
+<span id="cb16-14"><a href="#cb16-14"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change the synopsis in <span>24.6.4.2
+ <a href="https://wg21.link/range.iota.view">[range.iota.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a>  template&lt;weakly_incrementable W, semiregular Bound = unreachable_sentinel_t&gt;</span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="st">-   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffdel">semiregular</span>&lt;W&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="va">+   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffins">copyable</span>&lt;W&gt;</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>  class iota_view : public view_interface&lt;iota_view&lt;W, Bound&gt;&gt; {</span>
+<span id="cb17-5"><a href="#cb17-5"></a>  private:</span>
+<span id="cb17-6"><a href="#cb17-6"></a>    // [range.iota.iterator], class iota_view​::​iterator</span>
+<span id="cb17-7"><a href="#cb17-7"></a>    struct iterator;            // exposition only</span>
+<span id="cb17-8"><a href="#cb17-8"></a>    // [range.iota.sentinel], class iota_view​::​sentinel</span>
+<span id="cb17-9"><a href="#cb17-9"></a>    struct sentinel;            // exposition only</span>
+<span id="cb17-10"><a href="#cb17-10"></a>    W value_ = W();             // exposition only</span>
+<span id="cb17-11"><a href="#cb17-11"></a>    Bound bound_ = Bound();     // exposition only</span>
+<span id="cb17-12"><a href="#cb17-12"></a>  public:</span>
+<span id="cb17-13"><a href="#cb17-13"></a><span class="st">-   iota_view() = default;</span></span>
+<span id="cb17-14"><a href="#cb17-14"></a><span class="va">+   iota_view() <span class="diffins">requires default_initializable&lt;W&gt;</span> = default;</span></span>
+<span id="cb17-15"><a href="#cb17-15"></a>    constexpr explicit iota_view(W value);</span>
+<span id="cb17-16"><a href="#cb17-16"></a>    constexpr iota_view(type_identity_t&lt;W&gt; value,</span>
+<span id="cb17-17"><a href="#cb17-17"></a>                        type_identity_t&lt;Bound&gt; bound);</span>
+<span id="cb17-18"><a href="#cb17-18"></a>    constexpr iota_view(iterator first, sentinel last) : iota_view(*first, last.bound_) {}</span>
+<span id="cb17-19"><a href="#cb17-19"></a></span>
+<span id="cb17-20"><a href="#cb17-20"></a>    constexpr iterator begin() const;</span>
+<span id="cb17-21"><a href="#cb17-21"></a>    constexpr auto end() const;</span>
+<span id="cb17-22"><a href="#cb17-22"></a>    constexpr iterator end() const requires same_as&lt;W, Bound&gt;;</span>
+<span id="cb17-23"><a href="#cb17-23"></a></span>
+<span id="cb17-24"><a href="#cb17-24"></a>    constexpr auto size() const requires see below;</span>
+<span id="cb17-25"><a href="#cb17-25"></a>  };</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and adjust the constraint in <span>24.6.4.3
+ <a href="https://wg21.link/range.iota.iterator">[range.iota.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1"></a>namespace std::ranges {</span>
+<span id="cb18-2"><a href="#cb18-2"></a>  template&lt;weakly_incrementable W, semiregular Bound&gt;</span>
+<span id="cb18-3"><a href="#cb18-3"></a><span class="st">-   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffdel">semiregular</span>&lt;W&gt;</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a><span class="va">+   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffins">copyable</span>&lt;W&gt;</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>  struct iota_view&lt;W, Bound&gt;::iterator {</span>
+<span id="cb18-6"><a href="#cb18-6"></a>  private:</span>
+<span id="cb18-7"><a href="#cb18-7"></a>    W value_ = W();             // exposition only</span>
+<span id="cb18-8"><a href="#cb18-8"></a>  public:</span>
+<span id="cb18-9"><a href="#cb18-9"></a>    using iterator_concept = see below;</span>
+<span id="cb18-10"><a href="#cb18-10"></a>    using iterator_category = input_iterator_tag;       // present only if W models incrementable</span>
+<span id="cb18-11"><a href="#cb18-11"></a>    using value_type = W;</span>
+<span id="cb18-12"><a href="#cb18-12"></a>    using difference_type = IOTA-DIFF-T(W);</span>
+<span id="cb18-13"><a href="#cb18-13"></a></span>
+<span id="cb18-14"><a href="#cb18-14"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb18-15"><a href="#cb18-15"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;W&gt;</span> = default;</span></span>
+<span id="cb18-16"><a href="#cb18-16"></a>    </span>
+<span id="cb18-17"><a href="#cb18-17"></a>    // ...</span>
+<span id="cb18-18"><a href="#cb18-18"></a>  };</span>
+<span id="cb18-19"><a href="#cb18-19"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Adjust the constraint in <span>24.6.4.4
+ <a href="https://wg21.link/range.iota.sentinel">[range.iota.sentinel]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1"></a>namespace std::ranges {</span>
+<span id="cb19-2"><a href="#cb19-2"></a>  template&lt;weakly_incrementable W, semiregular Bound&gt;</span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="st">-   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffdel">semiregular</span>&lt;W&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="va">+   requires weakly-equality-comparable-with&lt;W, Bound&gt; &amp;&amp; <span class="diffins">copyable</span>&lt;W&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a>  struct iota_view&lt;W, Bound&gt;::sentinel {</span>
+<span id="cb19-6"><a href="#cb19-6"></a>    // ...</span>
+<span id="cb19-7"><a href="#cb19-7"></a>  };</span>
+<span id="cb19-8"><a href="#cb19-8"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializers, as well as the <code class="sourceCode cpp"><span class="cf">if</span></code> from <span>24.6.5.2
+ <a href="https://wg21.link/range.istream.view">[range.istream.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a>namespace std::ranges {</span>
+<span id="cb20-2"><a href="#cb20-2"></a>  // ...</span>
+<span id="cb20-3"><a href="#cb20-3"></a></span>
+<span id="cb20-4"><a href="#cb20-4"></a>  template&lt;movable Val, class CharT, class Traits&gt;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>    requires default_initializable&lt;Val&gt; &amp;&amp;</span>
+<span id="cb20-6"><a href="#cb20-6"></a>             stream-extractable&lt;Val, CharT, Traits&gt;</span>
+<span id="cb20-7"><a href="#cb20-7"></a>  class basic_istream_view : public view_interface&lt;basic_istream_view&lt;Val, CharT, Traits&gt;&gt; {</span>
+<span id="cb20-8"><a href="#cb20-8"></a>  public:</span>
+<span id="cb20-9"><a href="#cb20-9"></a><span class="st">-   basic_istream_view() = default;</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>    constexpr explicit basic_istream_view(basic_istream&lt;CharT, Traits&gt;&amp; stream);</span>
+<span id="cb20-11"><a href="#cb20-11"></a></span>
+<span id="cb20-12"><a href="#cb20-12"></a>    constexpr auto begin()</span>
+<span id="cb20-13"><a href="#cb20-13"></a>    {</span>
+<span id="cb20-14"><a href="#cb20-14"></a><span class="st">-     if (<em>stream_</em>) {</span></span>
+<span id="cb20-15"><a href="#cb20-15"></a>        *<em>stream_</em> &gt;&gt; <em>value_</em>;</span>
+<span id="cb20-16"><a href="#cb20-16"></a><span class="st">-     }</span></span>
+<span id="cb20-17"><a href="#cb20-17"></a>      return iterator{*this};</span>
+<span id="cb20-18"><a href="#cb20-18"></a>    }</span>
+<span id="cb20-19"><a href="#cb20-19"></a></span>
+<span id="cb20-20"><a href="#cb20-20"></a>    constexpr default_sentinel_t end() const noexcept;</span>
+<span id="cb20-21"><a href="#cb20-21"></a></span>
+<span id="cb20-22"><a href="#cb20-22"></a>  private:</span>
+<span id="cb20-23"><a href="#cb20-23"></a>    struct iterator;                                    // exposition only</span>
+<span id="cb20-24"><a href="#cb20-24"></a><span class="st">-   basic_istream&lt;CharT, Traits&gt;* <em>stream_</em> <span class="diffdel">= nullptr</span>;    // exposition only</span></span>
+<span id="cb20-25"><a href="#cb20-25"></a><span class="st">-   Val <em>value_</em> <span class="diffdel">= Val()</span>;                                 // exposition only</span></span>
+<span id="cb20-26"><a href="#cb20-26"></a><span class="va">+   basic_istream&lt;CharT, Traits&gt;* <em>stream_</em>;              // exposition only</span></span>
+<span id="cb20-27"><a href="#cb20-27"></a><span class="va">+   Val <em>value_</em>;                                         // exposition only</span></span>
+<span id="cb20-28"><a href="#cb20-28"></a>  };</span>
+<span id="cb20-29"><a href="#cb20-29"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializer from <span>24.6.5.3
+ <a href="https://wg21.link/range.istream.iterator">[range.istream.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1"></a>namespace std::ranges {</span>
+<span id="cb21-2"><a href="#cb21-2"></a>  template&lt;movable Val, class CharT, class Traits&gt;</span>
+<span id="cb21-3"><a href="#cb21-3"></a>    requires default_initializable&lt;Val&gt; &amp;&amp;</span>
+<span id="cb21-4"><a href="#cb21-4"></a>             stream-extractable&lt;Val, CharT, Traits&gt;</span>
+<span id="cb21-5"><a href="#cb21-5"></a>  class basic_istream_view&lt;Val, CharT, Traits&gt;::iterator {      // exposition only</span>
+<span id="cb21-6"><a href="#cb21-6"></a>  public:</span>
+<span id="cb21-7"><a href="#cb21-7"></a>    // ...</span>
+<span id="cb21-8"><a href="#cb21-8"></a></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a>    </span>
+<span id="cb21-11"><a href="#cb21-11"></a>    // ...</span>
+<span id="cb21-12"><a href="#cb21-12"></a></span>
+<span id="cb21-13"><a href="#cb21-13"></a>  private:</span>
+<span id="cb21-14"><a href="#cb21-14"></a><span class="st">-   basic_istream_view* parent_ <span class="diffdel">= nullptr</span>;                      // exposition only</span></span>
+<span id="cb21-15"><a href="#cb21-15"></a><span class="va">+   basic_istream_view* parent_;                                // exposition only</span></span>
+<span id="cb21-16"><a href="#cb21-16"></a>  };</span>
+<span id="cb21-17"><a href="#cb21-17"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove having to handle the case where <code class="sourceCode cpp">parent_ <span class="op">==</span> <span class="kw">nullptr</span></code> from all the iterator operations in <span>24.6.5.3
+ <a href="https://wg21.link/range.istream.iterator">[range.istream.iterator]</a></span> as this state is no longer representable:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1"></a>iterator&amp; operator++();</span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> Preconditions: <code class="sourceCode default">parent_-&gt;stream_ != nullptr</code> is <code class="sourceCode default">true</code>.</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> Effects: Equivalent to:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1"></a>*<em>parent_</em>-&gt;<em>stream_</em> &gt;&gt; <em>parent_</em>-&gt;<em>value_</em>;</span>
+<span id="cb23-2"><a href="#cb23-2"></a>return *this;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1"></a>void operator++(int);</span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Preconditions</em>: <code class="sourceCode default">parent_-&gt;stream_ != nullptr</code> is <code class="sourceCode default">true</code>.</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="op">++*</span><span class="kw">this</span></code>.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>Val&amp; operator*() const;</span></code></pre></div>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Preconditions</em>: <code class="sourceCode default"><em>parent_</em>-&gt;<em>stream_</em> != nullptr</code> is <code class="sourceCode default">true</code>.</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">7</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <em>parent_</em><span class="op">-&gt;</span><em>value_</em></code>;</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>friend bool operator==(const iterator&amp; x, default_sentinel_t);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">8</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <span class="diffdel">x.parent_ == nullptr ||</span> <span class="op">!*</span>x<span class="op">.</span>parent_<span class="op">-&gt;</span>stream_</code>;</p>
+</blockquote>
+<p>Replace the subclause [range.semi.wrap] (all the uses of <code class="sourceCode cpp">semiregular<span class="op">-</span>box<span class="op">&lt;</span>T<span class="op">&gt;</span></code> are removed with this paper) with a new subclause “Copyable wrapper” with stable name [range.copy.wrap]. The following is presented as a diff against the current <span>24.7.3
+ <a href="https://wg21.link/range.semi.wrap">[range.semi.wrap]</a></span>, and also resolves <span class="citation" data-cites="LWG3479">[<a href="#ref-LWG3479" role="doc-biblioref">LWG3479</a>]</span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> Many types in this subclause are specified in terms of an exposition-only class template <span class="rm" style="color: #bf0303"><del><em><span><code class="sourceCode default">semiregular-box</code></span></em></del></span> <span class="addu"><em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em></span>. <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>semiregular-box</em>&lt;T&gt;</code></span></del></span> <span class="addu"><code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code></span> behaves exactly like <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> with the following differences:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>semiregular-box</em>&lt;T&gt;</code></span></del></span> <span class="addu"><code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code></span> constrains its type parameter <code class="sourceCode cpp">T</code> with <code class="sourceCode cpp">copy_constructible<span class="op">&lt;</span>T<span class="op">&gt;</span></code> &amp;&amp; <code class="sourceCode cpp">is_object_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> <span class="rm" style="color: #bf0303"><del>If T models default_initializable, the</del></span> <span class="addu">The</span> default constructor of <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>semiregular-box</em>&lt;T&gt;</code></span></del></span> <span class="addu"><code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code></span> is equivalent to:</li>
+</ul>
+<div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1"></a><span class="st">- constexpr <em>semiregular-box</em>() noexcept(is_nothrow_default_constructible_v&lt;T&gt;)</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="st">-    : <em>semiregular-box</em>{in_place}</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a><span class="va">+ constexpr <em>copyable-box</em>() noexcept(is_nothrow_default_constructible_v&lt;T&gt;) <span class="diffins">requires default_initializable&lt;T&gt;</span> </span></span>
+<span id="cb27-4"><a href="#cb27-4"></a><span class="va">+    : <em>copyable-box</em>{in_place}</span></span>
+<span id="cb27-5"><a href="#cb27-5"></a>{ }</span></code></pre></div>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> If <code class="sourceCode cpp">copyable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is not modeled, the copy assignment operator is equivalent to:</li>
+</ul>
+<div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1"></a><span class="st">- <em>semiregular-box</em>&amp; operator=(const <em>semiregular-box</em>&amp; that)</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="va">+ <em>copyable-box</em>&amp; operator=(const <em>copyable-box</em>&amp; that)</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>    noexcept(is_nothrow_copy_constructible_v&lt;T&gt;)</span>
+<span id="cb28-4"><a href="#cb28-4"></a>  {</span>
+<span id="cb28-5"><a href="#cb28-5"></a><span class="va">+   if (this != addressof(that)) {  </span></span>
+<span id="cb28-6"><a href="#cb28-6"></a>      if (that) emplace(*that);</span>
+<span id="cb28-7"><a href="#cb28-7"></a>      else reset();</span>
+<span id="cb28-8"><a href="#cb28-8"></a><span class="va">+   }</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a>    return *this;</span>
+<span id="cb28-10"><a href="#cb28-10"></a>  }</span></code></pre></div>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> If <code class="sourceCode cpp">movable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is not modeled, the move assignment operator is equivalent to:</li>
+</ul>
+<div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb29-1"><a href="#cb29-1"></a><span class="st">- <em>semiregular-box</em>&amp; operator=(<em>semiregular-box</em>&amp;&amp; that)</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="va">+ <em>copyable-box</em>&amp; operator=(<em>copyable-box</em>&amp;&amp; that)</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a>    noexcept(is_nothrow_move_constructible_v&lt;T&gt;)</span>
+<span id="cb29-4"><a href="#cb29-4"></a>  {</span>
+<span id="cb29-5"><a href="#cb29-5"></a><span class="va">+   if (this != addressof(that)) {</span></span>
+<span id="cb29-6"><a href="#cb29-6"></a>      if (that) emplace(std::move(*that));</span>
+<span id="cb29-7"><a href="#cb29-7"></a>      else reset();</span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="va">+   }</span></span>
+<span id="cb29-9"><a href="#cb29-9"></a>    return *this;</span>
+<span id="cb29-10"><a href="#cb29-10"></a>  }</span></code></pre></div>
+</div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Recommended Practice</em>: <code class="sourceCode cpp"><em>copyable-box</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> should store only a <code class="sourceCode cpp">T</code> if either <code class="sourceCode cpp">T</code> models <code class="sourceCode cpp">copyable</code> or <code class="sourceCode cpp">is_nothrow_move_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> is_nothrow_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+</div>
+</blockquote>
+<p>Remove the default constructor and default member initializer from <span>24.7.4.2
+ <a href="https://wg21.link/range.ref.view">[range.ref.view]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp">ref_view</code> is a <code class="sourceCode cpp">view</code> of the elements of some other <code class="sourceCode cpp">range</code>.</p>
+<div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1"></a>namespace std::ranges {</span>
+<span id="cb30-2"><a href="#cb30-2"></a>  template&lt;range R&gt;</span>
+<span id="cb30-3"><a href="#cb30-3"></a>    requires is_object_v&lt;R&gt;</span>
+<span id="cb30-4"><a href="#cb30-4"></a>  class ref_view : public view_interface&lt;ref_view&lt;R&gt;&gt; {</span>
+<span id="cb30-5"><a href="#cb30-5"></a>  private:</span>
+<span id="cb30-6"><a href="#cb30-6"></a><span class="st">-   R* r_ <span class="diffdel">= nullptr</span>;            // exposition only</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a><span class="va">+   R* r_;                      // exposition only</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a>  public:</span>
+<span id="cb30-9"><a href="#cb30-9"></a><span class="st">-   constexpr ref_view() noexcept = default;</span></span>
+<span id="cb30-10"><a href="#cb30-10"></a>    </span>
+<span id="cb30-11"><a href="#cb30-11"></a>    // ...</span>
+<span id="cb30-12"><a href="#cb30-12"></a>  };</span>
+<span id="cb30-13"><a href="#cb30-13"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em> in <span>24.7.5.2
+ <a href="https://wg21.link/range.filter.view">[range.filter.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb31-1"><a href="#cb31-1"></a>namespace std::ranges {</span>
+<span id="cb31-2"><a href="#cb31-2"></a>  template&lt;input_range V, indirect_unary_predicate&lt;iterator_t&lt;V&gt;&gt; Pred&gt;</span>
+<span id="cb31-3"><a href="#cb31-3"></a>    requires view&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt;</span>
+<span id="cb31-4"><a href="#cb31-4"></a>  class filter_view : public view_interface&lt;filter_view&lt;V, Pred&gt;&gt; {</span>
+<span id="cb31-5"><a href="#cb31-5"></a>  private:</span>
+<span id="cb31-6"><a href="#cb31-6"></a>    V base_ = V();                // exposition only</span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="st">-   <span class="diffdel"><em>semiregular-box</em></span>&lt;Pred&gt; pred_;  // exposition only</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a><span class="va">+   <span class="diffins"><em>copyable-box</em></span>&lt;Pred&gt; pred_;     // exposition only</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a></span>
+<span id="cb31-10"><a href="#cb31-10"></a>    // [range.filter.iterator], class filter_view​::​iterator</span>
+<span id="cb31-11"><a href="#cb31-11"></a>    class iterator;                     // exposition only</span>
+<span id="cb31-12"><a href="#cb31-12"></a>    // [range.filter.sentinel], class filter_view​::​sentinel</span>
+<span id="cb31-13"><a href="#cb31-13"></a>    class sentinel;                     // exposition only</span>
+<span id="cb31-14"><a href="#cb31-14"></a></span>
+<span id="cb31-15"><a href="#cb31-15"></a>  public:</span>
+<span id="cb31-16"><a href="#cb31-16"></a><span class="st">-   filter_view() = default;</span></span>
+<span id="cb31-17"><a href="#cb31-17"></a><span class="va">+   filter_view() <span class="diffins">requires default_initializable&lt;V&gt; &amp;&amp; default_initializable&lt;Pred&gt;</span> = default;</span></span>
+<span id="cb31-18"><a href="#cb31-18"></a>    constexpr filter_view(V base, Pred pred);</span>
+<span id="cb31-19"><a href="#cb31-19"></a></span>
+<span id="cb31-20"><a href="#cb31-20"></a>    // ...</span>
+<span id="cb31-21"><a href="#cb31-21"></a>  };</span>
+<span id="cb31-22"><a href="#cb31-22"></a></span>
+<span id="cb31-23"><a href="#cb31-23"></a>  // ...</span>
+<span id="cb31-24"><a href="#cb31-24"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.5.3
+ <a href="https://wg21.link/range.filter.iterator">[range.filter.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1"></a>namespace std::ranges {</span>
+<span id="cb32-2"><a href="#cb32-2"></a>  template&lt;input_range V, indirect_unary_predicate&lt;iterator_t&lt;V&gt;&gt; Pred&gt;</span>
+<span id="cb32-3"><a href="#cb32-3"></a>    requires view&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt;</span>
+<span id="cb32-4"><a href="#cb32-4"></a>  class filter_view&lt;V, Pred&gt;::iterator {</span>
+<span id="cb32-5"><a href="#cb32-5"></a>  private:</span>
+<span id="cb32-6"><a href="#cb32-6"></a>    iterator_t&lt;V&gt; current_ = iterator_t&lt;V&gt;();   // exposition only</span>
+<span id="cb32-7"><a href="#cb32-7"></a>    filter_view* parent_ = nullptr;             // exposition only</span>
+<span id="cb32-8"><a href="#cb32-8"></a>  public:</span>
+<span id="cb32-9"><a href="#cb32-9"></a>    // ...</span>
+<span id="cb32-10"><a href="#cb32-10"></a></span>
+<span id="cb32-11"><a href="#cb32-11"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb32-12"><a href="#cb32-12"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;iterator_t&lt;V&gt;&gt;</span> = default;</span></span>
+<span id="cb32-13"><a href="#cb32-13"></a>    </span>
+<span id="cb32-14"><a href="#cb32-14"></a>    // ...</span>
+<span id="cb32-15"><a href="#cb32-15"></a>  };</span>
+<span id="cb32-16"><a href="#cb32-16"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em> in <span>24.7.6.2
+ <a href="https://wg21.link/range.transform.view">[range.transform.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb33-1"><a href="#cb33-1"></a>namespace std::ranges {</span>
+<span id="cb33-2"><a href="#cb33-2"></a>  template&lt;input_range V, copy_constructible F&gt;</span>
+<span id="cb33-3"><a href="#cb33-3"></a>    requires view&lt;V&gt; &amp;&amp; is_object_v&lt;F&gt; &amp;&amp;</span>
+<span id="cb33-4"><a href="#cb33-4"></a>             regular_invocable&lt;F&amp;, range_reference_t&lt;V&gt;&gt; &amp;&amp;</span>
+<span id="cb33-5"><a href="#cb33-5"></a>             can-reference&lt;invoke_result_t&lt;F&amp;, range_reference_t&lt;V&gt;&gt;&gt;</span>
+<span id="cb33-6"><a href="#cb33-6"></a>  class transform_view : public view_interface&lt;transform_view&lt;V, F&gt;&gt; {</span>
+<span id="cb33-7"><a href="#cb33-7"></a>  private:</span>
+<span id="cb33-8"><a href="#cb33-8"></a>    // [range.transform.iterator], class template transform_view​::​iterator</span>
+<span id="cb33-9"><a href="#cb33-9"></a>    template&lt;bool&gt; struct iterator;             // exposition only</span>
+<span id="cb33-10"><a href="#cb33-10"></a>    // [range.transform.sentinel], class template transform_view​::​sentinel</span>
+<span id="cb33-11"><a href="#cb33-11"></a>    template&lt;bool&gt; struct sentinel;             // exposition only</span>
+<span id="cb33-12"><a href="#cb33-12"></a></span>
+<span id="cb33-13"><a href="#cb33-13"></a>    V base_ = V();            // exposition only</span>
+<span id="cb33-14"><a href="#cb33-14"></a><span class="st">-   <span class="diffdel"><em>semiregular-box</em></span>&lt;F&gt; fun_;  // exposition only</span></span>
+<span id="cb33-15"><a href="#cb33-15"></a><span class="va">+   <span class="diffins"><em>copyable-box</em></span>&lt;F&gt; fun_;     // exposition only</span></span>
+<span id="cb33-16"><a href="#cb33-16"></a></span>
+<span id="cb33-17"><a href="#cb33-17"></a>  public:</span>
+<span id="cb33-18"><a href="#cb33-18"></a><span class="st">-   transform_view() = default;</span></span>
+<span id="cb33-19"><a href="#cb33-19"></a><span class="va">+   transform_view() <span class="diffins">requires default_initializable&lt;V&gt; &amp;&amp; default_initializable&lt;F&gt;</span> = default;</span></span>
+<span id="cb33-20"><a href="#cb33-20"></a>    </span>
+<span id="cb33-21"><a href="#cb33-21"></a>    // ...</span>
+<span id="cb33-22"><a href="#cb33-22"></a>  };</span>
+<span id="cb33-23"><a href="#cb33-23"></a>  </span>
+<span id="cb33-24"><a href="#cb33-24"></a>  // ...</span>
+<span id="cb33-25"><a href="#cb33-25"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.6.3
+ <a href="https://wg21.link/range.transform.iterator">[range.transform.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb34-1"><a href="#cb34-1"></a>namespace std::ranges {</span>
+<span id="cb34-2"><a href="#cb34-2"></a>  template&lt;input_range V, copy_constructible F&gt;</span>
+<span id="cb34-3"><a href="#cb34-3"></a>    requires view&lt;V&gt; &amp;&amp; is_object_v&lt;F&gt; &amp;&amp;</span>
+<span id="cb34-4"><a href="#cb34-4"></a>             regular_invocable&lt;F&amp;, range_reference_t&lt;V&gt;&gt; &amp;&amp;</span>
+<span id="cb34-5"><a href="#cb34-5"></a>             can-reference&lt;invoke_result_t&lt;F&amp;, range_reference_t&lt;V&gt;&gt;&gt;</span>
+<span id="cb34-6"><a href="#cb34-6"></a>  template&lt;bool Const&gt;</span>
+<span id="cb34-7"><a href="#cb34-7"></a>  class transform_view&lt;V, F&gt;::iterator {</span>
+<span id="cb34-8"><a href="#cb34-8"></a>  private:</span>
+<span id="cb34-9"><a href="#cb34-9"></a>    using Parent = <em>maybe-const</em>&lt;Const, transform_view&gt;;          // exposition only</span>
+<span id="cb34-10"><a href="#cb34-10"></a>    using Base = <em>maybe-const</em>&lt;Const, V&gt;;                         // exposition only</span>
+<span id="cb34-11"><a href="#cb34-11"></a>    iterator_t&lt;Base&gt; current_ = iterator_t&lt;Base&gt;();             // exposition only</span>
+<span id="cb34-12"><a href="#cb34-12"></a>    Parent* parent_ = nullptr;                                  // exposition only</span>
+<span id="cb34-13"><a href="#cb34-13"></a>  public:</span>
+<span id="cb34-14"><a href="#cb34-14"></a>    // ...</span>
+<span id="cb34-15"><a href="#cb34-15"></a></span>
+<span id="cb34-16"><a href="#cb34-16"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb34-17"><a href="#cb34-17"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;iterator_t&lt;Base&gt;&gt;</span> = default;</span></span>
+<span id="cb34-18"><a href="#cb34-18"></a>    </span>
+<span id="cb34-19"><a href="#cb34-19"></a>    // ...</span>
+<span id="cb34-20"><a href="#cb34-20"></a>  };</span>
+<span id="cb34-21"><a href="#cb34-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.7.2
+ <a href="https://wg21.link/range.take.view">[range.take.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb35-1"><a href="#cb35-1"></a>namespace std::ranges {</span>
+<span id="cb35-2"><a href="#cb35-2"></a>  template&lt;view V&gt;</span>
+<span id="cb35-3"><a href="#cb35-3"></a>  class take_view : public view_interface&lt;take_view&lt;V&gt;&gt; {</span>
+<span id="cb35-4"><a href="#cb35-4"></a>  private:</span>
+<span id="cb35-5"><a href="#cb35-5"></a>    V base_ = V();                                      // exposition only</span>
+<span id="cb35-6"><a href="#cb35-6"></a>    range_difference_t&lt;V&gt; count_ = 0;                   // exposition only</span>
+<span id="cb35-7"><a href="#cb35-7"></a>    // [range.take.sentinel], class template take_view​::​sentinel</span>
+<span id="cb35-8"><a href="#cb35-8"></a>    template&lt;bool&gt; struct sentinel;                     // exposition only</span>
+<span id="cb35-9"><a href="#cb35-9"></a>  public:</span>
+<span id="cb35-10"><a href="#cb35-10"></a><span class="st">-   take_view() = default;</span></span>
+<span id="cb35-11"><a href="#cb35-11"></a><span class="va">+   take_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>    </span>
+<span id="cb35-13"><a href="#cb35-13"></a>    // ...</span>
+<span id="cb35-14"><a href="#cb35-14"></a>  };</span>
+<span id="cb35-15"><a href="#cb35-15"></a>  </span>
+<span id="cb35-16"><a href="#cb35-16"></a>  // ...</span>
+<span id="cb35-17"><a href="#cb35-17"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em> in <span>24.7.8.2
+ <a href="https://wg21.link/range.take.while.view">[range.take.while.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb36-1"><a href="#cb36-1"></a>namespace std::ranges {</span>
+<span id="cb36-2"><a href="#cb36-2"></a>  template&lt;view V, class Pred&gt;</span>
+<span id="cb36-3"><a href="#cb36-3"></a>    requires input_range&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt; &amp;&amp;</span>
+<span id="cb36-4"><a href="#cb36-4"></a>             indirect_unary_predicate&lt;const Pred, iterator_t&lt;V&gt;&gt;</span>
+<span id="cb36-5"><a href="#cb36-5"></a>  class take_while_view : public view_interface&lt;take_while_view&lt;V, Pred&gt;&gt; {</span>
+<span id="cb36-6"><a href="#cb36-6"></a>    // [range.take.while.sentinel], class template take_while_view​::​sentinel</span>
+<span id="cb36-7"><a href="#cb36-7"></a>    template&lt;bool&gt; class sentinel;                      // exposition only</span>
+<span id="cb36-8"><a href="#cb36-8"></a></span>
+<span id="cb36-9"><a href="#cb36-9"></a>    V base_ = V();                // exposition only</span>
+<span id="cb36-10"><a href="#cb36-10"></a><span class="st">-   <span class="diffdel"><em>semiregular-box</em></span>&lt;Pred&gt; pred_;  // exposition only</span></span>
+<span id="cb36-11"><a href="#cb36-11"></a><span class="va">+   <span class="diffins"><em>copyable-box</em></span>&lt;Pred&gt; pred_;     // exposition only</span></span>
+<span id="cb36-12"><a href="#cb36-12"></a></span>
+<span id="cb36-13"><a href="#cb36-13"></a>  public:</span>
+<span id="cb36-14"><a href="#cb36-14"></a><span class="st">-   take_while_view() = default;</span></span>
+<span id="cb36-15"><a href="#cb36-15"></a><span class="va">+   take_while_view() <span class="diffins">requires default_initializable&lt;V&gt; &amp;&amp; default_initializable&lt;Pred&gt;</span> = default;</span></span>
+<span id="cb36-16"><a href="#cb36-16"></a>    </span>
+<span id="cb36-17"><a href="#cb36-17"></a>    // ...</span>
+<span id="cb36-18"><a href="#cb36-18"></a>  };</span>
+<span id="cb36-19"><a href="#cb36-19"></a>  </span>
+<span id="cb36-20"><a href="#cb36-20"></a>  // ...</span>
+<span id="cb36-21"><a href="#cb36-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.9.2
+ <a href="https://wg21.link/range.drop.view">[range.drop.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb37-1"><a href="#cb37-1"></a>namespace std::ranges {</span>
+<span id="cb37-2"><a href="#cb37-2"></a>  template&lt;view V&gt;</span>
+<span id="cb37-3"><a href="#cb37-3"></a>  class drop_view : public view_interface&lt;drop_view&lt;V&gt;&gt; {</span>
+<span id="cb37-4"><a href="#cb37-4"></a>  public:</span>
+<span id="cb37-5"><a href="#cb37-5"></a><span class="st">-   drop_view() = default;</span></span>
+<span id="cb37-6"><a href="#cb37-6"></a><span class="va">+   drop_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb37-7"><a href="#cb37-7"></a>    </span>
+<span id="cb37-8"><a href="#cb37-8"></a>    // ...</span>
+<span id="cb37-9"><a href="#cb37-9"></a>  private:</span>
+<span id="cb37-10"><a href="#cb37-10"></a>    V base_ = V();                              // exposition only</span>
+<span id="cb37-11"><a href="#cb37-11"></a>    range_difference_t&lt;V&gt; count_ = 0;           // exposition only</span>
+<span id="cb37-12"><a href="#cb37-12"></a>  };</span>
+<span id="cb37-13"><a href="#cb37-13"></a></span>
+<span id="cb37-14"><a href="#cb37-14"></a>  // ...</span>
+<span id="cb37-15"><a href="#cb37-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <em><code class="sourceCode cpp">copyable<span class="op">-</span>box</code></em> in <span>24.7.10.2
+ <a href="https://wg21.link/range.drop.while.view">[range.drop.while.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb38-1"><a href="#cb38-1"></a>namespace std::ranges {</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  template&lt;view V, class Pred&gt;</span>
+<span id="cb38-3"><a href="#cb38-3"></a>    requires input_range&lt;V&gt; &amp;&amp; is_object_v&lt;Pred&gt; &amp;&amp;</span>
+<span id="cb38-4"><a href="#cb38-4"></a>             indirect_unary_predicate&lt;const Pred, iterator_t&lt;V&gt;&gt;</span>
+<span id="cb38-5"><a href="#cb38-5"></a>  class drop_while_view : public view_interface&lt;drop_while_view&lt;V, Pred&gt;&gt; {</span>
+<span id="cb38-6"><a href="#cb38-6"></a>  public:</span>
+<span id="cb38-7"><a href="#cb38-7"></a><span class="st">-   drop_while_view() = default;</span></span>
+<span id="cb38-8"><a href="#cb38-8"></a><span class="va">+   drop_while_view() <span class="diffins">requires default_initializable&lt;V&gt; &amp;&amp; default_initializable&lt;Pred&gt;</span> = default;</span></span>
+<span id="cb38-9"><a href="#cb38-9"></a>    </span>
+<span id="cb38-10"><a href="#cb38-10"></a>    // ...</span>
+<span id="cb38-11"><a href="#cb38-11"></a></span>
+<span id="cb38-12"><a href="#cb38-12"></a>  private:</span>
+<span id="cb38-13"><a href="#cb38-13"></a>    V base_ = V();                // exposition only</span>
+<span id="cb38-14"><a href="#cb38-14"></a><span class="st">-   <span class="diffdel"><em>semiregular-box</em></span>&lt;Pred&gt; pred_;  // exposition only</span></span>
+<span id="cb38-15"><a href="#cb38-15"></a><span class="va">+   <span class="diffins"><em>copyable-box</em></span>&lt;Pred&gt; pred_;     // exposition only</span></span>
+<span id="cb38-16"><a href="#cb38-16"></a>  };</span>
+<span id="cb38-17"><a href="#cb38-17"></a></span>
+<span id="cb38-18"><a href="#cb38-18"></a>  template&lt;class R, class Pred&gt;</span>
+<span id="cb38-19"><a href="#cb38-19"></a>    drop_while_view(R&amp;&amp;, Pred) -&gt; drop_while_view&lt;views::all_t&lt;R&gt;, Pred&gt;;</span>
+<span id="cb38-20"><a href="#cb38-20"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor and switch to <code class="sourceCode cpp">optional</code> in <span>24.7.11.2
+ <a href="https://wg21.link/range.join.view">[range.join.view]</a></span> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: This change conflicts with the proposed change in <span class="citation" data-cites="P2328R0">[<a href="#ref-P2328R0" role="doc-biblioref">P2328R0</a>]</span>. If that change is applied, only the constraint on the default constructor needs to be added ]</span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb39-1"><a href="#cb39-1"></a>namespace std::ranges {</span>
+<span id="cb39-2"><a href="#cb39-2"></a>  template&lt;input_range V&gt;</span>
+<span id="cb39-3"><a href="#cb39-3"></a>    requires view&lt;V&gt; &amp;&amp; input_range&lt;range_reference_t&lt;V&gt;&gt; &amp;&amp;</span>
+<span id="cb39-4"><a href="#cb39-4"></a>             (is_reference_v&lt;range_reference_t&lt;V&gt;&gt; ||</span>
+<span id="cb39-5"><a href="#cb39-5"></a>              view&lt;range_value_t&lt;V&gt;&gt;)</span>
+<span id="cb39-6"><a href="#cb39-6"></a>  class join_view : public view_interface&lt;join_view&lt;V&gt;&gt; {</span>
+<span id="cb39-7"><a href="#cb39-7"></a>  private:</span>
+<span id="cb39-8"><a href="#cb39-8"></a>    using InnerRng =                    // exposition only</span>
+<span id="cb39-9"><a href="#cb39-9"></a>      range_reference_t&lt;V&gt;;</span>
+<span id="cb39-10"><a href="#cb39-10"></a>    // [range.join.iterator], class template join_view​::​iterator</span>
+<span id="cb39-11"><a href="#cb39-11"></a>    template&lt;bool Const&gt;</span>
+<span id="cb39-12"><a href="#cb39-12"></a>      struct iterator;                  // exposition only</span>
+<span id="cb39-13"><a href="#cb39-13"></a>    // [range.join.sentinel], class template join_view​::​sentinel</span>
+<span id="cb39-14"><a href="#cb39-14"></a>    template&lt;bool Const&gt;</span>
+<span id="cb39-15"><a href="#cb39-15"></a>      struct sentinel;                  // exposition only</span>
+<span id="cb39-16"><a href="#cb39-16"></a></span>
+<span id="cb39-17"><a href="#cb39-17"></a>    V base_ = V();                      // exposition only</span>
+<span id="cb39-18"><a href="#cb39-18"></a><span class="st">-   views::all_t&lt;InnerRng&gt; inner_ =     // exposition only, present only when !is_reference_v&lt;InnerRng&gt;</span></span>
+<span id="cb39-19"><a href="#cb39-19"></a><span class="st">-     views::all_t&lt;InnerRng&gt;();</span></span>
+<span id="cb39-20"><a href="#cb39-20"></a><span class="va">+   optional&lt;views::all_t&lt;InnerRng&gt;&gt; inner_;   // exposition only, present only when !is_reference_v&lt;InnerRng&gt;</span></span>
+<span id="cb39-21"><a href="#cb39-21"></a>  public:</span>
+<span id="cb39-22"><a href="#cb39-22"></a><span class="st">-   join_view() = default;</span></span>
+<span id="cb39-23"><a href="#cb39-23"></a><span class="va">+   join_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb39-24"><a href="#cb39-24"></a>    </span>
+<span id="cb39-25"><a href="#cb39-25"></a>    // ...</span>
+<span id="cb39-26"><a href="#cb39-26"></a>  };</span>
+<span id="cb39-27"><a href="#cb39-27"></a></span>
+<span id="cb39-28"><a href="#cb39-28"></a>  // ..</span>
+<span id="cb39-29"><a href="#cb39-29"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.11.3
+ <a href="https://wg21.link/range.join.iterator">[range.join.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb40-1"><a href="#cb40-1"></a>namespace std::ranges {</span>
+<span id="cb40-2"><a href="#cb40-2"></a>  template&lt;input_range V&gt;</span>
+<span id="cb40-3"><a href="#cb40-3"></a>    requires view&lt;V&gt; &amp;&amp; input_range&lt;range_reference_t&lt;V&gt;&gt; &amp;&amp;</span>
+<span id="cb40-4"><a href="#cb40-4"></a>             (is_reference_v&lt;range_reference_t&lt;V&gt;&gt; ||</span>
+<span id="cb40-5"><a href="#cb40-5"></a>              view&lt;range_value_t&lt;V&gt;&gt;)</span>
+<span id="cb40-6"><a href="#cb40-6"></a>  template&lt;bool Const&gt;</span>
+<span id="cb40-7"><a href="#cb40-7"></a>  struct join_view&lt;V&gt;::iterator {</span>
+<span id="cb40-8"><a href="#cb40-8"></a>  private:</span>
+<span id="cb40-9"><a href="#cb40-9"></a>    using <em>Parent</em>    = <em>maybe-const</em>&lt;Const, join_view&gt;;            // exposition only</span>
+<span id="cb40-10"><a href="#cb40-10"></a>    using <em>Base</em>      = <em>maybe-const</em>&lt;Const, V&gt;;                    // exposition only</span>
+<span id="cb40-11"><a href="#cb40-11"></a>    using <em>OuterIter</em> = iterator_t&lt;<em>Base</em>&gt;;                         // exposition only</span>
+<span id="cb40-12"><a href="#cb40-12"></a>    using <em>InnerIter</em> = iterator_t&lt;range_reference_t&lt;<em>Base</em>&gt;&gt;;      // exposition only</span>
+<span id="cb40-13"><a href="#cb40-13"></a></span>
+<span id="cb40-14"><a href="#cb40-14"></a>    static constexpr bool <em>ref-is-glvalue</em> =                      // exposition only</span>
+<span id="cb40-15"><a href="#cb40-15"></a>      is_reference_v&lt;range_reference_t&lt;<em>Base</em>&gt;&gt;;</span>
+<span id="cb40-16"><a href="#cb40-16"></a></span>
+<span id="cb40-17"><a href="#cb40-17"></a>    <em>OuterIter</em> outer_ = <em>OuterIter</em>();                             // exposition only</span>
+<span id="cb40-18"><a href="#cb40-18"></a>    <em>InnerIter</em> inner_ = <em>InnerIter</em>();                             // exposition only</span>
+<span id="cb40-19"><a href="#cb40-19"></a>    <em>Parent</em>* parent_ = nullptr;                                  // exposition only</span>
+<span id="cb40-20"><a href="#cb40-20"></a></span>
+<span id="cb40-21"><a href="#cb40-21"></a>    constexpr void <em>satisfy</em>();                                   // exposition only</span>
+<span id="cb40-22"><a href="#cb40-22"></a>  public:</span>
+<span id="cb40-23"><a href="#cb40-23"></a>    // ...</span>
+<span id="cb40-24"><a href="#cb40-24"></a></span>
+<span id="cb40-25"><a href="#cb40-25"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb40-26"><a href="#cb40-26"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;<em>OuterIter</em>&gt; &amp;&amp; default_initializable&lt;<em>InnerIter</em>&gt;</span> = default;</span></span>
+<span id="cb40-27"><a href="#cb40-27"></a>    </span>
+<span id="cb40-28"><a href="#cb40-28"></a>    // ...</span>
+<span id="cb40-29"><a href="#cb40-29"></a>  };</span>
+<span id="cb40-30"><a href="#cb40-30"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Update the implementation parts of <code class="sourceCode cpp">join_view<span class="op">::</span>iterator</code> now that <code class="sourceCode cpp">inner_</code> is an <code class="sourceCode cpp">optional</code> in <span>24.7.11.3
+ <a href="https://wg21.link/range.join.iterator">[range.join.iterator]</a></span> (dereferencing <code class="sourceCode cpp">parent_<span class="op">-&gt;</span>inner_</code> in both <code class="sourceCode cpp">satisfy<span class="op">()</span></code> and <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++()</span></code>) <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: Don’t apply these changes if <span class="citation" data-cites="P2328R0">[<a href="#ref-P2328R0" role="doc-biblioref">P2328R0</a>]</span> is adopted ]</span>:</p>
+<blockquote>
+<div class="sourceCode" id="cb41"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb41-1"><a href="#cb41-1"></a>constexpr void <em>satisfy</em>();       // exposition only</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Effects</em>: Equivalent to:</p>
+<div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb42-1"><a href="#cb42-1"></a>  auto update_inner = [this](range_reference_t&lt;<em>Base</em>&gt; x) -&gt; auto&amp; {</span>
+<span id="cb42-2"><a href="#cb42-2"></a>    if constexpr (<em>ref-is-glvalue</em>) // x is a reference</span>
+<span id="cb42-3"><a href="#cb42-3"></a>      return x;</span>
+<span id="cb42-4"><a href="#cb42-4"></a>    else</span>
+<span id="cb42-5"><a href="#cb42-5"></a><span class="st">-     return (<em>parent_</em>-&gt;<em>inner_</em> = views::all(std::move(x)));</span></span>
+<span id="cb42-6"><a href="#cb42-6"></a><span class="va">+     <em>parent_</em>-&gt;<em>inner_</em> = views::all(std::move(x));</span></span>
+<span id="cb42-7"><a href="#cb42-7"></a><span class="va">+     return *<em>parent_</em>-&gt;<em>inner_</em>;</span></span>
+<span id="cb42-8"><a href="#cb42-8"></a>  };</span>
+<span id="cb42-9"><a href="#cb42-9"></a>  </span>
+<span id="cb42-10"><a href="#cb42-10"></a>  for (; outer_ != ranges::end(<em>parent_</em>-&gt;<em>base_</em>); ++<em>outer_</em>) {</span>
+<span id="cb42-11"><a href="#cb42-11"></a>    auto&amp; inner = update_inner(*<em>outer_</em>);</span>
+<span id="cb42-12"><a href="#cb42-12"></a>    <em>inner_</em> = ranges::begin(inner);</span>
+<span id="cb42-13"><a href="#cb42-13"></a>    if (<em>inner_</em> != ranges::end(inner))</span>
+<span id="cb42-14"><a href="#cb42-14"></a>      return;</span>
+<span id="cb42-15"><a href="#cb42-15"></a>  }</span>
+<span id="cb42-16"><a href="#cb42-16"></a>  </span>
+<span id="cb42-17"><a href="#cb42-17"></a>  if constexpr (<em>ref-is-glvalue</em>)</span>
+<span id="cb42-18"><a href="#cb42-18"></a>    <em>inner_</em> = <em>InnerIter</em>();</span></code></pre></div>
+</div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>constexpr <em>iterator</em>&amp; operator++();</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">9</a></span> Let <code class="sourceCode cpp"><em>inner-range</em></code> be:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(9.1)</a></span> If <code class="sourceCode cpp"><em>ref-is-glvalue</em></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="op">*</span><em>outer_</em></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(9.2)</a></span> Otherwise, <code class="sourceCode cpp"><span class="addu">*</span><em>parent_</em><span class="op">-&gt;</span><em>inner_</em></code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">10</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb44-1"><a href="#cb44-1"></a>auto&amp;&amp; inner_rng = <em>inner-range</em>;</span>
+<span id="cb44-2"><a href="#cb44-2"></a>if (++<em>inner_</em> == ranges::end(inner_rng)) {</span>
+<span id="cb44-3"><a href="#cb44-3"></a>  ++<em>outer_</em>;</span>
+<span id="cb44-4"><a href="#cb44-4"></a>  <em>satisfy</em>();</span>
+<span id="cb44-5"><a href="#cb44-5"></a>}</span>
+<span id="cb44-6"><a href="#cb44-6"></a>return *this;</span></code></pre></div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.12.2
+ <a href="https://wg21.link/range.split.view">[range.split.view]</a></span> and change the implementation to use <code class="sourceCode cpp">optional<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></code> instead of a defaulted <code class="sourceCode cpp">iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span></code> (same as <code class="sourceCode cpp">join</code>) <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The same kind of change needs to be applied to <span class="citation" data-cites="P2210R2">[<a href="#ref-P2210R2" role="doc-biblioref">P2210R2</a>]</span> which is not yet in the working draft. The use of <code class="sourceCode default">optional</code> here should also be changed to <em><code class="sourceCode default">non-propagating-cache</code></em> with the adoption of <span class="citation" data-cites="P2328R0">[<a href="#ref-P2328R0" role="doc-biblioref">P2328R0</a>]</span>. ]</span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb45-1"><a href="#cb45-1"></a>namespace std::ranges {</span>
+<span id="cb45-2"><a href="#cb45-2"></a>  template&lt;auto&gt; struct require-constant;       // exposition only</span>
+<span id="cb45-3"><a href="#cb45-3"></a></span>
+<span id="cb45-4"><a href="#cb45-4"></a>  template&lt;class R&gt;</span>
+<span id="cb45-5"><a href="#cb45-5"></a>  concept tiny-range =                          // exposition only</span>
+<span id="cb45-6"><a href="#cb45-6"></a>    sized_range&lt;R&gt; &amp;&amp;</span>
+<span id="cb45-7"><a href="#cb45-7"></a>    requires { typename require-constant&lt;remove_reference_t&lt;R&gt;::size()&gt;; } &amp;&amp;</span>
+<span id="cb45-8"><a href="#cb45-8"></a>    (remove_reference_t&lt;R&gt;::size() &lt;= 1);</span>
+<span id="cb45-9"><a href="#cb45-9"></a></span>
+<span id="cb45-10"><a href="#cb45-10"></a>  template&lt;input_range V, forward_range Pattern&gt;</span>
+<span id="cb45-11"><a href="#cb45-11"></a>    requires view&lt;V&gt; &amp;&amp; view&lt;Pattern&gt; &amp;&amp;</span>
+<span id="cb45-12"><a href="#cb45-12"></a>             indirectly_comparable&lt;iterator_t&lt;V&gt;, iterator_t&lt;Pattern&gt;, ranges::equal_to&gt; &amp;&amp;</span>
+<span id="cb45-13"><a href="#cb45-13"></a>             (forward_range&lt;V&gt; || tiny-range&lt;Pattern&gt;)</span>
+<span id="cb45-14"><a href="#cb45-14"></a>  class split_view : public view_interface&lt;split_view&lt;V, Pattern&gt;&gt; {</span>
+<span id="cb45-15"><a href="#cb45-15"></a>  private:</span>
+<span id="cb45-16"><a href="#cb45-16"></a>    V base_ = V();                              // exposition only</span>
+<span id="cb45-17"><a href="#cb45-17"></a>    Pattern pattern_ = Pattern();               // exposition only</span>
+<span id="cb45-18"><a href="#cb45-18"></a><span class="st">-   iterator_t&lt;V&gt; current_ = iterator_t&lt;V&gt;();   // exposition only, present only if !forward_range&lt;V&gt;</span></span>
+<span id="cb45-19"><a href="#cb45-19"></a><span class="va">+   optional&lt;iterator_t&lt;V&gt;&gt; current_;           // exposition only, present only if !forward_range&lt;V&gt;</span></span>
+<span id="cb45-20"><a href="#cb45-20"></a>    // [range.split.outer], class template split_view​::​outer-iterator</span>
+<span id="cb45-21"><a href="#cb45-21"></a>    template&lt;bool&gt; struct outer-iterator;       // exposition only</span>
+<span id="cb45-22"><a href="#cb45-22"></a>    // [range.split.inner], class template split_view​::​inner-iterator</span>
+<span id="cb45-23"><a href="#cb45-23"></a>    template&lt;bool&gt; struct inner-iterator;       // exposition only</span>
+<span id="cb45-24"><a href="#cb45-24"></a>  public:</span>
+<span id="cb45-25"><a href="#cb45-25"></a><span class="st">-   split_view() = default;</span></span>
+<span id="cb45-26"><a href="#cb45-26"></a><span class="va">+   split_view() <span class="diffins">requires default_initializable&lt;<em>V</em>&gt; &amp;&amp; default_initializable&lt;<em>Pattern</em>&gt;</span> = default;</span></span>
+<span id="cb45-27"><a href="#cb45-27"></a>    </span>
+<span id="cb45-28"><a href="#cb45-28"></a>    // ...</span>
+<span id="cb45-29"><a href="#cb45-29"></a>  };</span>
+<span id="cb45-30"><a href="#cb45-30"></a>  </span>
+<span id="cb45-31"><a href="#cb45-31"></a>  // ...</span>
+<span id="cb45-32"><a href="#cb45-32"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change the description to dereference what is now an <code class="sourceCode cpp">optional</code> in <span>24.7.12.3
+ <a href="https://wg21.link/range.split.outer">[range.split.outer]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> Many of the specifications in [range.split] refer to the notional member <code class="sourceCode cpp"><em>current</em></code> of <code class="sourceCode cpp"><em>outer-iterator</em></code>. <code class="sourceCode cpp"><em>current</em></code> is equivalent to <code class="sourceCode cpp"><em>current_</em></code> if <code class="sourceCode cpp">V</code> models <code class="sourceCode cpp">forward_range</code>, and <code class="sourceCode cpp"><span class="addu">*</span><em>parent_</em><span class="op">-&gt;</span><em>current_</em></code> otherwise.</p>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.14.2
+ <a href="https://wg21.link/range.common.view">[range.common.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb46-1"><a href="#cb46-1"></a>namespace std::ranges {</span>
+<span id="cb46-2"><a href="#cb46-2"></a>  template&lt;view V&gt;</span>
+<span id="cb46-3"><a href="#cb46-3"></a>    requires (!common_range&lt;V&gt; &amp;&amp; copyable&lt;iterator_t&lt;V&gt;&gt;)</span>
+<span id="cb46-4"><a href="#cb46-4"></a>  class common_view : public view_interface&lt;common_view&lt;V&gt;&gt; {</span>
+<span id="cb46-5"><a href="#cb46-5"></a>  private:</span>
+<span id="cb46-6"><a href="#cb46-6"></a>    V base_ = V();  // exposition only</span>
+<span id="cb46-7"><a href="#cb46-7"></a>  public:</span>
+<span id="cb46-8"><a href="#cb46-8"></a><span class="st">-   common_view() = default;</span></span>
+<span id="cb46-9"><a href="#cb46-9"></a><span class="va">+   common_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb46-10"><a href="#cb46-10"></a>    </span>
+<span id="cb46-11"><a href="#cb46-11"></a>    // ...</span>
+<span id="cb46-12"><a href="#cb46-12"></a>  };</span>
+<span id="cb46-13"><a href="#cb46-13"></a>  </span>
+<span id="cb46-14"><a href="#cb46-14"></a>  // ...</span>
+<span id="cb46-15"><a href="#cb46-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.15.2
+ <a href="https://wg21.link/range.reverse.view">[range.reverse.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb47-1"><a href="#cb47-1"></a>namespace std::ranges {</span>
+<span id="cb47-2"><a href="#cb47-2"></a>  template&lt;view V&gt;</span>
+<span id="cb47-3"><a href="#cb47-3"></a>    requires bidirectional_range&lt;V&gt;</span>
+<span id="cb47-4"><a href="#cb47-4"></a>  class reverse_view : public view_interface&lt;reverse_view&lt;V&gt;&gt; {</span>
+<span id="cb47-5"><a href="#cb47-5"></a>  private:</span>
+<span id="cb47-6"><a href="#cb47-6"></a>    V base_ = V();  // exposition only</span>
+<span id="cb47-7"><a href="#cb47-7"></a>  public:</span>
+<span id="cb47-8"><a href="#cb47-8"></a><span class="st">-   reverse_view() = default;</span></span>
+<span id="cb47-9"><a href="#cb47-9"></a><span class="va">+   reverse_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb47-10"><a href="#cb47-10"></a>    </span>
+<span id="cb47-11"><a href="#cb47-11"></a>    // ...</span>
+<span id="cb47-12"><a href="#cb47-12"></a>  };</span>
+<span id="cb47-13"><a href="#cb47-13"></a>  </span>
+<span id="cb47-14"><a href="#cb47-14"></a>  // ...</span>
+<span id="cb47-15"><a href="#cb47-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.16.2
+ <a href="https://wg21.link/range.elements.view">[range.elements.view]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb48-1"><a href="#cb48-1"></a>namespace std::ranges {</span>
+<span id="cb48-2"><a href="#cb48-2"></a>  // ...</span>
+<span id="cb48-3"><a href="#cb48-3"></a></span>
+<span id="cb48-4"><a href="#cb48-4"></a>  template&lt;input_range V, size_t N&gt;</span>
+<span id="cb48-5"><a href="#cb48-5"></a>    requires view&lt;V&gt; &amp;&amp; has-tuple-element&lt;range_value_t&lt;V&gt;, N&gt; &amp;&amp;</span>
+<span id="cb48-6"><a href="#cb48-6"></a>             has-tuple-element&lt;remove_reference_t&lt;range_reference_t&lt;V&gt;&gt;, N&gt; &amp;&amp;</span>
+<span id="cb48-7"><a href="#cb48-7"></a>             returnable-element&lt;range_reference_t&lt;V&gt;, N&gt;</span>
+<span id="cb48-8"><a href="#cb48-8"></a>  class elements_view : public view_interface&lt;elements_view&lt;V, N&gt;&gt; {</span>
+<span id="cb48-9"><a href="#cb48-9"></a>  public:</span>
+<span id="cb48-10"><a href="#cb48-10"></a><span class="st">-   elements_view() = default;</span></span>
+<span id="cb48-11"><a href="#cb48-11"></a><span class="va">+   elements_view() <span class="diffins">requires default_initializable&lt;V&gt;</span> = default;</span></span>
+<span id="cb48-12"><a href="#cb48-12"></a>    </span>
+<span id="cb48-13"><a href="#cb48-13"></a>    // ...</span>
+<span id="cb48-14"><a href="#cb48-14"></a></span>
+<span id="cb48-15"><a href="#cb48-15"></a>  private:</span>
+<span id="cb48-16"><a href="#cb48-16"></a>    // [range.elements.iterator], class template elements_view​::​iterator</span>
+<span id="cb48-17"><a href="#cb48-17"></a>    template&lt;bool&gt; struct iterator;                     // exposition only</span>
+<span id="cb48-18"><a href="#cb48-18"></a>    // [range.elements.sentinel], class template elements_view​::​sentinel</span>
+<span id="cb48-19"><a href="#cb48-19"></a>    template&lt;bool&gt; struct sentinel;                     // exposition only</span>
+<span id="cb48-20"><a href="#cb48-20"></a>    V base_ = V();                                      // exposition only</span>
+<span id="cb48-21"><a href="#cb48-21"></a>  };</span>
+<span id="cb48-22"><a href="#cb48-22"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Constrain the defaulted default constructor in <span>24.7.16.3
+ <a href="https://wg21.link/range.elements.iterator">[range.elements.iterator]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb49-1"><a href="#cb49-1"></a>namespace std::ranges {</span>
+<span id="cb49-2"><a href="#cb49-2"></a>  template&lt;input_range V, size_t N&gt;</span>
+<span id="cb49-3"><a href="#cb49-3"></a>    requires view&lt;V&gt; &amp;&amp; has-tuple-element&lt;range_value_t&lt;V&gt;, N&gt; &amp;&amp;</span>
+<span id="cb49-4"><a href="#cb49-4"></a>             has-tuple-element&lt;remove_reference_t&lt;range_reference_t&lt;V&gt;&gt;, N&gt; &amp;&amp;</span>
+<span id="cb49-5"><a href="#cb49-5"></a>             returnable-element&lt;range_reference_t&lt;V&gt;, N&gt;</span>
+<span id="cb49-6"><a href="#cb49-6"></a>  template&lt;bool Const&gt;</span>
+<span id="cb49-7"><a href="#cb49-7"></a>  class elements_view&lt;V, N&gt;::iterator {                 // exposition only</span>
+<span id="cb49-8"><a href="#cb49-8"></a>    using <em>Base</em> = <em>maybe-const</em>&lt;Const, V&gt;;                 // exposition only</span>
+<span id="cb49-9"><a href="#cb49-9"></a></span>
+<span id="cb49-10"><a href="#cb49-10"></a>    iterator_t&lt;<em>Base</em>&gt; current_ = iterator_t&lt;<em>Base</em>&gt;();     // exposition only</span>
+<span id="cb49-11"><a href="#cb49-11"></a></span>
+<span id="cb49-12"><a href="#cb49-12"></a>    static constexpr decltype(auto) <em>get-element</em>(const iterator_t&lt;<em>Base</em>&gt;&amp; i);     // exposition only</span>
+<span id="cb49-13"><a href="#cb49-13"></a></span>
+<span id="cb49-14"><a href="#cb49-14"></a>  public:</span>
+<span id="cb49-15"><a href="#cb49-15"></a>    // ...</span>
+<span id="cb49-16"><a href="#cb49-16"></a></span>
+<span id="cb49-17"><a href="#cb49-17"></a><span class="st">-   iterator() = default;</span></span>
+<span id="cb49-18"><a href="#cb49-18"></a><span class="va">+   iterator() <span class="diffins">requires default_initializable&lt;iterator_t&lt;<em>Base</em>&gt;&gt;</span> = default;</span></span>
+<span id="cb49-19"><a href="#cb49-19"></a>    </span>
+<span id="cb49-20"><a href="#cb49-20"></a>    // ...</span>
+<span id="cb49-21"><a href="#cb49-21"></a>  };</span>
+<span id="cb49-22"><a href="#cb49-22"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump the Ranges feature-test macro in <span>17.3.2
+ <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb50-1"><a href="#cb50-1"></a><span class="st">- #define __cpp_lib_ranges <span class="diffdel">201911L</span> // also in &lt;algorithm&gt;, &lt;functional&gt;, &lt;iterator&gt;, &lt;memory&gt;, &lt;ranges&gt;</span></span>
+<span id="cb50-2"><a href="#cb50-2"></a><span class="va">+ #define __cpp_lib_ranges <span class="diffins">2021XXL</span> // also in &lt;algorithm&gt;, &lt;functional&gt;, &lt;iterator&gt;, &lt;memory&gt;, &lt;ranges&gt;</span></span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-EoP">
+<p>[EoP] Stepanov, A. and McJones, P. 2009. Elements of Programming. Addison-Wesley Professional. </p>
+</div>
+<div id="ref-LWG3479">
+<p>[LWG3479] Casey Carter. semiregular-box mishandles self-assignment. <br />
+<a href="https://wg21.link/lwg3479">https://wg21.link/lwg3479</a></p>
+</div>
+<div id="ref-N3351">
+<p>[N3351] B. Stroustrup, A. Sutton. 2012-01-13. A Concept Design for the STL. <br />
+<a href="https://wg21.link/n3351">https://wg21.link/n3351</a></p>
+</div>
+<div id="ref-N3644">
+<p>[N3644] Alan Talbot. 2013-04-18. Null Forward Iterators. <br />
+<a href="https://wg21.link/n3644">https://wg21.link/n3644</a></p>
+</div>
+<div id="ref-N4128">
+<p>[N4128] E. Niebler, S. Parent, A. Sutton. 2014-10-10. Ranges for the Standard Library, Revision 1. <br />
+<a href="https://wg21.link/n4128">https://wg21.link/n4128</a></p>
+</div>
+<div id="ref-P1330R0">
+<p>[P1330R0] Louis Dionne, David Vandevoorde. 2018-11-10. Changing the active member of a union inside constexpr. <br />
+<a href="https://wg21.link/p1330r0">https://wg21.link/p1330r0</a></p>
+</div>
+<div id="ref-P2210R2">
+<p>[P2210R2] Barry Revzin. 2021-03-05. Superior String Splitting. <br />
+<a href="https://wg21.link/p2210r2">https://wg21.link/p2210r2</a></p>
+</div>
+<div id="ref-P2231R1">
+<p>[P2231R1] Barry Revzin. 2021. Missing <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in <code class="sourceCode cpp">std<span class="op">::</span>optional</code> and <code class="sourceCode cpp">std<span class="op">::</span>variant</code>. <br />
+<a href="https://wg21.link/p2231r1">https://wg21.link/p2231r1</a></p>
+</div>
+<div id="ref-P2325R0">
+<p>[P2325R0] Barry Revzin. 2021-02-17. Views should not be required to be default constructible. <br />
+<a href="https://wg21.link/p2325r0">https://wg21.link/p2325r0</a></p>
+</div>
+<div id="ref-P2325R1">
+<p>[P2325R1] Barry Revzin. 2021-03-16. Views should not be required to be default constructible. <br />
+<a href="https://wg21.link/p2325r1">https://wg21.link/p2325r1</a></p>
+</div>
+<div id="ref-P2325R2">
+<p>[P2325R2] Barry Revzin. 2021-04-23. Views should not be required to be default constructible. <br />
+<a href="https://wg21.link/p2325r2">https://wg21.link/p2325r2</a></p>
+</div>
+<div id="ref-P2328R0">
+<p>[P2328R0] Tim Song. 2021-03-15. join_view should join all views of ranges. <br />
+<a href="https://wg21.link/p2328r0">https://wg21.link/p2328r0</a></p>
+</div>
+<div id="ref-range-v3">
+<p>[range-v3] Eric Niebler and Casey Carter. 2013. range-v3 repo. <br />
+<a href="https://github.com/ericniebler/range-v3/">https://github.com/ericniebler/range-v3/</a></p>
+</div>
+<div id="ref-range-v3-no-dflt">
+<p>[range-v3-no-dflt] Barry Revzin. 2021. Removing default construction from range-v3 views. <br />
+<a href="https://github.com/BRevzin/range-v3/commit/2e2c9299535211bc5417f9146eaed9945e596e83">https://github.com/BRevzin/range-v3/commit/2e2c9299535211bc5417f9146eaed9945e596e83</a></p>
+</div>
+<div id="ref-stl2">
+<p>[stl2] Eric Niebler and Casey Carter. 2014. stl2 repo. <br />
+<a href="https://github.com/ericniebler/stl2/">https://github.com/ericniebler/stl2/</a></p>
+</div>
+<div id="ref-stl2-179">
+<p>[stl2-179] Casey Carter. 2016. Consider relaxing the DefaultConstructible requirements. <br />
+<a href="https://github.com/ericniebler/stl2/issues/179">https://github.com/ericniebler/stl2/issues/179</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

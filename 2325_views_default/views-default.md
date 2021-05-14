@@ -1,6 +1,6 @@
 ---
 title: "Views should not be required to be default constructible"
-document: P2325R2
+document: P2325R3
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2325R2], updating wording.
 
 Since [@P2325R1], added wording.
 
@@ -237,7 +239,7 @@ namespace std {
   class insert_iterator {
   protected:
 -   Container* container @[= nullptr]{.diffdel}@;
--   ranges::iterator_t<Container> iter @[= ranges::iterator_t<Container>()]{.diffdel}@;
+-   ranges::iterator_t<Container> iter @[= ranges::iterator_t&lt;Container&gt;()]{.diffdel}@;
 +   Container* container;
 +   ranges::iterator_t<Container> iter;
 
@@ -577,10 +579,11 @@ iterator& operator++();
 :::
 
 [3]{.pnum} Effects: Equivalent to:
-    ```
-    *parent_->stream_ >> parent_->value_;
-    return *this;
-    ```
+
+```
+*@*parent_*@->@*stream_*@ >> @*parent_*@->@*value_*@;
+return *this;
+```
 ```
 void operator++(int);
 ```
@@ -588,15 +591,15 @@ void operator++(int);
 [4]{.pnum} *Preconditions*: `parent_->stream_ != nullptr` is `true`.
 :::
 
-[5]{.pnum} *Effects*: Equivalent to ++*this.
+[5]{.pnum} *Effects*: Equivalent to `++*this`.
 ```
 Val& operator*() const;
 ```
 ::: rm
-[6]{.pnum} *Preconditions*: `parent_->stream_ != nullptr` is `true`.
+[6]{.pnum} *Preconditions*: `@*parent_*@->@*stream_*@ != nullptr` is `true`.
 :::
 
-[7]{.pnum} *Effects*: Equivalent to: return `parent_->value_`;
+[7]{.pnum} *Effects*: Equivalent to: `return @*parent_*@->@*value_*@`;
 ```
 friend bool operator==(const iterator& x, default_sentinel_t);
 ```
@@ -614,7 +617,7 @@ Replace the subclause [range.semi.wrap] (all the uses of `semiregular-box<T>` ar
 - constexpr @*semiregular-box*@() noexcept(is_nothrow_default_constructible_v<T>)
 -    : @*semiregular-box*@{in_place}
 + constexpr @*copyable-box*@() noexcept(is_nothrow_default_constructible_v<T>) @[requires default_initializable&lt;T>]{.diffins}@ 
-+    : copyable-box{in_place}
++    : @*copyable-box*@{in_place}
 { }
 ```
 * [1.3]{.pnum} If `copyable<T>` is not modeled, the copy assignment operator is equivalent to:
@@ -645,7 +648,7 @@ Replace the subclause [range.semi.wrap] (all the uses of `semiregular-box<T>` ar
 ```
 
 ::: addu
-[2]{.pnum} *Recommended Practice*: `@*copyable-box*@<T>` should just store a `T` if either `T` models `copyable` or `is_nothrow_copy_constructible_v<T> && is_nothrow_copy_constructible_v<T>` is `true`.
+[2]{.pnum} *Recommended Practice*: `@*copyable-box*@<T>` should store only a `T` if either `T` models `copyable` or `is_nothrow_move_constructible_v<T> && is_nothrow_copy_constructible_v<T>` is `true`.
 :::
 :::
 
