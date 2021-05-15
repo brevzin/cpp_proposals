@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-06" />
+  <meta name="dcterms.date" content="2021-05-15" />
   <title>Using unknown pointers and references in constant expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D2280R2</td>
+    <td>P2280R2</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-06</td>
+    <td>2021-05-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -980,24 +980,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.</p>
 <h2 data-number="3.5" id="what-about-nullptr"><span class="header-section-number">3.5</span> What about <code class="sourceCode cpp"><span class="kw">nullptr</span></code>?<a href="#what-about-nullptr" class="self-link"></a></h2>
 <p>Consider this example from David Stone:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> a<span class="op">(</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb28-2"><a href="#cb28-2"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> x <span class="op">=</span> p<span class="op">-&gt;</span>size<span class="op">()</span>;</span>
-<span id="cb28-3"><a href="#cb28-3"></a><span class="op">}</span></span>
-<span id="cb28-4"><a href="#cb28-4"></a></span>
-<span id="cb28-5"><a href="#cb28-5"></a><span class="kw">constexpr</span> <span class="dt">bool</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-6"><a href="#cb28-6"></a>    a<span class="op">(</span><span class="kw">nullptr</span><span class="op">)</span>;</span>
-<span id="cb28-7"><a href="#cb28-7"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">int</span> N<span class="op">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">struct</span> array <span class="op">{</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span> <span class="cf">return</span> N; <span class="op">}</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="op">}</span>;</span>
+<span id="cb28-5"><a href="#cb28-5"></a></span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="kw">constexpr</span> <span class="dt">void</span> a<span class="op">(</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> x <span class="op">=</span> p<span class="op">-&gt;</span>size<span class="op">()</span>;</span>
 <span id="cb28-8"><a href="#cb28-8"></a><span class="op">}</span></span>
 <span id="cb28-9"><a href="#cb28-9"></a></span>
-<span id="cb28-10"><a href="#cb28-10"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">())</span>;</span>
-<span id="cb28-11"><a href="#cb28-11"></a></span>
-<span id="cb28-12"><a href="#cb28-12"></a><span class="dt">int</span> b<span class="op">(</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb28-13"><a href="#cb28-13"></a>    <span class="cf">return</span> p<span class="op">-&gt;</span>size<span class="op">()</span>;</span>
-<span id="cb28-14"><a href="#cb28-14"></a><span class="op">}</span></span>
-<span id="cb28-15"><a href="#cb28-15"></a></span>
-<span id="cb28-16"><a href="#cb28-16"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-17"><a href="#cb28-17"></a>    <span class="cf">return</span> b<span class="op">(</span><span class="kw">nullptr</span><span class="op">)</span>;</span>
-<span id="cb28-18"><a href="#cb28-18"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb28-10"><a href="#cb28-10"></a><span class="kw">constexpr</span> <span class="dt">bool</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-11"><a href="#cb28-11"></a>    a<span class="op">(</span><span class="kw">nullptr</span><span class="op">)</span>;</span>
+<span id="cb28-12"><a href="#cb28-12"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb28-13"><a href="#cb28-13"></a><span class="op">}</span></span>
+<span id="cb28-14"><a href="#cb28-14"></a></span>
+<span id="cb28-15"><a href="#cb28-15"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">())</span>;</span>
+<span id="cb28-16"><a href="#cb28-16"></a></span>
+<span id="cb28-17"><a href="#cb28-17"></a><span class="dt">int</span> b<span class="op">(</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-18"><a href="#cb28-18"></a>    <span class="cf">return</span> p<span class="op">-&gt;</span>size<span class="op">()</span>;</span>
+<span id="cb28-19"><a href="#cb28-19"></a><span class="op">}</span></span>
+<span id="cb28-20"><a href="#cb28-20"></a></span>
+<span id="cb28-21"><a href="#cb28-21"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-22"><a href="#cb28-22"></a>    <span class="cf">return</span> b<span class="op">(</span><span class="kw">nullptr</span><span class="op">)</span>;</span>
+<span id="cb28-23"><a href="#cb28-23"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
 <p>Here we have two pieces of code that each try to invoke a member function on a null pointer: one as a constant expression and one at runtime. With this paper as worded, the former may be well-defined (declaring <code class="sourceCode cpp">x</code> begins a new constant evaluation in which <code class="sourceCode cpp">p</code> has already started its lifetime and is not itself a constant expression, and so we have a pointer-to-unknown… which we can then invoke a non-static member on just fine because at no point do we read through the pointer or do anything else that involves knowing anything about the actual array object). But the latter would still be undefined behavior (invoking a non-static member function on a null pointer). This presents a fairly odd and unsatisfying situation where we have some code that is undefined behavior at runtime but… well-defined at compile time? That’s the opposite of the way this usually works!</p>
 <p>This kind of example suggests four possible directions:</p>
 <ol type="1">
@@ -1007,10 +1014,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Go further in the other direction and actually make David Stone’s example well-formed at runtime. That is, define invoking a member function on a null pointer as being okay as long as you don’t actually have to read any non-static data members (i.e. the same conditions that would other prevent equivalent code from being a constant expression). In other words, we widen both the allowed code during constant evaluation time and also the allowed code during runtime.</li>
 </ol>
 <p>This paper is currently worded going in the direction of (3), but based on the EWG Telecon on May 6th, 2021, it may be more palatable to go in one of the other directions. Note that even option (1) isn’t necessarily a panacea here since I can rewrite David Stone’s example as:</p>
+<blockquote>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> a<span class="op">(</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;*</span> p<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb29-2"><a href="#cb29-2"></a>    array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;&amp;</span> r <span class="op">=</span> <span class="op">*</span>p;</span>
 <span id="cb29-3"><a href="#cb29-3"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> x <span class="op">=</span> r<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb29-4"><a href="#cb29-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
 <p>Is this really that different? Here, the cause of the undefined behavior is in a slightly different place: dereferencing the potentially-null pointer rather than directly invoking a function on it. But the end result is kind of the same: R0 of this paper proposes this to be well-formed, and if we adopt either direction (1) or (2) then users would have to work around using pointers by introducing named references. Which doesn’t seem like it makes the code better.</p>
 <h2 data-number="3.6" id="wording"><span class="header-section-number">3.6</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>We need to strike the <span>7.7
