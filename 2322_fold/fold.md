@@ -131,7 +131,7 @@ But it means that our example, `fold(v, 1, std::plus())` yields the more likely 
 
 [@P2214R0] proposed a single fold algorithm that takes an initial value and a binary operation and performs a _left_ fold over the range. But there are a couple variants that are also quite valuable and that we should adopt as a family.
 
-## `fold_first`
+## `fold1`
 
 Sometimes, there is no good choice for the initial value of the fold and you want to use the first element of the range. For instance, if I want to find the smallest string in a range, I can already do that as `ranges::min(r)` but the only way to express this in terms of `fold` is to manually pull out the first element, like so:
 
@@ -143,9 +143,13 @@ ranges::fold(ranges::next(b), e, *b, ranges::min);
 
 But this is both tedious to write, and subtly wrong for input ranges anyway since if the `next(b)` is evaluated before `*b`, we have a dangling iterator. This comes up enough that this paper proposes a version of `fold` that uses the first element in the range as the initial value (and thus has a precondition that the range is not empty).
 
-This algorithm exists in Rust (under the name `fold_first` as a nightly-only experimental API and `fold1` in the `Itertools` crate) and Haskell (under the name `foldl1`) and Scala and Kotlin (which call it `reduce`, while the version that takes an initial value is called `fold`).
+This algorithm exists in Scala and Kotlin (which call the non-initializer version `reduce` but the initializer version `fold`), Haskell (under the name `fold1`), and Rust (in the `Itertools` crate under the name `fold1` and recently finalized under the name `reduce` to match Scala and Kotlin [@iterator_fold_self]). In Python, the single algorithm `functools.reduce` supports both forms (the `initializer` is an optional argument).
 
-The question is: should we give this algorithm a different name (e.g. `fold_first`) or provide a distinct overload of `fold`? To answer that question, we have to deal with the question of ambiguity. For two arguments, `fold(xs, a)` can only be interpreted as a `fold` with no initial value using `a` as the binary operator. For four arguments, `fold(xs, a, b, c)` can only be interpreted as a `fold` with `a` as the initial value, `b` as the binary operation that is the reduction function, and `c` as a unary projection.
+There are two questions to ask about the version of `fold` that does not take an extra initializer.
+
+### Distinct name?
+
+Should we give this algorithm a different name (e.g. `fold_first` or `fold1`, since `reduce` is clearly not an option for us) or provide a distinct overload of `fold`? To answer that question, we have to deal with the question of ambiguity. For two arguments, `fold(xs, a)` can only be interpreted as a `fold` with no initial value using `a` as the binary operator. For four arguments, `fold(xs, a, b, c)` can only be interpreted as a `fold` with `a` as the initial value, `b` as the binary operation that is the reduction function, and `c` as a unary projection.
 
 What about `fold(xs, a, b)`?  It could be:
 
@@ -175,6 +179,21 @@ fold(xs, first, as_unary(first));  // definitely interpretation #2
 
 As such, this paper proposes an overload for `fold` that take no initial value (and have a precondition that the range is non-empty) rather than introducing a different name for this case.
 
+### `optional` or UB?
+
+The result of `ranges::fold(empty_range, init, f)` is just `init`. That is straightforward. But what would the result of `ranges::fold(empty_range, f)` be (or `ranges::fold1(empty_range, f)` if we choose to provide a different name)? There are two options:
+
+1. a disengaged `optional<T>`, or
+2. `T`, but this case is undefined behavior
+
+In other words: empty range is either a valid input for the algorithm, whose result is `nullpt`, or there is a precondition that the range is non-empty. 
+
+Users can always recover the undefined behavior case if they want, by writing `*fold1(empty_range, f)`, and the `optional` return allows for easy addition of other functionality, such as providing a sentinel value for the empty range case (`fold1(empty_range, f).value_or(sentinel)` reads better than `not ranges::empty(r) ? fold1(r, f) : sentinel`, at least to me).
+
+However, this would be the very first algorithm in the standard library that meaningful interacts with one of the sum types. And goes against the convention of algorithms simply being undefined for empty ranges (such as `max`). 
+
+If the no-initializer version of `fold` returns an `optional<T>`, that's probably added motivation to name it something distinct from `fold`. 
+
 ## `fold_right`
 
 While `ranges::fold` would be a left-fold, there is also occasionally the need for a _right_-fold. While a `fold_right` is much easier to write in code given `fold` than `fold_first`, since `fold_right(r, init, op)` is `fold(r | views::reverse, init, flip(op))`, it's sufficiently common that it may as well be in the standard library.
@@ -193,7 +212,7 @@ Second, supporting bidirectional ranges is straightforward. Supporting forward r
 
 Third, the naming question.
 
-## Naming
+## Naming for left and right folds
 
 There are roughly three different choices that we could make here:
 
@@ -206,6 +225,97 @@ There's language precedents for any of these cases. F# and Kotlin both provide `
 In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`), although those algorithms are not as symmetric as `fold_left` and `fold_right`... while we do also have `shift_left` and `shift_right`.
 
 All of which is to say, I don't think there's a clear answer to this question. I would be quite happy with any of the three options. This paper picks (2). 
+
+## Short-circuiting folds
+
+The folds discussed up until now have always evaluated the entirety of the range. That's very useful in of itself, and several other algorithms that we have in the standard library can be implemented in terms of such a fold (e.g. `min` or `count_if`).
+
+But for some algorithms, we really want to short circuit. For instance, we don't want to define `all_of(r, pred)` as `fold(r, true, logical_and(), pred)`. This formulation would give the correct answer, but we really don't want to keep evaluating `pred` once we got our first `false`. To do this correctly, we really need short circuiting. 
+
+There are three (at least) different approaches for how to have a short-circuiting fold. Here are different approaches to implementing `any_of` in terms of a short-circuiting fold:
+
+1. You could provide a function that mutates the accumulator and returns `true` to continue and `false` to break. That is, `all_of(r, pred)` would look like
+
+    ```cpp
+    return fold_while(r, true, [&](bool& state, auto&& elem){
+        state = pred(FWD(elem));
+        return not state;
+    });
+    ```
+    
+    and the main loop of the `fold_while` algorithm would look like:
+    
+    ```cpp
+    for (; first != last; ++first) {
+        if (not f(move(init), *first)) {
+            break;
+        }
+    }
+    return init;
+    ```
+
+2. You could provide a function that returns a `variant<continue_<T>, done<T>>`. Rust's `Itertools` crate provides this under the name `fold_while`:
+
+    ```cpp
+    template <typename T> struct continue_ { T value; };
+    template <typename T> struct done { T value; };
+    template <typename T> using fold_while_t = variant<continue_<T>, done<T>>;
+    
+    return fold_while(r, true, [&](bool, auto&& elem) -> fold_while_t<bool> {
+        if (pred(FWD(elem))) {
+            return continue{true};
+        } else {
+            return done{false};
+        }
+    });
+    ```
+    
+    and the main loop of the `fold_while` algorithm would look like:
+    
+    ```cpp
+    for (; first != last; ++first) {
+        auto next_state = f(move(init), *first);
+        if (holds_alternative<continue_<T>>(next_state)) {
+            init = get<continue_<T>>(move(next_state)).value;
+        } else {
+            return get<done<T>>(move(next_state)).value;
+        }
+    }
+    return init;
+    ```    
+    
+3. You could provide a function that returns an `expected<T, E>`, which then the algorithm would return an `expected<T, E>` (rather than a `T`). Rust `Iterator` trait provides this under the name `try_fold`:
+
+    ```cpp
+    return fold_while(r, true, [&](bool, auto&& elem) -> expected<bool, bool> {
+        if (pred(FWD(elem))) {
+            return true;
+        } else {
+            return unexpected(false);
+        }
+    }).has_value();
+    ```
+    
+    and the main loop of the `fold_while` algorithm would look like:
+    
+    ```cpp
+    for (; first != last; ++first) {
+        auto next = f(move(init), *first);
+        if (not next) {
+            return next;
+        }
+        init = move(*next);
+    }
+    return init;
+    ```     
+    
+(1) is a questionable option because of mutating state (note that we cannot use `predicate` as the constraint on the type, because `predicate`s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.
+
+(2) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `done{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
+
+(3) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet, and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
+
+At this point, this paper does not propose adding a short-circuiting `fold` algorithm. It can be added later. 
 
 # Wording
 
@@ -388,3 +498,15 @@ return ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), f, pro
 ```
 :::
 :::
+
+---
+references:
+    - id: iterator_fold_self
+      citation-label: iterator_fold_self
+      title: " Tracking issue for `iterator_fold_self`"
+      author:
+        - family: Ashley Mannix
+      issued:
+        year: 2020
+      URL: https://github.com/rust-lang/rust/issues/68125  
+---
