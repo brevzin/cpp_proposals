@@ -212,19 +212,20 @@ Second, supporting bidirectional ranges is straightforward. Supporting forward r
 
 Third, the naming question.
 
-## Naming for left and right folds
+### Naming for left and right folds
 
-There are roughly three different choices that we could make here:
+There are roughly four different choices that we could make here:
 
 1. Provide the algorithms `fold` (a left-fold) and `fold_right`.
 2. Provide the algorithms `fold_left` and `fold_right`.
 3. Provide the algorithms `fold_left` and `fold_right` and also provide an alias `fold` which is also `fold_left`.
+4. Provide the algorithms `foldl` and `foldr`.
 
 There's language precedents for any of these cases. F# and Kotlin both provide `fold` as a left-fold and suffixed right-fold (`foldBack` in F#, `foldRight` in Kotlin). Elm, Haskell, and OCaml provide symmetrically named algorithms (`foldl`/`foldr` for the first two and `fold_left`/`fold_right` for the third). Scala provides a `foldLeft` and `foldRight` while also providing `fold` to also mean `foldLeft`.
 
-In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`), although those algorithms are not as symmetric as `fold_left` and `fold_right`... while we do also have `shift_left` and `shift_right`.
+In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`) and symmetric ones (`shift_left` vs `shift_right`), even symmetric ones with terse names (`rotl` and `rotr`, although the latter are basically instructions).
 
-All of which is to say, I don't think there's a clear answer to this question. I would be quite happy with any of the three options. This paper picks (2). 
+All of which is to say, I don't think there's a clear answer to this question. I would be quite happy with any of the options.
 
 ## Short-circuiting folds
 
@@ -315,7 +316,87 @@ There are three (at least) different approaches for how to have a short-circuiti
 
 (3) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet, and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
 
+Note that while the `expected<T, E>` version does convey failure semantically, more so than the `fold_result_t<T>` version, the latter can still be used to do so by simply returning a `fold_result_t<expected<T, E>>`.
+
 At this point, this paper does not propose adding a short-circuiting `fold` algorithm. It can be added later. 
+
+## Iterator-returning folds
+
+Up until this point, this paper has only discussed returning a _value_ from `fold`: whatever we get as the result of `f(f(f(f(init, e0), e1), e2), e3)`. But there is another value that we compute along the way that is thrown out: the end iterator.
+
+An alternative formulation of `fold` would preserve that information:
+
+```cpp
+template <input_iterator I, typename R>
+struct fold_result {
+    I in;
+    R value;
+};
+
+template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
+    @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F,
+    typename R = invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>
+constexpr auto fold(I first, S last, T init, F f, Proj proj = {})
+    -> fold_result<I, R>;
+```
+
+Rather than returning simply `R`. But the problem with that direction is, quoting from [@P2214R0]:
+
+::: quote
+[T]he above definition definitely follows Alexander Stepanov's law of useful return [@stepanov] (emphasis ours):
+
+::: quote
+When writing code, it’s often the case that you end up computing a value that the calling function doesn’t currently need. Later, however, this value may be important when the code is called in a different situation. In this situation, you should obey the law of useful return: *A procedure should return all the potentially useful information it computed.*
+:::
+
+But it makes the usage of the algorithm quite cumbersome. The point of a fold is to return the single value. We would just want to write:
+
+```cpp
+int total = ranges::sum(numbers);
+```
+
+Rather than:
+
+```cpp
+auto [_, total] = ranges::sum(numbers);
+```
+
+or:
+
+```cpp
+int total = ranges::sum(numbers, 0).value;
+```
+
+`ranges::fold` should just return `T`. This would be consistent with what the other range-based folds already return in C++20 (e.g. `ranges::count` returns a `range_difference_t<R>`, `ranges::any_of` - which can't quite be a `fold` due to wanting to short-circuit - just returns `bool`). 
+:::
+
+Moreover, even if we added a version of this algorithm that returned an iterator (let's call it `fold_with_iterator`), we wouldn't want `fold(first, last, init, f)` to be defined as
+```cpp
+return fold_with_iterator(first, last, init, f).value;
+```
+since this would have to incur an extra move of the accumulated result, due to lack of copy elision (we have different return types). So we'd want need this algorithm to be specified separately (or, perhaps, the "*Effects*: equivalent to" formulation is sufficiently permissive as to allow implementations to do the right thing?)
+
+From a usability perspective, I think it's important that `fold` just return the value. 
+
+The problem going past that is that we end up with this combinatorial explosion of algorithms based on a lot of orthogonal choices:
+
+1. iterator pair or range
+2. left or right fold
+3. initial value or no initial value
+4. short-circuit or not short-circuit
+5. return `T` or `(iterator, T)`
+
+Which would be... 32 distinct functions if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!
+
+This brings with it its own naming problem, and so we can come up with a suffix system:
+
+* `foldl` is a non-short-circuiting left-fold with an initial value that returns `T`
+* `foldl1` is a non-short-circuiting left-fold with no initial value that returns `T`
+* `foldl1_while` is a short-circuiting left-fold with no initial value that returns `T`
+* `foldr_with_iter` is a non-short-circuiting right-fold with an initial value that returns `(iterator, T)`
+* `foldr1_while_with_iter` is a short-circuiting right-fold with no initial value that returns `(iterator, T)`
+
+`with_iter` is not the best suffix, but the rest seem to work out ok. 
 
 # Wording
 
@@ -509,4 +590,11 @@ references:
       issued:
         year: 2020
       URL: https://github.com/rust-lang/rust/issues/68125  
+    - id: stepanov
+      citation-label: stepanov
+      title: From Mathematics to Generic Programming
+      author:
+        - family: Alexander A. Stepanov
+      issued:
+        year: 2014      
 ---
