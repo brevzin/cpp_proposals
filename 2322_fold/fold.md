@@ -324,7 +324,7 @@ At this point, this paper does not propose adding a short-circuiting `fold` algo
 
 Up until this point, this paper has only discussed returning a _value_ from `fold`: whatever we get as the result of `f(f(f(f(init, e0), e1), e2), e3)`. But there is another value that we compute along the way that is thrown out: the end iterator.
 
-An alternative formulation of `fold` would preserve that information:
+An alternative formulation of `fold` would preserve that information. Rather than returning `R`, we could do something like this:
 
 ```cpp
 template <input_iterator I, typename R>
@@ -340,7 +340,7 @@ constexpr auto fold(I first, S last, T init, F f, Proj proj = {})
     -> fold_result<I, R>;
 ```
 
-Rather than returning simply `R`. But the problem with that direction is, quoting from [@P2214R0]:
+But the problem with that direction is, quoting from [@P2214R0]:
 
 ::: quote
 [T]he above definition definitely follows Alexander Stepanov's law of useful return [@stepanov] (emphasis ours):
@@ -386,9 +386,9 @@ The problem going past that is that we end up with this combinatorial explosion 
 4. short-circuit or not short-circuit
 5. return `T` or `(iterator, T)`
 
-Which would be... 32 distinct functions if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!
+Which would be... 32 distinct functions (under either 8 or 16 different names, depending on if (3) introduces a new name or not) if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!
 
-This brings with it its own naming problem, and so we can come up with a suffix system:
+This brings with it its own naming problem. That's a lot of names. One approach there could be a suffix system:
 
 * `foldl` is a non-short-circuiting left-fold with an initial value that returns `T`
 * `foldl1` is a non-short-circuiting left-fold with no initial value that returns `T`

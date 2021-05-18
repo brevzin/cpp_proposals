@@ -809,7 +809,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>At this point, this paper does not propose adding a short-circuiting <code class="sourceCode cpp">fold</code> algorithm. It can be added later.</p>
 <h2 data-number="4.4" id="iterator-returning-folds"><span class="header-section-number">4.4</span> Iterator-returning folds<a href="#iterator-returning-folds" class="self-link"></a></h2>
 <p>Up until this point, this paper has only discussed returning a <em>value</em> from <code class="sourceCode cpp">fold</code>: whatever we get as the result of <code class="sourceCode cpp">f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>init, e0<span class="op">)</span>, e1<span class="op">)</span>, e2<span class="op">)</span>, e3<span class="op">)</span></code>. But there is another value that we compute along the way that is thrown out: the end iterator.</p>
-<p>An alternative formulation of <code class="sourceCode cpp">fold</code> would preserve that information:</p>
+<p>An alternative formulation of <code class="sourceCode cpp">fold</code> would preserve that information. Rather than returning <code class="sourceCode cpp">R</code>, we could do something like this:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, <span class="kw">typename</span> R<span class="op">&gt;</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a><span class="kw">struct</span> fold_result <span class="op">{</span></span>
 <span id="cb14-3"><a href="#cb14-3"></a>    I in;</span>
@@ -821,7 +821,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb14-9"><a href="#cb14-9"></a>    <span class="kw">typename</span> R <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;&gt;</span></span>
 <span id="cb14-10"><a href="#cb14-10"></a><span class="kw">constexpr</span> <span class="kw">auto</span> fold<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span></span>
 <span id="cb14-11"><a href="#cb14-11"></a>    <span class="op">-&gt;</span> fold_result<span class="op">&lt;</span>I, R<span class="op">&gt;</span>;</span></code></pre></div>
-<p>Rather than returning simply <code class="sourceCode cpp">R</code>. But the problem with that direction is, quoting from <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>:</p>
+<p>But the problem with that direction is, quoting from <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>:</p>
 <div class="quote">
 <p>[T]he above definition definitely follows Alexander Stepanov’s law of useful return <span class="citation" data-cites="stepanov">[<a href="#ref-stepanov" role="doc-biblioref">stepanov</a>]</span> (emphasis ours):</p>
 <div class="quote">
@@ -847,8 +847,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>short-circuit or not short-circuit</li>
 <li>return <code class="sourceCode cpp">T</code> or <code class="sourceCode cpp"><span class="op">(</span>iterator, T<span class="op">)</span></code></li>
 </ol>
-<p>Which would be… 32 distinct functions if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!</p>
-<p>This brings with it its own naming problem, and so we can come up with a suffix system:</p>
+<p>Which would be… 32 distinct functions (under either 8 or 16 different names, depending on if (3) introduces a new name or not) if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!</p>
+<p>This brings with it its own naming problem. That’s a lot of names. One approach there could be a suffix system:</p>
 <ul>
 <li><code class="sourceCode cpp">foldl</code> is a non-short-circuiting left-fold with an initial value that returns <code class="sourceCode cpp">T</code></li>
 <li><code class="sourceCode cpp">foldl1</code> is a non-short-circuiting left-fold with no initial value that returns <code class="sourceCode cpp">T</code></li>
