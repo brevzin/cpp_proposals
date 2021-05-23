@@ -224,9 +224,9 @@ There are three questions that would need to be asked about `fold_right`.
 
 First, the order of operations of to the function. Given `fold_right([1, 2, 3], z, f)`, is the evaluation `f(f(f(z, 3), 2), 1)` or is the evaluation `f(1, f(2, f(3, z)))`? Note that either way, we're choosing the `3` then `2` then `1`, both are right folds. It's a question of if the initial element is the left-hand operand (as it is in the left `fold`) or the right-hand operand (as it would be if consider the right fold as a flip of the left fold).
 
-One advantage of the former (where the initial call is `f(z, 3)`) is that we can specify `fold_right(r, z, op)` as precisely `fold_left(views::reverse(r), z, op)` and leave it at that. With the latter (where the initial call is `f(3, z)`), we would need slightly more specification and would want to avoid saying `flip(op)` since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues. 
+One advantage of the former - where the initial call is `f(z, 3)` - is that we can specify `fold_right(r, z, op)` as precisely `fold_left(views::reverse(r), z, op)` and leave it at that. Notably with the same `op`. With the latter - where the initial call is `f(3, z)` - we would need slightly more specification and would want to avoid saying `flip(op)` since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues. 
 
-If we take a look at how other languages handle left-fold and right-fold, and whether the accumulator is on the same side (i.e. the accumulator is always on the right) or opposite side (the accumulator is on the left-hand side for left fold and on the right-hand side for right fold):
+If we take a look at how other languages handle left-fold and right-fold, and whether the accumulator is on the same side (and, in these cases, the accumulator is always on the right) or opposite side (the accumulator is on the left-hand side for left fold and on the right-hand side for right fold):
 
 <table>
 <tr><th>Same Side</th><th>Opposite Side</th></tr>
