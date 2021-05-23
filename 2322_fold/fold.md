@@ -25,7 +25,7 @@ toc: true
 |-|-|-|-|-|
 |2|10|8|3|1|
 
-This revision uses different names for the initial value and no-initial value algorithms, although rather than using `fold` and `fold_right` (and coming up with how to name the no-initial value versions), this paper uses the names `foldl` and `foldr` and then` foldl1` and `foldr1`. This revision also changes the no-initial value versions from having a non-empty range as a precondition to instead returning `optional<T>`.
+This revision uses different names for the initial value and no-initial value algorithms, although rather than using `fold` and `fold_right` (and coming up with how to name the no-initial value versions), this paper uses the names `foldl` and `foldr` and then `foldl1` and `foldr1`. This revision also changes the no-initial value versions from having a non-empty range as a precondition to instead returning `optional<T>`.
 
 There was also discussion around having these algorithms return an end iterator. 
 
