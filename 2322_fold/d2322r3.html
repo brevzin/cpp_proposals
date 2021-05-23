@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-18" />
+  <meta name="dcterms.date" content="2021-05-23" />
   <title>`ranges::fold`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P2322R2</td>
+    <td>D2322R3</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-18</td>
+    <td>2021-05-23</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -584,11 +584,148 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#short-circuiting-folds"><span class="toc-section-number">4.3</span> Short-circuiting folds<span></span></a></li>
 <li><a href="#iterator-returning-folds"><span class="toc-section-number">4.4</span> Iterator-returning folds<span></span></a></li>
 </ul></li>
-<li><a href="#wording"><span class="toc-section-number">5</span> Wording<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">5</span> Implementation Experience<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">6</span> Wording<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P2322R2">[<a href="#ref-P2322R2" role="doc-biblioref">P2322R2</a>]</span> used the names <code class="sourceCode cpp">fold_left</code> and <code class="sourceCode cpp">fold_right</code> to refer to the left- and right- folds and used the same names for the initial value and no-initial value algorithms. LEWG took the following polls <span class="citation" data-cites="P2322-minutes">[<a href="#ref-P2322-minutes" role="doc-biblioref">P2322-minutes</a>]</span>:</p>
+<ul>
+<li><code class="sourceCode cpp">fold</code> with an initial value, and <code class="sourceCode cpp">fold</code> with no initial value and non-empty range should have different names (presumably <code class="sourceCode cpp">fold</code> and <code class="sourceCode cpp">fold_first</code>)</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>6</td>
+<td>6</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Rename <code class="sourceCode cpp">fold_left</code> to <code class="sourceCode cpp">fold</code></li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td>10</td>
+<td>8</td>
+<td>3</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>This revision uses different names for the initial value and no-initial value algorithms, although rather than using <code class="sourceCode cpp">fold</code> and <code class="sourceCode cpp">fold_right</code> (and coming up with how to name the no-initial value versions), this paper uses the names <code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldr</code> and then<code class="sourceCode cpp">foldl1</code> and <code class="sourceCode cpp">foldr1</code>. This revision also changes the no-initial value versions from having a non-empty range as a precondition to instead returning <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+<p>There was also discussion around having these algorithms return an end iterator.</p>
+<ul>
+<li>Return the end iterator in addition to the result</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td>3</td>
+<td>5</td>
+<td>4</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Have a version of the fold algorithms that return the end iterator in addition to the result (as either an additional set of functions, or having some of the versions have different return values)</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>4</td>
+<td>9</td>
+<td>3</td>
+<td>3</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>But the primary algorithms (<code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldl1</code> for left-fold) will definitely solely return a value. This revision adds further discussion on the flavors of <code class="sourceCode cpp">fold</code> that can be provided, but ultimately does not add additional algorithms.</p>
 <p><span class="citation" data-cites="P2322R1">[<a href="#ref-P2322R1" role="doc-biblioref">P2322R1</a>]</span> used <em><code class="sourceCode cpp">weakly<span class="op">-</span>assignable<span class="op">-</span>from</code></em> as the constraint, this elevates it to <code class="sourceCode cpp">assignable_from</code>. This revision also changes the return type of <code class="sourceCode cpp">fold</code> to no longer be the type of the initial value, see <a href="#return-type">the discussion</a>.</p>
 <p><span class="citation" data-cites="P2322R0">[<a href="#ref-P2322R0" role="doc-biblioref">P2322R0</a>]</span> used <code class="sourceCode cpp">regular_invocable</code> as the constraint in the <code class="sourceCode cpp"><em>foldable</em></code> concept, but we don’t need that for this algorithm and it prohibits reasonable uses like a mutating operation. <code class="sourceCode cpp">invocable</code> is the sufficient constraint here (in the same way that it is for <code class="sourceCode cpp">for_each</code>). Also restructured the API to overload on providing the initial value instead of having differently named algorithms.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -691,7 +828,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">auto</span> e <span class="op">=</span> ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>;</span>
 <span id="cb5-3"><a href="#cb5-3"></a>ranges<span class="op">::</span>fold<span class="op">(</span>ranges<span class="op">::</span>next<span class="op">(</span>b<span class="op">)</span>, e, <span class="op">*</span>b, ranges<span class="op">::</span>min<span class="op">)</span>;</span></code></pre></div>
 <p>But this is both tedious to write, and subtly wrong for input ranges anyway since if the <code class="sourceCode cpp">next<span class="op">(</span>b<span class="op">)</span></code> is evaluated before <code class="sourceCode cpp"><span class="op">*</span>b</code>, we have a dangling iterator. This comes up enough that this paper proposes a version of <code class="sourceCode cpp">fold</code> that uses the first element in the range as the initial value (and thus has a precondition that the range is not empty).</p>
-<p>This algorithm exists in Scala and Kotlin (which call the non-initializer version <code class="sourceCode cpp">reduce</code> but the initializer version <code class="sourceCode cpp">fold</code>), Haskell (under the name <code class="sourceCode cpp">fold1</code>), and Rust (in the <code class="sourceCode cpp">Itertools</code> crate under the name <code class="sourceCode cpp">fold1</code> and recently finalized under the name <code class="sourceCode cpp">reduce</code> to match Scala and Kotlin <span class="citation" data-cites="iterator_fold_self">[<a href="#ref-iterator_fold_self" role="doc-biblioref">iterator_fold_self</a>]</span>). In Python, the single algorithm <code class="sourceCode cpp">functools<span class="op">.</span>reduce</code> supports both forms (the <code class="sourceCode cpp">initializer</code> is an optional argument).</p>
+<p>This algorithm exists in Scala and Kotlin (which call the non-initializer version <code class="sourceCode cpp">reduce</code> but the initializer version <code class="sourceCode cpp">fold</code>), Haskell (under the name <code class="sourceCode cpp">fold1</code>), and Rust (in the <code class="sourceCode cpp">Itertools</code> crate under the name <code class="sourceCode cpp">fold1</code> and recently finalized under the name <code class="sourceCode cpp">reduce</code> to match Scala and Kotlin <span class="citation" data-cites="iterator_fold_self">[<a href="#ref-iterator_fold_self" role="doc-biblioref">iterator_fold_self</a>]</span>, although at some point it was <code class="sourceCode cpp">fold_first</code>).</p>
+<p>In Python, the single algorithm <code class="sourceCode cpp">functools<span class="op">.</span>reduce</code> supports both forms (the <code class="sourceCode cpp">initializer</code> is an optional argument). In Julia, <code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldr</code> both take an optional initial value as well (though it is mandatory in certain cases).</p>
 <p>There are two questions to ask about the version of <code class="sourceCode cpp">fold</code> that does not take an extra initializer.</p>
 <h3 data-number="4.1.1" id="distinct-name"><span class="header-section-number">4.1.1</span> Distinct name?<a href="#distinct-name" class="self-link"></a></h3>
 <p>Should we give this algorithm a different name (e.g. <code class="sourceCode cpp">fold_first</code> or <code class="sourceCode cpp">fold1</code>, since <code class="sourceCode cpp">reduce</code> is clearly not an option for us) or provide a distinct overload of <code class="sourceCode cpp">fold</code>? To answer that question, we have to deal with the question of ambiguity. For two arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with no initial value using <code class="sourceCode cpp">a</code> as the binary operator. For four arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a, b, c<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with <code class="sourceCode cpp">a</code> as the initial value, <code class="sourceCode cpp">b</code> as the binary operation that is the reduction function, and <code class="sourceCode cpp">c</code> as a unary projection.</p>
@@ -704,32 +842,75 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> first <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> x, <span class="kw">auto</span><span class="op">...</span> <span class="op">){</span> <span class="cf">return</span> x; <span class="op">}</span>;</span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="kw">auto</span> r <span class="op">=</span> fold<span class="op">(</span>xs, first, first<span class="op">)</span>;</span></code></pre></div>
 <p>This call is ambiguous! This works with either interpretation. It would either just return <code class="sourceCode cpp">first</code> (the lambda) in the first case or the first element of the range in the second case, which makes it either completely useless or just mostly useless.</p>
-<p>There might be a situation that is actually useful in which there is an ambiguity in these cases. But if one arises, it is fairly straightforward to force the correct interpretation by coercing the last argument to be either a binary or unary function:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="pp">#define FWD</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&amp;&amp;&gt;(</span>x<span class="op">)</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="pp">#define RETURNS</span><span class="op">(</span>e<span class="op">)</span><span class="pp"> </span><span class="op">-&gt;</span><span class="pp"> </span><span class="kw">decltype</span><span class="op">((</span>e<span class="op">))</span><span class="pp"> </span><span class="op">{</span><span class="pp"> </span><span class="cf">return</span><span class="pp"> </span>e;<span class="pp"> </span><span class="op">}</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> as_unary <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> f<span class="op">){</span> <span class="cf">return</span> <span class="op">[=](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> RETURNS<span class="op">(</span>f<span class="op">(</span>FWD<span class="op">(</span>x<span class="op">)))</span>; <span class="op">}</span>;</span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> as_binary <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> f<span class="op">){</span> <span class="cf">return</span> <span class="op">[=](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x, <span class="kw">auto</span><span class="op">&amp;&amp;</span> y<span class="op">)</span> RETURNS<span class="op">(</span>f<span class="op">(</span>FWD<span class="op">(</span>x<span class="op">)</span>, FWD<span class="op">(</span>y<span class="op">)))</span>; <span class="op">}</span>;</span>
-<span id="cb7-5"><a href="#cb7-5"></a></span>
-<span id="cb7-6"><a href="#cb7-6"></a>fold<span class="op">(</span>xs, first, as_binary<span class="op">(</span>first<span class="op">))</span>; <span class="co">// definitely interpretation #1</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>fold<span class="op">(</span>xs, first, as_unary<span class="op">(</span>first<span class="op">))</span>;  <span class="co">// definitely interpretation #2</span></span></code></pre></div>
-<p>As such, this paper proposes an overload for <code class="sourceCode cpp">fold</code> that take no initial value (and have a precondition that the range is non-empty) rather than introducing a different name for this case.</p>
+<p>It’s possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely. As such, this paper proposes an overload for <code class="sourceCode cpp">fold</code> that take no initial value (and have a precondition that the range is non-empty) rather than introducing a different name for this case.</p>
 <h3 data-number="4.1.2" id="optional-or-ub"><span class="header-section-number">4.1.2</span> <code class="sourceCode cpp">optional</code> or UB?<a href="#optional-or-ub" class="self-link"></a></h3>
-<p>The result of <code class="sourceCode cpp">ranges<span class="op">::</span>fold<span class="op">(</span>empty_range, init, f<span class="op">)</span></code> is just <code class="sourceCode cpp">init</code>. That is straightforward. But what would the result of <code class="sourceCode cpp">ranges<span class="op">::</span>fold<span class="op">(</span>empty_range, f<span class="op">)</span></code> be (or <code class="sourceCode cpp">ranges<span class="op">::</span>fold1<span class="op">(</span>empty_range, f<span class="op">)</span></code> if we choose to provide a different name)? There are two options:</p>
+<p>The result of <code class="sourceCode cpp">ranges<span class="op">::</span>foldl<span class="op">(</span>empty_range, init, f<span class="op">)</span></code> is just <code class="sourceCode cpp">init</code>. That is straightforward. But what would the result of <code class="sourceCode cpp">ranges<span class="op">::</span>foldl1<span class="op">(</span>empty_range, f<span class="op">)</span></code> be? There are two options:</p>
 <ol type="1">
 <li>a disengaged <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, or</li>
 <li><code class="sourceCode cpp">T</code>, but this case is undefined behavior</li>
 </ol>
-<p>In other words: empty range is either a valid input for the algorithm, whose result is <code class="sourceCode cpp">nullpt</code>, or there is a precondition that the range is non-empty.</p>
-<p>Users can always recover the undefined behavior case if they want, by writing <code class="sourceCode cpp"><span class="op">*</span>fold1<span class="op">(</span>empty_range, f<span class="op">)</span></code>, and the <code class="sourceCode cpp">optional</code> return allows for easy addition of other functionality, such as providing a sentinel value for the empty range case (<code class="sourceCode cpp">fold1<span class="op">(</span>empty_range, f<span class="op">).</span>value_or<span class="op">(</span>sentinel<span class="op">)</span></code> reads better than <code class="sourceCode cpp"><span class="kw">not</span> ranges<span class="op">::</span>empty<span class="op">(</span>r<span class="op">)</span> <span class="op">?</span> fold1<span class="op">(</span>r, f<span class="op">)</span> <span class="op">:</span> sentinel</code>, at least to me).</p>
-<p>However, this would be the very first algorithm in the standard library that meaningful interacts with one of the sum types. And goes against the convention of algorithms simply being undefined for empty ranges (such as <code class="sourceCode cpp">max</code>).</p>
-<p>If the no-initializer version of <code class="sourceCode cpp">fold</code> returns an <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, that’s probably added motivation to name it something distinct from <code class="sourceCode cpp">fold</code>.</p>
+<p>In other words: empty range is either a valid input for the algorithm, whose result is <code class="sourceCode cpp">nullopt</code>, or there is a precondition that the range is non-empty.</p>
+<p>Users can always recover the undefined behavior case if they want, by writing <code class="sourceCode cpp"><span class="op">*</span>foldl1<span class="op">(</span>empty_range, f<span class="op">)</span></code>, and the <code class="sourceCode cpp">optional</code> return allows for easy addition of other functionality, such as providing a sentinel value for the empty range case (<code class="sourceCode cpp">foldl1<span class="op">(</span>empty_range, f<span class="op">).</span>value_or<span class="op">(</span>sentinel<span class="op">)</span></code> reads better than <code class="sourceCode cpp"><span class="kw">not</span> ranges<span class="op">::</span>empty<span class="op">(</span>r<span class="op">)</span> <span class="op">?</span> foldl1<span class="op">(</span>r, f<span class="op">)</span> <span class="op">:</span> sentinel</code>, at least to me). It’s also much safer to use in the context where you may not know if the range is empty or not, because it’s adapted: <code class="sourceCode cpp">foldl1<span class="op">(</span>r <span class="op">|</span> filter<span class="op">(</span>f<span class="op">)</span>, op<span class="op">)</span></code>.</p>
+<p>However, this would be the very first algorithm in the standard library that meaningful interacts with one of the sum types. And goes against the convention of algorithms simply being undefined for empty ranges (such as <code class="sourceCode cpp">max</code>). Although it’s worth pointing out that <code class="sourceCode cpp">max_element</code> is <em>not</em> UB for an empty range, it simply returns the end iterator, and the distinction there is likely due to simply not having had an available sentinel to return. But now we do.</p>
+<p>This paper proposes returning <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. Which is added motivation for a name distinct from the <code class="sourceCode cpp">fold</code> algorithm that takes an initializer.</p>
 <h2 data-number="4.2" id="fold_right"><span class="header-section-number">4.2</span> <code class="sourceCode cpp">fold_right</code><a href="#fold_right" class="self-link"></a></h2>
-<p>While <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> would be a left-fold, there is also occasionally the need for a <em>right</em>-fold. While a <code class="sourceCode cpp">fold_right</code> is much easier to write in code given <code class="sourceCode cpp">fold</code> than <code class="sourceCode cpp">fold_first</code>, since <code class="sourceCode cpp">fold_right<span class="op">(</span>r, init, op<span class="op">)</span></code> is <code class="sourceCode cpp">fold<span class="op">(</span>r <span class="op">|</span> views<span class="op">::</span>reverse, init, flip<span class="op">(</span>op<span class="op">))</span></code>, it’s sufficiently common that it may as well be in the standard library.</p>
-<p>As with the previous section, we should also provide overloads of <code class="sourceCode cpp">fold_right</code> that do not take an initial value.</p>
+<p>While <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> would be a left-fold, there is also occasionally the need for a <em>right</em>-fold. As with the previous section, we should also provide overloads of <code class="sourceCode cpp">fold_right</code> that do not take an initial value.</p>
 <p>There are three questions that would need to be asked about <code class="sourceCode cpp">fold_right</code>.</p>
-<p>First, the order of operations of to the function. Given <code class="sourceCode cpp">fold_right<span class="op">([</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">]</span>, z, f<span class="op">)</span></code>, is the evaluation <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span>, f<span class="op">(</span><span class="dv">2</span>, f<span class="op">(</span><span class="dv">3</span>, z<span class="op">)))</span></code> or is the evaluation <code class="sourceCode cpp">f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>z, <span class="dv">3</span><span class="op">)</span>, <span class="dv">2</span><span class="op">)</span>, <span class="dv">1</span><span class="op">)</span></code>? Note that either way, we’re choosing the <code class="sourceCode cpp"><span class="dv">3</span></code> then <code class="sourceCode cpp"><span class="dv">2</span></code> then <code class="sourceCode cpp"><span class="dv">1</span></code>, both are right folds. It’s a question of if the initial element is the left-hand operand (as it is in the left <code class="sourceCode cpp">fold</code>) or the right-hand operand (as it would be if consider the right fold as a flip of the left fold). For instance, Scheme picks the former but Haskell picks the latter.</p>
-<p>One advantage of the former is that we can specify <code class="sourceCode cpp">fold_right<span class="op">(</span>r, z, op<span class="op">)</span></code> as precisely <code class="sourceCode cpp">fold_left<span class="op">(</span>views<span class="op">::</span>reverse<span class="op">(</span>r<span class="op">)</span>, z, op<span class="op">)</span></code> and leave it at that. With the latter, we would need need slightly more specification and would want to avoid saying <code class="sourceCode cpp">flip<span class="op">(</span>op<span class="op">)</span></code> since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues.</p>
-<p>This paper picks the latter (that is <code class="sourceCode cpp">fold_right</code> as the order of arguments flipped from <code class="sourceCode cpp">fold</code>).</p>
+<p>First, the order of operations of to the function. Given <code class="sourceCode cpp">fold_right<span class="op">([</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">]</span>, z, f<span class="op">)</span></code>, is the evaluation <code class="sourceCode cpp">f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>z, <span class="dv">3</span><span class="op">)</span>, <span class="dv">2</span><span class="op">)</span>, <span class="dv">1</span><span class="op">)</span></code> or is the evaluation <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span>, f<span class="op">(</span><span class="dv">2</span>, f<span class="op">(</span><span class="dv">3</span>, z<span class="op">)))</span></code>? Note that either way, we’re choosing the <code class="sourceCode cpp"><span class="dv">3</span></code> then <code class="sourceCode cpp"><span class="dv">2</span></code> then <code class="sourceCode cpp"><span class="dv">1</span></code>, both are right folds. It’s a question of if the initial element is the left-hand operand (as it is in the left <code class="sourceCode cpp">fold</code>) or the right-hand operand (as it would be if consider the right fold as a flip of the left fold).</p>
+<p>One advantage of the former (where the initial call is <code class="sourceCode cpp">f<span class="op">(</span>z, <span class="dv">3</span><span class="op">)</span></code>) is that we can specify <code class="sourceCode cpp">fold_right<span class="op">(</span>r, z, op<span class="op">)</span></code> as precisely <code class="sourceCode cpp">fold_left<span class="op">(</span>views<span class="op">::</span>reverse<span class="op">(</span>r<span class="op">)</span>, z, op<span class="op">)</span></code> and leave it at that. With the latter (where the initial call is <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">3</span>, z<span class="op">)</span></code>), we would need slightly more specification and would want to avoid saying <code class="sourceCode cpp">flip<span class="op">(</span>op<span class="op">)</span></code> since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues.</p>
+<p>If we take a look at how other languages handle left-fold and right-fold, and whether the accumulator is on the same side (i.e. the accumulator is always on the right) or opposite side (the accumulator is on the left-hand side for left fold and on the right-hand side for right fold):</p>
+<table>
+<tr>
+<th>
+Same Side
+</th>
+<th>
+Opposite Side
+</th>
+</tr>
+<tr>
+<td>
+<a href="http://community.schemewiki.org/?fold">Scheme</a>
+</td>
+<td>
+<a href="https://wiki.haskell.org/Fold">Haskell</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://hexdocs.pm/elixir/List.html#foldl/3">Elixir</a>
+</td>
+<td>
+<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-listmodule.html#fold">F#</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://package.elm-lang.org/packages/elm/core/latest/List#foldl">Elm</a>
+</td>
+<td>
+<a href="https://docs.julialang.org/en/v1/base/collections/#Base.foldl-Tuple%7BAny,%20Any%7D">Julia</a>
+</tr>
+<tr>
+<td></td>
+<td>
+<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/">Kotlin</a>
+</td>
+</tr>
+<tr>
+<td></td>
+<td>
+<a href="https://ocaml.org/api/List.html">OCaml</a>
+</td>
+</tr>
+<tr>
+<td></td>
+<td>
+<a href="https://www.scala-lang.org/api/2.13.3/scala/collection/immutable/List.html">Scala</a>
+</td>
+</tr>
+</table>
+<p>This paper chooses what appears to be the more common approach: the accumulator is on the left-hand side for left fold and the right-hand side for right fold. That is, <code class="sourceCode cpp">foldr<span class="op">(</span>r, z, op<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">foldl<span class="op">(</span>reverse<span class="op">(</span>r<span class="op">)</span>, z, flip<span class="op">(</span>op<span class="op">))</span></code>.</p>
 <p>Second, supporting bidirectional ranges is straightforward. Supporting forward ranges involves recursion of the size of the range. Supporting input ranges involves recursion and also copying the whole range first. Are either of these worth supporting? The paper simply supports bidirectional ranges.</p>
 <p>Third, the naming question.</p>
 <h3 data-number="4.2.1" id="naming-for-left-and-right-folds"><span class="header-section-number">4.2.1</span> Naming for left and right folds<a href="#naming-for-left-and-right-folds" class="self-link"></a></h3>
@@ -740,87 +921,85 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Provide the algorithms <code class="sourceCode cpp">fold_left</code> and <code class="sourceCode cpp">fold_right</code> and also provide an alias <code class="sourceCode cpp">fold</code> which is also <code class="sourceCode cpp">fold_left</code>.</li>
 <li>Provide the algorithms <code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldr</code>.</li>
 </ol>
-<p>There’s language precedents for any of these cases. F# and Kotlin both provide <code class="sourceCode cpp">fold</code> as a left-fold and suffixed right-fold (<code class="sourceCode cpp">foldBack</code> in F#, <code class="sourceCode cpp">foldRight</code> in Kotlin). Elm, Haskell, and OCaml provide symmetrically named algorithms (<code class="sourceCode cpp">foldl</code>/<code class="sourceCode cpp">foldr</code> for the first two and <code class="sourceCode cpp">fold_left</code>/<code class="sourceCode cpp">fold_right</code> for the third). Scala provides a <code class="sourceCode cpp">foldLeft</code> and <code class="sourceCode cpp">foldRight</code> while also providing <code class="sourceCode cpp">fold</code> to also mean <code class="sourceCode cpp">foldLeft</code>.</p>
+<p>There’s language precedents for any of these cases. F# and Kotlin both provide <code class="sourceCode cpp">fold</code> as a left-fold and suffixed right-fold (<code class="sourceCode cpp">foldBack</code> in F#, <code class="sourceCode cpp">foldRight</code> in Kotlin). Elm, Haskell, Julia, and OCaml provide symmetrically named algorithms (<code class="sourceCode cpp">foldl</code>/<code class="sourceCode cpp">foldr</code> for the first three and <code class="sourceCode cpp">fold_left</code>/<code class="sourceCode cpp">fold_right</code> for the third). Scala provides a <code class="sourceCode cpp">foldLeft</code> and <code class="sourceCode cpp">foldRight</code> while also providing <code class="sourceCode cpp">fold</code> to also mean <code class="sourceCode cpp">foldLeft</code>.</p>
 <p>In C++, we don’t have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (<code class="sourceCode cpp">keys</code> and <code class="sourceCode cpp">values</code> for <code class="sourceCode cpp">elements<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">elements<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;</span></code>, and <span class="citation" data-cites="P2321R0">[<a href="#ref-P2321R0" role="doc-biblioref">P2321R0</a>]</span> proposes <code class="sourceCode cpp">pairwise</code> and <code class="sourceCode cpp">pairwise_transform</code> as aliases for <code class="sourceCode cpp">adjacent<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">adjacent_transform<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;</span></code>). We also have precedent in the library for asymmetric names (<code class="sourceCode cpp">sort</code> vs <code class="sourceCode cpp">stable_sort</code> vs <code class="sourceCode cpp">partial_sort</code>) and symmetric ones (<code class="sourceCode cpp">shift_left</code> vs <code class="sourceCode cpp">shift_right</code>), even symmetric ones with terse names (<code class="sourceCode cpp">rotl</code> and <code class="sourceCode cpp">rotr</code>, although the latter are basically instructions).</p>
-<p>All of which is to say, I don’t think there’s a clear answer to this question. I would be quite happy with any of the options.</p>
+<p>All of which is to say, I don’t think there’s a clear answer to this question. But this paper proposes <code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldr</code>. It’s the right mix of having symmetry between the two names, while also not making them too long. There is preference for <code class="sourceCode cpp">fold</code> over <code class="sourceCode cpp">fold_left</code> (both because it’s more common than right-fold and thus having it shorter matters), and <code class="sourceCode cpp">foldl</code> is only a single character longer.</p>
 <h2 data-number="4.3" id="short-circuiting-folds"><span class="header-section-number">4.3</span> Short-circuiting folds<a href="#short-circuiting-folds" class="self-link"></a></h2>
 <p>The folds discussed up until now have always evaluated the entirety of the range. That’s very useful in of itself, and several other algorithms that we have in the standard library can be implemented in terms of such a fold (e.g. <code class="sourceCode cpp">min</code> or <code class="sourceCode cpp">count_if</code>).</p>
 <p>But for some algorithms, we really want to short circuit. For instance, we don’t want to define <code class="sourceCode cpp">all_of<span class="op">(</span>r, pred<span class="op">)</span></code> as <code class="sourceCode cpp">fold<span class="op">(</span>r, <span class="kw">true</span>, logical_and<span class="op">()</span>, pred<span class="op">)</span></code>. This formulation would give the correct answer, but we really don’t want to keep evaluating <code class="sourceCode cpp">pred</code> once we got our first <code class="sourceCode cpp"><span class="kw">false</span></code>. To do this correctly, we really need short circuiting.</p>
-<p>There are three (at least) different approaches for how to have a short-circuiting fold. Here are different approaches to implementing <code class="sourceCode cpp">any_of</code> in terms of a short-circuiting fold:</p>
+<p>There are (at least) three different approaches for how to have a short-circuiting fold. Here are different approaches to implementing <code class="sourceCode cpp">any_of</code> in terms of a short-circuiting fold:</p>
 <ol type="1">
 <li><p>You could provide a function that mutates the accumulator and returns <code class="sourceCode cpp"><span class="kw">true</span></code> to continue and <code class="sourceCode cpp"><span class="kw">false</span></code> to break. That is, <code class="sourceCode cpp">all_of<span class="op">(</span>r, pred<span class="op">)</span></code> would look like</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span><span class="op">&amp;</span> state, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">){</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>    state <span class="op">=</span> pred<span class="op">(</span>FWD<span class="op">(</span>elem<span class="op">))</span>;</span>
-<span id="cb8-3"><a href="#cb8-3"></a>    <span class="cf">return</span> <span class="kw">not</span> state;</span>
-<span id="cb8-4"><a href="#cb8-4"></a><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span><span class="op">&amp;</span> state, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">){</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    state <span class="op">=</span> pred<span class="op">(</span>elem<span class="op">)</span>;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="cf">return</span> <span class="kw">not</span> state;</span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="op">})</span>;</span></code></pre></div>
 <p>and the main loop of the <code class="sourceCode cpp">fold_while</code> algorithm would look like:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>        <span class="cf">break</span>;</span>
-<span id="cb9-4"><a href="#cb9-4"></a>    <span class="op">}</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="op">}</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="cf">return</span> init;</span></code></pre></div></li>
-<li><p>You could provide a function that returns a <code class="sourceCode cpp">variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, done<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>. Rust’s <code class="sourceCode cpp">Itertools</code> crate provides this under the name <code class="sourceCode cpp">fold_while</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> continue_ <span class="op">{</span> T value; <span class="op">}</span>;</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> done <span class="op">{</span> T value; <span class="op">}</span>;</span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">using</span> fold_while_t <span class="op">=</span> variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, done<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span>;</span>
-<span id="cb10-4"><a href="#cb10-4"></a></span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span>, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">)</span> <span class="op">-&gt;</span> fold_while_t<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>    <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(</span>FWD<span class="op">(</span>elem<span class="op">)))</span> <span class="op">{</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a>        <span class="cf">return</span> <span class="cf">continue</span><span class="op">{</span><span class="kw">true</span><span class="op">}</span>;</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb10-9"><a href="#cb10-9"></a>        <span class="cf">return</span> done<span class="op">{</span><span class="kw">false</span><span class="op">}</span>;</span>
-<span id="cb10-10"><a href="#cb10-10"></a>    <span class="op">}</span></span>
-<span id="cb10-11"><a href="#cb10-11"></a><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>        <span class="cf">break</span>;</span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="cf">return</span> init;</span></code></pre></div></li>
+<li><p>You could provide a function that returns a <code class="sourceCode cpp">variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, done<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>. Rust’s <code class="sourceCode cpp">Itertools</code> crate provides this under the name <a href="https://docs.rs/itertools/0.10.0/itertools/trait.Itertools.html#method.fold_while"><code class="sourceCode cpp">fold_while</code></a>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> continue_ <span class="op">{</span> T value; <span class="op">}</span>;</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> done <span class="op">{</span> T value; <span class="op">}</span>;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">using</span> fold_while_t <span class="op">=</span> variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, done<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span>;</span>
+<span id="cb9-4"><a href="#cb9-4"></a></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span>, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">)</span> <span class="op">-&gt;</span> fold_while_t<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(</span>elem<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>        <span class="cf">return</span> <span class="cf">continue</span><span class="op">{</span><span class="kw">true</span><span class="op">}</span>;</span>
+<span id="cb9-8"><a href="#cb9-8"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>        <span class="cf">return</span> done<span class="op">{</span><span class="kw">false</span><span class="op">}</span>;</span>
+<span id="cb9-10"><a href="#cb9-10"></a>    <span class="op">}</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="op">})</span>;</span></code></pre></div>
 <p>and the main loop of the <code class="sourceCode cpp">fold_while</code> algorithm would look like:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>    <span class="kw">auto</span> next_state <span class="op">=</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">)</span>;</span>
-<span id="cb11-3"><a href="#cb11-3"></a>    <span class="cf">if</span> <span class="op">(</span>holds_alternative<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>next_state<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb11-4"><a href="#cb11-4"></a>        init <span class="op">=</span> get<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>move<span class="op">(</span>next_state<span class="op">)).</span>value;</span>
-<span id="cb11-5"><a href="#cb11-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb11-6"><a href="#cb11-6"></a>        <span class="cf">return</span> get<span class="op">&lt;</span>done<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>move<span class="op">(</span>next_state<span class="op">)).</span>value;</span>
-<span id="cb11-7"><a href="#cb11-7"></a>    <span class="op">}</span></span>
-<span id="cb11-8"><a href="#cb11-8"></a><span class="op">}</span></span>
-<span id="cb11-9"><a href="#cb11-9"></a><span class="cf">return</span> init;</span></code></pre></div></li>
-<li><p>You could provide a function that returns an <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>, which then the algorithm would return an <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> (rather than a <code class="sourceCode cpp">T</code>). Rust <code class="sourceCode cpp">Iterator</code> trait provides this under the name <code class="sourceCode cpp">try_fold</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span>, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span><span class="dt">bool</span>, <span class="dt">bool</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a>    <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(</span>FWD<span class="op">(</span>elem<span class="op">)))</span> <span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>        <span class="cf">return</span> <span class="kw">true</span>;</span>
-<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb12-5"><a href="#cb12-5"></a>        <span class="cf">return</span> unexpected<span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
-<span id="cb12-6"><a href="#cb12-6"></a>    <span class="op">}</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a><span class="op">}).</span>has_value<span class="op">()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>    <span class="kw">auto</span> next_state <span class="op">=</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">)</span>;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="cf">if</span> <span class="op">(</span>holds_alternative<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>next_state<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>        init <span class="op">=</span> get<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>move<span class="op">(</span>next_state<span class="op">)).</span>value;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>        <span class="cf">return</span> get<span class="op">&lt;</span>done<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>move<span class="op">(</span>next_state<span class="op">)).</span>value;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="op">}</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="cf">return</span> init;</span></code></pre></div></li>
+<li><p>You could provide a function that returns an <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>, which then the algorithm would return an <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> (rather than a <code class="sourceCode cpp">T</code>). Rust <code class="sourceCode cpp">Iterator</code> trait provides this under the name <a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_fold"><code class="sourceCode cpp">try_fold</code></a>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="cf">return</span> fold_while<span class="op">(</span>r, <span class="kw">true</span>, <span class="op">[&amp;](</span><span class="dt">bool</span>, <span class="kw">auto</span><span class="op">&amp;&amp;</span> elem<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span><span class="dt">bool</span>, <span class="dt">bool</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(</span>FWD<span class="op">(</span>elem<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>        <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>        <span class="cf">return</span> unexpected<span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>    <span class="op">}</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="op">}).</span>has_value<span class="op">()</span>;</span></code></pre></div>
 <p>and the main loop of the <code class="sourceCode cpp">fold_while</code> algorithm would look like:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>    <span class="kw">auto</span> next <span class="op">=</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">)</span>;</span>
-<span id="cb13-3"><a href="#cb13-3"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> next<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a>        <span class="cf">return</span> next;</span>
-<span id="cb13-5"><a href="#cb13-5"></a>    <span class="op">}</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a>    init <span class="op">=</span> move<span class="op">(*</span>next<span class="op">)</span>;</span>
-<span id="cb13-7"><a href="#cb13-7"></a><span class="op">}</span></span>
-<span id="cb13-8"><a href="#cb13-8"></a><span class="cf">return</span> init;</span></code></pre></div></li>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="kw">auto</span> next <span class="op">=</span> f<span class="op">(</span>move<span class="op">(</span>init<span class="op">)</span>, <span class="op">*</span>first<span class="op">)</span>;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> next<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>        <span class="cf">return</span> next;</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="op">}</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    init <span class="op">=</span> move<span class="op">(*</span>next<span class="op">)</span>;</span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="op">}</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="cf">return</span> init;</span></code></pre></div></li>
 </ol>
-<ol type="1">
-<li><p>is a questionable option because of mutating state (note that we cannot use <code class="sourceCode cpp">predicate</code> as the constraint on the type, because <code class="sourceCode cpp">predicate</code>s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.</p></li>
-<li><p>is an awkward option for C++ because of general ergonomics. The provided lambda couldn’t just return <code class="sourceCode cpp">continue_<span class="op">{</span>x<span class="op">}</span></code> in one case and <code class="sourceCode cpp">done<span class="op">{</span>y<span class="op">}</span></code> in another since those have different types, so you’d basically always have to provide <code class="sourceCode cpp"><span class="op">-&gt;</span> fold_while_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library’s sum types.</p></li>
-<li><p>isn’t a great option for C++ because we don’t even have <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> in the standard library yet, and we’d also want to generalize this approach to any “truthy” type which would require coming up with a way to conceptualize (in the <code class="sourceCode cpp"><span class="kw">concept</span></code> sense) “truthy” (since <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would be a valid type as well, as well as any other the various user-defined versions out there).</p></li>
-</ol>
+<p>Option (1) is a questionable option because of mutating state (note that we cannot use <code class="sourceCode cpp">predicate</code> as the constraint on the type, because <code class="sourceCode cpp">predicate</code>s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.</p>
+<p>Option (2) is an awkward option for C++ because of general ergonomics. The provided lambda couldn’t just return <code class="sourceCode cpp">continue_<span class="op">{</span>x<span class="op">}</span></code> in one case and <code class="sourceCode cpp">done<span class="op">{</span>y<span class="op">}</span></code> in another since those have different types, so you’d basically always have to provide <code class="sourceCode cpp"><span class="op">-&gt;</span> fold_while_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library’s sum types.</p>
+<p>Option (3) isn’t a great option for C++ because we don’t even have <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> in the standard library yet, and we’d also want to generalize this approach to any “truthy” type which would require coming up with a way to conceptualize (in the <code class="sourceCode cpp"><span class="kw">concept</span></code> sense) “truthy” (since <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would be a valid type as well, as well as any other the various user-defined versions out there).</p>
 <p>Note that while the <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> version does convey failure semantically, more so than the <code class="sourceCode cpp">fold_result_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> version, the latter can still be used to do so by simply returning a <code class="sourceCode cpp">fold_result_t<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span></code>.</p>
 <p>At this point, this paper does not propose adding a short-circuiting <code class="sourceCode cpp">fold</code> algorithm. It can be added later.</p>
 <h2 data-number="4.4" id="iterator-returning-folds"><span class="header-section-number">4.4</span> Iterator-returning folds<a href="#iterator-returning-folds" class="self-link"></a></h2>
 <p>Up until this point, this paper has only discussed returning a <em>value</em> from <code class="sourceCode cpp">fold</code>: whatever we get as the result of <code class="sourceCode cpp">f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>init, e0<span class="op">)</span>, e1<span class="op">)</span>, e2<span class="op">)</span>, e3<span class="op">)</span></code>. But there is another value that we compute along the way that is thrown out: the end iterator.</p>
 <p>An alternative formulation of <code class="sourceCode cpp">fold</code> would preserve that information. Rather than returning <code class="sourceCode cpp">R</code>, we could do something like this:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, <span class="kw">typename</span> R<span class="op">&gt;</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">struct</span> fold_result <span class="op">{</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>    I in;</span>
-<span id="cb14-4"><a href="#cb14-4"></a>    R value;</span>
-<span id="cb14-5"><a href="#cb14-5"></a><span class="op">}</span>;</span>
-<span id="cb14-6"><a href="#cb14-6"></a></span>
-<span id="cb14-7"><a href="#cb14-7"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb14-8"><a href="#cb14-8"></a>    <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F,</span>
-<span id="cb14-9"><a href="#cb14-9"></a>    <span class="kw">typename</span> R <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a><span class="kw">constexpr</span> <span class="kw">auto</span> fold<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span></span>
-<span id="cb14-11"><a href="#cb14-11"></a>    <span class="op">-&gt;</span> fold_result<span class="op">&lt;</span>I, R<span class="op">&gt;</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, <span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">struct</span> fold_result <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    I in;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    R value;</span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="op">}</span>;</span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb13-8"><a href="#cb13-8"></a>    <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F,</span>
+<span id="cb13-9"><a href="#cb13-9"></a>    <span class="kw">typename</span> R <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="kw">constexpr</span> <span class="kw">auto</span> foldl<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>    <span class="op">-&gt;</span> fold_result<span class="op">&lt;</span>I, R<span class="op">&gt;</span>;</span></code></pre></div>
 <p>But the problem with that direction is, quoting from <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>:</p>
 <div class="quote">
 <p>[T]he above definition definitely follows Alexander Stepanov’s law of useful return <span class="citation" data-cites="stepanov">[<a href="#ref-stepanov" role="doc-biblioref">stepanov</a>]</span> (emphasis ours):</p>
@@ -828,15 +1007,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>When writing code, it’s often the case that you end up computing a value that the calling function doesn’t currently need. Later, however, this value may be important when the code is called in a different situation. In this situation, you should obey the law of useful return: <em>A procedure should return all the potentially useful information it computed.</em></p>
 </div>
 <p>But it makes the usage of the algorithm quite cumbersome. The point of a fold is to return the single value. We would just want to write:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
 <p>Rather than:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">auto</span> <span class="op">[</span>_, total<span class="op">]</span> <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">auto</span> <span class="op">[</span>_, total<span class="op">]</span> <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers<span class="op">)</span>;</span></code></pre></div>
 <p>or:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers, <span class="dv">0</span><span class="op">).</span>value;</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="dt">int</span> total <span class="op">=</span> ranges<span class="op">::</span>sum<span class="op">(</span>numbers, <span class="dv">0</span><span class="op">).</span>value;</span></code></pre></div>
 <p><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> should just return <code class="sourceCode cpp">T</code>. This would be consistent with what the other range-based folds already return in C++20 (e.g. <code class="sourceCode cpp">ranges<span class="op">::</span>count</code> returns a <code class="sourceCode cpp">range_difference_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>, <code class="sourceCode cpp">ranges<span class="op">::</span>any_of</code> - which can’t quite be a <code class="sourceCode cpp">fold</code> due to wanting to short-circuit - just returns <code class="sourceCode cpp"><span class="dt">bool</span></code>).</p>
 </div>
 <p>Moreover, even if we added a version of this algorithm that returned an iterator (let’s call it <code class="sourceCode cpp">fold_with_iterator</code>), we wouldn’t want <code class="sourceCode cpp">fold<span class="op">(</span>first, last, init, f<span class="op">)</span></code> to be defined as</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="cf">return</span> fold_with_iterator<span class="op">(</span>first, last, init, f<span class="op">).</span>value;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="cf">return</span> fold_with_iterator<span class="op">(</span>first, last, init, f<span class="op">).</span>value;</span></code></pre></div>
 <p>since this would have to incur an extra move of the accumulated result, due to lack of copy elision (we have different return types). So we’d want need this algorithm to be specified separately (or, perhaps, the “<em>Effects</em>: equivalent to” formulation is sufficiently permissive as to allow implementations to do the right thing?)</p>
 <p>From a usability perspective, I think it’s important that <code class="sourceCode cpp">fold</code> just return the value.</p>
 <p>The problem going past that is that we end up with this combinatorial explosion of algorithms based on a lot of orthogonal choices:</p>
@@ -847,7 +1026,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>short-circuit or not short-circuit</li>
 <li>return <code class="sourceCode cpp">T</code> or <code class="sourceCode cpp"><span class="op">(</span>iterator, T<span class="op">)</span></code></li>
 </ol>
-<p>Which would be… 32 distinct functions (under either 8 or 16 different names, depending on if (3) introduces a new name or not) if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!</p>
+<p>Which would be… 32 distinct functions (under 16 different names) if we go all out. And these really are basically orthogonal choices. Indeed, a short-circuiting fold seems even more likely to want the iterator that the algorithm stopped at! Do we need to provide all of them? Maybe we do!</p>
 <p>This brings with it its own naming problem. That’s a lot of names. One approach there could be a suffix system:</p>
 <ul>
 <li><code class="sourceCode cpp">foldl</code> is a non-short-circuiting left-fold with an initial value that returns <code class="sourceCode cpp">T</code></li>
@@ -857,125 +1036,137 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp">foldr1_while_with_iter</code> is a short-circuiting right-fold with no initial value that returns <code class="sourceCode cpp"><span class="op">(</span>iterator, T<span class="op">)</span></code></li>
 </ul>
 <p><code class="sourceCode cpp">with_iter</code> is not the best suffix, but the rest seem to work out ok.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="implementation-experience"><span class="header-section-number">5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h1>
+<p>This paper in its current form (containing the algorithms <code class="sourceCode cpp">foldl</code>, <code class="sourceCode cpp">foldl1</code>, <code class="sourceCode cpp">foldr</code>, and <code class="sourceCode cpp">foldr1</code>, where the <code class="sourceCode cpp"><span class="op">*</span><span class="dv">1</span></code> algorithms return an <code class="sourceCode cpp">optional</code>) has been implemented in range-v3 <span class="citation" data-cites="range-v3-fold">[<a href="#ref-range-v3-fold" role="doc-biblioref">range-v3-fold</a>]</span>.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">6</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Append to <span>25.4
  <a href="https://wg21.link/algorithm.syn">[algorithm.syn]</a></span>:</p>
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="pp">#include </span><span class="im">&lt;initializer_list&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a></span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a>  <span class="co">// ...</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a>    </span>
-<span id="cb19-6"><a href="#cb19-6"></a>  <span class="co">// [alg.fold], folds</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>  <span class="kw">namespace</span> ranges <span class="op">{</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb19-9"><a href="#cb19-9"></a>    <span class="kw">struct</span> <em>flipped</em> <span class="op">{</span>  <span class="co">// exposition only</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a>      F f;</span>
-<span id="cb19-11"><a href="#cb19-11"></a>      </span>
-<span id="cb19-12"><a href="#cb19-12"></a>      <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb19-13"><a href="#cb19-13"></a>        <span class="kw">requires</span> invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, T<span class="op">&gt;</span></span>
-<span id="cb19-14"><a href="#cb19-14"></a>      <span class="kw">constexpr</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, T<span class="op">&gt;</span> <span class="kw">operator</span><span class="op">()(</span>T<span class="op">&amp;&amp;</span>, U<span class="op">&amp;&amp;)</span>;</span>
-<span id="cb19-15"><a href="#cb19-15"></a>    <span class="op">}</span>;</span>
-<span id="cb19-16"><a href="#cb19-16"></a>    </span>
-<span id="cb19-17"><a href="#cb19-17"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I, <span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb19-18"><a href="#cb19-18"></a>    <span class="kw">concept</span> <em>indirectly-binary-left-foldable-impl</em> <span class="op">=</span>  <span class="co">// exposition only</span></span>
-<span id="cb19-19"><a href="#cb19-19"></a>        movable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-20"><a href="#cb19-20"></a>        movable<span class="op">&lt;</span>U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-21"><a href="#cb19-21"></a>        convertible_to<span class="op">&lt;</span>T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-22"><a href="#cb19-22"></a>        invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-23"><a href="#cb19-23"></a>        assignable_from<span class="op">&lt;</span>U<span class="op">&amp;</span>, invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;</span>;    </span>
-<span id="cb19-24"><a href="#cb19-24"></a>    </span>
-<span id="cb19-25"><a href="#cb19-25"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
-<span id="cb19-26"><a href="#cb19-26"></a>    <span class="kw">concept</span> <em>indirectly-binary-left-foldable</em> <span class="op">=</span>      <span class="co">// exposition only</span></span>
-<span id="cb19-27"><a href="#cb19-27"></a>        copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-28"><a href="#cb19-28"></a>        indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-29"><a href="#cb19-29"></a>        invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-30"><a href="#cb19-30"></a>        convertible_to<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>,</span>
-<span id="cb19-31"><a href="#cb19-31"></a>               decay_t<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb19-32"><a href="#cb19-32"></a>        <em>indirectly-binary-left-foldable-impl</em><span class="op">&lt;</span>F, T, I, decay_t<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;&gt;</span>; </span>
-<span id="cb19-33"><a href="#cb19-33"></a></span>
-<span id="cb19-34"><a href="#cb19-34"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
-<span id="cb19-35"><a href="#cb19-35"></a>    <span class="kw">concept</span> <em>indirectly-binary-right-foldable</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
-<span id="cb19-36"><a href="#cb19-36"></a>        <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span><em>flipped</em><span class="op">&lt;</span>F<span class="op">&gt;</span>, T, I<span class="op">&gt;</span>;    </span>
-<span id="cb19-37"><a href="#cb19-37"></a>  </span>
-<span id="cb19-38"><a href="#cb19-38"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-39"><a href="#cb19-39"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-40"><a href="#cb19-40"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_left<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-41"><a href="#cb19-41"></a></span>
-<span id="cb19-42"><a href="#cb19-42"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-43"><a href="#cb19-43"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-44"><a href="#cb19-44"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_left<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-45"><a href="#cb19-45"></a></span>
-<span id="cb19-46"><a href="#cb19-46"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-47"><a href="#cb19-47"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-48"><a href="#cb19-48"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb19-49"><a href="#cb19-49"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_left<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-50"><a href="#cb19-50"></a></span>
-<span id="cb19-51"><a href="#cb19-51"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-52"><a href="#cb19-52"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-53"><a href="#cb19-53"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb19-54"><a href="#cb19-54"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_left<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-55"><a href="#cb19-55"></a>    </span>
-<span id="cb19-56"><a href="#cb19-56"></a>    <span class="kw">template</span><span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-57"><a href="#cb19-57"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-58"><a href="#cb19-58"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_right<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-59"><a href="#cb19-59"></a></span>
-<span id="cb19-60"><a href="#cb19-60"></a>    <span class="kw">template</span><span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-61"><a href="#cb19-61"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-62"><a href="#cb19-62"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_right<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-63"><a href="#cb19-63"></a></span>
-<span id="cb19-64"><a href="#cb19-64"></a>    <span class="kw">template</span> <span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-65"><a href="#cb19-65"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-66"><a href="#cb19-66"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb19-67"><a href="#cb19-67"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_right<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb19-68"><a href="#cb19-68"></a></span>
-<span id="cb19-69"><a href="#cb19-69"></a>    <span class="kw">template</span> <span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb19-70"><a href="#cb19-70"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb19-71"><a href="#cb19-71"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb19-72"><a href="#cb19-72"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> fold_right<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;    </span>
-<span id="cb19-73"><a href="#cb19-73"></a>  <span class="op">}</span></span>
-<span id="cb19-74"><a href="#cb19-74"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="pp">#include </span><span class="im">&lt;initializer_list&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a></span>
+<span id="cb18-3"><a href="#cb18-3"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>  <span class="co">// ...</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    </span>
+<span id="cb18-6"><a href="#cb18-6"></a>  <span class="co">// [alg.fold], folds</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a>  <span class="kw">namespace</span> ranges <span class="op">{</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb18-9"><a href="#cb18-9"></a>    <span class="kw">struct</span> <em>flipped</em> <span class="op">{</span>  <span class="co">// exposition only</span></span>
+<span id="cb18-10"><a href="#cb18-10"></a>      F f;</span>
+<span id="cb18-11"><a href="#cb18-11"></a>      </span>
+<span id="cb18-12"><a href="#cb18-12"></a>      <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb18-13"><a href="#cb18-13"></a>        <span class="kw">requires</span> invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, T<span class="op">&gt;</span></span>
+<span id="cb18-14"><a href="#cb18-14"></a>      <span class="kw">constexpr</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, T<span class="op">&gt;</span> <span class="kw">operator</span><span class="op">()(</span>T<span class="op">&amp;&amp;</span>, U<span class="op">&amp;&amp;)</span>;</span>
+<span id="cb18-15"><a href="#cb18-15"></a>    <span class="op">}</span>;</span>
+<span id="cb18-16"><a href="#cb18-16"></a>    </span>
+<span id="cb18-17"><a href="#cb18-17"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb18-18"><a href="#cb18-18"></a>    <span class="kw">concept</span> <em>indirectly-binary-left-foldable-impl</em> <span class="op">=</span>  <span class="co">// exposition only</span></span>
+<span id="cb18-19"><a href="#cb18-19"></a>        movable<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-20"><a href="#cb18-20"></a>        movable<span class="op">&lt;</span>U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-21"><a href="#cb18-21"></a>        convertible_to<span class="op">&lt;</span>T, U<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-22"><a href="#cb18-22"></a>        invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-23"><a href="#cb18-23"></a>        assignable_from<span class="op">&lt;</span>U<span class="op">&amp;</span>, invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, U, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;</span>;    </span>
+<span id="cb18-24"><a href="#cb18-24"></a>    </span>
+<span id="cb18-25"><a href="#cb18-25"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb18-26"><a href="#cb18-26"></a>    <span class="kw">concept</span> <em>indirectly-binary-left-foldable</em> <span class="op">=</span>      <span class="co">// exposition only</span></span>
+<span id="cb18-27"><a href="#cb18-27"></a>        copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-28"><a href="#cb18-28"></a>        indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-29"><a href="#cb18-29"></a>        invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-30"><a href="#cb18-30"></a>        convertible_to<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>,</span>
+<span id="cb18-31"><a href="#cb18-31"></a>               decay_t<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb18-32"><a href="#cb18-32"></a>        <em>indirectly-binary-left-foldable-impl</em><span class="op">&lt;</span>F, T, I, decay_t<span class="op">&lt;</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;&gt;</span>; </span>
+<span id="cb18-33"><a href="#cb18-33"></a></span>
+<span id="cb18-34"><a href="#cb18-34"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb18-35"><a href="#cb18-35"></a>    <span class="kw">concept</span> <em>indirectly-binary-right-foldable</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
+<span id="cb18-36"><a href="#cb18-36"></a>        <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span><em>flipped</em><span class="op">&lt;</span>F<span class="op">&gt;</span>, T, I<span class="op">&gt;</span>;    </span>
+<span id="cb18-37"><a href="#cb18-37"></a>  </span>
+<span id="cb18-38"><a href="#cb18-38"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-39"><a href="#cb18-39"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-40"><a href="#cb18-40"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldl<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-41"><a href="#cb18-41"></a></span>
+<span id="cb18-42"><a href="#cb18-42"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-43"><a href="#cb18-43"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-44"><a href="#cb18-44"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldl<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-45"><a href="#cb18-45"></a></span>
+<span id="cb18-46"><a href="#cb18-46"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-47"><a href="#cb18-47"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-48"><a href="#cb18-48"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb18-49"><a href="#cb18-49"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldl1<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-50"><a href="#cb18-50"></a></span>
+<span id="cb18-51"><a href="#cb18-51"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-52"><a href="#cb18-52"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-53"><a href="#cb18-53"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb18-54"><a href="#cb18-54"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldl1<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-55"><a href="#cb18-55"></a>    </span>
+<span id="cb18-56"><a href="#cb18-56"></a>    <span class="kw">template</span><span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-57"><a href="#cb18-57"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-58"><a href="#cb18-58"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldr<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-59"><a href="#cb18-59"></a></span>
+<span id="cb18-60"><a href="#cb18-60"></a>    <span class="kw">template</span><span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-61"><a href="#cb18-61"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-62"><a href="#cb18-62"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldr<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-63"><a href="#cb18-63"></a></span>
+<span id="cb18-64"><a href="#cb18-64"></a>    <span class="kw">template</span> <span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-65"><a href="#cb18-65"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-66"><a href="#cb18-66"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb18-67"><a href="#cb18-67"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldr1<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb18-68"><a href="#cb18-68"></a></span>
+<span id="cb18-69"><a href="#cb18-69"></a>    <span class="kw">template</span> <span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb18-70"><a href="#cb18-70"></a>      <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb18-71"><a href="#cb18-71"></a>      <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb18-72"><a href="#cb18-72"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldr1<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;    </span>
+<span id="cb18-73"><a href="#cb18-73"></a>  <span class="op">}</span></span>
+<span id="cb18-74"><a href="#cb18-74"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>And add a new clause, [alg.fold]:</p>
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb20-2"><a href="#cb20-2"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_left<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb20-4"><a href="#cb20-4"></a></span>
-<span id="cb20-5"><a href="#cb20-5"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb20-6"><a href="#cb20-6"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb20-7"><a href="#cb20-7"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_left<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldl<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb19-4"><a href="#cb19-4"></a></span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb19-6"><a href="#cb19-6"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldl<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">using</span> U <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;</span>;</span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a>    <span class="cf">return</span> U<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">))</span>;</span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="op">}</span></span>
-<span id="cb21-5"><a href="#cb21-5"></a></span>
-<span id="cb21-6"><a href="#cb21-6"></a>U accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
-<span id="cb21-7"><a href="#cb21-7"></a><span class="cf">for</span> <span class="op">(++</span>first; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-8"><a href="#cb21-8"></a>    accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>accum<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
-<span id="cb21-9"><a href="#cb21-9"></a><span class="op">}</span></span>
-<span id="cb21-10"><a href="#cb21-10"></a><span class="cf">return</span> accum;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">using</span> U <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>    <span class="cf">return</span> U<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">))</span>;</span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="op">}</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a></span>
+<span id="cb20-6"><a href="#cb20-6"></a>U accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="cf">for</span> <span class="op">(++</span>first; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>    accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>accum<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
+<span id="cb20-9"><a href="#cb20-9"></a><span class="op">}</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a><span class="cf">return</span> accum;</span></code></pre></div>
 </blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb22-2"><a href="#cb22-2"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_left<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
-<span id="cb22-5"><a href="#cb22-5"></a></span>
-<span id="cb22-6"><a href="#cb22-6"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
-<span id="cb22-7"><a href="#cb22-7"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb22-8"><a href="#cb22-8"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb22-9"><a href="#cb22-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_left<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Preconditions</em>: <code class="sourceCode cpp">first <span class="op">!=</span> last</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> ranges<span class="op">::</span>fold_left<span class="op">(</span>ranges<span class="op">::</span>next<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">))</span>, std<span class="op">::</span>move<span class="op">(</span>last<span class="op">)</span>, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;(*</span>first<span class="op">)</span>, f, proj<span class="op">)</span></code> except ensuring that the initial value is constructed before the iterator is incremented if <code class="sourceCode cpp">first</code> is an input iterator.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb21-2"><a href="#cb21-2"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldl1<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb21-5"><a href="#cb21-5"></a></span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb21-7"><a href="#cb21-7"></a>  <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldl1<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> Let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>foldl<span class="op">(</span>first, last, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;(*</span>first<span class="op">)</span>, f, proj<span class="op">))</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Equivalent to:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>U<span class="op">&gt;()</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="op">}</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span> init<span class="op">(*</span>first<span class="op">)</span>;</span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="op">++</span>first;</span>
+<span id="cb22-7"><a href="#cb22-7"></a><span class="cf">return</span> optional<span class="op">&lt;</span>U<span class="op">&gt;(</span>in_place,</span>
+<span id="cb22-8"><a href="#cb22-8"></a>    ranges<span class="op">::</span>foldl<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>last<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>f<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>proj<span class="op">)))</span>;</span></code></pre></div>
+</blockquote>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span><span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
 <span id="cb23-2"><a href="#cb23-2"></a>  <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_right<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldr<span class="op">(</span>I first, S last, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
 <span id="cb23-4"><a href="#cb23-4"></a></span>
 <span id="cb23-5"><a href="#cb23-5"></a><span class="kw">template</span><span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> T, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
 <span id="cb23-6"><a href="#cb23-6"></a>  <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>T, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
-<span id="cb23-7"><a href="#cb23-7"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_right<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+<span id="cb23-7"><a href="#cb23-7"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldr<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, T init, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">using</span> U <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;</span>, T<span class="op">&gt;</span>;</span>
@@ -994,20 +1185,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span>bidirectional_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
 <span id="cb25-2"><a href="#cb25-2"></a>  <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, projected<span class="op">&lt;</span>I, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
 <span id="cb25-3"><a href="#cb25-3"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_right<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldr1<span class="op">(</span>I first, S last, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span>
 <span id="cb25-5"><a href="#cb25-5"></a></span>
 <span id="cb25-6"><a href="#cb25-6"></a><span class="kw">template</span> <span class="op">&lt;</span>bidirectional_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
 <span id="cb25-7"><a href="#cb25-7"></a>  <em>indirectly-binary-right-foldable</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> F<span class="op">&gt;</span></span>
 <span id="cb25-8"><a href="#cb25-8"></a>  <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
-<span id="cb25-9"><a href="#cb25-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>fold_right<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;  </span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Preconditions</em>: <code class="sourceCode cpp">first <span class="op">!=</span> last</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<span id="cb25-9"><a href="#cb25-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>foldr1<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F f, Proj proj <span class="op">=</span> <span class="op">{})</span>;  </span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> Let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>ranges<span class="op">::</span>foldr<span class="op">(</span>first, last, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;(*</span>first<span class="op">)</span>, f, proj<span class="op">))</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized">6</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a>I tail <span class="op">=</span> ranges<span class="op">::</span>prev<span class="op">(</span>ranges<span class="op">::</span>next<span class="op">(</span>first, std<span class="op">::</span>move<span class="op">(</span>last<span class="op">)))</span>;</span>
-<span id="cb26-2"><a href="#cb26-2"></a><span class="cf">return</span> ranges<span class="op">::</span>fold_right<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, tail, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;(*</span>tail<span class="op">)</span>, f, proj<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>U<span class="op">&gt;()</span>;</span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="op">}</span></span>
+<span id="cb26-4"><a href="#cb26-4"></a></span>
+<span id="cb26-5"><a href="#cb26-5"></a>I tail <span class="op">=</span> ranges<span class="op">::</span>prev<span class="op">(</span>ranges<span class="op">::</span>next<span class="op">(</span>first, std<span class="op">::</span>move<span class="op">(</span>last<span class="op">)))</span>;</span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="cf">return</span> optional<span class="op">&lt;</span>U<span class="op">&gt;(</span>in_place,</span>
+<span id="cb26-7"><a href="#cb26-7"></a>    ranges<span class="op">::</span>fold_right<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, tail, iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;(*</span>tail<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>f<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>proj<span class="op">)))</span>;</span></code></pre></div>
 </blockquote>
 </blockquote>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-iterator_fold_self">
 <p>[iterator_fold_self] Ashley Mannix. 2020. Tracking issue for <code class="sourceCode cpp">iterator_fold_self</code>. <br />
@@ -1021,6 +1217,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[P2321R0] Tim Song. 2021-02-21. zip. <br />
 <a href="https://wg21.link/p2321r0">https://wg21.link/p2321r0</a></p>
 </div>
+<div id="ref-P2322-minutes">
+<p>[P2322-minutes] LEWG. 2021. P2322 Minutes. <br />
+<a href="https://wiki.edg.com/bin/view/Wg21telecons2021/P2322#2021-05-03">https://wiki.edg.com/bin/view/Wg21telecons2021/P2322#2021-05-03</a></p>
+</div>
 <div id="ref-P2322R0">
 <p>[P2322R0] Barry Revzin. 2021-02-18. ranges::fold. <br />
 <a href="https://wg21.link/p2322r0">https://wg21.link/p2322r0</a></p>
@@ -1028,6 +1228,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2322R1">
 <p>[P2322R1] Barry Revzin. 2021-03-17. ranges::fold. <br />
 <a href="https://wg21.link/p2322r1">https://wg21.link/p2322r1</a></p>
+</div>
+<div id="ref-P2322R2">
+<p>[P2322R2] Barry Revzin. 2021-04-15. ranges::fold. <br />
+<a href="https://wg21.link/p2322r2">https://wg21.link/p2322r2</a></p>
+</div>
+<div id="ref-range-v3-fold">
+<p>[range-v3-fold] Barry Revzin. 2021. Fold algos. <br />
+<a href="https://github.com/ericniebler/range-v3/pull/1628">https://github.com/ericniebler/range-v3/pull/1628</a></p>
 </div>
 <div id="ref-stepanov">
 <p>[stepanov] Alexander A. Stepanov. 2014. From Mathematics to Generic Programming. </p>
