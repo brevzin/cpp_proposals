@@ -453,7 +453,7 @@ namespace std {
       
       template<class T, class U>
         requires invocable<F&, U, T>
-      constexpr invoke_result_t<F&, U, T> operator()(T&&, U&&);
+      invoke_result_t<F&, U, T> operator()(T&&, U&&);
     };
     
     template <class F, class T, class I, class U>
