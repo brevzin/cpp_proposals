@@ -661,7 +661,105 @@ First, a new class template `std::ranges::range_adaptor_closure<T>` that range a
 
 Second, a new function adaptor `std::bind_back`, such that `std::bind_back(f, ys...)(xs...)` is equivalent to `f(xs..., ys...)`.
 
+## Wording for `range_adaptor_closure`
 
+Add `range_adaptor_closure` to [ranges.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+#include <iterator>             // see [iterator.synopsis]
+
+namespace std::ranges {
+
++ // [range.adaptor.object]
++ template<class D>
++   requires is_class_v<D> && same_as<D, remove_cv_t<D>>
++ class range_adaptor_closure { };
+
+  // [view.interface], class template view_interface
+  template<class D>
+    requires is_class_v<D> && same_as<D, remove_cv_t<D>>
+  class view_interface;
+}
+```
+:::
+
+Change [range.adaptor.object]{.sref}:
+
+::: bq
+[1]{.pnum} A *range adaptor closure object* is a unary function object that accepts a `viewable_range` argument and returns a `view`.
+For a range adaptor closure object `C` and an expression `R` such that `decltype((R))` models `viewable_range`, the following expressions are equivalent and yield a view:
+```
+C(R)
+R | C
+```
+Given an additional range adaptor closure object `D`, the expression `C | D` is well-formed and produces another range adaptor closure object such that the following two expressions are equivalent:
+```
+R | C | D
+R | (C | D)
+```
+
+::: addu
+[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` has exactly one public base class `range_adaptor_closure<U>` for some type `U` and `T` has no other base classes of type `range_adaptor_closure<V>` for any other type `V`.
+:::
+:::
+
+## Wording for `bind_back`
+
+Add `bind_back` to [functional.syn]{.sref}. The wording will go into the same section, so rename the clause from [func.bind.front] to [func.bind.partial]:
+
+::: bq
+```diff
+namespace std {
+
+- // [func.bind.front], function template bind_front
++ // [func.bind.partial], function templates bind_front and bind_back
+  template<class F, class... Args> constexpr @*unspecified*@ bind_front(F&&, Args&&...);
++ template<class F, class... Args> constexpr @*unspecified*@ bind_back(F&&, Args&&...);
+}
+```
+:::
+
+Rename the [func.bind.front]{.sref} clause to [func.bind.partial] (Function templates `bind_front` and `bind_back`) and extend the wording to handle both cases:
+
+::: bq
+```diff
+  template<class F, class... Args>
+    constexpr @*unspecified*@ bind_back(F&& f, Args&&... args);
++ template<class F, class... Args>
++   constexpr @*unspecified*@ bind_back(F&& f, Args&&... args);
+```
+[1]{.pnum} Within this subclause:
+
+* [1.1]{.pnum} `g` is a value of the result of a `bind_front` [or `bind_back`]{.addu} invocation,
+* [1.2]{.pnum} `FD` is the type `decay_t<F>`,
+* [1.3]{.pnum} `fd` is the target object of `g` ([func.def]) of type `FD`, direct-non-list-initialized with `std​::​forward<F​>(f)`,
+* [1.4]{.pnum} `BoundArgs` is a pack that denotes `decay_t<Args>...`,
+* [1.5]{.pnum} `bound_args` is a pack of bound argument entities of `g` ([func.def]) of types `BoundArgs...`, direct-non-list-initialized with `std​::​forward<Args>(args)...`, respectively, and
+* [1.6]{.pnum} `call_args` is an argument pack used in a function call expression ([expr.call]) of `g`.
+
+[2]{.pnum} *Mandates*:
+
+```
+is_constructible_v<FD, F> &&
+is_move_constructible_v<FD> &&
+(is_constructible_v<BoundArgs, Args> && ...) &&
+(is_move_constructible_v<BoundArgs> && ...)
+```
+is `true`.
+
+[3]{.pnum} *Preconditions*: `FD` meets the *Cpp17MoveConstructible* requirements.
+For each `T@~i~@` in `BoundArgs`, if `T@~i~@` is an object type, `T@~i~@` meets the *Cpp17MoveConstructible* requirements.
+
+[4]{.pnum} *Returns*: A perfect forwarding call wrapper g with call pattern[:]{.addu}
+
+* [4.1]{.pnum} `invoke(fd, bound_args..., call_args...)` [for a `bind_front` invocation, or]{.addu}
+* [4.2]{.pnum} [`invoke(fd, call_args..., bound_args...)` for a `bind_front` invocation.]{.addu}
+
+[5]{.pnum} *Throws*: Any exception thrown by the initialization of the state entities of `g` ([func.def]).
+:::
 
 ---
 references:

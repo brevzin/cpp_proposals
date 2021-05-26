@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-25" />
+  <meta name="dcterms.date" content="2021-05-26" />
   <title>Pipe support for user-defined range adaptors</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-25</td>
+    <td>2021-05-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -577,7 +577,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#range-adaptor-closure-objects"><span class="toc-section-number">3.1</span> Range Adaptor Closure Objects<span></span></a></li>
 <li><a href="#range-adaptor-objects"><span class="toc-section-number">3.2</span> Range Adaptor Objects<span></span></a></li>
 </ul></li>
-<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording-for-range_adaptor_closure"><span class="toc-section-number">4.1</span> Wording for <code class="sourceCode cpp">range_adaptor_closure</code><span></span></a></li>
+<li><a href="#wording-for-bind_back"><span class="toc-section-number">4.2</span> Wording for <code class="sourceCode cpp">bind_back</code><span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
@@ -1183,6 +1187,88 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This paper proposes two additions to the standard library:</p>
 <p>First, a new class template <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>T<span class="op">&gt;</span></code> that range adaptor closure objects will have to inherit from. For existing range adaptor closure objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code>) and the partially applied results from the existing range adaptor objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span></code>), it will be up to the standard library to properly handle them (whether changing those types to inherit from this new thing or having <code class="sourceCode cpp">range_adaptor_closure</code> additionally recognize the particular implementation’s preexisting range adaptor closure marker instead).</p>
 <p>Second, a new function adaptor <code class="sourceCode cpp">std<span class="op">::</span>bind_back</code>, such that <code class="sourceCode cpp">std<span class="op">::</span>bind_back<span class="op">(</span>f, ys<span class="op">...)(</span>xs<span class="op">...)</span></code> is equivalent to <code class="sourceCode cpp">f<span class="op">(</span>xs<span class="op">...</span>, ys<span class="op">...)</span></code>.</p>
+<h2 data-number="4.1" id="wording-for-range_adaptor_closure"><span class="header-section-number">4.1</span> Wording for <code class="sourceCode cpp">range_adaptor_closure</code><a href="#wording-for-range_adaptor_closure" class="self-link"></a></h2>
+<p>Add <code class="sourceCode cpp">range_adaptor_closure</code> to <span>24.2
+ <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>#include &lt;compare&gt;              // see [compare.syn]</span>
+<span id="cb24-2"><a href="#cb24-2"></a>#include &lt;initializer_list&gt;     // see [initializer.list.syn]</span>
+<span id="cb24-3"><a href="#cb24-3"></a>#include &lt;iterator&gt;             // see [iterator.synopsis]</span>
+<span id="cb24-4"><a href="#cb24-4"></a></span>
+<span id="cb24-5"><a href="#cb24-5"></a>namespace std::ranges {</span>
+<span id="cb24-6"><a href="#cb24-6"></a></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="va">+ // [range.adaptor.object]</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="va">+ template&lt;class D&gt;</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a><span class="va">+   requires is_class_v&lt;D&gt; &amp;&amp; same_as&lt;D, remove_cv_t&lt;D&gt;&gt;</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="va">+ class range_adaptor_closure { };</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a></span>
+<span id="cb24-12"><a href="#cb24-12"></a>  // [view.interface], class template view_interface</span>
+<span id="cb24-13"><a href="#cb24-13"></a>  template&lt;class D&gt;</span>
+<span id="cb24-14"><a href="#cb24-14"></a>    requires is_class_v&lt;D&gt; &amp;&amp; same_as&lt;D, remove_cv_t&lt;D&gt;&gt;</span>
+<span id="cb24-15"><a href="#cb24-15"></a>  class view_interface;</span>
+<span id="cb24-16"><a href="#cb24-16"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change <span>24.7.2
+ <a href="https://wg21.link/range.adaptor.object">[range.adaptor.object]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> A <em>range adaptor closure object</em> is a unary function object that accepts a <code class="sourceCode cpp">viewable_range</code> argument and returns a <code class="sourceCode cpp">view</code>. For a range adaptor closure object <code class="sourceCode cpp">C</code> and an expression <code class="sourceCode cpp">R</code> such that <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>R<span class="op">))</span></code> models <code class="sourceCode cpp">viewable_range</code>, the following expressions are equivalent and yield a view:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>C(R)</span>
+<span id="cb25-2"><a href="#cb25-2"></a>R | C</span></code></pre></div>
+<p>Given an additional range adaptor closure object <code class="sourceCode cpp">D</code>, the expression <code class="sourceCode cpp">C <span class="op">|</span> D</code> is well-formed and produces another range adaptor closure object such that the following two expressions are equivalent:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>R | C | D</span>
+<span id="cb26-2"><a href="#cb26-2"></a>R | (C | D)</span></code></pre></div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized">?</a></span> An object <code class="sourceCode cpp">t</code> of type <code class="sourceCode cpp">T</code> is a range adaptor closure object if <code class="sourceCode cpp">T</code> has exactly one public base class <code class="sourceCode cpp">range_adaptor_closure<span class="op">&lt;</span>U<span class="op">&gt;</span></code> for some type <code class="sourceCode cpp">U</code> and <code class="sourceCode cpp">T</code> has no other base classes of type <code class="sourceCode cpp">range_adaptor_closure<span class="op">&lt;</span>V<span class="op">&gt;</span></code> for any other type <code class="sourceCode cpp">V</code>.</p>
+</div>
+</blockquote>
+<h2 data-number="4.2" id="wording-for-bind_back"><span class="header-section-number">4.2</span> Wording for <code class="sourceCode cpp">bind_back</code><a href="#wording-for-bind_back" class="self-link"></a></h2>
+<p>Add <code class="sourceCode cpp">bind_back</code> to <span>20.14.2
+ <a href="https://wg21.link/functional.syn">[functional.syn]</a></span>. The wording will go into the same section, so rename the clause from [func.bind.front] to [func.bind.partial]:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1"></a>namespace std {</span>
+<span id="cb27-2"><a href="#cb27-2"></a></span>
+<span id="cb27-3"><a href="#cb27-3"></a><span class="st">- // [func.bind.front], function template bind_front</span></span>
+<span id="cb27-4"><a href="#cb27-4"></a><span class="va">+ // [func.bind.partial], function templates bind_front and bind_back</span></span>
+<span id="cb27-5"><a href="#cb27-5"></a>  template&lt;class F, class... Args&gt; constexpr <em>unspecified</em> bind_front(F&amp;&amp;, Args&amp;&amp;...);</span>
+<span id="cb27-6"><a href="#cb27-6"></a><span class="va">+ template&lt;class F, class... Args&gt; constexpr <em>unspecified</em> bind_back(F&amp;&amp;, Args&amp;&amp;...);</span></span>
+<span id="cb27-7"><a href="#cb27-7"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Rename the <span>20.14.14
+ <a href="https://wg21.link/func.bind.front">[func.bind.front]</a></span> clause to [func.bind.partial] (Function templates <code class="sourceCode cpp">bind_front</code> and <code class="sourceCode cpp">bind_back</code>) and extend the wording to handle both cases:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1"></a>  template&lt;class F, class... Args&gt;</span>
+<span id="cb28-2"><a href="#cb28-2"></a>    constexpr <em>unspecified</em> bind_back(F&amp;&amp; f, Args&amp;&amp;... args);</span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="va">+ template&lt;class F, class... Args&gt;</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="va">+   constexpr <em>unspecified</em> bind_back(F&amp;&amp; f, Args&amp;&amp;... args);</span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> Within this subclause:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(1.1)</a></span> <code class="sourceCode cpp">g</code> is a value of the result of a <code class="sourceCode cpp">bind_front</code> <span class="addu">or <code class="sourceCode cpp">bind_back</code></span> invocation,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.2)</a></span> <code class="sourceCode cpp">FD</code> is the type <code class="sourceCode cpp">decay_t<span class="op">&lt;</span>F<span class="op">&gt;</span></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.3)</a></span> <code class="sourceCode cpp">fd</code> is the target object of <code class="sourceCode cpp">g</code> ([func.def]) of type <code class="sourceCode cpp">FD</code>, direct-non-list-initialized with <code class="sourceCode cpp">std​<span class="op">::</span>​forward<span class="op">&lt;</span>F​<span class="op">&gt;(</span>f<span class="op">)</span></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.4)</a></span> <code class="sourceCode cpp">BoundArgs</code> is a pack that denotes <code class="sourceCode cpp">decay_t<span class="op">&lt;</span>Args<span class="op">&gt;...</span></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.5)</a></span> <code class="sourceCode cpp">bound_args</code> is a pack of bound argument entities of <code class="sourceCode cpp">g</code> ([func.def]) of types <code class="sourceCode cpp">BoundArgs<span class="op">...</span></code>, direct-non-list-initialized with <code class="sourceCode cpp">std​<span class="op">::</span>​forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...</span></code>, respectively, and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(1.6)</a></span> <code class="sourceCode cpp">call_args</code> is an argument pack used in a function call expression ([expr.call]) of <code class="sourceCode cpp">g</code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Mandates</em>:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>is_constructible_v&lt;FD, F&gt; &amp;&amp;</span>
+<span id="cb29-2"><a href="#cb29-2"></a>is_move_constructible_v&lt;FD&gt; &amp;&amp;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>(is_constructible_v&lt;BoundArgs, Args&gt; &amp;&amp; ...) &amp;&amp;</span>
+<span id="cb29-4"><a href="#cb29-4"></a>(is_move_constructible_v&lt;BoundArgs&gt; &amp;&amp; ...)</span></code></pre></div>
+<p>is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Preconditions</em>: <code class="sourceCode cpp">FD</code> meets the <em>Cpp17MoveConstructible</em> requirements. For each <code class="sourceCode cpp">T<sub>i</sub></code> in <code class="sourceCode cpp">BoundArgs</code>, if <code class="sourceCode cpp">T<sub>i</sub></code> is an object type, <code class="sourceCode cpp">T<sub>i</sub></code> meets the <em>Cpp17MoveConstructible</em> requirements.</p>
+<p><span class="marginalizedparent"><a class="marginalized">4</a></span> <em>Returns</em>: A perfect forwarding call wrapper g with call pattern<span class="addu">:</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(4.1)</a></span> <code class="sourceCode cpp">invoke<span class="op">(</span>fd, bound_args<span class="op">...</span>, call_args<span class="op">...)</span></code> <span class="addu">for a <code class="sourceCode cpp">bind_front</code> invocation, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(4.2)</a></span> <span class="addu"><code class="sourceCode cpp">invoke<span class="op">(</span>fd, call_args<span class="op">...</span>, bound_args<span class="op">...)</span></code> for a <code class="sourceCode cpp">bind_front</code> invocation.</span></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized">5</a></span> <em>Throws</em>: Any exception thrown by the initialization of the state entities of <code class="sourceCode cpp">g</code> ([func.def]).</p>
+</blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-gcc-10">
