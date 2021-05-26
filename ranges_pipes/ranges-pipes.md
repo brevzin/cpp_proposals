@@ -9,6 +9,16 @@ author:
 toc: true
 ---
 
+# Introduction
+
+When we presented the C++23 Ranges Plan [@P2214R0] to LEWG, one of the arguments we made was that the top priority item on the list was the ability to eagerly collect a range into a type (`ranges::to` [@P1206R3]). During the telecon discussing that paper, Walter Brown made an excellent observation: if we gave users the tools to write their own range adaptors that would properly inter-operate with standard library adaptors (as well as other users' adaptors), then it becomes less important to provide more adaptors in the standard library. 
+
+The goal of this paper is provide that functionality: provide a standard customization mechanism for range adaptors, so that everybody can write their own adaptors. 
+
+# Implementation Experience
+
+To start with, there have been several implementations of the range adaptor design, that are all a little bit different. It is worth going through them all to compare how they solved the problem. 
+
 ## NanoRange
 
 In Tristan Brindle's [@NanoRange], we have the following approach. NanoRange uses the acronyms `raco` for **R**ange **A**daptor **C**losure **O**bject and `rao` for **R**ange **A**daptor **O**bject (both defined in [range.adaptor.object]{.sref}).
@@ -528,6 +538,76 @@ namespace std::ranges::views {
 }
 ```
 :::
+
+# Problem Space
+
+Ultimately, there are two separate problems here.
+
+## Range Adaptor Closure Objects
+
+We need to be able to declare a _range adaptor closure object_ ([range.adaptor.object]{.sref}), which has the following requirements (where `R` is some `viewable_range`, and `C` and `D` are range adaptor closure objects):
+
+* `C(R)` and `R | C` are equivalent
+* `R | C | D` and `R | (C | D)`
+
+It is up to the user to provide the call operator to make `C(R)` work, but it needs to be up to whatever the library design is to make `R | C` work (and end up invoking `C`) and to make `C | D` work (to produce a new range adaptor closure object).
+
+Because the library needs to provide operator overloads, the design needs to be such that it is actually possible for those operator overloads to be discovered. The five implementations presented above have three different approaches to this:
+
+1. The closure object type is declared in the namespace where the `operator|`s are declared (NanoRange)
+2. The closure object type inherits from a regular base class (gcc 11) or CRTP base class (MSVC) which defines those `operator|`s.
+3. The closure object type is a specialization of a library class template, with the actual function object type as a template parameter (range-v3, gcc 10).
+
+Of these, the NanoRange option is a non-starter since we don't want to have everyone adding all of their types into `std::ranges`. 
+
+While a regular base class (gcc 11) is easier to use (by virtue of simply being less to type) than a CRTP base class (msvc), it has the downside of the multiple-instances-of-the-same-empty-base problem (see also [@LWG3549]). In gcc 11's implementation, the `C | D` overload produces an object that [looks like](https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges#L872-L878):
+
+::: bq
+```cpp
+// A range adaptor closure that represents composition of the range
+// adaptor closures _Lhs and _Rhs.
+template<typename _Lhs, typename _Rhs>
+  struct _Pipe : _RangeAdaptorClosure
+  {
+    [[no_unique_address]] _Lhs _M_lhs;
+    [[no_unique_address]] _Rhs _M_rhs;
+    // ...
+  };
+```
+:::
+
+This object contains three copies of `_RangeAdaptorClosure`, which means it has to be at least 3 bytes wide, even if `_Lhs` and `_Rhs` are both empty. 
+
+That reduces our choice to either providing a class template that users inherit from CRTP-style (MSVC) or a class template that users use to wrap their type (gcc 10/range-v3). There isn't that much of a difference between the two as far as implementing a range adaptor closure object goes - it's just a question of where you put the library type. But there _is_ a different as far as diagnostics are concerned. With the `views::join` example, it's a question of whether an error message will contain the type `JoinFn` or whether it will contain the type `std::ranges::range_adaptor_closure<JoinFn>` in it. Having the former is strictly better. 
+
+This paper proposes the MSVC approach: having a CRTP base class that implements the range adaptor closure design.
+
+## Range Adaptor Objects
+
+We need to be able to declare a _range adaptor object_ ([range.adaptor.object]{.sref}). This part is more complicated. For multi-argument range adaptors, we need the following forms to be equivalent:
+
+* `adaptor(range, args...)`
+* `adaptor(args...)(range)`
+* `range | adaptor(args...)`
+
+Where `adaptor(args...)` produces a range adaptor closure object.
+
+While the various implementation approaches for the range adaptor closure problem were fairly similar (the library has to provide two `operator|`s, there really aren't that many ways to provide them), the implementations presented here have very different approaches to making multi-argument range adaptors more convenient - which range from extremely manual (MSVC) to effortless (gcc 10). There's such a range of implementations here that it's quite difficult to actually say which is the "right" one, or which one could be considered "standard practice." This is still an area being experimented on.
+
+But importantly, the standard library also doesn't *need* to solve this problem. As soon as the standard library can provide a common mechanism for users to create a range adaptor closure object that can play well with others, users can implement their range adaptors any way they like. Perhaps some new, as-yet undiscovered approach comes around in a few years that is superior to the other alternatives and we can standardize that one for C++26. Perhaps a language solution (like `|>`) gets finalized and this becomes less important too. 
+
+Rather than try to introduce a mechanism like gcc 10's or gcc 11's approach, this paper actually proposes no approach. Or, put differently, this paper proposes the MSVC approach for the range adaptor object problem too.
+
+However, one approach to the range adaptor problem (range-v3's) involves using `bind_back` to create a new range adaptor closure object. There was previously a proposal to add `bind_back` as a new function adaptor to the standard library [@P0356R0], though it was removed in R1 of that paper due to lack of compelling uses cases. This problem seems compelling to me, and I'd expect some users to use `bind_back` to solve it.
+
+# Proposal
+
+This paper proposes two additions to the standard library:
+
+First, a new class template `std::ranges::range_adaptor_closure<T>` that range adaptor closure objects will have to inherit from. This includes all existing range adaptor closure objects (like `std::views::join`) and the partially applied results from the existing range adaptor objects (like `std::views::transform(f)`).
+
+Second, a new function adaptor `std::bind_back`, such that `std::bind_back(f, ys...)(xs...)` is equivalent to `f(xs..., ys...)`.
+
 
 
 ---

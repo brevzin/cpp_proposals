@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-10" />
+  <meta name="dcterms.date" content="2021-05-25" />
   <title>Pipe support for user-defined range adaptors</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-10</td>
+    <td>2021-05-25</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -563,15 +563,30 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#nanorange"><span class="toc-section-number">0.1</span> NanoRange<span></span></a></li>
-<li><a href="#range-v3"><span class="toc-section-number">0.2</span> range-v3<span></span></a></li>
-<li><a href="#gcc-10"><span class="toc-section-number">0.3</span> gcc 10<span></span></a></li>
-<li><a href="#gcc-11"><span class="toc-section-number">0.4</span> gcc 11<span></span></a></li>
-<li><a href="#msvc"><span class="toc-section-number">0.5</span> msvc<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">1</span> References<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">2</span> Implementation Experience<span></span></a>
+<ul>
+<li><a href="#nanorange"><span class="toc-section-number">2.1</span> NanoRange<span></span></a></li>
+<li><a href="#range-v3"><span class="toc-section-number">2.2</span> range-v3<span></span></a></li>
+<li><a href="#gcc-10"><span class="toc-section-number">2.3</span> gcc 10<span></span></a></li>
+<li><a href="#gcc-11"><span class="toc-section-number">2.4</span> gcc 11<span></span></a></li>
+<li><a href="#msvc"><span class="toc-section-number">2.5</span> msvc<span></span></a></li>
+</ul></li>
+<li><a href="#problem-space"><span class="toc-section-number">3</span> Problem Space<span></span></a>
+<ul>
+<li><a href="#range-adaptor-closure-objects"><span class="toc-section-number">3.1</span> Range Adaptor Closure Objects<span></span></a></li>
+<li><a href="#range-adaptor-objects"><span class="toc-section-number">3.2</span> Range Adaptor Objects<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
-<h2 data-number="0.1" id="nanorange"><span class="header-section-number">0.1</span> NanoRange<a href="#nanorange" class="self-link"></a></h2>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>When we presented the C++23 Ranges Plan <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span> to LEWG, one of the arguments we made was that the top priority item on the list was the ability to eagerly collect a range into a type (<code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R3">[<a href="#ref-P1206R3" role="doc-biblioref">P1206R3</a>]</span>). During the telecon discussing that paper, Walter Brown made an excellent observation: if we gave users the tools to write their own range adaptors that would properly inter-operate with standard library adaptors (as well as other users’ adaptors), then it becomes less important to provide more adaptors in the standard library.</p>
+<p>The goal of this paper is provide that functionality: provide a standard customization mechanism for range adaptors, so that everybody can write their own adaptors.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="implementation-experience"><span class="header-section-number">2</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h1>
+<p>To start with, there have been several implementations of the range adaptor design, that are all a little bit different. It is worth going through them all to compare how they solved the problem.</p>
+<h2 data-number="2.1" id="nanorange"><span class="header-section-number">2.1</span> NanoRange<a href="#nanorange" class="self-link"></a></h2>
 <p>In Tristan Brindle’s <span class="citation" data-cites="NanoRange">[<a href="#ref-NanoRange" role="doc-biblioref">NanoRange</a>]</span>, we have the following approach. NanoRange uses the acronyms <code class="sourceCode cpp">raco</code> for <strong>R</strong>ange <strong>A</strong>daptor <strong>C</strong>losure <strong>O</strong>bject and <code class="sourceCode cpp">rao</code> for <strong>R</strong>ange <strong>A</strong>daptor <strong>O</strong>bject (both defined in <span>24.7.2
  <a href="https://wg21.link/range.adaptor.object">[range.adaptor.object]</a></span>).</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">namespace</span> nano<span class="op">::</span>detail <span class="op">{</span></span>
@@ -694,7 +709,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-6"><a href="#cb4-6"></a>        <span class="cf">return</span> join_view<span class="op">{</span>FWD<span class="op">(</span>e<span class="op">)}</span>;</span>
 <span id="cb4-7"><a href="#cb4-7"></a>    <span class="op">}</span></span>
 <span id="cb4-8"><a href="#cb4-8"></a><span class="op">}</span>;</span></code></pre></div>
-<h2 data-number="0.2" id="range-v3"><span class="header-section-number">0.2</span> range-v3<a href="#range-v3" class="self-link"></a></h2>
+<h2 data-number="2.2" id="range-v3"><span class="header-section-number">2.2</span> range-v3<a href="#range-v3" class="self-link"></a></h2>
 <p>In <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span>, the approach is a bit more involved but still has the same kind of structure. Here, we have three types: <code class="sourceCode cpp">view_closure<span class="op">&lt;</span>F<span class="op">&gt;</span></code> inherits from <code class="sourceCode cpp">view_closure_base</code> inherits from <code class="sourceCode cpp">view_closure_base_</code> (the latter of which is an empty class).</p>
 <p><code class="sourceCode cpp">view_closure<span class="op">&lt;</span>F<span class="op">&gt;</span></code> is a lot like NanoRange’s <code class="sourceCode cpp">rao_proxy<span class="op">&lt;</span>F<span class="op">&gt;</span></code>, just with an extra base class:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ViewFn<span class="op">&gt;</span></span>
@@ -793,7 +808,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>Compared to NanoRange, this looks very similar. We have to manually write both overloads for <code class="sourceCode cpp">transform</code>, where the partial overload returns some kind of special library closure object (<code class="sourceCode cpp">view_closure</code> vs <code class="sourceCode cpp">rao_proxy</code>). The primary difference here is that with NanoRange, <code class="sourceCode cpp">join_view_fn</code> needed to be defined in the <code class="sourceCode cpp">nano<span class="op">::</span>detail</code> namespace and then the variable template <code class="sourceCode cpp">is_raco</code> needed to be specialized to <code class="sourceCode cpp"><span class="kw">true</span></code>, while in range-v3, <code class="sourceCode cpp">join_view_fn</code> can actually be in any namespace as long as the <code class="sourceCode cpp">join</code> object itself has type <code class="sourceCode cpp">view_closure<span class="op">&lt;</span>join_view_fn<span class="op">&gt;</span></code>.</p>
-<h2 data-number="0.3" id="gcc-10"><span class="header-section-number">0.3</span> gcc 10<a href="#gcc-10" class="self-link"></a></h2>
+<h2 data-number="2.3" id="gcc-10"><span class="header-section-number">2.3</span> gcc 10<a href="#gcc-10" class="self-link"></a></h2>
 <p>The implementation of pipe support in <span class="citation" data-cites="gcc-10">[<a href="#ref-gcc-10" role="doc-biblioref">gcc-10</a>]</span> is quite different from either NanoRange or range-v3. There, we had two class templates: <code class="sourceCode cpp">__adaptor<span class="op">::</span>_RangeAdaptorClosure<span class="op">&lt;</span>F<span class="op">&gt;</span></code> and <code class="sourceCode cpp">__adaptor<span class="op">::</span>_RangeAdaptor<span class="op">&lt;</span>F<span class="op">&gt;</span></code>, which represent range adaptor closure objects and range adaptors, respectively.</p>
 <p>The latter either invokes <code class="sourceCode cpp">F</code> if possible (to handle the <code class="sourceCode cpp">adaptor<span class="op">(</span>range, args<span class="op">...)</span></code> case) or, if not, returns a <code class="sourceCode cpp">_RangeAdaptorClosure</code> specialization (to handle the <code class="sourceCode cpp">adaptor<span class="op">(</span>args<span class="op">...)</span></code> case). The following implementation is reduced a bit, to simply convey how it works (and to use non-uglified names):</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Callable<span class="op">&gt;</span></span>
@@ -926,7 +941,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h2 data-number="0.4" id="gcc-11"><span class="header-section-number">0.4</span> gcc 11<a href="#gcc-11" class="self-link"></a></h2>
+<h2 data-number="2.4" id="gcc-11"><span class="header-section-number">2.4</span> gcc 11<a href="#gcc-11" class="self-link"></a></h2>
 <p>The implementation of pipe support in <span class="citation" data-cites="gcc-11">[<a href="#ref-gcc-11" role="doc-biblioref">gcc-11</a>]</span> is closer to the range-v3/NanoRange implementations than the gcc 10 one.</p>
 <p>In this implementation, <code class="sourceCode cpp">_RangeAdaptorClosure</code> is an empty type that is the base class of every range adaptor closure, equivalent to range-v3’s <code class="sourceCode cpp">view_closure_base</code>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">struct</span> _RangeAdaptorClosure <span class="op">{</span></span>
@@ -1006,7 +1021,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>This is longer than the gcc 10 implementation in that we need both a type and a variable, whereas before we only needed the lambda. But it’s still shorter than either the NanoRange or range-v3 implementations in that we do not need to manually implement the partial overload. The library does that for us, we simply have to provide the <em>using-declaration</em> to bring in the partial <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code> as well as declare our <code class="sourceCode cpp">arity</code>.</p>
-<h2 data-number="0.5" id="msvc"><span class="header-section-number">0.5</span> msvc<a href="#msvc" class="self-link"></a></h2>
+<h2 data-number="2.5" id="msvc"><span class="header-section-number">2.5</span> msvc<a href="#msvc" class="self-link"></a></h2>
 <p>The <span class="citation" data-cites="msvc">[<a href="#ref-msvc" role="doc-biblioref">msvc</a>]</span> implementation is also worth sharing as it is probably the most manual of all the implementations. While range-v3 and NanoRange require you to manually write the partial calls yourself, they both provide library wrappers that do the binding for you (<code class="sourceCode cpp">bind_back</code> and <code class="sourceCode cpp">rao_proxy</code>, respectively), in the msvc implementation, each range adaptor actually has its own private partial call implementation.</p>
 <p>As such, the implementations of just <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">transform</code> look like (slightly reduced for paper-ware):</p>
 <table>
@@ -1074,7 +1089,56 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">1</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="problem-space"><span class="header-section-number">3</span> Problem Space<a href="#problem-space" class="self-link"></a></h1>
+<p>Ultimately, there are two separate problems here.</p>
+<h2 data-number="3.1" id="range-adaptor-closure-objects"><span class="header-section-number">3.1</span> Range Adaptor Closure Objects<a href="#range-adaptor-closure-objects" class="self-link"></a></h2>
+<p>We need to be able to declare a <em>range adaptor closure object</em> (<span>24.7.2
+ <a href="https://wg21.link/range.adaptor.object">[range.adaptor.object]</a></span>), which has the following requirements (where <code class="sourceCode cpp">R</code> is some <code class="sourceCode cpp">viewable_range</code>, and <code class="sourceCode cpp">C</code> and <code class="sourceCode cpp">D</code> are range adaptor closure objects):</p>
+<ul>
+<li><code class="sourceCode cpp">C<span class="op">(</span>R<span class="op">)</span></code> and <code class="sourceCode cpp">R <span class="op">|</span> C</code> are equivalent</li>
+<li><code class="sourceCode cpp">R <span class="op">|</span> C <span class="op">|</span> D</code> and <code class="sourceCode cpp">R <span class="op">|</span> <span class="op">(</span>C <span class="op">|</span> D<span class="op">)</span></code></li>
+</ul>
+<p>It is up to the user to provide the call operator to make <code class="sourceCode cpp">C<span class="op">(</span>R<span class="op">)</span></code> work, but it needs to be up to whatever the library design is to make <code class="sourceCode cpp">R <span class="op">|</span> C</code> work (and end up invoking <code class="sourceCode cpp">C</code>) and to make <code class="sourceCode cpp">C <span class="op">|</span> D</code> work (to produce a new range adaptor closure object).</p>
+<p>Because the library needs to provide operator overloads, the design needs to be such that it is actually possible for those operator overloads to be discovered. The five implementations presented above have three different approaches to this:</p>
+<ol type="1">
+<li>The closure object type is declared in the namespace where the <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>s are declared (NanoRange)</li>
+<li>The closure object type inherits from a regular base class (gcc 11) or CRTP base class (MSVC) which defines those <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>s.</li>
+<li>The closure object type is a specialization of a library class template, with the actual function object type as a template parameter (range-v3, gcc 10).</li>
+</ol>
+<p>Of these, the NanoRange option is a non-starter since we don’t want to have everyone adding all of their types into <code class="sourceCode cpp">std<span class="op">::</span>ranges</code>.</p>
+<p>While a regular base class (gcc 11) is easier to use (by virtue of simply being less to type) than a CRTP base class (msvc), it has the downside of the multiple-instances-of-the-same-empty-base problem (see also <span class="citation" data-cites="LWG3549">[<a href="#ref-LWG3549" role="doc-biblioref">LWG3549</a>]</span>). In gcc 11’s implementation, the <code class="sourceCode cpp">C <span class="op">|</span> D</code> overload produces an object that <a href="https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges#L872-L878">looks like</a>:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">// A range adaptor closure that represents composition of the range</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="co">// adaptor closures _Lhs and _Rhs.</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> _Lhs, <span class="kw">typename</span> _Rhs<span class="op">&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>  <span class="kw">struct</span> _Pipe <span class="op">:</span> _RangeAdaptorClosure</span>
+<span id="cb21-5"><a href="#cb21-5"></a>  <span class="op">{</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>    <span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span> _Lhs _M_lhs;</span>
+<span id="cb21-7"><a href="#cb21-7"></a>    <span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span> _Rhs _M_rhs;</span>
+<span id="cb21-8"><a href="#cb21-8"></a>    <span class="co">// ...</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>  <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>This object contains three copies of <code class="sourceCode cpp">_RangeAdaptorClosure</code>, which means it has to be at least 3 bytes wide, even if <code class="sourceCode cpp">_Lhs</code> and <code class="sourceCode cpp">_Rhs</code> are both empty.</p>
+<p>That reduces our choice to either providing a class template that users inherit from CRTP-style (MSVC) or a class template that users use to wrap their type (gcc 10/range-v3). There isn’t that much of a difference between the two as far as implementing a range adaptor closure object goes - it’s just a question of where you put the library type. But there <em>is</em> a different as far as diagnostics are concerned. With the <code class="sourceCode cpp">views<span class="op">::</span>join</code> example, it’s a question of whether an error message will contain the type <code class="sourceCode cpp">JoinFn</code> or whether it will contain the type <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>JoinFn<span class="op">&gt;</span></code> in it. Having the former is strictly better.</p>
+<p>This paper proposes the MSVC approach: having a CRTP base class that implements the range adaptor closure design.</p>
+<h2 data-number="3.2" id="range-adaptor-objects"><span class="header-section-number">3.2</span> Range Adaptor Objects<a href="#range-adaptor-objects" class="self-link"></a></h2>
+<p>We need to be able to declare a <em>range adaptor object</em> (<span>24.7.2
+ <a href="https://wg21.link/range.adaptor.object">[range.adaptor.object]</a></span>). This part is more complicated. For multi-argument range adaptors, we need the following forms to be equivalent:</p>
+<ul>
+<li><code class="sourceCode cpp">adaptor<span class="op">(</span>range, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">adaptor<span class="op">(</span>args<span class="op">...)(</span>range<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp">range <span class="op">|</span> adaptor<span class="op">(</span>args<span class="op">...)</span></code></li>
+</ul>
+<p>Where <code class="sourceCode cpp">adaptor<span class="op">(</span>args<span class="op">...)</span></code> produces a range adaptor closure object.</p>
+<p>While the various implementation approaches for the range adaptor closure problem were fairly similar (the library has to provide two <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">|</span></code>s, there really aren’t that many ways to provide them), the implementations presented here have very different approaches to making multi-argument range adaptors more convenient - which range from extremely manual (MSVC) to effortless (gcc 10). There’s such a range of implementations here that it’s quite difficult to actually say which is the “right” one, or which one could be considered “standard practice.” This is still an area being experimented on.</p>
+<p>But importantly, the standard library also doesn’t <em>need</em> to solve this problem. As soon as the standard library can provide a common mechanism for users to create a range adaptor closure object that can play well with others, users can implement their range adaptors any way they like. Perhaps some new, as-yet undiscovered approach comes around in a few years that is superior to the other alternatives and we can standardize that one for C++26. Perhaps a language solution (like <code class="sourceCode cpp"><span class="op">|&gt;</span></code>) gets finalized and this becomes less important too.</p>
+<p>Rather than try to introduce a mechanism like gcc 10’s or gcc 11’s approach, this paper actually proposes no approach. Or, put differently, this paper proposes the MSVC approach for the range adaptor object problem too.</p>
+<p>However, one approach to the range adaptor problem (range-v3’s) involves using <code class="sourceCode cpp">bind_back</code> to create a new range adaptor closure object. There was previously a proposal to add <code class="sourceCode cpp">bind_back</code> as a new function adaptor to the standard library <span class="citation" data-cites="P0356R0">[<a href="#ref-P0356R0" role="doc-biblioref">P0356R0</a>]</span>, though it was removed in R1 of that paper due to lack of compelling uses cases. This problem seems compelling to me, and I’d expect some users to use <code class="sourceCode cpp">bind_back</code> to solve it.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes two additions to the standard library:</p>
+<p>First, a new class template <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>T<span class="op">&gt;</span></code> that range adaptor closure objects will have to inherit from. This includes all existing range adaptor closure objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code>) and the partially applied results from the existing range adaptor objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span></code>).</p>
+<p>Second, a new function adaptor <code class="sourceCode cpp">std<span class="op">::</span>bind_back</code>, such that <code class="sourceCode cpp">std<span class="op">::</span>bind_back<span class="op">(</span>f, ys<span class="op">...)(</span>xs<span class="op">...)</span></code> is equivalent to <code class="sourceCode cpp">f<span class="op">(</span>xs<span class="op">...</span>, ys<span class="op">...)</span></code>.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-gcc-10">
 <p>[gcc-10] Jonathan Wakely. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 10. <br />
@@ -1084,6 +1148,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[gcc-11] Patrick Palka. 2021. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 11. <br />
 <a href="https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges">https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges</a></p>
 </div>
+<div id="ref-LWG3549">
+<p>[LWG3549] Tim Song. view_interface is overspecified to derive from view_base. <br />
+<a href="https://wg21.link/lwg3549">https://wg21.link/lwg3549</a></p>
+</div>
 <div id="ref-msvc">
 <p>[msvc] Casey Carter. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in msvc. <br />
 <a href="https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges">https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges</a></p>
@@ -1091,6 +1159,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-NanoRange">
 <p>[NanoRange] Tristan Brindle. 2017. NanoRange. <br />
 <a href="https://github.com/tcbrindle/nanorange">https://github.com/tcbrindle/nanorange</a></p>
+</div>
+<div id="ref-P0356R0">
+<p>[P0356R0] Tomasz Kamiński. 2016-05-22. Simplified partial function application. <br />
+<a href="https://wg21.link/p0356r0">https://wg21.link/p0356r0</a></p>
+</div>
+<div id="ref-P1206R3">
+<p>[P1206R3] Corentin Jabot, Eric Niebler, Casey Carter. 2020-11-22. ranges::to: A function to convert any range to a container. <br />
+<a href="https://wg21.link/p1206r3">https://wg21.link/p1206r3</a></p>
+</div>
+<div id="ref-P2214R0">
+<p>[P2214R0] Barry Revzin, Conor Hoekstra, Tim Song. 2020-10-15. A Plan for C++23 Ranges. <br />
+<a href="https://wg21.link/p2214r0">https://wg21.link/p2214r0</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2013. Range library for C++14/17/20, basis for C++20’s std::ranges. <br />
