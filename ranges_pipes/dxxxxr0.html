@@ -1134,14 +1134,59 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>But importantly, the standard library also doesn’t <em>need</em> to solve this problem. As soon as the standard library can provide a common mechanism for users to create a range adaptor closure object that can play well with others, users can implement their range adaptors any way they like. Perhaps some new, as-yet undiscovered approach comes around in a few years that is superior to the other alternatives and we can standardize that one for C++26. Perhaps a language solution (like <code class="sourceCode cpp"><span class="op">|&gt;</span></code>) gets finalized and this becomes less important too.</p>
 <p>Rather than try to introduce a mechanism like gcc 10’s or gcc 11’s approach, this paper actually proposes no approach. Or, put differently, this paper proposes the MSVC approach for the range adaptor object problem too.</p>
 <p>However, one approach to the range adaptor problem (range-v3’s) involves using <code class="sourceCode cpp">bind_back</code> to create a new range adaptor closure object. There was previously a proposal to add <code class="sourceCode cpp">bind_back</code> as a new function adaptor to the standard library <span class="citation" data-cites="P0356R0">[<a href="#ref-P0356R0" role="doc-biblioref">P0356R0</a>]</span>, though it was removed in R1 of that paper due to lack of compelling uses cases. This problem seems compelling to me, and I’d expect some users to use <code class="sourceCode cpp">bind_back</code> to solve it.</p>
+<p>This is sufficient to provide, for instance, gcc 10’s solution as a small standalone library:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">class</span> closure <span class="op">:</span> <span class="kw">public</span> std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>closure<span class="op">&lt;</span>F<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>    F f;</span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>    <span class="kw">constexpr</span> closure<span class="op">(</span>F f<span class="op">)</span> <span class="op">:</span> f<span class="op">(</span>f<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>    </span>
+<span id="cb22-7"><a href="#cb22-7"></a>    <span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>        <span class="kw">requires</span> std<span class="op">::</span>invocable<span class="op">&lt;</span>F <span class="kw">const</span><span class="op">&amp;</span>, R<span class="op">&gt;</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>    <span class="kw">constexpr</span> <span class="kw">operator</span><span class="op">()(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb22-10"><a href="#cb22-10"></a>        <span class="cf">return</span> f<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb22-11"><a href="#cb22-11"></a>    <span class="op">}</span></span>
+<span id="cb22-12"><a href="#cb22-12"></a><span class="op">}</span>;</span>
+<span id="cb22-13"><a href="#cb22-13"></a></span>
+<span id="cb22-14"><a href="#cb22-14"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb22-15"><a href="#cb22-15"></a><span class="kw">class</span> adaptor <span class="op">{</span></span>
+<span id="cb22-16"><a href="#cb22-16"></a>    F f;</span>
+<span id="cb22-17"><a href="#cb22-17"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb22-18"><a href="#cb22-18"></a>    <span class="kw">constexpr</span> adaptor<span class="op">(</span>F f<span class="op">)</span> <span class="op">:</span> f<span class="op">(</span>f<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb22-19"><a href="#cb22-19"></a>    </span>
+<span id="cb22-20"><a href="#cb22-20"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb22-21"><a href="#cb22-21"></a>    <span class="kw">constexpr</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb22-22"><a href="#cb22-22"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>invocable<span class="op">&lt;</span>F <span class="kw">const</span><span class="op">&amp;</span>, Args<span class="op">...&gt;)</span> <span class="op">{</span></span>
+<span id="cb22-23"><a href="#cb22-23"></a>            <span class="cf">return</span> f<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...)</span>;</span>
+<span id="cb22-24"><a href="#cb22-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb22-25"><a href="#cb22-25"></a>            <span class="cf">return</span> closure<span class="op">(</span>std<span class="op">::</span>bind_back<span class="op">(</span>f, std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...))</span>;</span>
+<span id="cb22-26"><a href="#cb22-26"></a>        <span class="op">}</span></span>
+<span id="cb22-27"><a href="#cb22-27"></a>    <span class="op">}</span></span>
+<span id="cb22-28"><a href="#cb22-28"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>With the familiar <code class="sourceCode cpp">join</code> and <code class="sourceCode cpp">transform</code> examples showing up as:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> closure join</span>
+<span id="cb23-2"><a href="#cb23-2"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>        <span class="cf">return</span> join_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb23-5"><a href="#cb23-5"></a>      <span class="op">}</span>;</span>
+<span id="cb23-6"><a href="#cb23-6"></a>      </span>
+<span id="cb23-7"><a href="#cb23-7"></a><span class="kw">inline</span> <span class="kw">constexpr</span> adaptor transform</span>
+<span id="cb23-8"><a href="#cb23-8"></a>    <span class="op">=</span> <span class="op">[]&lt;</span>viewable_range R, <span class="kw">typename</span> F<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* ... */</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a>      <span class="op">(</span>R<span class="op">&amp;&amp;</span> r, F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb23-10"><a href="#cb23-10"></a>        <span class="cf">return</span> transform_view<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb23-11"><a href="#cb23-11"></a>      <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes two additions to the standard library:</p>
-<p>First, a new class template <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>T<span class="op">&gt;</span></code> that range adaptor closure objects will have to inherit from. This includes all existing range adaptor closure objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code>) and the partially applied results from the existing range adaptor objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span></code>).</p>
+<p>First, a new class template <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range_adaptor_closure<span class="op">&lt;</span>T<span class="op">&gt;</span></code> that range adaptor closure objects will have to inherit from. For existing range adaptor closure objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code>) and the partially applied results from the existing range adaptor objects (like <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span></code>), it will be up to the standard library to properly handle them (whether changing those types to inherit from this new thing or having <code class="sourceCode cpp">range_adaptor_closure</code> additionally recognize the particular implementation’s preexisting range adaptor closure marker instead).</p>
 <p>Second, a new function adaptor <code class="sourceCode cpp">std<span class="op">::</span>bind_back</code>, such that <code class="sourceCode cpp">std<span class="op">::</span>bind_back<span class="op">(</span>f, ys<span class="op">...)(</span>xs<span class="op">...)</span></code> is equivalent to <code class="sourceCode cpp">f<span class="op">(</span>xs<span class="op">...</span>, ys<span class="op">...)</span></code>.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-gcc-10">
-<p>[gcc-10] Jonathan Wakely. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 10. <br />
+<p>[gcc-10] Patrick Palka. 2020. <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code> in gcc 10. <br />
 <a href="https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges">https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges</a></p>
 </div>
 <div id="ref-gcc-11">

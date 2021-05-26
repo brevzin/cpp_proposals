@@ -600,11 +600,64 @@ Rather than try to introduce a mechanism like gcc 10's or gcc 11's approach, thi
 
 However, one approach to the range adaptor problem (range-v3's) involves using `bind_back` to create a new range adaptor closure object. There was previously a proposal to add `bind_back` as a new function adaptor to the standard library [@P0356R0], though it was removed in R1 of that paper due to lack of compelling uses cases. This problem seems compelling to me, and I'd expect some users to use `bind_back` to solve it.
 
+This is sufficient to provide, for instance, gcc 10's solution as a small standalone library:
+
+::: bq
+```cpp
+template <typename F>
+class closure : public std::ranges::range_adaptor_closure<closure<F>> {
+    F f;
+public:
+    constexpr closure(F f) : f(f) { }
+    
+    template <std::ranges::viewable_range R>
+        requires std::invocable<F const&, R>
+    constexpr operator()(R&& r) const {
+        return f(std::forward<R>(r));
+    }
+};
+
+template <typename F>
+class adaptor {
+    F f;
+public:
+    constexpr adaptor(F f) : f(f) { }
+    
+    template <typename... Args>
+    constexpr operator()(Args&&... args) const {
+        if constexpr (std::invocable<F const&, Args...>) {
+            return f(std::forward<Args>(args)...);
+        } else {
+            return closure(std::bind_back(f, std::forward<Args>(args)...));
+        }
+    }
+};
+```
+:::
+
+With the familiar `join` and `transform` examples showing up as:
+
+::: bq
+```cpp
+inline constexpr closure join
+    = []<viewable_range R> requires /* ... */
+      (R&& r) {
+        return join_view(FWD(r));
+      };
+      
+inline constexpr adaptor transform
+    = []<viewable_range R, typename F> requires /* ... */
+      (R&& r, F&& f){
+        return transform_view(FWD(r), FWD(f));
+      };
+```
+:::
+
 # Proposal
 
 This paper proposes two additions to the standard library:
 
-First, a new class template `std::ranges::range_adaptor_closure<T>` that range adaptor closure objects will have to inherit from. This includes all existing range adaptor closure objects (like `std::views::join`) and the partially applied results from the existing range adaptor objects (like `std::views::transform(f)`).
+First, a new class template `std::ranges::range_adaptor_closure<T>` that range adaptor closure objects will have to inherit from. For existing range adaptor closure objects (like `std::views::join`) and the partially applied results from the existing range adaptor objects (like `std::views::transform(f)`), it will be up to the standard library to properly handle them (whether changing those types to inherit from this new thing or having `range_adaptor_closure` additionally recognize the particular implementation's preexisting range adaptor closure marker instead).
 
 Second, a new function adaptor `std::bind_back`, such that `std::bind_back(f, ys...)(xs...)` is equivalent to `f(xs..., ys...)`.
 
@@ -632,7 +685,7 @@ references:
       citation-label: gcc-10
       title: "`<ranges>` in gcc 10"
       author:
-          - family: Jonathan Wakely
+          - family: Patrick Palka
       issued:
           - year: 2020
       URL: https://github.com/gcc-mirror/gcc/blob/860c5caf8cbb87055c02b1e77d04f658d2c75880/libstdc%2B%2B-v3/include/std/ranges
