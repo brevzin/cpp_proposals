@@ -702,7 +702,7 @@ R | (C | D)
 ```
 
 ::: addu
-[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` has exactly one public base class `range_adaptor_closure<U>` for some type `U` and `T` has no other base classes of type `range_adaptor_closure<V>` for any other type `V`.
+[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` models `derived_from<range_adaptor_closure<T>>` and `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`.
 :::
 :::
 
