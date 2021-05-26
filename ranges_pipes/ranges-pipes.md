@@ -756,7 +756,7 @@ For each `T@~i~@` in `BoundArgs`, if `T@~i~@` is an object type, `T@~i~@` meets 
 [4]{.pnum} *Returns*: A perfect forwarding call wrapper g with call pattern[:]{.addu}
 
 * [4.1]{.pnum} `invoke(fd, bound_args..., call_args...)` [for a `bind_front` invocation, or]{.addu}
-* [4.2]{.pnum} [`invoke(fd, call_args..., bound_args...)` for a `bind_front` invocation.]{.addu}
+* [4.2]{.pnum} [`invoke(fd, call_args..., bound_args...)` for a `bind_back` invocation.]{.addu}
 
 [5]{.pnum} *Throws*: Any exception thrown by the initialization of the state entities of `g` ([func.def]).
 :::
