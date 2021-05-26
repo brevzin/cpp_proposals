@@ -183,7 +183,7 @@ There are two questions to ask about the version of `fold` that does not take an
 
 ### Distinct name?
 
-Should we give this algorithm a different name (e.g. `fold_first` or `fold1`, since `reduce` is clearly not an option for us) or provide a distinct overload of `fold`? To answer that question, we have to deal with the question of ambiguity. For two arguments, `fold(xs, a)` can only be interpreted as a `fold` with no initial value using `a` as the binary operator. For four arguments, `fold(xs, a, b, c)` can only be interpreted as a `fold` with `a` as the initial value, `b` as the binary operation that is the reduction function, and `c` as a unary projection.
+Should we give this algorithm a different name (e.g. `fold_first` or `fold1`, since `reduce` is clearly not an option for us) or provide it as an overload of `fold`? To answer that question, we have to deal with the question of ambiguity. For two arguments, `fold(xs, a)` can only be interpreted as a `fold` with no initial value using `a` as the binary operator. For four arguments, `fold(xs, a, b, c)` can only be interpreted as a `fold` with `a` as the initial value, `b` as the binary operation that is the reduction function, and `c` as a unary projection.
 
 What about `fold(xs, a, b)`?  It could be:
 
@@ -199,7 +199,9 @@ auto r = fold(xs, first, first);
 
 This call is ambiguous! This works with either interpretation. It would either just return `first` (the lambda) in the first case or the first element of the range in the second case, which makes it either completely useless or just mostly useless.
 
-It's possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely. As such, this paper proposes an overload for `fold` that take no initial value (and have a precondition that the range is non-empty) rather than introducing a different name for this case.
+It's possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely.
+
+As such, this paper proposes a differently named algorithm for the version that takes no initial value rather than adding an overload under the same name. 
 
 ### `optional` or UB?
 

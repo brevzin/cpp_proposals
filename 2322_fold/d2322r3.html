@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-24" />
+  <meta name="dcterms.date" content="2021-05-26" />
   <title>`ranges::fold`</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-24</td>
+    <td>2021-05-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -832,7 +832,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>In Python, the single algorithm <code class="sourceCode cpp">functools<span class="op">.</span>reduce</code> supports both forms (the <code class="sourceCode cpp">initializer</code> is an optional argument). In Julia, <code class="sourceCode cpp">foldl</code> and <code class="sourceCode cpp">foldr</code> both take an optional initial value as well (though it is mandatory in certain cases).</p>
 <p>There are two questions to ask about the version of <code class="sourceCode cpp">fold</code> that does not take an extra initializer.</p>
 <h3 data-number="4.1.1" id="distinct-name"><span class="header-section-number">4.1.1</span> Distinct name?<a href="#distinct-name" class="self-link"></a></h3>
-<p>Should we give this algorithm a different name (e.g. <code class="sourceCode cpp">fold_first</code> or <code class="sourceCode cpp">fold1</code>, since <code class="sourceCode cpp">reduce</code> is clearly not an option for us) or provide a distinct overload of <code class="sourceCode cpp">fold</code>? To answer that question, we have to deal with the question of ambiguity. For two arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with no initial value using <code class="sourceCode cpp">a</code> as the binary operator. For four arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a, b, c<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with <code class="sourceCode cpp">a</code> as the initial value, <code class="sourceCode cpp">b</code> as the binary operation that is the reduction function, and <code class="sourceCode cpp">c</code> as a unary projection.</p>
+<p>Should we give this algorithm a different name (e.g. <code class="sourceCode cpp">fold_first</code> or <code class="sourceCode cpp">fold1</code>, since <code class="sourceCode cpp">reduce</code> is clearly not an option for us) or provide it as an overload of <code class="sourceCode cpp">fold</code>? To answer that question, we have to deal with the question of ambiguity. For two arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with no initial value using <code class="sourceCode cpp">a</code> as the binary operator. For four arguments, <code class="sourceCode cpp">fold<span class="op">(</span>xs, a, b, c<span class="op">)</span></code> can only be interpreted as a <code class="sourceCode cpp">fold</code> with <code class="sourceCode cpp">a</code> as the initial value, <code class="sourceCode cpp">b</code> as the binary operation that is the reduction function, and <code class="sourceCode cpp">c</code> as a unary projection.</p>
 <p>What about <code class="sourceCode cpp">fold<span class="op">(</span>xs, a, b<span class="op">)</span></code>? It could be:</p>
 <ol type="1">
 <li>Using <code class="sourceCode cpp">a</code> as the initial value and <code class="sourceCode cpp">b</code> as a binary reduction of the form <code class="sourceCode cpp"><span class="op">(</span>A, X<span class="op">)</span> <span class="op">-&gt;</span> A</code>.</li>
@@ -842,7 +842,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> first <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> x, <span class="kw">auto</span><span class="op">...</span> <span class="op">){</span> <span class="cf">return</span> x; <span class="op">}</span>;</span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="kw">auto</span> r <span class="op">=</span> fold<span class="op">(</span>xs, first, first<span class="op">)</span>;</span></code></pre></div>
 <p>This call is ambiguous! This works with either interpretation. It would either just return <code class="sourceCode cpp">first</code> (the lambda) in the first case or the first element of the range in the second case, which makes it either completely useless or just mostly useless.</p>
-<p>It’s possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely. As such, this paper proposes an overload for <code class="sourceCode cpp">fold</code> that take no initial value (and have a precondition that the range is non-empty) rather than introducing a different name for this case.</p>
+<p>It’s possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely.</p>
+<p>As such, this paper proposes a differently named algorithm for the version that takes no initial value rather than adding an overload under the same name.</p>
 <h3 data-number="4.1.2" id="optional-or-ub"><span class="header-section-number">4.1.2</span> <code class="sourceCode cpp">optional</code> or UB?<a href="#optional-or-ub" class="self-link"></a></h3>
 <p>The result of <code class="sourceCode cpp">ranges<span class="op">::</span>foldl<span class="op">(</span>empty_range, init, f<span class="op">)</span></code> is just <code class="sourceCode cpp">init</code>. That is straightforward. But what would the result of <code class="sourceCode cpp">ranges<span class="op">::</span>foldl1<span class="op">(</span>empty_range, f<span class="op">)</span></code> be? There are two options:</p>
 <ol type="1">
