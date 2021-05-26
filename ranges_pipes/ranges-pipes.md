@@ -673,7 +673,7 @@ Add `range_adaptor_closure` to [ranges.syn]{.sref}:
 
 namespace std::ranges {
 
-+ // [range.adaptor.object]
++ // [range.adaptor.object], range adaptor objects
 + template<class D>
 +   requires is_class_v<D> && same_as<D, remove_cv_t<D>>
 + class range_adaptor_closure { };
