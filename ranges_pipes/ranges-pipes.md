@@ -686,11 +686,11 @@ namespace std::ranges {
 ```
 :::
 
-Change [range.adaptor.object]{.sref}:
+Change [range.adaptor.object]{.sref} [We have to relax these requirements because can't enforce them on future user-defined range adaptors, and we'll need to do this for `ranges::to` anyway which we'll want to call a range adaptor closure object]{.ednote}:
 
 ::: bq
-[1]{.pnum} A *range adaptor closure object* is a unary function object that accepts a `viewable_range` argument and returns a `view`.
-For a range adaptor closure object `C` and an expression `R` such that `decltype((R))` models `viewable_range`, the following expressions are equivalent and yield a view:
+[1]{.pnum} A *range adaptor closure object* is a unary function object that accepts a [`viewable_range`]{.rm} [`range`]{.addu} argument [and returns a `view`]{.rm}.
+For a range adaptor closure object `C` and an expression `R` such that `decltype((R))` models [`viewable_range`]{.rm} [`range`]{.addu}, the following expressions are equivalent [and yield a `view`]{.rm}:
 ```
 C(R)
 R | C
@@ -703,6 +703,9 @@ R | (C | D)
 
 ::: addu
 [?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` models `derived_from<range_adaptor_closure<T>>` and `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`.
+
+[?]{.pnum} The template parameter `D` for `range_adaptor_closure` may be an incomplete type.
+Before any member of the resulting specialization of `range_adaptor_closure` other than special member functions is referenced, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`.
 :::
 :::
 
