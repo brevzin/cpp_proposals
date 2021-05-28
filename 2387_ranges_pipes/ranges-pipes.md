@@ -705,7 +705,7 @@ R | (C | D)
 [?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` models `derived_from<range_adaptor_closure<T>>`,  `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and `T` does not model `range`.
 
 [?]{.pnum} The template parameter `D` for `range_adaptor_closure` may be an incomplete type.
-Before any `|` expression having an object of type `D` as an operand is referenced, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`.
+Before any expression of type *cv* `D` appears as an operand to the `|` operator, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`.
 :::
 :::
 
