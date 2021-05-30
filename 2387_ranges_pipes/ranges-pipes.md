@@ -539,6 +539,8 @@ namespace std::ranges::views {
 ```
 :::
 
+Otherwise, the MSVC implementation of the range adaptor closure functionality (which it calls `_Pipe::_Base<D>`) is similar enough to gcc 11's implementation (which it calls `_RangeAdaptorClosure`). The primary difference is that the former is a CRTP base class template while the latter is simply a base class.
+
 # Problem Space
 
 Ultimately, there are two separate problems here.
