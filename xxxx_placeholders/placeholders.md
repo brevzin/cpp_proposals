@@ -321,7 +321,204 @@ auto tims_locations = $@~a~@ |> views::filter($@~c~@.name() == "Tim") |> views::
 
 The introducer would be impossible to take away if `|>` took a placeholder, since given the code `e |> views::transform($, $.address())`, how do you know that `$.address()` is intended to be a placeholder-lambda by itself, rather than intending to evaluate as `views::transform(e, e.address())` (which is obviously nonsense in this particular example, but could be a perfectly reasonable expression in a different context). 
 
-So the takeaway here is... this is *quite* messy. A pipeline operator with a placeholder is very flexible, and naturally lends itself to being defined in terms of a placeholder lambda. And placeholder lambdas themselves are very useful (the numerous libraries in existence which allow them is testament to that). But somehow, combining a placeholder pipeline with a placeholder lambda leads to code that might be quite a bit worse than if we had the pipeline with no placeholder (as originally proposed) but still adopted placeholder lambdas. 
+So the takeaway here is... this is *quite* messy. A pipeline operator with a placeholder is very flexible, and naturally lends itself to being defined in terms of a placeholder lambda. And placeholder lambdas themselves are very useful (the numerous libraries in existence which allow them is testament to that).
+
+But somehow, combining a placeholder pipeline with a placeholder lambda leads to code that might be quite a bit worse than if we had the pipeline with no placeholder (as originally proposed) but still adopted placeholder lambdas. Placeholder lambdas also allow us to claw back some of value of placeholder pipelines in function calls, albeit with a much more awkward syntax:
+
+::: cmptable
+### Placeholder Pipeline
+```cpp
+x |> zip($, y)
+```
+
+### Placeholder Lambda
+```cpp
+x |> zip(y)
+```
+
+---
+
+```cpp
+x |> zip(y, $)
+```
+
+```cpp
+// As-is, this has to capture y, but it may
+// make sense to special-case placeholder-lambdas
+// in pipeline-expressions to avoid having to
+// capture because they're immediately-evaluated
+x |> ([y]: zip(y, $))()
+
+// ... as in just (but the parentheses are still necessary):
+x |> (zip(y, $))()
+```
+
+---
+
+```cpp
+employees |> filter($, [](auto&& e){
+                           return e.name() == "Tim";
+                       })
+
+// unclear if this is viable
+employees |> filter($, []: $.name() == "Tim")
+```
+
+```cpp
+employees |> filter([]: $.name() == "Tim")
+
+
+
+// unclear if this is viable
+employees |> filter($.name() == "Tim")
+```
+
+---
+
+```cpp
+std::tuple(1, 2) |> std::apply(std::plus(), $)
+```
+
+```cpp
+std::tuple(1, 2) |> (std::apply(std::plus(), $))()
+```
+
+---
+
+```cpp
+GetString(i) |> co_await $ |> $.size()
+```
+
+```cpp
+// there's no |> way to do this without placeholders
+(co_await GetString(i)).size()
+```
+
+---
+
+```cpp
+FILE* file = fopen("a.txt", "wb");
+if (file) {
+    file |> fputs("Hello world", $);
+    file |> fseek($, 9, SEEK_SET);
+    file |> fclose($);
+}
+```
+
+```cpp
+FILE* file = fopen("a.txt", "wb");
+if (file) {
+    file |> (fputs("Hello world", $))();
+    file |> fseek(9, SEEK_SET);
+    file |> fclose();
+}
+```
+:::
+
+# Placeholders in Templates
+
+There's at least one more other context, completely separate from pipelining expressions and lambdas, where using placeholders is valuable: creating alias templates on the fly.
+
+There are two problems with alias templates today: they _must_ be declared as their own statement and that statement _cannot_ be in local scope. This means that when you need an alias template, it could easily end up being declared quite far away from use. This is very similar to the problem of having to create function objects on their own line, far away from use - a problem that was solved with the introduction of lambdas in C++11. 
+
+One particularly interesting use of alias templates that merits consideration for a more convenient syntax is class template argument deduction. Since C++20, the following is valid:
+
+::: bq
+```cpp
+template <typename T> using int_pair = pair<int, T>;
+int_pair x(1, 2); // ok, x is a pair<int, int>
+```
+:::
+
+This is fine if `int_pair` is a commonly used alias that actually merits a name. But is quite inconvenient if that is not the case: you have to introduce a (likely-meaningless) name, somewhere away from its intended use, to be only used a single time. But consider, instead, the following:
+
+::: bq
+```cpp
+pair<int, $> x(1, 2);
+```
+:::
+
+If we define `pair<int, $>` as creating, on the fly, a uniquely-named alias template (in the same way that a lambda creates, on the fly, a uniquely-named function object), that might look like:
+
+::: bq
+```cpp
+template <typename _T1> using __pair_alias = pair<int, _T1>;
+```
+:::
+
+And the class template argument deduction rules we already have kick in and have the desired behavior. This is a frequently desired extension. For instance, some of [@P1021R1]'s examples could be written as:
+
+::: bq
+```cpp
+using namespace ba = boost::algorithm;
+ 
+set<string, $> case_insensitive_strings(ba::ilexicographic_compare);
+ 
+// Lambda comparators are great for algorithms like sort
+// Now with associative containers, too!
+set<int, $> s([](int i, int j) { 
+                 return std::popcount(i) < std::popcount(j);
+               }); 
+ 
+// and container adaptors!
+priority_queue<Task, $> tasks([](Task a, Task b) { 
+                                 return a.priority < b.priority;
+                              });
+```
+:::
+
+The difference here is that I'm annotating, with a placeholder, the type that needs to be filled in... rather than omitting it entirely (which has the problem that `set<string>` is already a valid type which is _not_ the desired type for the variable `case_insensitive_strings`).
+
+In this use-case, the choice of placeholder in particular should probably be `auto`. As in:
+
+::: bq
+```cpp
+pair<int, auto> x(1, 2);
+```
+:::
+
+But there's a few interesting questions around this usage:
+
+## Alias or Constraint
+
+Should a *template-id* with a placeholder be a constraint or an alias template? The interesting example might be `optional<auto> x = 7;` If `optional<auto>` is a constraint, then this is ill-formed because `7` is not some kind of `optional<T>`. If it's just an alias template, then this is fine and behaves the same as `optional x = 7;`, which wraps the `7`, declaring `x` to be an `optional<int>`. Both forms are useful - while the constraint `optional<auto>` is easy enough to write (as `specializes<optional>`), the constraint `pair<int, auto>` is substantitively harder. 
+
+However, if `optional<auto>` *were* a constraint, how would you use it in a *requires-clause*? What would that syntax be? There doesn't really seem to be an obvious choice here (`optional<auto><T>`? Nope.) This is a separate problem that's also important to consider, since this does come up: we need a way to unpack types. Perhaps the right way here is to allow a `using` declaration in the middle of a template parameter list:
+
+::: bq
+```cpp
+template <typename T, typename F,
+          using optional<typename U> = invoke_result_t<F&, T const&>>
+auto and_then(optional<T> const&, F) -> optional<U>;
+```
+:::
+    
+## How many `auto`s    
+    
+Let's say rather than `auto` we wanted some kind of constraint:
+
+::: bq
+```cpp
+pair<int, invocable<int> auto@~1~@>  auto@~2~@ p = /* ... */;
+```
+:::
+
+Which of those two `auto`s is necessary?
+
+* `auto@~1~@` is very likely necessary. `invocable<int>` is a valid expression in its own right (that evaluates to `false`) so you have to know if this is a *concept-id* or a *type-constraint*. The `auto` would signal that this is clearly a *type-constraint* and thus a placeholder.
+* `auto@~2~@`, given the necessity of `auto@~1~@`, may not be necessary. Perhaps it could be used to differentiate the alias vs constraint cases, where `optional<auto> a = 7;` is an alias with a placeholder but `optional<auto> auto b = 7;` (which is the syntax we use for constrained variable declarations) is a constraint (that fails because `7` is not an `optional<auto>`). But this seems a bit subtle and, if anything, is an argument *against* using `auto@~2~@` to avoid the association with constrained variable declarations.
+
+## What about non-type template parameters? 
+
+What about this case:
+
+::: bq
+```cpp
+std::array<int, auto> x = {1, 2, 3, 4, 5};
+```
+:::
+
+Can this deduce `x` as an `array<int, 5>`? It would mean that `auto` would have to be a placeholder for both types and values. That'd be an unfortunate case of applying different meanings to the same syntax. But at least, we can't overload template names like this anyway (there's no case where `Z<int, auto>` is sometimes two types and sometimes a type and a value), so do we really need two different placeholders for the type and value cases?
 
 ---
 references:
