@@ -42,16 +42,16 @@ make all of my papers.
 
 - [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde. CWG approved, needs LWG review.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
+- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html). Already approved by LWG.
+- [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 
 ### Pending CWG/LWG Review
 
-- Nothing.
+- [p0847r6 - Deducing this](0847_deducing_this/p0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 
 ### Pending EWG/LEWG Voting
 
-- [p0847r6 - Deducing this](0847_deducing_this/p0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
-- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html). Already approved by LWG.
 - [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
 
 ### Pending EWG/LEWG Review
@@ -68,8 +68,7 @@ make all of my papers.
 - [p2214r0 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r0.html), with Conor Hoekstra and Tim Song.
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
-- [p2322r2 - `ranges::fold`](2322_fold/p2322r2.html).
-- [p2325r2 - Views should not be required to be default constructible](2325_views_default/p2325r2.html).
+- [d2322r3 - `ranges::fold`](2322_fold/p2322r3.html).
 
 #### Concepts
 
