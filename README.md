@@ -40,9 +40,9 @@ make all of my papers.
 
 ### Pending Plenary
 
-- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde. CWG approved, needs LWG review.
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
-- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html). Already approved by LWG.
+- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
 - [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 
 ### Pending CWG/LWG Review
