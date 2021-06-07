@@ -27,17 +27,6 @@ make all of my papers.
 - [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
 - [p2162r2 - Inheriting from `std::variant`](2162_inherit_variant/p2162r2.html).
 
-### Rejected
-
-- [p0321r1 - Make pointers to members callable](0312_pointers_to_members/p0312r1.html). Rejected in Toronto.
-- [p0573r2 - Abbreviated Lambdas](0573_abbrev_lambdas/p0573r2.html), with Tomasz Kamiński. Rejected in Albuquerque.
-- [p0644r1 - Forward without forward](0644_fwd/p0644r1.html). Rejected in Albuquerque.
-- [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter. Rejected in San Diego.
-
-### On Hold
-- [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
-- [p2089r0 - Function parameter constraints are fragile](2089_param_constraints/p2089r0.html). The proposal this responds to was tabled.
-
 ### Pending Plenary
 
 - [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
@@ -81,3 +70,16 @@ make all of my papers.
 - [p1169r1 - static `operator()`](1169_static_call/p1169r1.html), with Casey Carter. Rejected in San Diego.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
+
+### Rejected
+
+- [p0321r1 - Make pointers to members callable](0312_pointers_to_members/p0312r1.html). Rejected in Toronto.
+- [p0573r2 - Abbreviated Lambdas](0573_abbrev_lambdas/p0573r2.html), with Tomasz Kamiński. Rejected in Albuquerque.
+- [p0644r1 - Forward without forward](0644_fwd/p0644r1.html). Rejected in Albuquerque.
+- [p0893r1 - Chaining comparisons](0893_chain_comparisons/p0893r1.html), with Herb Sutter. Rejected in San Diego.
+
+### On Hold
+- [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
+- [p2089r0 - Function parameter constraints are fragile](2089_param_constraints/p2089r0.html). The proposal this responds to was tabled.
+
+
