@@ -26,13 +26,14 @@ make all of my papers.
 - [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
 - [p2162r2 - Inheriting from `std::variant`](2162_inherit_variant/p2162r2.html).
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
+- [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
+- [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 
 ### Pending Plenary
 
-- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
-- [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
-- [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
-- [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
+None.
 
 ### Pending CWG/LWG Review
 
