@@ -259,7 +259,16 @@ There's language precedents for any of these cases. F# and Kotlin both provide `
 
 In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`) and symmetric ones (`shift_left` vs `shift_right`), even symmetric ones with terse names (`rotl` and `rotr`, although the latter are basically instructions).
 
-All of which is to say, I don't think there's a clear answer to this question. But this paper proposes `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer. 
+All of which is to say, I don't think there's a clear answer to this question. There are, I think, three sane option banks:
+
+|A|B|C|
+|-|-|-|
+|`fold_left`|`fold`|`foldl`|
+|`fold_right`|`fold_right`|`foldr`|
+|`fold_left_first`|`fold_left_first`|`foldl1`|
+|`fold_right_first`|`fold_right_first`|`foldr1`|
+
+And this paper proposes option C: `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer. 
 
 ## Short-circuiting folds
 
@@ -613,7 +622,7 @@ namespace std {
     
     template <input_range R, class T, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-    constexpr fold_while_result<iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});    
+    constexpr fold_while_result<borrowed_iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});    
 
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
@@ -623,7 +632,7 @@ namespace std {
     template <input_range R, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr fold_while_result<iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
+    constexpr fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
   }
 }
 ```
@@ -716,7 +725,7 @@ template <input_range R, class Proj = identity,
 constexpr auto ranges::foldl1(R&& r, F f, Proj proj = {});
 ```
 
-[2]{.pnum} Let `U` be `decltype(ranges::foldl(first, last, iter_value_t<I>(*first), f, proj))`.
+[2]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
 
 [3]{.pnum} *Effects*: Equivalent to:
 
@@ -786,7 +795,7 @@ if (first == last) {
 
 I tail = ranges::prev(ranges::next(first, std::move(last)));
 return optional<U>(in_place,
-    ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), std::move(f), std::move(proj)));
+    ranges::foldr(std::move(first), tail, iter_value_t<I>(*tail), std::move(f), std::move(proj)));
 ```
 :::
 
@@ -797,7 +806,7 @@ constexpr ranges::fold_while_result<I, T> ranges::foldl_while(I first, S last, T
 
 template <input_range R, class T, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-constexpr ranges::fold_while_result<iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {}); 
+constexpr ranges::fold_while_result<borrowed_iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {}); 
 ```
 
 [7]{.pnum} *Effects*: Equivalent to:
@@ -805,7 +814,7 @@ constexpr ranges::fold_while_result<iterator_t<R>, T> ranges::foldl_while(R&& r,
 ::: bq
 ```cpp
 for (; first != last; ++first) {
-    if (!invoke(f(init, invoke(proj, *first)))) {
+    if (!invoke(f, init, invoke(proj, *first))) {
         break;
     }
 }
@@ -824,7 +833,7 @@ constexpr ranges::fold_while_result<I, optional<iter_value_t<I>>>
 template <input_range R, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr ranges::fold_while_result<iterator_t<R>, optional<range_value_t<R>>>
+constexpr ranges::fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>>
   ranges::foldl1_while(R&& r, F f, Proj proj = {});   
 ```
 
@@ -833,7 +842,7 @@ constexpr ranges::fold_while_result<iterator_t<R>, optional<range_value_t<R>>>
 ::: bq
 ```cpp
 if (first == last) {
-    return {first, nullopt};
+    return {std::move(first), nullopt};
 }
 
 iter_value_t<I> init(*first);
