@@ -482,12 +482,49 @@ Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `f
 
 # Wording
 
-Append to [algorithm.syn]{.sref}:
+Append to [algorithm.syn]{.sref}, first a new result type:
+
+::: bq
+```diff
+#include <initializer_list>
+
+namespace std {
+  namespace ranges {
+    // [algorithms.results], algorithm result types
+    template<class I, class F>
+      struct in_fun_result;
+
+    template<class I1, class I2>
+      struct in_in_result;
+
+    template<class I, class O>
+      struct in_out_result;
+
+    template<class I1, class I2, class O>
+      struct in_in_out_result;
+
+    template<class I, class O1, class O2>
+      struct in_out_out_result;
+
+    template<class T>
+      struct min_max_result;
+
+    template<class I>
+      struct in_found_result;
+      
++   template<class I, class T>
++     struct in_value_result;      
+  }
+
+  // ...
+}
+```
+:::
+
+and then also a bunch of fold algorithms:
 
 ::: bq
 ```cpp
-#include <initializer_list>
-
 namespace std {
   // ...
     
@@ -567,6 +604,9 @@ namespace std {
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
     constexpr auto foldr1(R&& r, F f, Proj proj = {});  
 
+    template<class I, class T>
+      using fold_while_result = in_value_result<I, T>;
+
     template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
     constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
@@ -574,7 +614,7 @@ namespace std {
     template <input_range R, class T, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
     constexpr fold_while_result<iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});    
-    
+
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
@@ -614,19 +654,19 @@ namespace std::ranges {
   };
 
 + template<class I, class T>
-+ struct fold_while_result {
++ struct in_value_result {
 +   [[no_unique_address]] I in;
 +   [[no_unique_address]] T value;
 +
 +   template<class I2, class T2>
 +     requires convertible_to<const I&, I2> && convertible_to<const T&, T2>
-+   constexpr operator fold_while_result<I2, T2>() const & {
++   constexpr operator in_value_result<I2, T2>() const & {
 +     return {in, value};
 +   }
 +
 +   template<class I2, class T2>
 +     requires convertible_to<I, I2> && convertible_to<T, T2>
-+   constexpr operator fold_while_result<I2, T2>() const & {
++   constexpr operator in_value_result<I2, T2>() && {
 +     return {std::move(in), std::move(value)};
 +   }
 + };  
@@ -753,11 +793,11 @@ return optional<U>(in_place,
 ```cpp
 template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
-constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
+constexpr ranges::fold_while_result<I, T> ranges::foldl_while(I first, S last, T init, F f, Proj proj = {});
 
 template <input_range R, class T, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-constexpr fold_while_result<iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {}); 
+constexpr ranges::fold_while_result<iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {}); 
 ```
 
 [7]{.pnum} *Effects*: Equivalent to:
@@ -778,12 +818,14 @@ return {std::move(first), std::move(init)};
 template <input_iterator I, sentinel_for<I> S, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr fold_while_result<I, optional<iter_value_t<I>>> foldl1_while(I first, S last, F f, Proj proj = {});
+constexpr ranges::fold_while_result<I, optional<iter_value_t<I>>>
+  ranges::foldl1_while(I first, S last, F f, Proj proj = {});
 
 template <input_range R, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr fold_while_result<iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});   
+constexpr ranges::fold_while_result<iterator_t<R>, optional<range_value_t<R>>>
+  ranges::foldl1_while(R&& r, F f, Proj proj = {});   
 ```
 
 [8]{.pnum} *Effects*: Equivalent to:
@@ -796,7 +838,7 @@ if (first == last) {
 
 iter_value_t<I> init(*first);
 ++first;
-return foldl_while(std::move(first), std::move(last), std::move(init), std::move(proj));
+return ranges::foldl_while(std::move(first), std::move(last), std::move(init), std::move(proj));
 ```
 :::
 
