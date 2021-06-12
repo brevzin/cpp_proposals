@@ -546,7 +546,7 @@ namespace std {
 
     template <input_range R, class Proj = identity,
       @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
-      requires constructible_from<range_value_t<I>, range_reference_t<I>>
+      requires constructible_from<range_value_t<R>, range_reference_t<R>>
     constexpr auto foldl1(R&& r, F f, Proj proj = {});
     
     template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
@@ -564,7 +564,7 @@ namespace std {
 
     template <bidirectional_range R, class Proj = identity,
       @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
-      requires constructible_from<range_value_t<I>, range_reference_t<I>>
+      requires constructible_from<range_value_t<R>, range_reference_t<R>>
     constexpr auto foldr1(R&& r, F f, Proj proj = {});  
 
     template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
@@ -583,7 +583,7 @@ namespace std {
     template <input_range R, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr fold_while_result<iterator_t<I>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
+    constexpr fold_while_result<iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
   }
 }
 ```
@@ -672,7 +672,7 @@ constexpr auto ranges::foldl1(I first, S last, F f, Proj proj = {});
 
 template <input_range R, class Proj = identity,
   @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
-  requires constructible_from<range_value_t<I>, range_reference_t<I>>
+  requires constructible_from<range_value_t<R>, range_reference_t<R>>
 constexpr auto ranges::foldl1(R&& r, F f, Proj proj = {});
 ```
 
@@ -730,7 +730,7 @@ constexpr auto ranges::foldr1(I first, S last, F f, Proj proj = {});
 
 template <bidirectional_range R, class Proj = identity,
   @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
-  requires constructible_from<range_value_t<I>, range_reference_t<I>>
+  requires constructible_from<range_value_t<R>, range_reference_t<R>>
 constexpr auto ranges::foldr1(R&& r, F f, Proj proj = {});  
 ```
 
@@ -783,7 +783,7 @@ constexpr fold_while_result<I, optional<iter_value_t<I>>> foldl1_while(I first, 
 template <input_range R, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr fold_while_result<iterator_t<I>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});   
+constexpr fold_while_result<iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});   
 ```
 
 [8]{.pnum} *Effects*: Equivalent to:
