@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: D2322R3
+document: P2322R3
 date: today
 audience: LEWG
 author:
@@ -41,7 +41,7 @@ There was also discussion around having these algorithms return an end iterator.
 |-|-|-|-|-|
 |4|9|3|3|1|
 
-But the primary algorithms (`foldl` and `foldl1` for left-fold) will definitely solely return a value. This revision adds further discussion on the flavors of `fold` that can be provided, but ultimately does not add additional algorithms. 
+But the primary algorithms (`foldl` and `foldl1` for left-fold) will definitely solely return a value. This revision adds further discussion on the flavors of `fold` that can be provided, and ultimately adds another pair that satisfies this desire.
 
 [@P2322R1] used _`weakly-assignable-from`_ as the constraint, this elevates it to `assignable_from`. This revision also changes the return type of `fold` to no longer be the type of the initial value, see [the discussion](#return-type).
 
@@ -282,8 +282,8 @@ There are (at least) three different approaches for how to have a short-circuiti
     
     ```cpp
     for (; first != last; ++first) {
-        if (not f(move(init), *first)) {
-            break;
+        if (not f(init, *first)) { // NB: not moving init into "f"
+            break;                 // since we're mutating in-place
         }
     }
     return init;
@@ -351,8 +351,6 @@ Option (2) is an awkward option for C++ because of general ergonomics. The provi
 Option (3) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet, and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
 
 Note that while the `expected<T, E>` version does convey failure semantically, more so than the `fold_result_t<T>` version, the latter can still be used to do so by simply returning a `fold_result_t<expected<T, E>>`.
-
-At this point, this paper does not propose adding a short-circuiting `fold` algorithm. It can be added later. 
 
 ## Iterator-returning folds
 
@@ -432,9 +430,55 @@ This brings with it its own naming problem. That's a lot of names. One approach 
 
 `with_iter` is not the best suffix, but the rest seem to work out ok. 
 
+## Short-circuiting and iterator-returning
+
+One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that do short circuiting and return an iterator? Do we even need a short-circuiting fold that *doesn't* return an iterator? 
+
+In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposal is six algorithms (with two overloads each):
+
+1. `foldl` (a left-fold with an initial value that returns `T`)
+2. `foldl1` (a left-fold with no initial value that returns `T`)
+3. `foldr` (a right-fold with an initial value that returns `T`)
+4. `foldr1` (a right-fold with no initial value that returns `T`)
+5. `foldl_while` (a short-circuiting left-fold with an initial value that returns `(iterator, T)`)
+6. `foldl1_while` (a short-circuiting left-fold with no initial value that returns `(iterator, T)`)
+
+There is no short-circuiting right-fold, since you can use `views::reverse`. This is a little harder to use since the transition from a fold that just returns `T` to a fold that actually produces an `iterator` as well isn't as easy as going from:
+
+::: bq
+```cpp
+auto value = ranges::foldl(r, init, op);
+```
+:::
+
+to:
+
+::: bq
+```cpp
+auto [iterator, value] = ranges::foldl_while(r, init, op);
+```
+:::
+
+Instead, you have to wrap the binary operation. Though, in general, any binary operation suitable for `foldl` could be turned into a non-short-circuiting binary operation suitable for `foldl_while` via (although for specific operations, it could be more efficient to write it by hand):
+
+::: bq
+```cpp
+inline constexpr auto wrap = [](auto op){
+    return [=](auto& state, auto&& elem){
+        state = op(move(state), FWD(elem)); 
+        return true;
+    };
+};
+
+auto [iterator, value] = ranges::foldl_while(r, init, wrap(op));
+```
+:::
+
+Note that for `foldl_while` and `foldl1_while`, we don't have the same kind of return type shenanigans that we have with `foldl` and `foldr` - `foldl_while` takes a `T` as the initial value and returns that same type (since we have to pass a mutable reference to it into the binary operation).
+
 # Implementation Experience
 
-This paper in its current form (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold].
+Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold]. The short-circuiting alternatives will be added later. 
 
 # Wording
 
@@ -474,6 +518,14 @@ namespace std {
         convertible_to<invoke_result_t<F&, T, iter_reference_t<I>>,
                decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>> &&
         @*indirectly-binary-left-foldable-impl*@<F, T, I, decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>>; 
+        
+    template <class F, class T, class I>
+    concept @*indirectly-short-circuit-left-foldable*@ = // exposition only
+        copy_constructible<F> &&
+        movable<T> &&
+        indirectly_readable<I> &&
+        invocable<F&, T&, iter_reference_t<I>> &&
+        @*boolean-testable*@<invoke_result_t<F&, T&, iter_reference_t<I>>>;
 
     template <class F, class T, class I>
     concept @*indirectly-binary-right-foldable*@ =    // exposition only
@@ -513,8 +565,71 @@ namespace std {
     template <bidirectional_range R, class Proj = identity,
       @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
       requires constructible_from<range_value_t<I>, range_reference_t<I>>
-    constexpr auto foldr1(R&& r, F f, Proj proj = {});    
+    constexpr auto foldr1(R&& r, F f, Proj proj = {});  
+
+    template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
+      @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
+    constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
+    
+    template <input_range R, class T, class Proj = identity,
+      @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
+    constexpr fold_while_result<iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});    
+    
+    template <input_iterator I, sentinel_for<I> S, class Proj = identity,
+      @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+      requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
+    constexpr fold_while_result<I, optional<iter_value_t<I>>> foldl1_while(I first, S last, F f, Proj proj = {});
+
+    template <input_range R, class Proj = identity,
+      @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
+      requires constructible_from<range_value_t<R>, range_reference_t<R>>
+    constexpr fold_while_result<iterator_t<I>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
   }
+}
+```
+:::
+
+Add a new result type to [algorithms.results]{.sref}:
+
+::: bq
+```diff
+namespace std::ranges {
+  // ...
+  
+  template<class I>
+  struct in_found_result {
+    [[no_unique_address]] I in;
+    bool found;
+
+    template<class I2>
+      requires convertible_­to<const I&, I2>
+    constexpr operator in_found_result<I2>() const & {
+      return {in, found};
+    }
+    template<class I2>
+      requires convertible_­to<I, I2>
+    constexpr operator in_found_result<I2>() && {
+      return {std::move(in), found};
+    }
+  };
+
++ template<class I, class T>
++ struct fold_while_result {
++   [[no_unique_address]] I in;
++   [[no_unique_address]] T value;
++
++   template<class I2, class T2>
++     requires convertible_to<const I&, I2> && convertible_to<const T&, T2>
++   constexpr operator fold_while_result<I2, T2>() const & {
++     return {in, value};
++   }
++
++   template<class I2, class T2>
++     requires convertible_to<I, I2> && convertible_to<T, T2>
++   constexpr operator fold_while_result<I2, T2>() const & {
++     return {std::move(in), std::move(value)};
++   }
++ };  
 }
 ```
 :::
@@ -634,6 +749,57 @@ return optional<U>(in_place,
     ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), std::move(f), std::move(proj)));
 ```
 :::
+
+```cpp
+template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
+  @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
+constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
+
+template <input_range R, class T, class Proj = identity,
+  @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
+constexpr fold_while_result<iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {}); 
+```
+
+[7]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```cpp
+for (; first != last; ++first) {
+    if (!invoke(f(init, invoke(proj, *first)))) {
+        break;
+    }
+}
+
+return {std::move(first), std::move(init)};
+```
+:::
+
+```cpp
+template <input_iterator I, sentinel_for<I> S, class Proj = identity,
+  @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+  requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
+constexpr fold_while_result<I, optional<iter_value_t<I>>> foldl1_while(I first, S last, F f, Proj proj = {});
+
+template <input_range R, class Proj = identity,
+  @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
+  requires constructible_from<range_value_t<R>, range_reference_t<R>>
+constexpr fold_while_result<iterator_t<I>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});   
+```
+
+[8]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```cpp
+if (first == last) {
+    return {first, nullopt};
+}
+
+iter_value_t<I> init(*first);
+++first;
+return foldl_while(std::move(first), std::move(last), std::move(init), std::move(proj));
+```
+:::
+
 
 :::
 
