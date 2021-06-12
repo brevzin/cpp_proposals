@@ -1,6 +1,6 @@
 ---
 title: "Pipe support for user-defined range adaptors"
-document: D2387R0
+document: P2387R0
 date: today
 audience: LEWG
 author:
