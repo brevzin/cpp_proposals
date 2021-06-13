@@ -265,7 +265,7 @@ All of which is to say, I don't think there's a clear answer to this question. T
 |-|-|-|
 |`fold_left`|`fold`|`foldl`|
 |`fold_right`|`fold_right`|`foldr`|
-|`fold_left_first`|`fold_left_first`|`foldl1`|
+|`fold_left_first`|`fold_first`|`foldl1`|
 |`fold_right_first`|`fold_right_first`|`foldr1`|
 
 And this paper proposes option C: `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer. 
