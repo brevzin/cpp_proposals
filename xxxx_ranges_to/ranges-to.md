@@ -186,16 +186,16 @@ std::list<int> xs = {1, 2, 3};
 
 // this would use our new range-based constructor
 // and give us a vector<int> containing {1, 2, 3}
-std::vector v2(std::from_range, xs);
+std::vector a(std::from_range, xs);
 
 // same
-std::vector w2{std::from_range, xs};
+std::vector b{std::from_range, xs};
 
 // this is a vector of list<int>
-std::vector q{xs};
+std::vector c{xs};
 
 // and this is ill-formed
-std::vector r(xs);
+std::vector d(xs);
 ```
 :::
 
@@ -227,7 +227,7 @@ That is, `ranges::to<C>(r, args...)`, for some type cv-unqualified type `C` that
 
 1. `C(r, args...)`
 2. `C(std::from_range, r, args...)`
-3. If `C` is a range of ranges, and `r` is a range of ranges, then let `r2c` be `r | transform(to<range_value_t<C>>)`. 
+3. If `C` is a range of ranges, and `r` is a range of ranges, then let `r2c` be `r | transform(to<range_value_t<C>>)` in the following:
     a. `C(r2c, args...)`
     b. `C(std::from_range, r2c, args...)`
 
@@ -235,11 +235,24 @@ And that's already... pretty good! This would cover collecting any pipeline into
 
 There really are only three fallbacks that we can try:
 
-* use the iterator-pair constructor, if our range is actually a common range whose iterators are C++17 iterators. A version of that is using the iterator-pair constructor if `views::common(r)` is valid, to force common-ness, although this would be fairly expensive.
+* use the iterator-pair constructor, if our range is actually a common range whose iterators are C++17 iterators. A version of that is using the iterator-pair constructor if `views::common(r)` is valid, to force common-ness, although this would be fairly expensive, and we would want to avoid that.
 * use the `ranges::copy` solution presented earlier, with some kind of insertion iterator.
 * provide an ADL customization point, separate from the constructor customization point already offered.
 
-The second option there might look something like this:
+The first option there would be:
+
+::: bq
+```cpp
+template <range C, common_range R, typename... Args>
+    requires constructible_from<C, iterator_t<R>, iterator_t<R>, Args...>
+          && @*cpp17-input-iterator*@<iterator_t<R>>
+auto to(R&& r, Args&&... args) -> C {
+    return C(ranges::begin(R), ranges::end(r), FWD(args)...);
+}
+```
+:::
+
+and the second option there might look something like this:
 
 ::: bq
 ```cpp
