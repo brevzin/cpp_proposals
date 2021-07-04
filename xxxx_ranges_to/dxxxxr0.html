@@ -746,63 +746,89 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ol type="1">
 <li><code class="sourceCode cpp">C<span class="op">(</span>r, args<span class="op">...)</span></code></li>
 <li><code class="sourceCode cpp">C<span class="op">(</span>std<span class="op">::</span>from_range, r, args<span class="op">...)</span></code></li>
-<li>If <code class="sourceCode cpp">C</code> is a range of ranges, and <code class="sourceCode cpp">r</code> is a range of ranges, then let <code class="sourceCode cpp">r2c</code> be <code class="sourceCode cpp">r <span class="op">|</span> transform<span class="op">(</span>to<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>C<span class="op">&gt;&gt;)</span></code> in the following:
-<ol type="a">
-<li><code class="sourceCode cpp">C<span class="op">(</span>r2c, args<span class="op">...)</span></code></li>
-<li><code class="sourceCode cpp">C<span class="op">(</span>std<span class="op">::</span>from_range, r2c, args<span class="op">...)</span></code></li>
-</ol></li>
 </ol>
-<p>And that’s already… pretty good! This would cover collecting any pipeline into a standard library container (the third step there handles the case of trying to converting something like a range of range of <code class="sourceCode cpp">T</code> into a <code class="sourceCode cpp">vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>). But what it would not yet do is provide a way of collecting a pipeline into some user-defined container that adheres to the C++98-through-C++17 notion of generic iterator-pair construction but not yet this new notion of generic range construction. To still work with legacy containers, we need some kind of fallback that is not based on these constructors.</p>
+<p>Let’s generalize this and put a name to this: we’re constructing a <code class="sourceCode cpp">C</code> from a range and some other arguments:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, range R, typeanme<span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>        <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>C, R, Args<span class="op">...&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>              <span class="op">||</span> constructible_from<span class="op">&lt;</span>C, from_range_t, R, Args<span class="op">...&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="kw">auto</span> <em>construct-from-range</em><span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> C<span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>constructible_from<span class="op">&lt;</span>C, R, Args<span class="op">...&gt;)</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="cf">return</span> C<span class="op">(</span>FWD<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>        <span class="cf">return</span> C<span class="op">(</span>from_range, FWD<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb11-9"><a href="#cb11-9"></a>    <span class="op">}</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a><span class="op">}</span>;</span></code></pre></div>
+<p>That is, our starting point is that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>C<span class="op">&gt;(</span>r, args<span class="op">...)</span></code> is <code class="sourceCode cpp"><em>construct-from-range</em><span class="op">&lt;</span>C<span class="op">&gt;(</span>r, args<span class="op">...)</span></code>.</p>
+<p>Now, we also want to handle the recursive case. The above lets me construct a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code> from a range of <code class="sourceCode cpp">string</code>, but it does not let me construct a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code> from a range of range of <code class="sourceCode cpp"><span class="dt">char</span></code>. We could push that complexity onto <code class="sourceCode cpp">string</code> (by making it constructible from any range of <code class="sourceCode cpp"><span class="dt">char</span></code>) or <code class="sourceCode cpp">vector</code> (by making its <code class="sourceCode cpp">from_range_t</code> constructor work for both the case where we’re doing direct- or range-construction), but instead we can keep that complexity entirely inside of <code class="sourceCode cpp">to</code>.</p>
+<p>We can do that by extending our rule by making <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>C<span class="op">&gt;(</span>r, args<span class="op">...)</span></code> be the first one of these expressions that is valid:</p>
+<ol type="1">
+<li><code class="sourceCode cpp"><em>construct-from-range</em><span class="op">&lt;</span>C<span class="op">&gt;(</span>r, args<span class="op">...)</span></code> (which itself tries to do the <code class="sourceCode cpp">from_range_t</code> dance)</li>
+<li>if <code class="sourceCode cpp">C</code> is a range of ranges and <code class="sourceCode cpp">r</code> is a range of ranges, then <code class="sourceCode cpp"><em>construct-from-range</em><span class="op">&lt;</span>C<span class="op">&gt;(</span>r <span class="op">|</span> transform<span class="op">(</span>to<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>C<span class="op">&gt;&gt;)</span>, args<span class="op">...)</span></code></li>
+</ol>
+<p>And that’s already… pretty good! This would cover collecting any pipeline into a standard library container. But what it would not yet do is provide a way of collecting a pipeline into some user-defined container that adheres to the C++98-through-C++17 notion of generic iterator-pair construction but not yet this new notion of generic range construction. To still work with legacy containers, we need some kind of fallback that is not based on these constructors.</p>
 <p>There really are only three fallbacks that we can try:</p>
-<ul>
+<ol type="1">
 <li>use the iterator-pair constructor, if our range is actually a common range whose iterators are C++17 iterators. A version of that is using the iterator-pair constructor if <code class="sourceCode cpp">views<span class="op">::</span>common<span class="op">(</span>r<span class="op">)</span></code> is valid, to force common-ness, although this would be fairly expensive, and we would want to avoid that.</li>
 <li>use the <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code> solution presented earlier, with some kind of insertion iterator.</li>
 <li>provide an ADL customization point, separate from the constructor customization point already offered.</li>
-</ul>
+</ol>
 <p>The first option there would be:</p>
 <blockquote>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range C, common_range R, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>    <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Args<span class="op">...&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a>          <span class="op">&amp;&amp;</span> <em>cpp17-input-iterator</em><span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4"></a><span class="kw">auto</span> to<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> C <span class="op">{</span></span>
-<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">return</span> C<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>R<span class="op">)</span>, ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
-<span id="cb11-6"><a href="#cb11-6"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range C, common_range R, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Args<span class="op">...&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>          <span class="op">&amp;&amp;</span> <em>cpp17-input-iterator</em><span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="kw">auto</span> to<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> C <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="cf">return</span> C<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>R<span class="op">)</span>, ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>, FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>and the second option there might look something like this:</p>
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, <span class="kw">typename</span> I<span class="op">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">concept</span> <em>push-back-from</em> <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C c, I it<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>    c<span class="op">.</span>push_back<span class="op">(*</span>it<span class="op">)</span>;</span>
-<span id="cb12-4"><a href="#cb12-4"></a><span class="op">}</span>;</span>
-<span id="cb12-5"><a href="#cb12-5"></a></span>
-<span id="cb12-6"><a href="#cb12-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, <span class="kw">typename</span> I<span class="op">&gt;</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a><span class="kw">concept</span> <em>insert-from</em> <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C c, I it<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-8"><a href="#cb12-8"></a>    c<span class="op">.</span>insert<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>c<span class="op">)</span>, <span class="op">*</span>it<span class="op">)</span>;</span>
-<span id="cb12-9"><a href="#cb12-9"></a><span class="op">}</span>;</span>
-<span id="cb12-10"><a href="#cb12-10"></a></span>
-<span id="cb12-11"><a href="#cb12-11"></a><span class="kw">template</span> <span class="op">&lt;</span>range C, range R, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb12-12"><a href="#cb12-12"></a>    <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>C, Args<span class="op">...&gt;</span></span>
-<span id="cb12-13"><a href="#cb12-13"></a>          <span class="op">&amp;&amp;</span> <span class="op">(</span><em>push-back-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb12-14"><a href="#cb12-14"></a>              <span class="op">||</span> <em>insert-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span></span>
-<span id="cb12-15"><a href="#cb12-15"></a><span class="kw">auto</span> to<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> C <span class="op">{</span></span>
-<span id="cb12-16"><a href="#cb12-16"></a>    C c<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
-<span id="cb12-17"><a href="#cb12-17"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">(</span><span class="dt">size_t</span> s<span class="op">)</span> <span class="op">{</span> c<span class="op">.</span>reserve<span class="op">(</span>s<span class="op">)</span>; <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb12-18"><a href="#cb12-18"></a>        c<span class="op">.</span>reserve<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">(</span>r<span class="op">))</span>;</span>
-<span id="cb12-19"><a href="#cb12-19"></a>    <span class="op">}</span></span>
-<span id="cb12-20"><a href="#cb12-20"></a>    </span>
-<span id="cb12-21"><a href="#cb12-21"></a>    <span class="kw">auto</span> out_iterator <span class="op">=</span> <span class="op">[&amp;]{</span></span>
-<span id="cb12-22"><a href="#cb12-22"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>push-back-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
-<span id="cb12-23"><a href="#cb12-23"></a>            <span class="cf">return</span> back_inserter<span class="op">(</span>c<span class="op">)</span>;</span>
-<span id="cb12-24"><a href="#cb12-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb12-25"><a href="#cb12-25"></a>            <span class="cf">return</span> inserter<span class="op">(</span>c, ranges<span class="op">::</span>end<span class="op">(</span>c<span class="op">))</span>;</span>
-<span id="cb12-26"><a href="#cb12-26"></a>        <span class="op">}</span></span>
-<span id="cb12-27"><a href="#cb12-27"></a>    <span class="op">}()</span>;</span>
-<span id="cb12-28"><a href="#cb12-28"></a>    ranges<span class="op">::</span>copy<span class="op">(</span>r, out_iterator<span class="op">)</span>;</span>
-<span id="cb12-29"><a href="#cb12-29"></a>    </span>
-<span id="cb12-30"><a href="#cb12-30"></a>    <span class="cf">return</span> c;</span>
-<span id="cb12-31"><a href="#cb12-31"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, <span class="kw">typename</span> I<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">concept</span> <em>push-back-from</em> <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C c, I it<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    c<span class="op">.</span>push_back<span class="op">(*</span>it<span class="op">)</span>;</span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="op">}</span>;</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C, <span class="kw">typename</span> I<span class="op">&gt;</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="kw">concept</span> <em>insert-from</em> <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>C c, I it<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>    c<span class="op">.</span>insert<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>c<span class="op">)</span>, <span class="op">*</span>it<span class="op">)</span>;</span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="op">}</span>;</span>
+<span id="cb13-10"><a href="#cb13-10"></a></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="kw">template</span> <span class="op">&lt;</span>range C, range R, <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>    <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>C, Args<span class="op">...&gt;</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>          <span class="op">&amp;&amp;</span> <span class="op">(</span><em>push-back-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a>              <span class="op">||</span> <em>insert-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="kw">auto</span> to<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">-&gt;</span> C <span class="op">{</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a>    C c<span class="op">(</span>FWD<span class="op">(</span>args<span class="op">)...)</span>;</span>
+<span id="cb13-17"><a href="#cb13-17"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">(</span><span class="dt">size_t</span> s<span class="op">)</span> <span class="op">{</span> c<span class="op">.</span>reserve<span class="op">(</span>s<span class="op">)</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a>        c<span class="op">.</span>reserve<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb13-19"><a href="#cb13-19"></a>    <span class="op">}</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a>    </span>
+<span id="cb13-21"><a href="#cb13-21"></a>    <span class="kw">auto</span> out_iterator <span class="op">=</span> <span class="op">[&amp;]{</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><em>push-back-from</em><span class="op">&lt;</span>C, iterator_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a>            <span class="cf">return</span> back_inserter<span class="op">(</span>c<span class="op">)</span>;</span>
+<span id="cb13-24"><a href="#cb13-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a>            <span class="cf">return</span> inserter<span class="op">(</span>c, ranges<span class="op">::</span>end<span class="op">(</span>c<span class="op">))</span>;</span>
+<span id="cb13-26"><a href="#cb13-26"></a>        <span class="op">}</span></span>
+<span id="cb13-27"><a href="#cb13-27"></a>    <span class="op">}()</span>;</span>
+<span id="cb13-28"><a href="#cb13-28"></a>    ranges<span class="op">::</span>copy<span class="op">(</span>r, out_iterator<span class="op">)</span>;</span>
+<span id="cb13-29"><a href="#cb13-29"></a>    </span>
+<span id="cb13-30"><a href="#cb13-30"></a>    <span class="cf">return</span> c;</span>
+<span id="cb13-31"><a href="#cb13-31"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This is… okay, but at least importantly it allows the efficient solution for standard library containers and also provides a path for external containers to do the same for themselves.</p>
+<p>If we stick both of the above fallbacks into <code class="sourceCode cpp"><em>construct-from-range</em></code>, we end up defining it as the first of:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">C<span class="op">(</span>r, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">C<span class="op">(</span>from_range, r, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">C<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>, ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>, args<span class="op">...)</span></code> (if <code class="sourceCode cpp">r</code> is a <code class="sourceCode cpp">common_range</code> whose iterator is a <code class="sourceCode cpp"><em>cpp17-input-iterator</em></code>)</li>
+<li>the implementation above using <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code> on the right kind of output iterator</li>
+</ol>
+<p>While still defining <code class="sourceCode cpp">ranges<span class="op">::</span>to</code> as the first valid expression of:</p>
+<ol type="1">
+<li><code class="sourceCode cpp"><em>construct-from-range</em><span class="op">&lt;</span>C<span class="op">&gt;(</span>r, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp"><em>construct-from-range</em><span class="op">&lt;</span>C<span class="op">&gt;(</span>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>ranges<span class="op">::</span>to<span class="op">&lt;</span>C<span class="op">&gt;)</span>, args<span class="op">...)</span></code></li>
+</ol>
+<p>Then we end up with a design that, while fairly complex, still allows for an efficient solution in all cases and an as-good-as-possible fallback until those efficient solutions are opted in to.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">2</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1206R3">

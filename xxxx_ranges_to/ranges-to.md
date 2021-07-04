@@ -227,17 +227,38 @@ That is, `ranges::to<C>(r, args...)`, for some type cv-unqualified type `C` that
 
 1. `C(r, args...)`
 2. `C(std::from_range, r, args...)`
-3. If `C` is a range of ranges, and `r` is a range of ranges, then let `r2c` be `r | transform(to<range_value_t<C>>)` in the following:
-    a. `C(r2c, args...)`
-    b. `C(std::from_range, r2c, args...)`
 
-And that's already... pretty good! This would cover collecting any pipeline into a standard library container (the third step there handles the case of trying to converting something like a range of range of `T` into a `vector<vector<T>>`). But what it would not yet do is provide a way of collecting a pipeline into some user-defined container that adheres to the C++98-through-C++17 notion of generic iterator-pair construction but not yet this new notion of generic range construction. To still work with legacy containers, we need some kind of fallback that is not based on these constructors. 
+Let's generalize this and put a name to this: we're constructing a `C` from a range and some other arguments:
+
+```cpp
+template <typename C, range R, typeanme... Args>
+        requires constructible_from<C, R, Args...>
+              || constructible_from<C, from_range_t, R, Args...>
+auto @*construct-from-range*@(R&& r, Args&&... args) -> C{
+    if constexpr (constructible_from<C, R, Args...>) {
+        return C(FWD(r), FWD(args)...);
+    } else {
+        return C(from_range, FWD(r), FWD(args)...);
+    }
+};
+```
+
+That is, our starting point is that `ranges::to<C>(r, args...)` is `@*construct-from-range*@<C>(r, args...)`.
+
+Now, we also want to handle the recursive case. The above lets me construct a `vector<string>` from a range of `string`, but it does not let me construct a `vector<string>` from a range of range of `char`. We could push that complexity onto `string` (by making it constructible from any range of `char`) or `vector` (by making its `from_range_t` constructor work for both the case where we're doing direct- or range-construction), but instead we can keep that complexity entirely inside of `to`. 
+
+We can do that by extending our rule by making `ranges::to<C>(r, args...)` be the first one of these expressions that is valid:
+
+1. `@*construct-from-range*@<C>(r, args...)` (which itself tries to do the `from_range_t` dance)
+2. if `C` is a range of ranges and `r` is a range of ranges, then `@*construct-from-range*@<C>(r | transform(to<range_value_t<C>>), args...)`
+
+And that's already... pretty good! This would cover collecting any pipeline into a standard library container. But what it would not yet do is provide a way of collecting a pipeline into some user-defined container that adheres to the C++98-through-C++17 notion of generic iterator-pair construction but not yet this new notion of generic range construction. To still work with legacy containers, we need some kind of fallback that is not based on these constructors. 
 
 There really are only three fallbacks that we can try:
 
-* use the iterator-pair constructor, if our range is actually a common range whose iterators are C++17 iterators. A version of that is using the iterator-pair constructor if `views::common(r)` is valid, to force common-ness, although this would be fairly expensive, and we would want to avoid that.
-* use the `ranges::copy` solution presented earlier, with some kind of insertion iterator.
-* provide an ADL customization point, separate from the constructor customization point already offered.
+1. use the iterator-pair constructor, if our range is actually a common range whose iterators are C++17 iterators. A version of that is using the iterator-pair constructor if `views::common(r)` is valid, to force common-ness, although this would be fairly expensive, and we would want to avoid that.
+2. use the `ranges::copy` solution presented earlier, with some kind of insertion iterator.
+3. provide an ADL customization point, separate from the constructor customization point already offered.
 
 The first option there would be:
 
@@ -291,3 +312,17 @@ auto to(R&& r, Args&&... args) -> C {
 :::
 
 This is... okay, but at least importantly it allows the efficient solution for standard library containers and also provides a path for external containers to do the same for themselves. 
+
+If we stick both of the above fallbacks into `@*construct-from-range*@`, we end up defining it as the first of:
+
+1. `C(r, args...)`
+2. `C(from_range, r, args...)`
+3. `C(ranges::begin(r), ranges::end(r), args...)` (if `r` is a `common_range` whose iterator is a `@*cpp17-input-iterator*@`)
+4. the implementation above using `ranges::copy` on the right kind of output iterator
+
+While still defining `ranges::to` as the first valid expression of:
+
+1. `@*construct-from-range*@<C>(r, args...)`
+2. `@*construct-from-range*@<C>(r | views::transform(ranges::to<C>), args...)`
+
+Then we end up with a design that, while fairly complex, still allows for an efficient solution in all cases and an as-good-as-possible fallback until those efficient solutions are opted in to.
