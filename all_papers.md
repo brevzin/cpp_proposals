@@ -51,3 +51,5 @@
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
+- Range-based container operations and  <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>: [dxxxxr0.html](xxxx_ranges_to/dxxxxr0.html)
+- What is a  <code class="sourceCode cpp">view</code> ?: [dxxxxr0.html](xxxx_what_view/dxxxxr0.html)
