@@ -33,11 +33,11 @@ make all of my papers.
 
 ### Pending Plenary
 
-None.
+- [p0847r7 - Deducing this](0847_deducing_this/p0847r7.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 
 ### Pending CWG/LWG Review
 
-- [p0847r6 - Deducing this](0847_deducing_this/p0847r6.html), with Simon Brand, Gašper Ažman, and Ben Deane.
+None.
 
 ### Pending EWG/LEWG Voting
 

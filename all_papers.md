@@ -4,7 +4,7 @@
 - 644 Forward without  <code>forward</code>: [p0644r1](0644_fwd/p0644r1.html)
 - 704 Fixing const-qualified pointers to members: [p0704r0](0704_const_qual_pmfs/p0704r0.html) [p0704r1](0704_const_qual_pmfs/p0704r1.html)
 - 780 Allow pack expansion in lambda init-capture: [p0780r0](0780_lambda_pack_capture/p0780r0.html) [p0780r1](0780_lambda_pack_capture/p0780r1.html) [p0780r2](0780_lambda_pack_capture/p0780r2.html)
-- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [p0847r6](0847_deducing_this/p0847r6.html)
+- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [p0847r6](0847_deducing_this/p0847r6.html) [d0847r7](0847_deducing_this/d0847r7.html) [p0847r7](0847_deducing_this/p0847r7.html)
 - 848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - 892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)

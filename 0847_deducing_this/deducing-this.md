@@ -1,6 +1,6 @@
 ---
 title: Deducing this
-document: P0847R6
+document: P0847R7
 date: today
 audience: EWG
 author:
@@ -21,6 +21,10 @@ toc-depth: 3
 We propose a new mechanism for specifying or deducing the value category of the expression that a member-function is invoked on. In other words, a way to tell from within a member function whether the expression it's invoked on is an lvalue or an rvalue; whether it is const or volatile; and the expression's type.
 
 # Revision History # {#revision-history}
+
+***Changes since r6***
+
+Wording changes after CWG telecon.
 
 ***Changes since r5***
 
@@ -1961,13 +1965,13 @@ One decision was to introduce the term _object parameter_ as the union of explic
 
 ### Wording in [basic]{.sref}
 
-Extend the definition of correspond in [basic.scope.scope]{.sref}/3 to check the implicit/explicit object parameter types:
+Extend the definition of correspond[^1] in [basic.scope.scope]{.sref}/3 to check the implicit/explicit object parameter types:
 
 ::: bq
 ::: addu
 [a]{.pnum} Two non-static member functions have _corresponding object parameters_ if:
 
-- [a.1]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_ and the types of their object parameters, are removing top-level references, are the same, or
+- [a.1]{.pnum} exactly one is an implicit object member function with no _ref-qualifier_ and the types of their object parameters ([dcl.fct]), after removing top-level references, are the same, or
 - [a.2]{.pnum} their object parameters have the same type.
 
 
@@ -2015,64 +2019,6 @@ and extend the example:
 ```
 :::
 
-In the C++17 wording, we had this example [\[over.load\]/2.3 in N4659](https://timsong-cpp.github.io/cppwp/n4659/over.load#2.3):
-
-::: bq
-```cpp
-class Y {
-  void h() &;
-  void h() const &;             // OK
-  void h() &&;                  // OK, all declarations have a ref-qualifier
-  void i() &;
-  void i() const;               // ill-formed, prior declaration of i
-                                // has a ref-qualifier
-};
-```
-:::
-
-The `Y::i` example actually becomes well-formed after [@P1787R6] (see [Davis' email to core](https://lists.isocpp.org/core/2020/11/10201.php)), since the prior wording did not consider *cv*-qualifiers but the new wording does. The wording change above preserves Davis' change, the above is allowed.
-
-In regards to examples like:
-
-::: bq
-```cpp
-struct A {
-    void f();
-    void f() &;
-};
-
-struct B {
-    void f();
-    void f() &&;
-};
-```
-:::
-
-There isn't much reason that the absence of a *ref-qualifier* is more `&`-ish than `&&`-ish. So both of these pairs of function declarations should be rejected. It would be nice to _just_ talk about the type of the object parameter, but this would only reject `A` but not `B`.
-
-Hence the whole paragraph about corresponding object parameters. If exactly one is a legacy non-static member function with no _ref-qualifier_, we have to ignore the reference part of the type. That would end up with both of these corresponding.
-
-For an example like this:
-
-```cpp
-struct C {
-    void f();
-    void f(this C);
-};
-```
-
-This is technically differentiable by overload resolution:
-
-```cpp
-struct D : C { };
-
-const C cc;
-cc.f(); // calls second overload
-D d;
-d.f();  // calls first overload
-```
-
-But doesn't seem especially meaningful to support either, so should be rejected by the above rule. 
 
 ### Wording in [expr]{.sref}
 
@@ -2179,7 +2125,7 @@ Change [expr.unary.op]{.sref}/3, requiring that taking a pointer to an explicit 
 
 [3]{.pnum} The result of the unary `&` operator is a pointer to its operand.
 
-- [3.1]{.pnum} If the operand is a _qualified-id_ naming a non-static or variant member `m` of some class `C` with type `T`, the result has type “pointer to member of class `C` of type `T`” and is a prvalue designating `C​::​m`.
+- [3.1]{.pnum} If the operand is a _qualified-id_ naming a non-static or variant member `m` of some class `C` with type `T`, [other than an explicit object member function,]{.addu} the result has type “pointer to member of class `C` of type `T`” and is a prvalue designating `C​::​m`.
 - [3.2]{.pnum} Otherwise, if the operand is an lvalue of type `T`, the resulting expression is a prvalue of type “pointer to `T`” whose result is a pointer to the designated object ([intro.memory]) or function. [If the operand names an explicit object member function (dcl.fct), the operand shall be a _qualified-id_.]{.addu} [Note 2: In particular, taking the address of a variable of type “cv `T`” yields a pointer of type “pointer to cv `T`”. — end note]
 - [3.3]{.pnum} Otherwise, the program is ill-formed.
 :::
@@ -2239,7 +2185,7 @@ void test(C c) {
 
 [5d]{.pnum} The _object parameter_ of a non-static member function is either the explicit object parameter or the implicit object parameter ([over.match.funcs]).
 
-[5e]{.pnum} An _non-object parameter_ is a function parameter that is not the explicit object parameter. The _non-object-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit object parameter, if any, omitted. [ _Note_: The non-object-parameter-type-list consists of the adjusted types of all the non-object parameters. _-end note_ ]
+[5e]{.pnum} A _non-object parameter_ is a function parameter that is not the explicit object parameter. The _non-object-parameter-type-list_ of a member function is the parameter-type-list of that function with the explicit object parameter, if any, omitted. [ _Note_: The non-object-parameter-type-list consists of the adjusted types of all the non-object parameters. _-end note_ ]
 
 :::
 :::
@@ -2341,13 +2287,19 @@ struct C {
         f(C{});    // error: no viable candidate
         C{}.f();   // ok
     }
+    
+    void k(this int);
+    operator int() const;
+    void m(this const C& c) {
+        c.k();     // ok
+    }
 };
 ```
 - *end example* ]
 :::
 :::
 
-Add to [over.call.object]{.sref}/3:
+Change [over.call.object]{.sref}/3:
 
 ::: bq
 
@@ -2507,6 +2459,65 @@ The authors would like to thank:
 - Ville Voutilainen, Herb Sutter, Titus Winters and Bjarne Stroustrup for their guidance in design-space exploration
 - Eva Conti for furious copy editing, patience, and moral support
 - Daveed Vandevoorde for his extensive feedback on recursive lambdas and implementation help
+
+[^1]: In the C++17 wording, we had this example [\[over.load\]/2.3 in N4659](https://timsong-cpp.github.io/cppwp/n4659/over.load#2.3):
+
+    ::: bq
+    ```cpp
+    class Y {
+      void h() &;
+      void h() const &;             // OK
+      void h() &&;                  // OK, all declarations have a ref-qualifier
+      void i() &;
+      void i() const;               // ill-formed, prior declaration of i
+                                    // has a ref-qualifier
+    };
+    ```
+    :::
+
+    The `Y::i` example actually becomes well-formed after [@P1787R6] (see [Davis' email to core](https://lists.isocpp.org/core/2020/11/10201.php)), since the prior wording did not consider *cv*-qualifiers but the new wording does. The wording change above preserves Davis' change, the above is allowed.
+
+    In regards to examples like:
+
+    ::: bq
+    ```cpp
+    struct A {
+        void f();
+        void f() &;
+    };
+
+    struct B {
+        void f();
+        void f() &&;
+    };
+    ```
+    :::
+
+    There isn't much reason that the absence of a *ref-qualifier* is more `&`-ish than `&&`-ish. So both of these pairs of function declarations should be rejected. It would be nice to _just_ talk about the type of the object parameter, but this would only reject `A` but not `B`.
+
+    Hence the whole paragraph about corresponding object parameters. If exactly one is a legacy non-static member function with no _ref-qualifier_, we have to ignore the reference part of the type. That would end up with both of these corresponding.
+
+    For an example like this:
+
+    ```cpp
+    struct C {
+        void f();
+        void f(this C);
+    };
+    ```
+
+    This is technically differentiable by overload resolution:
+
+    ```cpp
+    struct D : C { };
+
+    const C cc;
+    cc.f(); // calls second overload
+    D d;
+    d.f();  // calls first overload
+    ```
+
+    But doesn't seem especially meaningful to support either, so should be rejected by the above rule. 
 
 ---
 references:
