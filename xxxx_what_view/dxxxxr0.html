@@ -565,7 +565,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">2</span> References<span></span></a></li>
+<li><a href="#the-need-for-cheap-copies"><span class="toc-section-number">2</span> The need for cheap copies<span></span></a></li>
+<li><a href="#refining-the-view-requirements"><span class="toc-section-number">3</span> Refining the view requirements<span></span></a></li>
+<li><a href="#what-is-a-view"><span class="toc-section-number">4</span> What is a <code class="sourceCode cpp">view</code>?<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -599,7 +602,175 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>But somehow absent from the discussion is: why do we care about views and range adaptors being cheap to copy and assign and destroy? This isn’t just idle navel-gazing either, <span class="citation" data-cites="LWG3452">[<a href="#ref-LWG3452" role="doc-biblioref">LWG3452</a>]</span> points out that requiring strict O(1) destruction has implications for whether <code class="sourceCode cpp">std<span class="op">::</span>generator</code> <span class="citation" data-cites="P2168R3">[<a href="#ref-P2168R3" role="doc-biblioref">P2168R3</a>]</span> can be a <code class="sourceCode cpp">view</code>. What can go wrong in a program that annotates a range as being a <code class="sourceCode cpp">view</code> despite not meeting these requirements?</p>
 <p>The goal of this paper is to provide good answers to these questions.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">2</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="the-need-for-cheap-copies"><span class="header-section-number">2</span> The need for cheap copies<a href="#the-need-for-cheap-copies" class="self-link"></a></h1>
+<p>N4128 asked the following question:</p>
+<div class="quote">
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">auto</span> rng <span class="op">=</span> v <span class="op">|</span> view<span class="op">::</span>reverse;</span></code></pre></div>
+<p>This creates a view of <code class="sourceCode cpp">v</code> that iterates in reverse order. Now: is <code class="sourceCode cpp">rng</code> copyable, and if so, how expensive is the copy operation?</p>
+</div>
+<p>Why is this question important? The initial thought to <code class="sourceCode cpp">rng</code> itself being cheap to copy might be that we need this requirement because we write algorithms that take views by value:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_view V<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="dt">void</span> some_algo<span class="op">(</span>V v<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>We could have gone that route (and we definitely do encourage people to take <em>specific</em> views by value - such as <code class="sourceCode cpp">span</code> and <code class="sourceCode cpp">string_view</code>), but that would affect the usability of a range-based algorithms. You could not write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">)</span></code> on a <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, since that is not a view - you would have to write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>views<span class="op">::</span>all<span class="op">(</span>v<span class="op">))</span></code> or perhaps something like <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>all<span class="op">())</span></code> or <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>view<span class="op">())</span></code>. Either way, we very much want range-based algorithms to be able to operator on, well, ranges, so these are always written instead to take ranges by forwarding reference:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">void</span> some_algo<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>At best, we write algorithms that do require views and it’s those algorithms that themselves construct the views that they need - but their API surface still takes ranges (specifically, <code class="sourceCode cpp">viewable_range</code>s <span>24.4.5
+ <a href="https://wg21.link/range.refinements">[range.refinements]</a></span>) by forwarding reference.</p>
+<p>If we don’t care about views being cheap to copy because of the desire to write algorithms that take them by value, then why do we care about views being cheap to copy?</p>
+<p>Because we very much care about views being cheap to <em>construct</em>.</p>
+<p>Let’s go back to this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">auto</span> rng <span class="op">=</span> v <span class="op">|</span> views<span class="op">::</span>reverse;</span></code></pre></div>
+</blockquote>
+<p>This is intended to be a lazy range adaptor - constructing <code class="sourceCode cpp">rng</code> here isn’t intended to do any work, it’s just preparing to do work in the future. It’s important for this to be “cheap” - in the sense that this should absolutely not end up copying all the elements of <code class="sourceCode cpp">v</code>, or really doing any operation on the elements of <code class="sourceCode cpp">v</code>. This extends to all layering of range adaptors:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">auto</span> rng <span class="op">=</span> v <span class="op">|</span> views<span class="op">::</span>some</span>
+<span id="cb6-2"><a href="#cb6-2"></a>             <span class="op">|</span> views<span class="op">::</span>operations</span>
+<span id="cb6-3"><a href="#cb6-3"></a>             <span class="op">|</span> views<span class="op">::</span>here;</span></code></pre></div>
+</blockquote>
+<p>If constructing each of these range adaptors in turn required touching all the elements of <code class="sourceCode cpp">v</code>, this would be a horribly expensive construct - and we haven’t even done anything yet! This is why we need views to be cheap to copy - not so that we can pass them cheaply into algorithms, but so we can cheaply compose them into other views.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="refining-the-view-requirements"><span class="header-section-number">3</span> Refining the view requirements<a href="#refining-the-view-requirements" class="self-link"></a></h1>
+<p>Currently, in order for a type <code class="sourceCode cpp">T</code> to model <code class="sourceCode cpp">view</code>, it needs to have O(1) move construction, move assignment, and destruction. If <code class="sourceCode cpp">T</code> is copyable, the copy operations also need to be O(1). What happens if a type <code class="sourceCode cpp">T</code> satisfies <code class="sourceCode cpp">view</code> (whether by it inheriting from <code class="sourceCode cpp">view_base</code>, inheriting from <code class="sourceCode cpp">view_interface<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, or simply specializing <code class="sourceCode cpp">enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code> to be <code class="sourceCode cpp"><span class="kw">true</span></code>), yet does not actually satisfy the O(1) semantics I just laid out?</p>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">struct</span> bad_view <span class="op">:</span> view_interface<span class="op">&lt;</span>bad_view<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    </span>
+<span id="cb7-4"><a href="#cb7-4"></a>    bad_view<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> v<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    </span>
+<span id="cb7-6"><a href="#cb7-6"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>iterator begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> v<span class="op">.</span>begin<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>iterator end<span class="op">()</span>   <span class="op">{</span> <span class="cf">return</span> v<span class="op">.</span>end<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="op">}</span>;</span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> get_ints<span class="op">()</span>;</span>
+<span id="cb7-11"><a href="#cb7-11"></a></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="kw">auto</span> rng <span class="op">=</span> bad_view<span class="op">(</span>get_ints<span class="op">())</span> <span class="op">|</span> views<span class="op">::</span>enumerate;</span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">[</span>idx, i<span class="op">]</span> <span class="op">:</span> rng<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}. {}</span><span class="sc">\n</span><span class="st">&quot;</span>, idx, i<span class="op">)</span>;</span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p><code class="sourceCode cpp">bad_view</code> is, as the name might suggest, a bad view. It is O(1) move constructible and move assignable, but it is not O(1) destructible. It is copyable, but not O(1) copyable (though nothing in this program tries to copy a <code class="sourceCode cpp">bad_view</code> - but if it did, that would be expensive!). As a result, this program is violating <span>16.4.5.11
+ <a href="https://wg21.link/res.on.requirements">[res.on.requirements]</a></span>/2:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> If the validity or meaning of a program depends on whether a sequence of template arguments models a concept, and the concept is satisfied but not modeled, the program is ill-formed, no diagnostic required.</p>
+</blockquote>
+<p>Ill-formed, no diagnostic required! That is a harsh ruling for this program!</p>
+<p>But what actually goes wrong if a program-defined <code class="sourceCode cpp">view</code> ends up violating the semantic requirements of a <code class="sourceCode cpp">view</code>? The goal of a <code class="sourceCode cpp">view</code> is to enable cheap construction of range adaptors. If that construction isn’t as cheap as expected, then the result is just that the construction is… more expensive than expected. It would still be semantically <em>correct</em>, it’s just less inefficient thatn ideal? That’s not usually the line to draw for ill-formed, no diagnostic required.</p>
+<p>Furthermore, what actual operations do we need to be cheap? Consider this refinement:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">struct</span> bad_view2 <span class="op">:</span> view_interface<span class="op">&lt;</span>bad_view2<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    </span>
+<span id="cb8-4"><a href="#cb8-4"></a>    bad_view2<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> v<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>    </span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="co">// movable, but not copyable</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>    bad_view2<span class="op">(</span>bad_view2 <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb8-8"><a href="#cb8-8"></a>    bad_view2<span class="op">(</span>bad_view2<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb8-9"><a href="#cb8-9"></a>    bad_view2<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>bad_view2 <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb8-10"><a href="#cb8-10"></a>    bad_view2<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">+(</span>bad_view2<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb8-11"><a href="#cb8-11"></a>    </span>
+<span id="cb8-12"><a href="#cb8-12"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>iterator begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> v<span class="op">.</span>begin<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>iterator end<span class="op">()</span>   <span class="op">{</span> <span class="cf">return</span> v<span class="op">.</span>end<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="op">}</span>;</span>
+<span id="cb8-15"><a href="#cb8-15"></a></span>
+<span id="cb8-16"><a href="#cb8-16"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> get_ints<span class="op">()</span>;</span>
+<span id="cb8-17"><a href="#cb8-17"></a></span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="kw">auto</span> rng <span class="op">=</span> bad_view2<span class="op">(</span>get_ints<span class="op">())</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>         <span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">&gt;</span> <span class="dv">0</span>; <span class="op">})</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a>         <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">*</span> i; <span class="op">})</span>;</span></code></pre></div>
+</blockquote>
+<p>This whole construction involves moving a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> twice (once into the <code class="sourceCode cpp">filter_view</code> and once into the <code class="sourceCode cpp">transform_view</code>, both moving a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> is cheap) and destroying a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> three times (twice when the source is empty, and once eventually when we’re destroying <code class="sourceCode cpp">rng</code> - it’s this last one that is not O(1)).</p>
+<p>In contrast, the ordained method for writing this code is actually:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">auto</span> ints <span class="op">=</span> get_ints<span class="op">()</span>; <span class="co">// must stash this into a variable first</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">auto</span> rng <span class="op">=</span> ints</span>
+<span id="cb9-3"><a href="#cb9-3"></a>         <span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">&gt;</span> <span class="dv">0</span>; <span class="op">})</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>         <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">*</span> i; <span class="op">})</span>;</span></code></pre></div>
+</blockquote>
+<p>Now, this no longer involves any moves of a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, since <code class="sourceCode cpp">rng</code> will instead be holding a <code class="sourceCode cpp">ref_view</code> into it, so this is in some sense cheaper. But this still, in the end, requires destroying that <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> - it’s just that this cost is paid by destroying <code class="sourceCode cpp">ints</code> rather than destroying <code class="sourceCode cpp">rng</code> in this formulation. That’s not meaningfully different. And moreover, there’s real cost to be paid by the latter formulation: now <code class="sourceCode cpp">rng</code> has an internal reference into <code class="sourceCode cpp">ints</code>, which both means that we have to be more careful because we can dangle (not an issue in the <code class="sourceCode cpp">bad_view2</code> formulation) and that we have an extra indirection through a pointer which could have performance impact.</p>
+<p>Which is ironic, given that it’s the performance consideration which makes <code class="sourceCode cpp">bad_view2</code> bad.</p>
+<p>Let’s consider relaxing the requirements as follows:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <code class="sourceCode cpp">T</code> models <code class="sourceCode cpp">view</code> only if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.1)</a></span> <code class="sourceCode cpp">T</code> has O(1) move construction; and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> <code class="sourceCode cpp">T</code> has O(1) move assignment; and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.3)</a></span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">T</code></span> has O(1) destruction</del></span> <span class="addu">if <code class="sourceCode cpp">N</code> moves are made from an object of type <code class="sourceCode cpp">T</code> that contained <code class="sourceCode cpp">M</code> elements, then those <code class="sourceCode cpp">N</code> objects have <code class="sourceCode cpp">O<span class="op">(</span>N<span class="op">+</span>M<span class="op">)</span></code> destruction</span>; and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.4)</a></span> <code class="sourceCode cpp">copy_constructible<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>, or <code class="sourceCode cpp">T</code> has O(1) copy construction; and</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.5)</a></span> <code class="sourceCode cpp">copyable<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>, or <code class="sourceCode cpp">T</code> has O(1) copy assignment.</li>
+</ul>
+</blockquote>
+<p>Or, alternatively:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.3)</a></span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">T</code></span> has</del></span> <span class="addu">an object of type <code class="sourceCode cpp">T</code> that has been moved from</span> has O(1) destruction; and</li>
+</ul>
+</blockquote>
+<p>In this formulation, <code class="sourceCode cpp">bad_view</code> is still a bad view (because it is copyable and copying it is expensive - which is important because building up a range adaptor pipeline using lvalue views will try to copy them) but <code class="sourceCode cpp">bad_view2</code> is actually totally fine (and indeed, it is not more expensive than the alternate formulation).</p>
+<p>In this formulation, <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is definitely a <code class="sourceCode cpp">view</code> that does not violate any of the semantic requirements.</p>
+<p>This formulation has another extremely significant consequence. <span class="citation" data-cites="N4128">[<a href="#ref-N4128" role="doc-biblioref">N4128</a>]</span> stated:</p>
+<div class="quote">
+<p>[Views] are lightweight objects that refer to elements they do not own. As a result, they can guarantee O(1) copyability and assignability.</p>
+</div>
+<p>But this would no longer <em>necessarily</em> have to be the case. Consider the following:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range R<span class="op">&gt;</span> <span class="kw">requires</span> is_object_v<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> movable<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">class</span> owning_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>owning_view<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    R r_; <span class="co">// exposition only</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    </span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="kw">template</span><span class="op">&lt;</span><em>different-from</em><span class="op">&lt;</span>owning_view<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>      <span class="kw">requires</span> see below</span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="kw">constexpr</span> owning_view<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span>
+<span id="cb10-9"><a href="#cb10-9"></a>    </span>
+<span id="cb10-10"><a href="#cb10-10"></a>    owning_view<span class="op">(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    owning_view<span class="op">(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-12"><a href="#cb10-12"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb10-13"><a href="#cb10-13"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-14"><a href="#cb10-14"></a></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb10-17"><a href="#cb10-17"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-19"><a href="#cb10-19"></a></span>
+<span id="cb10-20"><a href="#cb10-20"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-21"><a href="#cb10-21"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-22"><a href="#cb10-22"></a>    </span>
+<span id="cb10-23"><a href="#cb10-23"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-24"><a href="#cb10-24"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-25"><a href="#cb10-25"></a></span>
+<span id="cb10-26"><a href="#cb10-26"></a></span>
+<span id="cb10-27"><a href="#cb10-27"></a>    <span class="co">// + overloads for empty, size, data</span></span>
+<span id="cb10-28"><a href="#cb10-28"></a><span class="op">}</span>;</span>
+<span id="cb10-29"><a href="#cb10-29"></a>  </span>
+<span id="cb10-30"><a href="#cb10-30"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb10-31"><a href="#cb10-31"></a>owning_view<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> owning_view<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span></code></pre></div>
+</blockquote>
+<p>An <code class="sourceCode cpp">owning_view<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code> would completely satisfy the semantics of <code class="sourceCode cpp">view</code>: it is not copyable, it is O(1) movable, and moved-from object would be O(1) destructible. All without sacrificing any of the benefit that views provide: cheap construction of range adaptor pipelines.</p>
+<p>Adopting these semantics, along with <code class="sourceCode cpp">owning_view</code>, would further allow us to respecify <code class="sourceCode cpp">views<span class="op">::</span>all</code> (<span>24.7.4
+ <a href="https://wg21.link/range.all">[range.all]</a></span>) as:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> The name <code class="sourceCode cpp">views​<span class="op">::</span>​all</code> denotes a range adaptor object ([range.adaptor.object]). Given a subexpression <code class="sourceCode cpp">E</code>, the expression <code class="sourceCode cpp">views​<span class="op">::</span>​all<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.1)</a></span> <code class="sourceCode cpp"><em>decay-copy</em><span class="op">(</span>E<span class="op">)</span></code> if the decayed type of <code class="sourceCode cpp">E</code> models <code class="sourceCode cpp">view</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">ref_view<span class="op">{</span>E<span class="op">}</span></code> if that expression is well-formed.</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.3)</a></span> Otherwise, <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">subrange{E}</code></span></del></span> <span class="addu"><code class="sourceCode cpp">owning_view<span class="op">{</span>E<span class="op">}</span></code></span>.</li>
+</ul>
+</blockquote>
+<p>The first sub-bullet effectively rejects using lvalue non-copyable views, as desired. Then the second bullet captures lvalue non-view ranges by reference and the new third bullet<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> would capture rvalue non-view ranges by ownership. This is safer and more ergonomic too.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="what-is-a-view"><span class="header-section-number">4</span> What is a <code class="sourceCode cpp">view</code>?<a href="#what-is-a-view" class="self-link"></a></h1>
+<p>Once upon a time, a <code class="sourceCode cpp">view</code> was a cheaply copyable, non-owning range. We’ve already somewhat lost the “cheaply copyable” requirement since views don’t have to be copyable, and now this paper is suggesting that we also lose the non-owning part.</p>
+<p>So how do you answer the question now?</p>
+<p>There may not be a clean answer, which is admittedly unsatisfying, but it mainly boils down to:</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> rng <span class="op">=</span> v <span class="op">|</span> views<span class="op">::</span>reverse;</span></code></pre></div>
+</blockquote>
+<p>If <code class="sourceCode cpp">v</code> is an lvalue, do you want <code class="sourceCode cpp">rng</code> to <em>copy</em> <code class="sourceCode cpp">v</code> or to <em>refer</em> to <code class="sourceCode cpp">v</code>? If you want it to copy <code class="sourceCode cpp">v</code>, because copying <code class="sourceCode cpp">v</code> is cheap and you want to avoid paying for indirection and potentional dangling, then <code class="sourceCode cpp">v</code> is a <code class="sourceCode cpp">view</code>. If you want to refer to <code class="sourceCode cpp">v</code>, because copying <code class="sourceCode cpp">v</code> is expensive (possibly more expensive than the algorithm you’re doing), then <code class="sourceCode cpp">v</code> is not a view. <code class="sourceCode cpp">string_view</code> is a <code class="sourceCode cpp">view</code>, <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code> is not.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-LWG3452">
 <p>[LWG3452] Mathias Stearn. Are views really supposed to have strict 𝒪(1) destruction? <br />
@@ -617,12 +788,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[P2168R3] Corentin Jabot, Lewis Baker. 2021-04-19. generator: A Synchronous Coroutine Generator Compatible With Ranges. <br />
 <a href="https://wg21.link/p2168r3">https://wg21.link/p2168r3</a></p>
 </div>
+<div id="ref-P2325R3">
+<p>[P2325R3] Barry Revzin. 2021-05-14. Views should not be required to be default constructible. <br />
+<a href="https://wg21.link/p2325r3">https://wg21.link/p2325r3</a></p>
+</div>
 </div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>This is why they’re called <em>range</em> adaptors rather than <em>view</em> adaptors, perhaps that should change as well?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2" role="doc-endnote"><p>except <code class="sourceCode cpp">views<span class="op">::</span>single</code><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>the existing third bullet could only have been hit by rvalue, <em>borrowed</em>, non-view ranges. Before the adoption of <span class="citation" data-cites="P2325R3">[<a href="#ref-P2325R3" role="doc-biblioref">P2325R3</a>]</span>, fixed-extent <code class="sourceCode cpp">span</code> was the pub quiz trivia answer to what this bullet was for. Afterwards, is there a real type that would fit here?<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 </div>
