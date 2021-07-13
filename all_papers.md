@@ -4,7 +4,7 @@
 - 644 Forward without  <code>forward</code>: [p0644r1](0644_fwd/p0644r1.html)
 - 704 Fixing const-qualified pointers to members: [p0704r0](0704_const_qual_pmfs/p0704r0.html) [p0704r1](0704_const_qual_pmfs/p0704r1.html)
 - 780 Allow pack expansion in lambda init-capture: [p0780r0](0780_lambda_pack_capture/p0780r0.html) [p0780r1](0780_lambda_pack_capture/p0780r1.html) [p0780r2](0780_lambda_pack_capture/p0780r2.html)
-- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [p0847r6](0847_deducing_this/p0847r6.html) [d0847r7](0847_deducing_this/d0847r7.html) [p0847r7](0847_deducing_this/p0847r7.html)
+- 847 Deducing `this`: [p0847r0](0847_deducing_this/p0847r0.html) [p0847r1](0847_deducing_this/p0847r1.html) [p0847r2](0847_deducing_this/p0847r2.html) [p0847r4](0847_deducing_this/p0847r4.html) [p0847r5](0847_deducing_this/p0847r5.html) [p0847r6](0847_deducing_this/p0847r6.html) [p0847r7](0847_deducing_this/p0847r7.html)
 - 848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - 892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
@@ -47,9 +47,9 @@
 - 2322 <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>: [p2322r0](2322_fold/p2322r0.html) [p2322r1](2322_fold/p2322r1.html) [p2322r2](2322_fold/p2322r2.html) [p2322r3](2322_fold/p2322r3.html)
 - 2325 Views should not be required to be default constructible: [p2325r0](2325_views_default/p2325r0.html) [p2325r1](2325_views_default/p2325r1.html) [p2325r2](2325_views_default/p2325r2.html) [p2325r3](2325_views_default/p2325r3.html)
 - 2387 Pipe support for user-defined range adaptors: [p2387r0](2387_ranges_pipes/p2387r0.html)
+- 2415 What is a  <code class="sourceCode cpp">view</code> ?: [p2415r0](2415_what_view/p2415r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
 - Range-based container operations and  <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>: [dxxxxr0.html](xxxx_ranges_to/dxxxxr0.html)
-- What is a  <code class="sourceCode cpp">view</code> ?: [dxxxxr0.html](xxxx_what_view/dxxxxr0.html)

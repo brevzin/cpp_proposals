@@ -59,7 +59,8 @@ None.
 - [p2278r0 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r0.html).
 - [p2286r1 - Formatting Ranges](2286_fmt_ranges/p2286r1.html).
 - [d2322r3 - `ranges::fold`](2322_fold/p2322r3.html).
-- [d2387r0 - Pipe support for user-defined range adaptors](2387_ranges_pipes/d2387r0.html).
+- [p2387r0 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r0.html).
+- [p2415r0 - What is a `view`?](2415_what_view/p2415r0.html).
 
 #### Concepts
 
