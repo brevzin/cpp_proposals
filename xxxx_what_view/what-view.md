@@ -240,10 +240,10 @@ public:
     constexpr const R&& base() const&& { return std::move(r_); }
 
     constexpr iterator_t<R> begin() { return ranges::begin(r_); }
-    constexpr iterator_t<R> begin() const requires range<const R>{ return ranges::begin(r_); }
+    constexpr iterator_t<const R> begin() const requires range<const R>{ return ranges::begin(r_); }
     
     constexpr sentinel_t<R> end() { return ranges::end(r_); }
-    constexpr sentinel_t<R> end() const requires range<const R> { return ranges::end(r_); }
+    constexpr sentinel_t<const R> end() const requires range<const R> { return ranges::end(r_); }
 
 
     // + overloads for empty, size, data
@@ -267,6 +267,21 @@ Adopting these semantics, along with `owning_view`, would further allow us to re
 :::
 
 The first sub-bullet effectively rejects using lvalue non-copyable views, as desired. Then the second bullet captures lvalue non-view ranges by reference and the new third bullet[^3] would capture rvalue non-view ranges by ownership. This is safer and more ergonomic too. 
+
+Making the above change implies we also need to respecify `viewable_range` (in [range.refinements]{.sref}/5), since this concept and `views::all` need to stay in sync:
+
+::: bq
+[5]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
+
+```
+template<class T>
+  concept viewable_range =
+    range<T> &&
+    ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
+     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_cvref_t&lt;T>>)]{.addu}@));
+```
+
+:::
 
 # What is a `view`?
 
