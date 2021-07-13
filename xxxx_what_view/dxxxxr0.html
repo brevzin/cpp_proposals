@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-07-11" />
+  <meta name="dcterms.date" content="2021-07-13" />
   <title>What is a `view`?</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-07-11</td>
+    <td>2021-07-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -613,7 +613,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_view V<span class="op">&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a><span class="dt">void</span> some_algo<span class="op">(</span>V v<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
-<p>We could have gone that route (and we definitely do encourage people to take <em>specific</em> views by value - such as <code class="sourceCode cpp">span</code> and <code class="sourceCode cpp">string_view</code>), but that would affect the usability of a range-based algorithms. You could not write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">)</span></code> on a <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, since that is not a view - you would have to write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>views<span class="op">::</span>all<span class="op">(</span>v<span class="op">))</span></code> or perhaps something like <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>all<span class="op">())</span></code> or <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>view<span class="op">())</span></code>. Either way, we very much want range-based algorithms to be able to operator on, well, ranges, so these are always written instead to take ranges by forwarding reference:</p>
+<p>We could have gone that route (and we definitely do encourage people to take <em>specific</em> views by value - such as <code class="sourceCode cpp">span</code> and <code class="sourceCode cpp">string_view</code>), but that would affect the usability of range-based algorithms. You could not write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">)</span></code> on a <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, since that is not a view - you would have to write <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>views<span class="op">::</span>all<span class="op">(</span>v<span class="op">))</span></code> or perhaps something like <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>all<span class="op">())</span></code> or <code class="sourceCode cpp">ranges<span class="op">::</span>sort<span class="op">(</span>v<span class="op">.</span>view<span class="op">())</span></code>. Either way, we very much want range-based algorithms to be able to operate on, well, ranges, so these are always written instead to take ranges by forwarding reference:</p>
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="dt">void</span> some_algo<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
@@ -632,7 +632,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-2"><a href="#cb6-2"></a>             <span class="op">|</span> views<span class="op">::</span>operations</span>
 <span id="cb6-3"><a href="#cb6-3"></a>             <span class="op">|</span> views<span class="op">::</span>here;</span></code></pre></div>
 </blockquote>
-<p>If constructing each of these range adaptors in turn required touching all the elements of <code class="sourceCode cpp">v</code>, this would be a horribly expensive construct - and we haven’t even done anything yet! This is why we need views to be cheap to copy - not so that we can pass them cheaply into algorithms, but so we can cheaply compose them into other views.</p>
+<p>If constructing each of these range adaptors in turn required touching all the elements of <code class="sourceCode cpp">v</code>, this would be a horribly expensive construct - and we haven’t even done anything yet! This is why we need views to be cheap to copy - range adaptors <em>are</em> the algorithms for views, and we need to be able to pass views cheaply to those.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="refining-the-view-requirements"><span class="header-section-number">3</span> Refining the view requirements<a href="#refining-the-view-requirements" class="self-link"></a></h1>
 <p>Currently, in order for a type <code class="sourceCode cpp">T</code> to model <code class="sourceCode cpp">view</code>, it needs to have O(1) move construction, move assignment, and destruction. If <code class="sourceCode cpp">T</code> is copyable, the copy operations also need to be O(1). What happens if a type <code class="sourceCode cpp">T</code> satisfies <code class="sourceCode cpp">view</code> (whether by it inheriting from <code class="sourceCode cpp">view_base</code>, inheriting from <code class="sourceCode cpp">view_interface<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, or simply specializing <code class="sourceCode cpp">enable_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code> to be <code class="sourceCode cpp"><span class="kw">true</span></code>), yet does not actually satisfy the O(1) semantics I just laid out?</p>
 <p>Consider:</p>
@@ -659,7 +659,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> If the validity or meaning of a program depends on whether a sequence of template arguments models a concept, and the concept is satisfied but not modeled, the program is ill-formed, no diagnostic required.</p>
 </blockquote>
 <p>Ill-formed, no diagnostic required! That is a harsh ruling for this program!</p>
-<p>But what actually goes wrong if a program-defined <code class="sourceCode cpp">view</code> ends up violating the semantic requirements of a <code class="sourceCode cpp">view</code>? The goal of a <code class="sourceCode cpp">view</code> is to enable cheap construction of range adaptors. If that construction isn’t as cheap as expected, then the result is just that the construction is… more expensive than expected. It would still be semantically <em>correct</em>, it’s just less inefficient thatn ideal? That’s not usually the line to draw for ill-formed, no diagnostic required.</p>
+<p>But what actually goes wrong if a program-defined <code class="sourceCode cpp">view</code> ends up violating the semantic requirements of a <code class="sourceCode cpp">view</code>? The goal of a <code class="sourceCode cpp">view</code> is to enable cheap construction of range adaptors. If that construction isn’t as cheap as expected, then the result is just that the construction is… more expensive than expected. It would still be semantically <em>correct</em>, it’s just less efficient than ideal? That’s not usually the line to draw for ill-formed, no diagnostic required.</p>
 <p>Furthermore, what actual operations do we need to be cheap? Consider this refinement:</p>
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">struct</span> bad_view2 <span class="op">:</span> view_interface<span class="op">&lt;</span>bad_view2<span class="op">&gt;</span> <span class="op">{</span></span>
@@ -723,32 +723,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-3"><a href="#cb10-3"></a>    R r_; <span class="co">// exposition only</span></span>
 <span id="cb10-4"><a href="#cb10-4"></a>    </span>
 <span id="cb10-5"><a href="#cb10-5"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>    <span class="kw">template</span><span class="op">&lt;</span><em>different-from</em><span class="op">&lt;</span>owning_view<span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a>      <span class="kw">requires</span> see below</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    <span class="kw">constexpr</span> owning_view<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span>
-<span id="cb10-9"><a href="#cb10-9"></a>    </span>
-<span id="cb10-10"><a href="#cb10-10"></a>    owning_view<span class="op">(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
-<span id="cb10-11"><a href="#cb10-11"></a>    owning_view<span class="op">(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb10-12"><a href="#cb10-12"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
-<span id="cb10-13"><a href="#cb10-13"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb10-14"><a href="#cb10-14"></a></span>
-<span id="cb10-15"><a href="#cb10-15"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
-<span id="cb10-16"><a href="#cb10-16"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
-<span id="cb10-17"><a href="#cb10-17"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb10-18"><a href="#cb10-18"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb10-19"><a href="#cb10-19"></a></span>
-<span id="cb10-20"><a href="#cb10-20"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb10-21"><a href="#cb10-21"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb10-22"><a href="#cb10-22"></a>    </span>
-<span id="cb10-23"><a href="#cb10-23"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb10-24"><a href="#cb10-24"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>    owning_view<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="kw">constexpr</span> owning_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span>
+<span id="cb10-8"><a href="#cb10-8"></a>    </span>
+<span id="cb10-9"><a href="#cb10-9"></a>    owning_view<span class="op">(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    owning_view<span class="op">(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">const</span> owning_view<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb10-12"><a href="#cb10-12"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-17"><a href="#cb10-17"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a></span>
+<span id="cb10-19"><a href="#cb10-19"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-20"><a href="#cb10-20"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-21"><a href="#cb10-21"></a>    </span>
+<span id="cb10-22"><a href="#cb10-22"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-23"><a href="#cb10-23"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb10-24"><a href="#cb10-24"></a></span>
 <span id="cb10-25"><a href="#cb10-25"></a></span>
-<span id="cb10-26"><a href="#cb10-26"></a></span>
-<span id="cb10-27"><a href="#cb10-27"></a>    <span class="co">// + overloads for empty, size, data</span></span>
-<span id="cb10-28"><a href="#cb10-28"></a><span class="op">}</span>;</span>
-<span id="cb10-29"><a href="#cb10-29"></a>  </span>
-<span id="cb10-30"><a href="#cb10-30"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb10-31"><a href="#cb10-31"></a>owning_view<span class="op">(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> owning_view<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span></code></pre></div>
+<span id="cb10-26"><a href="#cb10-26"></a>    <span class="co">// + overloads for empty, size, data</span></span>
+<span id="cb10-27"><a href="#cb10-27"></a><span class="op">}</span>;</span>
+<span id="cb10-28"><a href="#cb10-28"></a>  </span>
+<span id="cb10-29"><a href="#cb10-29"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb10-30"><a href="#cb10-30"></a>owning_view<span class="op">(</span>R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> owning_view<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span></code></pre></div>
 </blockquote>
 <p>An <code class="sourceCode cpp">owning_view<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code> would completely satisfy the semantics of <code class="sourceCode cpp">view</code>: it is not copyable, it is O(1) movable, and moved-from object would be O(1) destructible. All without sacrificing any of the benefit that views provide: cheap construction of range adaptor pipelines.</p>
 <p>Adopting these semantics, along with <code class="sourceCode cpp">owning_view</code>, would further allow us to respecify <code class="sourceCode cpp">views<span class="op">::</span>all</code> (<span>24.7.4

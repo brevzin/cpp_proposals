@@ -74,7 +74,7 @@ void some_algo(V v);
 ```
 :::
 
-We could have gone that route (and we definitely do encourage people to take *specific* views by value - such as `span` and `string_view`), but that would affect the usability of a range-based algorithms. You could not write `ranges::sort(v)` on a `vector<T>`, since that is not a view - you would have to write `ranges::sort(views::all(v))` or perhaps something like `ranges::sort(v.all())` or `ranges::sort(v.view())`. Either way, we very much want range-based algorithms to be able to operator on, well, ranges, so these are always written instead to take ranges by forwarding reference:
+We could have gone that route (and we definitely do encourage people to take *specific* views by value - such as `span` and `string_view`), but that would affect the usability of range-based algorithms. You could not write `ranges::sort(v)` on a `vector<T>`, since that is not a view - you would have to write `ranges::sort(views::all(v))` or perhaps something like `ranges::sort(v.all())` or `ranges::sort(v.view())`. Either way, we very much want range-based algorithms to be able to operate on, well, ranges, so these are always written instead to take ranges by forwarding reference:
 
 ::: bq
 ```cpp
@@ -107,7 +107,7 @@ auto rng = v | views::some
 ```
 :::
 
-If constructing each of these range adaptors in turn required touching all the elements of `v`, this would be a horribly expensive construct - and we haven't even done anything yet! This is why we need views to be cheap to copy - not so that we can pass them cheaply into algorithms, but so we can cheaply compose them into other views. 
+If constructing each of these range adaptors in turn required touching all the elements of `v`, this would be a horribly expensive construct - and we haven't even done anything yet! This is why we need views to be cheap to copy - range adaptors *are* the algorithms for views, and we need to be able to pass views cheaply to those.
 
 # Refining the view requirements
 
@@ -143,7 +143,7 @@ for (auto const& [idx, i] : rng) {
 
 Ill-formed, no diagnostic required! That is a harsh ruling for this program! 
 
-But what actually goes wrong if a program-defined `view` ends up violating the semantic requirements of a `view`? The goal of a `view` is to enable cheap construction of range adaptors. If that construction isn't as cheap as expected, then the result is just that the construction is... more expensive than expected. It would still be semantically *correct*, it's just less inefficient thatn ideal? That's not usually the line to draw for ill-formed, no diagnostic required. 
+But what actually goes wrong if a program-defined `view` ends up violating the semantic requirements of a `view`? The goal of a `view` is to enable cheap construction of range adaptors. If that construction isn't as cheap as expected, then the result is just that the construction is... more expensive than expected. It would still be semantically *correct*, it's just less efficient than ideal? That's not usually the line to draw for ill-formed, no diagnostic required. 
 
 Furthermore, what actual operations do we need to be cheap? Consider this refinement:
 
@@ -226,9 +226,8 @@ class owning_view : public view_interface<owning_view<R>> {
     R r_; // exposition only
     
 public:
-    template<@*different-from*@<owning_view> T>
-      requires see below
-    constexpr owning_view(T&& t);
+    owning_view() = default;
+    constexpr owning_view(R&& t);
     
     owning_view(const owning_view&) = delete;
     owning_view(owning_view&&) = default;
@@ -251,7 +250,7 @@ public:
 };
   
 template <class R>
-owning_view(R&) -> owning_view<R>;
+owning_view(R&&) -> owning_view<R>;
 ```
 :::
 
