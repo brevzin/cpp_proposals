@@ -274,7 +274,7 @@ That is: ranges are surrounded with `[]`s and delimited with `", "`. Pairs and t
 It is more important to me that ranges and tuples are visually distinct (in this case `[]` vs `()`, but the way that `fmt` currently does it as `{}` vs `()` is also okay) than it would be to quote the string-y types. My rank order of the possible options for the map `m` above is:
 
 <table>
-<tr><th>Ranges</th><th>Tuples</th><th>Quoted?</th><th>Formatted Result</th></td>
+<tr><th>Ranges</th><th>Tuples</th><th>Quoted?</th><th>Formatted Result</th></tr>
 <tr><td>`[]`</td><td>`()`</td><td>✔️</td><td>`[("hello", 'h'), ("world", 'w')]`{.x}</td></tr>
 <tr><td>`{}`</td><td>`()`</td><td>✔️</td><td>`{("hello", 'h'), ("world", 'w')}`{.x}</td></tr>
 <tr><td>`[]`</td><td>`()`</td><td>❌</td><td>`[(hello, h), (world, w)]`{.x}</td></tr>
@@ -284,7 +284,28 @@ It is more important to me that ranges and tuples are visually distinct (in this
 
 My preference for avoiding `{}` in the formatting is largely because it's unlikely the results here can be used directly for copying and pasting directly into initialization anyway, so the priority is simply having visual distinction for the various cases.
 
-With quoting, the question is how does the library choose if something is string-like and thus needs to be quoted. Currently, fmtlib makes this determination by checking for the presence of certain operations (`p->length()`, `p->find('a')`, and `p->data()`). We could instead add a variable template called `enable_formatting_as_string` to allow for opting into this kind of formatting.
+With quoting, the question is how does the library choose if something is string-like and thus needs to be quoted. Currently, fmtlib makes this determination by checking for the presence of certain operations (`p->length()`, `p->find('a')`, and `p->data()`). We could instead add a variable template called `enable_formatting_as_string` to allow for opting into this kind of formatting. This approach isn't perfect, since we easily end up with situations like:
+
+::: bq
+```cpp
+vector<string> words = {"  some  ", " words   ", "here"};
+std::print("{}\n", words);   // ["  some  ", " words  ", "here"]
+
+auto trimmed = words | transform(views::trim_whitespace);
+std::print("{}\n", trimmed); // [['s', 'o', 'm', 'e'], ['w', 'o', 'r', 'd', 's'], ['h', 'e', 'r', 'e']]
+```
+:::
+
+You probably want the trimmed strings to still print quoted as `"some"` rather than `['s', 'o', 'm', 'e']`, and having a variable template wouldn't solve that unless you apply it to `trim_whitespace_view` as well. This suggests maybe going one step further and introduced some kind of `views::quoted` that exists solely to indicate that a particular range of char should be formatted as quoted:
+
+::: bq
+```cpp
+auto trimmed2 = words | transform(views::trim_whitespace | views::quoted);
+std::print("{}\n", trimmed2); // ["some", "words", "here"]
+```
+:::
+
+But that's not necessarily sufficient for handling cases like wanting to print a `tuple<R, int>` where `R` is some range of char that you want to print quoted - there's no "view" on a `tuple` that we can easily apply. So rather than worry necessary about solving all possible formatting problems, this paper simply proposes `enable_formatting_as_string` (which will be `true` for specializations of `basic_string` and `basic_string_view`), which can be easily applied to the myriad of other string-like types out there, on the basis of being good enough. 
 
 ## What additional functionality?
 
@@ -388,7 +409,7 @@ You can see an example of formatting a move-only, non-`const`-iterable range on 
 
 It's quite important that a `std::string` whose value is `"hello"` gets printed as `hello` rather than something like `[h, e, l, l, o]`.
 
-This would basically fall out no matter how we approach implementing such a thing, so in of itself is not much of a concern. However, for users who have either custom containers or want to customize formatting of a standard container for their own types, they need to make sure that they can provide a specialization which is more constrained than the standard library's for ranges. To ensure that they can do that, I think we need to be clear about the specific constraint we use when we specify this.
+This would basically fall out no matter how we approach implementing such a thing, so in of itself is not much of a concern. However, for users who have either custom containers or want to customize formatting of a standard container for their own types, they need to make sure that they can provide a specialization which is more constrained than the standard library's for ranges. To ensure that they can do that, I think we need to be clear about the specific constraint we use when we specify this, and thus this paper proposes a user-facing concept `formattable` that other parts of this proposal will directly use.
 
 ## `format` or `std::cout`?
 
@@ -398,23 +419,25 @@ Just `format` is sufficient.
 
 Nobody expected this section.
 
-The `value_type` of this range is `bool`, which is formattable. But the `reference` type of this range is `vector<bool>::reference`, which is not. In order to make the whole type formattable, we can either make `vector<bool>::reference` formattable (and thus, in general, a range is formattable if both its value and reference types are formattable) or allow formatting to fall back to constructing a `value` for each `reference` (and thus, in general, a range is formattable if at least its value is).
+The `value_type` of this range is `bool`, which is formattable. But the `reference` type of this range is `vector<bool>::reference`, which is not. In order to make the whole type formattable, we can either make `vector<bool>::reference` formattable (and thus, in general, a range is formattable if its reference types is formattable) or allow formatting to fall back to constructing a `value` for each `reference` (and thus, in general, a range is formattable if either its reference type or its `value_type` is formattable).
 
 For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there's no distinction here between the two options. And even for `zip`, there's still not much distinction since it just wraps this question in `tuple` since again for most ranges the types will be something like `tuple<T, U>` vs `tuple<T&, U const&>`, so again there isn't much distinction.
 
-`vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn't offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it's also very cheap to provide a formatter specialization for `vector<bool>::reference`. We might as well.
+`vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn't offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it's also very cheap to provide a formatter specialization for `vector<bool>::reference`.
+
+Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. Or, rather, since it's actually defined as `vector<bool, Alloc>::reference`, this isn't necessarily feasible, so instead this paper proposes a specialization for `vector<bool, Alloc>` at top level. 
 
 
 # Proposal
 
 The standard library should add specializations of `formatter` for:
 
-* any type that satisifies `range` whose `value_type` and `reference` are formattable,
+* any type `T` such that `T const` satisifies `range` and whose `reference` is formattable,
 * `pair<T, U>` if `T` and `U` are formattable,
 * `tuple<Ts...>` if all of `Ts...` are formattable,
-* `vector<bool>::reference` (which does as `bool` does).
+* `vector<bool, Alloc>` (which formats as a range of `bool`).
 
-Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted (with string-like being determined via variable template trait).
+Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. `std::array` is tuple-like, but not a tuple, it's treated as a range. In the context of formatting ranges, pairs, and tuples, types that are char-like (e.g. `char`, `char16_t` - there is a fixed set of character types) or string-like (e.g. `string`, `string_view`, controlled by `enable_formatting_as_string`) should be formatted as being quoted.
 
 Formatting ranges does not support any additional format specifiers. 
 
@@ -423,6 +446,8 @@ The standard library should also add a utility `std::format_join` (or any other 
 For types like `std::generator<T>` (which are move-only, non-const-iterable ranges), users will have to either use `std::format_join` facility or use something like `ranges::ref_view` as shown earlier.
 
 ## Wording
+
+The wording here is grouped by functionality added rather than linearly going through the standard text. 
 
 ### Concept `formattable`
 
@@ -472,6 +497,43 @@ concept formattable =
 :::
 
 ### Additional `formatter` specializations
+
+Change [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [format.formatter], formatter
++ template<class T>
++   inline constexpr bool enable_formatting_as_string = @*see below*@;
+  
+  template<class T, class charT = char> struct formatter;
+  
+  // ...
+}
+```
+:::
+
+Add to... somewhere:
+
+::: bq
+::: addu
+```
+template<class T>
+  inline constexpr bool enable_formatting_as_string = false;
+  
+template<class charT, class traits, class Allocator>
+  inline constexpr bool enable_formatting_as_string<basic_string<charT, traits, Allocator>> = true;
+  
+template<class charT, class traits>
+  inline constexpr bool enable_formatting_as_string<basic_string_view<charT, traits>> = true;  
+```
+
+[*]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `enable_formatting_as_string` to `true` for any cv-unqualified program-defined type `T` such that `const T` models `range` and `remove_cvref_t<ranges::range_reference_t<const R>>` is a character type ([basic.fundamental]) [*Note*: Users may do so to ensure that a program-defined string type formats as `"hello"` rather than as `['h', 'e', 'l', 'l', 'o']` *-end note*].
+:::
+:::
 
 Add to [format.formatter.spec]{.sref}:
 
