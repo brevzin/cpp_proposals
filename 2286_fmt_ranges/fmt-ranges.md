@@ -469,7 +469,102 @@ concept formattable =
 
 [2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
 :::
-::: 
+:::
+
+### Additional `formatter` specializations
+
+Add to [format.formatter.spec]{.sref}:
+
+::: bq
+[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of formatter is either enabled or disabled, as described below.
+[*Note 1*: Enabled specializations meet the *Formatter* requirements, and disabled specializations do not.
+— *end note*]
+
+Each header that declares the template formatter provides the following enabled specializations: 
+
+* [2.1]{.pnum} The specializations ...
+* [2.2]{.pnum} For each `charT`, the string type specializations ...
+* [2.3]{.pnum} For each `charT`, for each *cv*-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization ...
+* [2.4]{.pnum} For each `charT`, the pointer type specializations ...
+
+The `parse` member functions of these formatters interpret the format specification as a *std-format-spec* as described in [format.string.std].
+[*Note 2*: Specializations such as `formatter<wchar_t, char>` and `formatter<const char*, wchar_t>` that would require implicit multibyte / wide string or character conversion are disabled.
+— *end note*]
+
+::: addu
+* [2.5]{.pnum} For each `charT`, the pair and tuple specializations
+```
+template <formattable<charT> T1, formattable<charT> T2> struct formatter<pair<T1, T2>, charT>;
+template <formattable<charT>... Types> struct formatter<tuple<Types...>, charT>;
+```
+
+* [2.6]{.pnum} For each `charT`, the range specializations
+```
+template <class R> requires range<const R> && formattable<range_reference_t<const R>, charT>
+struct formatter<R, charT>;
+```
+
+The `parse` member functions of these formatters require that the format specification is an empty format string.
+:::
+:::
+
+### The join formatter
+
+Change [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [format.error], class format_error
+  class format_error;
+  
++ // [format.join], a join formatter
++ template <ranges::input_range V, class charT = char>
++   requires ranges::view<V> &&
++            formattable<ranges::range_reference_t<V>, charT>
++ class @*format-join-view*@; // exposition only
++
++ template <ranges::input_range V, class charT>
++   requires ranges::view<V> &&
++            formattable<ranges::range_reference_t<V>, charT>
++ struct formatter<@*format-join-view*@<V, charT>, charT>;
++
++ template <ranges::viewable_range R>
++   requires formattable<ranges::range_reference_t<R>, char>
++ constexpr @*format-join-view*@<ranges::all_t<R>, char>
++   format_join(R&& range, string_view sep);
+}
+```
+:::
+
+Add a new clause [format.join]:
+
+::: bq
+::: addu
+```
+template <ranges::input_range V, class charT = char>
+  requires ranges::view<V> &&
+           formattable<ranges::range_reference_t<V>, charT>
+class @*format-join-view*@ {        // exposition only
+  V @*view*@;                       // exposition only
+  basic_string_view<charT> @*sep*@; // exposition only
+  
+public:
+  constexpr @*format-join-view*@(V v, basic_string_view<charT> s);
+};
+```
+
+```
+constexpr @*format-join-view*@(V v, basic_string_view<charT> s)
+```
+
+[1]{.pnum} *Effects*: Direct-non-list initializes `@*view*@` with `std::move(v)` and `@*str*@` with `s`.
+:::
+:::
+
+
 
 ---
 references:

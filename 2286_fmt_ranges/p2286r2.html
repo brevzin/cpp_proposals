@@ -584,6 +584,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#wording"><span class="toc-section-number">4.1</span> Wording<span></span></a>
 <ul>
 <li><a href="#concept-formattable"><span class="toc-section-number">4.1.1</span> Concept <code class="sourceCode cpp">formattable</code><span></span></a></li>
+<li><a href="#additional-formatter-specializations"><span class="toc-section-number">4.1.2</span> Additional <code class="sourceCode cpp">formatter</code> specializations<span></span></a></li>
+<li><a href="#the-join-formatter"><span class="toc-section-number">4.1.3</span> The join formatter<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -982,6 +984,79 @@ Formatted Result
 <span id="cb21-9"><a href="#cb21-9"></a>        { f.format(t, fc) } -&gt; same_as&lt;<em>fmt-iter-for</em>&lt;charT&gt;&gt;;</span>
 <span id="cb21-10"><a href="#cb21-10"></a>    };</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">2</a></span> A type <code class="sourceCode cpp">T</code> and a character type <code class="sourceCode cpp">charT</code> model <code class="sourceCode cpp">formattable</code> if <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code> meets the <em>Formatter</em> requirements ([formatter.requirements]).</p>
+</div>
+</blockquote>
+<h3 data-number="4.1.2" id="additional-formatter-specializations"><span class="header-section-number">4.1.2</span> Additional <code class="sourceCode cpp">formatter</code> specializations<a href="#additional-formatter-specializations" class="self-link"></a></h3>
+<p>Add to <span>20.20.5.2
+ <a href="https://wg21.link/format.formatter.spec">[format.formatter.spec]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> Let <code class="sourceCode cpp">charT</code> be either <code class="sourceCode cpp"><span class="dt">char</span></code> or <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>. Each specialization of formatter is either enabled or disabled, as described below. [<em>Note 1</em>: Enabled specializations meet the <em>Formatter</em> requirements, and disabled specializations do not. — <em>end note</em>]</p>
+<p>Each header that declares the template formatter provides the following enabled specializations:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.1)</a></span> The specializations …</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.2)</a></span> For each <code class="sourceCode cpp">charT</code>, the string type specializations …</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.3)</a></span> For each <code class="sourceCode cpp">charT</code>, for each <em>cv</em>-unqualified arithmetic type <code class="sourceCode cpp">ArithmeticT</code> other than <code class="sourceCode cpp"><span class="dt">char</span></code>, <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>, <code class="sourceCode cpp"><span class="dt">char8_t</span></code>, <code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or <code class="sourceCode cpp"><span class="dt">char32_t</span></code>, a specialization …</li>
+<li><span class="marginalizedparent"><a class="marginalized">(2.4)</a></span> For each <code class="sourceCode cpp">charT</code>, the pointer type specializations …</li>
+</ul>
+<p>The <code class="sourceCode cpp">parse</code> member functions of these formatters interpret the format specification as a <em>std-format-spec</em> as described in [format.string.std]. [<em>Note 2</em>: Specializations such as <code class="sourceCode cpp">formatter<span class="op">&lt;</span><span class="dt">wchar_t</span>, <span class="dt">char</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span></code> that would require implicit multibyte / wide string or character conversion are disabled. — <em>end note</em>]</p>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.5)</a></span> For each <code class="sourceCode cpp">charT</code>, the pair and tuple specializations</li>
+</ul>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1"></a>template &lt;formattable&lt;charT&gt; T1, formattable&lt;charT&gt; T2&gt; struct formatter&lt;pair&lt;T1, T2&gt;, charT&gt;;</span>
+<span id="cb22-2"><a href="#cb22-2"></a>template &lt;formattable&lt;charT&gt;... Types&gt; struct formatter&lt;tuple&lt;Types...&gt;, charT&gt;;</span></code></pre></div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized">(2.6)</a></span> For each <code class="sourceCode cpp">charT</code>, the range specializations</li>
+</ul>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1"></a>template &lt;class R&gt; requires range&lt;const R&gt; &amp;&amp; formattable&lt;range_reference_t&lt;const R&gt;, charT&gt;</span>
+<span id="cb23-2"><a href="#cb23-2"></a>struct formatter&lt;R, charT&gt;;</span></code></pre></div>
+<p>The <code class="sourceCode cpp">parse</code> member functions of these formatters require that the format specification is an empty format string.</p>
+</div>
+</blockquote>
+<h3 data-number="4.1.3" id="the-join-formatter"><span class="header-section-number">4.1.3</span> The join formatter<a href="#the-join-formatter" class="self-link"></a></h3>
+<p>Change <span>20.20.1
+ <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>namespace std {</span>
+<span id="cb24-2"><a href="#cb24-2"></a>  // ...</span>
+<span id="cb24-3"><a href="#cb24-3"></a></span>
+<span id="cb24-4"><a href="#cb24-4"></a>  // [format.error], class format_error</span>
+<span id="cb24-5"><a href="#cb24-5"></a>  class format_error;</span>
+<span id="cb24-6"><a href="#cb24-6"></a>  </span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="va">+ // [format.join], a join formatter</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="va">+ template &lt;ranges::input_range V, class charT = char&gt;</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a><span class="va">+   requires ranges::view&lt;V&gt; &amp;&amp;</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="va">+            formattable&lt;ranges::range_reference_t&lt;V&gt;, charT&gt;</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a><span class="va">+ class <em>format-join-view</em>; // exposition only</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a><span class="va">+</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="va">+ template &lt;ranges::input_range V, class charT&gt;</span></span>
+<span id="cb24-14"><a href="#cb24-14"></a><span class="va">+   requires ranges::view&lt;V&gt; &amp;&amp;</span></span>
+<span id="cb24-15"><a href="#cb24-15"></a><span class="va">+            formattable&lt;ranges::range_reference_t&lt;V&gt;, charT&gt;</span></span>
+<span id="cb24-16"><a href="#cb24-16"></a><span class="va">+ struct formatter&lt;<em>format-join-view</em>&lt;V, charT&gt;, charT&gt;;</span></span>
+<span id="cb24-17"><a href="#cb24-17"></a><span class="va">+</span></span>
+<span id="cb24-18"><a href="#cb24-18"></a><span class="va">+ template &lt;ranges::viewable_range R&gt;</span></span>
+<span id="cb24-19"><a href="#cb24-19"></a><span class="va">+   requires formattable&lt;ranges::range_reference_t&lt;R&gt;, char&gt;</span></span>
+<span id="cb24-20"><a href="#cb24-20"></a><span class="va">+ constexpr <em>format-join-view</em>&lt;ranges::all_t&lt;R&gt;, char&gt;</span></span>
+<span id="cb24-21"><a href="#cb24-21"></a><span class="va">+   format_join(R&amp;&amp; range, string_view sep);</span></span>
+<span id="cb24-22"><a href="#cb24-22"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add a new clause [format.join]:</p>
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>template &lt;ranges::input_range V, class charT = char&gt;</span>
+<span id="cb25-2"><a href="#cb25-2"></a>  requires ranges::view&lt;V&gt; &amp;&amp;</span>
+<span id="cb25-3"><a href="#cb25-3"></a>           formattable&lt;ranges::range_reference_t&lt;V&gt;, charT&gt;</span>
+<span id="cb25-4"><a href="#cb25-4"></a>class <em>format-join-view</em> {        // exposition only</span>
+<span id="cb25-5"><a href="#cb25-5"></a>  V <em>view</em>;                       // exposition only</span>
+<span id="cb25-6"><a href="#cb25-6"></a>  basic_string_view&lt;charT&gt; <em>sep</em>; // exposition only</span>
+<span id="cb25-7"><a href="#cb25-7"></a>  </span>
+<span id="cb25-8"><a href="#cb25-8"></a>public:</span>
+<span id="cb25-9"><a href="#cb25-9"></a>  constexpr <em>format-join-view</em>(V v, basic_string_view&lt;charT&gt; s);</span>
+<span id="cb25-10"><a href="#cb25-10"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>constexpr <em>format-join-view</em>(V v, basic_string_view&lt;charT&gt; s)</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Direct-non-list initializes <code class="sourceCode cpp"><em>view</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>v<span class="op">)</span></code> and <code class="sourceCode cpp"><em>str</em></code> with <code class="sourceCode cpp">s</code>.</p>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
