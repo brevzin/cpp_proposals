@@ -562,8 +562,10 @@ template <formattable<charT>... Types> struct formatter<tuple<Types...>, charT>;
 
 * [2.6]{.pnum} For each `charT`, the range specializations
 ```
-template <class R> requires range<const R> && formattable<range_reference_t<const R>, charT>
+template <class R>
+  requires range<const R> && formattable<range_reference_t<const R>, charT>
 struct formatter<R, charT>;
+template <class Alloc> struct formatter<vector<bool, Alloc>, charT>;
 ```
 
 The `parse` member functions of these formatters require that the format specification is an empty format string.
