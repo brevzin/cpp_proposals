@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R1
+document: P2286R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2286R1], adding a sketch of wording.
 
 [@P2286R0] suggested making all the formatting implementation-defined. Several people reached out to me suggesting in no uncertain terms that this is unacceptable. This revision lays out options for such formatting.
 
@@ -412,13 +414,62 @@ The standard library should add specializations of `formatter` for:
 * `tuple<Ts...>` if all of `Ts...` are formattable,
 * `vector<bool>::reference` (which does as `bool` does).
 
-Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted (with string-like being determined via variable template trait). 
+Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. For types that satisfy both (e.g. `std::array`), they're treated as ranges. In the context of formatting ranges, types that are string-like (e.g. `char`, `string`, `string_view`) should be formatted as being quoted (with string-like being determined via variable template trait).
 
 Formatting ranges does not support any additional format specifiers. 
 
 The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted.
 
 For types like `std::generator<T>` (which are move-only, non-const-iterable ranges), users will have to either use `std::format_join` facility or use something like `ranges::ref_view` as shown earlier.
+
+## Wording
+
+### Concept `formattable`
+
+First, we need to define a user-facing concept. We need this because we need to constrain `formatter` specializations on whether the underlying elements of the `pair`/`tuple`/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we're trying to be good enough:
+
+Change [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [format.formatter], formatter
+  template<class T, class charT = char> struct formatter;
+  
+  // [format.parse.ctx], class template basic_format_parse_context
+  template<class charT> class basic_format_parse_context;
+  using format_parse_context = basic_format_parse_context<char>;
+  using wformat_parse_context = basic_format_parse_context<wchar_t>;
+
++ // [format.formattable], formattable
++ template<class T, class charT = char>
++   concept formattable = @*see below*@;
+```
+:::
+
+Add a clause [format.formattable] under [format.formatter]{.sref} and likely after [formatter.requirements]{.sref}
+
+::: bq
+::: addu
+[1]{.pnum} Let `@*fmt-iter-for*@<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
+```
+template <class T, class charT = char>
+concept formattable =
+    semiregular<formatter<T, charT>> &&
+    requires (formatter<T, charT> f,
+              T t,
+              basic_format_context<@*fmt-iter-for*@<charT>, charT> fc,
+              basic_format_parse_context<charT> pc) {
+        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
+        { f.format(t, fc) } -> same_as<@*fmt-iter-for*@<charT>>;
+    };
+```
+
+[2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
+:::
+::: 
 
 ---
 references:
