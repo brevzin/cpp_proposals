@@ -437,7 +437,7 @@ The standard library should add specializations of `formatter` for:
 * `tuple<Ts...>` if all of `Ts...` are formattable,
 * `vector<bool, Alloc>` (which formats as a range of `bool`).
 
-Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. `std::array` is tuple-like, but not a tuple, it's treated as a range. In the context of formatting ranges, pairs, and tuples, types that are char-like (e.g. `char`, `char16_t` - there is a fixed set of character types) or string-like (e.g. `string`, `string_view`, controlled by `enable_formatting_as_string`) should be formatted as being quoted.
+Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. `std::array` is tuple-like, but not a tuple, it's treated as a range. In the context of formatting ranges, pairs, and tuples, character types (in the [basic.fundamental]{.sref} sense) or string-like (e.g. `string`, `string_view`, controlled by `enable_formatting_as_string`) should be formatted as being quoted (characters using `'` and strings using `"`).
 
 Formatting ranges does not support any additional format specifiers. 
 
