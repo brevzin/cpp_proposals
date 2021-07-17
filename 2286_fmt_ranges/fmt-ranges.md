@@ -531,9 +531,9 @@ namespace std {
 +            formattable<ranges::range_reference_t<V>, charT>
 + struct formatter<@*format-join-view*@<V, charT>, charT>;
 +
-+ template <ranges::viewable_range R>
++ template <ranges::input_range R>
 +   requires formattable<ranges::range_reference_t<R>, char>
-+ constexpr @*format-join-view*@<ranges::all_t<R>, char>
++ constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>
 +   format_join(R&& range, string_view sep);
 }
 ```
@@ -561,6 +561,15 @@ constexpr @*format-join-view*@(V v, basic_string_view<charT> s)
 ```
 
 [1]{.pnum} *Effects*: Direct-non-list initializes `@*view*@` with `std::move(v)` and `@*str*@` with `s`.
+
+```
+template <ranges::input_range R>
+  requires formattable<ranges::range_reference_t<R>, char>
+constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>
+  format_join(R&& range, string_view sep);
+```
+
+[2]{.pnum} *Effects*: Equivalent to `return @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>(ranges::views::ref(range), sep);`
 :::
 :::
 

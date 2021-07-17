@@ -1035,9 +1035,9 @@ Formatted Result
 <span id="cb24-15"><a href="#cb24-15"></a><span class="va">+            formattable&lt;ranges::range_reference_t&lt;V&gt;, charT&gt;</span></span>
 <span id="cb24-16"><a href="#cb24-16"></a><span class="va">+ struct formatter&lt;<em>format-join-view</em>&lt;V, charT&gt;, charT&gt;;</span></span>
 <span id="cb24-17"><a href="#cb24-17"></a><span class="va">+</span></span>
-<span id="cb24-18"><a href="#cb24-18"></a><span class="va">+ template &lt;ranges::viewable_range R&gt;</span></span>
+<span id="cb24-18"><a href="#cb24-18"></a><span class="va">+ template &lt;ranges::input_range R&gt;</span></span>
 <span id="cb24-19"><a href="#cb24-19"></a><span class="va">+   requires formattable&lt;ranges::range_reference_t&lt;R&gt;, char&gt;</span></span>
-<span id="cb24-20"><a href="#cb24-20"></a><span class="va">+ constexpr <em>format-join-view</em>&lt;ranges::all_t&lt;R&gt;, char&gt;</span></span>
+<span id="cb24-20"><a href="#cb24-20"></a><span class="va">+ constexpr <em>format-join-view</em>&lt;ranges::ref_view&lt;remove_reference_t&lt;R&gt;&gt;, char&gt;</span></span>
 <span id="cb24-21"><a href="#cb24-21"></a><span class="va">+   format_join(R&amp;&amp; range, string_view sep);</span></span>
 <span id="cb24-22"><a href="#cb24-22"></a>}</span></code></pre></div>
 </div>
@@ -1057,6 +1057,11 @@ Formatted Result
 <span id="cb25-10"><a href="#cb25-10"></a>};</span></code></pre></div>
 <div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1"></a>constexpr <em>format-join-view</em>(V v, basic_string_view&lt;charT&gt; s)</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <em>Effects</em>: Direct-non-list initializes <code class="sourceCode cpp"><em>view</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>v<span class="op">)</span></code> and <code class="sourceCode cpp"><em>str</em></code> with <code class="sourceCode cpp">s</code>.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>template &lt;ranges::input_range R&gt;</span>
+<span id="cb27-2"><a href="#cb27-2"></a>  requires formattable&lt;ranges::range_reference_t&lt;R&gt;, char&gt;</span>
+<span id="cb27-3"><a href="#cb27-3"></a>constexpr <em>format-join-view</em>&lt;ranges::ref_view&lt;remove_reference_t&lt;R&gt;&gt;, char&gt;</span>
+<span id="cb27-4"><a href="#cb27-4"></a>  format_join(R&amp;&amp; range, string_view sep);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>format-join-view</em><span class="op">&lt;</span>ranges<span class="op">::</span>ref_view<span class="op">&lt;</span>remove_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, <span class="dt">char</span><span class="op">&gt;(</span>ranges<span class="op">::</span>views<span class="op">::</span>ref<span class="op">(</span>range<span class="op">)</span>, sep<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
