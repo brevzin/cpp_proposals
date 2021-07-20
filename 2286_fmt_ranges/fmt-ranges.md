@@ -435,7 +435,7 @@ The standard library should add specializations of `formatter` for:
 * any type `T` such that `T const` satisifies `range` and whose `reference` is formattable,
 * `pair<T, U>` if `T` and `U` are formattable,
 * `tuple<Ts...>` if all of `Ts...` are formattable,
-* `vector<bool, Alloc>` (which formats as a range of `bool`).
+* `vector<bool, Alloc>::reference` (which formats as a `bool`).
 
 Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. `std::array` is tuple-like, but not a tuple, it's treated as a range. In the context of formatting ranges, pairs, and tuples, character types (in the [basic.fundamental]{.sref} sense) or string-like (e.g. `string`, `string_view`, controlled by `enable_formatting_as_string`) should be formatted as being quoted (characters using `'` and strings using `"`).
 
@@ -519,7 +519,7 @@ namespace std {
 
 + // [format.range], range formatter
 + template<class R, class charT>
-+   concept @*default-formattable-range*@ =
++   concept @*default-formattable-range*@ =     // exposition only
 +     ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>, charT>
 +     || ranges::input_range<R> && ranges::view<R> && copyable<R> && formattable<ranges::range_reference_t<R>, charT>
 +
@@ -546,8 +546,8 @@ template<class charT, class traits>
   inline constexpr bool enable_formatting_as_string<basic_string_view<charT, traits>> = true;  
 ```
 
-:::
 [*]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `enable_formatting_as_string` to `true` for any cv-unqualified program-defined type `T` which models `@*default-formattable-range*@<charT>`. [*Note*: Users may do so to ensure that a program-defined string type formats as `"hello"` rather than as `['h', 'e', 'l', 'l', 'o']` *-end note*].
+:::
 :::
 
 Add the new clause [format.range]:
@@ -629,6 +629,7 @@ namespace std {
 +   requires ranges::view<V> &&
 +            formattable<ranges::range_reference_t<V>, charT>
 + struct formatter<@*format-join-impl*@<V, charT>, charT>;
++
 +
 + template <ranges::input_range R>
 +   requires formattable<ranges::range_reference_t<R>, char>
@@ -747,6 +748,13 @@ namespace std {
   
 + template<class charT, formattable<charT> T1, formattable<charT> T2>
 +   struct formatter<pair<T1, T2>, charT>;
++
++ template <formattable<char> T1, formattable<char> T2>
++   constexpr @*see below*@ format_join(const pair<T1, T2>& p, string_view sep);
++
++ template <formattable<wchar_t> T1, formattable<wchar_t> T2>
++   constexpr @*see below*@ format_join(const pair<T1, T2>& p, wstring_view sep);
+
   // ...  
 };
 ```
@@ -787,11 +795,11 @@ template <typename FormatContext>
 
 [3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
 
-* [3.1]{.pnum} `'('`
+* [3.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("(")`
 * [3.2]{.pnum} `@*format-maybe-quote*@<charT>(p.first)`
-* [3.3]{.pnum} `", "`
+* [3.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`
 * [3.4]{.pnum} `@*format-maybe-quote*@<charT>(p.second)`
-* [3.5]{.pnum} `')'`
+* [3.5]{.pnum} `@*STATICALLY-WIDEN*@<charT>(")")`
 
 [4]{.pnum} *Returns*: an iterator past the end of the output range
 
@@ -813,6 +821,12 @@ namespace std {
   
 + template<class charT, formattable<charT>... Types>
 +   struct formatter<tuple<Types...>, charT>;
++
++ template <formattable<char>... Types>
++   constexpr @*see below*@ format_join(const tuple<Types...>& t, string_view sep);
++
++ template <formattable<wchar_t>... Types>
++   constexpr @*see below*@ format_join(const tuple<Types...>& t, wstring_view sep);
 
   // ...  
 };
@@ -854,12 +868,12 @@ template <typename FormatContext>
 
 [3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
 
-* [3.1]{.pnum} `'('`
+* [3.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("(")`
 * [3.2]{.pnum} For each element `e` in the tuple `t`:`
 
     * [3.2.1]{.pnum} `@*format-maybe-quote*@<charT>(e)`
-    * [3.2.2]{.pnum} `", "`, unless `e` is the last element of `t`
-* [3.3]{.pnum} `')'`
+    * [3.2.2]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`, unless `e` is the last element of `t`
+* [3.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>(")")`
 
 [4]{.pnum} *Returns*: an iterator past the end of the output range
 
@@ -902,7 +916,7 @@ template<class R>
 ```
 template<class R, class charT> requires @*is-vector-bool-reference*@<R>
   class formatter<R, charT> {
-    formatter<bool, charT> @*fmt*@;
+    formatter<bool, charT> @*fmt*@;     // exposition only
   
   public:
     template <class ParseContext>
