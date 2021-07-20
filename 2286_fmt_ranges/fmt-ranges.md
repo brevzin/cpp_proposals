@@ -471,6 +471,9 @@ namespace std {
 + // [format.formattable], formattable
 + template<class T, class charT = char>
 +   concept formattable = @*see below*@;
+
+  // ...
+}
 ```
 :::
 
@@ -496,7 +499,7 @@ concept formattable =
 :::
 :::
 
-### Additional `formatter` specializations
+### Additional `formatter` specializations in `<format>`
 
 Change [format.syn]{.sref}:
 
@@ -510,6 +513,12 @@ namespace std {
 +   inline constexpr bool enable_formatting_as_string = @*see below*@;
   
   template<class T, class charT = char> struct formatter;
+
++ // [format.range], range formatter
++ template<class R, class charT>
++     requires ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>>
++           || ranges::input_range<R> && ranges::view<R> && copyable<R> && formattable<ranges::range_reference_t<R>>
++   struct formatter<R, charT>;
   
   // ...
 }
@@ -535,40 +544,65 @@ template<class charT, class traits>
 :::
 :::
 
-Add to [format.formatter.spec]{.sref}:
+Add the new clause [format.range]:
 
 ::: bq
-[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of formatter is either enabled or disabled, as described below.
-[*Note 1*: Enabled specializations meet the *Formatter* requirements, and disabled specializations do not.
-— *end note*]
-
-Each header that declares the template formatter provides the following enabled specializations: 
-
-* [2.1]{.pnum} The specializations ...
-* [2.2]{.pnum} For each `charT`, the string type specializations ...
-* [2.3]{.pnum} For each `charT`, for each *cv*-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization ...
-* [2.4]{.pnum} For each `charT`, the pointer type specializations ...
-
-The `parse` member functions of these formatters interpret the format specification as a *std-format-spec* as described in [format.string.std].
-[*Note 2*: Specializations such as `formatter<wchar_t, char>` and `formatter<const char*, wchar_t>` that would require implicit multibyte / wide string or character conversion are disabled.
-— *end note*]
-
 ::: addu
-* [2.5]{.pnum} For each `charT`, the pair and tuple specializations
 ```
-template <formattable<charT> T1, formattable<charT> T2> struct formatter<pair<T1, T2>, charT>;
-template <formattable<charT>... Types> struct formatter<tuple<Types...>, charT>;
+inline constexpr auto @*format-maybe-quote*@ = // exposition only
+    []<class T>(const T& t){
+      if constexpr (is_same_v<T, char> || is_same_v<T, wchar_t>) {
+        return format("'{}'", t);
+      } else if constexpr (enable_formatting_as_string<T>) {
+        return format("\"{}\"", t);
+      } else {
+        return format("{}", t);
+      }
+    };
+
+template<class R, class charT>
+    requires ranges::input_range<const R>
+             && formattable<ranges::range_reference_t<const R>>
+          || ranges::input_range<R>
+             && ranges::view<R>
+             && copyable<R>
+             && formattable<ranges::range_reference_t<R>>
+  struct formatter<R, charT> {
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+        
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const R& range, FormatContext& ctx);
+  };
 ```
 
-* [2.6]{.pnum} For each `charT`, the range specializations
 ```
-template <class R>
-  requires range<const R> && formattable<range_reference_t<const R>, charT>
-struct formatter<R, charT>;
-template <class Alloc> struct formatter<vector<bool, Alloc>, charT>;
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
 ```
+[1]{.pnum} Let `T` denote the type `ranges::range_reference_t<const R>` if `const R` models `ranges::range` and `ranges::range_reference_t<R>` otherwise. 
 
-The `parse` member functions of these formatters require that the format specification is an empty format string.
+[2]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T, charT>().parse(ctx)` throws.
+
+[3]{.pnum} *Returns*: `ctx.begin()`.
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const R& range, FormatContext& ctx);
+```
+[4]{.pnum} *Effects*: Let `r` be `range` if `const R` models `ranges::range` and `views::all(range)` otherwise. Writes the following into `ctx.out()`:
+
+- [4.1]{.pnum} `'['`
+- [4.2]{.pnum} for each element, `e`, of the range `r`:
+    * [4.2.1]{.pnum} `@*format-maybe-quote*@(e)`
+    * [4.2.2]{.pnum} `", "`, unless `e` is the last element of `r`
+- [4.3]{.pnum} `']'`
+
+[5]{.pnum} *Returns*: an iterator past the end of the output range
 :::
 :::
 
@@ -588,17 +622,22 @@ namespace std {
 + template <ranges::input_range V, class charT = char>
 +   requires ranges::view<V> &&
 +            formattable<ranges::range_reference_t<V>, charT>
-+ class @*format-join-view*@; // exposition only
++ class @*format-join-impl*@; // exposition only
 +
 + template <ranges::input_range V, class charT>
 +   requires ranges::view<V> &&
 +            formattable<ranges::range_reference_t<V>, charT>
-+ struct formatter<@*format-join-view*@<V, charT>, charT>;
++ struct formatter<@*format-join-impl*@<V, charT>, charT>;
 +
 + template <ranges::input_range R>
 +   requires formattable<ranges::range_reference_t<R>, char>
-+ constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>
++ constexpr @*format-join-impl*@<ranges::ref_view<remove_reference_t<R>>, char>
 +   format_join(R&& range, string_view sep);
++
++ template <ranges::input_range R>
++   requires formattable<ranges::range_reference_t<R>, wchar_t>
++ constexpr @*format-join-impl*@<ranges::ref_view<remove_reference_t<R>>, wchar_t>
++   format_join(R&& range, wstring_view sep);
 }
 ```
 :::
@@ -607,13 +646,21 @@ Add a new clause [format.join]:
 
 ::: bq
 ::: addu
+[1]{.pnum} The function template `format_join` is a convenient utility to provide a custom *format-spec* to apply to each element when formatting a range, along with a custom delimiter. 
+
+[2]{.pnum} [*Example*:
+```
+cout << format("{:02x}", format_join(vector{10,20,30,40,50,60}, ":")); // prints 0a:14:1e:28:32:3c
+```
+-*end example*]
+
 ```
 template <ranges::input_range V, class charT = char>
   requires ranges::view<V> &&
            formattable<ranges::range_reference_t<V>, charT>
-class @*format-join-view*@ {        // exposition only
-  V @*view*@;                       // exposition only
-  basic_string_view<charT> @*sep*@; // exposition only
+class @*format-join-view*@ {                               // exposition only
+  V @*view*@;                                              // exposition only
+  basic_string_view<charT> @*sep*@;                        // exposition only
   
 public:
   constexpr @*format-join-view*@(V v, basic_string_view<charT> s);
@@ -624,20 +671,264 @@ public:
 constexpr @*format-join-view*@(V v, basic_string_view<charT> s)
 ```
 
-[1]{.pnum} *Effects*: Direct-non-list initializes `@*view*@` with `std::move(v)` and `@*str*@` with `s`.
+[3]{.pnum} *Effects*: Direct-non-list initializes `@*view*@` with `std::move(v)` and `@*sep*@` with `s`.
+
+```
+template <ranges::input_range V, class charT>
+  requires ranges::view<V> &&
+           formattable<ranges::range_reference_t<V>, charT>
+struct formatter<@*format-join-impl*@<V, charT>, charT> {
+  formatter<ranges::range_reference_t<V>, charT> @*fmt*@;  // exposition only
+
+  template <typename ParseContext>
+    constexpr typename ParseContext::iterator
+      parse(ParseContext& ctx);
+      
+  template <typename FormatContext>
+    typename FormatContext::iterator
+      format(const @*format-join-impl*@<V, charT>& j, FormatContext& ctx);
+};
+```
+
+```
+template <typename ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+[4]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
+  
+```
+template <typename FormatContext>
+  typename FormatContext::iterator
+    format(const @*format-join-impl*@<V, charT>& j, FormatContext& ctx);
+```
+
+[5]{.pnum} *Effects*: Write the followng into `ctx.out()`:
+
+* [3.1]{.pnum} For each element `e` of `j.@*view*@`:
+    * [3.1.1]{.pnum} `@*fmt*@.format(e, ctx)`
+    * [3.1.2]{.pnum} `j.@*sep*@`, unless `e` is the last element of `j.@*view*@`
+    
+[6]{.pnum} *Returns*: an iterator past the end of the output range
 
 ```
 template <ranges::input_range R>
   requires formattable<ranges::range_reference_t<R>, char>
 constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>
   format_join(R&& range, string_view sep);
+  
+template <ranges::input_range R>
+  requires formattable<ranges::range_reference_t<R>, wchar_t>
+constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, wchar_t>
+  format_join(R&& range, wstring_view sep);  
 ```
 
-[2]{.pnum} *Effects*: Equivalent to `return @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>(ranges::views::ref(range), sep);`
+[7]{.pnum} *Effects*: Equivalent to `return {ranges::ref_view(range), sep};`
+
+```
+```
 :::
 :::
 
+### Formatter for `pair`
 
+Add to [utility.syn]{.sref}
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [pairs], class template pair
+  template<class T1, class T2>
+    struct pair;
+  
++ template<class charT, formattable<charT> T1, formattable<charT> T2>
++   struct formatter<pair<T1, T2>, charT>;
+  // ...  
+};
+```
+:::
+
+Add a new subclause [pair.format] under [pairs]{.sref}
+
+::: bq
+::: addu
+```
+template<class charT, formattable<charT> T1, formattable<charT> T2>
+  struct formatter<pair<T1, T2>, charT> {
+    template <typename ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+        
+    template <typename FormatContext>
+      typename FormatContext::iterator
+        format(const pair<T1, T2>& p, FormatContext& ctx);    
+  };
+```
+
+```
+template <typename ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```   
+
+[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T1, charT>().parse(ctx)` or `formatter<T2, charT>().parse(ctx)` throws.
+
+[2]{.pnum} *Returns*: `ctx.begin()`.
+
+```
+template <typename FormatContext>
+  typename FormatContext::iterator
+    format(const pair<T1, T2>& p, FormatContext& ctx);    
+```
+
+[3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
+
+* [3.1]{.pnum} `'('`
+* [3.2]{.pnum} `@*format-maybe-quote*@(p.first)`
+* [3.3]{.pnum} `", "`
+* [3.4]{.pnum} `@*format-maybe-quote*@(p.second)`
+* [3.5]{.pnum} `')'`
+
+[4]{.pnum} *Returns*: an iterator past the end of the output range
+
+:::
+:::
+
+### Formatter for `tuple`
+
+Add to [tuple.syn]{.sref}
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+
+namespace std {
+  // [tuple.tuple], class template tuple
+  template<class... Types>
+    class tuple;
+  
++ template<class charT, formattable<charT>... Types>
++   struct formatter<tuple<Types...>, charT>;
+
+  // ...  
+};
+```
+:::
+
+Add a new subclause [tuple.format] under [tuple]{.sref}
+
+::: bq
+::: addu
+```
+template<class charT, formattable<charT>... Types>
+  struct formatter<tuple<Types...>, charT> {
+    template <typename ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+        
+    template <typename FormatContext>
+      typename FormatContext::iterator
+        format(const tuple<Types...>& t, FormatContext& ctx);    
+  };
+```
+
+```
+template <typename ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```   
+
+[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T, charT>().parse(ctx)` throws for each type `T` in `Types...`.
+
+[2]{.pnum} *Returns*: `ctx.begin()`.
+
+```
+template <typename FormatContext>
+  typename FormatContext::iterator
+    format(const tuple<Types...>& t, FormatContext& ctx);    
+```
+
+[3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
+
+* [3.1]{.pnum} `'('`
+* [3.2]{.pnum} For each element `e` in the tuple `t`:`
+
+    * [3.2.1]{.pnum} `@*format-maybe-quote*@(e)`
+    * [3.2.2]{.pnum} `", "`, unless `e` is the last element of `t`
+* [3.3]{.pnum} `')'`
+
+[4]{.pnum} *Returns*: an iterator past the end of the output range
+
+:::
+:::
+
+### Formatter for `vector<bool>::reference`
+
+Add to [vector.syn]{.sref}
+
+::: bq
+```diff
+namespace std {
+  // [vector], class template vector
+  template<class T, class Allocator = allocator<T>> class vector;
+
+  // ...
+
+  // [vector.bool], class vector<bool>
+  template<class Allocator> class vector<bool, Allocator>;
+  
++ template<class R>
++   inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@; // exposition only
+
++ template<class R, class charT> requires @*is-vector-bool-reference*@<R>
++   struct formatter<R, charT>;
+```
+:::
+
+Add to [vector.bool] at the end:
+
+::: bq
+::: addu
+```
+template<class R>
+  inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@;
+```
+[8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` shall be `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some template parameter `Alloc`.
+
+```
+template<class R, class charT> requires @*is-vector-bool-reference*@<R>
+  struct formatter<R, charT> {
+    formatter<bool, charT> @*fmt*@;
+    
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+        
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const R& ref, FormatContext& ctx);
+  };
+```
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[9]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
+    
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const R& ref, FormatContext& ctx);
+```
+
+[10]{.pnum} *Effects*: Equivalent to `return @*fmt*@.format(ref, ctx);`
+:::
+:::
 
 ---
 references:
