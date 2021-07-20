@@ -679,7 +679,7 @@ template <ranges::input_range V, class charT>
   requires ranges::view<V> &&
            formattable<ranges::range_reference_t<V>, charT>
 class formatter<@*format-join-impl*@<V, charT>, charT> {
-  formatter<ranges::range_reference_t<V>, charT> @*fmt*@;  // exposition only
+  formatter<remove_cvref_t<ranges::range_reference_t<V>>, charT> @*fmt*@;  // exposition only
 
 public:
   template <typename ParseContext>
@@ -775,7 +775,7 @@ template <typename ParseContext>
     parse(ParseContext& ctx);
 ```   
 
-[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T1, charT>().parse(ctx)` or `formatter<T2, charT>().parse(ctx)` throws.
+[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T1>, charT>().parse(ctx)` or `formatter<remove_cvref_t<T2>, charT>().parse(ctx)` throws.
 
 [2]{.pnum} *Returns*: `ctx.begin()`.
 
@@ -842,7 +842,7 @@ template <typename ParseContext>
     parse(ParseContext& ctx);
 ```   
 
-[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T, charT>().parse(ctx)` throws for each type `T` in `Types...`.
+[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T>, charT>().parse(ctx)` throws for each type `T` in `Types...`.
 
 [2]{.pnum} *Returns*: `ctx.begin()`.
 
