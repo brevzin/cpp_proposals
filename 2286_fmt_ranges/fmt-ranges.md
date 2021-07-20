@@ -469,7 +469,7 @@ namespace std {
   using wformat_parse_context = basic_format_parse_context<wchar_t>;
 
 + // [format.formattable], formattable
-+ template<class T, class charT = char>
++ template<class T, class charT>
 +   concept formattable = @*see below*@;
 
   // ...
@@ -483,16 +483,19 @@ Add a clause [format.formattable] under [format.formatter]{.sref} and likely aft
 ::: addu
 [1]{.pnum} Let `@*fmt-iter-for*@<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
 ```
-template <class T, class charT = char>
-concept formattable =
+template<class T, class charT>
+concept @*formattable-impl*@ =
     semiregular<formatter<T, charT>> &&
     requires (formatter<T, charT> f,
-              T t,
+              const T t,
               basic_format_context<@*fmt-iter-for*@<charT>, charT> fc,
               basic_format_parse_context<charT> pc) {
         { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
         { f.format(t, fc) } -> same_as<@*fmt-iter-for*@<charT>>;
     };
+
+template<class T, class charT = char>
+concept formattable = @*formattable-impl*@<remove_cvref_t<T>, charT>;
 ```
 
 [2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
@@ -516,8 +519,11 @@ namespace std {
 
 + // [format.range], range formatter
 + template<class R, class charT>
-+     requires ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>>
-+           || ranges::input_range<R> && ranges::view<R> && copyable<R> && formattable<ranges::range_reference_t<R>>
++   concept @*default-formattable-range*@ =
++     ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>, charT>
++     || ranges::input_range<R> && ranges::view<R> && copyable<R> && formattable<ranges::range_reference_t<R>, charT>
++
++ template<class charT, @*default-formattable-range*@<charT>, R>
 +   struct formatter<R, charT>;
   
   // ...
@@ -540,8 +546,8 @@ template<class charT, class traits>
   inline constexpr bool enable_formatting_as_string<basic_string_view<charT, traits>> = true;  
 ```
 
-[*]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `enable_formatting_as_string` to `true` for any cv-unqualified program-defined type `T` such that `const T` models `range` and `remove_cvref_t<ranges::range_reference_t<const R>>` is a character type ([basic.fundamental]) [*Note*: Users may do so to ensure that a program-defined string type formats as `"hello"` rather than as `['h', 'e', 'l', 'l', 'o']` *-end note*].
 :::
+[*]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `enable_formatting_as_string` to `true` for any cv-unqualified program-defined type `T` which models `@*default-formattable-range*@<charT>`. [*Note*: Users may do so to ensure that a program-defined string type formats as `"hello"` rather than as `['h', 'e', 'l', 'l', 'o']` *-end note*].
 :::
 
 Add the new clause [format.range]:
@@ -549,24 +555,19 @@ Add the new clause [format.range]:
 ::: bq
 ::: addu
 ```
+template<class charT>
 inline constexpr auto @*format-maybe-quote*@ = // exposition only
     []<class T>(const T& t){
-      if constexpr (is_same_v<T, char> || is_same_v<T, wchar_t>) {
-        return format("'{}'", t);
+      if constexpr (is_same_v<T, charT>) {
+        return format(@*STATICALLY-WIDEN*@<charT>("'{}'"), t);
       } else if constexpr (enable_formatting_as_string<T>) {
-        return format("\"{}\"", t);
+        return format(@*STATICALLY-WIDEN*@<charT>("\"{}\""), t);
       } else {
-        return format("{}", t);
+        return format(@*STATICALLY-WIDEN*@<charT>("{}"), t);
       }
     };
 
-template<class R, class charT>
-    requires ranges::input_range<const R>
-             && formattable<ranges::range_reference_t<const R>>
-          || ranges::input_range<R>
-             && ranges::view<R>
-             && copyable<R>
-             && formattable<ranges::range_reference_t<R>>
+template<class charT, @*default-formattable-range*@<charT>, R>
   struct formatter<R, charT> {
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -585,7 +586,7 @@ template <class ParseContext>
 ```
 [1]{.pnum} Let `T` denote the type `ranges::range_reference_t<const R>` if `const R` models `ranges::range` and `ranges::range_reference_t<R>` otherwise. 
 
-[2]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<T, charT>().parse(ctx)` throws.
+[2]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T>, charT>().parse(ctx)` throws.
 
 [3]{.pnum} *Returns*: `ctx.begin()`.
 
@@ -596,11 +597,11 @@ template <class FormatContext>
 ```
 [4]{.pnum} *Effects*: Let `r` be `range` if `const R` models `ranges::range` and `views::all(range)` otherwise. Writes the following into `ctx.out()`:
 
-- [4.1]{.pnum} `'['`
+- [4.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("[")`
 - [4.2]{.pnum} for each element, `e`, of the range `r`:
-    * [4.2.1]{.pnum} `@*format-maybe-quote*@(e)`
-    * [4.2.2]{.pnum} `", "`, unless `e` is the last element of `r`
-- [4.3]{.pnum} `']'`
+    * [4.2.1]{.pnum} `@*format-maybe-quote*@<charT>(e)`
+    * [4.2.2]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`, unless `e` is the last element of `r`
+- [4.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>("]")`
 
 [5]{.pnum} *Returns*: an iterator past the end of the output range
 :::
@@ -619,7 +620,7 @@ namespace std {
   class format_error;
   
 + // [format.join], a join formatter
-+ template <ranges::input_range V, class charT = char>
++ template <ranges::input_range V, class charT>
 +   requires ranges::view<V> &&
 +            formattable<ranges::range_reference_t<V>, charT>
 + class @*format-join-impl*@; // exposition only
@@ -655,7 +656,7 @@ cout << format("{:02x}", format_join(vector{10,20,30,40,50,60}, ":")); // prints
 -*end example*]
 
 ```
-template <ranges::input_range V, class charT = char>
+template <ranges::input_range V, class charT>
   requires ranges::view<V> &&
            formattable<ranges::range_reference_t<V>, charT>
 class @*format-join-view*@ {                               // exposition only
@@ -671,15 +672,16 @@ public:
 constexpr @*format-join-view*@(V v, basic_string_view<charT> s)
 ```
 
-[3]{.pnum} *Effects*: Direct-non-list initializes `@*view*@` with `std::move(v)` and `@*sep*@` with `s`.
+[3]{.pnum} *Effects*: Direct-non-list-initializes `@*view*@` with `std::move(v)` and `@*sep*@` with `s`.
 
 ```
 template <ranges::input_range V, class charT>
   requires ranges::view<V> &&
            formattable<ranges::range_reference_t<V>, charT>
-struct formatter<@*format-join-impl*@<V, charT>, charT> {
+class formatter<@*format-join-impl*@<V, charT>, charT> {
   formatter<ranges::range_reference_t<V>, charT> @*fmt*@;  // exposition only
 
+public:
   template <typename ParseContext>
     constexpr typename ParseContext::iterator
       parse(ParseContext& ctx);
@@ -703,7 +705,7 @@ template <typename FormatContext>
     format(const @*format-join-impl*@<V, charT>& j, FormatContext& ctx);
 ```
 
-[5]{.pnum} *Effects*: Write the followng into `ctx.out()`:
+[5]{.pnum} *Effects*: Write the following into `ctx.out()`:
 
 * [3.1]{.pnum} For each element `e` of `j.@*view*@`:
     * [3.1.1]{.pnum} `@*fmt*@.format(e, ctx)`
@@ -786,9 +788,9 @@ template <typename FormatContext>
 [3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
 
 * [3.1]{.pnum} `'('`
-* [3.2]{.pnum} `@*format-maybe-quote*@(p.first)`
+* [3.2]{.pnum} `@*format-maybe-quote*@<charT>(p.first)`
 * [3.3]{.pnum} `", "`
-* [3.4]{.pnum} `@*format-maybe-quote*@(p.second)`
+* [3.4]{.pnum} `@*format-maybe-quote*@<charT>(p.second)`
 * [3.5]{.pnum} `')'`
 
 [4]{.pnum} *Returns*: an iterator past the end of the output range
@@ -855,7 +857,7 @@ template <typename FormatContext>
 * [3.1]{.pnum} `'('`
 * [3.2]{.pnum} For each element `e` in the tuple `t`:`
 
-    * [3.2.1]{.pnum} `@*format-maybe-quote*@(e)`
+    * [3.2.1]{.pnum} `@*format-maybe-quote*@<charT>(e)`
     * [3.2.2]{.pnum} `", "`, unless `e` is the last element of `t`
 * [3.3]{.pnum} `')'`
 
@@ -895,13 +897,14 @@ Add to [vector.bool] at the end:
 template<class R>
   inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@;
 ```
-[8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` shall be `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some template parameter `Alloc`.
+[8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` is `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some type `Alloc` if `vector<bool, Alloc>` is not a program-defined specialization.
 
 ```
 template<class R, class charT> requires @*is-vector-bool-reference*@<R>
-  struct formatter<R, charT> {
+  class formatter<R, charT> {
     formatter<bool, charT> @*fmt*@;
-    
+  
+  public:
     template <class ParseContext>
       constexpr typename ParseContext::iterator
         parse(ParseContext& ctx);
