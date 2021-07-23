@@ -1,6 +1,6 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: P2036R1
+document: P2036R2
 date: today
 audience: EWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2036R1], added feature test macro discussion and implementation experience.
 
 Since [@P2036R0], added wording and discussion of issues around getting the lookup correct.
 
@@ -362,6 +364,14 @@ Today, this example is ill-formed (although no compiler diagnoses it) because `v
 
 I'm wary of such a change because I'm very wary of touching anything related to ODR. Especially because in an example like this, we could easily make `value` not odr-used here (either by making `value` `static` or by changing `read` to not take by reference).
 
+## Feature-test macro
+
+The change this paper suggests doesn't merit a feature test macro. If you had to support both the old and new versions, you would just directly write the code the old way that would get you the behavior you wanted with the new way. Writing two different *trailing-return-type*s or *noexcept-specifier*s doesn't seem like it would provide any value - just write the one that always works.
+
+## Implementation Experience
+
+None, but the behavior changes suggested here don't require any kind of parsing heroics. We still have everything we need to know at the time that we're parsing the *trailing-return-type*, it's just that there's a new scope that is looked in first. No implementors have reported any concerns. 
+
 # Wording
 
 This wording is based on the working draft after Davis Herring's opus [@P1787R6] was merged (i.e. [@N4878]).
@@ -412,7 +422,8 @@ int j;
     {};
 };
 ```
- 
+
+## [expr.prim.id.unqual]
 
 Change [expr.prim.id.unqual]{.sref}/3 as described earlier. It currently reads:
 
@@ -422,7 +433,7 @@ Change [expr.prim.id.unqual]{.sref}/3 as described earlier. It currently reads:
 Otherwise, the type of the expression is the type of the result.
 :::
 
-Change it to instead read (I'm trying to add bullets and parentheses to make it clear what branch each case refers to), and as a drive by fix the issue Tim Song pointed out [here](https://lists.isocpp.org/core/2020/10/9982.php):
+Change it to instead read as follows. Expressing this change as a diff is mostly illegible so I'm instead just presenting the before and after text separately. I'm also trying to add bullets and parentheses to make it clear what branch each case refers to and as a drive by fix the issue Tim Song pointed out [here](https://lists.isocpp.org/core/2020/10/9982.php):
 
 ::: bq
 [3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is either a local entity or names an _init-capture_ and
@@ -467,6 +478,8 @@ Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
 ```
 *- end example*]
 :::
+
+## [expr.prim.lambda.capture]
 
 Change [expr.prim.lambda.capture]{.sref}/6:
 
