@@ -1,7 +1,7 @@
 ---
 title: "Formatting Ranges"
 document: P2286R2
-date: today
+date: 2021-07-19
 audience: LEWG
 author:
     - name: Barry Revzin
@@ -494,7 +494,7 @@ concept @*formattable-impl*@ =
         { f.format(t, fc) } -> same_as<@*fmt-iter-for*@<charT>>;
     };
 
-template<class T, class charT = char>
+template<class T, class charT>
 concept formattable = @*formattable-impl*@<remove_cvref_t<T>, charT>;
 ```
 
