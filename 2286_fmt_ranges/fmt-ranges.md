@@ -263,7 +263,7 @@ Should `std::pair<int, int>{4, 5}` be printed as `{4, 5}` or `(4, 5)`? Here, eit
 
 ### `map` and `set` (and other associative containers)
 
-Should `std::map<int, int>{{1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
+Should `std::map<int, int>{@@{1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
 
 The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`? 
 
@@ -348,7 +348,7 @@ The latter is clearly more verbose, but has the advantage that if you want to tr
 
 ::: bq
 ```cpp
-std::vector<std::pair<int, int>> v = {{1, 2}, {3, 4}};
+std::vector<std::pair<int, int>> v = {@@{1, 2}, {3, 4}};
 std::print("{}\n", v);                // [(1, 2), (3, 4)]
 std::print("{}\n", format_as_map(v)); // {1: 2, 3: 4}
 ```
