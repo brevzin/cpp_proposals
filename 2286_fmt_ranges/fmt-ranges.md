@@ -1,7 +1,7 @@
 ---
 title: "Formatting Ranges"
-document: P2286R2
-date: 2021-07-19
+document: P2286R3
+date: today
 audience: LEWG
 author:
     - name: Barry Revzin
@@ -10,6 +10,11 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2286R2], several major changes:
+
+* This paper assumes the adoption of [@P2418R0], which affects how [non-`const`-iterable views](#how-to-support-those-views-which-are-not-const-iterable) are handled. This paper now introduces two concepts (`formattable` and `const_formattable`) instead of just one. 
+* Extended discussion and functionality for various [representations](#what-representation), including how to quote strings properly and how to format associative ranges. 
 
 Since [@P2286R1], adding a sketch of wording.
 
@@ -244,47 +249,112 @@ However, the point here isn't necessarily to produce the best possible represent
 
 ## What representation?
 
-There are several questions to ask about what the representation should be for printing.
+There are several questions to ask about what the representation should be for printing. I'll go through each kind in turn.
 
-1. Should `vector<int>{1, 2, 3}` be printed as `{1, 2, 3}` (as `fmt` currently does and as the type is constructed in C++) or `[1, 2, 3]` (as is typical representationally outside of C++)? 
-2. Should `pair<int, int>{3, 4}` be printed as `{3, 4}` (as the type is constructed) or as `(3, 4)` (as `fmt` currently does and is typical representationally outside of C++)?
-3. Should `char` and `string` in the context of ranges and tuples be printed as quoted (as `fmt` currently does) or unquoted (as these types are typically formatted)?
+### `vector` (and other ranges)
 
-What I'm proposing is the following:
+Should `std::vector<int>{1, 2, 3}` be printed as `{1, 2, 3}` or `[1, 2, 3]`? At the time of [@P2286R1], `fmt` used `{}`s but changed to use `[]`s for consistency with Python ([400b953f](https://github.com/fmtlib/fmt/commit/400b953fbb420ff1e47565303c64223445a51955)).
+
+Even though in C++ we initialize `vector`s (and, generally, other containers as well) with `{}`s while Python's uses `[1, 2, 3]` (and likewise Rust has `vec![1, 2, 3]`), `[]` is typical representationally so seems like the clear best choice here. 
+
+### `pair` and `tuple`
+
+Should `std::pair<int, int>{4, 5}` be printed as `{4, 5}` or `(4, 5)`? Here, either syntax can claim to be the syntax used to initialize the `pair`/`tuple`. `fmt` has always printed these types with `()`s, and this is also how Python and Rust print such types. As with using `[]` for ranges, `()` seems like the common representation for tuples and so seems like the clear best choice.
+
+### `map` and `set` (and other associative containers)
+
+Should `std::map<int, int>{{1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
+
+The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`? 
+
+If we print `map`s as any other range of pairs, there's nothing left to do. If we print `map`s as associations, then we additionally have to answer the question of how user-defined associative containers can get printed in the same way. Hold onto this thought for a minute.
+
+### `char` and `string` (and other string-like types) in ranges or tuples
+
+Should `pair<char, string>('x', "hello")` print as `(x, hello)` or `('x', "hello")`? Should `print<char, string>('y', "with\n\"quotes\"")` print as:
+
+::: bq
+```
+(y, with
+"quotes")
+```
+:::
+
+or
+
+::: bq
+```
+('y', "with
+"quotes"")
+```
+:::
+
+or
+
+::: bq
+```
+('y', "with\n\"quotes\"")
+```
+:::
+
+While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). But there is a difference between `fmt` and Python/Rust when it comes to embedded quotes:
+
+* `fmt` simply surrounds strings with "s and doesn't escape any internal characters, so has the second implementation above there (with the extra newline)
+* Rust does escape internal strings , so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)).
+* Python sort of does and sort of doesn't, owing to the fact that you can have strings with single or double quotes, but it definitely escapes the `\n` either way.
+
+Escaping seems like the most desirable behavior. Following Rust's behavior, we escape `\t`, `\r`, `\n`, `\\`, `"` (for `string` types only), `'` (for `char` types only), and extended graphemes (if Unicode). 
+
+Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior?
+
+### Customization
+
+There's basically two different approaches to customization here:
+
+* a type trait (whether variable template or class template) that opts into the customized behavior ([@P2286R2] proposed `enable_formatting_as_string` to enable formatting as a string)
+* a class template with a member view that formats its member as appropriate for the kind (string/set/map).
+
+The difference between the two in the typical case where you just have a type that always behaves the same way is:
+
+::: cmptable
+### type trait
+```cpp
+namespace N {
+  struct my_string { ... };
+}
+
+template <>
+inline constexpr bool
+std::enable_formatting_as_string<
+  N::my_string> = true;
+```
+
+### formatter
+```cpp
+namespace N {
+  struct my_string { ... };
+}
+
+namespace std {
+  template <>
+  struct formatter<N::my_string, char>
+    : formatter<string_format_wrapper<N::my_string>, char>
+  { };
+}
+```
+:::
+
+The latter is clearly more verbose, but has the advantage that if you want to treat a type as a string/set/map that isn't always formatted that way, the custom formatters would let you do that:
 
 ::: bq
 ```cpp
-std::vector<int> v = {1, 2, 3};
-std::map<std::string, char> m = {@{@"hello", 'h'}, {"world", 'w'}};
-
-std::print("v={}. m={}\n", v, m);
+std::vector<std::pair<int, int>> v = {{1, 2}, {3, 4}};
+std::print("{}\n", v);                // [(1, 2), (3, 4)]
+std::print("{}\n", format_as_map(v)); // {1: 2, 3: 4}
 ```
 :::
 
-print:
-
-::: bq
-```
-v=[1, 2, 3]. m=[("hello", 'h'), ("world", 'w')]
-```
-:::
-
-That is: ranges are surrounded with `[]`s and delimited with `", "`. Pairs and tuples are surrounded with `()`s and delimited with `", "`. Types like `char`, `string`, and `string_view` are printed quoted.
-
-It is more important to me that ranges and tuples are visually distinct (in this case `[]` vs `()`, but the way that `fmt` currently does it as `{}` vs `()` is also okay) than it would be to quote the string-y types. My rank order of the possible options for the map `m` above is:
-
-<table>
-<tr><th>Ranges</th><th>Tuples</th><th>Quoted?</th><th>Formatted Result</th></tr>
-<tr><td>`[]`</td><td>`()`</td><td>✔️</td><td>`[("hello", 'h'), ("world", 'w')]`{.x}</td></tr>
-<tr><td>`{}`</td><td>`()`</td><td>✔️</td><td>`{("hello", 'h'), ("world", 'w')}`{.x}</td></tr>
-<tr><td>`[]`</td><td>`()`</td><td>❌</td><td>`[(hello, h), (world, w)]`{.x}</td></tr>
-<tr><td>`{}`</td><td>`()`</td><td>❌</td><td>`{(hello, h), (world, w)}`{.x}</td></tr>
-<tr><td>`{}`</td><td>`{}`</td><td>❌</td><td><code>{<b></b>{hello, h}, {world, w}}</code></td></tr>
-</table>
-
-My preference for avoiding `{}` in the formatting is largely because it's unlikely the results here can be used directly for copying and pasting directly into initialization anyway, so the priority is simply having visual distinction for the various cases.
-
-With quoting, the question is how does the library choose if something is string-like and thus needs to be quoted. Currently, fmtlib makes this determination by checking for the presence of certain operations (`p->length()`, `p->find('a')`, and `p->data()`). We could instead add a variable template called `enable_formatting_as_string` to allow for opting into this kind of formatting. This approach isn't perfect, since we easily end up with situations like:
+Which especially comes into play when you're dealing with range adaptors and just construct some range of pairs or range of range of char and wish to print that as a map or string, accordingly. For example:
 
 ::: bq
 ```cpp
@@ -293,19 +363,85 @@ std::print("{}\n", words);   // ["  some  ", " words  ", "here"]
 
 auto trimmed = words | transform(views::trim_whitespace);
 std::print("{}\n", trimmed); // [['s', 'o', 'm', 'e'], ['w', 'o', 'r', 'd', 's'], ['h', 'e', 'r', 'e']]
+std::print("{}\n", trimmed | views::transform(format_as_string));  
+                             // ["some", "words", "here"]
 ```
 :::
 
-You probably want the trimmed strings to still print quoted as `"some"` rather than `['s', 'o', 'm', 'e']`, and having a variable template wouldn't solve that unless you apply it to `trim_whitespace_view` as well. This suggests maybe going one step further and introduced some kind of `views::quoted` that exists solely to indicate that a particular range of char should be formatted as quoted:
+But perhaps the most important question here is: how do you format wrappers?
+
+Let's say you have your own implementation of `Optional`, that you want to format the same way that Rust does: so that a disengaged one formats as `None` and an engaged one formats as `Some(??)`. We can start by:
 
 ::: bq
 ```cpp
-auto trimmed2 = words | transform(views::trim_whitespace | views::quoted);
-std::print("{}\n", trimmed2); // ["some", "words", "here"]
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    // we'll skip parse for now
+    
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            return format_to(ctx.out(), "Some({})", *opt);
+        }
+    }
+}; 
 ```
 :::
 
-But that's not necessarily sufficient for handling cases like wanting to print a `tuple<R, int>` where `R` is some range of char that you want to print quoted - there's no "view" on a `tuple` that we can easily apply. So rather than worry necessary about solving all possible formatting problems, this paper simply proposes `enable_formatting_as_string` (which will be `true` for specializations of `basic_string` and `basic_string_view`), which can be easily applied to the myriad of other string-like types out there, on the basis of being good enough. 
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which is fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advanage of the quoting rules we just went through. Put differently: how would the standard library implement any of the functionality I'm talking about here? 
+
+Well, we could start by being very explicit about this:
+
+::: bq
+```cpp
+template <formattable<char> T>
+template <typename FormatContext>
+auto formatter<Optional<T>, char>::format(Optional<T> const& opt, FormatContext& ctx) {
+    if (not opt) {
+        return format_to(ctx.out(), "None");
+    } else {
+        if constexpr (same_as<T, char>) {
+            return format_to(ctx.out(), "Some({})", format_as_char(*opt));
+        } else if constexpr (enable_formatting_as_string<T>) {
+            return format_to(ctx.out(), "Some({})", format_as_string(*opt));
+        } else {
+            return format_to(ctx.out(), "Some({})", *opt);
+        }
+    }
+}
+```
+:::
+
+Note that we need *both* `enable_formatting_as_string` here *and also* `format_as_string`. Because these types inherently have two different formatting rules. 
+
+I don't want every wrapper type to have to write all of that, so we clearly need another standard facility to do this. We can call it `format_as_quoted`:
+
+::: bq
+```cpp
+template <formattable<char> T>
+template <typename FormatContext>
+auto formatter<Optional<T>, char>::format(Optional<T> const& opt, FormatContext& ctx) {
+    if (not opt) {
+        return format_to(ctx.out(), "None");
+    } else {
+        return format_to(ctx.out(), "Some({})", format_as_quoted(*opt));
+    }
+}
+```
+:::
+
+### Summary of Fancied Formatting Facilities
+
+In short:
+
+1. Ranges format as `[a, b, c]`
+2. Tuples and pairs format as `(x, y, z)`
+3. Chars and strings when in ranges and tuples format as quoted. User-defined strings can opt in to this quoting by specializing `enable_formatting_as_string`.
+4. Standard library associative containers format as `{k1: v1, k2: v2}` or `{k1, k2}`. 
+5. Different formatting can be opted into by wrapping a type in `format_as_char`, `format_as_string`, `format_as_set`, `format_as_map`. The function `format_as_meow` returns a `meow_format_wrapper<T>` (which contains a single member of type `T*`).
+6. A generic type can be formatted as quoted by wrapping it with `format_as_quoted` (which may perform either `format_as_char`, `format_as_string`, or identity). 
 
 ## What additional functionality?
 
@@ -337,73 +473,21 @@ That seems like the right mix of functionality to me.
 
 ## How to support those views which are not `const`-iterable?
 
-There are several C++20 range adapters which are not `const`-iterable. These include `views::filter` and `views::drop_while`. But `std::format` takes its arguments by `Args const&...`, so how could they be printable?
+In earlier revisions of this paper, we had to deal with the problem of ranges that are neither `const`-iterable nor copyable and how to handle that situation (which earlier revisions answered by... uh... not handling that situation). With [@P2418R0], however, that is no longer a problem: just pass in your non-`const`-iterable range as non-`const`.
 
-`fmt` handles this just fine even with its formatter specialization taking by const by converting the range [to a view first](https://github.com/fmtlib/fmt/blob/f8c2f8480aae17906409496ff1d3b965212330f0/include/fmt/ranges.h#L351).
-
-So we can do something like:
+This still begs the question of if this should compile:
 
 ::: bq
 ```cpp
-template <range R, typename Char>
-struct formatter<R, Char>
-{
-    template <typename FormatContext>
-    auto format(R const& rng, FormatContext& ctx) {
-        auto values = std::views::all(rng);
-        // ...
-    }
-};
+std::vector<int> ints = {1, 2, 3, 4};
+auto const cannot_even = ints | views::filter([](int i){ return i % 2 != 0; });
+std::print("{}\n", cannot_even);
 ```
 :::
 
-But, this still doesn't cover all the cases. If `R` is a type such that `R const` is a `view` but `R` is move-only, that won't compile. We can work around this case. But if `R` is a type that such that `view<R> and not range<R const> and not copyable<R>`, there's really no way of getting this to work without changing the API.
+`cannot_even` isn't iterable, because it's `const`. But it *is* copyable and it *is* a view. Prior revisions of this paper supported this case by copying it, which is what the `fmt` library also used to do. But as of yesterday ([111de881](https://github.com/fmtlib/fmt/commit/111de881)), this situation is no longer supported. If you want to print a `const` object that is a copyable `view` that is not `const`-iterable, it is up to you to copy it to produce a non-`const` object. This has the benefit of making the copy more obvious to the user. 
 
-Notably, the proposed `std::generator<T>` is one such type [@P2168R0]
-
-If we do want to support this case (and `fmt` does not), then we will need to change the API of `format` to take by forwarding reference instead of by const reference. That is, replace
-
-```cpp
-template<class... Args>
-string format(string_view fmt, const Args&... args);
-```
-
-with:
-
-```cpp
-template<class... Args>
-string format(string_view fmt, Args&&... args);
-```
-
-But it's not that easy. While we would need `std::generator<T>` to bind to `Args&&` rather than `Args const&`, there are other cases which have the exact opposite problem: bit-fields need to bind to `Args const&` and cannot bind to `Args&&`.
-
-So we can't really change the API to support this use-case without breaking other use-cases. But there are workarounds for this case:
-
-* `fmt::join`, which does take by forwarding reference
-* `ranges::ref_view` can wrap an lvalue of such a view, the resulting view would be `const`-iterable.
-
-For example:
-
-::: bq
-```cpp
-auto ints_coro(int n) -> std::generator<int> {
-    for (int i = 0; i < n; ++i) {
-        co_yield i;
-    }
-}
-
-fmt::print("{}", ints_coro(10)); // error
-fmt::print("[{}]", fmt::join(ints_coro(10), ", ")); // ok
-
-auto v = ints_coro(10);
-fmt::print("{}", std::ranges::ref_view(v)); // ok, if tedious
-
-fmt::print("{}", ints_coro(10) | ranges::to<std::vector>); // ok, but expensive
-fmt::print("{}", views::iota(0, 10)); // ok, but harder to implement
-```
-:::
-
-You can see an example of formatting a move-only, non-`const`-iterable range on compiler explorer [@fmt-non-const].
+Alternatively, users can use the proposed equivalent of `fmt::join` to avoid the copy. 
 
 ## Specifying formatters for ranges
 
@@ -949,12 +1033,20 @@ template <class FormatContext>
 
 ---
 references:
-    - id: fmt-non-const
-      citation-label: fmt-non-const
-      title: "Formatting a move-only non-const-iterable range"
+    - id: P2286R2
+      citation-label: P2286R2
+      title: "Formatting Ranges"
       author:
         - family: Barry Revzin
       issued:
-        - year: 2021
-      URL: https://godbolt.org/z/149YqW
+        -year: 2021
+      URL: https://wg21.link/p2286r2
+    - id: P2418R0
+      citation-label: P2418R0
+      title: "Add support for `std::generator`-like types to `std::format`"
+      author:
+        - family: Victor Zverovich
+      issued:
+        -year: 2021
+      URL: https://wg21.link/p2418r0  
 ---
