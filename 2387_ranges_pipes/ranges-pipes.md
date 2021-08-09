@@ -1,6 +1,6 @@
 ---
 title: "Pipe support for user-defined range adaptors"
-document: P2387R0
+document: P2387R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2387R0], added a feature test macro.
 
 # Introduction
 
@@ -732,7 +736,7 @@ Rename the [func.bind.front]{.sref} clause to [func.bind.partial] (Function temp
 ::: bq
 ```diff
   template<class F, class... Args>
-    constexpr @*unspecified*@ bind_back(F&& f, Args&&... args);
+    constexpr @*unspecified*@ bind_front(F&& f, Args&&... args);
 + template<class F, class... Args>
 +   constexpr @*unspecified*@ bind_back(F&& f, Args&&... args);
 ```
@@ -765,6 +769,16 @@ For each `T@~i~@` in `BoundArgs`, if `T@~i~@` is an object type, `T@~i~@` meets 
 
 [5]{.pnum} *Throws*: Any exception thrown by the initialization of the state entities of `g` ([func.def]).
 :::
+
+## Feature-test macro
+
+Bump the value of `__cpp_lib_ranges` in [version.syn]{.sref}:
+
+```diff
+- #define __cpp_lib_ranges                            @[202106L]{.diffdel}@
++ #define __cpp_lib_ranges                            @[2021XXL]{.diffins}@
+    // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
+```
 
 ---
 references:
