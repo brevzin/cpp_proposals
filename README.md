@@ -41,6 +41,7 @@ None.
 
 ### Pending EWG/LEWG Voting
 
+- [p1169r2 - static `operator()`](1169_static_call/p1169r2.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 
@@ -69,7 +70,6 @@ None.
 
 #### Other
 
-- [p1169r1 - static `operator()`](1169_static_call/p1169r1.html), with Casey Carter. Rejected in San Diego.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 

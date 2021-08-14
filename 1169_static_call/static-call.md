@@ -1,6 +1,6 @@
 ---
 title: "static `operator()`"
-document: P1169R1
+document: P1169R2
 date: today
 audience: EWG
 author:
@@ -13,6 +13,8 @@ toc: true
 
 # Revision History
 
+[@P1169R1] was approved for electronic polling by EWG, but two issues came up that while this paper does not *change* are still worth commenting on: can [static lambdas still have capture](#static-lambdas-with-capture) and can whether or not stateless lambdas be `static` be [implementation-defined](#can-the-static-ness-of-lambdas-be-implementation-defined)?
+
 [@P1169R0] was presented to EWGI in San Diego, where there was no consensus to pursue the paper. However, recent discussion has caused renewed interest in this paper so it has been resurfaced. R0 of this paper additionally proposed implicitly changing capture-less lambdas to have static function call operators, which would be an breaking change. That part of this paper has been changed to instead allow for an explicit opt-in to static. Additionally, this language change has been implemented. 
 
 # Motivation
@@ -23,6 +25,7 @@ As part of the Ranges work, more and more function objects are being added to th
 
 What this means is that if the call operator happens to not be inlined, an extra register must be used to pass in the `this` pointer to the object - even if there is no need for it whatsoever. Here is a [simple example](https://godbolt.org/z/ajTZo2):
 
+::: bq
 ```cpp
 struct X {
     bool operator()(int) const;
@@ -41,6 +44,7 @@ int count_x(std::vector<int> const& xs) {
     );
 }    
 ```
+:::
 
 `x` is a global function object that has no members that is intended to be passed into various algorithms. But in order to work in algorithms, it needs to have a call operator - which must be non-static. You can see the difference in the generated asm btween using the function object as intended and passing in an equivalent static member function:
 
@@ -130,6 +134,7 @@ There are other operators that are currently required to be implemented as non-s
 
 There is one case that needs to be specially considered when it comes to overload resolution, which did not need to be considered until now:
 
+::: bq
 ```cpp
 struct less {
     static constexpr auto operator()(int i, int j) -> bool {
@@ -142,13 +147,16 @@ struct less {
 
 static_assert(less{}(1, 2));
 ```
+:::
 
 If we simply allow `operator()` to be declared `static`, we'd have two candidates here: the function call operator and the surrogate call function. Overload resolution between those candidates would work as considering between:
 
+::: bq
 ```cpp
 operator()(@*contrived-parameter*@, int, int);
 @*call-function*@(bool(*)(int, int), int, int);
 ```
+:::
 
 And currently this is ambiguous because [over.match.best.general]{.sref}/1.1 stipulates that the conversion sequence for the contrived implicit object parameter of a static member function is neither better nor worse than _any other conversion sequence_. This needs to be reined in slightly such that the conversion sequence for the contrived implicit object parameter is neither better nor worse than any _standard_ conversion sequence, but still better than user-defined or ellipsis conversion sequences. Such a change would disambiguate this case in favor of the call operator.
 
@@ -157,12 +165,15 @@ And currently this is ambiguous because [over.match.best.general]{.sref}/1.1 sti
 
 A common source of function objects whose call operators could be static but are not are lambdas without any capture. Had we been able to declare the call operator static when lambdas were originally introduced in the language, we would surely have had a lambda such as:
 
+::: bq
 ```cpp
 auto four = []{ return 4; };
 ```
+:::
 
 desugar into:
 
+::: bq
 ```cpp
 struct __unique {
     static constexpr auto operator()() { return 4; };
@@ -173,6 +184,7 @@ struct __unique {
 
 __unique four{};
 ```
+:::
 
 Rather than desugaring to a type that has a non-static call operator along with a conversion function that has to return some other function. 
 
@@ -180,16 +192,47 @@ However, we can't simply change such lambdas because this could break code. Ther
 
 Instead, we propose that this can be opt-in: a lambda is allowed to be declared `static`, which will then cause the call operator (or call operator template) of the lambda to be a static member function rather than a non-static member function:
 
+::: bq
 ```cpp
 auto four = []() static { return 4; };
 ```
+:::
 
 We then also need to ensure that a lambda cannot be declared `static` if it is declared `mutable` (an inherently non-static property) or has any capture (as that would be fairly pointless, since you could not access any of that capture).
+
+### Static lambdas with capture
+
+Consider the situation where a lambda may need to capture something (for lifetime purposes only) but does not otherwise need to reference it. For instance:
+
+::: bq
+```cpp
+auto under_lock = [lock=std::unique_lock(mtx)]() static { /* do something */; };
+```
+:::
+
+The body of this lambda does not use the capture `lock` in any way, so there isn't anything that inherently prevents this lambda from having a `static` call operator. The rule from R1 of this paper was basically:
+
+> A `static` lambda shall have no *lambda-capture*.
+
+But could instead be:
+
+> If a lambda is `static`, then any *id-expression* within the body of the lambda that would be an odr-use of a captured entity is ill-formed. 
+
+However, we feel that the value of the teachability of "Just make stateless lambdas `static`" outweights the value of supporting holding capturing variables that the body of the lambda does not use. This restriction could be relaxed in the future, if it proves overly onerous (much as we are here relaxing the restriction that call operators be non-static member functions).
+
+### Can the `static`-ness of lambdas be implementation-defined?
+
+Another question arose during the telecon about whether it is feasible or desirable to make it implementation-defined as to whether or not the call operator of a capture-less lambda is `static`. 
+
+The advantage of making it implementation-defined is that implementations could, potentially, add a flag that would allow users to treat all of their capture-less lambdas as `static` without the burden of adding this extra annotation (had call operators been allowed to be static before C++11, surely capture-less lambdas would have been implicitly `static`) while still making this sufficiently opt-in as to avoid ABI-breaking changes. 
+
+The disadvantage of making it implementation-defined is that this is a fairly important property of how a lambda behaves. Right now, the observable properties of a lambda are specified and portable. The implementation freedom areas are typically not observable to the programmer. The static-ness of the operator is observable, so making that implementation-defined or unspecified seems antithetical to the design of lambdas. The rationale for doing something like this (i.e. avoiding a sea of seemingly-pointless `static` annotations when the compiler should be able to Just Do It), but it seems rather weird that a property like that wouldn't be portable.
 
 ## Deduction Guides
 
 Consider the following, assuming a version of `less` that uses a static call operator:
 
+::: bq
 ```cpp
 template <typename T>
 struct less {
@@ -200,6 +243,7 @@ struct less {
 
 std::function f = less<int>{};
 ```
+:::
 
 This will not compile with this change, because `std::function`'s deduction guides only work with either function pointers (which does not apply) or class types whose call operator is a non-static member function. These will need to be extended to support call operators with function type (as they would for [@P0847R6] anyway).
 
