@@ -1,6 +1,6 @@
 ---
 title: "Using unknown pointers and references in constant expressions"
-document: P2280R2
+document: P2280R3
 date: today
 audience: EWG
 author:
@@ -11,7 +11,9 @@ toc: true
 
 # Revision History
 
-[@P2280R1] extended R0 to also include `this`. This revision extends that further to consider pointers-to-unknown in addition to references-to-unknown.
+[@P2280R2] extended R1 to also include pointers-to-unknown. R3 pares that extension back down, effectively reverting to R1 of this paper, following EWG discussion of R2. 
+
+[@P2280R1] extended R0 to also include `this`. R2 extends that further to consider pointers-to-unknown in addition to references-to-unknown.
 
 [@P2280R0] was discussed at the EWG telecon on Feb 3, 2021. The following polls were taken:
 
@@ -35,7 +37,7 @@ Send P2280 to Electronic Polling, with the intent of going to Core, after gettin
 | 8  | 10 | 1  | 0  | 0  |
 :::
 
-This revision updates wording. This revision also adds discussion of [the `this` pointer](#the-this-pointer), and extends the proposal to additional cover `this` (but not arbitrary pointers)
+R1 updates wording. R1 also adds discussion of [the `this` pointer](#the-this-pointer), and extends the proposal to additional cover `this` (but not arbitrary pointers)
 
 # Introduction
 
@@ -242,7 +244,7 @@ What all of these examples have in common is that they are using a reference to 
 
 ## The `this` pointer
 
-Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, so we write our member function two different ways (the latter using [@P0847R6]):
+Consider the following example, very similar to one I shared earlier. Here, we need to read a constant through a member, so we write our member function two different ways (the latter using [@P0847R7]):
 
 ::: cmptable
 ### Regular non-static member function
@@ -347,7 +349,61 @@ Supporting references-to-unknown is largely about _not_ rejecting those cases th
 
 But what about the other operations? Comparing two pointers, where at least one is a pointer-to-unknown, cannot be a constant expression so will have to be rejected. There is a notable exception here in doing something like `p == p` which could potentially be `true` but seems exceedingly narrow. What about pointer arithmetic? Should the `#3` example above work or not? Would your answer change if instead of a pointer we had an array of unknown bound (there's an example of such later in this paper)? What if it were `p[0]` instead of `p[3]`?
 
-This paper takes a very narrow position here: indirecting through a `T*` with unknown value is fine, but that's all you can do with it. That is, pointers-to-unknown behave a lot like references-to-unknown that are just spelled differently. No pointer arithmetic, comparison, invocation, etc. 
+### What about `nullptr`?
+
+Consider this example from David Stone:
+
+::: bq
+```cpp
+template <typename T, int N>
+struct array {
+    constexpr auto size() const -> int { return N; }
+};
+
+constexpr void a(array<int, 1>* p) {
+    constexpr int x = p->size();
+}
+
+constexpr bool f() {
+    a(nullptr);
+    return true;
+}
+
+static_assert(f());
+
+int b(array<int, 1>* p) {
+    return p->size();
+}
+
+int main() {
+    return b(nullptr);
+}
+```
+:::
+
+Here we have two pieces of code that each try to invoke a member function on a null pointer: one as a constant expression and one at runtime. If we supported pointers-to-unknown in constant expressions (as [@P2280R2] suggested), the former may be well-defined (declaring `x` begins a new constant evaluation in which `p` has already started its lifetime and is not itself a constant expression, and so we have a pointer-to-unknown... which we can then invoke a non-static member on just fine because at no point do we read through the pointer or do anything else that involves knowing anything about the actual array object). But the latter would still be undefined behavior (invoking a non-static member function on a null pointer). This presents a fairly odd and unsatisfying situation where we have some code that is undefined behavior at runtime but... well-defined at compile time? That's the opposite of the way this usually works!
+
+This kind of example suggests four possible directions:
+
+1. Go back to [@P2280R0] which only suggested allowing references to unknown, which sidesteps this question entirely.
+2. Go back to [@P2280R1] which only suggested allowing references to unknown and `this`, which _mostly_ sidesteps this question in a way that's much more palatable since by the time you enter a member function and `this` would be used, we're kind of in a different situations where this question just isn't in your face. 
+3. Accept the situation proposed in [@P2280R2], where we introduce this potential duality in scenarios like this.
+4. Go further in the other direction and actually make David Stone's example well-formed *at runtime*. That is, define invoking a member function on a null pointer as being okay as long as you don't actually have to read any non-static data members (i.e. the same conditions that would other prevent equivalent code from being a constant expression). In other words, we widen both the allowed code during constant evaluation time and also the allowed code during runtime.
+
+Based on the EWG Telecon on May 6th, 2021, (3) is the least palatable of the four directions. Note that even option (1) isn't necessarily a panacea here since I can rewrite David Stone's example as:
+
+::: bq
+```cpp
+constexpr void a(array<int, 1>* p) {
+    array<int, 1>& r = *p;
+    constexpr int x = r.size();
+}
+```
+:::
+
+Is this really that different? Here, the cause of the undefined behavior is in a slightly different place: dereferencing the potentially-null pointer rather than directly invoking a function on it. But the end result is kind of the same: R0 of this paper proposes this to be well-formed, and if we adopt either direction (1) or (2) then users would have to work around using pointers by introducing named references. Which doesn't seem like it makes the code better. 
+
+Regardless, the position of this revision of this paper is that allowing references-to-unknown and the `this` pointer (but not any other pointer) gives the most value while avoiding most weird issues.
 
 
 # Proposal
@@ -469,81 +525,23 @@ Which every compiler currently provides different results (in order of most reas
 
 This, to me, seems like there should be an added rule in [expr.const] that rejects addition and subtraction to an array of unknown bound unless that value is 0. This case seems unrelated enough to the rest of the paper that I think it should just be a Core issue.
 
-## What about `nullptr`?
-
-Consider this example from David Stone:
-
-::: bq
-```cpp
-template <typename T, int N>
-struct array {
-    constexpr auto size() const -> int { return N; }
-};
-
-constexpr void a(array<int, 1>* p) {
-    constexpr int x = p->size();
-}
-
-constexpr bool f() {
-    a(nullptr);
-    return true;
-}
-
-static_assert(f());
-
-int b(array<int, 1>* p) {
-    return p->size();
-}
-
-int main() {
-    return b(nullptr);
-}
-```
-:::
-
-Here we have two pieces of code that each try to invoke a member function on a null pointer: one as a constant expression and one at runtime. With this paper as worded, the former may be well-defined (declaring `x` begins a new constant evaluation in which `p` has already started its lifetime and is not itself a constant expression, and so we have a pointer-to-unknown... which we can then invoke a non-static member on just fine because at no point do we read through the pointer or do anything else that involves knowing anything about the actual array object). But the latter would still be undefined behavior (invoking a non-static member function on a null pointer). This presents a fairly odd and unsatisfying situation where we have some code that is undefined behavior at runtime but... well-defined at compile time? That's the opposite of the way this usually works!
-
-This kind of example suggests four possible directions:
-
-1. Go back to [@P2280R0] which only suggested allowing references to unknown, which sidesteps this question entirely.
-2. Go back to [@P2280R1] which only suggested allowing references to unknown and `this`, which _mostly_ sidesteps this question in a way that's much more palatable since by the time you enter a member function and `this` would be used, we're kind of in a different situations where this question just isn't in your face. 
-3. Accept the situation proposed in this paper, where we introduce this potential duality in scenarios like this.
-4. Go further in the other direction and actually make David Stone's example well-formed at runtime. That is, define invoking a member function on a null pointer as being okay as long as you don't actually have to read any non-static data members (i.e. the same conditions that would other prevent equivalent code from being a constant expression). In other words, we widen both the allowed code during constant evaluation time and also the allowed code during runtime.
-
-This paper is currently worded going in the direction of (3), but based on the EWG Telecon on May 6th, 2021, it may be more palatable to go in one of the other directions. Note that even option (1) isn't necessarily a panacea here since I can rewrite David Stone's example as:
-
-::: bq
-```cpp
-constexpr void a(array<int, 1>* p) {
-    array<int, 1>& r = *p;
-    constexpr int x = r.size();
-}
-```
-:::
-
-Is this really that different? Here, the cause of the undefined behavior is in a slightly different place: dereferencing the potentially-null pointer rather than directly invoking a function on it. But the end result is kind of the same: R0 of this paper proposes this to be well-formed, and if we adopt either direction (1) or (2) then users would have to work around using pointers by introducing named references. Which doesn't seem like it makes the code better. 
-
-
 ## Wording
 
-We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation and the 5.1 rule that disallows using `this` outside of `constexpr` functions, and add new rules to reject polymorphic operations on unknown objects and rejecting various pointer-to-unknown operations:
+We need to strike the [expr.const]{.sref}/5.12 rule that disallows using references-to-unknown during constant evaluation, and add a new rule to reject polymorphic objects on unknown objects and taking the address of an unknown reference:
 
 ::: bq
 [5]{.pnum} An expression `E` is a _core constant expression_ unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following: 
 
-- [5.1]{.pnum} [`this`, except in a constexpr function that is being evaluated as part of `E`;]{.rm}
-- [5.1]{.pnum} [an operation which has an operand that is an expression of pointer type that points to an unspecified object within the evaluation of `E`, if that operation is one of the following:]{.addu}
-    - [5.1.1]{.pnum} [addition or subtraction ([expr.add]),]{.addu}
-    - [5.1.2]{.pnum} [comparison ([expr.eq], [expr.rel]),]{.addu}
-    - [5.1.3]{.pnum} [increment or decrement ([expr.pre.incr]), or]{.addu}
-    - [5.1.4]{.pnum} [boolean conversion ([conv.bool]),]{.addu}
+- [5.1]{.pnum} `this`, except
+    - [5.1.1]{.pnum} in a constexpr function that is being evaluated as part of `E` [or]{.addu}
+    - [5.1.2]{.pnum} [as part of an implicit or explicit class member access expression]{.addu};
 - [5.2]{.pnum} [...]
 - [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
     - [5.5.1]{.pnum} the object is usable in constant expressions or
     - [5.5.2]{.pnum} its lifetime began within the evaluation of `E`;
 - [5.7]{.pnum} [...]
 - [5.8]{.pnum} an lvalue-to-rvalue conversion unless it is applied to 
-    - [5.8.1]{.pnum} a non-volatile glvalue that refers to [either]{.addu} an object that is usable in constant expressions [ or an object of pointer type]{.addu}, or
+    - [5.8.1]{.pnum} a non-volatile glvalue that refers to an object that is usable in constant expressions, or
     - [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`
 - [5.9]{.pnum} [...]
 - [5.10]{.pnum} [...]
@@ -553,16 +551,14 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
     - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm} 
 - [5.13]{.pnum} in a _lambda-expression_, a reference to `this` or to a variable with automatic storage duration defined outside that _lambda-expression_, where the reference would be an odr-use; 
 - [5.14]{.pnum} [...]
-- [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown, on a pointer which points to an object whose dynamic type is unknown, or]{.addu} that would throw an exception;
+- [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
 :::
 
 And add a new rule to properly handle the lifetime examples shown in the previous section:
 
 ::: bq
 ::: addu
-[*]{.pnum} An object or reference is called unspecified within the evaluation of a core constant expression `E` if it is not usable in constant expressions and its lifetime did not begin with the evaluation of `E`. During the evaluation of an expression `E` as a core constant expression, any objects or references that are unspecified within the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. 
-
-[*]{.pnum} The dynamic type of an object that is unspecified within the evaluation of `E` is unknown. A pointer that is unspecified within the evaluation of `E` is treated as pointing to an object of the type pointed to that is unspecified within the evaluation of `E`. A reference that is unspecified within the evaluation of `E` is treated as being bound to an object of the referenced type that is unspecified within the evaluation of `E`.
+[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. 
 
 [*Example*:
 ```cpp
@@ -588,19 +584,13 @@ struct Swim {
 };
 
 void splash(Swim& swam) {
-    static_assert(swam.phelps() == 28);      // ok
-    static_assert((&swam)->phelps() == 28);  // ok
-    static_assert(swam.lochte() == 12);      // error: invoking virtual function on reference
-                                             // with unknown dynamic type
-    static_assert(swam.coughlin == 12);      // error: lvalue-to-rvalue conversion on an object
-                                             // not usable in constant expressions
-    static_assert(&swam == &swam);           // error: performing a comparison operation involving
-                                             // a pointer to unspecified object
-    
-    constexpr int a = (&swam + 0)->phelps(); // error: performing an addition on a pointer to
-                                             // unspecified object
-    constexpr Swim* swim = &swam;            // error: a pointer to unspecified object is not a
-                                             // permitted result of a constant expression
+    static_assert(swam.phelps() == 28);     // ok
+    static_assert((&swam)->phelps() == 28); // error: lvalue-to-conversion on a pointer not
+                                            // usable in constant expressions    
+    static_assert(swam.lochte() == 12);     // error: invoking virtual function on reference
+                                            // with unknown dynamic type
+    static_assert(swam.coughlin == 12);     // error: lvalue-to-rvalue conversion on an object
+                                            // not usable in constant expressions
 }
 
 extern Swim dc;
@@ -618,6 +608,7 @@ Add a note to [expr.const]/11 to make it clear that these are not permitted resu
 ::: bq
 [11]{.pnum} An entity is a _permitted result of a constant expression_ if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function. [\[ *Note*: A glvalue core constant expression that either refers to or points to an unspecified object is not a constant expression. *- end note*\]]{.addu}
 :::
+
 
 # Acknowledgments
 
