@@ -42,7 +42,7 @@ None.
 ### Pending EWG/LEWG Voting
 
 - [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
-- [p2280r1 - Using unknown references in constant expressions](2280_unknown_reference/p2280r1.html).
+- [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 
 ### Pending EWG/LEWG Review
 
