@@ -752,6 +752,37 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>If a lambda is <code class="sourceCode cpp"><span class="kw">static</span></code>, then any <em>id-expression</em> within the body of the lambda that would be an odr-use of a captured entity is ill-formed.</p>
 </blockquote>
 <p>However, we feel that the value of the teachability of “Just make stateless lambdas <code class="sourceCode cpp"><span class="kw">static</span></code>” outweights the value of supporting holding capturing variables that the body of the lambda does not use. This restriction could be relaxed in the future, if it proves overly onerous (much as we are here relaxing the restriction that call operators be non-static member functions).</p>
+<p>This aspect was specifically polled during the telecon, and the outcome was:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
 <h3 data-number="3.2.2" id="can-the-static-ness-of-lambdas-be-implementation-defined"><span class="header-section-number">3.2.2</span> Can the <code class="sourceCode cpp"><span class="kw">static</span></code>-ness of lambdas be implementation-defined?<a href="#can-the-static-ness-of-lambdas-be-implementation-defined" class="self-link"></a></h3>
 <p>Another question arose during the telecon about whether it is feasible or desirable to make it implementation-defined as to whether or not the call operator of a capture-less lambda is <code class="sourceCode cpp"><span class="kw">static</span></code>.</p>
 <p>The advantage of making it implementation-defined is that implementations could, potentially, add a flag that would allow users to treat all of their capture-less lambdas as <code class="sourceCode cpp"><span class="kw">static</span></code> without the burden of adding this extra annotation (had call operators been allowed to be static before C++11, surely capture-less lambdas would have been implicitly <code class="sourceCode cpp"><span class="kw">static</span></code>) while still making this sufficiently opt-in as to avoid ABI-breaking changes.</p>

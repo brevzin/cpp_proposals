@@ -220,6 +220,12 @@ But could instead be:
 
 However, we feel that the value of the teachability of "Just make stateless lambdas `static`" outweights the value of supporting holding capturing variables that the body of the lambda does not use. This restriction could be relaxed in the future, if it proves overly onerous (much as we are here relaxing the restriction that call operators be non-static member functions).
 
+This aspect was specifically polled during the telecon, and the outcome was:
+
+|SF|F|N|A|SA|
+|--|-|-|-|--|
+| 0|3|4|5| 0|
+
 ### Can the `static`-ness of lambdas be implementation-defined?
 
 Another question arose during the telecon about whether it is feasible or desirable to make it implementation-defined as to whether or not the call operator of a capture-less lambda is `static`. 
