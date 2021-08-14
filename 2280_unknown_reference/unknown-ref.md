@@ -11,6 +11,16 @@ toc: true
 
 # Revision History
 
+To help clarify what expressions were allowed in which versions, here is a table:
+
+<table>
+<tr><th/><th>References to unknown</th><th>Accesses via `this`</th><th>Pointers to unknown</th></tr>
+<tr><td>[@P2280R0]</td><td>✔️</td><td>❌</td><td>❌</td></tr>
+<tr><td>[@P2280R1]</td><td>✔️</td><td>✔️</td><td>❌</td></tr>
+<tr><td>[@P2280R2]</td><td>✔️</td><td>✔️</td><td>✔️</td></tr>
+<tr><td>This paper (R3)</td><td>✔️</td><td>✔️</td><td>❌</td></tr>
+</table>
+
 [@P2280R2] extended R1 to also include pointers-to-unknown. R3 pares that extension back down, effectively reverting to R1 of this paper, following EWG discussion of R2. 
 
 [@P2280R1] extended R0 to also include `this`. R2 extends that further to consider pointers-to-unknown in addition to references-to-unknown.
