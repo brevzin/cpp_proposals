@@ -348,7 +348,13 @@ namespace std::ranges {
 Relax the requirements on `view` in [range.view]{.sref}:
 
 ::: bq
-[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties that make them suitable for use in constructing range adaptor pipelines]{.addu}.
+[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties that make it suitable for use in constructing range adaptor pipelines]{.addu}.
+
+```cpp
+template<class T>
+  concept view =
+    range<T> && movable<T> && enable_view<T>;
+```
 
 [2]{.pnum} `T` models `view` only if:
 
