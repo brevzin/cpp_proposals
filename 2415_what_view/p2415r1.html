@@ -850,10 +850,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">5</a></span> The <code class="sourceCode cpp">viewable_range</code> concept specifies the requirements of a <code class="sourceCode cpp">range</code> type that can be converted to a <code class="sourceCode cpp">view</code> safely.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1"></a>template&lt;class T&gt;</span>
-<span id="cb15-2"><a href="#cb15-2"></a>  concept viewable_range =</span>
-<span id="cb15-3"><a href="#cb15-3"></a>    range&lt;T&gt; &amp;&amp;</span>
-<span id="cb15-4"><a href="#cb15-4"></a>    ((view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; constructible_from&lt;remove_cvref_t&lt;T&gt;, T&gt;) ||</span>
-<span id="cb15-5"><a href="#cb15-5"></a>     (!view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; <span class="rm" style="color: #bf0303"><del>borrowed_range<T></del></span> <span class="addu">(is_lvalue_reference_v&lt;T&gt; || movable&lt;remove_reference_t&lt;T&gt;&gt;)</span>));</span></code></pre></div>
+<span id="cb15-2"><a href="#cb15-2"></a>concept viewable_range =</span>
+<span id="cb15-3"><a href="#cb15-3"></a>  range&lt;T&gt; &amp;&amp;</span>
+<span id="cb15-4"><a href="#cb15-4"></a>  ((view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; constructible_from&lt;remove_cvref_t&lt;T&gt;, T&gt;) ||</span>
+<span id="cb15-5"><a href="#cb15-5"></a>   (!view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; <span class="rm" style="color: #bf0303"><del>borrowed_range&lt;T&gt;</del></span></span>
+<span id="cb15-6"><a href="#cb15-6"></a>                                <span class="addu">(is_lvalue_reference_v&lt;T&gt; || movable&lt;remove_reference_t&lt;T&gt;&gt;)</span>));</span></code></pre></div>
 </blockquote>
 <p>Change the last bullet in the definition of <code class="sourceCode cpp">views<span class="op">::</span>all</code> in <span>24.7.5.1
  <a href="https://wg21.link/range.all.general">[range.all.general]</a></span>:</p>

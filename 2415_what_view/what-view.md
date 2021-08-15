@@ -381,10 +381,11 @@ Change the definition of `viewable_range` to line up with `views::all` (see late
 
 ```
 template<class T>
-  concept viewable_range =
-    range<T> &&
-    ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
-     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>>)]{.addu}@));
+concept viewable_range =
+  range<T> &&
+  ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
+   (!view<remove_cvref_t<T>> && @[borrowed_range&lt;T>]{.rm}@
+                                @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>>)]{.addu}@));
 ```
 :::
 
