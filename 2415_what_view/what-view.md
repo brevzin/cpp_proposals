@@ -282,7 +282,7 @@ template<class T>
   concept viewable_range =
     range<T> &&
     ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
-     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_cvref_t&lt;T>>)]{.addu}@));
+     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>>)]{.addu}@));
 ```
 
 :::
@@ -334,7 +334,7 @@ namespace std::ranges {
     inline constexpr bool enable_borrowed_range<ref_view<T>> = true;
 
 + template<range R>
-+   requires is_object_v<R> && movable<R>
++   requires movable<R>
 + class owning_view;
 + 
 + template<class T>
@@ -348,13 +348,15 @@ namespace std::ranges {
 Relax the requirements on `view` in [range.view]{.sref}:
 
 ::: bq
+[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties that make them suitable for use in constructing range adaptor pipelines]{.addu}.
+
 [2]{.pnum} `T` models `view` only if:
 
 * [2.1]{.pnum} `T` has `O(1)` move construction; and
 * [2.2]{.pnum} [`T` has `O(1)` move assignment]{.rm} [move assignment of an object of type `T` is no more complex than destruction followed by move construction]{.addu}; and
 * [2.3]{.pnum} [`T` has `O(1)` destruction]{.rm} [if `N` copies and/or moves are made from an object of type `T` that contained `M` elements, then those `N` objects have `O(N+M)` destruction [*Note*: this implies that a moved-from object of type `T` has `O(1)` destruction -*end note*] ]{.addu}; and
 * [2.4]{.pnum} `copy_constructible<T>` is `false`, or `T` has `O(1)` copy construction; and
-* [2.5]{.pnum} `copyable<T>` is `false`, or `T` has `O(1)` copy assignment.
+* [2.5]{.pnum} `copyable<T>` is `false`, or [`T` has `O(1)` copy assignment]{.rm} [copy assignment of an object of type `T` is no more complex than destruction followed by copy construction]{.addu}.
 
 [3]{.pnum} [*Example 1*: Examples of `view`s are:
 
@@ -362,11 +364,11 @@ Relax the requirements on `view` in [range.view]{.sref}:
 * [3.2]{.pnum} A range type that holds its elements by `shared_ptr` and shares ownership with all its copies.
 * [3.3]{.pnum} A range type that generates its elements on demand.
 
-Most containers are not views since destruction of the container destroys the elements, which cannot be done in constant time.
+Most containers are not views since [destruction of]{.rm} [copying]{.addu} the container [destroys]{.rm} [copies all of]{.addu} the elements, which cannot be done in constant time.
 — *end example*]
 :::
 
-Change the definition of `viewable_range` to line up with `views::all` (see later) in [range.refinements]{.sref}:
+Change the definition of `viewable_range` to line up with `views::all` (see later) in [range.refinements]{.sref} [`remove_reference_t` rather than `remove_cvref_t` because we need to reject `const vector<int>&&` from being a `viewable_range`]{.ednote}:
 
 ::: bq
 [5]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
@@ -376,7 +378,7 @@ template<class T>
   concept viewable_range =
     range<T> &&
     ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
-     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_cvref_t&lt;T>>)]{.addu}@));
+     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>>)]{.addu}@));
 ```
 :::
 
@@ -398,17 +400,15 @@ Add a new subclause under [range.all] directly after [range.ref.view]{.sref} nam
 ```cpp
 namespace std::ranges {
   template<range R>
-    requires is_object_v<R> && movable<R>
+    requires movable<R>
   class owning_view : public view_interface<owning_view<R>> {
   private:
-    R r_;                      // exposition only
+    R r_ = R();   // exposition only
   public:
-    owning_view() = default;
+    owning_view() requires default_initializable<R> = default;
     constexpr owning_view(R&& t);
 
-    owning_view(const owning_view&) = delete;
     owning_view(owning_view&&) = default;
-    owning_view& operator=(const owning_view&) = delete;
     owning_view& operator=(owning_view&&) = default;
 
     constexpr R& base() & { return r_; }
