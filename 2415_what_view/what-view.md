@@ -1,6 +1,6 @@
 ---
 title: "What is a `view`?"
-document: P2415R0
+document: P2415R1
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,10 @@ author:
       email: <t.canens.cpp@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2415R0], added wording.
 
 # Introduction
 
@@ -298,6 +302,154 @@ auto rng = v | views::reverse;
 :::
 
 If `v` is an lvalue, do you want `rng` to *copy* `v` or to *refer*  to `v`? If you want it to copy `v`, because copying `v` is cheap and you want to avoid paying for indirection and potentional dangling, then `v` is a `view`. If you want to refer to `v`, because copying `v` is expensive (possibly more expensive than the algorithm you're doing), then `v` is not a view. `string_view` is a `view`, `vector<string>` is not.
+
+# Proposed Wording
+
+This also resolves [@LWG3452]. 
+
+Add `owning_view` to [ranges.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+#include <iterator>             // see [iterator.synopsis]
+
+namespace std::ranges {
+  // ...
+  
+  // [range.all], all view
+  namespace views {
+    inline constexpr unspecified all = unspecified;
+
+    template<viewable_range R>
+      using all_t = decltype(all(declval<R>()));
+  }
+
+  template<range R>
+    requires is_object_v<R>
+  class ref_view;
+
+  template<class T>
+    inline constexpr bool enable_borrowed_range<ref_view<T>> = true;
+
++ template<range R>
++   requires is_object_v<R> && movable<R>
++ class owning_view;
++ 
++ template<class T>
++   inline constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;  
+
+  // ...    
+}
+```
+:::
+
+Relax the requirements on `view` in [range.view]{.sref}:
+
+::: bq
+[2]{.pnum} `T` models `view` only if:
+
+* [2.1]{.pnum} `T` has `O(1)` move construction; and
+* [2.2]{.pnum} [`T` has `O(1)` move assignment]{.rm} [move assignment of an object of type `T` is no more complex than destruction followed by move construction]{.addu}; and
+* [2.3]{.pnum} [`T` has `O(1)` destruction]{.rm} [if `N` copies and/or moves are made from an object of type `T` that contained `M` elements, then those `N` objects have `O(N+M)` destruction [*Note*: this implies that a moved-from object of type `T` has `O(1)` destruction -*end note*] ]{.addu}; and
+* [2.4]{.pnum} `copy_constructible<T>` is `false`, or `T` has `O(1)` copy construction; and
+* [2.5]{.pnum} `copyable<T>` is `false`, or `T` has `O(1)` copy assignment.
+
+[3]{.pnum} [*Example 1*: Examples of `view`s are:
+
+* [3.1]{.pnum} A range type that wraps a pair of iterators.
+* [3.2]{.pnum} A range type that holds its elements by `shared_ptr` and shares ownership with all its copies.
+* [3.3]{.pnum} A range type that generates its elements on demand.
+
+Most containers are not views since destruction of the container destroys the elements, which cannot be done in constant time.
+— *end example*]
+:::
+
+Change the definition of `viewable_range` to line up with `views::all` (see later) in [range.refinements]{.sref}:
+
+::: bq
+[5]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
+
+```
+template<class T>
+  concept viewable_range =
+    range<T> &&
+    ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
+     (!view<remove_cvref_t<T>> && @[borrowed_range<T>]{.rm}@ @[(is_lvalue_reference_v&lt;T> || movable<remove_cvref_t&lt;T>>)]{.addu}@));
+```
+:::
+
+Change the last bullet in the definition of `views::all` in [range.all.general]{.sref}:
+
+::: bq
+[2]{.pnum} The name `views​::​all` denotes a range adaptor object ([range.adaptor.object]). Given a subexpression `E`, the expression `views​::​all(E)` is expression-equivalent to: 
+
+- [2.1]{.pnum} `@*decay-copy*@(E)` if the decayed type of `E` models `view`.
+- [2.2]{.pnum} Otherwise, `ref_view{E}` if that expression is well-formed.
+- [2.3]{.pnum} Otherwise, [`subrange{E}`]{.rm} [`owning_view{E}`]{.addu}. 
+:::
+
+Add a new subclause under [range.all] directly after [range.ref.view]{.sref} named "Class template `owning_view`" with stable name [range.owning.view]:
+
+::: bq
+[1]{.pnum} `owning_view` is a move-only `view` of the elements of some other `range`.
+
+```cpp
+namespace std::ranges {
+  template<range R>
+    requires is_object_v<R> && movable<R>
+  class owning_view : public view_interface<owning_view<R>> {
+  private:
+    R r_;                      // exposition only
+  public:
+    owning_view() = default;
+    constexpr owning_view(R&& t);
+
+    owning_view(const owning_view&) = delete;
+    owning_view(owning_view&&) = default;
+    owning_view& operator=(const owning_view&) = delete;
+    owning_view& operator=(owning_view&&) = default;
+
+    constexpr R& base() & { return r_; }
+    constexpr const R& base() const& { return r_; }
+    constexpr R&& base() && { return std::move(r_); }
+    constexpr const R&& base() const&& { return std::move(r_); }
+
+    constexpr iterator_t<R> begin() { return ranges::begin(r_); }
+    constexpr sentinel_t<R> end() { return ranges::end(r_); }
+    
+    constexpr iterator_t<const R> begin() const requires range<const R>
+    { return ranges::begin(r_); }
+    constexpr sentinel_t<const R> end() const requires range<const R>
+    { return ranges::end(r_); }
+
+    constexpr bool empty()
+      requires requires { ranges::empty(r_); }
+    { return ranges::empty(r_); }    
+    constexpr bool empty() const
+      requires requires { ranges::empty(r_); }
+    { return ranges::empty(r_); }
+
+    constexpr auto size() requires sized_range<R>
+    { return ranges::size(r_); }
+    constexpr auto size() const requires sized_range<const R>
+    { return ranges::size(r_); }
+
+    constexpr auto data() requires contiguous_range<R>
+    { return ranges::data(r_); }
+    constexpr auto data() const requires contiguous_range<const R>
+    { return ranges::data(r_); }
+  };
+}
+```
+
+```cpp
+constexpr owning_view(R&& t);
+```
+
+[2]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
+:::
 
 
 [^1]: This is why they're called _range_ adaptors rather than _view_ adaptors, perhaps that should change as well?

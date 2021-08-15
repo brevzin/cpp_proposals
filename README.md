@@ -61,7 +61,7 @@ None.
 - [p2286r2 - Formatting Ranges](2286_fmt_ranges/p2286r2.html).
 - [p2322r3 - `ranges::fold`](2322_fold/p2322r3.html).
 - [p2387r1 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r1.html).
-- [p2415r0 - What is a `view`?](2415_what_view/p2415r0.html)
+- [p2415r1 - What is a `view`?](2415_what_view/p2415r1.html)
 
 #### Concepts
 
