@@ -202,6 +202,20 @@ auto rando(G& g)
 But it's awkward that the first version doesn't Just Work. 
 :::
 
+Another from [gcc bug 101937](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101937):
+
+::: bq
+```cpp
+struct S { enum { e = 4 }; }
+
+void f(S& s) {
+    constexpr int i = s.e;
+}
+```
+:::
+
+here, `S::e` is an enum, so it's about as constant as constant can get, but because we're accessing through `s` this is invalid. libstdc++ was inadvertently relying on this being valid. 
+
 Another from me:
 
 ::: bq
