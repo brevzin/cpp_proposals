@@ -798,7 +798,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb13-7"><a href="#cb13-7"></a>  </span>
 <span id="cb13-8"><a href="#cb13-8"></a>  // [range.all], all view</span>
 <span id="cb13-9"><a href="#cb13-9"></a>  namespace views {</span>
-<span id="cb13-10"><a href="#cb13-10"></a>    inline constexpr unspecified all = unspecified;</span>
+<span id="cb13-10"><a href="#cb13-10"></a>    inline constexpr <em>unspecified</em> all = <em>unspecified</em>;</span>
 <span id="cb13-11"><a href="#cb13-11"></a></span>
 <span id="cb13-12"><a href="#cb13-12"></a>    template&lt;viewable_range R&gt;</span>
 <span id="cb13-13"><a href="#cb13-13"></a>      using all_t = decltype(all(declval&lt;R&gt;()));</span>
@@ -811,15 +811,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb13-20"><a href="#cb13-20"></a>  template&lt;class T&gt;</span>
 <span id="cb13-21"><a href="#cb13-21"></a>    inline constexpr bool enable_borrowed_range&lt;ref_view&lt;T&gt;&gt; = true;</span>
 <span id="cb13-22"><a href="#cb13-22"></a></span>
-<span id="cb13-23"><a href="#cb13-23"></a><span class="va">+ template&lt;range R&gt;</span></span>
-<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+   requires movable&lt;R&gt;</span></span>
-<span id="cb13-25"><a href="#cb13-25"></a><span class="va">+ class owning_view;</span></span>
-<span id="cb13-26"><a href="#cb13-26"></a><span class="va">+ </span></span>
-<span id="cb13-27"><a href="#cb13-27"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb13-28"><a href="#cb13-28"></a><span class="va">+   inline constexpr bool enable_borrowed_range&lt;owning_view&lt;T&gt;&gt; = enable_borrowed_range&lt;T&gt;;  </span></span>
-<span id="cb13-29"><a href="#cb13-29"></a></span>
-<span id="cb13-30"><a href="#cb13-30"></a>  // ...    </span>
-<span id="cb13-31"><a href="#cb13-31"></a>}</span></code></pre></div>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="va">+ template &lt;class R&gt;</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+   inline constexpr bool <em>is-initializer-list</em> = <em>see below</em>;</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a><span class="va">+</span></span>
+<span id="cb13-26"><a href="#cb13-26"></a><span class="va">+ template&lt;range R&gt;</span></span>
+<span id="cb13-27"><a href="#cb13-27"></a><span class="va">+   requires movable&lt;R&gt; &amp;&amp; (!<em>is-initializer-list</em>&lt;R&gt;)</span></span>
+<span id="cb13-28"><a href="#cb13-28"></a><span class="va">+ class owning_view;</span></span>
+<span id="cb13-29"><a href="#cb13-29"></a><span class="va">+ </span></span>
+<span id="cb13-30"><a href="#cb13-30"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb13-31"><a href="#cb13-31"></a><span class="va">+   inline constexpr bool enable_borrowed_range&lt;owning_view&lt;T&gt;&gt; = enable_borrowed_range&lt;T&gt;;  </span></span>
+<span id="cb13-32"><a href="#cb13-32"></a></span>
+<span id="cb13-33"><a href="#cb13-33"></a>  // ...    </span>
+<span id="cb13-34"><a href="#cb13-34"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Relax the requirements on <code class="sourceCode cpp">view</code> in <span>24.4.4
@@ -854,7 +857,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-3"><a href="#cb15-3"></a>  range&lt;T&gt; &amp;&amp;</span>
 <span id="cb15-4"><a href="#cb15-4"></a>  ((view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; constructible_from&lt;remove_cvref_t&lt;T&gt;, T&gt;) ||</span>
 <span id="cb15-5"><a href="#cb15-5"></a>   (!view&lt;remove_cvref_t&lt;T&gt;&gt; &amp;&amp; <span class="rm" style="color: #bf0303"><del>borrowed_range&lt;T&gt;</del></span></span>
-<span id="cb15-6"><a href="#cb15-6"></a>                                <span class="addu">(is_lvalue_reference_v&lt;T&gt; || movable&lt;remove_reference_t&lt;T&gt;&gt;)</span>));</span></code></pre></div>
+<span id="cb15-6"><a href="#cb15-6"></a>         <span class="addu">(is_lvalue_reference_v&lt;T&gt; || movable&lt;remove_reference_t&lt;T&gt;&gt; &amp;&amp; !<em>is-initializer-list</em>&lt;T&gt;)</span>));</span></code></pre></div>
 </blockquote>
 <p>Change the last bullet in the definition of <code class="sourceCode cpp">views<span class="op">::</span>all</code> in <span>24.7.5.1
  <a href="https://wg21.link/range.all.general">[range.all.general]</a></span>:</p>
@@ -870,52 +873,58 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
  <a href="https://wg21.link/range.ref.view">[range.ref.view]</a></span> named “Class template <code class="sourceCode cpp">owning_view</code>” with stable name [range.owning.view]:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized">1</a></span> <code class="sourceCode cpp">owning_view</code> is a move-only <code class="sourceCode cpp">view</code> of the elements of some other <code class="sourceCode cpp">range</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>range R<span class="op">&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>    <span class="kw">requires</span> movable<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
-<span id="cb16-4"><a href="#cb16-4"></a>  <span class="kw">class</span> owning_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>owning_view<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb16-5"><a href="#cb16-5"></a>  <span class="kw">private</span><span class="op">:</span></span>
-<span id="cb16-6"><a href="#cb16-6"></a>    R r_ <span class="op">=</span> R<span class="op">()</span>;   <span class="co">// exposition only</span></span>
-<span id="cb16-7"><a href="#cb16-7"></a>  <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb16-8"><a href="#cb16-8"></a>    owning_view<span class="op">()</span> <span class="kw">requires</span> default_initializable<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb16-9"><a href="#cb16-9"></a>    <span class="kw">constexpr</span> owning_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span>
-<span id="cb16-10"><a href="#cb16-10"></a></span>
-<span id="cb16-11"><a href="#cb16-11"></a>    owning_view<span class="op">(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb16-12"><a href="#cb16-12"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <em>is-initializer-list</em> <span class="op">=</span> <em>see below</em>;</span>
+<span id="cb16-3"><a href="#cb16-3"></a></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a>  <span class="kw">template</span><span class="op">&lt;</span>range R<span class="op">&gt;</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="kw">requires</span> movable<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><em>is-initializer-list</em><span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a>  <span class="kw">class</span> owning_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>owning_view<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>  <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>    R r_ <span class="op">=</span> R<span class="op">()</span>;   <span class="co">// exposition only</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>    owning_view<span class="op">()</span> <span class="kw">requires</span> default_initializable<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb16-12"><a href="#cb16-12"></a>    <span class="kw">constexpr</span> owning_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span>
 <span id="cb16-13"><a href="#cb16-13"></a></span>
-<span id="cb16-14"><a href="#cb16-14"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
-<span id="cb16-15"><a href="#cb16-15"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
-<span id="cb16-16"><a href="#cb16-16"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-17"><a href="#cb16-17"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-18"><a href="#cb16-18"></a></span>
-<span id="cb16-19"><a href="#cb16-19"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-20"><a href="#cb16-20"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-21"><a href="#cb16-21"></a>    </span>
-<span id="cb16-22"><a href="#cb16-22"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
-<span id="cb16-23"><a href="#cb16-23"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-24"><a href="#cb16-24"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
-<span id="cb16-25"><a href="#cb16-25"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-26"><a href="#cb16-26"></a></span>
-<span id="cb16-27"><a href="#cb16-27"></a>    <span class="kw">constexpr</span> <span class="dt">bool</span> empty<span class="op">()</span></span>
-<span id="cb16-28"><a href="#cb16-28"></a>      <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-29"><a href="#cb16-29"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span>    </span>
-<span id="cb16-30"><a href="#cb16-30"></a>    <span class="kw">constexpr</span> <span class="dt">bool</span> empty<span class="op">()</span> <span class="kw">const</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a>    owning_view<span class="op">(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb16-15"><a href="#cb16-15"></a>    owning_view<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>owning_view<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb16-16"><a href="#cb16-16"></a></span>
+<span id="cb16-17"><a href="#cb16-17"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb16-18"><a href="#cb16-18"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> r_; <span class="op">}</span></span>
+<span id="cb16-19"><a href="#cb16-19"></a>    <span class="kw">constexpr</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-20"><a href="#cb16-20"></a>    <span class="kw">constexpr</span> <span class="kw">const</span> R<span class="op">&amp;&amp;</span> base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-21"><a href="#cb16-21"></a></span>
+<span id="cb16-22"><a href="#cb16-22"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-23"><a href="#cb16-23"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span>R<span class="op">&gt;</span> end<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-24"><a href="#cb16-24"></a>    </span>
+<span id="cb16-25"><a href="#cb16-25"></a>    <span class="kw">constexpr</span> iterator_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
+<span id="cb16-26"><a href="#cb16-26"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>begin<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-27"><a href="#cb16-27"></a>    <span class="kw">constexpr</span> sentinel_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
+<span id="cb16-28"><a href="#cb16-28"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>end<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-29"><a href="#cb16-29"></a></span>
+<span id="cb16-30"><a href="#cb16-30"></a>    <span class="kw">constexpr</span> <span class="dt">bool</span> empty<span class="op">()</span></span>
 <span id="cb16-31"><a href="#cb16-31"></a>      <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-32"><a href="#cb16-32"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-33"><a href="#cb16-33"></a></span>
-<span id="cb16-34"><a href="#cb16-34"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
-<span id="cb16-35"><a href="#cb16-35"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-36"><a href="#cb16-36"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
-<span id="cb16-37"><a href="#cb16-37"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-38"><a href="#cb16-38"></a></span>
-<span id="cb16-39"><a href="#cb16-39"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">requires</span> contiguous_range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
-<span id="cb16-40"><a href="#cb16-40"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>data<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-41"><a href="#cb16-41"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> contiguous_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
-<span id="cb16-42"><a href="#cb16-42"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>data<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb16-43"><a href="#cb16-43"></a>  <span class="op">}</span>;</span>
-<span id="cb16-44"><a href="#cb16-44"></a><span class="op">}</span></span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">constexpr</span> owning_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized">2</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp">r_</code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>t<span class="op">)</span></code>.</p>
+<span id="cb16-32"><a href="#cb16-32"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span>    </span>
+<span id="cb16-33"><a href="#cb16-33"></a>    <span class="kw">constexpr</span> <span class="dt">bool</span> empty<span class="op">()</span> <span class="kw">const</span></span>
+<span id="cb16-34"><a href="#cb16-34"></a>      <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-35"><a href="#cb16-35"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>empty<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-36"><a href="#cb16-36"></a></span>
+<span id="cb16-37"><a href="#cb16-37"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb16-38"><a href="#cb16-38"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-39"><a href="#cb16-39"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
+<span id="cb16-40"><a href="#cb16-40"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-41"><a href="#cb16-41"></a></span>
+<span id="cb16-42"><a href="#cb16-42"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">requires</span> contiguous_range<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
+<span id="cb16-43"><a href="#cb16-43"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>data<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-44"><a href="#cb16-44"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> contiguous_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></span>
+<span id="cb16-45"><a href="#cb16-45"></a>    <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>data<span class="op">(</span>r_<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb16-46"><a href="#cb16-46"></a>  <span class="op">}</span>;</span>
+<span id="cb16-47"><a href="#cb16-47"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span> <em>is-initializer-list</em> <span class="op">=</span> <em>see below</em>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">2</a></span> For a type <code class="sourceCode cpp">R</code>, <code class="sourceCode cpp"><em>is-initializer-list</em><span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if and only if <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is a specialization of <code class="sourceCode cpp">std<span class="op">::</span>initializer_list</code>.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">constexpr</span> owning_view<span class="op">(</span>R<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized">3</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp">r_</code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>t<span class="op">)</span></code>.</p>
 </blockquote>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">

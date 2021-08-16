@@ -320,7 +320,7 @@ namespace std::ranges {
   
   // [range.all], all view
   namespace views {
-    inline constexpr unspecified all = unspecified;
+    inline constexpr @*unspecified*@ all = @*unspecified*@;
 
     template<viewable_range R>
       using all_t = decltype(all(declval<R>()));
@@ -333,8 +333,11 @@ namespace std::ranges {
   template<class T>
     inline constexpr bool enable_borrowed_range<ref_view<T>> = true;
 
++ template <class R>
++   inline constexpr bool @*is-initializer-list*@ = @*see below*@;
++
 + template<range R>
-+   requires movable<R>
++   requires movable<R> && (!@*is-initializer-list*@<R>)
 + class owning_view;
 + 
 + template<class T>
@@ -385,7 +388,7 @@ concept viewable_range =
   range<T> &&
   ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
    (!view<remove_cvref_t<T>> && @[borrowed_range&lt;T>]{.rm}@
-                                @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>>)]{.addu}@));
+         @[(is_lvalue_reference_v&lt;T> || movable<remove_reference_t&lt;T>> && !*is-initializer-list*&lt;T>)]{.addu}@));
 ```
 :::
 
@@ -405,9 +408,12 @@ Add a new subclause under [range.all] directly after [range.ref.view]{.sref} nam
 [1]{.pnum} `owning_view` is a move-only `view` of the elements of some other `range`.
 
 ```cpp
+template <class R>
+  inline constexpr bool @*is-initializer-list*@ = @*see below*@;
+
 namespace std::ranges {
   template<range R>
-    requires movable<R>
+    requires movable<R> && !@*is-initializer-list*@<R>
   class owning_view : public view_interface<owning_view<R>> {
   private:
     R r_ = R();   // exposition only
@@ -452,10 +458,18 @@ namespace std::ranges {
 ```
 
 ```cpp
+template <class R>
+  inline constexpr bool @*is-initializer-list*@ = @*see below*@;
+```
+
+[2]{.pnum} For a type `R`, `@*is-initializer-list*@<R>` is `true` if and only if `remove_cvref_t<R>` is a specialization of `std::initializer_list`.
+
+
+```cpp
 constexpr owning_view(R&& t);
 ```
 
-[2]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
+[3]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
 :::
 
 
