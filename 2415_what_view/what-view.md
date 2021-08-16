@@ -420,7 +420,7 @@ Add a new subclause under [range.all] directly after [range.ref.view]{.sref} nam
 ```cpp
 namespace std::ranges {
   template<range R>
-    requires movable<R> && !@*is-initializer-list*@<R> // see [range.refinements]
+    requires movable<R> && (!@*is-initializer-list*@<R>) // see [range.refinements]
   class owning_view : public view_interface<owning_view<R>> {
   private:
     R r_ = R();   // exposition only
