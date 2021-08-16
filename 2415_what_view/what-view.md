@@ -303,6 +303,10 @@ auto rng = v | views::reverse;
 
 If `v` is an lvalue, do you want `rng` to *copy* `v` or to *refer*  to `v`? If you want it to copy `v`, because copying `v` is cheap and you want to avoid paying for indirection and potentional dangling, then `v` is a `view`. If you want to refer to `v`, because copying `v` is expensive (possibly more expensive than the algorithm you're doing), then `v` is not a view. `string_view` is a `view`, `vector<string>` is not.
 
+# Implementation Experience
+
+This proposal has been implemented and passes the libstdc++ testsuite (with suitable modifications). 
+
 # Proposed Wording
 
 This also resolves [@LWG3452]. 
@@ -333,11 +337,8 @@ namespace std::ranges {
   template<class T>
     inline constexpr bool enable_borrowed_range<ref_view<T>> = true;
 
-+ template <class R>
-+   inline constexpr bool @*is-initializer-list*@ = @*see below*@;
-+
 + template<range R>
-+   requires movable<R> && (!@*is-initializer-list*@<R>)
++   requires @*see below*@
 + class owning_view;
 + 
 + template<class T>
@@ -377,9 +378,18 @@ Most containers are not views since [destruction of]{.rm} [copying]{.addu} the c
 — *end example*]
 :::
 
-Change the definition of `viewable_range` to line up with `views::all` (see later) in [range.refinements]{.sref} [`remove_reference_t` rather than `remove_cvref_t` because we need to reject `const vector<int>&&` from being a `viewable_range`]{.ednote}:
+Change the definition of `viewable_range` to line up with `views::all` (see later) in [range.refinements]{.sref}, inserting the new exposition-only variable template `@*is-initializer-list*@<T>` [`remove_reference_t` rather than `remove_cvref_t` because we need to reject `const vector<int>&&` from being a `viewable_range`]{.ednote}:
 
 ::: bq
+::: addu
+```
+template <class R>
+  inline constexpr bool @*is-initializer-list*@ = @*see below*@; // exposition only
+```
+
+[*]{.pnum} For a type `R`, `@*is-initializer-list*@<R>` is `true` if and only if `remove_cvref_t<R>` is a specialization of `std::initializer_list`.
+:::
+
 [5]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
 
 ```
@@ -408,12 +418,9 @@ Add a new subclause under [range.all] directly after [range.ref.view]{.sref} nam
 [1]{.pnum} `owning_view` is a move-only `view` of the elements of some other `range`.
 
 ```cpp
-template <class R>
-  inline constexpr bool @*is-initializer-list*@ = @*see below*@;
-
 namespace std::ranges {
   template<range R>
-    requires movable<R> && !@*is-initializer-list*@<R>
+    requires movable<R> && !@*is-initializer-list*@<R> // see [range.refinements]
   class owning_view : public view_interface<owning_view<R>> {
   private:
     R r_ = R();   // exposition only
@@ -458,18 +465,10 @@ namespace std::ranges {
 ```
 
 ```cpp
-template <class R>
-  inline constexpr bool @*is-initializer-list*@ = @*see below*@;
-```
-
-[2]{.pnum} For a type `R`, `@*is-initializer-list*@<R>` is `true` if and only if `remove_cvref_t<R>` is a specialization of `std::initializer_list`.
-
-
-```cpp
 constexpr owning_view(R&& t);
 ```
 
-[3]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
+[2]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
 :::
 
 
