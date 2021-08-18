@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-08-16" />
+  <meta name="dcterms.date" content="2021-08-18" />
   <title>Using unknown pointers and references in constant expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-08-16</td>
+    <td>2021-08-18</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -855,7 +855,7 @@ This paper (R3)
 <span id="cb12-4"><a href="#cb12-4"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> i <span class="op">=</span> s<span class="op">.</span>e;</span>
 <span id="cb12-5"><a href="#cb12-5"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>here, <code class="sourceCode cpp">S<span class="op">::</span>e</code> is an enum, so it’s about as constant as constant can get, but because we’re accessing through <code class="sourceCode cpp">s</code> this is invalid. libstdc++ was inadvertently relying on this being valid.</p>
+<p>Here, <code class="sourceCode cpp">S<span class="op">::</span>e</code> is an enum, so it’s about as constant as constant can get, but because we’re accessing through <code class="sourceCode cpp">s</code> this is invalid. libstdc++ was inadvertently relying on this being valid.</p>
 <p>Another from me:</p>
 <blockquote>
 <p>I have a project that has a structure like:</p>
@@ -1113,7 +1113,7 @@ This paper (R3)
 <li><span class="marginalizedparent"><a class="marginalized">(5.1)</a></span> <code class="sourceCode cpp"><span class="kw">this</span></code>, except
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized">(5.1.1)</a></span> in a constexpr function that is being evaluated as part of <code class="sourceCode cpp">E</code> <span class="addu">or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.1.2)</a></span> <span class="addu">as part of an implicit or explicit class member access expression</span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.1.2)</a></span> <span class="addu">when appearing as the <em>postfix-expression</em> of an implicit or explicit class member access expression ([expr.ref])</span>;</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> […]</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.5)</a></span> an invocation of a virtual function for an object unless <span class="addu">the object’s dynamic type is known and either</span>
@@ -1137,13 +1137,13 @@ This paper (R3)
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.13)</a></span> in a <em>lambda-expression</em>, a reference to <code class="sourceCode cpp"><span class="kw">this</span></code> or to a variable with automatic storage duration defined outside that <em>lambda-expression</em>, where the reference would be an odr-use;</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.14)</a></span> […]</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.26)</a></span> a <code class="sourceCode cpp"><span class="kw">dynamic_cast</span></code> ([expr.dynamic.cast]) or <code class="sourceCode cpp"><span class="kw">typeid</span></code> ([expr.typeid]) expression <span class="addu">on a reference bound to an object whose dynamic type is unknown or</span> that would throw an exception;</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.26)</a></span> a <code class="sourceCode cpp"><span class="kw">dynamic_cast</span></code> ([expr.dynamic.cast]) or <code class="sourceCode cpp"><span class="kw">typeid</span></code> ([expr.typeid]) expression <span class="addu">on a glvalue that refers to an object whose dynamic type is unknown or</span> that would throw an exception;</li>
 </ul>
 </blockquote>
 <p>And add a new rule to properly handle the lifetime examples shown in the previous section:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s and uses of <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> that refer to an object or reference whose lifetime did not begin with the evaluation of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
+<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s and uses of <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> that refer to an object or reference whose lifetime did not begin with the evaluation of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as binding to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
 <p>[<em>Example</em>:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> array_size<span class="op">(</span>T <span class="op">(&amp;)[</span>N<span class="op">])</span> <span class="op">{</span></span>

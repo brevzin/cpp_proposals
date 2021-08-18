@@ -214,7 +214,7 @@ void f(S& s) {
 ```
 :::
 
-here, `S::e` is an enum, so it's about as constant as constant can get, but because we're accessing through `s` this is invalid. libstdc++ was inadvertently relying on this being valid. 
+Here, `S::e` is an enum, so it's about as constant as constant can get, but because we're accessing through `s` this is invalid. libstdc++ was inadvertently relying on this being valid. 
 
 Another from me:
 
@@ -558,7 +558,7 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
 
 - [5.1]{.pnum} `this`, except
     - [5.1.1]{.pnum} in a constexpr function that is being evaluated as part of `E` [or]{.addu}
-    - [5.1.2]{.pnum} [as part of an implicit or explicit class member access expression]{.addu};
+    - [5.1.2]{.pnum} [when appearing as the *postfix-expression* of an implicit or explicit class member access expression ([expr.ref])]{.addu};
 - [5.2]{.pnum} [...]
 - [5.5]{.pnum} an invocation of a virtual function for an object unless [the object's dynamic type is known and either]{.addu}
     - [5.5.1]{.pnum} the object is usable in constant expressions or
@@ -575,14 +575,14 @@ We need to strike the [expr.const]{.sref}/5.12 rule that disallows using referen
     - [5.12.2]{.pnum} [its lifetime began within the evaluation of `E`;]{.rm} 
 - [5.13]{.pnum} in a _lambda-expression_, a reference to `this` or to a variable with automatic storage duration defined outside that _lambda-expression_, where the reference would be an odr-use; 
 - [5.14]{.pnum} [...]
-- [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a reference bound to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
+- [5.26]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) or `typeid` ([expr.typeid]) expression [on a glvalue that refers to an object whose dynamic type is unknown or]{.addu} that would throw an exception;
 :::
 
 And add a new rule to properly handle the lifetime examples shown in the previous section:
 
 ::: bq
 ::: addu
-[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as being bound to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. 
+[*]{.pnum} During the evaluation of an expression `E` as a core constant expression, all *id-expression*s and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `E` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as binding to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown. 
 
 [*Example*:
 ```cpp
