@@ -1116,10 +1116,10 @@ This paper (R3)
 <li><span class="marginalizedparent"><a class="marginalized">(5.1.2)</a></span> <span class="addu">when appearing as the <em>postfix-expression</em> of an implicit or explicit class member access expression ([expr.ref])</span>;</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.2)</a></span> […]</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.5)</a></span> an invocation of a virtual function for an object unless <span class="addu">the object’s dynamic type is known and either</span>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5)</a></span> an invocation of a virtual function for an object <span class="rm" style="color: #bf0303"><del>unless</del></span> <span class="addu">whose dynamic type is unknown</span>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized">(5.5.1)</a></span> the object is usable in constant expressions or</li>
-<li><span class="marginalizedparent"><a class="marginalized">(5.5.2)</a></span> its lifetime began within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5.1)</a></span> <span class="rm" style="color: #bf0303"><del>the object is usable in constant expressions or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized">(5.5.2)</a></span> <span class="rm" style="color: #bf0303"><del>its lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>;</del></span></li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.7)</a></span> […]</li>
 <li><span class="marginalizedparent"><a class="marginalized">(5.8)</a></span> an lvalue-to-rvalue conversion unless it is applied to
@@ -1143,7 +1143,7 @@ This paper (R3)
 <p>And add a new rule to properly handle the lifetime examples shown in the previous section:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s and uses of <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> that refer to an object or reference whose lifetime did not begin with the evaluation of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is unknown. For such a reference that is not usable in constant expressions, the reference is treated as binding to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
+<p><span class="marginalizedparent"><a class="marginalized">*</a></span> During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, all <em>id-expression</em>s and uses of <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code> that refer to an object or reference whose lifetime did not begin with the evaluation of <code class="sourceCode cpp">E</code> are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. For such an object that is not usable in constant expressions, the dynamic type of the object is <em>unknown</em>. For such a reference that is not usable in constant expressions, the reference is treated as binding to an unspecified object of the referenced type whose lifetime and that of all subobjects includes the entire constant evaluation and whose dynamic type is unknown.</p>
 <p>[<em>Example</em>:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> array_size<span class="op">(</span>T <span class="op">(&amp;)[</span>N<span class="op">])</span> <span class="op">{</span></span>
@@ -1170,17 +1170,18 @@ This paper (R3)
 <span id="cb31-23"><a href="#cb31-23"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>;     <span class="co">// ok</span></span>
 <span id="cb31-24"><a href="#cb31-24"></a>    <span class="kw">static_assert</span><span class="op">((&amp;</span>swam<span class="op">)-&gt;</span>phelps<span class="op">()</span> <span class="op">==</span> <span class="dv">28</span><span class="op">)</span>; <span class="co">// error: lvalue-to-conversion on a pointer not</span></span>
 <span id="cb31-25"><a href="#cb31-25"></a>                                            <span class="co">// usable in constant expressions    </span></span>
-<span id="cb31-26"><a href="#cb31-26"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference</span></span>
-<span id="cb31-27"><a href="#cb31-27"></a>                                            <span class="co">// with unknown dynamic type</span></span>
-<span id="cb31-28"><a href="#cb31-28"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>coughlin <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: lvalue-to-rvalue conversion on an object</span></span>
-<span id="cb31-29"><a href="#cb31-29"></a>                                            <span class="co">// not usable in constant expressions</span></span>
-<span id="cb31-30"><a href="#cb31-30"></a><span class="op">}</span></span>
-<span id="cb31-31"><a href="#cb31-31"></a></span>
-<span id="cb31-32"><a href="#cb31-32"></a><span class="kw">extern</span> Swim dc;</span>
-<span id="cb31-33"><a href="#cb31-33"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
-<span id="cb31-34"><a href="#cb31-34"></a></span>
-<span id="cb31-35"><a href="#cb31-35"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
-<span id="cb31-36"><a href="#cb31-36"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
+<span id="cb31-26"><a href="#cb31-26"></a>    <span class="kw">static_assert</span><span class="op">(</span>Swim<span class="op">().</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;   <span class="co">// ok</span></span>
+<span id="cb31-27"><a href="#cb31-27"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>lochte<span class="op">()</span> <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: invoking virtual function on reference</span></span>
+<span id="cb31-28"><a href="#cb31-28"></a>                                            <span class="co">// with unknown dynamic type</span></span>
+<span id="cb31-29"><a href="#cb31-29"></a>    <span class="kw">static_assert</span><span class="op">(</span>swam<span class="op">.</span>coughlin <span class="op">==</span> <span class="dv">12</span><span class="op">)</span>;     <span class="co">// error: lvalue-to-rvalue conversion on an object</span></span>
+<span id="cb31-30"><a href="#cb31-30"></a>                                            <span class="co">// not usable in constant expressions</span></span>
+<span id="cb31-31"><a href="#cb31-31"></a><span class="op">}</span></span>
+<span id="cb31-32"><a href="#cb31-32"></a></span>
+<span id="cb31-33"><a href="#cb31-33"></a><span class="kw">extern</span> Swim dc;</span>
+<span id="cb31-34"><a href="#cb31-34"></a><span class="kw">extern</span> Swim<span class="op">&amp;</span> trident;</span>
+<span id="cb31-35"><a href="#cb31-35"></a></span>
+<span id="cb31-36"><a href="#cb31-36"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>dc<span class="op">)</span>;         <span class="co">// ok: can only be typeid(Swim)</span></span>
+<span id="cb31-37"><a href="#cb31-37"></a><span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;</span> y <span class="op">=</span> <span class="kw">typeid</span><span class="op">(</span>trident<span class="op">)</span>;    <span class="co">// error: unknown dynamic type</span></span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>
