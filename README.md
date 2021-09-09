@@ -37,12 +37,11 @@ make all of my papers.
 
 ### Pending CWG/LWG Review
 
-None.
+- [p2036r2 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r2.html).
 
 ### Pending EWG/LEWG Voting
 
 - [p1169r2 - static `operator()`](1169_static_call/p1169r2.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
-- [p2036r1 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r1.html).
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 
 ### Pending EWG/LEWG Review
