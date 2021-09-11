@@ -1,6 +1,6 @@
 ---
 title: "A Plan for C++23 Ranges"
-document: P2214R0
+document: P2214R1
 date: today
 audience: LEWG
 author:
@@ -21,6 +21,16 @@ span.yellow {
     background-color: #ffff00;
 }
 </style>
+
+# Revision History
+
+Since [@P2214R0], updating with progress and links to other papers. Several changes have been made here:
+
+* Pipe support for range adaptors has been added as a Tier 1 priority.
+* `cache1` has been lowered from Tier 1 to Tier 2 due to inherent issues with its design.
+* `const_` has been upgraded from Tier 3 to Tier 1 due to demand.
+* `flat_map` has been lowered to Tier 3 (since now `transform(f) | join` is correct for all cases).
+* `transform_maybe` has been lowered to Tier 2 (since it depends on `cache1`)
 
 # Introduction
 
@@ -58,7 +68,16 @@ This paper provides our opinion for how to categorize Ranges functionality into 
 
 C++20 Ranges, and the range-v3 that birthed it, isn't just a collection of loosely related views and algorithms. There's some important other functionality there. 
 
-One critical piece of missing functionality is [`ranges::to` [@P1206R1]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing. 
+One critical piece of missing functionality is [`ranges::to` [@P1206R6]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing. 
+
+Another criticial piece of functionality was pointed out by Walter Brown in the telecon discussing the initial draft of this paper: it is simply not possible for users to write their own range adaptors such that they smoothly interact with standard library (or other user) range adaptors. That is, it is possible (but a little tedious) for users to write an adaptor such that they can write `r | my::thing | my::func(2)`, but it is *not* possible for them to write an adaptor such that they can write:
+
+```cpp
+auto adaptor = my::thing | std::views::transform(f) | my::func(2);
+auto result = r | adaptor;
+```
+
+In order to do that, standard library adaptors need to recognize user-defined adaptors as being adaptors. That needs library help and is also a top priority - since if users can define more adaptors, it becomes less critical that the standard library provide all of them. The standard library needs to provide [pipe support for user-defined adaptors [@P2387R1]]{.addu}
 
 Another important piece of functionality is simply the ability to print views. In range-v3, views were printable, which made it easy to debug programs or to provide meaningful output. For instance, the following program using range-v3 happily compiles:
 
@@ -117,12 +136,12 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `all` | C++20 | C++20 |
 | `any_view<T>` | range-v3 | Not proposed |
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
-| `cache1` | range-v3 | [Tier 1, largely for `flat_map`. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
+| `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
 | `cartesian_product` | range-v3 | [Tier 1]{.addu} |
 | `chunk` | range-v3 | [Tier 1]{.addu} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | [Tier 3]{.diffdel} |
+| `const_` | range-v3 | [Tier 1]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -134,7 +153,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `empty` | C++20 | C++20 |
 | `enumerate` | range-v3 | [Tier 1]{.addu} |
 | `filter` | C++20 | C++20 |
-| `for_each` | range-v3 | [Tier 1. Most languages call this `flat_map`, but we probably need to call it `transform_join`. Also allow for non-views]{.addu} |
+| `for_each` | range-v3 | [Tier 3. Most languages call this `flat_map`, but we probably need to call it `transform_join`. <br />This is now completely supported as `transform(f) | join`]{.diffdel} |
 | `generate` | range-v3 | [Tier 2]{.yellow} |
 | `generate_n` | range-v3 | [Tier 2]{.yellow} |
 | `group_by` | range-v3 | [Tier 1 (but not how range-v3 does it). Possibly renamed to `chunk_by`.]{.addu}. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
@@ -171,7 +190,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `take_last_while` | (not in range-v3) | [Tier 2]{.yellow} |
 | `take_while` | C++20 | C++20 |
 | `tokenize` | range-v3 | Not proposed |
-| `transform_maybe` | (not in range-v3) | [Tier 1, as a more ergonomic `maybe` (Haskell calls this `mapMaybe`, Rust calls this `filter_map`)]{.addu} |
+| `transform_maybe` | (not in range-v3) | [Tier 2, as a more ergonomic `maybe` (Haskell calls this `mapMaybe`, Rust calls this `filter_map`)]{.yellow} |
 | `trim` | range-v3 | [Tier 2]{.yellow} |
 | `unbounded` | range-v3 | Not proposed |
 | `unique` | range-v3 | [Tier 2]{.yellow} |
@@ -226,7 +245,7 @@ Ultimately, this question of full view or not fill view is one that should guide
 
 ## The `zip` family
 
-The `zip` family of range adapters is an extremely useful set of adapters with broad applicability. It consists of five user-facing range adapters:
+The `zip` family of range adapters is an extremely useful set of adapters with broad applicability (and is now proposed in [@P2321R2]). It consists of five user-facing range adapters:
 
 1. `zip`
 1. `zip_transform` &mdash; `zip_with` in range-v3
@@ -632,18 +651,11 @@ There really aren't any particular thorny library issues to resolve here, simply
 
 ### `flat_map`
 
-`flat_map(E, F)` is very nearly `E | transform(F) | join`. Very nearly, because that doesn't _quite_ work. If the callable returns a prvalue range that is not a `view` (a seemingly specific constraint that is actually a very common use-case - consider a function returning a `vector<int>`), the above doesn't work. This specific case frequently comes up on StackOverflow asking for workarounds. 
+`flat_map(E, F)` is, following the adoption of [@P2328R1], exactly `join(transform(E, F))`.
 
-And there is one in range-v3, it's called `cache1` &mdash; though here we suggest renaming it as `cache_latest`. As the name suggests, it caches a single element at a time from its parent view - which allows the range to be `join`ed. With the adoption of `cache_latest` (a view itself with other broad applicability), we could specify `views::flat_map(E, F)` as expression-equivalent to:
+Prior to that paper, it used to be the case that if the callable returned a prvalue range that is not a `view` (a seemingly specific constraint that is actually a very common use-case - consider a function returning a `vector<int>`), then the `join` would fail. The workaround for this was a range adaptor in range-v3 called `cache1`, but that adaptor has other design issues (described in the above paper) and as a result is not considered a high priority right now.
 
-::: bq
-- `E | views::transform(F) | views::join` if that is a valid expression.
-- Otherwise, `E | views::transform(F) | views::cache_latest | views::join`.
-:::
-
-range-v3 has `cache1` yet only supports the first bullet, under the name `views::for_each`.
-
-Despite being composed of other adapters that we already have, this is sufficiently complex to implement, sufficiently important, and requires a new adapter to boot, that it merits Tier 1 inclusion. Unlike other examples we've seen in this paper, there really isn't much added benefit to `flat_map` being a first-class view, so we propose to specify it as suggested above &mdash; in terms of `transform`, `join`, and possibly `cache_latest`.
+Given that, we could specify `views::flat_map(E, F)` as expression-equivalent to `views::join(views::transform(E, F))`. It's not clear that there is a more efficient way to implement this (unlike the case of, say, `views::tail` vs `views::drop(1)` described earlier), so we could add this as a trivial alias. We don't have examples of aliases like this in the standard library today (`keys` is an alias for `elements<0>`, but that's still a single adaptor).
 
 ### `transform_maybe`
 
@@ -725,6 +737,8 @@ inline constexpr auto transform_maybe4 = [](auto&& f){
 };
 ```
 We think that `transform_view` merits a first-class view to accomplish this functionality not only because the above is very involved but also because it still has unnecessary overhead - it'd be nice to avoid instantiating _four_ views when one is sufficient, along with all the wrapping that entails. 
+
+However, because of the `cache_latest` dependency (see also [@P2328R1]), we're kicking this one down to Tier 2.
 
 ## The sliding family
 
@@ -833,9 +847,9 @@ views::zip(v) | views::transform(LIFT(std::as_const));
 
 would not compile. And were it to compile, what should it actually mean? `zip`'s `reference` type here, as previously discussed, should be `std::tuple<int&>`. What would a `const` view over this range mean? Should we transparently propagate prvalues, thereby being a shallow `const`, and produce a new range whose `reference` is `std::tuple<int&>`? Or should we somehow come up with a way to do deep `const`-ness here and yield a range whose `reference` is `std::tuple<int const&>`? The latter noting that we are not doing this sort of introspection for `views::zip_transform`.
 
-In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int> const`. This does not seem like a good choice, since it would involve actually copying elements. Maybe not terrible here because they're `int`s, but for more expensive types it would be very surprising if `views::const_` actually incurred overhead. 
+In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int const&>` (following the various `tuple` changes performed to implement `zip` in [@P2321R2]), which is exactly what you want.
 
-Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, but is something that needs more research. As such, we think it's Tier 3 material.
+Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R0] and is Tier 1 material. 
 
 # Algorithms
 
@@ -1019,6 +1033,8 @@ constexpr T fold(R&& r, T init, BinaryOperation op, Proj proj = {}) {
 }
 ```
 
+For more on this fold, along with several other fold algorithms, see [@P2322R3].
+
 ### `ranges::reduce`
 
 We have this interesting situation in the standard library today where `std::accumulate` has a name strongly suggestive of addition, yet because it's specified to invoke its binary operation serially, it has no additional requirements on that operation. But we also have `std::reduce`, which is a much more generic name with no suggested underlying operation, yet has very strong semantic constraints on its operation: it must be both associative and commutative. This comes from [@N3408], emphasis ours:
@@ -1122,7 +1138,7 @@ ranges::fold(views::zip_transform(std::multiplies(), a, b)
 
 :::
 
-We think that once we add [`ranges::fold` as Tier 1]{.addu} and [`ranges::reduce` as Tier 2]{.yellow}, we do not actually have a need for either a `ranges::transform_reduce` or a `ranges::inner_product` (which would also save us from having to come up with a name for the latter).
+We think that once we add [`ranges::fold` as Tier 1 [@P2322R2]]{.addu} and [`ranges::reduce` as Tier 2]{.yellow}, we do not actually have a need for either a `ranges::transform_reduce` or a `ranges::inner_product` (which would also save us from having to come up with a name for the latter).
  
 
 ## Algorithms that Output a Range (Anamorphisms)
@@ -1285,33 +1301,31 @@ Given that the actions don't provide any functionality that we don't already hav
 
 To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.
 
+The following includes links ot papers that currently exist so far.
+
 ## [Tier 1]{.addu}
 
-- `ranges::to`
-- the ability to format `view`s with `std::format`
+- `ranges::to` ([@P1206R6])
+- the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R1])
+- the ability to format `view`s with `std::format` ([@P2286R2])
 - the addition of the following first class range adapters:
-    - `views::cache_latest`
-    - `views::cartesian_product`
+    - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
+    - `views::const_` ([@P2278R0])    
     - `views::group_by`
-    - `views::@_iter-zip-transform_@<V>` (exposition-only)
-    - `views::@_iter-adjacent-transform_@<V>` (exposition-only)
-    - `views::@_index-view_@<S, D>` (exposition-only)
     - `views::join_with`
     - `views::slide`
     - `views::stride`
-    - `views::transform_maybe`
 - the addition of the following range adapters specified in terms of other range adapters:
-    - `views::enumerate` 
-    - `views::flat_map` (renamed to... something)    
-    - `views::zip`
-    - `views::zip_transform`
-    - `views::adjacent`
-    - `views::adjacent_transform`
+    - `views::enumerate` ([@P2164R5])
+    - `views::zip` ([@P2321R2])
+    - `views::zip_transform` ([@P2321R2])
+    - `views::adjacent` ([@P2321R2])
+    - `views::adjacent_transform` ([@P2321R2])
 - the addition of the following range algorithms:
     - `ranges::iota`
-    - `ranges::fold`
-- the following other changes to standard library (necessary for the `zip` family):
+    - `ranges::fold` ([@P2322R3])
+- the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2]):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`
     - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
@@ -1342,6 +1356,7 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
     - `views::split_when`
     - `views::take_last`
     - `views::take_last_while`
+    - `views::transform_maybe`    
     - `views::trim`
     - `views::unique`
 - the addition of the following range algorithms:
@@ -1355,8 +1370,8 @@ To summarize the above descriptions, we want to triage a lot of outstanding rang
 - the addition of the following range adapters:
     - `views::adjacent_filter`
     - `views::adjacent_remove_if`
-    - `views::const_`
     - `views::drop_exactly`    
+    - `views::flat_map` (possibly unnecessary given [@P2328R1])    
     - `views::head`        
     - `views::linear_distribute`
     - `views::sample`
