@@ -1155,7 +1155,7 @@ We think that once we add [`ranges::fold` as Tier 1 [@P2322R2]]{.addu} and [`ran
 
 But that does not hold for the other algorithms.
 
-`shift_left` and `shift_right` fall into a similar boat as `iota`, but aren't completely without questions. [@P1243R4] originally proposed these, but were dropped from the paper based on discussion about the return type. `shift_right` has a straightforward return type of `subrange(new_first, last)`. But what should `shift_left` return? If, for consistency, it returns `subrange(first, new_last)` then we don't return `last` &mdash; even though we had to to compute it, unlike all the other `ranges` algorithms. So that question will still have to be answered.
+`shift_left` and `shift_right` fall into a similar boat as `iota`, but aren't completely without questions. [@P1243R4] originally proposed these, but were dropped from the paper based on discussion about the return type. `shift_right` has a straightforward return type of `subrange(new_first, last)`. But what should `shift_left` return? If, for consistency, it returns `subrange(first, new_last)` then we don't return `last` &mdash; even though we had to to compute it, unlike most of the other `ranges` algorithms. Most, but not all (`is_sorted`, `count`, and the proposed `fold` do not, for instance). So that question will still have to be answered.
 
 ### `std::adjacent_difference` &rarr; `ranges::adjacent_transform`
 
