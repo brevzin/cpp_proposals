@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: P2322R3
+document: P2322R4
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2322R3], no changes in actual proposal, just some improvements in the description.
 
 [@P2322R2] used the names `fold_left` and `fold_right` to refer to the left- and right- folds and used the same names for the initial value and no-initial value algorithms. LEWG took the following polls [@P2322-minutes]:
 
@@ -297,38 +299,45 @@ There are (at least) three different approaches for how to have a short-circuiti
     }
     return init;
     ```
+    
+2. Same as #1, except return an enum class instead of a `bool` (like `control_flow::continue_` vs `control_flow::break_`).
 
-2. You could provide a function that returns a `variant<continue_<T>, done<T>>`. Rust's `Itertools` crate provides this under the name [`fold_while`](https://docs.rs/itertools/0.10.0/itertools/trait.Itertools.html#method.fold_while):
+3. You could provide a function that returns a `variant<continue_<T>, break_<U>>`. The algorithm would then return this variant (rather than a `T`). Rust's `Itertools` crate provides this under the name [`fold_while`](https://docs.rs/itertools/0.10.0/itertools/trait.Itertools.html#method.fold_while):
 
     ```cpp
     template <typename T> struct continue_ { T value; };
-    template <typename T> struct done { T value; };
-    template <typename T> using fold_while_t = variant<continue_<T>, done<T>>;
     
-    return fold_while(r, true, [&](bool, auto&& elem) -> fold_while_t<bool> {
+    template <typename T> struct break_ { T value; };
+    template <> struct break_<void> { };
+    break_() -> break_<void>;
+    
+    template <typename T, typename U>
+    using fold_while_t = variant<continue_<T>, break_<U>>;
+    
+    return fold_while(r, true, [&](bool, auto&& elem) -> fold_while_t<bool, void> {
         if (pred(elem)) {
-            return continue{true};
+            return continue_{true};
         } else {
-            return done{false};
+            return break_();
         }
-    });
+    }).index() == 0;
     ```
     
     and the main loop of the `fold_while` algorithm would look like:
     
     ```cpp
+    variant<continue_<T>, break_<E>> state = continue_<T>{init};
+    
     for (; first != last; ++first) {
-        auto next_state = f(move(init), *first);
-        if (holds_alternative<continue_<T>>(next_state)) {
-            init = get<continue_<T>>(move(next_state)).value;
-        } else {
-            return get<done<T>>(move(next_state)).value;
+        state = f(get<continue_<T>>(move(state)).value, *first);
+        if (holds_alternative<break_<U>>(next_state)) {
+            break;
         }
     }
-    return init;
+    return state;
     ```    
     
-3. You could provide a function that returns an `expected<T, E>`, which then the algorithm would return an `expected<T, E>` (rather than a `T`). Rust `Iterator` trait provides this under the name [`try_fold`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_fold):
+4. You could provide a function that returns an `expected<T, E>`, which then the algorithm would return an `expected<T, E>` (rather than a `T`). Rust `Iterator` trait provides this under the name [`try_fold`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_fold):
 
     ```cpp
     return fold_while(r, true, [&](bool, auto&& elem) -> expected<bool, bool> {
@@ -348,18 +357,19 @@ There are (at least) three different approaches for how to have a short-circuiti
         if (not next) {
             return next;
         }
-        init = move(*next);
+        init = *move(next);
     }
+    
     return init;
     ```     
     
 Option (1) is a questionable option because of mutating state (note that we cannot use `predicate` as the constraint on the type, because `predicate`s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.
 
-Option (2) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `done{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
+Option (2) seems like a strictly worse version than Option (1) for C++, due to not being able to use existing predicates. 
 
-Option (3) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet, and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
+Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `break_{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T, U>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
 
-Note that while the `expected<T, E>` version does convey failure semantically, more so than the `fold_result_t<T>` version, the latter can still be used to do so by simply returning a `fold_result_t<expected<T, E>>`.
+Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point), and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
 
 ## Iterator-returning folds
 
@@ -439,11 +449,11 @@ This brings with it its own naming problem. That's a lot of names. One approach 
 
 `with_iter` is not the best suffix, but the rest seem to work out ok. 
 
-## Short-circuiting and iterator-returning
+## The proposal: short-circuiting and iterator-returning
 
 One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that do short circuiting and return an iterator? Do we even need a short-circuiting fold that *doesn't* return an iterator? 
 
-In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposal is six algorithms (with two overloads each):
+In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposing is six algorithms (with two overloads each):
 
 1. `foldl` (a left-fold with an initial value that returns `T`)
 2. `foldl1` (a left-fold with no initial value that returns `T`)
@@ -696,7 +706,7 @@ template<input_range R, class T, class Proj = identity,
 constexpr auto ranges::foldl(R&& r, T init, F f, Proj proj = {});
 ```
 
-[1]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
@@ -725,9 +735,9 @@ template <input_range R, class Proj = identity,
 constexpr auto ranges::foldl1(R&& r, F f, Proj proj = {});
 ```
 
-[2]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
+[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
 
-[3]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
@@ -783,9 +793,9 @@ template <bidirectional_range R, class Proj = identity,
 constexpr auto ranges::foldr1(R&& r, F f, Proj proj = {});  
 ```
 
-[5]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f, proj))`.
+[#]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f, proj))`.
 
-[6]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
@@ -809,7 +819,7 @@ template <input_range R, class T, class Proj = identity,
 constexpr ranges::fold_while_result<borrowed_iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {}); 
 ```
 
-[7]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
@@ -837,7 +847,7 @@ constexpr ranges::fold_while_result<borrowed_iterator_t<R>, optional<range_value
   ranges::foldl1_while(R&& r, F f, Proj proj = {});   
 ```
 
-[8]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
