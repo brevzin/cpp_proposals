@@ -56,7 +56,7 @@ We could certainly entertain more Actions and Views in the realm of Ranges. Whet
 
 We believe that adding more functionality to Ranges is important, even if it would technically be a 3rd priority item (unless you consider the spirit of the 2nd priority to include integration with itself).
 
-But there is a _lot_ of outstanding functionality that could be added. And while we think all of it should eventually be added (having more algorithms and more views is always a good thing), we realize that this is may be too much even in the C++23 time frame. Rather than having one-off papers that propose one bit of functionality (as in [@P1255R6], [@P1894R0], or [@P2164R1]), we think it's important to take a big picture view of what is out there and triage the various parts into three separate buckets:
+But there is a _lot_ of outstanding functionality that could be added. And while we think all of it should eventually be added (having more algorithms and more views is always a good thing), we realize that this is may be too much even in the C++23 time frame. Rather than having one-off papers that propose one bit of functionality (as in [@P1255R6], [@P1894R0], or [@P2164R5]), we think it's important to take a big picture view of what is out there and triage the various parts into three separate buckets:
 
 1. Functionality that is really important for C++23. That which is frequently used and broadly applicable, and thus whose absence is frequently complained about.
 2. Functionality that would be nice to have for C++23. Not as frequently needed as the first bucket, but still clearly want it in the standard - but more tolerable if this slips. Ideally C++23 anyway, but simply less critical.
@@ -129,19 +129,19 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | View | Current Status | Proposed Priority |
 |---------------|----------------|----------|
 | `addressof` | range-v3 | Not proposed |
-| `adjacent` | (not in range-v3) | [Tier 1]{.addu} |
-| `adjacent_transform` | (not in range-v3) | [Tier 1]{.addu} |
+| `adjacent` | (not in range-v3) | [Tier 1 [@P2321R2]]{.addu} |
+| `adjacent_transform` | (not in range-v3) | [Tier 1 [@P2321R2]]{.addu} |
 | `adjacent_filter` | range-v3 | [Tier 3]{.diffdel} |
 | `adjacent_remove_if` | range-v3 | [Tier 3]{.diffdel} |
 | `all` | C++20 | C++20 |
 | `any_view<T>` | range-v3 | Not proposed |
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
 | `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
-| `cartesian_product` | range-v3 | [Tier 1]{.addu} |
+| `cartesian_product` | range-v3 | [Tier 1 [@P2374R1]]{.addu} |
 | `chunk` | range-v3 | [Tier 1]{.addu} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | [Tier 1]{.addu} |
+| `const_` | range-v3 | [Tier 1 [@P2278R0]]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -151,7 +151,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `drop_exactly` | range-v3 | [Tier 3]{.diffdel} |
 | `drop_while` | C++20 | C++20 |
 | `empty` | C++20 | C++20 |
-| `enumerate` | range-v3 | [Tier 1]{.addu} |
+| `enumerate` | range-v3 | [Tier 1 [@P2164R5]]{.addu} |
 | `filter` | C++20 | C++20 |
 | `for_each` | range-v3 | [Tier 3. Most languages call this `flat_map`, but we probably need to call it `transform_join`. <br />This is now completely supported as `transform(f) | join`]{.diffdel} |
 | `generate` | range-v3 | [Tier 2]{.yellow} |
@@ -195,8 +195,8 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `unbounded` | range-v3 | Not proposed |
 | `unique` | range-v3 | [Tier 2]{.yellow} |
 | `values` | C++20 | C++20 |
-| `zip` | range-v3 | [Tier 1]{.addu} |
-| `zip_with` | range-v3 | [Tier 1, renamed to `zip_transform`]{.addu} |
+| `zip` | range-v3 | [Tier 1 [@P2321R2]]{.addu} |
+| `zip_with` | range-v3 | [Tier 1, renamed to `zip_transform` [@P2321R2]]{.addu} |
 
 ## Full view or not full view
 
