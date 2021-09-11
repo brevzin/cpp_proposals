@@ -1,6 +1,6 @@
 ---
 title: "`cbegin` should always return a constant iterator"
-document: P2278R0
+document: P2278R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2278R0], added wording.
 
 # How we got to here
 
@@ -829,6 +833,352 @@ However, `std::cbegin` and `std::cend` are harder to extend. If we changed them 
 Would it be worth making such a change to `std::cbegin`? 
 
 Ultimately, the question is where in the Ranges Plan for C++23 [@P2214R0] such an improvement would fit in? That paper is focused exclusively on providing a large amount of new functionality to users. The facility proposed in this paper, while an improvement over the status quo, does not seem more important than any of that paper. I just want us to keep that in mind - I do not consider this problem in the top tier of ranges-related problems that need solving. 
+
+## Wording
+
+### Iterators
+
+Add to [iterator.synopsis]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <concepts>             // see [concepts.syn]
+
+namespace std {
+  // ...
+  // [insert.iterators], insert iterators
+  template<class Container> class back_insert_iterator;
+  template<class Container>
+    constexpr back_insert_iterator<Container> back_inserter(Container& x);
+
+  template<class Container> class front_insert_iterator;
+  template<class Container>
+    constexpr front_insert_iterator<Container> front_inserter(Container& x);
+
+  template<class Container> class insert_iterator;
+  template<class Container>
+    constexpr insert_iterator<Container>
+      inserter(Container& x, ranges::iterator_t<Container> i);
+
++ // [const.iterators], constant iterators and sentinels
++ template <input_iterator I>
++   using $constant-reference-for$ = $see below$; // exposition only
++ template<class Iterator>
++   concept $constant-iterator$ = $see below$; // exposition only
++
++ template<class Iterator>
++   class basic_const_iterator;
++
++ template<typename T, common_with<T> U>
++ struct common_type<basic_const_iterator<T>, U> {
++   using type = basic_const_iterator<common_type_t<T, U>>;
++ };
++ template<typename T, common_with<T> U>
++ struct std::common_type<U, basic_const_iterator<T>> {
++   using type = basic_const_iterator<common_type_t<T, U>>;
++ };
++ template<typename T, common_with<T> U>
++ struct common_type<basic_const_iterator<T>, basic_const_iterator<U>> {
++   using type = basic_const_iterator<common_type_t<T, U>>;
++ };
++
++ template<input_iterator I>
++ constexpr auto make_const_iterator(I it);
++
++ template<typename S>
++ constexpr auto make_const_sentinel(S s);
++ 
++ template<class I>
++   using const_iterator = decltype(make_const_iterator(declval<I>()));
+
+  // [move.iterators], move iterators and sentinels
+  template<class Iterator> class move_iterator;  
+  // ...
+}
+```
+:::
+
+Add definitions for all this stuff in the new clause [const.iterators], ahead of [move.iterators]:
+
+::: bq
+[#]{.pnum} Class template `basic_const_iterator` is an iterator adaptor with the same behavior as the underlying iterator except that its indirection operator implicitly converts the value returned by the underlying iterator's indirection operator to a type such that the adapted iterator is a constant iterator ([iterator.requirements]).
+Some generic algorithms can be called with constant iterators to avoid mutation.
+
+[#]{.pnum} The type `const_iterator<I>`, for an underlying iterator `I`, is a constant iterator.
+
+```cpp
+template <input_iterator It>
+  using $constant-reference-for$ = common_reference_t<iter_value_t<It> const&&, iter_reference_t<It>>;
+
+template <typename It>
+concept $constant-iterator$ = input_iterator<It>
+                         && same_as<$constant-reference-for$<It>, iter_reference_t<It>>;
+
+template<input_iterator I>
+constexpr auto make_const_iterator(I it);
+```
+
+[#]{.pnum} *Returns*: If `I` satisfies `$constant-iterator$`, `it`. Otherwise, `basic_const_iterator<I>(std::move(it))`.
+
+```cpp
+template<typename S>
+constexpr auto make_const_sentinel(S s);
+```
+
+[#]{.pnum} *Returns*: If `I` satisfies `input_iterator`, `make_const_iterator(std::move(s))`. Otherwise, `s`.
+
+```cpp
+template <input_iterator Iterator>
+class basic_const_iterator
+{
+    Iterator $current$ = Iterator();
+
+public:
+    using iterator_concept = $see below$;
+    using iterator_category = $see below$; // not always present
+    using value_type = iter_value_t<Iterator>;
+    using difference_type = iter_difference_t<Iterator>;
+
+    basic_const_iterator() requires default_initializeable<Iterator> = default;
+    basic_const_iterator(Iterator current);
+    template <convertible_to<It> U>
+      basic_const_iterator(basic_const_iterator<U> current);
+    template <convertible_to<It> T>
+      basic_const_iterator(T&& current);
+    
+    constexpr const Iterator& base() const&;
+    constexpr Iterator base() &&;
+    
+    constexpr decltype(auto) operator*() const;
+    constexpr const value_type* operator->() const requires contiguous_iterator<Iterator>;
+    
+    constexpr basic_const_iterator& operator++();
+    constexpr void operator++(int);
+    constexpr basic_const_iterator operator++(int) requires forward_iterator<Iterator>;
+
+    constexpr basic_const_iterator& operator--() requires bidirectional_iterator<Iterator>;
+    constexpr basic_const_iterator operator--(int) requires bidirectional_iterator<Iterator>;
+    
+    constexpr basic_const_iterator& operator+=(difference_type n) requires random_access_iterator<Iterator>;
+    constexpr basic_const_iterator& operator-=(difference_type n) requires random_access_iterator<Iterator>;
+    
+    constexpr decltype(auto) operator[](difference_type n) const requires random_access_iterator<Iterator>;
+
+    template <sentinel_for<Iterator> S>
+    friend constexpr bool operator==(const basic_const_iterator& x, const S& s)
+      requires equality_comparable<Iterator>;
+      
+    friend constexpr bool operator<(const basic_const_iterator& x, const basic_const_iterator& y)
+      requires random_access_iterator<Iterator>;
+    friend constexpr bool operator>(const basic_const_iterator& x, const basic_const_iterator& y)
+      requires random_access_iterator<Iterator>;
+    friend constexpr bool operator<=(const basic_const_iterator& x, const basic_const_iterator& y)
+      requires random_access_iterator<Iterator>;
+    friend constexpr bool operator>=(const basic_const_iterator& x, const basic_const_iterator& y)
+      requires random_access_iterator<Iterator>;
+    friend constexpr auto operator<=>(const basic_const_iterator& x, const basic_const_iterator& y)
+      requires random_access_iterator<Iterator> && three_way_comparable<Iterator>;      
+      
+    template <$not-same-as$<basic_const_iterator> I>
+      friend constexpr bool operator<(const basic_const_iterator& x, const I& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$not-same-as$<basic_const_iterator> I>
+      friend constexpr bool operator>(const basic_const_iterator& x, const I& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$not-same-as$<basic_const_iterator> I>
+      friend constexpr bool operator<=(const basic_const_iterator& x, const I& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$not-same-as$<basic_const_iterator> I>
+      friend constexpr bool operator>=(const basic_const_iterator& x, const I& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;      
+    template <$not-same-as$<basic_const_iterator> I>  
+      friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I> && three_way_comparable_with<Iterator, I>;      
+      
+    friend constexpr basic_const_iterator operator+(basic_const_iterator i, difference_type n)
+      requires random_access_iterator<Iterator>;    
+    friend constexpr basic_const_iterator operator+(difference_type n, basic_const_iterator i)
+      requires random_access_iterator<Iterator>;
+    friend constexpr basic_const_iterator operator-(basic_const_iterator i, difference_type n)
+      requires random_access_iterator<Iterator>;   
+    friend constexpr difference_type operator-(const basic_const_iterator& x, basic_const_iterator& y)
+      requires sized_sentinel_for<Iterator, Iterator>
+};
+```
+:::
+
+### Ranges
+
+Add to [ranges.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+#include <iterator>             // see [iterator.synopsis]
+
+namespace std::ranges {
+  // ...
+  // [range.refinements], other range refinements
+  template<class R, class T>
+    concept output_range = see below;
+
+  template<class T>
+    concept input_range = see below;
+
+  template<class T>
+    concept forward_range = see below;
+
+  template<class T>
+    concept bidirectional_range = see below;
+
+  template<class T>
+    concept random_access_range = see below;
+
+  template<class T>
+    concept contiguous_range = see below;
+
+  template<class T>
+    concept common_range = see below;
+
+  template<class T>
+    concept viewable_range = see below;
+
++ template<class T>
++   concept constant_range = $see below$;  
+  
+  // [view.interface], class template view_interface
+  // ...  
+  
+  // [range.reverse], reverse view
+  template<view V>
+    requires bidirectional_range<V>
+  class reverse_view;
+
+  template<class T>
+    inline constexpr bool enable_borrowed_range<reverse_view<T>> = enable_borrowed_range<T>;
+
+  namespace views { inline constexpr $unspecified$ reverse = $unspecified$; }
+
++ // [range.const], constant view
++ template <range R>
++   constexpr auto& $possibly-const$(R& r) { // exposition only
++     if constexpr (constant_range<const R> && !constant_range<R>) {
++       return const_cast<const R&>(r);
++     } else {
++       return r;
++     }
++   }
++
++ template<view V>  
++   requires input_range<V>
++ class const_view;
++ 
++ template<class T>
++   inline constexpr bool enable_borrowed_range<const_view<T>> = enable_borrowed_range<T>;
++ 
++ namespace views { inline constexpr $unspecified$ const_ = $unspecified$; }
+  
+  // ...
+}
+```
+:::
+
+Update `ranges::cbegin` in [range.access.cbegin]{.sref}:
+
+::: bq
+[1]{.pnum} The name `ranges​::​cbegin` denotes a customization point object ([customization.point.object]).
+[The expression `ranges​::​​cbegin(E)` for a subexpression `E` of type `T` is expression-equivalent to]{.rm} [Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`. Then:]{.addu}
+
+::: rm
+* [1.1]{.pnum} `ranges​::​begin(static_cast<const T&>(E))` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, `ranges​::​begin(static_cast<const T&&>(E))`.
+:::
+::: addu
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​begin(E)` is ill-formed.
+* [1.2]{.pnum} Otherwise, `ranges::cbegin(E)` is expression-equivalent to `make_const_iterator(ranges::begin($possibly-const$(t))`.
+:::
+
+[2]{.pnum} [*Note 1*: Whenever `ranges​::​cbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
+— *end note*]
+:::
+
+Update `ranges::cend` in [range.access.cend]{.sref}:
+
+::: bq
+[1]{.pnum} The name `ranges​::​cend` denotes a customization point object ([customization.point.object]).
+[The expression `ranges​::​​cend(E)` for a subexpression `E` of type `T` is expression-equivalent to]{.rm} [Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`. Then:]{.addu}
+
+::: rm
+* [1.1]{.pnum} `ranges​::​cend(static_cast<const T&>(E))` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, `ranges​::​cend(static_cast<const T&&>(E))`.
+:::
+::: addu
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​cend(E)` is ill-formed.
+* [1.2]{.pnum} Otherwise, `ranges::cend(E)` is expression-equivalent to `make_const_sentinel(ranges::end($possibly-const$(t))`.
+:::
+
+[2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::cend(E)` and `ranges::cbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
+— *end note*]
+:::
+
+Update `ranges::crbegin` in [range.access.crbegin]{.sref}:
+
+::: bq
+[1]{.pnum} The name `ranges​::​crbegin` denotes a customization point object ([customization.point.object]).
+[The expression `ranges​::​​crbegin(E)` for a subexpression `E` of type `T` is expression-equivalent to]{.rm} [Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`. Then:]{.addu}
+
+::: rm
+* [1.1]{.pnum} `ranges​::​rbegin(static_cast<const T&>(E))` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, `ranges​::​rbegin(static_cast<const T&&>(E))`.
+:::
+::: addu
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​begin(E)` is ill-formed.
+* [1.2]{.pnum} Otherwise, `ranges::crbegin(E)` is expression-equivalent to `make_const_iterator(ranges::rbegin($possibly-const$(t))`.
+:::
+
+[2]{.pnum} [*Note 1*: Whenever `ranges​::​crbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
+— *end note*]
+:::
+
+Update `ranges::crend` in [range.access.crend]{.sref}:
+
+::: bq
+[1]{.pnum} The name `ranges​::​crend` denotes a customization point object ([customization.point.object]).
+[The expression `ranges​::​​crend(E)` for a subexpression `E` of type `T` is expression-equivalent to]{.rm} [Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`. Then:]{.addu}
+
+::: rm
+* [1.1]{.pnum} `ranges​::​rend(static_cast<const T&>(E))` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, `ranges​::​rend(static_cast<const T&&>(E))`.
+:::
+::: addu
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​cend(E)` is ill-formed.
+* [1.2]{.pnum} Otherwise, `ranges::crend(E)` is expression-equivalent to `make_const_sentinel(ranges::rend($possibly-const$(t))`.
+:::
+
+[2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::crend(E)` and `ranges::crbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
+— *end note*]
+:::
+
+Update `ranges::cdata` in [range.prim.cdata]{.sref}:
+
+::: bq
+::: addu
+```
+template<typename T>
+constexpr auto $as-const-pointer$(const T* p) { return p; } // exposition only
+```
+:::
+
+[1]{.pnum} The name `ranges​::​cdata` denotes a customization point object ([customization.point.object]).
+The expression `ranges​::​​cdata(E)` for a subexpression `E` of type `T` is expression-equivalent to:
+
+* [1.1]{.pnum} `@[*as-constant-ptr*(]{.addu}@ranges​::​data(static_cast<const T&>(E))@[)]{.addu}@` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, ``@[*as-constant-ptr*(]{.addu}@ranges​::​data(static_cast<const T&&>(E))@[)]{.addu}@`.
+
+[2]{.pnum} [*Note 1*: Whenever `ranges​::​cdata(E)` is a valid expression, it has pointer to [constant]{.addu} object type. — end note]
+:::
 
 # Epilogue
 
