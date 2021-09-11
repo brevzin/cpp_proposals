@@ -31,6 +31,7 @@ Since [@P2214R0], updating with progress and links to other papers. Several chan
 * `const_` has been upgraded from Tier 3 to Tier 1 due to demand.
 * `flat_map` has been lowered to Tier 3 (since now `transform(f) | join` is correct for all cases).
 * `transform_maybe` has been lowered to Tier 2 (since it depends on `cache1`)
+* the various set range adaptors were omitted previously, and are added as Tier 3.
 
 # Introduction
 
@@ -177,6 +178,10 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `reverse` | C++20 | C++20 |
 | `sample` | range-v3 | [Tier 3]{.diffdel} |
 | `scan` | (not in range-v3) | [Tier 2, as a rename of what is `partial_sum` in range-v3]{.yellow} |
+| `set_difference` | range-v3 | [Tier 3]{.diffdel} |
+| `set_intersection` | range-v3 | [Tier 3]{.diffdel} |
+| `set_union` | range-v3 | [Tier 3]{.diffdel} |
+| `set_symmetric_difference` | range-v3 | [Tier 3]{.diffdel} |
 | `single` | C++20 | C++20 |
 | `slice` | range-v3 | [Tier 3]{.diffdel} |
 | `sliding` | range-v3 | [Tier 1, renamed to `slide`]{.addu} |
@@ -342,7 +347,7 @@ Hence, in order to make `ranges::sort(zip(vi, vs))` compile, we need to make `zi
 
 _Or_, rather than change `std::tuple`, we can have `zip_view<R...>::value_type` and `zip_view<R...>::reference` be an entirely different tuple type than `std::tuple`, introducing a second tuple type into the standard library: `std2::tuple2`. This just seems like a facially terrible idea, we already have one tuple type, we should just have it solve this problem for is.
 
-We therefore propose that `std::tuple<T...>` be const-assignable whenever all of `T...` are const-assignable. And likewise for `std::pair<T, U>`, for consistency, as well as the other proxy reference types in the standard libary: `std::vector<bool>::reference` and `std::bitset<N>::reference`.
+We therefore propose that `std::tuple<T...>` be const-assignable whenever all of `T...` are const-assignable. And likewise for `std::pair<T, U>`, for consistency, the other proxy reference type in the standard libary: `std::vector<bool>::reference`.
 
 ### A `tuple` that is `readable`
 
@@ -1331,11 +1336,11 @@ The following includes links ot papers that currently exist so far.
     - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
     - `tuple<T&...>` should be constructible from `tuple<T...>&`.
     - `vector<bool>::reference` should be const-assignable
-    - `bitset<N>::reference` should be const-assignable
 
 ## [Tier 2]{.yellow}
 
 - the addition of the following range adapters:
+    - `views::cache1`
     - `views::concat`
     - `views::cycle`
     - `views::delimit`    
@@ -1375,6 +1380,10 @@ The following includes links ot papers that currently exist so far.
     - `views::head`        
     - `views::linear_distribute`
     - `views::sample`
+    - `views::set_difference`
+    - `views::set_intersection`
+    - `views::set_union`
+    - `views::set_symmetric_difference`
     - `views::slice`    
     - `views::tail`  
     - `views::take_exactly`

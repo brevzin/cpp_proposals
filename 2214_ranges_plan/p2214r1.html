@@ -636,6 +636,7 @@ span.yellow {
 <li><code class="sourceCode cpp">const_</code> has been upgraded from Tier 3 to Tier 1 due to demand.</li>
 <li><code class="sourceCode cpp">flat_map</code> has been lowered to Tier 3 (since now <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> join</code> is correct for all cases).</li>
 <li><code class="sourceCode cpp">transform_maybe</code> has been lowered to Tier 2 (since it depends on <code class="sourceCode cpp">cache1</code>)</li>
+<li>the various set range adaptors were omitted previously, and are added as Tier 3.</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>When Ranges was merged into C++20 <span class="citation" data-cites="P0896R4">[<a href="#ref-P0896R4" role="doc-biblioref">P0896R4</a>]</span>, it was knowingly incomplete. While it was based on the implementation experience in range-v3 <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span>, only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later.</p>
@@ -966,6 +967,26 @@ span.yellow {
 <td><span class="yellow">Tier 2, as a rename of what is <code class="sourceCode cpp">partial_sum</code> in range-v3</span></td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">set_difference</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">set_intersection</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">set_union</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">set_symmetric_difference</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp">single</code></td>
 <td>C++20</td>
 <td>C++20</td>
@@ -1165,7 +1186,7 @@ span.yellow {
 <span id="cb8-14"><a href="#cb8-14"></a><span class="va">+   constexpr tuple&amp; operator=(tuple&lt;UTypes...&gt;&amp;&amp;) const;</span></span></code></pre></div>
 </div>
 <p><em>Or</em>, rather than change <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>, we can have <code class="sourceCode cpp">zip_view<span class="op">&lt;</span>R<span class="op">...&gt;::</span>value_type</code> and <code class="sourceCode cpp">zip_view<span class="op">&lt;</span>R<span class="op">...&gt;::</span>reference</code> be an entirely different tuple type than <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>, introducing a second tuple type into the standard library: <code class="sourceCode cpp">std2<span class="op">::</span>tuple2</code>. This just seems like a facially terrible idea, we already have one tuple type, we should just have it solve this problem for is.</p>
-<p>We therefore propose that <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>T<span class="op">...&gt;</span></code> be const-assignable whenever all of <code class="sourceCode cpp">T<span class="op">...</span></code> are const-assignable. And likewise for <code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>, for consistency, as well as the other proxy reference types in the standard libary: <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code> and <code class="sourceCode cpp">std<span class="op">::</span>bitset<span class="op">&lt;</span>N<span class="op">&gt;::</span>reference</code>.</p>
+<p>We therefore propose that <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>T<span class="op">...&gt;</span></code> be const-assignable whenever all of <code class="sourceCode cpp">T<span class="op">...</span></code> are const-assignable. And likewise for <code class="sourceCode cpp">std<span class="op">::</span>pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>, for consistency, the other proxy reference type in the standard libary: <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>.</p>
 <h3 data-number="4.2.2" id="a-tuple-that-is-readable"><span class="header-section-number">4.2.2</span> A <code class="sourceCode cpp">tuple</code> that is <code class="sourceCode cpp">readable</code><a href="#a-tuple-that-is-readable" class="self-link"></a></h3>
 <p>We encourage everyone to review Eric Niebler’s four-part series on iterators <span class="citation" data-cites="niebler.iter.0">[<a href="#ref-niebler.iter.0" role="doc-biblioref">niebler.iter.0</a>]</span> <span class="citation" data-cites="niebler.iter.1">[<a href="#ref-niebler.iter.1" role="doc-biblioref">niebler.iter.1</a>]</span> <span class="citation" data-cites="niebler.iter.2">[<a href="#ref-niebler.iter.2" role="doc-biblioref">niebler.iter.2</a>]</span> <span class="citation" data-cites="niebler.iter.3">[<a href="#ref-niebler.iter.3" role="doc-biblioref">niebler.iter.3</a>]</span>, as this problem is covered in there in some depth.</p>
 <p>There is a fundamental problem with standard library algorithms and how they interact with proxy iterators. One example used in the series is <code class="sourceCode cpp">unique_copy</code>:</p>
@@ -2045,13 +2066,13 @@ span.yellow {
 <li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">...&gt;</span></code> should be const-assignable whenever <code class="sourceCode cpp">T<span class="op">...</span></code> are const-assignable</li>
 <li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">&amp;...&gt;</span></code> should be constructible from <code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">...&gt;&amp;</span></code>.</li>
 <li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code> should be const-assignable</li>
-<li><code class="sourceCode cpp">bitset<span class="op">&lt;</span>N<span class="op">&gt;::</span>reference</code> should be const-assignable</li>
 </ul></li>
 </ul>
 <h2 data-number="7.2" id="tier-2"><span class="header-section-number">7.2</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
 <ul>
 <li>the addition of the following range adapters:
 <ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cache1</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>concat</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code><br />
@@ -2101,6 +2122,10 @@ span.yellow {
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>linear_distribute</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>sample</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_difference</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_intersection</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_union</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_symmetric_difference</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slice</code><br />
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>tail</code><br />
