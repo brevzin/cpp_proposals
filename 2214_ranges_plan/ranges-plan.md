@@ -118,7 +118,7 @@ int main() {
 But neither the ability to stream views directly nor `fmt::join` are in C++20, so there is no direct way to print a range at all.
  
 
-We think it's important that C++23 provides the ability to [format all the `view`s]{.addu}. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it's frustrating to even have to.
+We think it's important that C++23 provides the ability to [format all the ranges [@P2286R2]]{.addu}. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it's frustrating to even have to.
 
 # Views
 
