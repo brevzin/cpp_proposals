@@ -1038,7 +1038,7 @@ constexpr T fold(R&& r, T init, BinaryOperation op, Proj proj = {}) {
 }
 ```
 
-For more on this fold, along with several other fold algorithms, see [@P2322R3].
+For more on this fold, along with several other fold algorithms, see [@P2322R4].
 
 ### `ranges::reduce`
 
@@ -1329,7 +1329,7 @@ The following includes links ot papers that currently exist so far.
     - `views::adjacent_transform` ([@P2321R2])
 - the addition of the following range algorithms:
     - `ranges::iota`
-    - `ranges::fold` ([@P2322R3])
+    - `ranges::fold` ([@P2322R4])
 - the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2]):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`
@@ -1492,4 +1492,13 @@ references:
       issues:
         - year: 2020
       URL: https://swift.org/blog/swift-algorithms/
+    - id: P2322R4
+      citation-label: P2322R4
+      title: "`ranges::fold`"
+      author:
+        - family: Barry Revzin
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2322r4
+      
 ---
