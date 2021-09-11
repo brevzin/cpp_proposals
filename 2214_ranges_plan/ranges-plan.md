@@ -182,7 +182,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `sliding` | range-v3 | [Tier 1, renamed to `slide`]{.addu} |
 | `split` | C++20, but unergonomic | See [@P2210R0]. |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
-| `stride` | range-v3 | [Tier 1]{.addu} |
+| `stride` | range-v3 | [Tier 1 [@P1899R0]]{.addu} |
 | `tail` | range-v3 | [Tier 3]{.diffdel} |
 | `take` | C++20 | C++20 |
 | `take_exactly` | range-v3 | [Tier 3]{.diffdel} |
@@ -746,7 +746,7 @@ Conor talks about this family of ranges in a CppCon 2019 lighting talk [@hoekstr
 
 - `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4.
 - `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `adjacent`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here.
-- `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges.
+- `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See [@P1899R0].
 
 These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm `windowed`, Scala calls it `sliding`, D calls it `slide`, Haskell calls it `divvy`, and Clojure calls it `partition`.
 
@@ -1315,7 +1315,7 @@ The following includes links ot papers that currently exist so far.
     - `views::group_by`
     - `views::join_with`
     - `views::slide`
-    - `views::stride`
+    - `views::stride` ([@P1899R0])
 - the addition of the following range adapters specified in terms of other range adapters:
     - `views::enumerate` ([@P2164R5])
     - `views::zip` ([@P2321R2])

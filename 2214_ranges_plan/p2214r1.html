@@ -993,7 +993,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">stride</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">tail</code></td>
@@ -1531,7 +1531,7 @@ span.yellow {
 <ul>
 <li><code class="sourceCode cpp">chunk<span class="op">(</span>N<span class="op">)</span></code> breaks a range into non-overlapping ranges of length <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that the last range has length less than 4.</li>
 <li><code class="sourceCode cpp">slide<span class="op">(</span>N<span class="op">)</span></code> is very similar to <code class="sourceCode cpp">chunk</code> except its subranges are overlapping and all have length exactly <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>slide<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span><span class="op">]</span>,<span class="op">[</span><span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span><span class="op">]</span>,<span class="op">[</span><span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span><span class="op">]</span>,<span class="op">[</span><span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that <code class="sourceCode cpp">slide<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is similar to <code class="sourceCode cpp">adjacent</code>, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this <code class="sourceCode cpp">sliding</code>, which has a different tense from the other two, so we change it to <code class="sourceCode cpp">slide</code> here.</li>
-<li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges.</li>
+<li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See <span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>.</li>
 </ul>
 <p>These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm <code class="sourceCode cpp">windowed</code>, Scala calls it <code class="sourceCode cpp">sliding</code>, D calls it <code class="sourceCode cpp">slide</code>, Haskell calls it <code class="sourceCode cpp">divvy</code>, and Clojure calls it <code class="sourceCode cpp">partition</code>.</p>
 <table>
@@ -2023,7 +2023,7 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>group_by</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>)</li>
 </ul></li>
 <li>the addition of the following range adapters specified in terms of other range adapters:
 <ul>
@@ -2190,6 +2190,10 @@ span.yellow {
 <div id="ref-P1894R0">
 <p>[P1894R0] Andrew Tomazos. 2019-10-02. Proposal of std::upto, std::indices and std::enumerate. <br />
 <a href="https://wg21.link/p1894r0">https://wg21.link/p1894r0</a></p>
+</div>
+<div id="ref-P1899R0">
+<p>[P1899R0] Christopher Di Bella. 2019-10-07. stride_view. <br />
+<a href="https://wg21.link/p1899r0">https://wg21.link/p1899r0</a></p>
 </div>
 <div id="ref-P2011R1">
 <p>[P2011R1] Barry Revzin, Colby Pike. 2020-04-16. A pipeline-rewrite operator. <br />
