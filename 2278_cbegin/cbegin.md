@@ -1174,8 +1174,8 @@ constexpr auto $as-const-pointer$(const T* p) { return p; } // exposition only
 [1]{.pnum} The name `ranges​::​cdata` denotes a customization point object ([customization.point.object]).
 The expression `ranges​::​​cdata(E)` for a subexpression `E` of type `T` is expression-equivalent to:
 
-* [1.1]{.pnum} `@[*as-constant-ptr*(]{.addu}@ranges​::​data(static_cast<const T&>(E))@[)]{.addu}@` if `E` is an lvalue.
-* [1.2]{.pnum} Otherwise, ``@[*as-constant-ptr*(]{.addu}@ranges​::​data(static_cast<const T&&>(E))@[)]{.addu}@`.
+* [1.1]{.pnum} `@[*as-const-pointer*(]{.addu}@ranges​::​data(static_cast<const T&>(E))@[)]{.addu}@` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, ``@[*as-const-pointer*(]{.addu}@ranges​::​data(static_cast<const T&&>(E))@[)]{.addu}@`.
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cdata(E)` is a valid expression, it has pointer to [constant]{.addu} object type. — end note]
 :::
