@@ -1307,7 +1307,7 @@ The following includes links ot papers that currently exist so far.
 
 - `ranges::to` ([@P1206R6])
 - the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R1])
-- the ability to format `view`s with `std::format` ([@P2286R2])
+- the ability to format ranges with `std::format` ([@P2286R2])
 - the addition of the following first class range adapters:
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
