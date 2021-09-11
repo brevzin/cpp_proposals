@@ -369,7 +369,9 @@ Option (2) seems like a strictly worse version than Option (1) for C++, due to n
 
 Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `break_{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T, U>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
 
-Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point), and we'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there).
+Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point), and ergonomically it has the same issues as described earlier - you can't just return a `T` and an `unexpected<E>` for a lambda, you need to have a trailing return type. We'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well. 
+
+Given these options, none of which stand out as being especially amazing, this paper proposes (1). 
 
 ## Iterator-returning folds
 
