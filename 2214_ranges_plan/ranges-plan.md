@@ -32,6 +32,7 @@ Since [@P2214R0], updating with progress and links to other papers. Several chan
 * `flat_map` has been lowered to Tier 3 (since now `transform(f) | join` is correct for all cases).
 * `transform_maybe` has been lowered to Tier 2 (since it depends on `cache1`)
 * the various set range adaptors were omitted previously, and are added as Tier 3.
+* two more algorithms that weren't rangified for C++20 added as Tier 1: `shift_left` and `shift_right`.
 
 # Introduction
 
@@ -865,6 +866,8 @@ But there are a few algorithms that aren't in `<algorithm>` that do not have ran
 | Algorithm | Priority |
 |-----------|----------|
 | `iota` | [Tier 1]{.addu} |
+| `shift_left` | [Tier 1]{.addu} |
+| `shift_right` | [Tier 1]{.addu} |
 | `accumulate` | [Tier 1, renamed to `fold`.]{.addu} |
 | `reduce` | [Tier 2, along with `sum` and `product`.]{.yellow} |
 | `transform_reduce` | Not proposed. |
@@ -1152,6 +1155,8 @@ We think that once we add [`ranges::fold` as Tier 1 [@P2322R2]]{.addu} and [`ran
 
 But that does not hold for the other algorithms.
 
+`shift_left` and `shift_right` fall into a similar boat as `iota`, but aren't completely without questions. [@P1243R4] originally proposed these, but were dropped from the paper based on discussion about the return type. `shift_right` has a straightforward return type of `subrange(new_first, last)`. But what should `shift_left` return? If, for consistency, it returns `subrange(first, new_last)` then we don't return `last` &mdash; even though we had to to compute it, unlike all the other `ranges` algorithms. So that question will still have to be answered.
+
 ### `std::adjacent_difference` &rarr; `ranges::adjacent_transform`
 
 `std::adjacent_difference` joins `std::accumulate` and `std::inner_product` in the list of algorithms prejudicially named after a specific operation. We do not yet have `views::adjacent_transform` ([Tier 1]{.addu} above), and this would be the algorithm version of those views:
@@ -1330,6 +1335,8 @@ The following includes links ot papers that currently exist so far.
 - the addition of the following range algorithms:
     - `ranges::iota`
     - `ranges::fold` ([@P2322R4])
+    - `ranges::shift_left`
+    - `ranges::shift_right`
 - the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2]):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`

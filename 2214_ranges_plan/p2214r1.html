@@ -637,6 +637,7 @@ span.yellow {
 <li><code class="sourceCode cpp">flat_map</code> has been lowered to Tier 3 (since now <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> join</code> is correct for all cases).</li>
 <li><code class="sourceCode cpp">transform_maybe</code> has been lowered to Tier 2 (since it depends on <code class="sourceCode cpp">cache1</code>)</li>
 <li>the various set range adaptors were omitted previously, and are added as Tier 3.</li>
+<li>two more algorithms that weren’t rangified for C++20 added as Tier 1: <code class="sourceCode cpp">shift_left</code> and <code class="sourceCode cpp">shift_right</code>.</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>When Ranges was merged into C++20 <span class="citation" data-cites="P0896R4">[<a href="#ref-P0896R4" role="doc-biblioref">P0896R4</a>]</span>, it was knowingly incomplete. While it was based on the implementation experience in range-v3 <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span>, only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later.</p>
@@ -1689,6 +1690,14 @@ span.yellow {
 <td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="even">
+<td><code class="sourceCode cpp">shift_left</code></td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">shift_right</code></td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp">accumulate</code></td>
 <td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">fold</code>.</span></td>
 </tr>
@@ -1927,6 +1936,7 @@ span.yellow {
 <h2 data-number="5.2" id="algorithms-that-output-a-range-anamorphisms"><span class="header-section-number">5.2</span> Algorithms that Output a Range (Anamorphisms)<a href="#algorithms-that-output-a-range-anamorphisms" class="self-link"></a></h2>
 <p><code class="sourceCode cpp">iota</code> is the easiest one to consider here. We already have <code class="sourceCode cpp">views<span class="op">::</span>iota</code> in C++20, which importantly means that we already have all the correct constraints in place. In that sense, it almost takes less time to adopt <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code> than it would take to discuss whether or not it’s worth spending time adopting it.</p>
 <p>But that does not hold for the other algorithms.</p>
+<p><code class="sourceCode cpp">shift_left</code> and <code class="sourceCode cpp">shift_right</code> fall into a similar boat as <code class="sourceCode cpp">iota</code>, but aren’t completely without questions. <span class="citation" data-cites="P1243R4">[<a href="#ref-P1243R4" role="doc-biblioref">P1243R4</a>]</span> originally proposed these, but were dropped from the paper based on discussion about the return type. <code class="sourceCode cpp">shift_right</code> has a straightforward return type of <code class="sourceCode cpp">subrange<span class="op">(</span>new_first, last<span class="op">)</span></code>. But what should <code class="sourceCode cpp">shift_left</code> return? If, for consistency, it returns <code class="sourceCode cpp">subrange<span class="op">(</span>first, new_last<span class="op">)</span></code> then we don’t return <code class="sourceCode cpp">last</code> — even though we had to to compute it, unlike all the other <code class="sourceCode cpp">ranges</code> algorithms. So that question will still have to be answered.</p>
 <h3 data-number="5.2.1" id="stdadjacent_difference-rangesadjacent_transform"><span class="header-section-number">5.2.1</span> <code class="sourceCode cpp">std<span class="op">::</span>adjacent_difference</code> → <code class="sourceCode cpp">ranges<span class="op">::</span>adjacent_transform</code><a href="#stdadjacent_difference-rangesadjacent_transform" class="self-link"></a></h3>
 <p><code class="sourceCode cpp">std<span class="op">::</span>adjacent_difference</code> joins <code class="sourceCode cpp">std<span class="op">::</span>accumulate</code> and <code class="sourceCode cpp">std<span class="op">::</span>inner_product</code> in the list of algorithms prejudicially named after a specific operation. We do not yet have <code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="addu">Tier 1</span> above), and this would be the algorithm version of those views:</p>
 <table>
@@ -2058,6 +2068,8 @@ span.yellow {
 <ul>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>iota</code></li>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> (<span class="citation" data-cites="P2322R4">[<a href="#ref-P2322R4" role="doc-biblioref">P2322R4</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code></li>
 </ul></li>
 <li>the following other changes to standard library (necessary for the <code class="sourceCode cpp">zip</code> family, all handled by <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>):
 <ul>
@@ -2187,6 +2199,10 @@ span.yellow {
 <div id="ref-P1206R6">
 <p>[P1206R6] Corentin Jabot, Eric Niebler, Casey Carter. 2021-08-03. Conversions from ranges to containers. <br />
 <a href="https://wg21.link/p1206r6">https://wg21.link/p1206r6</a></p>
+</div>
+<div id="ref-P1243R4">
+<p>[P1243R4] Dan Raviv. 2020-02-12. Rangify New Algorithms. <br />
+<a href="https://wg21.link/p1243r4">https://wg21.link/p1243r4</a></p>
 </div>
 <div id="ref-P1255R6">
 <p>[P1255R6] Steve Downey. 2020-04-05. A view of 0 or 1 elements: views::maybe. <br />
