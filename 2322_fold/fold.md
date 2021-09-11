@@ -369,7 +369,20 @@ Option (2) seems like a strictly worse version than Option (1) for C++, due to n
 
 Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `break_{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T, U>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
 
-Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point), and ergonomically it has the same issues as described earlier - you can't just return a `T` and an `unexpected<E>` for a lambda, you need to have a trailing return type. We'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well. 
+Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point, as [@P0323R10] is already being discussed in LWG), and ergonomically it has the same issues as described earlier - you can't just return a `T` and an `unexpected<E>` for a lambda, you need to have a trailing return type. We'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there. Rust's name for this is `Try`, with a [new revision](https://rust-lang.github.io/rfcs/3058-try-trait-v2.html) in progress). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well. 
+
+Or, to put these all in a table, given that the accumulator has type `T`:
+
+<table>
+<tr><th/><th>Callable is Pure?</th><th>Callable returns...</th><th>Algorithm returns...</th></tr>
+<tr><th>1</th><td>❌</td><td>`bool`</td><td>`T`</td></tr>
+<tr><th>2</th><td>❌</td><td>`enum class control_flow`</td><td>`T`</td></tr>
+<tr><th>3</th><td>✔️</td><td>`variant<continue_<T>, break_<U>>`</td><td>`variant<continue_<T>, break_<U>>`</td></tr>
+<tr><th>4</th><td>✔️</td><td>`expected<T, E>`<br/>`optional<T>`</td><td>`expected<T, E>`<br />`optional<T>`</td></tr>
+</table>
+
+Option (3) is far too unergonomic in C++ to be reasonable, but Option (4) does have the benefit that it would allow different return types for the early-return and full-consume cases. 
+
 
 Given these options, none of which stand out as being especially amazing, this paper proposes (1). 
 

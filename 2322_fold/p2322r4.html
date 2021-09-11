@@ -1031,7 +1031,79 @@ Opposite Side
 <p>Option (1) is a questionable option because of mutating state (note that we cannot use <code class="sourceCode cpp">predicate</code> as the constraint on the type, because <code class="sourceCode cpp">predicate</code>s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.</p>
 <p>Option (2) seems like a strictly worse version than Option (1) for C++, due to not being able to use existing predicates.</p>
 <p>Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn’t just return <code class="sourceCode cpp">continue_<span class="op">{</span>x<span class="op">}</span></code> in one case and <code class="sourceCode cpp">break_<span class="op">{</span>y<span class="op">}</span></code> in another since those have different types, so you’d basically always have to provide <code class="sourceCode cpp"><span class="op">-&gt;</span> fold_while_t<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library’s sum types.</p>
-<p>Option (4) isn’t a great option for C++ because we don’t even have <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> in the standard library yet (although hopefully imminent at this point), and ergonomically it has the same issues as described earlier - you can’t just return a <code class="sourceCode cpp">T</code> and an <code class="sourceCode cpp">unexpected<span class="op">&lt;</span>E<span class="op">&gt;</span></code> for a lambda, you need to have a trailing return type. We’d also want to generalize this approach to any “truthy” type which would require coming up with a way to conceptualize (in the <code class="sourceCode cpp"><span class="kw">concept</span></code> sense) “truthy” (since <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would be a valid type as well, as well as any other the various user-defined versions out there). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well.</p>
+<p>Option (4) isn’t a great option for C++ because we don’t even have <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> in the standard library yet (although hopefully imminent at this point, as <span class="citation" data-cites="P0323R10">[<a href="#ref-P0323R10" role="doc-biblioref">P0323R10</a>]</span> is already being discussed in LWG), and ergonomically it has the same issues as described earlier - you can’t just return a <code class="sourceCode cpp">T</code> and an <code class="sourceCode cpp">unexpected<span class="op">&lt;</span>E<span class="op">&gt;</span></code> for a lambda, you need to have a trailing return type. We’d also want to generalize this approach to any “truthy” type which would require coming up with a way to conceptualize (in the <code class="sourceCode cpp"><span class="kw">concept</span></code> sense) “truthy” (since <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would be a valid type as well, as well as any other the various user-defined versions out there. Rust’s name for this is <code class="sourceCode cpp">Try</code>, with a <a href="https://rust-lang.github.io/rfcs/3058-try-trait-v2.html">new revision</a> in progress). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well.</p>
+<p>Or, to put these all in a table, given that the accumulator has type <code class="sourceCode cpp">T</code>:</p>
+<table>
+<tr>
+<th></th>
+<th>
+Callable is Pure?
+</th>
+<th>
+Callable returns…
+</th>
+<th>
+Algorithm returns…
+</th>
+</tr>
+<tr>
+<th>
+1
+</th>
+<td>
+❌
+</td>
+<td>
+<code class="sourceCode cpp"><span class="dt">bool</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr>
+<th>
+2
+</th>
+<td>
+❌
+</td>
+<td>
+<code class="sourceCode cpp"><span class="kw">enum</span> <span class="kw">class</span> control_flow</code>
+</td>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr>
+<th>
+3
+</th>
+<td>
+✔️
+</td>
+<td>
+<code class="sourceCode cpp">variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, break_<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">variant<span class="op">&lt;</span>continue_<span class="op">&lt;</span>T<span class="op">&gt;</span>, break_<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span></code>
+</td>
+</tr>
+<tr>
+<th>
+4
+</th>
+<td>
+✔️
+</td>
+<td>
+<code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code><br /><code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code><br /><code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+</td>
+</tr>
+</table>
+<p>Option (3) is far too unergonomic in C++ to be reasonable, but Option (4) does have the benefit that it would allow different return types for the early-return and full-consume cases.</p>
 <p>Given these options, none of which stand out as being especially amazing, this paper proposes (1).</p>
 <h2 data-number="4.4" id="iterator-returning-folds"><span class="header-section-number">4.4</span> Iterator-returning folds<a href="#iterator-returning-folds" class="self-link"></a></h2>
 <p>Up until this point, this paper has only discussed returning a <em>value</em> from <code class="sourceCode cpp">fold</code>: whatever we get as the result of <code class="sourceCode cpp">f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>init, e0<span class="op">)</span>, e1<span class="op">)</span>, e2<span class="op">)</span>, e3<span class="op">)</span></code>. But there is another value that we compute along the way that is thrown out: the end iterator.</p>
@@ -1430,6 +1502,10 @@ Opposite Side
 <div id="ref-iterator_fold_self">
 <p>[iterator_fold_self] Ashley Mannix. 2020. Tracking issue for <code class="sourceCode cpp">iterator_fold_self</code>. <br />
 <a href="https://github.com/rust-lang/rust/issues/68125">https://github.com/rust-lang/rust/issues/68125</a></p>
+</div>
+<div id="ref-P0323R10">
+<p>[P0323R10] JF Bastien, Vicente Botet. 2021-04-15. std::expected. <br />
+<a href="https://wg21.link/p0323r10">https://wg21.link/p0323r10</a></p>
 </div>
 <div id="ref-P2214R0">
 <p>[P2214R0] Barry Revzin, Conor Hoekstra, Tim Song. 2020-10-15. A Plan for C++23 Ranges. <br />
