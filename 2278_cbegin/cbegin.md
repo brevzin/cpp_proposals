@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2278R0], added wording.
+Since [@P2278R0], added wording (including `ranges::cdata`, which was omitted in the first revision, and adding member `cbegin` and `cend` to `view_interface`). Renamed `views::as_const` to `views::as_const`.
 
 # How we got to here
 
@@ -196,7 +196,7 @@ This table points out a few things:
 - Sometimes, `It` is already a constant iterator, so we would want to actively avoid wrapping in such a case. 
 - The last couple rows are hard. 
 
-Thankfully, this is a solved problem. The `views::const_` [in range-v3](https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp) has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:
+Thankfully, this is a solved problem. The `views::as_const` [in range-v3](https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp) has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:
 
 ```cpp
 template <std::input_iterator It>
@@ -515,7 +515,7 @@ In addition to simply working across all ranges, it has a few other features wor
 
 Note that here, `ranges::end` already checks that the type returned is a `sentinel` for the type returned by `ranges::begin`. Given that fact, the implementation here already ensures that `sentinel_for<decltype(cbegin(r)), decltype(cend(r))>`  holds.
 
-## A `views::const_`
+## A `views::as_const`
 
 A whole const-view can be implemented on top of these pieces, in the same way that `views::reverse` is implemented on top of `reverse_iterator` (see the full implementation [@const-impl]):
 
@@ -542,7 +542,7 @@ inline constexpr bool ::std::ranges::enable_borrowed_range<const_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 // libstdc++ specific (hopefully standard version coming soon!)
-inline constexpr std::views::__adaptor::_RangeAdaptorClosure const_ =
+inline constexpr std::views::__adaptor::_RangeAdaptorClosure as_const =
     []<std::ranges::viewable_range R>(R&& r)
     {
         using U = std::remove_cvref_t<R>;
@@ -563,19 +563,19 @@ The three cases here are:
 2. `r` is not a constant range but `std::as_const(r)` would be. Rather than do any wrapping ourselves, we defer to `std::as_const`. Example is `std::vector<T>`. We explicitly remove `view`s from this set, because `views::all()` would drop the `const` anyway and we may need to preserve it (e.g. `single_view<T>`).
 3. `r` is neither a constant range nor can easily be made one, so we have to wrap ourselves. Examples are basically any mutable view. 
 
-To me, being able to provide a `views::const_` is the ultimate solution for this problem, since it's the one that guarantees correctness even in the presence of a range-based for statement:
+To me, being able to provide a `views::as_const` is the ultimate solution for this problem, since it's the one that guarantees correctness even in the presence of a range-based for statement:
 
 ```cpp
-for (auto const& e : r | views::const_) { ... }
+for (auto const& e : r | views::as_const) { ... }
 ```
 
 Or passing a constant range to an algorithm:
 
 ```cpp
-dont_touch_me(views::const_(r));
+dont_touch_me(views::as_const(r));
 ```
 
-As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `const_`, but there's a few other good name options here like `views::as_const` or `views::to_const`.
+As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `as_const`, but there's a few other good name options here like `views::as_const` or `views::to_const`.
 
 ## What About `std::cbegin` and `std::cend`?
 
@@ -826,7 +826,7 @@ But this is fine. None of these member functions are even strictly necessary, an
 
 The status quo is that we have an algorithm named `cbegin` whose job is to provide a constant iterator, but it does not always do that, and sometimes it doesn't even provide a mutable iterator. This is an unfortunate situation. 
 
-We can resolve this by extending `std::ranges::cbegin` and `std::ranges::cend` to conditionally wrap their provided range's `iterator`/`sentinel` pairs to ensure that the result is a constant iterator, and use these tools to build up a `views::const_` range adapter. This completely solves the problem without any imposed boilerplate per range. 
+We can resolve this by extending `std::ranges::cbegin` and `std::ranges::cend` to conditionally wrap their provided range's `iterator`/`sentinel` pairs to ensure that the result is a constant iterator, and use these tools to build up a `views::as_const` range adapter. This completely solves the problem without any imposed boilerplate per range. 
 
 However, `std::cbegin` and `std::cend` are harder to extend. If we changed them at all, we would probably punt on handling C++17 input iterators and non-`const`-iterable ranges. This means that `std::cbegin` and `std::ranges::cbegin` do different things, but `std::rbegin` and `std::ranges::rbegin` _already_ do different things. `std::ranges::rbegin` is already a superior `std::rbegin`, so having `std::ranges::cbegin` be a superior `std::cbegin` only follows from that. In other words, `std::cbegin` is constrained to not deviate too much from its current behavior, whereas `std::ranges::cbegin` is new and Can Do Better.
 
@@ -835,6 +835,56 @@ Would it be worth making such a change to `std::cbegin`?
 Ultimately, the question is where in the Ranges Plan for C++23 [@P2214R0] such an improvement would fit in? That paper is focused exclusively on providing a large amount of new functionality to users. The facility proposed in this paper, while an improvement over the status quo, does not seem more important than any of that paper. I just want us to keep that in mind - I do not consider this problem in the top tier of ranges-related problems that need solving. 
 
 ## Wording
+
+### Span
+
+Assuming we want to add member `cmeow` to span, the following would ensure that `ranges::cmeow(s)` and `s.cmeow()` all return the same thing. This effectively reverts [@LWG3320]. [While typically in the standard library, `const_reverse_iterator` is an alias for `std::reverse_iterator<const_iterator>`, here it is flipped, because `ranges::rbegin` will attempt to call member `rbegin` but `ranges::cbegin` will not. So this ensures that the algorithms and members reutrn the same thing]{.draftnote}
+
+Add to the synopsis in [span.overview]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  template<class ElementType, size_t Extent = dynamic_extent>
+  class span {
+  public:
+    // constants and types
+    using element_type = ElementType;
+    using value_type = remove_cv_t<ElementType>;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using pointer = element_type*;
+    using const_pointer = const element_type*;
+    using reference = element_type&;
+    using const_reference = const element_type&;
+    using iterator = $implementation-defined$;        // see [span.iterators]
++   using const_iterator = std::const_iterator<iterator>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
++   using const_reverse_iterator = std::const_iterator<reverse_iterator>;    
+    static constexpr size_type extent = Extent;
+
+    // ...
+
+    // [span.iterators], iterator support
+    constexpr iterator begin() const noexcept;
+    constexpr iterator end() const noexcept;
++   constexpr const_iterator cbegin() const noexcept { return const_iterator(begin()); }
++   constexpr const_iterator cend() const noexcept { return const_iterator(end()); }
+    constexpr reverse_iterator rbegin() const noexcept;
+    constexpr reverse_iterator rend() const noexcept;
++   constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(rbegin()); }
++   constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(rend()); }
+
+  private:
+    pointer data_;              // exposition only
+    size_type size_;            // exposition only
+  };
+  
+  // ...
+}
+```
+:::
+
 
 ### Iterators
 
@@ -875,7 +925,7 @@ namespace std {
 +   using type = basic_const_iterator<common_type_t<T, U>>;
 + };
 + template<typename T, common_with<T> U>
-+ struct std::common_type<U, basic_const_iterator<T>> {
++ struct common_type<U, basic_const_iterator<T>> {
 +   using type = basic_const_iterator<common_type_t<T, U>>;
 + };
 + template<typename T, common_with<T> U>
@@ -1010,6 +1060,8 @@ public:
 
 ### Ranges
 
+[`$constant-iterator$` is exposition-only while `constant_range` is not, largely on the basis that I'm aware of use-cases for the latter [@coerce-const] but not the former.]{.draftnote}
+
 Add to [ranges.syn]{.sref}:
 
 ::: bq
@@ -1078,7 +1130,7 @@ namespace std::ranges {
 + template<class T>
 +   inline constexpr bool enable_borrowed_range<const_view<T>> = enable_borrowed_range<T>;
 + 
-+ namespace views { inline constexpr $unspecified$ const_ = $unspecified$; }
++ namespace views { inline constexpr $unspecified$ as_const = $unspecified$; }
   
   // ...
 }
@@ -1153,7 +1205,7 @@ Update `ranges::crend` in [range.access.crend]{.sref}:
 * [1.2]{.pnum} Otherwise, `ranges​::​rend(static_cast<const T&&>(E))`.
 :::
 ::: addu
-* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​cend(E)` is ill-formed.
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​rend(E)` is ill-formed.
 * [1.2]{.pnum} Otherwise, `ranges::crend(E)` is expression-equivalent to `make_const_sentinel(ranges::rend($possibly-const$(t))`.
 :::
 
@@ -1172,13 +1224,127 @@ constexpr auto $as-const-pointer$(const T* p) { return p; } // exposition only
 :::
 
 [1]{.pnum} The name `ranges​::​cdata` denotes a customization point object ([customization.point.object]).
-The expression `ranges​::​​cdata(E)` for a subexpression `E` of type `T` is expression-equivalent to:
+[The expression `ranges​::​​cdata(E)` for a subexpression `E` of type `T` is expression-equivalent to:]{.rm} [Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`. Then:]{.addu}
 
-* [1.1]{.pnum} `@[*as-const-pointer*(]{.addu}@ranges​::​data(static_cast<const T&>(E))@[)]{.addu}@` if `E` is an lvalue.
-* [1.2]{.pnum} Otherwise, ``@[*as-const-pointer*(]{.addu}@ranges​::​data(static_cast<const T&&>(E))@[)]{.addu}@`.
+::: rm
+* [1.1]{.pnum} `ranges​::​data(static_cast<const T&>(E))` if `E` is an lvalue.
+* [1.2]{.pnum} Otherwise, `ranges​::​data(static_cast<const T&&>(E))`.
+:::
+::: addu
+* [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​data(E)` is ill-formed.
+* [1.2]{.pnum} Otherwise, `ranges::cdata(E)` is expression-equivalent to `$as-const-pointer$(ranges::data($possibly-const$(t)))`.
+:::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cdata(E)` is a valid expression, it has pointer to [constant]{.addu} object type. — end note]
 :::
+
+Add `cbegin` and `cend` to `view_interface` in [view.interface.general]{.sref}:
+
+::: bq
+```diff
+namespace std::ranges {
+  template<class D>
+    requires is_class_v<D> && same_as<D, remove_cv_t<D>>
+  class view_interface {
+  private:
+    constexpr D& $derived$() noexcept {               // exposition only
+      return static_cast<D&>(*this);
+    }
+    constexpr const D& $derived$() const noexcept {   // exposition only
+      return static_cast<const D&>(*this);
+    }
+
+  public:
+    constexpr bool empty() requires forward_range<D> {
+      return ranges::begin($derived$()) == ranges::end($derived$());
+    }
+    constexpr bool empty() const requires forward_range<const D> {
+      return ranges::begin($derived$()) == ranges::end($derived$());
+    }
+
++   constexpr auto cbegin() {
++       return ranges::cbegin($derived$());
++   }
++   constexpr auto cbegin() const requires range<const D> {
++       return ranges::cbegin($derived$());
++   }    
++   constexpr auto cend() {
++       return ranges::cend($derived$());
++   }
++   constexpr auto cend() const requires range<const D> {
++       return ranges::cend($derived$());
++   }    
+
+    // ...
+  };
+}
+```
+:::
+
+### 24.7.? Const view [range.const]
+
+#### 24.7.?.1 Overview [range.const.overview]
+
+::: bq
+[1]{.pnum} `const_view` presents a `view` of an underlying sequence as constant. That is, the elements of a `const_view` cannot be modified.
+
+[#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U`be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
+
+* [#.#]{.pnum} `views::all(E)` if `T` models `constant_range`
+* [#.#]{.pnum} Otherwise, `views::all(static_cast<const U&>(E))` if `const U` models `constant_range` and `U` does not model `view`.
+* [#.#]{.pnum} Otherwise, `ranges::const_view{E}`.
+
+[#]{.pnum} [*Example*:
+```cpp
+template<constant_range R>
+void cant_touch_this(R&&);
+
+std::vector<int> beat = {1, 2, 3, 4};
+cant_touch_this(views::as_const(beat)); // will not modify the elements of beat
+```
+-*end example*]
+:::
+
+#### 24.7.?.2 Class template `const_view` [range.const.view]
+
+::: bq
+```cpp
+namespace std::ranges {
+  template<input_range V>
+    requires view<V>
+  class const_view : public zip_interface<const_view<V>>
+  {
+    V $base_$ = V(); // exposition only
+    
+  public:
+    const_view() requires default_initializable<V> = default;
+    constexpr explicit const_view(V base);
+    
+    constexpr V base() const& requires copy_as_constconstructible<V> { return base_; }
+    constexpr V base() && { return std::move(base_); }    
+    
+    consetxpr auto begin() requires (!$simple-view$<V>) { return ranges::cbegin($base_$); }
+    consetxpr auto begin() const requires range<const V> { return ranges::cbegin($base_$); }
+    
+    constexpr auto end() requires (!$simple-view$<V>) { return ranges::cend($base_$); }
+    constexpr auto end() const requires range<const V> { return ranges::cend($base_$); }
+    
+    constexpr auto size() requires sized_range<V> { return ranges::size($base_$); }
+    constexpr auto size() const requires sized_range<const V> { return ranges::size($base_$); }
+  };
+  
+  template<class R>
+    const_view(R&&) -> const_view<views::all_t<R>>;
+}
+```
+
+```cpp
+constexpr explicit const_view(V base);
+```
+
+[1]{.pnum} *Effects*: Initializes `$base_$` with `std::move(base)`.
+:::
+
 
 # Epilogue
 
@@ -1194,4 +1360,12 @@ references:
     issued:
       - year: 2020
     URL: https://godbolt.org/z/Px6Gfe
+  - id: coerce-const
+    citation-label: coerce-const
+    title: "Coercing deep const-ness"
+    author:
+      - family: Barry Revzin
+    issued:
+      - year: 2021
+    URL: https://brevzin.github.io/c++/2021/09/10/deep-const/
 ---
