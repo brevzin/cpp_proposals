@@ -143,7 +143,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `chunk` | range-v3 | [Tier 1]{.addu} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | [Tier 1 [@P2278R0]]{.addu} |
+| `const_` | range-v3 | [Tier 1 [@P2278R1]]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -259,25 +259,21 @@ The `zip` family of range adapters is an extremely useful set of adapters with b
 1. `adjacent` &mdash; `adjacent(E)` is equivalent to `zip(E, E | drop(1))`
 1. `adjacent_transform` &mdash; is to `adjacent` what `zip_transform` is to `zip`
 
-We hope to be able to specify these five in terms of two, exposition-only range adapters: `@_iter-zip-transform_@<V>` and `@_iter-adjacent-transform_@<V>`.
-
 Indeed, we have many algorithms that exist largely because we don't have `zip` (and prior to Ranges, didn't have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to `ranges::transform` 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a `zip` of the two ranges, `adjacent_difference` is `adjacent_transform`, `inner_product` is `zip_transform` followed by `accumulate`, and so on and so on. This is why we think `zip` is the top priority view.
 
 range-v3 uses the name `zip_with`, but here we are instead proposing `zip_transform`. The reason is that what we're doing is, quite simply, a `transform` and in C++, we don't really have a strong association of that with the `_with` suffix. Instead, we have algorithms like `begins_with` and concepts like `swappable_with` and `totally_ordered_with`, which have nothing to do with this sort of thing. 
 
-The most generic of this group is `@_iter-zip-transform_@<V>`. It is core functionality for the family and aids significantly in the specification effort where LWG bandwidth is concerned. `@_iter-zip-transform_@(f, rs...)` takes an `n`-ary invocable and `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `@_iter-zip-transform_@` is the minimum size of its ranges. The `reference` type is the type of `f(*is...)` while the `value_type` is `V` (described in more detail [later](#zip-and-zip_transforms-value_type) along with the specific choices for `@_V~zip_transform~_@` and `@_V~zip~_@` used below).
+range-v3 implements `zip` and `zip_with` in terms of an underlying adaptor named `iter_zip_with`, which takes an `n`-ary invocable and `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `iter_zip_with` is the minimum size of its ranges. The `reference` type is the type of `f(*is...)` while the `value_type` is `V` (described in more detail [later](#zip-and-zip_transforms-value_type) along with the specific choices for `@_V~zip_transform~_@` and `@_V~zip~_@` used below). 
 
-From `@_iter-zip-transform_@`, we get:
+But it turned out that these two views have enough differences that this doesn't aid in the specification effort that much, and so [@P2321R2] did not do it this way. Instead, `zip_transform_view<F, V...>` is specified in terms of a member `zip_view<V...>`. 
 
-- `zip_transform(F, E...)` is expression-equivalent to `@_iter-zip-transform_@<@_V~zip_transform~_@>(@_indirected_@(F), Es...)`, where `@_indirected_@` is a specification-only function object that dereferences all of its arguments before invoking `F` (e.g. `@_indirected_@(F)(x, y, z)` is equivalent to `F(*x, *y, *z)`)
-- `zip(E...)` is expression-equivalent to `views::@_iter-zip-transform_@<@_V~zip~_@>(@_make-zip-tuple_@, Es...)`, where `@_make-zip-tuple_@` is basically `[]<input_iterator... Is>(Is... is) { return tuple<iter_reference_t<Is>...>(*is...); }`.
-- `enumerate(E)` is expression-equivalent to `zip(@_index-view_@(E), E)`. We will discuss why `@_index-view_@(E)` instead of `iota(range_size_t<decltype(E)>(0)` [later](#enumerates-first-range).
+Having those two, `enumerate(E)` is expression-equivalent to `zip(@_index-view_@(E), E)`. We will discuss why `@_index-view_@(E)` instead of `iota(range_size_t<decltype(E)>(0)` [later](#enumerates-first-range).
 
-But we do not want to define `adjacent(E)` as `zip(E, E | drop(1))`. The primary reason to avoid doing this, and to make `adjacent` (or rather, `@_iter-adjacent-transform_@<V>`) a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that `drop` has to store (see also the `drop`/`tail` discussion earlier).
+But we do not want to define `adjacent(E)` as `zip(E, E | drop(1))`. The primary reason to avoid doing this, and to make `adjacent` a first-class view type despite the added specification effort, is that it allows supporting move-only views. On top of that, it has the benefit of not having to store the view twice or the other cruft that `drop` has to store (see also the `drop`/`tail` discussion earlier).
 
-Once we have `@_iter-adjacent-transform_@<V>`, `adjacent` and `adjacent_transform` follow in the same way that we defined `zip` and `zip_transform`.
+Similar to how `zip_transform_view<F, V...>` is specified in terms of a member `zip_view<V...>`, `adjacent_transform_view<V, F, N>` is specified as having a member `adjacent_view<V, N>`.
 
-In short, we get five extremely useful ranges for the price of three specification-only ones. Which is why we think they should be considered and adopted as a group. 
+In short, we get five extremely useful ranges largely from the price of two of them (plus a lot of boilerplate). Which is why we think they should be considered and adopted as a group. 
 
 But in order to actually adopt `zip` and friends into C++23, we need to resolve several problems.
 
@@ -569,14 +565,6 @@ Or for this specific example:
 
 We think these would be the most valuable choices. 
 
-As such, we can be more precise in our earlier formulation and say that:
-
-- `views::zip_transform(F, E...)` is expression-equivalent to `views::@_iter-zip-transform_@<remove_cvref_t<invoke_result_t<decltype(F)&, range_reference_t<decltype(E)>...>>>(@_indirected_@(F), E...)`
-- `views::zip(E...)` is expression-equivalent to `views::@_iter-zip-transform_@<std::tuple<range_value_t<decltype(E)>...>>(@_forward-as-tuple_@, E...)`
-
-and similar for `adjacent_transform` and `adjacent`.
-
-
 ### `enumerate`'s first range
 
 We wrote earlier that `enumerate(r)` can be defined as `zip(iota(range_size_t<R>(0)), r)`, but it turns out that this isn't _quite_ right, and we need to do something slightly different.
@@ -855,7 +843,7 @@ would not compile. And were it to compile, what should it actually mean? `zip`'s
 
 In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int const&>` (following the various `tuple` changes performed to implement `zip` in [@P2321R2]), which is exactly what you want.
 
-Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R0] and is Tier 1 material. 
+Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R1] and is Tier 1 material. 
 
 # Algorithms
 
@@ -1325,7 +1313,7 @@ The following includes links ot papers that currently exist so far.
 - the addition of the following first class range adapters:
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
-    - `views::const_` ([@P2278R0])    
+    - `views::const_` ([@P2278R1])    
     - `views::group_by`
     - `views::join_with`
     - `views::slide`
@@ -1511,5 +1499,12 @@ references:
       issued:
         year: 2021
       URL: https://wg21.link/p2322r4
-      
+    - id: P2278R1
+      citation-label: P2278R1
+      title: "`cbegin` should always return a constant iterator"
+      author:
+        - family: Barry Revzin
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2278r1
 ---
