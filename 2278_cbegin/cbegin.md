@@ -1320,7 +1320,7 @@ namespace std::ranges {
     const_view() requires default_initializable<V> = default;
     constexpr explicit const_view(V base);
     
-    constexpr V base() const& requires copy_as_constconstructible<V> { return base_; }
+    constexpr V base() const& requires copy_constructible<V> { return base_; }
     constexpr V base() && { return std::move(base_); }    
     
     consetxpr auto begin() requires (!$simple-view$<V>) { return ranges::cbegin($base_$); }
