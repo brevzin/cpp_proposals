@@ -142,6 +142,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
 | `cartesian_product` | range-v3 | [Tier 1 [@P2374R1]]{.addu} |
 | `chunk` | range-v3 | [Tier 1]{.addu} |
+| `chunk_by` | range-v3 | [Tier 1]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
 | `const_` | range-v3 | [Tier 1 [@P2278R1]]{.addu} |
@@ -159,7 +160,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `for_each` | range-v3 | [Tier 3. Most languages call this `flat_map`, but we probably need to call it `transform_join`. <br />This is now completely supported as `transform(f) | join`]{.diffdel} |
 | `generate` | range-v3 | [Tier 2]{.yellow} |
 | `generate_n` | range-v3 | [Tier 2]{.yellow} |
-| `group_by` | range-v3 | [Tier 1 (but not how range-v3 does it). Possibly renamed to `chunk_by`.]{.addu}. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
+| `group_by` | range-v3 | Not proposed. See [`group_by` discussion](#the-group_by-family) |
 | `head` | (not in range-v3) | [Tier 3]{.diffdel} |
 | `indirect` | range-v3 | Not proposed |
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
@@ -638,6 +639,8 @@ This would give us three range adaptors that produce non-overlapping ranges of r
 - `chunk_on` (or whatever), which takes a unary projection
 
 And we think that it's nice that all of these algorithms have the same root. There *are* other algorithms that produces ranges of ranges, but they either exclude some elements (`split`) or repeat some elements (`slide`). 
+
+Additionally, just recently, range-v3 just added a [`views::chunk_by`](https://github.com/ericniebler/range-v3/pull/1648) that does exactly as suggested here (comparing consecutive elements, as opposed to range-v3 preexisting `views::group_by` which compares against the first in group).
 
 ## Monadic binds
 
@@ -1324,8 +1327,8 @@ The following includes links ot papers that currently exist so far.
 - the addition of the following first class range adapters:
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
+    - `views::chunk_by`    
     - `views::const_` ([@P2278R1])    
-    - `views::group_by`
     - `views::join_with`
     - `views::slide`
     - `views::stride` ([@P1899R0])
@@ -1351,6 +1354,7 @@ The following includes links ot papers that currently exist so far.
 
 - the addition of the following range adapters:
     - `views::cache1`
+    - `views::chunk_on`    
     - `views::concat`
     - `views::cycle`
     - `views::delimit`    
