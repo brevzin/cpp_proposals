@@ -1339,10 +1339,10 @@ The following includes links ot papers that currently exist so far.
     - `views::adjacent` ([@P2321R2])
     - `views::adjacent_transform` ([@P2321R2])
 - the addition of the following range algorithms:
-    - `ranges::iota`
+    - `ranges::iota` ([@P2440R0])
     - `ranges::fold` ([@P2322R4])
-    - `ranges::shift_left`
-    - `ranges::shift_right`
+    - `ranges::shift_left` ([@P2440R0])
+    - `ranges::shift_right` ([@P2440R0])
 - the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2]):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`
@@ -1530,4 +1530,12 @@ references:
       issued:
         year: 2021
       URL: https://wg21.link/p2278r1
+    - id: P2440R0
+      citation-label: P2440R0
+      title: "`ranges::iota`, `ranges::shift_left`, and `ranges::shift_right`"
+      author:
+        - family: Tim Song
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2440r0
 ---
