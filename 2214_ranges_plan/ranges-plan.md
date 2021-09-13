@@ -1324,20 +1324,19 @@ The following includes links ot papers that currently exist so far.
 - `ranges::to` ([@P1206R6])
 - the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R1])
 - the ability to format ranges with `std::format` ([@P2286R2])
-- the addition of the following first class range adapters:
+- the addition of the following range adapters:
+    - `views::adjacent` ([@P2321R2])
+    - `views::adjacent_transform` ([@P2321R2])
     - `views::as_const` ([@P2278R1])
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
     - `views::chunk_by`    
+    - `views::enumerate` ([@P2164R5])
     - `views::join_with`
     - `views::slide`
     - `views::stride` ([@P1899R0])
-- the addition of the following range adapters specified in terms of other range adapters:
-    - `views::enumerate` ([@P2164R5])
     - `views::zip` ([@P2321R2])
     - `views::zip_transform` ([@P2321R2])
-    - `views::adjacent` ([@P2321R2])
-    - `views::adjacent_transform` ([@P2321R2])
 - the addition of the following range algorithms:
     - `ranges::iota` ([@P2440R0])
     - `ranges::fold` ([@P2322R4])
