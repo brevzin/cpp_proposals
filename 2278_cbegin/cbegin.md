@@ -1312,7 +1312,7 @@ cant_touch_this(views::as_const(beat)); // will not modify the elements of beat
 namespace std::ranges {
   template<input_range V>
     requires view<V>
-  class const_view : public zip_interface<const_view<V>>
+  class const_view : public view_interface<const_view<V>>
   {
     V $base_$ = V(); // exposition only
     
