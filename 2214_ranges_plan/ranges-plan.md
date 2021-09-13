@@ -33,6 +33,7 @@ Since [@P2214R0], updating with progress and links to other papers. Several chan
 * `transform_maybe` has been lowered to Tier 2 (since it depends on `cache1`)
 * the various set range adaptors were omitted previously, and are added as Tier 3.
 * two more algorithms that weren't rangified for C++20 added as Tier 1: `shift_left` and `shift_right`.
+* added more color to the discussion of `chunk_by`
 
 # Introduction
 
@@ -615,18 +616,28 @@ range-v3 is mostly in the first category, except its implementation choice is qu
 
 In Haskell, the second `1` starts a new group because we're comparing it with its previous element and `3 <= 1` is `false`. But in range-v3, the second `1` does not start a new group because we're comparing it with the first element of the group, and `1 <= 1` is `true`. We think the Haskell/Elixir/D choice is more familiar and more useful.
 
+It's also worth noting that technically Haskell has *two* different `groupBy` functions: `Data.List.groupBy` (which does what range-v3 does) and `Data.List.GroupBy.groupBy` (which does what we're stating Haskell's implementation really is). This newer one is even called the "Replacement definition" in its docs [@haskell.groupby].
+
 The question is _which_ one of the three options would we want to pick for C++Next?
 
 Well, when it comes to algorithms, the more the better. We think it's clear we wouldn't want to pick the 3rd option (we can easily produce a dictionary from the 2nd option), so the question is between the first two. While the binary version of `group_by` is more generic (since you approximate the unary version in terms of it, even it's a different shape) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both.
 
 We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate &mdash; but we're not sure if that's the best idea.
 
-Given the time and bandwidth pressure, we think the top priority is the binary `group_by` and the unary form, while still very useful, should be a Tier 2 addition. As far as naming goes, there two approaches we could take:
+Given the time and bandwidth pressure, we think the top priority is the binary `group_by` and the unary form, while still very useful, should be a Tier 2 addition.
 
-- `group_by` takes a binary predicate and either `group_on` or `group_by_key` takes a unary transform.
-- `chunk_by` takes a binary predicate and `chunk_on` takes a unary transform.
+As far as naming goes, our preferred naming is:
 
-The latter choice also lines up with a different algorithm that takes a range and yields a range of ranges: [`chunk`](#the-sliding-family).
+- `chunk_by` takes a binary predicate
+- `chunk_on` (or perhaps `chunk_by_key` or `chunk_on_key`) takes a unary transform and produces a range of pairs (as D, Rust, and Python do, but Swift does not)
+
+This would give us three range adaptors that produce non-overlapping ranges of ranges that include every element of the original range exactly once:
+
+- `chunk`, which takes a number (described [here](#the-sliding-family))
+- `chunk_by`, which takes a binary predicate
+- `chunk_on` (or whatever), which takes a unary projection
+
+And we think that it's nice that all of these algorithms have the same root. There *are* other algorithms that produces ranges of ranges, but they either exclude some elements (`split`) or repeat some elements (`slide`). 
 
 ## Monadic binds
 
@@ -1491,6 +1502,14 @@ references:
       issues:
         - year: 2020
       URL: https://swift.org/blog/swift-algorithms/
+    - id: haskell.groupby
+      citation-label: haskell.groupby
+      title: "groupBy: Replacement definition of Data.List.GroupBy"
+      author:
+        - family: Donnacha Oisín Kidney
+      issues:
+        - year: 2018
+      URL: https://hackage.haskell.org/package/groupBy      
     - id: P2322R4
       citation-label: P2322R4
       title: "`ranges::fold`"

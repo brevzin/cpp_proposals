@@ -639,6 +639,7 @@ span.yellow {
 <li><code class="sourceCode cpp">transform_maybe</code> has been lowered to Tier 2 (since it depends on <code class="sourceCode cpp">cache1</code>)</li>
 <li>the various set range adaptors were omitted previously, and are added as Tier 3.</li>
 <li>two more algorithms that weren’t rangified for C++20 added as Tier 1: <code class="sourceCode cpp">shift_left</code> and <code class="sourceCode cpp">shift_right</code>.</li>
+<li>added more color to the discussion of <code class="sourceCode cpp">chunk_by</code></li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>When Ranges was merged into C++20 <span class="citation" data-cites="P0896R4">[<a href="#ref-P0896R4" role="doc-biblioref">P0896R4</a>]</span>, it was knowingly incomplete. While it was based on the implementation experience in range-v3 <span class="citation" data-cites="range-v3">[<a href="#ref-range-v3" role="doc-biblioref">range-v3</a>]</span>, only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later.</p>
@@ -1418,15 +1419,23 @@ span.yellow {
 <span id="cb1-2"><a href="#cb1-2"></a>[[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">3</span>],[<span class="dv">1</span>,<span class="dv">2</span>],[<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">5</span>],[<span class="dv">2</span>]] <span class="co">-- Haskell&#39;s implementation</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a>[[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>],[<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">2</span>]]     <span class="co">-- range-v3&#39;s implementation</span></span></code></pre></div>
 <p>In Haskell, the second <code class="sourceCode cpp"><span class="dv">1</span></code> starts a new group because we’re comparing it with its previous element and <code class="sourceCode cpp"><span class="dv">3</span> <span class="op">&lt;=</span> <span class="dv">1</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>. But in range-v3, the second <code class="sourceCode cpp"><span class="dv">1</span></code> does not start a new group because we’re comparing it with the first element of the group, and <code class="sourceCode cpp"><span class="dv">1</span> <span class="op">&lt;=</span> <span class="dv">1</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>. We think the Haskell/Elixir/D choice is more familiar and more useful.</p>
+<p>It’s also worth noting that technically Haskell has <em>two</em> different <code class="sourceCode cpp">groupBy</code> functions: <code class="sourceCode cpp">Data<span class="op">.</span>List<span class="op">.</span>groupBy</code> (which does what range-v3 does) and <code class="sourceCode cpp">Data<span class="op">.</span>List<span class="op">.</span>GroupBy<span class="op">.</span>groupBy</code> (which does what we’re stating Haskell’s implementation really is). This newer one is even called the “Replacement definition” in its docs <span class="citation" data-cites="haskell.groupby">[<a href="#ref-haskell.groupby" role="doc-biblioref">haskell.groupby</a>]</span>.</p>
 <p>The question is <em>which</em> one of the three options would we want to pick for C++Next?</p>
 <p>Well, when it comes to algorithms, the more the better. We think it’s clear we wouldn’t want to pick the 3rd option (we can easily produce a dictionary from the 2nd option), so the question is between the first two. While the binary version of <code class="sourceCode cpp">group_by</code> is more generic (since you approximate the unary version in terms of it, even it’s a different shape) and thus more broadly applicable, the unary version also comes up frequently and as such we feel that we should provide both.</p>
 <p>We could hypothetically follow the D model and provide both under the same name, selecting based on whether the provided callable is a unary invocable or a binary predicate — but we’re not sure if that’s the best idea.</p>
-<p>Given the time and bandwidth pressure, we think the top priority is the binary <code class="sourceCode cpp">group_by</code> and the unary form, while still very useful, should be a Tier 2 addition. As far as naming goes, there two approaches we could take:</p>
+<p>Given the time and bandwidth pressure, we think the top priority is the binary <code class="sourceCode cpp">group_by</code> and the unary form, while still very useful, should be a Tier 2 addition.</p>
+<p>As far as naming goes, our preferred naming is:</p>
 <ul>
-<li><code class="sourceCode cpp">group_by</code> takes a binary predicate and either <code class="sourceCode cpp">group_on</code> or <code class="sourceCode cpp">group_by_key</code> takes a unary transform.</li>
-<li><code class="sourceCode cpp">chunk_by</code> takes a binary predicate and <code class="sourceCode cpp">chunk_on</code> takes a unary transform.</li>
+<li><code class="sourceCode cpp">chunk_by</code> takes a binary predicate</li>
+<li><code class="sourceCode cpp">chunk_on</code> (or perhaps <code class="sourceCode cpp">chunk_by_key</code> or <code class="sourceCode cpp">chunk_on_key</code>) takes a unary transform and produces a range of pairs (as D, Rust, and Python do, but Swift does not)</li>
 </ul>
-<p>The latter choice also lines up with a different algorithm that takes a range and yields a range of ranges: <a href="#the-sliding-family"><code class="sourceCode cpp">chunk</code></a>.</p>
+<p>This would give us three range adaptors that produce non-overlapping ranges of ranges that include every element of the original range exactly once:</p>
+<ul>
+<li><code class="sourceCode cpp">chunk</code>, which takes a number (described <a href="#the-sliding-family">here</a>)</li>
+<li><code class="sourceCode cpp">chunk_by</code>, which takes a binary predicate</li>
+<li><code class="sourceCode cpp">chunk_on</code> (or whatever), which takes a unary projection</li>
+</ul>
+<p>And we think that it’s nice that all of these algorithms have the same root. There <em>are</em> other algorithms that produces ranges of ranges, but they either exclude some elements (<code class="sourceCode cpp">split</code>) or repeat some elements (<code class="sourceCode cpp">slide</code>).</p>
 <h2 data-number="4.4" id="monadic-binds"><span class="header-section-number">4.4</span> Monadic binds<a href="#monadic-binds" class="self-link"></a></h2>
 <p>We added <code class="sourceCode cpp">views<span class="op">::</span>transform</code> in C++20, but there are closely related views in that family, which several other languages also provide.</p>
 <p><code class="sourceCode cpp">views<span class="op">::</span>transform</code> takes a range of <code class="sourceCode cpp">T</code> and a function <code class="sourceCode cpp">T <span class="op">-&gt;</span> U</code> and produces a range of <code class="sourceCode cpp">U</code>. But we can play around with the shape of the callable to produce two other extremely useful adapters:</p>
@@ -2148,6 +2157,10 @@ span.yellow {
 </ul>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-haskell.groupby">
+<p>[haskell.groupby] Donnacha Oisín Kidney. groupBy: Replacement definition of Data.List.GroupBy. <br />
+<a href="https://hackage.haskell.org/package/groupBy">https://hackage.haskell.org/package/groupBy</a></p>
+</div>
 <div id="ref-hoekstra.cppcon">
 <p>[hoekstra.cppcon] Conor Hoekstra. 2019. 23 Ranges: slide &amp; stride. <br />
 <a href="https://www.youtube.com/watch?v=-_lqZJK2vjI">https://www.youtube.com/watch?v=-_lqZJK2vjI</a></p>
