@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2278R0], added wording (including `ranges::cdata`, which was omitted in the first revision, and adding member `cbegin` and `cend` to `view_interface`). Renamed `views::as_const` to `views::as_const`.
+Since [@P2278R0], added wording (including `ranges::cdata`, which was omitted in the first revision, and adding member `cbegin` and `cend` to `view_interface`). Renamed `views::as_const` to `views::as_const`. Also fixed `views::as_const` definition to handle deep-const `view`s (they do exist).
 
 # How we got to here
 
@@ -547,7 +547,7 @@ inline constexpr std::views::__adaptor::_RangeAdaptorClosure as_const =
     {
         using U = std::remove_cvref_t<R>;
     
-        if constexpr (@_constant-range_@<R>) {
+        if constexpr (@_constant-range_@<std::views::all_t<R>>) {
             return std::views::all(r);
         } else if constexpr (@_constant-range_@<U const> and not std::ranges::view<U>) {
             return std::views::all(std::as_const(r));
@@ -559,7 +559,7 @@ inline constexpr std::views::__adaptor::_RangeAdaptorClosure as_const =
 
 The three cases here are:
 
-1. `r` is already a constant range, no need to do anything, pass it through. Examples are `std::span<T const>` or `std::vector<T> const` or `std::set<T>`.
+1. `r` is already a constant range, no need to do anything, pass it through. Examples are `std::span<T const>` or `std::vector<T> const` or `std::set<T>`. We specifically check `all_t<R>` rather than `R` to handle the case where `R` might be a view that is a constant range, but we have a const object that is a deep-const view (e.g. if `r` is a `single_view<int> const`, then `views::all(r)` would be a `single_view<int>` which is no longer a constant range).
 2. `r` is not a constant range but `std::as_const(r)` would be. Rather than do any wrapping ourselves, we defer to `std::as_const`. Example is `std::vector<T>`. We explicitly remove `view`s from this set, because `views::all()` would drop the `const` anyway and we may need to preserve it (e.g. `single_view<T>`).
 3. `r` is neither a constant range nor can easily be made one, so we have to wrap ourselves. Examples are basically any mutable view. 
 
@@ -1149,7 +1149,7 @@ Update `ranges::cbegin` in [range.access.cbegin]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​begin(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::cbegin(E)` is expression-equivalent to `make_const_iterator(ranges::begin($possibly-const$(t))`.
+* [1.2]{.pnum} Otherwise, `ranges::cbegin(E)` is expression-equivalent to `make_const_iterator(ranges::begin($possibly-const$(t)))`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
@@ -1168,7 +1168,7 @@ Update `ranges::cend` in [range.access.cend]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​cend(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::cend(E)` is expression-equivalent to `make_const_sentinel(ranges::end($possibly-const$(t))`.
+* [1.2]{.pnum} Otherwise, `ranges::cend(E)` is expression-equivalent to `make_const_sentinel(ranges::end($possibly-const$(t)))`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::cend(E)` and `ranges::cbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
@@ -1187,7 +1187,7 @@ Update `ranges::crbegin` in [range.access.crbegin]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​begin(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::crbegin(E)` is expression-equivalent to `make_const_iterator(ranges::rbegin($possibly-const$(t))`.
+* [1.2]{.pnum} Otherwise, `ranges::crbegin(E)` is expression-equivalent to `make_const_iterator(ranges::rbegin($possibly-const$(t)))`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​crbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
@@ -1206,7 +1206,7 @@ Update `ranges::crend` in [range.access.crend]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​rend(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::crend(E)` is expression-equivalent to `make_const_sentinel(ranges::rend($possibly-const$(t))`.
+* [1.2]{.pnum} Otherwise, `ranges::crend(E)` is expression-equivalent to `make_const_sentinel(ranges::rend($possibly-const$(t)))`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::crend(E)` and `ranges::crbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
@@ -1290,7 +1290,7 @@ namespace std::ranges {
 
 [#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U`be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
 
-* [#.#]{.pnum} `views::all(E)` if `T` models `constant_range`
+* [#.#]{.pnum} `views::all(E)` if `views::all_t<T>` models `constant_range`
 * [#.#]{.pnum} Otherwise, `views::all(static_cast<const U&>(E))` if `const U` models `constant_range` and `U` does not model `view`.
 * [#.#]{.pnum} Otherwise, `ranges::const_view{E}`.
 
@@ -1359,7 +1359,7 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/Px6Gfe
+    URL: https://godbolt.org/z/x7o5dvM36
   - id: coerce-const
     citation-label: coerce-const
     title: "Coercing deep const-ness"
