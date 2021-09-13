@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-09-12" />
+  <meta name="dcterms.date" content="2021-09-13" />
   <title>cbegin should always return a constant iterator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-09-12</td>
+    <td>2021-09-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -781,12 +781,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Sometimes, <code class="sourceCode cpp">It</code> is already a constant iterator, so we would want to actively avoid wrapping in such a case.</li>
 <li>The last couple rows are hard.</li>
 </ul>
-<p>Thankfully, this is a solved problem. The <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> <a href="https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp">in range-v3</a> has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:</p>
+<p>Thankfully, this is a solved problem. The <code class="sourceCode cpp">views<span class="op">::</span>const_</code> adapter <a href="https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp">in range-v3</a> has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>input_iterator It<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="kw">using</span> const_ref_for <span class="op">=</span> std<span class="op">::</span>common_reference_t<span class="op">&lt;</span></span>
 <span id="cb4-3"><a href="#cb4-3"></a>    std<span class="op">::</span>iter_value_t<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;&amp;</span>,</span>
 <span id="cb4-4"><a href="#cb4-4"></a>    std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;</span>;</span></code></pre></div>
-<p>This does not yield the correct result for the last row in my table at the moment, but if we make the changes to <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> prescribed in <span class="citation" data-cites="P2214R0">[<a href="#ref-P2214R0" role="doc-biblioref">P2214R0</a>]</span>, then it would.</p>
+<p>This does not yield the correct result for the last row in my table at the moment, but now that we are making the changes to <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> prescribed in <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, it soon will.</p>
 <p>Avoiding unnecessary wrapping can be achieved through a factory function that checks to see if such wrapping would change type:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">// a type is a constant iterator if its an iterator whose reference type is</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="co">// the same as the type that const_ref_for would pick for it</span></span>
@@ -1639,7 +1639,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h4 data-number="4.1.4.1" id="overview-range.const.overview"><span class="header-section-number">4.1.4.1</span> 24.7.?.1 Overview [range.const.overview]<a href="#overview-range.const.overview" class="self-link"></a></h4>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">1</a></span> <code class="sourceCode cpp">const_view</code> presents a <code class="sourceCode cpp">view</code> of an underlying sequence as constant. That is, the elements of a <code class="sourceCode cpp">const_view</code> cannot be modified.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression, let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>, and let <code class="sourceCode cpp">U</code>be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>as_const<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression, let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>, and let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>as_const<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(2.1)</a></span> <code class="sourceCode cpp">views<span class="op">::</span>all<span class="op">(</span>E<span class="op">)</span></code> if <code class="sourceCode cpp">views<span class="op">::</span>all_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> models <code class="sourceCode cpp">constant_range</code></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">views<span class="op">::</span>all<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">const</span> U<span class="op">&amp;&gt;(</span>E<span class="op">))</span></code> if <code class="sourceCode cpp"><span class="kw">const</span> U</code> models <code class="sourceCode cpp">constant_range</code> and <code class="sourceCode cpp">U</code> does not model <code class="sourceCode cpp">view</code>.</li>
@@ -1752,6 +1752,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2278R0">
 <p>[P2278R0] Barry Revzin. 2021-01-10. cbegin should always return a constant iterator. <br />
 <a href="https://wg21.link/p2278r0">https://wg21.link/p2278r0</a></p>
+</div>
+<div id="ref-P2321R2">
+<p>[P2321R2] Tim Song. 2021-06-11. zip. <br />
+<a href="https://wg21.link/p2321r2">https://wg21.link/p2321r2</a></p>
 </div>
 </div>
 </div>

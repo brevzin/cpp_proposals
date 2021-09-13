@@ -196,7 +196,7 @@ This table points out a few things:
 - Sometimes, `It` is already a constant iterator, so we would want to actively avoid wrapping in such a case. 
 - The last couple rows are hard. 
 
-Thankfully, this is a solved problem. The `views::as_const` [in range-v3](https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp) has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:
+Thankfully, this is a solved problem. The `views::const_` adapter [in range-v3](https://github.com/ericniebler/range-v3/blob/d098b9610ac2f182f667ae9274ac2fac7f1327f5/include/range/v3/view/const.hpp) has for many years used a formula that works for all of these cases. In C++20 Ranges terms, I would spell it this way:
 
 ```cpp
 template <std::input_iterator It>
@@ -205,7 +205,7 @@ using const_ref_for = std::common_reference_t<
     std::iter_reference_t<It>>;
 ```
 
-This does not yield the correct result for the last row in my table at the moment, but if we make the changes to `std::tuple` prescribed in [@P2214R0], then it would. 
+This does not yield the correct result for the last row in my table at the moment, but now that we are making the changes to `std::tuple` prescribed in [@P2321R2], it soon will. 
 
 Avoiding unnecessary wrapping can be achieved through a factory function that checks to see if such wrapping would change type:
 
@@ -1288,7 +1288,7 @@ namespace std::ranges {
 ::: bq
 [1]{.pnum} `const_view` presents a `view` of an underlying sequence as constant. That is, the elements of a `const_view` cannot be modified.
 
-[#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U`be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
+[#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U` be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} `views::all(E)` if `views::all_t<T>` models `constant_range`
 * [#.#]{.pnum} Otherwise, `views::all(static_cast<const U&>(E))` if `const U` models `constant_range` and `U` does not model `view`.
