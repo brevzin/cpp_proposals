@@ -1157,7 +1157,7 @@ We think that once we add [`ranges::fold` as Tier 1 [@P2322R2]]{.addu} and [`ran
 
 But that does not hold for the other algorithms.
 
-### `shift_let` and `shift_right`
+### `shift_left` and `shift_right`
 
 `shift_left` and `shift_right` fall into a similar boat as `iota`, but aren't completely without questions. [@P1243R4] originally proposed these, but were dropped from the paper based on discussion about the return type. `shift_right` has a straightforward return type of `subrange(new_first, last)`. But what should `shift_left` return?
 
