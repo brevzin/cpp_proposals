@@ -575,7 +575,7 @@ Or passing a constant range to an algorithm:
 dont_touch_me(views::as_const(r));
 ```
 
-As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `as_const`, but there's a few other good name options here like `views::as_const` or `views::to_const`.
+As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `const_`, but there's a few other good name options here like `views::as_const` or `views::to_const` or `views::constify`. [@P2278R0] used range-v3's `views::const_`, this revision suggests `views::as_const` (mirroring `std::as_const`). The advantage of `views::as_const` is that it is a mirror of `std::as_const` and so sharing a name seems reasonable. The disadvantage is that it could cause users to use `std::as_const` when they meant to use `views::as_const`. Although I'm also not sure that the other names (like `const_`, `to_const`, or `constify`) would completely alleviate that problem either. 
 
 ## What About `std::cbegin` and `std::cend`?
 
