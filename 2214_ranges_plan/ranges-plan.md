@@ -28,7 +28,7 @@ Since [@P2214R0], updating with progress and links to other papers. Several chan
 
 * Pipe support for range adaptors has been added as a Tier 1 priority.
 * `cache1` has been lowered from Tier 1 to Tier 2 due to inherent issues with its design.
-* `const_` has been upgraded from Tier 3 to Tier 1 due to demand.
+* `as_const` has been upgraded from Tier 3 to Tier 1 due to demand (and renamed from `const_`).
 * `flat_map` has been lowered to Tier 3 (since now `transform(f) | join` is correct for all cases).
 * `transform_maybe` has been lowered to Tier 2 (since it depends on `cache1`)
 * the various set range adaptors were omitted previously, and are added as Tier 3.
@@ -145,7 +145,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `chunk_by` | range-v3 | [Tier 1]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | [Tier 1 [@P2278R1]]{.addu} |
+| `const_` | range-v3 | [Tier 1 [@P2278R1], renamed to `as_const`]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -844,9 +844,9 @@ Several of the above views that are labeled "not proposed" are variations on a c
 
 But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. `views::addressof` is shorter than `views::transform(LIFT(std::addressof))` (assuming a `LIFT` macro that wraps a name and emits a lambda), but we're not sure that we necessarily need to add special cases of `transform` for every useful function.
 
-### `views::const_`
+### `views::as_const`
 
-There's one that stands out as being slightly different though: `views::const_` isn't quite the same as a `transform` over `std::as_const`, because of the existence of proxy references. `std::as_const` only accepts lvalues, so something like:
+There's one that stands out as being slightly different though: `views::as_const` isn't quite the same as a `transform` over `std::as_const`, because of the existence of proxy references. `std::as_const` only accepts lvalues, so something like:
 
 ```cpp
 std::vector<int> v;
@@ -1325,10 +1325,10 @@ The following includes links ot papers that currently exist so far.
 - the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R1])
 - the ability to format ranges with `std::format` ([@P2286R2])
 - the addition of the following first class range adapters:
+    - `views::as_const` ([@P2278R1])
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk`
     - `views::chunk_by`    
-    - `views::const_` ([@P2278R1])    
     - `views::join_with`
     - `views::slide`
     - `views::stride` ([@P1899R0])

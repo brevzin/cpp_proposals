@@ -591,7 +591,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#other-view-adapters"><span class="toc-section-number">4.8</span> Other view adapters<span></span></a></li>
 <li><a href="#derivatives-of-transform"><span class="toc-section-number">4.9</span> Derivatives of <code class="sourceCode cpp">transform</code><span></span></a>
 <ul>
-<li><a href="#viewsconst_"><span class="toc-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>const_</code><span></span></a></li>
+<li><a href="#viewsas_const"><span class="toc-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>as_const</code><span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">5</span> Algorithms<span></span></a>
@@ -634,7 +634,7 @@ span.yellow {
 <ul>
 <li>Pipe support for range adaptors has been added as a Tier 1 priority.</li>
 <li><code class="sourceCode cpp">cache1</code> has been lowered from Tier 1 to Tier 2 due to inherent issues with its design.</li>
-<li><code class="sourceCode cpp">const_</code> has been upgraded from Tier 3 to Tier 1 due to demand.</li>
+<li><code class="sourceCode cpp">as_const</code> has been upgraded from Tier 3 to Tier 1 due to demand (and renamed from <code class="sourceCode cpp">const_</code>).</li>
 <li><code class="sourceCode cpp">flat_map</code> has been lowered to Tier 3 (since now <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> join</code> is correct for all cases).</li>
 <li><code class="sourceCode cpp">transform_maybe</code> has been lowered to Tier 2 (since it depends on <code class="sourceCode cpp">cache1</code>)</li>
 <li>the various set range adaptors were omitted previously, and are added as Tier 3.</li>
@@ -797,7 +797,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">const_</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1 <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span></span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>, renamed to <code class="sourceCode cpp">as_const</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">counted</code></td>
@@ -1664,8 +1664,8 @@ span.yellow {
 <h2 data-number="4.9" id="derivatives-of-transform"><span class="header-section-number">4.9</span> Derivatives of <code class="sourceCode cpp">transform</code><a href="#derivatives-of-transform" class="self-link"></a></h2>
 <p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
 <p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
-<h3 data-number="4.9.1" id="viewsconst_"><span class="header-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>const_</code><a href="#viewsconst_" class="self-link"></a></h3>
-<p>There’s one that stands out as being slightly different though: <code class="sourceCode cpp">views<span class="op">::</span>const_</code> isn’t quite the same as a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, because of the existence of proxy references. <code class="sourceCode cpp">std<span class="op">::</span>as_const</code> only accepts lvalues, so something like:</p>
+<h3 data-number="4.9.1" id="viewsas_const"><span class="header-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>as_const</code><a href="#viewsas_const" class="self-link"></a></h3>
+<p>There’s one that stands out as being slightly different though: <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> isn’t quite the same as a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, because of the existence of proxy references. <code class="sourceCode cpp">std<span class="op">::</span>as_const</code> only accepts lvalues, so something like:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v;</span>
 <span id="cb24-2"><a href="#cb24-2"></a>views<span class="op">::</span>zip<span class="op">(</span>v<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">))</span>;</span></code></pre></div>
 <p>would not compile. And were it to compile, what should it actually mean? <code class="sourceCode cpp">zip</code>’s <code class="sourceCode cpp">reference</code> type here, as previously discussed, should be <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>. What would a <code class="sourceCode cpp"><span class="kw">const</span></code> view over this range mean? Should we transparently propagate prvalues, thereby being a shallow <code class="sourceCode cpp"><span class="kw">const</span></code>, and produce a new range whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>? Or should we somehow come up with a way to do deep <code class="sourceCode cpp"><span class="kw">const</span></code>-ness here and yield a range whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;&gt;</span></code>? The latter noting that we are not doing this sort of introspection for <code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code>.</p>
@@ -2054,11 +2054,10 @@ span.yellow {
 <li>the ability to format ranges with <code class="sourceCode cpp">std<span class="op">::</span>format</code> (<span class="citation" data-cites="P2286R2">[<a href="#ref-P2286R2" role="doc-biblioref">P2286R2</a>]</span>)</li>
 <li>the addition of the following first class range adapters:
 <ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R1">[<a href="#ref-P2374R1" role="doc-biblioref">P2374R1</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code><br />
-</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>const_</code> (<span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>)<br />
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
