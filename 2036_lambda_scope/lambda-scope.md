@@ -1,6 +1,6 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: P2036R2
+document: D2036R3   
 date: today
 audience: EWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2036R2], wording changes.
 
 Since [@P2036R1], added feature test macro discussion and implementation experience.
 
@@ -437,14 +439,14 @@ Change it to instead read as follows. Expressing this change as a diff is mostly
 
 ::: bq
 [3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is either a local entity or names an _init-capture_ and
-the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.
+the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be the _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.
 
 If naming the local entity or _init-capture_ from outside of an unevaluated operand in `S` would refer to an entity captured by copy in some intervening _lambda-expression_ ([expr.prim.lambda.capture]), then let `E` be the innermost such intervening _lambda-expression_.
 
 - [3.1]{.pnum} If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of `E`. 
 - [3.2]{.pnum} Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.
 
-Otherwise (if there is no such _lambda-expression_ `E` or the entity is either not local or does not name an _init-capture_), the type of the expression is the type of the result.
+Otherwise, the type of the expression is the type of the result.
 :::
 
 Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
@@ -473,6 +475,8 @@ Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
 +   [=]{
 +       []<decltype(x) P>{};      // ok: x is in the outer lambda's function parameter scope
 +       [](decltype((x)) y){};    // ok: lambda takes a parameter of type float const&
++       [x=1](decltype((x)) z){}; // error: x refers to init-capture but is in lambda's
++                                 // parameter-declaration-clause
 +   };
   }
 ```

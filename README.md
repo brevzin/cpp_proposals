@@ -37,7 +37,7 @@ make all of my papers.
 
 ### Pending CWG/LWG Review
 
-- [p2036r2 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r2.html).
+- [d2036r3 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/d2036r3.html).
 
 ### Pending EWG/LEWG Voting
 
