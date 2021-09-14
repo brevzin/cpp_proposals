@@ -427,24 +427,17 @@ int j;
 
 ## [expr.prim.id.unqual]
 
-Change [expr.prim.id.unqual]{.sref}/3 as described earlier. It currently reads:
+Change [expr.prim.id.unqual]{.sref}/3, including adding bullet points to make it clear what branch each case refers to and a drive by fix the issue Tim Song pointed out [here](https://lists.isocpp.org/core/2020/10/9982.php):
 
 ::: bq
-[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is a local entity and naming it from outside of an unevaluated operand within the scope where the _unqualified-id_ appears would result in some intervening _lambda-expression_ capturing it by copy ([expr.prim.lambda.capture]), the type of the expression is the type of a class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of the innermost such intervening _lambda-expression_.
+[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). [If the entity is either a local entity or names an _init-capture_ and
+the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be the _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.]{.addu}
 
-Otherwise, the type of the expression is the type of the result.
-:::
+If [the entity is a local entity and naming it]{.rm} [naming the local entity or _init-capture_]{.addu} from outside of an unevaluated operand [within the scope where the _unqualified-id_ appears]{.rm} [in `S`]{.addu} would [result in some intervening _lambda-expression_ capturing it by copy]{.rm} [refer to an entity captured by copy in some intervening _lambda-expression_]{.addu} ([expr.prim.lambda.capture]), [then let `E` be the innermost such _lambda-expression_]{.addu}.
 
-Change it to instead read as follows. Expressing this change as a diff is mostly illegible so I'm instead just presenting the before and after text separately. I'm also trying to add bullets and parentheses to make it clear what branch each case refers to and as a drive by fix the issue Tim Song pointed out [here](https://lists.isocpp.org/core/2020/10/9982.php):
+- [3.#]{.pnum} [If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then]{.addu} the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of [the innermost such intervening _lambda-expression_]{.rm} [`E`]{.addu}. 
+- [3.#]{.pnum} [Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.]{.addu}
 
-::: bq
-[3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the entity is either a local entity or names an _init-capture_ and
-the _unqualified-id_ appears in a _lambda-expression_ at program point `P`, then let `S` be the _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.
-
-If naming the local entity or _init-capture_ from outside of an unevaluated operand in `S` would refer to an entity captured by copy in some intervening _lambda-expression_ ([expr.prim.lambda.capture]), then let `E` be the innermost such intervening _lambda-expression_.
-
-- [3.1]{.pnum} If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of `E`. 
-- [3.2]{.pnum} Otherwise (if `P` either precedes `E`'s function parameter scope or is in `E`'s _parameter-declaration-clause_), the program is ill-formed.
 
 Otherwise, the type of the expression is the type of the result.
 :::
