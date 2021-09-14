@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-09-12" />
+  <meta name="dcterms.date" content="2021-09-14" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-09-12</td>
+    <td>2021-09-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -777,7 +777,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">chunk</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">chunk_by</code></td>
@@ -902,7 +902,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">join</code></td>
 <td>partially C++20, lacks delimiter ability</td>
-<td><span class="addu">Tier 1 (adding delimiter ability via <code class="sourceCode cpp">join_with</code>)</span></td>
+<td><span class="addu">Tier 1 (adding delimiter ability via <code class="sourceCode cpp">join_with</code> <span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span>)</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">keys</code></td>
@@ -1007,7 +1007,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">sliding</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">slide</code></span></td>
+<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">slide</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">split</code></td>
@@ -1556,8 +1556,8 @@ span.yellow {
 <h2 data-number="4.5" id="the-sliding-family"><span class="header-section-number">4.5</span> The sliding family<a href="#the-sliding-family" class="self-link"></a></h2>
 <p>Conor talks about this family of ranges in a CppCon 2019 lighting talk <span class="citation" data-cites="hoekstra.cppcon">[<a href="#ref-hoekstra.cppcon" role="doc-biblioref">hoekstra.cppcon</a>]</span>.</p>
 <ul>
-<li><code class="sourceCode cpp">chunk<span class="op">(</span>N<span class="op">)</span></code> breaks a range into non-overlapping ranges of length <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that the last range has length less than 4.</li>
-<li><code class="sourceCode cpp">slide<span class="op">(</span>N<span class="op">)</span></code> is very similar to <code class="sourceCode cpp">chunk</code> except its subranges are overlapping and all have length exactly <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>slide<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span><span class="op">]</span>,<span class="op">[</span><span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span><span class="op">]</span>,<span class="op">[</span><span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span><span class="op">]</span>,<span class="op">[</span><span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that <code class="sourceCode cpp">slide<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is similar to <code class="sourceCode cpp">adjacent</code>, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this <code class="sourceCode cpp">sliding</code>, which has a different tense from the other two, so we change it to <code class="sourceCode cpp">slide</code> here.</li>
+<li><code class="sourceCode cpp">chunk<span class="op">(</span>N<span class="op">)</span></code> breaks a range into non-overlapping ranges of length <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that the last range has length less than 4. See <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>.</li>
+<li><code class="sourceCode cpp">slide<span class="op">(</span>N<span class="op">)</span></code> is very similar to <code class="sourceCode cpp">chunk</code> except its subranges are overlapping and all have length exactly <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>slide<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span><span class="op">]</span>,<span class="op">[</span><span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span><span class="op">]</span>,<span class="op">[</span><span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span><span class="op">]</span>,<span class="op">[</span><span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that <code class="sourceCode cpp">slide<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is similar to <code class="sourceCode cpp">adjacent</code>, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this <code class="sourceCode cpp">sliding</code>, which has a different tense from the other two, so we change it to <code class="sourceCode cpp">slide</code> here. See <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>.</li>
 <li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See <span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>.</li>
 </ul>
 <p>These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm <code class="sourceCode cpp">windowed</code>, Scala calls it <code class="sourceCode cpp">sliding</code>, D calls it <code class="sourceCode cpp">slide</code>, Haskell calls it <code class="sourceCode cpp">divvy</code>, and Clojure calls it <code class="sourceCode cpp">partition</code>.</p>
@@ -1654,7 +1654,7 @@ span.yellow {
 <li><code class="sourceCode cpp">cycle<span class="op">(</span>R<span class="op">)</span></code> produces an infinite ranges that, well, cycles through <code class="sourceCode cpp">R</code> repeatedly.</li>
 <li><code class="sourceCode cpp">scan<span class="op">(</span>R, F, V<span class="op">)</span></code> is the lazy view version of <code class="sourceCode cpp">std<span class="op">::</span>inclusive_scan</code>, except not having a defaulted binary operation.</li>
 <li><code class="sourceCode cpp">intersperse<span class="op">(</span>V<span class="op">)</span></code> produces a new range alternating selecting elements from the source range and the value <code class="sourceCode cpp">V</code></li>
-<li><code class="sourceCode cpp">join_with<span class="op">(</span>V<span class="op">)</span></code>. C++20 has a version of <code class="sourceCode cpp">join</code> that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> means, if <code class="sourceCode cpp">v</code> happens to itself be a joinable range. range-v3 assumes that if <code class="sourceCode cpp">v</code> is a joinable range that <code class="sourceCode cpp">views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce <code class="sourceCode cpp">join_with</code> that requires a delimiter.</li>
+<li><code class="sourceCode cpp">join_with<span class="op">(</span>V<span class="op">)</span></code>. C++20 has a version of <code class="sourceCode cpp">join</code> that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> means, if <code class="sourceCode cpp">v</code> happens to itself be a joinable range. range-v3 assumes that if <code class="sourceCode cpp">v</code> is a joinable range that <code class="sourceCode cpp">views<span class="op">::</span>join<span class="op">(</span>v<span class="op">)</span></code> joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce <code class="sourceCode cpp">join_with</code> that requires a delimiter. See <span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span>.</li>
 <li><code class="sourceCode cpp">partial_sum<span class="op">(</span>R<span class="op">)</span></code> is equivalent to <code class="sourceCode cpp">scan<span class="op">(</span>R, std<span class="op">::</span>plus<span class="op">&lt;&gt;())</span></code>.</li>
 <li><code class="sourceCode cpp">split_when<span class="op">(</span>P<span class="op">)</span></code> is a more complicated version of <code class="sourceCode cpp">split</code> that rather than taking a value or a range, instead takes a predicate that could also return an iterator.</li>
 <li><code class="sourceCode cpp">sample<span class="op">(</span>N<span class="op">)</span></code> yields a random sample of the given length.</li>
@@ -2058,12 +2058,12 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R1">[<a href="#ref-P2374R1" role="doc-biblioref">P2374R1</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code><br />
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>enumerate</code> (<span class="citation" data-cites="P2164R5">[<a href="#ref-P2164R5" role="doc-biblioref">P2164R5</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> <span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
@@ -2297,6 +2297,14 @@ span.yellow {
 <div id="ref-P2440R0">
 <p>[P2440R0] Tim Song. 2021. <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code>, and <code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code>. <br />
 <a href="https://wg21.link/p2440r0">https://wg21.link/p2440r0</a></p>
+</div>
+<div id="ref-P2441R0">
+<p>[P2441R0] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>. <br />
+<a href="https://wg21.link/p2441r0">https://wg21.link/p2441r0</a></p>
+</div>
+<div id="ref-P2442R0">
+<p>[P2442R0] Tim Song. 2021. Windowing range adaptors: <code class="sourceCode cpp">views<span class="op">::</span>chunk</code> and <code class="sourceCode cpp">views<span class="op">::</span>slide</code>. <br />
+<a href="https://wg21.link/p2442r0">https://wg21.link/p2442r0</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2014. range-v3. <br />

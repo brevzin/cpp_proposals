@@ -141,7 +141,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
 | `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
 | `cartesian_product` | range-v3 | [Tier 1 [@P2374R1]]{.addu} |
-| `chunk` | range-v3 | [Tier 1]{.addu} |
+| `chunk` | range-v3 | [Tier 1 [@P2442R0]]{.addu} |
 | `chunk_by` | range-v3 | [Tier 1]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
@@ -166,7 +166,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | C++20 |
-| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability via `join_with`)]{.addu} |
+| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability via `join_with` [@P2441R0])]{.addu} |
 | `keys` | C++20 | C++20 |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R6] | ??? |
@@ -187,7 +187,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `set_symmetric_difference` | range-v3 | [Tier 3]{.diffdel} |
 | `single` | C++20 | C++20 |
 | `slice` | range-v3 | [Tier 3]{.diffdel} |
-| `sliding` | range-v3 | [Tier 1, renamed to `slide`]{.addu} |
+| `sliding` | range-v3 | [Tier 1, renamed to `slide` [@P2442R0]]{.addu} |
 | `split` | C++20, but unergonomic | See [@P2210R0]. |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
 | `stride` | range-v3 | [Tier 1 [@P1899R0]]{.addu} |
@@ -752,8 +752,8 @@ However, because of the `cache_latest` dependency (see also [@P2328R1]), we're k
 
 Conor talks about this family of ranges in a CppCon 2019 lighting talk [@hoekstra.cppcon].
 
-- `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4.
-- `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `adjacent`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here.
+- `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4. See [@P2442R0].
+- `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `adjacent`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here. See [@P2442R0].
 - `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See [@P1899R0].
 
 These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm `windowed`, Scala calls it `sliding`, D calls it `slide`, Haskell calls it `divvy`, and Clojure calls it `partition`.
@@ -829,7 +829,7 @@ Other range adapters that we haven't talked about yet, but aren't sure how to gr
 - `cycle(R)` produces an infinite ranges that, well, cycles through `R` repeatedly.
 - `scan(R, F, V)` is the lazy view version of `std::inclusive_scan`, except not having a defaulted binary operation.
 - `intersperse(V)` produces a new range alternating selecting elements from the source range and the value `V`
-- `join_with(V)`. C++20 has a version of `join` that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what ` r | views::join(v)` means, if `v` happens to itself be a joinable range. range-v3 assumes that if `v` is a joinable range that `views::join(v)` joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce `join_with` that requires a delimiter.
+- `join_with(V)`. C++20 has a version of `join` that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what ` r | views::join(v)` means, if `v` happens to itself be a joinable range. range-v3 assumes that if `v` is a joinable range that `views::join(v)` joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce `join_with` that requires a delimiter. See [@P2441R0].
 - `partial_sum(R)` is equivalent to `scan(R, std::plus<>())`.
 - `split_when(P)` is a more complicated version of `split` that rather than taking a value or a range, instead takes a predicate that could also return an iterator. 
 - `sample(N)` yields a random sample of the given length.
@@ -1329,11 +1329,11 @@ The following includes links ot papers that currently exist so far.
     - `views::adjacent_transform` ([@P2321R2])
     - `views::as_const` ([@P2278R1])
     - `views::cartesian_product` ([@P2374R1])
-    - `views::chunk`
+    - `views::chunk` [@P2442R0]
     - `views::chunk_by`    
     - `views::enumerate` ([@P2164R5])
-    - `views::join_with`
-    - `views::slide`
+    - `views::join_with` [@P2441R0]
+    - `views::slide` [@P2442R0]
     - `views::stride` ([@P1899R0])
     - `views::zip` ([@P2321R2])
     - `views::zip_transform` ([@P2321R2])
@@ -1537,4 +1537,20 @@ references:
       issued:
         year: 2021
       URL: https://wg21.link/p2440r0
+    - id: P2441R0
+      citation-label: P2441R0
+      title: "`views::join_with`"
+      author:
+        - family: Barry Revzin
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2441r0
+    - id: P2442R0
+      citation-label: P2442R0
+      title: "Windowing range adaptors: `views::chunk` and `views::slide`"
+      author:
+        - family: Tim Song
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2442r0      
 ---
