@@ -782,7 +782,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">chunk_by</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span>. This is an improved <a href="#the-group_by-family"><code class="sourceCode cpp">group_by</code></a> recently added to range-v3. <span class="yellow">Also consider a variant <code class="sourceCode cpp">chunk_on</code> as Tier 2</span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2443R0">[<a href="#ref-P2443R0" role="doc-biblioref">P2443R0</a>]</span></span>. This is an improved <a href="#the-group_by-family"><code class="sourceCode cpp">group_by</code></a> recently added to range-v3. <span class="yellow">Also consider a variant <code class="sourceCode cpp">chunk_on</code> as Tier 2</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">common</code></td>
@@ -1442,6 +1442,7 @@ span.yellow {
 </ul>
 <p>And we think that it’s nice that all of these algorithms have the same root. There <em>are</em> other algorithms that produces ranges of ranges, but they either exclude some elements (<code class="sourceCode cpp">split</code>) or repeat some elements (<code class="sourceCode cpp">slide</code>).</p>
 <p>Additionally, just recently, range-v3 just added a <a href="https://github.com/ericniebler/range-v3/pull/1648"><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code></a> that does exactly as suggested here (comparing consecutive elements, as opposed to range-v3 preexisting <code class="sourceCode cpp">views<span class="op">::</span>group_by</code> which compares against the first in group).</p>
+<p>This is proposed in <span class="citation" data-cites="P2443R0">[<a href="#ref-P2443R0" role="doc-biblioref">P2443R0</a>]</span>.</p>
 <h2 data-number="4.4" id="monadic-binds"><span class="header-section-number">4.4</span> Monadic binds<a href="#monadic-binds" class="self-link"></a></h2>
 <p>We added <code class="sourceCode cpp">views<span class="op">::</span>transform</code> in C++20, but there are closely related views in that family, which several other languages also provide.</p>
 <p><code class="sourceCode cpp">views<span class="op">::</span>transform</code> takes a range of <code class="sourceCode cpp">T</code> and a function <code class="sourceCode cpp">T <span class="op">-&gt;</span> U</code> and produces a range of <code class="sourceCode cpp">U</code>. But we can play around with the shape of the callable to produce two other extremely useful adapters:</p>
@@ -2058,12 +2059,12 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R1">[<a href="#ref-P2374R1" role="doc-biblioref">P2374R1</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code><br />
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> (<span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code> (<span class="citation" data-cites="P2443R0">[<a href="#ref-P2443R0" role="doc-biblioref">P2443R0</a>]</span>)<br />
 </li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>enumerate</code> (<span class="citation" data-cites="P2164R5">[<a href="#ref-P2164R5" role="doc-biblioref">P2164R5</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> <span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> (<span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> (<span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
@@ -2305,6 +2306,10 @@ span.yellow {
 <div id="ref-P2442R0">
 <p>[P2442R0] Tim Song. 2021. Windowing range adaptors: <code class="sourceCode cpp">views<span class="op">::</span>chunk</code> and <code class="sourceCode cpp">views<span class="op">::</span>slide</code>. <br />
 <a href="https://wg21.link/p2442r0">https://wg21.link/p2442r0</a></p>
+</div>
+<div id="ref-P2443R0">
+<p>[P2443R0] Tim Song. 2021. <code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code>. <br />
+<a href="https://wg21.link/p2443r0">https://wg21.link/p2443r0</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2014. range-v3. <br />

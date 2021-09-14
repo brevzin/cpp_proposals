@@ -142,7 +142,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
 | `cartesian_product` | range-v3 | [Tier 1 [@P2374R1]]{.addu} |
 | `chunk` | range-v3 | [Tier 1 [@P2442R0]]{.addu} |
-| `chunk_by` | range-v3 | [Tier 1]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
+| `chunk_by` | range-v3 | [Tier 1 [@P2443R0]]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
 | `const_` | range-v3 | [Tier 1 [@P2278R1], renamed to `as_const`]{.addu} |
@@ -641,6 +641,8 @@ This would give us three range adaptors that produce non-overlapping ranges of r
 And we think that it's nice that all of these algorithms have the same root. There *are* other algorithms that produces ranges of ranges, but they either exclude some elements (`split`) or repeat some elements (`slide`). 
 
 Additionally, just recently, range-v3 just added a [`views::chunk_by`](https://github.com/ericniebler/range-v3/pull/1648) that does exactly as suggested here (comparing consecutive elements, as opposed to range-v3 preexisting `views::group_by` which compares against the first in group).
+
+This is proposed in [@P2443R0].
 
 ## Monadic binds
 
@@ -1329,11 +1331,11 @@ The following includes links ot papers that currently exist so far.
     - `views::adjacent_transform` ([@P2321R2])
     - `views::as_const` ([@P2278R1])
     - `views::cartesian_product` ([@P2374R1])
-    - `views::chunk` [@P2442R0]
-    - `views::chunk_by`    
+    - `views::chunk` ([@P2442R0])
+    - `views::chunk_by` ([@P2443R0])    
     - `views::enumerate` ([@P2164R5])
-    - `views::join_with` [@P2441R0]
-    - `views::slide` [@P2442R0]
+    - `views::join_with` ([@P2441R0])
+    - `views::slide` ([@P2442R0])
     - `views::stride` ([@P1899R0])
     - `views::zip` ([@P2321R2])
     - `views::zip_transform` ([@P2321R2])
@@ -1552,5 +1554,13 @@ references:
         - family: Tim Song
       issued:
         year: 2021
-      URL: https://wg21.link/p2442r0      
+      URL: https://wg21.link/p2442r0  
+    - id: P2443R0
+      citation-label: P2443R0
+      title: "`views::chunk_by`"
+      author:
+        - family: Tim Song
+      issued:
+        year: 2021
+      URL: https://wg21.link/p2443r0         
 ---
