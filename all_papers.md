@@ -48,6 +48,7 @@
 - 2325 Views should not be required to be default constructible: [p2325r0](2325_views_default/p2325r0.html) [p2325r1](2325_views_default/p2325r1.html) [p2325r2](2325_views_default/p2325r2.html) [p2325r3](2325_views_default/p2325r3.html)
 - 2387 Pipe support for user-defined range adaptors: [p2387r0](2387_ranges_pipes/p2387r0.html) [p2387r1](2387_ranges_pipes/p2387r1.html)
 - 2415 What is a  <code class="sourceCode cpp">view</code> ?: [p2415r0](2415_what_view/p2415r0.html) [p2415r1](2415_what_view/p2415r1.html)
+- 2441 <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>: [p2441r0](2441_join_with/p2441r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)

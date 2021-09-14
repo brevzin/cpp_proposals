@@ -61,6 +61,7 @@ make all of my papers.
 - [p2322r4 - `ranges::fold`](2322_fold/p2322r4.html).
 - [p2387r1 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r1.html).
 - [p2415r1 - What is a `view`?](2415_what_view/p2415r1.html)
+- [p2441r0 - `views::join_with`](2441_join_with/p2441r0.html)
 
 #### Concepts
 
