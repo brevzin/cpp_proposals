@@ -65,7 +65,7 @@ Never.
 
 ### `const`-iterable
 
-Whenever `Rng` and `Pattern` are, nothing else imposed by `join_with` itself. 
+If `Rng` and `Pattern` are, and `Inner` is glvalue range. This is the same requirement as `join_view` has, because if `Inner` is not a reference that means we have to store it, which requires state, which implies mutating that state during iteration.
 
 ## Implementation Experience
 
