@@ -49,17 +49,23 @@ Those types all existing is an added constraint on constructing a `join_with_vie
 
 I'm not sure I see a need to deviate from the implementation here. 
 
-## Conditionally Common
+## Various Properties
+
+### Conditionally Common
 
 Like `views::join`, `views::join_with` can be common when `Rng` is a range of glvalue ranges, `Rng` and `Inner` are both forward and common. Note that we don't need `Pattern` to be common.
 
-## Borrowed
+### Borrowed
 
 Never.
 
-## Sized
+### Sized
 
 Never.
+
+### `const`-iterable
+
+Whenever `Rng` and `Pattern` are, nothing else imposed by `join_with` itself. 
 
 ## Implementation Experience
 

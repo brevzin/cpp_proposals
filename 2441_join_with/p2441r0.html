@@ -569,10 +569,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#naming"><span class="toc-section-number">2.1</span> Naming<span></span></a></li>
 <li><a href="#category"><span class="toc-section-number">2.2</span> Category<span></span></a></li>
 <li><a href="#value-and-reference-type"><span class="toc-section-number">2.3</span> Value and Reference Type<span></span></a></li>
-<li><a href="#conditionally-common"><span class="toc-section-number">2.4</span> Conditionally Common<span></span></a></li>
-<li><a href="#borrowed"><span class="toc-section-number">2.5</span> Borrowed<span></span></a></li>
-<li><a href="#sized"><span class="toc-section-number">2.6</span> Sized<span></span></a></li>
-<li><a href="#implementation-experience"><span class="toc-section-number">2.7</span> Implementation Experience<span></span></a></li>
+<li><a href="#various-properties"><span class="toc-section-number">2.4</span> Various Properties<span></span></a>
+<ul>
+<li><a href="#conditionally-common"><span class="toc-section-number">2.4.1</span> Conditionally Common<span></span></a></li>
+<li><a href="#borrowed"><span class="toc-section-number">2.4.2</span> Borrowed<span></span></a></li>
+<li><a href="#sized"><span class="toc-section-number">2.4.3</span> Sized<span></span></a></li>
+<li><a href="#const-iterable"><span class="toc-section-number">2.4.4</span> <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable<span></span></a></li>
+</ul></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">2.5</span> Implementation Experience<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
 <ul>
@@ -605,13 +609,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">using</span> rvalue_reference <span class="op">=</span> common_reference_t<span class="op">&lt;</span>range_rvalue_reference_t<span class="op">&lt;</span>Inner<span class="op">&gt;</span>, range_rvalue_reference_t<span class="op">&lt;</span>Pattern<span class="op">&gt;&gt;</span>;</span></code></pre></div>
 <p>Those types all existing is an added constraint on constructing a <code class="sourceCode cpp">join_with_view</code>.</p>
 <p>I’m not sure I see a need to deviate from the implementation here.</p>
-<h2 data-number="2.4" id="conditionally-common"><span class="header-section-number">2.4</span> Conditionally Common<a href="#conditionally-common" class="self-link"></a></h2>
+<h2 data-number="2.4" id="various-properties"><span class="header-section-number">2.4</span> Various Properties<a href="#various-properties" class="self-link"></a></h2>
+<h3 data-number="2.4.1" id="conditionally-common"><span class="header-section-number">2.4.1</span> Conditionally Common<a href="#conditionally-common" class="self-link"></a></h3>
 <p>Like <code class="sourceCode cpp">views<span class="op">::</span>join</code>, <code class="sourceCode cpp">views<span class="op">::</span>join_with</code> can be common when <code class="sourceCode cpp">Rng</code> is a range of glvalue ranges, <code class="sourceCode cpp">Rng</code> and <code class="sourceCode cpp">Inner</code> are both forward and common. Note that we don’t need <code class="sourceCode cpp">Pattern</code> to be common.</p>
-<h2 data-number="2.5" id="borrowed"><span class="header-section-number">2.5</span> Borrowed<a href="#borrowed" class="self-link"></a></h2>
+<h3 data-number="2.4.2" id="borrowed"><span class="header-section-number">2.4.2</span> Borrowed<a href="#borrowed" class="self-link"></a></h3>
 <p>Never.</p>
-<h2 data-number="2.6" id="sized"><span class="header-section-number">2.6</span> Sized<a href="#sized" class="self-link"></a></h2>
+<h3 data-number="2.4.3" id="sized"><span class="header-section-number">2.4.3</span> Sized<a href="#sized" class="self-link"></a></h3>
 <p>Never.</p>
-<h2 data-number="2.7" id="implementation-experience"><span class="header-section-number">2.7</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h3 data-number="2.4.4" id="const-iterable"><span class="header-section-number">2.4.4</span> <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable<a href="#const-iterable" class="self-link"></a></h3>
+<p>Whenever <code class="sourceCode cpp">Rng</code> and <code class="sourceCode cpp">Pattern</code> are, nothing else imposed by <code class="sourceCode cpp">join_with</code> itself.</p>
+<h2 data-number="2.5" id="implementation-experience"><span class="header-section-number">2.5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Up until recently, the <code class="sourceCode cpp">join_with_view</code> in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented <a href="https://godbolt.org/z/4nczY7MeE">this design</a> from scratch.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <h2 data-number="3.1" id="addition-to-ranges"><span class="header-section-number">3.1</span> Addition to <code class="sourceCode cpp"><span class="op">&lt;</span>ranges<span class="op">&gt;</span></code><a href="#addition-to-ranges" class="self-link"></a></h2>
