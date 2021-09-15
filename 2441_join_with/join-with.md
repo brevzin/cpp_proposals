@@ -575,8 +575,8 @@ namespace std::ranges {
         requires Const && convertible_to<sentinel_t<V>, sentinel_t<$Base$>>;
 
     template <bool OtherConst>
-        requires sentinel_for<sentinel_t<Base>, iterator_t<$maybe-const$<OtherConst, V>>>
-    friend constexpr bool operator==(const $iterator$<OtherConst>& x, const sentinel& y);
+        requires sentinel_for<sentinel_t<$Base$>, iterator_t<$maybe-const$<OtherConst, V>>>
+    friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentinel$& y);
 };
 ```
 
@@ -595,8 +595,8 @@ constexpr sentinel(sentinel<!Const> s)
 
 ```cpp
 template <bool OtherConst>
-    requires sentinel_for<sentinel_t<Base>, iterator_t<$maybe-const$<OtherConst, V>>>
-friend constexpr bool operator==(const $iterator$<OtherConst>& x, const sentinel& y) {
+    requires sentinel_for<sentinel_t<$Base$>, iterator_t<$maybe-const$<OtherConst, V>>>
+friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentinel$& y) {
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$end_$`
