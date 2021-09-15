@@ -69,7 +69,7 @@ If `Rng` and `Pattern` are, and `Inner` is glvalue range. This is the same requi
 
 ## Implementation Experience
 
-Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/5TM843sfo) from scratch. 
+Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/b1fdabW3s) from scratch. 
 
 # Wording
 
@@ -278,7 +278,7 @@ namespace std::ranges {
     constexpr void operator++(int);
     constexpr $iterator$ operator++(int)
         requires $ref-is-glvalue$ && forward_iterator<$OuterIter$> &&
-                 forward_iterator<$InnerIter$> && forward_iterator<$PatternIter$>;
+                 forward_iterator<$InnerIter$>;
                  
     constexpr $iterator$& operator--()
         requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
@@ -300,7 +300,7 @@ namespace std::ranges {
     }
     
     friend constexpr void iter_swap(const $iterator$& x, const $iterator$& y)
-        requires indirectly_swappable<$InnerIter$> && indirectly_swappable<$PatternIter$>
+        requires indirectly_swappable<$InnerIter$, $PatternIter$>
     {
       std::visit(ranges::iter_swap, x.$inner_it_$, y.$inner_it_$);
     }    
@@ -311,7 +311,7 @@ namespace std::ranges {
 [1]{.pnum} `$iterator$::iterator_concept` is defined as follows:
 
 * [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range, and `$InnerBase$` and `$PatternBase$` each model `$bidi-common$, then `iterator_concept` denotes `bidirectional_iterator_tag`.
-* [#.#]{.pnum} Otherwise, if `$ref-is-glvalue$` is `true` and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
+* [#.#]{.pnum} Otherwise, if `$ref-is-glvalue$` is `true` and `$Base$` and `$InnerBase$` each  model `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag.
 
 [#]{.pnum} The member *typedef-name* `iterator_category` is defined if and only if `$ref-is-glvalue$` is `true`, and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `forward_range`. In that case, `$iterator$::iterator_category` is defined as follows:
@@ -481,7 +481,7 @@ constexpr void operator++(int);
 ```cpp
 constexpr $iterator$ operator++(int)
     requires $ref-is-glvalue$ && forward_iterator<$OuterIter$> &&
-             forward_iterator<$InnerIter$> && forward_iterator<$PatternIter$>;
+             forward_iterator<$InnerIter$>;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -600,7 +600,7 @@ constexpr sentinel(sentinel<!Const> s)
 ```cpp
 template <bool OtherConst>
     requires sentinel_for<sentinel_t<$Base$>, iterator_t<$maybe-const$<OtherConst, V>>>
-friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentinel$& y) {
+friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentinel$& y);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$end_$;`
