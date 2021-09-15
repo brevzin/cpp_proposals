@@ -262,8 +262,6 @@ namespace std::ranges {
     using iterator_concept = $see below$;
     using iterator_category = $see below$;                              // not always present
     using value_type = $see below$;
-    using reference = $see below$;
-    using rvalue_reference = $see below$;
     using difference_type = $see below$;
     
     $iterator$() requires default_initializable<$OuterIter$> && default_initializable<$InnerIter$> = default;
@@ -274,7 +272,7 @@ namespace std::ranges {
                  convertible_to<iterator_t<$InnerRng$>, $InnerIter$> &&
                  convertible_to<iterator_t<$Pattern$>, $PatternIter$>;
                  
-    constexpr reference operator*() const;
+    constexpr decltype(auto) operator*() const;
     
     constexpr $iterator$& operator++();
     constexpr void operator++(int);
@@ -283,18 +281,21 @@ namespace std::ranges {
                  forward_iterator<$InnerIter$> && forward_iterator<$PatternIter$>;
                  
     constexpr $iterator$& operator--()
-        requires $ref-is-glvalue$ && $bidi-common$<$Base$> &&
+        requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
                  $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
     constexpr $iterator$ operator--(int)
-        requires $ref-is-glvalue$ && $bidi-common$<$Base$> &&
+        requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
                  $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
                  
     friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
         requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
                  equality_comparable<$InnerIter$> && equality_comparable<$PatternIter$>;
                  
-    friend constexpr rvalue_reference iter_move(const $iterator$& x)
+    friend constexpr decltype(auto) iter_move(const $iterator$& x)
     {
+      using rvalue_reference = common_reference_t<
+        iter_rvalue_reference_t<$InnerIter$>,
+        iter_rvalue_reference_t<$PatternIter$>>;
       return std::visit<rvalue_reference>(ranges::iter_move, x.$inner_it_$);
     }
     
@@ -309,14 +310,14 @@ namespace std::ranges {
 
 [1]{.pnum} `$iterator$::iterator_concept` is defined as follows:
 
-* [#.#]{.pnum} If `$ref-is-glvalue$` is `true` and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `$bidi-common$, then `iterator_concept` denotes `bidirectional_iterator_tag`.
+* [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range, and `$InnerBase$` and `$PatternBase$` each model `$bidi-common$, then `iterator_concept` denotes `bidirectional_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `$ref-is-glvalue$` is `true` and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag.
 
 [#]{.pnum} The member *typedef-name* `iterator_category` is defined if and only if `$ref-is-glvalue$` is `true`, and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `forward_range`. In that case, `$iterator$::iterator_category` is defined as follows:
 
 * [#.#]{.pnum} Let `OUTERC` denote `iterator_traits<$OuterIter$>::iterator_category`. Let `INNERC` denote `iterator_traits<$InnerIter$>::iterator_category`, and let `PATTERNC` denote `iterator_traits<$PatternIter$>::iterator_category`.
-* [#.#]{.pnum} If `OUTERC`, `INNERC`, and `PATTERNC` each model `derived_from<bidirectional_iterator_category>`, `iterator_category` denotes `bidirectional_iterator_tag`.
+* [#.#]{.pnum} If `OUTERC`, `INNERC`, and `PATTERNC` each model `derived_from<bidirectional_iterator_category>` and `$InnerBase$` and `$PatternBase$` each model `common_range`, `iterator_category` denotes `bidirectional_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `OUTERC`, `INNERC`, and `PATTERNC` each model `derived_from<forward_iterator_tag>`, `iterator_category` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_category` denotes `input_iterator_tag`.
 
@@ -326,22 +327,6 @@ namespace std::ranges {
 common_type_t<
     iter_value_t<$InnerIter$>,
     iter_value_t<$PatternIter$>>
-```
-
-[#]{.pnum} `$iterator$::reference` denotes the type:
-
-```cpp
-common_reference_t<
-    iter_reference_t<$InnerIter$>,
-    iter_reference_t<$PatternIter$>>
-```
-
-[#]{.pnum} `$iterator$::rvalue_reference` denotes the type:
-
-```cpp
-common_reference_t<
-    iter_rvalue_reference_t<$InnerIter$>,
-    iter_rvalue_reference_t<$PatternIter$>>
 ```
 
 [#]{.pnum} `$iterator$::difference_type` denotes the type:
@@ -449,10 +434,19 @@ constexpr $iterator$($iterator$<!Const> i)
 [#]{.pnum} *Effects*: Initializes `$outer_it_$` with `std::move(i.$outer_it_$)`, `$inner_it_$` with `std::move(i.$inner_it_$)`, and `$parent_$` with `i.$parent_$`.
 
 ```cpp
-constexpr reference operator*() const;
+constexpr decltype(auto) operator*() const;
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return std::visit([](auto& it) -> reference { return *it; }, $inner_it_$);`
+[#]{.pnum} *Effects*: Equivalent to:
+
+::: bq
+```cpp
+using reference = common_reference_t<
+    iter_reference_t<$InnerIter$>,
+    iter_reference_t<$PatternIter$>>;
+return std::visit([](auto& it) -> reference { return *it; }, $inner_it_$);
+```
+:::
 
 ```cpp
 constexpr $iterator$& operator++();
@@ -492,7 +486,7 @@ return tmp;
    
 ```cpp   
 constexpr $iterator$& operator--()
-    requires $ref-is-glvalue$ && $bidi-common$<$Base$> &&
+    requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
              $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
 ```
 
@@ -530,7 +524,7 @@ return *this;
 
 ```cpp
 constexpr $iterator$ operator--(int)
-    requires $ref-is-glvalue$ && $bidi-common$<$Base$> &&
+    requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
              $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
 ```
 
