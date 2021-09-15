@@ -69,7 +69,7 @@ Whenever `Rng` and `Pattern` are, nothing else imposed by `join_with` itself.
 
 ## Implementation Experience
 
-Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/Kbfj4e4j5) from scratch. 
+Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/5TM843sfo) from scratch. 
 
 # Wording
 
@@ -289,7 +289,7 @@ namespace std::ranges {
                  
     friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
         requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
-                 equality_comparable<$InnerIter$> && equality_comparable<$PatternIter$>;
+                 equality_comparable<$InnerIter$>;
                  
     friend constexpr decltype(auto) iter_move(const $iterator$& x)
     {
@@ -551,7 +551,7 @@ return tmp;
 ```cpp             
 friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
     requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
-             equality_comparable<$InnerIter$> && equality_comparable<$PatternIter$>;
+             equality_comparable<$InnerIter$>;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$outer_it_$ && x.$inner_it_$ == y.$inner_it_$`;
@@ -595,7 +595,7 @@ constexpr sentinel(sentinel<!Const> s)
     requires Const && convertible_to<sentinel_t<V>, sentinel_t<$Base$>>;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$end_$` with `ranges::end(std::move(s.$end_$))`.
+[#]{.pnum} *Effects*: Initializes `$end_$` with `std::move(s.$end_$)`.
 
 ```cpp
 template <bool OtherConst>
@@ -603,7 +603,7 @@ template <bool OtherConst>
 friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentinel$& y) {
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$end_$`
+[#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$end_$;`
 :::
 
 ---
