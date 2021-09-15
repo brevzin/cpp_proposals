@@ -69,7 +69,7 @@ Whenever `Rng` and `Pattern` are, nothing else imposed by `join_with` itself.
 
 ## Implementation Experience
 
-Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/4nczY7MeE) from scratch. 
+Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/Kbfj4e4j5) from scratch. 
 
 # Wording
 
@@ -264,7 +264,7 @@ namespace std::ranges {
     using value_type = $see below$;
     using difference_type = $see below$;
     
-    $iterator$() requires default_initializable<$OuterIter$> && default_initializable<$InnerIter$> = default;
+    $iterator$() requires default_initializable<$OuterIter$> = default;
     constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);
     constexpr $iterator$($iterator$<!Const> i)
         requires Const &&
@@ -415,7 +415,7 @@ constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);
 
 ::: bq
 ```cpp
-if ($outer_it_$ != ranges::end($parent_$->$base_$) {
+if ($outer_it_$ != ranges::end($parent_$->$base_$)) {
     auto&& inner = $update-inner$($outer_it_$);
     $inner_it_$.emplace<1>(ranges::begin(inner));
     $satisfy$();
@@ -431,7 +431,17 @@ constexpr $iterator$($iterator$<!Const> i)
              convertible_to<iterator_t<$Pattern$>, $PatternIter$>;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$outer_it_$` with `std::move(i.$outer_it_$)`, `$inner_it_$` with `std::move(i.$inner_it_$)`, and `$parent_$` with `i.$parent_$`.
+[#]{.pnum} *Effects*: Initializes `$outer_it_$` with `std::move(i.$outer_it_$)` and `$parent_$` with `i.$parent_$`. Then, equivalent to:
+
+::: bq
+```cpp
+if (i.$inner_it_$.index() == 0) {
+    $inner_it_$.emplace<0>(std::get<0>(std::move(i.$inner_it_$)));
+} else {
+    $inner_it_$.emplace<1>(std::get<1>(std::move(i.$inner_it_$)));
+}
+```
+:::
 
 ```cpp
 constexpr decltype(auto) operator*() const;
