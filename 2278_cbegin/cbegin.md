@@ -1283,9 +1283,9 @@ namespace std::ranges {
 ```
 :::
 
-### 24.7.? Const view [range.const]
+### 24.7.? Const view [range.const] {-}
 
-#### 24.7.?.1 Overview [range.const.overview]
+#### 24.7.?.1 Overview [range.const.overview] {-}
 
 ::: bq
 [1]{.pnum} `const_view` presents a `view` of an underlying sequence as constant. That is, the elements of a `const_view` cannot be modified.
@@ -1307,7 +1307,7 @@ cant_touch_this(views::as_const(beat)); // will not modify the elements of beat
 -*end example*]
 :::
 
-#### 24.7.?.2 Class template `const_view` [range.const.view]
+#### 24.7.?.2 Class template `const_view` [range.const.view] {-}
 
 ::: bq
 ```cpp
