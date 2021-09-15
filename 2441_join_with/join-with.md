@@ -310,9 +310,9 @@ namespace std::ranges {
 
 [1]{.pnum} `$iterator$::iterator_concept` is defined as follows:
 
-* [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range, and `$InnerBase$` and `$PatternBase$` each model `$bidi-common$, then `iterator_concept` denotes `bidirectional_iterator_tag`.
+* [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range`, and `$InnerBase$` and `$PatternBase$` each model `$bidi-common$`, then `iterator_concept` denotes `bidirectional_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `$ref-is-glvalue$` is `true` and `$Base$` and `$InnerBase$` each  model `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
-* [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag.
+* [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag`.
 
 [#]{.pnum} The member *typedef-name* `iterator_category` is defined if and only if `$ref-is-glvalue$` is `true`, and `$Base$`, `$InnerBase$`, and `$PatternBase$` each model `forward_range`. In that case, `$iterator$::iterator_category` is defined as follows:
 
