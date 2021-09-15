@@ -317,7 +317,7 @@ namespace std::ranges {
 [#]{.pnum} The member *typedef-name* `iterator_category` is defined if and only if `$ref-is-glvalue$` is `true`, and `$Base$` and `$InnerBase$` each model `forward_range`. In that case, `$iterator$::iterator_category` is defined as follows:
 
 * [#.#]{.pnum} Let `OUTERC` denote `iterator_traits<$OuterIter$>::iterator_category`. Let `INNERC` denote `iterator_traits<$InnerIter$>::iterator_category`, and let `PATTERNC` denote `iterator_traits<$PatternIter$>::iterator_category`.
-* [#.#]{.pnum} If `is_reference_v<common_reference_t<iter_reference_t<$InnerIter$>, iter_reference_t<$PatternIter$>>>` is `false`, `iterator_category` denotes `input_iterator_tag`.
+* [#.#]{.pnum} If `is_lvalue_reference_v<common_reference_t<iter_reference_t<$InnerIter$>, iter_reference_t<$PatternIter$>>>` is `false`, `iterator_category` denotes `input_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `OUTERC`, `INNERC`, and `PATTERNC` each model `derived_from<bidirectional_iterator_category>` and `$InnerBase$` and `$PatternBase$` each model `common_range`, `iterator_category` denotes `bidirectional_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `OUTERC`, `INNERC`, and `PATTERNC` each model `derived_from<forward_iterator_tag>`, `iterator_category` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_category` denotes `input_iterator_tag`.
