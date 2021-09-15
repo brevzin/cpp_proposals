@@ -1,6 +1,6 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: D2036R3   
+document: P2036R3   
 date: today
 audience: EWG
 author:

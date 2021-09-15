@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2021-09-14" />
+  <title>Change scope of lambda trailing-return-type</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Change scope of lambda <em>trailing-return-type</em></h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2036R3</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2021-09-14</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#potential-impact"><span class="toc-section-number">3</span> Potential Impact<span></span></a>
+<ul>
+<li><a href="#no-capture">No capture: <code class="sourceCode cpp"><span class="op">[]</span></code><span></span></a></li>
+<li><a href="#init-capture-aexpr-or-aexpr"><em>init-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>a<span class="op">=</span>expr<span class="op">]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>expr<span class="op">]</span></code><span></span></a></li>
+<li><a href="#simple-capture-b-b-this-or-this"><em>simple-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[&amp;</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[</span><span class="kw">this</span><span class="op">]</span></code>, or <code class="sourceCode cpp"><span class="op">[*</span><span class="kw">this</span><span class="op">]</span></code><span></span></a></li>
+<li><a href="#capture-default-with"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[&amp;]</span></code><span></span></a></li>
+<li><a href="#capture-default-with-1"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[=]</span></code><span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#parts-of-a-lambda"><span class="toc-section-number">4.1</span> Parts of a Lambda<span></span></a></li>
+<li><a href="#odr-used-when-not-odr-usable"><span class="toc-section-number">4.2</span> odr-used when not odr-usable<span></span></a></li>
+<li><a href="#feature-test-macro"><span class="toc-section-number">4.3</span> Feature-test macro<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">4.4</span> Implementation Experience<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">5</span> Wording<span></span></a>
+<ul>
+<li><a href="#expr.prim.id.unqual"><span class="toc-section-number">5.1</span> [expr.prim.id.unqual]<span></span></a></li>
+<li><a href="#expr.prim.lambda.capture"><span class="toc-section-number">5.2</span> [expr.prim.lambda.capture]<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">6</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2036R2">[<a href="#ref-P2036R2" role="doc-biblioref">P2036R2</a>]</span>, wording changes.</p>
+<p>Since <span class="citation" data-cites="P2036R1">[<a href="#ref-P2036R1" role="doc-biblioref">P2036R1</a>]</span>, added feature test macro discussion and implementation experience.</p>
+<p>Since <span class="citation" data-cites="P2036R0">[<a href="#ref-P2036R0" role="doc-biblioref">P2036R0</a>]</span>, added wording and discussion of issues around getting the lookup correct.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>There’s a surprising aspect to the way that name lookup works in lambdas: it behaves differently in the <em>trailing-return-type</em> than it does in the lambda body. Consider the simple lambda implementing a counter:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">auto</span> counter1 <span class="op">=</span> <span class="op">[</span>j<span class="op">=</span><span class="dv">0</span><span class="op">]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>j<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="cf">return</span> j<span class="op">++</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="op">}</span>;</span></code></pre></div>
+<p>The <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>j<span class="op">)</span></code> here is pointless (the deduced return type would be the same), but the real issue here is that it does not actually compile. That’s because the variable <code class="sourceCode cpp">j</code> we’re “declaring” in the init-capture isn’t actually “visible” yet (I’m using these terms somewhat loosely). The <code class="sourceCode cpp">j</code> in the body refers to the lambda’s “member” <code class="sourceCode cpp">j</code>, but the <code class="sourceCode cpp">j</code> in the <em>trailing-return-type</em> needs to find some outer <code class="sourceCode cpp">j</code> instead. Despite the capture being lexically closer to the lambda itself, and certainly far more likely to be the programmer’s intended meaning.</p>
+<p>The best case scenario is that such code does not compile. The worst case scenario is that it does - because when it does compile, it means we had a situation like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">double</span> j <span class="op">=</span> <span class="fl">42.0</span>;</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="co">// ...</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">auto</span> counter2 <span class="op">=</span> <span class="op">[</span>j<span class="op">=</span><span class="dv">0</span><span class="op">]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>j<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="cf">return</span> j<span class="op">++</span>;</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="op">}</span>;</span></code></pre></div>
+<p>And now our lambda returns a <code class="sourceCode cpp"><span class="dt">double</span></code> instead of an <code class="sourceCode cpp"><span class="dt">int</span></code>.</p>
+<p>This problem is most clear with <em>init-capture</em>, where we may actually be introducing new names. But it can show up in far more subtle ways with normal copy capture:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> bar<span class="op">(</span><span class="dt">int</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>;        <span class="co">// #1</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> bar<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>; <span class="co">// #2</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="dt">int</span> i;</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">auto</span> f <span class="op">=</span> <span class="op">[=](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>bar<span class="op">(</span>i, x<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="cf">return</span> bar<span class="op">(</span>i, x<span class="op">)</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>f<span class="op">(</span><span class="dv">42</span><span class="op">)</span>; <span class="co">// error</span></span></code></pre></div>
+<p>Here, in the <em>trailing-return-type</em>, <code class="sourceCode cpp">x</code> refers to the parameter of the lambda, but <code class="sourceCode cpp">i</code> doesn’t refer to the lambda’s member (the lexically closest thing, declared implicitly via the <code class="sourceCode cpp"><span class="op">[=]</span></code>) but actually refers to the block scope variable, <code class="sourceCode cpp">i</code>. These are both <code class="sourceCode cpp"><span class="dt">int</span></code>s, but the outer one is a mutable <code class="sourceCode cpp"><span class="dt">int</span></code> while within the call operator of the lambda, is a <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">int</span></code> (because the call operator is implicitly <code class="sourceCode cpp"><span class="kw">const</span></code>). Hence the <em>trailing-return-type</em> gets deduced as <code class="sourceCode cpp"><span class="dt">int</span></code> (via <code class="sourceCode cpp"><span class="pp">#1</span></code>) while the expression in the body has type <code class="sourceCode cpp"><span class="dt">void</span></code> (via <code class="sourceCode cpp"><span class="pp">#2</span></code>). This doesn’t compile.</p>
+<p>Another example arises from trying to write a SFINAE-friendly function composer:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> F, <span class="kw">typename</span> G<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> compose<span class="op">(</span>F f, G g<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> <span class="op">[=](</span><span class="kw">auto</span><span class="op">...</span> args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>g<span class="op">(</span>args<span class="op">...)))</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        <span class="cf">return</span> f<span class="op">(</span>g<span class="op">(</span>args<span class="op">...))</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="op">}</span></span></code></pre></div>
+<p>This implementation is buggy. The problem is the <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">g</code> from the body of the lambda are accessed as <code class="sourceCode cpp"><span class="kw">const</span></code>, but from the <em>trailing-return-type</em> are not. Pass in a callable that’s intended to be non-<code class="sourceCode cpp"><span class="kw">const</span></code>-invocable (like, say, a <code class="sourceCode cpp"><span class="kw">mutable</span></code> lambda), and we end up with a hard error when we finally instantiate the body.</p>
+<p>For the <em>trailing-return-type</em> case, this problem only surfaces with <em>init-capture</em> (which can introduce new names) and any kind of copy capture (which may change the const qualification on some names). With reference capture (specifically either just <code class="sourceCode cpp"><span class="op">[&amp;]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">]</span></code>), both the inner and outer uses of names are equivalent so there is no issue.</p>
+<p>While it is possible (and quite easy) to produce examples that demonstrate this sort of different behavior, it’s quite difficult to come up with examples in which this difference is actually desired and intended. I wrote a clang-tidy check to find any uses of problematic captures (those that are come from a copy capture or <em>init-capture</em>) and ran it on multiple code bases and could not find one. I would love to see a real world example.</p>
+<p>This issue (the potentially-different interpretations of the same name in the <em>trailing-return-type</em> and lambda body) was one of (but not the only) reason that <span class="citation" data-cites="P0573R2">[<a href="#ref-P0573R2" role="doc-biblioref">P0573R2</a>]</span> was rejected. Consider this equivalent formulation of the earlier example, but with the abbreviated lambda:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> bar<span class="op">(</span><span class="dt">int</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>;        <span class="co">// #1</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> bar<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span>; <span class="co">// #2</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="dt">int</span> i;</span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">auto</span> f <span class="op">=</span> <span class="op">[=](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">=&gt;</span> bar<span class="op">(</span>i, x<span class="op">)</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a>f<span class="op">(</span><span class="dv">42</span><span class="op">)</span>; <span class="co">// still error</span></span></code></pre></div>
+<p>Here, we still error, for all the same reasons, because this lambda is defined to be equivalent to the previous one. But here, we only have one single <code class="sourceCode cpp">bar<span class="op">(</span>i, x<span class="op">)</span></code> expression which nevertheless is interpreted two different ways.</p>
+<p>As pointed out in that paper, it is quite common for users to “hack” this kind of lambda expression by using a macro that does the de-duplication for them. Such lambdas are broken if they use any kind of copy or init-capture. Or, more likely, somebody tried to write such a lambda, became confused when it didn’t compile, flipped over a table, and then wrote it the long way.</p>
+<p>This is one of those incredibly subtle aspects of the language today that are just needlessly confounding. It seems to me that whenever the meaning of an <em>id-expression</em> differs between the two contexts, it’s a bug. I think we should just remove this corner case. It’s also blocking reasonable future language evolution, and is likely a source of subtle bugs and preexisting user frustration.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="potential-impact"><span class="header-section-number">3</span> Potential Impact<a href="#potential-impact" class="self-link"></a></h1>
+<p>Let’s go through the various types of capture and see what the impact of this proposed change would be on usage and implementation.</p>
+<h3 class="unnumbered" data-number id="no-capture">No capture: <code class="sourceCode cpp"><span class="op">[]</span></code><a href="#no-capture" class="self-link"></a></h3>
+<p>There is no capture, so there is no new thing to find. No change.</p>
+<h3 class="unnumbered" data-number id="init-capture-aexpr-or-aexpr"><em>init-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>a<span class="op">=</span>expr<span class="op">]</span></code> or <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>expr<span class="op">]</span></code><a href="#init-capture-aexpr-or-aexpr" class="self-link"></a></h3>
+<p>By the time we get to the <em>trailing-return-type</em>, we know the types of all the <em>init-capture</em> and we know whether the lambda is <code class="sourceCode cpp"><span class="kw">mutable</span></code> or not, which means that we will know how to correctly interpret uses of <code class="sourceCode cpp">a</code> in the <em>trailing-return-type</em>. This will likely change the meaning of such code, if such code exists today. But note that such code seems fundamentally questionable so it’s unlikely that much such code exists today.</p>
+<h3 class="unnumbered" data-number id="simple-capture-b-b-this-or-this"><em>simple-capture</em>: <code class="sourceCode cpp"><span class="op">[</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[&amp;</span>b<span class="op">]</span></code>, <code class="sourceCode cpp"><span class="op">[</span><span class="kw">this</span><span class="op">]</span></code>, or <code class="sourceCode cpp"><span class="op">[*</span><span class="kw">this</span><span class="op">]</span></code><a href="#simple-capture-b-b-this-or-this" class="self-link"></a></h3>
+<p>This is basically the same result as the <em>init-capture</em> case: we know the types by the time we get to the beginning of the <em>trailing-return-type</em>, so there are no issues determining what it should be.</p>
+<p>With the reference capture cases (as well the <em>init-capture</em> spelling <code class="sourceCode cpp"><span class="op">[&amp;</span>a<span class="op">=</span>a<span class="op">]</span></code>), there is actually no difference in interpretation anyway.</p>
+<h3 class="unnumbered" data-number id="capture-default-with"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[&amp;]</span></code><a href="#capture-default-with" class="self-link"></a></h3>
+<p>With reference captures, there is no difference in interpretation between considered the capture and considering the outer scope variable. This paper would change nothing.</p>
+<h3 class="unnumbered" data-number id="capture-default-with-1"><em>capture-default</em> with <code class="sourceCode cpp"><span class="op">[=]</span></code><a href="#capture-default-with-1" class="self-link"></a></h3>
+<p>This is the sad case. Specifically, in the case where:</p>
+<ol type="1">
+<li>We have a <em>capture-default</em> of <code class="sourceCode cpp"><span class="op">=</span></code>, and</li>
+<li>We have a <em>trailing-return-type</em>, and</li>
+<li>That <em>trailing-return-type</em> has an <em>id-expression</em> which is not otherwise covered by any other kind of capture, and</li>
+<li>The use of that <em>id-expression</em>, if it appeared in the body, would be affected by the rule in <span>7.5.4.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 (that is, it’s not just <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span></code> but has to be either <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span></code> or something like <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>), and</li>
+<li>The lambda is not <code class="sourceCode cpp"><span class="kw">mutable</span></code>, and</li>
+<li>The variable is not <code class="sourceCode cpp"><span class="kw">const</span></code></li>
+</ol>
+<p>Then we have a problem. First, let’s go over the cases that are not problematic.</p>
+<ol start="3" type="1">
+<li>Eliminates cases like <code class="sourceCode cpp"><span class="op">[=</span>, a<span class="op">]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>a<span class="op">))</span></code>, which we know captures <code class="sourceCode cpp">a</code> by copy so we can figure out what the type of <code class="sourceCode cpp">a</code> would be when nominated in the body.</li>
+<li>Eliminates cases like <code class="sourceCode cpp"><span class="op">[=]()</span> <span class="op">-&gt;</span> X<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>a<span class="op">)&gt;</span></code>, which actually have the same meaning in the body already.</li>
+<li>Eliminates cases like <code class="sourceCode cpp"><span class="op">[=]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>a<span class="op">))</span></code>. Whether or not we end up having to capture <code class="sourceCode cpp">a</code>, the meaning of <code class="sourceCode cpp">f<span class="op">(</span>a<span class="op">)</span></code> is the same in the body as it is in the <em>trailing-return-type</em>.</li>
+<li>Eliminates cases like <code class="sourceCode cpp"><span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>g<span class="op">(</span>c<span class="op">))</span></code> where <code class="sourceCode cpp">c</code> is, say, an <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code>. Whether or not we end up having to capture <code class="sourceCode cpp">c</code>, the meaning of <code class="sourceCode cpp">g<span class="op">(</span>c<span class="op">)</span></code> is the same in the body as it is in the <em>trailing-return-type</em>.</li>
+</ol>
+<p>We’re left with this pathological case:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> i;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>i<span class="op">))</span></span></code></pre></div>
+<p>At this point, we do not know if we’re capturing <code class="sourceCode cpp">i</code> or not. Today, this treats <code class="sourceCode cpp">i</code> as an lvalue of type <code class="sourceCode cpp"><span class="dt">int</span></code> here. But with the proposed rule change, this <em>might</em> have to treat <code class="sourceCode cpp">i</code> as a <code class="sourceCode cpp"><span class="kw">const</span></code> access, but only <em>if</em> we end up having to capture <code class="sourceCode cpp">i</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span><span class="op">&amp;)</span>       <span class="op">-&gt;</span> <span class="dt">int</span>;</span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">double</span>;</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="dt">int</span> i;</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="kw">auto</span> should_capture <span class="op">=</span> <span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>i<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="cf">return</span> f<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="op">}</span>;</span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="kw">auto</span> should_not_capture <span class="op">=</span> <span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span>i<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Today, both lambdas return <code class="sourceCode cpp"><span class="dt">int</span></code>. With the suggested change, the <em>trailing-return-type</em> needs to consider the capture, so we need to delay parsing it until we see what the lambda bodies actually look like. And then, we might determine that the lambda <code class="sourceCode cpp">should_capture</code> actually returns a <code class="sourceCode cpp"><span class="dt">double</span></code>.</p>
+<p>How can we handle this case?</p>
+<ol type="1">
+<li>We can, in this specific scenario (capture has an <code class="sourceCode cpp"><span class="op">=</span></code> and the lambda is <code class="sourceCode cpp"><span class="kw">const</span></code>) just treat the <em>trailing-return-type</em> as token soup. The simplified rules for capture aren’t based on return type <span class="citation" data-cites="P0588R1">[<a href="#ref-P0588R1" role="doc-biblioref">P0588R1</a>]</span> in any way, so this can work.</li>
+<li>We can, in this specific scenario, just say that <code class="sourceCode cpp">i</code> is captured when used this way and that if it would not have been captured following the usual rules that the lambda is ill-formed.</li>
+<li>We can say generally that any capturable entity in the <em>trailing-return-type</em> will behave as if it’s captured (regardless of if it ends up being captured or not).</li>
+</ol>
+<p>This paper suggests option 3. As with the rest of this paper, it is easy to come up with examples where the rules would change. Lambdas like the following would change meaning:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="dt">int</span> i;</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="co">// previously returned int&amp;, proposed returns int const&amp;</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co">// even though i is not actually captured in this lambda</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">auto</span> f <span class="op">=</span> <span class="op">[=](</span><span class="dt">int</span><span class="op">&amp;</span> j<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">((</span>i<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="cf">return</span> j;</span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="op">}</span>;</span></code></pre></div>
+<p>But it is difficult to come up with actual real-world examples that would break. And easy to come up with real-world examples that would be fixed by this change. The lambda <code class="sourceCode cpp">should_capture</code> would change to return a <code class="sourceCode cpp"><span class="dt">double</span></code>, which seems more likely to be correct, and much more realistic an example than <code class="sourceCode cpp">f</code>.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes that name lookup in the <em>trailing-return-type</em> of a lambda first consider that lambda’s captures before looking further outward. We may not know at the time of parsing the return type which names actually are captured, so this paper proposes to treat all capturable entities as if they were captured.</p>
+<p>That is, treat the <em>trailing-return-type</em> like the function body rather than treating it like a function parameter.</p>
+<p>Such a change fixes the lambda in a way that almost certainly matches user intent, fixes the <code class="sourceCode cpp">counter</code> and <code class="sourceCode cpp">compose</code> lambdas presented earlier, and fixes all current and future lambdas that use a macro to de-duplicate the <em>trailing-return-type</em> from the body.</p>
+<p>For the pathologically bad case (the use of a name in a <em>trailing-return-type</em> of a <code class="sourceCode cpp"><span class="kw">const</span></code> lambda that nominates a non-<code class="sourceCode cpp"><span class="kw">const</span></code> variable not otherwise accounted for in other lambda capture) that means we might have a lambda where we treat a name as captured when it might end up not actually having been captured - which would be a mistreatment in the opposite direction of the problem that this paper has been describing. This is unfortunate, but it’s an especially strange corner case - one that’s much more unlikely to appear in real code than the cases that this paper is trying to resolve.</p>
+<h2 data-number="4.1" id="parts-of-a-lambda"><span class="header-section-number">4.1</span> Parts of a Lambda<a href="#parts-of-a-lambda" class="self-link"></a></h2>
+<p>If we write out a lambda that has all the parts that it can have, they would be in the following order (most of these are optional):</p>
+<ol type="1">
+<li><em>lambda-introducer</em></li>
+<li><em>template-parameter-list</em></li>
+<li><em>requires-clause</em> (#1)</li>
+<li><em>lambda-declarator</em>
+<ol type="a">
+<li><em>parameter-declaration-clause</em></li>
+<li><em>decl-specifier-seq</em></li>
+<li><em>noexcept-specifier</em></li>
+<li><em>attribute-specifier-seq</em></li>
+<li><em>trailing-return-type</em></li>
+<li><em>requires-clause</em> (#2)</li>
+</ol></li>
+<li><em>compound-statement</em></li>
+</ol>
+<p>If we have a copy capture (whether it’s a <em>simple-capture</em> or a <em>capture-default</em> of <code class="sourceCode cpp"><span class="op">=</span></code> or an <em>init-capture</em> that isn’t a reference), the issue is we do not know what the type of a capture should be until we’ve seen whether the lambda is <code class="sourceCode cpp"><span class="kw">mutable</span></code> or not (in the <em>decl-specifier-seq</em>).</p>
+<p>What do we want to do about a case like this?</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="dt">double</span> x;</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span> y<span class="op">){</span> <span class="cf">return</span> x; <span class="op">}</span></span></code></pre></div>
+<p>There are four options for what this lambda could mean:</p>
+<ol type="1">
+<li>this is a lambda that takes a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">&amp;</span></code> (status quo).</li>
+<li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code> (lookup could be changed to find the <em>init-capture</em> but not do any member access transformation - even though this lambda ends up being not <code class="sourceCode cpp"><span class="kw">mutable</span></code>)</li>
+<li>this is a lambda that takes an <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> (would require lookahead, highly undesirable)</li>
+<li>this is ill-formed</li>
+</ol>
+<p>While there’s a lot of motivation for the <em>trailing-return-type</em>, I have never seen anybody write this and do not know what the motivation for such a thing would be. (1) isn’t very reasonable since the <em>init-capture</em> is lexically closer to use and it’s just as surprising to find <code class="sourceCode cpp"><span class="op">::</span>x</code> in the <em>parameter-declaration-clause</em> as it is in the <em>trailing-return-type</em>.</p>
+<p>The advantage of (4) is that it guarantees that all uses of <code class="sourceCode cpp">x</code> in the <em>lambda-expression</em> after the <em>lambda-introducer</em> mean the same thing — we reject the cases up front where we are not sure what answer to give without doing lookahead. If motivation arises in the future for using captures in these contexts, we can always change the lookup in these contexts to allow such uses — rejecting now doesn’t cut off that path.</p>
+<p>This paper proposes (4).</p>
+<p>Note that there are potentially <em>two</em> different <em>requires-clause</em>s in a lambda: one that is before the <em>decl-specifier-seq</em> and one that is after. Using a capture would be ill-formed in one but valid in the other:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">double</span> x;</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)*</span> p<span class="op">&gt;</span> <span class="co">// ill-formed</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>        <span class="op">*</span>p <span class="op">=</span> x;      <span class="co">// ill-formed</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span> q<span class="op">)</span>  <span class="co">// ill-formed</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="co">// now we know x is an lvalue of type int const</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>    <span class="kw">noexcept</span><span class="op">(</span><span class="kw">noexcept</span><span class="op">(</span>q<span class="op">+</span>x<span class="op">))</span>     <span class="co">// ok</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>q<span class="op">+</span>x<span class="op">)</span>            <span class="co">// ok</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="kw">requires</span> <span class="kw">requires</span> <span class="op">{</span> q<span class="op">+</span>x; <span class="op">}</span>  <span class="co">// ok</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>    <span class="op">{</span></span>
+<span id="cb10-13"><a href="#cb10-13"></a>        <span class="cf">return</span> q<span class="op">+</span>x;             <span class="co">// ok</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a>    <span class="op">}</span></span></code></pre></div>
+<p>The status quo today is that all uses here are valid, and all of them save for the last one find <code class="sourceCode cpp"><span class="op">::</span>x</code> (the <code class="sourceCode cpp"><span class="dt">double</span></code>) — only in the lambda’s <em>compound-statement</em> does lookup find the <em>init-capture</em> <code class="sourceCode cpp">x</code> (the <code class="sourceCode cpp"><span class="dt">int</span></code>).</p>
+<h2 data-number="4.2" id="odr-used-when-not-odr-usable"><span class="header-section-number">4.2</span> odr-used when not odr-usable<a href="#odr-used-when-not-odr-usable" class="self-link"></a></h2>
+<p>Davis Herring provides the following example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> read<span class="op">(</span><span class="kw">const</span> <span class="dt">int</span> <span class="op">&amp;</span>i<span class="op">)</span> <span class="op">{</span><span class="cf">return</span> i;<span class="op">}</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> value<span class="op">=</span><span class="dv">3</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">return</span> <span class="op">[=]()</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">(*)[</span>read<span class="op">(</span>value<span class="op">)]</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="kw">static</span> <span class="dt">int</span> x<span class="op">[</span>read<span class="op">(</span>value<span class="op">)]</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a>        <span class="cf">return</span> <span class="op">&amp;</span>x;</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="op">}</span>;</span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="op">}</span></span></code></pre></div>
+<p>Today, this example is ill-formed (although no compiler diagnoses it) because <code class="sourceCode cpp">value</code> is odr-used in the <em>trailing-return-type</em>, but it is not odr-usable (<span>6.3 <a href="https://wg21.link/basic.def.odr">[basic.def.odr]</a></span>/9) there. It would be consistent with the theme of this paper (having the <em>trailing-return-type</em> have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don’t start capturing more things.</p>
+<p>I’m wary of such a change because I’m very wary of touching anything related to ODR. Especially because in an example like this, we could easily make <code class="sourceCode cpp">value</code> not odr-used here (either by making <code class="sourceCode cpp">value</code> <code class="sourceCode cpp"><span class="kw">static</span></code> or by changing <code class="sourceCode cpp">read</code> to not take by reference).</p>
+<h2 data-number="4.3" id="feature-test-macro"><span class="header-section-number">4.3</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>The change this paper suggests doesn’t merit a feature test macro. If you had to support both the old and new versions, you would just directly write the code the old way that would get you the behavior you wanted with the new way. Writing two different <em>trailing-return-type</em>s or <em>noexcept-specifier</em>s doesn’t seem like it would provide any value - just write the one that always works.</p>
+<h2 data-number="4.4" id="implementation-experience"><span class="header-section-number">4.4</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>None, but the behavior changes suggested here don’t require any kind of parsing heroics. We still have everything we need to know at the time that we’re parsing the <em>trailing-return-type</em>, it’s just that there’s a new scope that is looked in first. No implementors have reported any concerns.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>This wording is based on the working draft after Davis Herring’s opus <span class="citation" data-cites="P1787R6">[<a href="#ref-P1787R6" role="doc-biblioref">P1787R6</a>]</span> was merged (i.e. <span class="citation" data-cites="N4878">[<a href="#ref-N4878" role="doc-biblioref">N4878</a>]</span>).</p>
+<p>The wording strategy here is as follows. We have the following scopes today:</p>
+<ul>
+<li><em>lambda-introducer</em></li>
+<li><em>template-parameter-list</em></li>
+<li><em>requires-clause</em> (#1)</li>
+<li><em>lambda-declarator</em>
+<ul>
+<li><em>parameter-declaration-clause</em> (function parameter scope)</li>
+<li><em>decl-specifier-seq</em></li>
+<li><em>noexcept-specifier</em></li>
+<li><em>attribute-specifier-seq</em></li>
+<li><em>trailing-return-type</em></li>
+<li><em>requires-clause</em> (#2)
+<ul>
+<li><em>compound-statement</em> (block scope)</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>We have to move the <em>init-capture</em> to inhabit the function parameter scope, making sure to still reject cases like:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="dt">int</span> x<span class="op">){}</span></code> (currently rejected by <span>6.4.3 <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/2, the <em>init-capture</em> targets the <em>compound-statement</em> and the function parameter targets the parent of that)</li>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]{</span> <span class="dt">int</span> x; <span class="op">}</span></code> (currently rejected by <span>6.4.1 <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/4, the two declarations of <code class="sourceCode cpp">x</code> potentially conflict in the same scope)</li>
+</ul>
+<p>We then have to change the [expr.prim.id.unqual] rule such that if an <em>unqualified-id</em> names a local entity from a point <code class="sourceCode cpp">S</code> within a lambda-expression, we first consider the point <code class="sourceCode cpp">S<span class="ch">&#39;</span></code> that is within the <em>compound-statement</em> of that innermost lambda. If, from <code class="sourceCode cpp">S<span class="ch">&#39;</span></code>, some intervening lambda (not necessary the innermost lambda from <code class="sourceCode cpp">S<span class="ch">&#39;</span></code>) would capture the local entity by copy then:</p>
+<ul>
+<li>if <code class="sourceCode cpp">S</code> is in that innermost capturing lambda’s function parameter scope but not in the <em>parameter-declaration-clause</em>, then we do the class member access transformation.</li>
+<li>otherwise, we say the access is ill-formed.</li>
+</ul>
+<p>To clarify:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="dt">int</span> x;</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="op">[=]&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)*</span> p<span class="op">)&gt;</span>  <span class="co">// error: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>                      <span class="co">// but not from the function parameter scope</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)</span> y<span class="op">)</span>   <span class="co">// error: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>                      <span class="co">// from within the function parameter scope, but it&#39;s in the <em>parameter-declaration-clause</em></span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">((</span>x<span class="op">))</span>  <span class="co">// ok: unqualified-id names a local entity that would be captured by copy</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>                      <span class="co">// in the function parameter scope, transformed into class access. Yields int const&amp;.</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="op">{</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>        <span class="cf">return</span> x;     <span class="co">// ok: lvalue of type int const</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="op">}</span>;</span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="dt">int</span> j;</span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="op">[=](){</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a>    <span class="op">[]&lt;</span><span class="kw">decltype</span><span class="op">(</span>j<span class="op">)*</span> q<span class="op">&gt;</span> <span class="co">// ok: the innermost lambda that would capture j by copy is the outer lambda</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a>                       <span class="co">// and we are in the outer&#39;s lambda&#39;s function parameter scope, this is int*</span></span>
+<span id="cb12-16"><a href="#cb12-16"></a>    <span class="op">(</span><span class="kw">decltype</span><span class="op">((</span>j<span class="op">))</span> w<span class="op">)</span>  <span class="co">// ok: as above, &#39;w&#39; is a parameter of type int const&amp;</span></span>
+<span id="cb12-17"><a href="#cb12-17"></a>    <span class="op">{}</span>;</span>
+<span id="cb12-18"><a href="#cb12-18"></a><span class="op">}</span>;</span></code></pre></div>
+<h2 data-number="5.1" id="expr.prim.id.unqual"><span class="header-section-number">5.1</span> [expr.prim.id.unqual]<a href="#expr.prim.id.unqual" class="self-link"></a></h2>
+<p>Change <span>7.5.4.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3, including adding bullet points to make it clear what branch each case refers to and a drive by fix the issue Tim Song pointed out <a href="https://lists.isocpp.org/core/2020/10/9982.php">here</a>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">3</a></span> The result is the entity denoted by the <em>unqualified-id</em> ([basic.lookup.unqual]). <span class="addu">If the entity is either a local entity or names an <em>init-capture</em> and the <em>unqualified-id</em> appears in a <em>lambda-expression</em> at program point <code class="sourceCode cpp">P</code>, then let <code class="sourceCode cpp">S</code> be the <em>compound-expression</em> of the innermost enclosing <em>lambda-expression</em> of <code class="sourceCode cpp">P</code>.</span></p>
+<p>If <span class="rm" style="color: #bf0303"><del>the entity is a local entity and naming it</del></span> <span class="addu">naming the local entity or <em>init-capture</em></span> from outside of an unevaluated operand <span class="rm" style="color: #bf0303"><del>within the scope where the <em>unqualified-id</em> appears</del></span> <span class="addu">in <code class="sourceCode cpp">S</code></span> would <span class="rm" style="color: #bf0303"><del>result in some intervening <em>lambda-expression</em> capturing it by copy</del></span> <span class="addu">refer to an entity captured by copy in some intervening <em>lambda-expression</em></span> ([expr.prim.lambda.capture]), <span class="addu">then let <code class="sourceCode cpp">E</code> be the innermost such <em>lambda-expression</em></span>.</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(3.1)</a></span> <span class="addu">If <code class="sourceCode cpp">P</code> is in <code class="sourceCode cpp">E</code>’s function parameter scope but not its <em>parameter-declaration-clause</em>, then</span> the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of <span class="rm" style="color: #bf0303"><del>the innermost such intervening <em>lambda-expression</em></del></span> <span class="addu"><code class="sourceCode cpp">E</code></span>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(3.2)</a></span> <span class="addu">Otherwise (if <code class="sourceCode cpp">P</code> either precedes <code class="sourceCode cpp">E</code>’s function parameter scope or is in <code class="sourceCode cpp">E</code>’s <em>parameter-declaration-clause</em>), the program is ill-formed.</span></li>
+</ul>
+<p>Otherwise, the type of the expression is the type of the result.</p>
+</blockquote>
+<p>Extend the example in <span>7.5.4.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>/3 to demonstrate this rule:</p>
+<blockquote>
+<p>[<em>Example 1:</em></p>
+<div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>  void f() {</span>
+<span id="cb13-2"><a href="#cb13-2"></a>    float x, &amp;r = x;</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="st">-   [=] {</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="va">+   [=]() -&gt; decltype((x)) {      // lambda returns float const&amp; because this lambda</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="va">+                                 // is not mutable and x is an lvalue</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>      decltype(x) y1;             // y1 has type float</span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="st">-     decltype((x)) y2 = y1;      // y2 has type float const&amp; <span class="diffdel">because this lambda</span></span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="st">-                                 // <span class="diffdel">is not mutable and x is an lvalue</span></span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="va">+     decltype((x)) y2 = y1;      // y2 has type float const&amp;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a>      decltype(r) r1 = y1;        // r1 has type float&amp;</span>
+<span id="cb13-11"><a href="#cb13-11"></a>      decltype((r)) r2 = y2;      // r2 has type float const&amp;</span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="va">+     return y2;</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>    };</span>
+<span id="cb13-14"><a href="#cb13-14"></a>    </span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="va">+   [=]&lt;decltype(x) P&gt;{};         // error: x refers to local entity but precedes the</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="va">+                                 // lambda&#39;s function parameter scope</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="va">+   [=](decltype((x)) y){};       // error: x refers to local entity but is in lambda&#39;s</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="va">+                                 // parameter-declaration-clause</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="va">+   [=]{</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a><span class="va">+       []&lt;decltype(x) P&gt;{};      // ok: x is in the outer lambda&#39;s function parameter scope</span></span>
+<span id="cb13-21"><a href="#cb13-21"></a><span class="va">+       [](decltype((x)) y){};    // ok: lambda takes a parameter of type float const&amp;</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a><span class="va">+       [x=1](decltype((x)) z){}; // error: x refers to init-capture but is in lambda&#39;s</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="va">+                                 // parameter-declaration-clause</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+   };</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a>  }</span></code></pre></div>
+</div>
+<p><em>- end example</em>]</p>
+</blockquote>
+<h2 data-number="5.2" id="expr.prim.lambda.capture"><span class="header-section-number">5.2</span> [expr.prim.lambda.capture]<a href="#expr.prim.lambda.capture" class="self-link"></a></h2>
+<p>Change <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/6:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">6</a></span> An <em>init-capture</em> inhabits the <span class="addu">function parameter</span> scope of the <em>lambda-expression</em>’s <span class="rm" style="color: #bf0303"><del><em>compound-statement</em></del></span> <span class="addu"><em>parameter-declaration-clause</em></span>. An <em>init-capture</em> without ellipsis behaves as if it declares and explicitly captures a variable of the form […]</p>
+</blockquote>
+<p>And extend the example to demonstrate this usage (now we do have an <code class="sourceCode cpp">i</code> in scope for <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>i<span class="op">)</span></code> to find):</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>  int x = 4;</span>
+<span id="cb14-2"><a href="#cb14-2"></a>  auto y = [&amp;r = x, x = x+1]()-&gt;int {</span>
+<span id="cb14-3"><a href="#cb14-3"></a>              r += 2;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>              return x+2;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>           }();                                    // Updates ​::​x to 6, and initializes y to 7.</span>
+<span id="cb14-6"><a href="#cb14-6"></a>           </span>
+<span id="cb14-7"><a href="#cb14-7"></a>  auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name</span>
+<span id="cb14-8"><a href="#cb14-8"></a>  </span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="va">+ auto counter = [i=0]() mutable -&gt; decltype(i) {  // ok: returns int</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="va">+   return i++;</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="va">+ };</span></span></code></pre></div>
+</div>
+</blockquote>
+<p>Our earlier bad examples of <em>init-capture</em> should still be rejected:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">](</span><span class="dt">int</span> x<span class="op">){}</span></code> is now rejected by <span>6.4.1 <a href="https://wg21.link/basic.scope.scope">[basic.scope.scope]</a></span>/4, since we know have two declarations of <code class="sourceCode cpp">x</code> in the function parameter scope of the lambda.</li>
+<li><code class="sourceCode cpp"><span class="op">[</span>x<span class="op">=</span><span class="dv">1</span><span class="op">]{</span> <span class="dt">int</span> x; <span class="op">}</span></code> is now rejected by <span>6.4.3 <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/2, since the declaration <code class="sourceCode cpp"><span class="dt">int</span> x</code> targets the block scope of the <em>compound-statement</em> of the lambda and <code class="sourceCode cpp">x<span class="op">=</span><span class="dv">1</span></code> is a declaration whose target scope is the function parameter scope, the parent of that <em>compound-statement</em>.</li>
+</ul>
+<p>Basically, we’ve just swapped which rule rejects which example, but both examples are still rejected.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">6</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Davis Herring for all of his work, just in general. Thanks to Tim Song for help understand the rules.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-N4878">
+<p>[N4878] Thomas Köppe. 2020-12-15. Working Draft, Standard for Programming Language C++. <br />
+<a href="https://wg21.link/n4878">https://wg21.link/n4878</a></p>
+</div>
+<div id="ref-P0573R2">
+<p>[P0573R2] Barry Revzin, Tomasz Kamiński. 2017-10-08. Abbreviated Lambdas for Fun and Profit. <br />
+<a href="https://wg21.link/p0573r2">https://wg21.link/p0573r2</a></p>
+</div>
+<div id="ref-P0588R1">
+<p>[P0588R1] Richard Smith. 2017-11-07. Simplifying implicit lambda capture. <br />
+<a href="https://wg21.link/p0588r1">https://wg21.link/p0588r1</a></p>
+</div>
+<div id="ref-P1787R6">
+<p>[P1787R6] S. Davis Herring. 2020-10-28. Declarations and where to find them. <br />
+<a href="https://wg21.link/p1787r6">https://wg21.link/p1787r6</a></p>
+</div>
+<div id="ref-P2036R0">
+<p>[P2036R0] Barry Revzin. 2020-01-12. Changing scope for lambda trailing-return-type. <br />
+<a href="https://wg21.link/p2036r0">https://wg21.link/p2036r0</a></p>
+</div>
+<div id="ref-P2036R1">
+<p>[P2036R1] Barry Revzin. 2021-01-13. Changing scope for lambda trailing-return-type. <br />
+<a href="https://wg21.link/p2036r1">https://wg21.link/p2036r1</a></p>
+</div>
+<div id="ref-P2036R2">
+<p>[P2036R2] Barry Revzin. 2021-07-23. Changing scope for lambda trailing-return-type. <br />
+<a href="https://wg21.link/p2036r2">https://wg21.link/p2036r2</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -29,7 +29,7 @@
 - 1959 Remove  <code class="sourceCode cpp">std<span class="op">::</span>weak_equality</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>strong_equality</code>: [p1959r0](1959_remove_equality/p1959r0.html)
 - 2011 A pipeline-rewrite operator: [p2011r0](2011_pipeline/p2011r0.html) [p2011r1](2011_pipeline/p2011r1.html) [d2011r2](2011_pipeline/d2011r2.html)
 - 2017 Conditionally borrowed ranges: [p2017r0](2017_safe_range/p2017r0.html) [p2017r1](2017_safe_range/p2017r1.html)
-- 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html) [p2036r1](2036_lambda_scope/p2036r1.html) [p2036r2](2036_lambda_scope/p2036r2.html) [d2036r3](2036_lambda_scope/d2036r3.html)
+- 2036 Change scope of lambda  <em>trailing-return-type</em>: [p2036r0](2036_lambda_scope/p2036r0.html) [p2036r1](2036_lambda_scope/p2036r1.html) [p2036r2](2036_lambda_scope/p2036r2.html) [d2036r3](2036_lambda_scope/d2036r3.html) [p2036r3](2036_lambda_scope/p2036r3.html)
 - 2089 Function parameter constraints are fragile: [p2089r0](2089_param_constraints/p2089r0.html)
 - 2095 Resolve lambda init-capture pack grammar (CWG2378): [p2095r0](2095_lambda_pack_cwg/p2095r0.html)
 - 2120 Simplified structured bindings protocol with pack aliases: [p2120r0](1858_generalized_packs/p2120r0.html)
