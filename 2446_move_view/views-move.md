@@ -80,9 +80,6 @@ namespace std::ranges {
 
 [#]{.pnum} [*Example*:
 ```cpp
-template<constant_range R>
-void cant_touch_this(R&&);
-
 std::vector<string> words = {"the", "quick", "brown", "fix", "ate", "a", "pterodactyl"};
 std::vector<string> new_words;
 std::ranges::copy(words | views::move, std::back_inserter(long)); // moves each string from words into new_words
