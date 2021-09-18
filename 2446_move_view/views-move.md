@@ -80,7 +80,7 @@ namespace std::ranges {
 
 [#]{.pnum} [*Example*:
 ```cpp
-std::vector<string> words = {"the", "quick", "brown", "fix", "ate", "a", "pterodactyl"};
+std::vector<string> words = {"the", "quick", "brown", "fox", "ate", "a", "pterodactyl"};
 std::vector<string> new_words;
 std::ranges::copy(words | views::move, std::back_inserter(long)); // moves each string from words into new_words
 ```
@@ -105,19 +105,19 @@ namespace std::ranges {
     constexpr V base() const& requires copy_constructible<V> { return $base_$; }
     constexpr V base() && { return std::move($base_$); }    
     
-    consetxpr auto begin() requires (!$simple-view$<V>) { return std::move_iterator(ranges::begin($base_$)); }
-    consetxpr auto begin() const requires range<const V> { return std::move_iterator(ranges::begin($base_$)); }
+    constexpr auto begin() requires (!$simple-view$<V>) { return std::move_iterator(ranges::begin($base_$)); }
+    constexpr auto begin() const requires range<const V> { return std::move_iterator(ranges::begin($base_$)); }
     
     constexpr auto end() requires (!$simple-view$<V>) {
         if constexpr (common_range<V>) {
-            return std::move_iterator(ranges::end($base_$);
+            return std::move_iterator(ranges::end($base_$));
         } else {
             return std::move_sentinel(ranges::end($base_$));
         }
     }
     constexpr auto end() const requires range<const V> {
         if constexpr (common_range<const V>) {
-            return std::move_iterator(ranges::end($base_$);
+            return std::move_iterator(ranges::end($base_$));
         } else {
             return std::move_sentinel(ranges::end($base_$));
         }
