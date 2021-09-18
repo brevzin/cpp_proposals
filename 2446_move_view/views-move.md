@@ -102,8 +102,8 @@ namespace std::ranges {
     move_view() requires default_initializable<V> = default;
     constexpr explicit move_view(V base);
     
-    constexpr V base() const& requires copy_constructible<V> { return base_; }
-    constexpr V base() && { return std::move(base_); }    
+    constexpr V base() const& requires copy_constructible<V> { return $base_$; }
+    constexpr V base() && { return std::move($base_$); }    
     
     consetxpr auto begin() requires (!$simple-view$<V>) { return std::move_iterator(ranges::begin($base_$)); }
     consetxpr auto begin() const requires range<const V> { return std::move_iterator(ranges::begin($base_$)); }
