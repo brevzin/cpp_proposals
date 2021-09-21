@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-09-20" />
+  <meta name="dcterms.date" content="2021-09-21" />
   <title>Relaxing some constexpr restrictions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-09-20</td>
+    <td>2021-09-21</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -575,9 +575,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> that might never evaluate to a constant expression. But… so what if they don’t? The goal of this paper is to stop diagnosing problems that don’t exist.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="maybe-not-now-but-soon"><span class="header-section-number">2</span> Maybe Not Now, But Soon<a href="#maybe-not-now-but-soon" class="self-link"></a></h1>
 <p><code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions and function templates in C++ generally speaking mean <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. Not all instantiations or evaluations must be invocable at compile time, it’s just that there must be at least one set of function arguments in at least one instantiation that works.</p>
-<p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6:</p>
+<p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6-7:</p>
 <div class="quote">
 <p>For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
+<p>[…] If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</p>
 </div>
 <p>Here is an example of a program that violates this rule:</p>
 <blockquote>
@@ -686,7 +687,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Are all of these functions okay? I would argue that they <em>should</em> all be okay, but per the wording they’re currently not.</p>
 <p>I want <code class="sourceCode cpp">Wrapper</code> to be entirely <code class="sourceCode cpp"><span class="kw">constexpr</span></code> where feasible. Some of those functions may not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> for all types, and that’s fine. Some of these functions may not be able to be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in C++N but may be later, and I don’t want to have to go back and either annotate against this (which I don’t think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>Strike <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6 and the example following it, in its entirety:</p>
+<p>Strike <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6 and the example following it, in its entirety, along with the second sentence in /7:</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
@@ -711,11 +712,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 
 </div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression. <span class="rm" style="color: #bf0303"><del>If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</del></span></p>
 </blockquote>
 <p>Strike part of <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3 and fix the example (which is already wrong at the moment, since default-initializing an <code class="sourceCode cpp"><span class="dt">int</span></code> during constant evaluation is ok):</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">3</a></span> An explicitly-defaulted function that is not defined as deleted may be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> <span class="rm" style="color: #bf0303"><del>only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">4</a></span> [<em>Example 1</em>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> An explicitly-defaulted function that is not defined as deleted may be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> <span class="rm" style="color: #bf0303"><del>only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> [<em>Example 1</em>:</p>
 <div>
 <div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  struct S {</span>
 <span id="cb10-2"><a href="#cb10-2"></a><span class="st">-   constexpr S() = default;              // error: implicit S() is not constexpr</span></span>

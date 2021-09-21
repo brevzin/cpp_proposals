@@ -183,7 +183,7 @@ I want `Wrapper` to be entirely `constexpr` where feasible. Some of those functi
 
 # Proposal
 
-Strike [dcl.constexpr]{.sref}/6 and the example following it, in its entirety:
+Strike [dcl.constexpr]{.sref}/6 and the example following it, in its entirety, along with the second sentence in /7:
 
 ::: bq
 ::: rm
@@ -209,6 +209,9 @@ struct D : B {
 ```
 - *end example*]
 :::
+
+[7]{.pnum} If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression.
+[If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.]{.rm}
 :::
 
 Strike part of [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
