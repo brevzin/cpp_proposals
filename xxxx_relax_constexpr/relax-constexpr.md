@@ -11,7 +11,7 @@ toc: true
 
 # Abstract
 
-There are two rules about `constexpr` programming that make code ill-formed or ill-formed (no diagnostic required) if functions or function templates are marked `constexpr` that might never evaluate to a constant expression. But... so what if they don't? The goal of this paper is to stop diagnosing problems that don't exist. 
+There are two rules about `constexpr` programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked `constexpr` that might never evaluate to a constant expression. But... so what if they don't? The goal of this paper is to stop diagnosing problems that don't exist. 
 
 # Maybe Not Now, But Soon
 
