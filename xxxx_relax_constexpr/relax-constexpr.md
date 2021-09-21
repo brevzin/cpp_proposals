@@ -11,7 +11,7 @@ toc: true
 
 # Abstract
 
-There are two rules about `constexpr` programming that make certain code ill-formed or ill-formed (no diagnostic required). This paper seeks to relax both of those rules.
+There are two rules about `constexpr` programming that make code ill-formed or ill-formed (no diagnostic required) if functions or function templates are marked `constexpr` that might never evaluate to a constant expression. But... so what if they don't? The goal of this paper is to stop diagnosing problems that don't exist. 
 
 # Maybe Not Now, But Soon
 
@@ -180,8 +180,6 @@ private:
 Are all of these functions okay? I would argue that they *should* all be okay, but per the wording they're currently not.
 
 I want `Wrapper` to be entirely `constexpr` where feasible. Some of those functions may not be `constexpr` for all types, and that's fine. Some of these functions may not be able to be `constexpr` in C++N but may be later, and I don't want to have to go back and either annotate against this (which I don't think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations. 
-
-Stop diagnosing problems that don't exist. 
 
 # Proposal
 

@@ -572,7 +572,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
-<p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make certain code ill-formed or ill-formed (no diagnostic required). This paper seeks to relax both of those rules.</p>
+<p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make code ill-formed or ill-formed (no diagnostic required) if functions or function templates are marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> that might never evaluate to a constant expression. But… so what if they don’t? The goal of this paper is to stop diagnosing problems that don’t exist.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="maybe-not-now-but-soon"><span class="header-section-number">2</span> Maybe Not Now, But Soon<a href="#maybe-not-now-but-soon" class="self-link"></a></h1>
 <p><code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions and function templates in C++ generally speaking mean <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. Not all instantiations or evaluations must be invocable at compile time, it’s just that there must be at least one set of function arguments in at least one instantiation that works.</p>
 <p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6:</p>
@@ -685,7 +685,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Are all of these functions okay? I would argue that they <em>should</em> all be okay, but per the wording they’re currently not.</p>
 <p>I want <code class="sourceCode cpp">Wrapper</code> to be entirely <code class="sourceCode cpp"><span class="kw">constexpr</span></code> where feasible. Some of those functions may not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> for all types, and that’s fine. Some of these functions may not be able to be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in C++N but may be later, and I don’t want to have to go back and either annotate against this (which I don’t think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations.</p>
-<p>Stop diagnosing problems that don’t exist.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Strike <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6 and the example following it, in its entirety:</p>
 <blockquote>
