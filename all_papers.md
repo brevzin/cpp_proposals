@@ -55,3 +55,4 @@
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
 - Range-based container operations and  <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>: [dxxxxr0.html](xxxx_ranges_to/dxxxxr0.html)
+- Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [dxxxxr0.html](xxxx_relax_constexpr/dxxxxr0.html)
