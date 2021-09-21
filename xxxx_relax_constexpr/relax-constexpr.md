@@ -53,7 +53,7 @@ constexpr void h(std::optional<int>& o) {
 ```
 :::
 
-Here, `h` is the exact same kind of function as `g`: we have a function unconditionally calling another non-`constexpr` function. At least, that's true for C++17. It's won't be true in C++23, and the answer for C++20 depends on how vendors choose to implement [@P2231R1]. Here the answer depends: here is a function that can easily be `constexpr` in one standard but not in earlier ones. 
+Here, `h` is the exact same kind of function as `g`: we have a function unconditionally calling another non-`constexpr` function. At least, that's true for C++17. It's won't be true in C++23, and the answer for C++20 depends on how vendors choose to implement [@P2231R1]. Here the answer depends: some functions can easily be `constexpr` in one standard but not in earlier ones. 
 
 Now, the sanctioned way to fix this code is to write:
 
@@ -76,9 +76,9 @@ I would argue it's not. The language rules for `constexpr` have expanded in ever
 
 Moreover, while it's possible to write the above for `std::optional`, I'm not sure that it's common for other library to provide macros that can be used to mark functions conditionally `constexpr` like this. Or, indeed, if there is even another such example. So if I'm a consumer of a library that might have some functionality `constexpr` in one version but more functionality `constexpr` in the next, I always have to lag. 
 
-Such diagnosis may have made sense in the C++11 days, but now that we're approaching C++23 where more and more things are `constexpr` and more and more libraries will mark more of their functions `constexpr` because they can be, it just seems strictly better to just reserve diagnosing `constexpr` violations to the place where we already have to diagnose them: when you write code that *must* be evaluated at compile time. 
+Such diagnosis may have made sense in the C++11 days, but now that we're approaching C++23 where more and more things are `constexpr` and more and more libraries will mark more of their functions `constexpr` because they can be, it seems strictly better to just reserve diagnosing `constexpr` violations to the place where we already have to diagnose them: when you write code that *must* be evaluated at compile time. 
 
-Put differently, the current rule is there must be some tuple (function arguments, template arguments) for which a `constexpr` function invocation is a constant expression. But there's really another input here: (function arguments, template arguments, version). The version here might be the language version, it might be a bunch of library versions. Ultimately, it's about time. A function may not be `constexpr` today, but it may be `constexpr` soon. Diagnosing it as not being `constexpr` yet does not seem useful. 
+Put differently, the current rule is there must be some tuple (function arguments, template arguments) for which a `constexpr` function invocation is a constant expression. But there's really another input here: (function arguments, template arguments, version). The version here might be the language version, it might be a bunch of library versions. Ultimately, it's a question of time. A function may not be `constexpr` today, but it may be `constexpr` soon. Diagnosing it as not being `constexpr` *yet* seems harmful to the question of evolving code. 
 
 
 # Sometimes Maybe, Sometimes Always
@@ -155,7 +155,7 @@ private:
 ```
 :::
 
-So I have some functions marked `constexpr` and some not, but all of them are still usable during constant evaluation time. The lack of consistency here is a bit jarring. `constexpr` functions should always be *maybe* `constexpr`, not *must be* `constexpr`.
+So I have some functions marked `constexpr` and some not, but all of them are still usable during constant evaluation time (where appropriate based on `T`). The lack of consistency here is a bit jarring. `constexpr` functions should always be *maybe* `constexpr`, not *must be* `constexpr`.
 
 # Onwards to constexpr classes
 
@@ -170,7 +170,7 @@ struct Wrapper constexpr {
     Wrapper(T const& t) : t(t) { }
     
     void reset() { t.reset(); }
-    bool operator==(Wrappre const&) const = default;
+    bool operator==(Wrapper const&) const = default;
 private:
     std::optional<T> t;
 };
@@ -180,6 +180,8 @@ private:
 Are all of these functions okay? I would argue that they *should* all be okay, but per the wording they're currently not.
 
 I want `Wrapper` to be entirely `constexpr` where feasible. Some of those functions may not be `constexpr` for all types, and that's fine. Some of these functions may not be able to be `constexpr` in C++N but may be later, and I don't want to have to go back and either annotate against this (which I don't think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations. 
+
+Stop diagnosing problems that don't exist. 
 
 # Proposal
 
@@ -214,7 +216,7 @@ struct D : B {
 Strike part of [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
 
 ::: bq
-[3]{.pnum} [An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` only if it is constexpr-compatible ([special], [class.compare.default]).]{.rm}
+[3]{.pnum} An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` [only if it is constexpr-compatible ([special], [class.compare.default])]{.rm}.
 A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.
 
 [4]{.pnum} [*Example 1*:
