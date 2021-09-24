@@ -309,7 +309,18 @@ This proposal has been implemented and passes the libstdc++ testsuite (with suit
 
 # Proposed Wording
 
+
 This also resolves [@LWG3452]. 
+
+Update [version.syn]{.sref}
+
+::: bq
+```diff
+- #define __cpp_lib_ranges                            @[202106L]{.diffdel}@
++ #define __cpp_lib_ranges                            @[2021XXL]{.diffins}@
+    // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
+```
+:::
 
 Add `owning_view` to [ranges.syn]{.sref}:
 
@@ -352,7 +363,7 @@ namespace std::ranges {
 Relax the requirements on `view` in [range.view]{.sref}:
 
 ::: bq
-[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties below that make it suitable for use in constructing range adaptor pipelines ([range.adaptors])]{.addu}.
+[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [the semantic properties below, which make it suitable for use in constructing range adaptor pipelines ([range.adaptors])]{.addu}.
 
 ```cpp
 template<class T>
@@ -374,7 +385,7 @@ template<class T>
 * [3.2]{.pnum} A range type that holds its elements by `shared_ptr` and shares ownership with all its copies.
 * [3.3]{.pnum} A range type that generates its elements on demand.
 
-[Most containers are not views]{.rm} [A container, such as `vector<string>`, does not meet the semantic requirements of a view]{.addu} since [destruction of]{.rm} [copying]{.addu} the container [destroys]{.rm} [copies all of]{.addu} the elements, which cannot be done in constant time.
+[Most containers are not views]{.rm} [A container such as `vector<string>` does not meet the semantic requirements of `view`]{.addu} since [destruction of]{.rm} [copying]{.addu} the container [destroys]{.rm} [copies all of]{.addu} the elements, which cannot be done in constant time.
 — *end example*]
 :::
 
@@ -387,7 +398,7 @@ template <class R>
   inline constexpr bool @*is-initializer-list*@ = @*see below*@; // exposition only
 ```
 
-[*]{.pnum} For a type `R`, `@*is-initializer-list*@<R>` is `true` if and only if `remove_cvref_t<R>` is a specialization of `std::initializer_list`.
+[*]{.pnum} For a type `R`, `@*is-initializer-list*@<R>` is `true` if and only if `remove_cvref_t<R>` is a specialization of `initializer_list`.
 :::
 
 [5]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
