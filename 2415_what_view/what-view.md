@@ -1,6 +1,6 @@
 ---
 title: "What is a `view`?"
-document: P2415R1
+document: P2415R2
 date: today
 audience: LEWG
 author:
@@ -352,7 +352,7 @@ namespace std::ranges {
 Relax the requirements on `view` in [range.view]{.sref}:
 
 ::: bq
-[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties that make it suitable for use in constructing range adaptor pipelines]{.addu}.
+[1]{.pnum} The `view` concept specifies the requirements of a `range` type that has [constant time move construction, move assignment, and destruction; that is, the cost of these operations is independent of the number of elements in the `view`]{.rm} [semantic properties below that make it suitable for use in constructing range adaptor pipelines ([range.adaptors])]{.addu}.
 
 ```cpp
 template<class T>
@@ -374,7 +374,7 @@ template<class T>
 * [3.2]{.pnum} A range type that holds its elements by `shared_ptr` and shares ownership with all its copies.
 * [3.3]{.pnum} A range type that generates its elements on demand.
 
-Most containers are not views since [destruction of]{.rm} [copying]{.addu} the container [destroys]{.rm} [copies all of]{.addu} the elements, which cannot be done in constant time.
+[Most containers are not views]{.rm} [A container, such as `vector<string>`, does not meet the semantic requirements of a view]{.addu} since [destruction of]{.rm} [copying]{.addu} the container [destroys]{.rm} [copies all of]{.addu} the elements, which cannot be done in constant time.
 — *end example*]
 :::
 
@@ -423,7 +423,7 @@ namespace std::ranges {
     requires movable<R> && (!@*is-initializer-list*@<R>) // see [range.refinements]
   class owning_view : public view_interface<owning_view<R>> {
   private:
-    R r_ = R();   // exposition only
+    R $r_$ = R();   // exposition only
   public:
     owning_view() requires default_initializable<R> = default;
     constexpr owning_view(R&& t);
@@ -431,35 +431,35 @@ namespace std::ranges {
     owning_view(owning_view&&) = default;
     owning_view& operator=(owning_view&&) = default;
 
-    constexpr R& base() & { return r_; }
-    constexpr const R& base() const& { return r_; }
-    constexpr R&& base() && { return std::move(r_); }
-    constexpr const R&& base() const&& { return std::move(r_); }
+    constexpr R& base() & noexcept { return $r_$; }
+    constexpr const R& base() const& noexcept { return $r_$; }
+    constexpr R&& base() && noexcept { return std::move($r_$); }
+    constexpr const R&& base() const&& noexcept { return std::move($r_$); }
 
-    constexpr iterator_t<R> begin() { return ranges::begin(r_); }
-    constexpr sentinel_t<R> end() { return ranges::end(r_); }
+    constexpr iterator_t<R> begin() { return ranges::begin($r_$); }
+    constexpr sentinel_t<R> end() { return ranges::end($r_$); }
     
-    constexpr iterator_t<const R> begin() const requires range<const R>
-    { return ranges::begin(r_); }
-    constexpr sentinel_t<const R> end() const requires range<const R>
-    { return ranges::end(r_); }
+    constexpr auto begin() const requires range<const R>
+    { return ranges::begin($r_$); }
+    constexpr auto end() const requires range<const R>
+    { return ranges::end($r_$); }
 
     constexpr bool empty()
-      requires requires { ranges::empty(r_); }
-    { return ranges::empty(r_); }    
+      requires requires { ranges::empty($r_$); }
+    { return ranges::empty($r_$); }    
     constexpr bool empty() const
-      requires requires { ranges::empty(r_); }
-    { return ranges::empty(r_); }
+      requires requires { ranges::empty($r_$); }
+    { return ranges::empty($r_$); }
 
     constexpr auto size() requires sized_range<R>
-    { return ranges::size(r_); }
+    { return ranges::size($r_$); }
     constexpr auto size() const requires sized_range<const R>
-    { return ranges::size(r_); }
+    { return ranges::size($r_$); }
 
     constexpr auto data() requires contiguous_range<R>
-    { return ranges::data(r_); }
+    { return ranges::data($r_$); }
     constexpr auto data() const requires contiguous_range<const R>
-    { return ranges::data(r_); }
+    { return ranges::data($r_$); }
   };
 }
 ```
@@ -468,7 +468,7 @@ namespace std::ranges {
 constexpr owning_view(R&& t);
 ```
 
-[2]{.pnum} *Effects*: Initializes `r_` with `std::move(t)`.
+[2]{.pnum} *Effects*: Initializes `$r_$` with `std::move(t)`.
 :::
 
 
