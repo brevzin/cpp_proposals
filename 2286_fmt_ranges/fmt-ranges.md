@@ -15,6 +15,8 @@ Since [@P2286R2], several major changes:
 
 * This paper assumes the adoption of [@P2418R0], which affects how [non-`const`-iterable views](#how-to-support-those-views-which-are-not-const-iterable) are handled. This paper now introduces two concepts (`formattable` and `const_formattable`) instead of just one. 
 * Extended discussion and functionality for various [representations](#what-representation), including how to quote strings properly and how to format associative ranges. 
+* Introduction of format specifiers of all kinds and discussion of how to make them work more broadly.
+* Removed the wording, since the priority is the design.
 
 Since [@P2286R1], adding a sketch of wording.
 
@@ -263,7 +265,7 @@ Should `std::pair<int, int>{4, 5}` be printed as `{4, 5}` or `(4, 5)`? Here, eit
 
 ### `map` and `set` (and other associative containers)
 
-Should `std::map<int, int>{@@{1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
+Should `std::map<int, int>{@{@1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
 
 The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`? 
 
@@ -271,7 +273,7 @@ If we print `map`s as any other range of pairs, there's nothing left to do. If w
 
 ### `char` and `string` (and other string-like types) in ranges or tuples
 
-Should `pair<char, string>('x', "hello")` print as `(x, hello)` or `('x', "hello")`? Should `print<char, string>('y', "with\n\"quotes\"")` print as:
+Should `pair<char, string>('x', "hello")` print as `(x, hello)` or `('x', "hello")`? Should `pair<char, string>('y', "with\n\"quotes\"")` print as:
 
 ::: bq
 ```
@@ -284,30 +286,117 @@ or
 
 ::: bq
 ```
-('y', "with
-"quotes"")
-```
-:::
-
-or
-
-::: bq
-```
 ('y', "with\n\"quotes\"")
 ```
 :::
 
-While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). But there is a difference between `fmt` and Python/Rust when it comes to embedded quotes:
-
-* `fmt` simply surrounds strings with "s and doesn't escape any internal characters, so has the second implementation above there (with the extra newline)
-* Rust does escape internal strings , so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)).
-* Python sort of does and sort of doesn't, owing to the fact that you can have strings with single or double quotes, but it definitely escapes the `\n` either way.
+While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well. 
 
 Escaping seems like the most desirable behavior. Following Rust's behavior, we escape `\t`, `\r`, `\n`, `\\`, `"` (for `string` types only), `'` (for `char` types only), and extended graphemes (if Unicode). 
 
 Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior?
 
+Moreover, it's all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings *unescaped*? 
+
+### Format Specifiers
+
+One of (but hardly the only) the great selling points of `format` over iostreams is the ability to use specifiers. For instance, from the `fmt` documentation:
+
+::: bq
+```cpp
+fmt::format("{:<30}", "left aligned");
+// Result: "left aligned                  "
+fmt::format("{:>30}", "right aligned");
+// Result: "                 right aligned"
+fmt::format("{:^30}", "centered");
+// Result: "           centered           "
+fmt::format("{:*^30}", "centered");  // use '*' as a fill char
+// Result: "***********centered***********"
+```
+:::
+
+Earlier revisions of this paper suggested that formatting ranges and tuples would accept no format specifiers, but there ineed are quite a few things we may want to do here (as by Tomasz Kamiński and Peter Dimov):
+
+* Formatting a range of pairs as a map (the `key: value` syntax rather than the `(key, value)` one)
+* Formatting a range of chars as a string (i.e. to print `hello` rather than `['h', 'e', 'l', 'l', 'o']`)
+
+But these are just providing a specifier for how we format the range itself. How about how we format the elements of the range? Can I conveniently format a range of integers, printing their values as hex? Or as characters? Or print a range of chrono time points in whatever format I want? That's fairly powerful.
+
+The problem is how do we actually *do that*.
+
+
+
 ### Customization
+
+There are actually multiple questions when it comes to customization:
+
+1. How do you opt in a user-defined string type to being formatted without delimiters (when printed normally) or being formatted as quoted (when as part of a range or tuple)?
+2. How do you opt in a user-defined associated range to being printed as an association?
+3. How do you choose to print a given range as either a quoted string or an associated container (whether opted into or not)?
+
+These are all important questions, since even regardless of how we do customization, we need to give the user the tools to format their types the way they want, conveniently. For instance, a user might have a type like:
+
+::: bq
+```cpp
+struct Foo {
+    int bar;
+    std::string baz;
+};
+```
+:::
+
+And want to format `Foo{.bar=10, .baz="Hello World"}` as the string `Foo(bar=10, baz="Hello World")`. This requires giving the user some way to choose to print the `baz` member as being quoted, rather than not. They need to have something to be able to write here:
+
+::: bq
+```cpp
+template <>
+struct formatter<Foo, char> {
+    template <typename FormatContext>
+    constexpr auto format(Foo const& f, FormatContext& ctx) {
+        return format_to(ctx.out(), "Foo(bar={}, baz={})", f.bar, /* ???? */);
+    }
+}; 
+```
+:::
+
+Extending this question out further: how do you format wrappers?
+
+Let's say you have your own implementation of `Optional`, that you want to format the same way that Rust does: so that a disengaged one formats as `None` and an engaged one formats as `Some(??)`. We can start by:
+
+::: bq
+```cpp
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    // we'll skip parse for now
+    
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            return format_to(ctx.out(), "Some({})", *opt);
+        }
+    }
+}; 
+```
+:::
+
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules we just went through. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context? 
+
+Put differently, how does the library implement formatting `pair` and `tuple` and arbitrary `range`s, which also would have to do this dance of conditionally quoting character and string types? Users need that functionality too, and we need to provide it.
+
+
+
+
+
+
+
+
+
+
+
+
+Having a type trait ([@P2286R2] proposed `enable_formatting_as_string` as a variable template to opt into 
 
 There's basically two different approaches to customization here:
 
@@ -348,7 +437,7 @@ The latter is clearly more verbose, but has the advantage that if you want to tr
 
 ::: bq
 ```cpp
-std::vector<std::pair<int, int>> v = {@@{1, 2}, {3, 4}};
+std::vector<std::pair<int, int>> v = {@{@1, 2}, {3, 4}};
 std::print("{}\n", v);                // [(1, 2), (3, 4)]
 std::print("{}\n", format_as_map(v)); // {1: 2, 3: 4}
 ```
@@ -529,507 +618,6 @@ The standard library should also add a utility `std::format_join` (or any other 
 
 For types like `std::generator<T>` (which are move-only, non-const-iterable ranges), users will have to either use `std::format_join` facility or use something like `ranges::ref_view` as shown earlier.
 
-## Wording
-
-The wording here is grouped by functionality added rather than linearly going through the standard text. 
-
-### Concept `formattable`
-
-First, we need to define a user-facing concept. We need this because we need to constrain `formatter` specializations on whether the underlying elements of the `pair`/`tuple`/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we're trying to be good enough:
-
-Change [format.syn]{.sref}:
-
-::: bq
-```diff
-namespace std {
-  // ...
-
-  // [format.formatter], formatter
-  template<class T, class charT = char> struct formatter;
-  
-  // [format.parse.ctx], class template basic_format_parse_context
-  template<class charT> class basic_format_parse_context;
-  using format_parse_context = basic_format_parse_context<char>;
-  using wformat_parse_context = basic_format_parse_context<wchar_t>;
-
-+ // [format.formattable], formattable
-+ template<class T, class charT>
-+   concept formattable = @*see below*@;
-
-  // ...
-}
-```
-:::
-
-Add a clause [format.formattable] under [format.formatter]{.sref} and likely after [formatter.requirements]{.sref}
-
-::: bq
-::: addu
-[1]{.pnum} Let `@*fmt-iter-for*@<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
-```
-template<class T, class charT>
-concept @*formattable-impl*@ =
-    semiregular<formatter<T, charT>> &&
-    requires (formatter<T, charT> f,
-              const T t,
-              basic_format_context<@*fmt-iter-for*@<charT>, charT> fc,
-              basic_format_parse_context<charT> pc) {
-        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
-        { f.format(t, fc) } -> same_as<@*fmt-iter-for*@<charT>>;
-    };
-
-template<class T, class charT>
-concept formattable = @*formattable-impl*@<remove_cvref_t<T>, charT>;
-```
-
-[2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
-:::
-:::
-
-### Additional `formatter` specializations in `<format>`
-
-Change [format.syn]{.sref}:
-
-::: bq
-```diff
-namespace std {
-  // ...
-
-  // [format.formatter], formatter
-+ template<class T>
-+   inline constexpr bool enable_formatting_as_string = @*see below*@;
-  
-  template<class T, class charT = char> struct formatter;
-
-+ // [format.range], range formatter
-+ template<class R, class charT>
-+   concept @*default-formattable-range*@ =     // exposition only
-+     ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>, charT>
-+     || ranges::input_range<R> && ranges::view<R> && copyable<R> && formattable<ranges::range_reference_t<R>, charT>
-+
-+ template<class charT, @*default-formattable-range*@<charT>, R>
-+   struct formatter<R, charT>;
-  
-  // ...
-}
-```
-:::
-
-Add to... somewhere:
-
-::: bq
-::: addu
-```
-template<class T>
-  inline constexpr bool enable_formatting_as_string = false;
-  
-template<class charT, class traits, class Allocator>
-  inline constexpr bool enable_formatting_as_string<basic_string<charT, traits, Allocator>> = true;
-  
-template<class charT, class traits>
-  inline constexpr bool enable_formatting_as_string<basic_string_view<charT, traits>> = true;  
-```
-
-[*]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `enable_formatting_as_string` to `true` for any cv-unqualified program-defined type `T` which models `@*default-formattable-range*@<charT>`. [*Note*: Users may do so to ensure that a program-defined string type formats as `"hello"` rather than as `['h', 'e', 'l', 'l', 'o']` *-end note*].
-:::
-:::
-
-Add the new clause [format.range]:
-
-::: bq
-::: addu
-```
-template<class charT>
-inline constexpr auto @*format-maybe-quote*@ = // exposition only
-    []<class T>(const T& t){
-      if constexpr (is_same_v<T, charT>) {
-        return format(@*STATICALLY-WIDEN*@<charT>("'{}'"), t);
-      } else if constexpr (enable_formatting_as_string<T>) {
-        return format(@*STATICALLY-WIDEN*@<charT>("\"{}\""), t);
-      } else {
-        return format(@*STATICALLY-WIDEN*@<charT>("{}"), t);
-      }
-    };
-
-template<class charT, @*default-formattable-range*@<charT>, R>
-  struct formatter<R, charT> {
-    template <class ParseContext>
-      constexpr typename ParseContext::iterator
-        parse(ParseContext& ctx);
-        
-    template <class FormatContext>
-      typename FormatContext::iterator
-        format(const R& range, FormatContext& ctx);
-  };
-```
-
-```
-template <class ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```
-[1]{.pnum} Let `T` denote the type `ranges::range_reference_t<const R>` if `const R` models `ranges::range` and `ranges::range_reference_t<R>` otherwise. 
-
-[2]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T>, charT>().parse(ctx)` throws.
-
-[3]{.pnum} *Returns*: `ctx.begin()`.
-
-```
-template <class FormatContext>
-  typename FormatContext::iterator
-    format(const R& range, FormatContext& ctx);
-```
-[4]{.pnum} *Effects*: Let `r` be `range` if `const R` models `ranges::range` and `views::all(range)` otherwise. Writes the following into `ctx.out()`:
-
-- [4.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("[")`
-- [4.2]{.pnum} for each element, `e`, of the range `r`:
-    * [4.2.1]{.pnum} `@*format-maybe-quote*@<charT>(e)`
-    * [4.2.2]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`, unless `e` is the last element of `r`
-- [4.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>("]")`
-
-[5]{.pnum} *Returns*: an iterator past the end of the output range
-:::
-:::
-
-### The join formatter
-
-Change [format.syn]{.sref}:
-
-::: bq
-```diff
-namespace std {
-  // ...
-
-  // [format.error], class format_error
-  class format_error;
-  
-+ // [format.join], a join formatter
-+ template <ranges::input_range V, class charT>
-+   requires ranges::view<V> &&
-+            formattable<ranges::range_reference_t<V>, charT>
-+ class @*format-join-impl*@; // exposition only
-+
-+ template <ranges::input_range V, class charT>
-+   requires ranges::view<V> &&
-+            formattable<ranges::range_reference_t<V>, charT>
-+ struct formatter<@*format-join-impl*@<V, charT>, charT>;
-+
-+
-+ template <ranges::input_range R>
-+   requires formattable<ranges::range_reference_t<R>, char>
-+ constexpr @*format-join-impl*@<ranges::ref_view<remove_reference_t<R>>, char>
-+   format_join(R&& range, string_view sep);
-+
-+ template <ranges::input_range R>
-+   requires formattable<ranges::range_reference_t<R>, wchar_t>
-+ constexpr @*format-join-impl*@<ranges::ref_view<remove_reference_t<R>>, wchar_t>
-+   format_join(R&& range, wstring_view sep);
-}
-```
-:::
-
-Add a new clause [format.join]:
-
-::: bq
-::: addu
-[1]{.pnum} The function template `format_join` is a convenient utility to provide a custom *format-spec* to apply to each element when formatting a range, along with a custom delimiter. 
-
-[2]{.pnum} [*Example*:
-```
-cout << format("{:02x}", format_join(vector{10,20,30,40,50,60}, ":")); // prints 0a:14:1e:28:32:3c
-```
--*end example*]
-
-```
-template <ranges::input_range V, class charT>
-  requires ranges::view<V> &&
-           formattable<ranges::range_reference_t<V>, charT>
-class @*format-join-view*@ {                               // exposition only
-  V @*view*@;                                              // exposition only
-  basic_string_view<charT> @*sep*@;                        // exposition only
-  
-public:
-  constexpr @*format-join-view*@(V v, basic_string_view<charT> s);
-};
-```
-
-```
-constexpr @*format-join-view*@(V v, basic_string_view<charT> s)
-```
-
-[3]{.pnum} *Effects*: Direct-non-list-initializes `@*view*@` with `std::move(v)` and `@*sep*@` with `s`.
-
-```
-template <ranges::input_range V, class charT>
-  requires ranges::view<V> &&
-           formattable<ranges::range_reference_t<V>, charT>
-class formatter<@*format-join-impl*@<V, charT>, charT> {
-  formatter<remove_cvref_t<ranges::range_reference_t<V>>, charT> @*fmt*@;  // exposition only
-
-public:
-  template <typename ParseContext>
-    constexpr typename ParseContext::iterator
-      parse(ParseContext& ctx);
-      
-  template <typename FormatContext>
-    typename FormatContext::iterator
-      format(const @*format-join-impl*@<V, charT>& j, FormatContext& ctx);
-};
-```
-
-```
-template <typename ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```
-[4]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
-  
-```
-template <typename FormatContext>
-  typename FormatContext::iterator
-    format(const @*format-join-impl*@<V, charT>& j, FormatContext& ctx);
-```
-
-[5]{.pnum} *Effects*: Write the following into `ctx.out()`:
-
-* [3.1]{.pnum} For each element `e` of `j.@*view*@`:
-    * [3.1.1]{.pnum} `@*fmt*@.format(e, ctx)`
-    * [3.1.2]{.pnum} `j.@*sep*@`, unless `e` is the last element of `j.@*view*@`
-    
-[6]{.pnum} *Returns*: an iterator past the end of the output range
-
-```
-template <ranges::input_range R>
-  requires formattable<ranges::range_reference_t<R>, char>
-constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, char>
-  format_join(R&& range, string_view sep);
-  
-template <ranges::input_range R>
-  requires formattable<ranges::range_reference_t<R>, wchar_t>
-constexpr @*format-join-view*@<ranges::ref_view<remove_reference_t<R>>, wchar_t>
-  format_join(R&& range, wstring_view sep);  
-```
-
-[7]{.pnum} *Effects*: Equivalent to `return {ranges::ref_view(range), sep};`
-
-```
-```
-:::
-:::
-
-### Formatter for `pair`
-
-Add to [utility.syn]{.sref}
-
-::: bq
-```diff
-namespace std {
-  // ...
-
-  // [pairs], class template pair
-  template<class T1, class T2>
-    struct pair;
-  
-+ template<class charT, formattable<charT> T1, formattable<charT> T2>
-+   struct formatter<pair<T1, T2>, charT>;
-+
-+ template <formattable<char> T1, formattable<char> T2>
-+   constexpr @*see below*@ format_join(const pair<T1, T2>& p, string_view sep);
-+
-+ template <formattable<wchar_t> T1, formattable<wchar_t> T2>
-+   constexpr @*see below*@ format_join(const pair<T1, T2>& p, wstring_view sep);
-
-  // ...  
-};
-```
-:::
-
-Add a new subclause [pair.format] under [pairs]{.sref}
-
-::: bq
-::: addu
-```
-template<class charT, formattable<charT> T1, formattable<charT> T2>
-  struct formatter<pair<T1, T2>, charT> {
-    template <typename ParseContext>
-      constexpr typename ParseContext::iterator
-        parse(ParseContext& ctx);
-        
-    template <typename FormatContext>
-      typename FormatContext::iterator
-        format(const pair<T1, T2>& p, FormatContext& ctx);    
-  };
-```
-
-```
-template <typename ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```   
-
-[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T1>, charT>().parse(ctx)` or `formatter<remove_cvref_t<T2>, charT>().parse(ctx)` throws.
-
-[2]{.pnum} *Returns*: `ctx.begin()`.
-
-```
-template <typename FormatContext>
-  typename FormatContext::iterator
-    format(const pair<T1, T2>& p, FormatContext& ctx);    
-```
-
-[3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
-
-* [3.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("(")`
-* [3.2]{.pnum} `@*format-maybe-quote*@<charT>(p.first)`
-* [3.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`
-* [3.4]{.pnum} `@*format-maybe-quote*@<charT>(p.second)`
-* [3.5]{.pnum} `@*STATICALLY-WIDEN*@<charT>(")")`
-
-[4]{.pnum} *Returns*: an iterator past the end of the output range
-
-:::
-:::
-
-### Formatter for `tuple`
-
-Add to [tuple.syn]{.sref}
-
-::: bq
-```diff
-#include <compare>              // see [compare.syn]
-
-namespace std {
-  // [tuple.tuple], class template tuple
-  template<class... Types>
-    class tuple;
-  
-+ template<class charT, formattable<charT>... Types>
-+   struct formatter<tuple<Types...>, charT>;
-+
-+ template <formattable<char>... Types>
-+   constexpr @*see below*@ format_join(const tuple<Types...>& t, string_view sep);
-+
-+ template <formattable<wchar_t>... Types>
-+   constexpr @*see below*@ format_join(const tuple<Types...>& t, wstring_view sep);
-
-  // ...  
-};
-```
-:::
-
-Add a new subclause [tuple.format] under [tuple]{.sref}
-
-::: bq
-::: addu
-```
-template<class charT, formattable<charT>... Types>
-  struct formatter<tuple<Types...>, charT> {
-    template <typename ParseContext>
-      constexpr typename ParseContext::iterator
-        parse(ParseContext& ctx);
-        
-    template <typename FormatContext>
-      typename FormatContext::iterator
-        format(const tuple<Types...>& t, FormatContext& ctx);    
-  };
-```
-
-```
-template <typename ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```   
-
-[1]{.pnum} *Throws*: `format_error` if `ctx` does not refer to an empty *format-spec* or anything that `formatter<remove_cvref_t<T>, charT>().parse(ctx)` throws for each type `T` in `Types...`.
-
-[2]{.pnum} *Returns*: `ctx.begin()`.
-
-```
-template <typename FormatContext>
-  typename FormatContext::iterator
-    format(const tuple<Types...>& t, FormatContext& ctx);    
-```
-
-[3]{.pnum} *Effects*: Writes the following into `ctx.out()`:
-
-* [3.1]{.pnum} `@*STATICALLY-WIDEN*@<charT>("(")`
-* [3.2]{.pnum} For each element `e` in the tuple `t`:`
-
-    * [3.2.1]{.pnum} `@*format-maybe-quote*@<charT>(e)`
-    * [3.2.2]{.pnum} `@*STATICALLY-WIDEN*@<charT>(", ")`, unless `e` is the last element of `t`
-* [3.3]{.pnum} `@*STATICALLY-WIDEN*@<charT>(")")`
-
-[4]{.pnum} *Returns*: an iterator past the end of the output range
-
-:::
-:::
-
-### Formatter for `vector<bool>::reference`
-
-Add to [vector.syn]{.sref}
-
-::: bq
-```diff
-namespace std {
-  // [vector], class template vector
-  template<class T, class Allocator = allocator<T>> class vector;
-
-  // ...
-
-  // [vector.bool], class vector<bool>
-  template<class Allocator> class vector<bool, Allocator>;
-  
-+ template<class R>
-+   inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@; // exposition only
-
-+ template<class R, class charT> requires @*is-vector-bool-reference*@<R>
-+   struct formatter<R, charT>;
-```
-:::
-
-Add to [vector.bool] at the end:
-
-::: bq
-::: addu
-```
-template<class R>
-  inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@;
-```
-[8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` is `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some type `Alloc` if `vector<bool, Alloc>` is not a program-defined specialization.
-
-```
-template<class R, class charT> requires @*is-vector-bool-reference*@<R>
-  class formatter<R, charT> {
-    formatter<bool, charT> @*fmt*@;     // exposition only
-  
-  public:
-    template <class ParseContext>
-      constexpr typename ParseContext::iterator
-        parse(ParseContext& ctx);
-        
-    template <class FormatContext>
-      typename FormatContext::iterator
-        format(const R& ref, FormatContext& ctx);
-  };
-```
-
-```
-template <class ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```
-
-[9]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
-    
-```
-template <class FormatContext>
-  typename FormatContext::iterator
-    format(const R& ref, FormatContext& ctx);
-```
-
-[10]{.pnum} *Effects*: Equivalent to `return @*fmt*@.format(ref, ctx);`
-:::
-:::
 
 ---
 references:
