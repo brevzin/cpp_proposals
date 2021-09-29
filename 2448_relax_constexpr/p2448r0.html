@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-09-21" />
+  <meta name="dcterms.date" content="2021-09-28" />
   <title>Relaxing some constexpr restrictions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>DxxxxR0</td>
+    <td>P2448R0</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-09-21</td>
+    <td>2021-09-28</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -575,10 +575,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> that might never evaluate to a constant expression. But… so what if they don’t? The goal of this paper is to stop diagnosing problems that don’t exist.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="maybe-not-now-but-soon"><span class="header-section-number">2</span> Maybe Not Now, But Soon<a href="#maybe-not-now-but-soon" class="self-link"></a></h1>
 <p><code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions and function templates in C++ generally speaking mean <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. Not all instantiations or evaluations must be invocable at compile time, it’s just that there must be at least one set of function arguments in at least one instantiation that works.</p>
-<p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6-7:</p>
+<p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6:</p>
 <div class="quote">
 <p>For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
-<p>[…] If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</p>
 </div>
 <p>Here is an example of a program that violates this rule:</p>
 <blockquote>
