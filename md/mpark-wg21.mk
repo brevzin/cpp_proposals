@@ -18,5 +18,5 @@ endif
 #    --bibliography $(THIS_DIR)wg21_fmt.yaml \
 #	$(full_index)
 
-%.html: $(DEPS) $(THIS_DIR)pandoc.css
+%.html: $(DEPS)
 	$(PANDOC) --bibliography $(DATADIR)/csl.json --bibliography $(THIS_DIR)wg21_fmt.yaml
