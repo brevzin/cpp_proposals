@@ -50,9 +50,9 @@
 - 2415 What is a  <code class="sourceCode cpp">view</code> ?: [p2415r0](2415_what_view/p2415r0.html) [p2415r1](2415_what_view/p2415r1.html) [p2415r2](2415_what_view/p2415r2.html)
 - 2441 <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>: [p2441r0](2441_join_with/p2441r0.html)
 - 2446 <code class="sourceCode cpp">views<span class="op">::</span>move</code>: [p2446r0](2446_move_view/p2446r0.html)
+- 2448 Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [p2448r0](2448_relax_constexpr/p2448r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
-- Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [dxxxxr0.html](2448_relax_constexpr/dxxxxr0.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
 - Range-based container operations and  <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>: [dxxxxr0.html](xxxx_ranges_to/dxxxxr0.html)
