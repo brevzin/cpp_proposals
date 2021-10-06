@@ -10,7 +10,7 @@
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
 - 1061 Structured Bindings can introduce a Pack: [p1061r0](1061_sb_pack/p1061r0.html) [p1061r1](1061_sb_pack/p1061r1.html) [d1061r2](1061_sb_pack/d1061r2.html)
 - 1065 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>   <em><code class="sourceCode cpp">INVOKE</code></em>: [p1065r0](1065_constexpr_invoke/p1065r0.html) [p1065r1](1065_constexpr_invoke/p1065r1.html) [p1065r2](1065_constexpr_invoke/p1065r2.html)
-- 1169 static  <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>: [p1169r0](1169_static_call/p1169r0.html) [p1169r1](1169_static_call/p1169r1.html) [p1169r2](1169_static_call/p1169r2.html)
+- 1169 static  <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>: [p1169r0](1169_static_call/p1169r0.html) [p1169r1](1169_static_call/p1169r1.html) [p1169r2](1169_static_call/p1169r2.html) [p1169r3](1169_static_call/p1169r3.html)
 - 1170 Overload sets as function parameters: [p1170r0](1170_overload_sets/p1170r0.html)
 - 1185 <code class="language-cpp">&lt;=&gt; != ==</code>: [p1185r0](118x_spaceship/p1185r0.html) [p1185r1](118x_spaceship/p1185r1.html) [p1185r2](118x_spaceship/p1185r2.html)
 - 1186 When do you actually use  <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> ?: [p1186r0](118x_spaceship/p1186r0.html) [p1186r1](118x_spaceship/p1186r1.html) [p1186r2](118x_spaceship/p1186r2.html) [p1186r3](118x_spaceship/p1186r3.html)

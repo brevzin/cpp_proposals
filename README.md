@@ -10,7 +10,7 @@ make all of my papers.
 - [p0704r1 - Fixing const-qualified pointers to members](0704_const_qual_pmfs/p0704r1.html).
 - [p0780r2 - Allow pack expansion in lambda init-capture](0780_lambda_pack_capture/p0780r2.html). There is a core issue (CWG 2378) as a pack of references is currently specified as `...&id` instead of `&...id`.
 - [p0848r3 - Conditionally Trivial Special Member Functions](0848_special_members/p0848r3.html), with Casey Carter.
-- [p0892r2 - `explicit(bool)`](0892_explicit_bool/p0892r2.html), with STL. 
+- [p0892r2 - `explicit(bool)`](0892_explicit_bool/p0892r2.html), with STL.
 - [p1065r2 - constexpr `INVOKE`](1065_constexpr_invoke/p1065r2.html), with Tomasz Kamiński.
 - [p1185r2 - `<=> != ==`](118x_spaceship/p1185r2.html). Splitting `==` and `<=>`.
 - [p1186r3 - When do you actually use `<=>`?](118x_spaceship/p1186r3.html). A helper feature to make it easier to adopt `<=>`.
@@ -41,7 +41,7 @@ make all of my papers.
 
 ### Pending EWG/LEWG Voting
 
-- [p1169r2 - static `operator()`](1169_static_call/p1169r2.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
+- [p1169r3 - static `operator()`](1169_static_call/p1169r3.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 
 ### Pending EWG/LEWG Review

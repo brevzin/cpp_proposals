@@ -1,6 +1,6 @@
 ---
 title: "static `operator()`"
-document: P1169R2
+document: P1169R3
 date: today
 audience: EWG
 author:
@@ -13,15 +13,17 @@ toc: true
 
 # Revision History
 
+Since [@P1169R2], added missing feature-test macro.
+
 [@P1169R1] was approved for electronic polling by EWG, but two issues came up that while this paper does not *change* are still worth commenting on: can [static lambdas still have capture](#static-lambdas-with-capture) and can whether or not stateless lambdas be `static` be [implementation-defined](#can-the-static-ness-of-lambdas-be-implementation-defined)?
 
-[@P1169R0] was presented to EWGI in San Diego, where there was no consensus to pursue the paper. However, recent discussion has caused renewed interest in this paper so it has been resurfaced. R0 of this paper additionally proposed implicitly changing capture-less lambdas to have static function call operators, which would be an breaking change. That part of this paper has been changed to instead allow for an explicit opt-in to static. Additionally, this language change has been implemented. 
+[@P1169R0] was presented to EWGI in San Diego, where there was no consensus to pursue the paper. However, recent discussion has caused renewed interest in this paper so it has been resurfaced. R0 of this paper additionally proposed implicitly changing capture-less lambdas to have static function call operators, which would be an breaking change. That part of this paper has been changed to instead allow for an explicit opt-in to static. Additionally, this language change has been implemented.
 
 # Motivation
 
 The standard library has always accepted arbitrary function objects - whether to be unary or binary predicates, or perform arbitrary operations. Function objects with call operator templates in particular have a significant advantage today over using overload sets since you can just pass them into algorithms. This makes, for instance, `std::less<>{}` very useful.
 
-As part of the Ranges work, more and more function objects are being added to the standard library - the set of Customization Point Objects (CPOs). These objects are Callable, but they don't, as a rule, have any members. They simply exist to do what Eric Niebler termed the ["Std Swap Two-Step"](http://ericniebler.com/2014/10/21/customization-point-design-in-c11-and-beyond/). Nevertheless, the call operators of all of these types are non-static member functions. Because _all_ call operators have to be non-static member functions. 
+As part of the Ranges work, more and more function objects are being added to the standard library - the set of Customization Point Objects (CPOs). These objects are Callable, but they don't, as a rule, have any members. They simply exist to do what Eric Niebler termed the ["Std Swap Two-Step"](http://ericniebler.com/2014/10/21/customization-point-design-in-c11-and-beyond/). Nevertheless, the call operators of all of these types are non-static member functions. Because _all_ call operators have to be non-static member functions.
 
 What this means is that if the call operator happens to not be inlined, an extra register must be used to pass in the `this` pointer to the object - even if there is no need for it whatsoever. Here is a [simple example](https://godbolt.org/z/ajTZo2):
 
@@ -42,7 +44,7 @@ int count_x(std::vector<int> const& xs) {
     x
 #endif
     );
-}    
+}
 ```
 :::
 
@@ -84,7 +86,7 @@ count_x(std::vector<int, std::allocator<int> > const&):
         pop     rbx
         pop     rbp
         pop     r12
-        ret    
+        ret
 ```
 
 ### Static member function
@@ -116,7 +118,7 @@ count_x(std::vector<int, std::allocator<int> > const&):
         xor     eax, eax
         pop     rbp
         pop     r12
-        ret    
+        ret
 ```
 :::
 
@@ -126,7 +128,7 @@ The typical way to express the idea that we don't need an object parameter is to
 
 # Proposal
 
-The proposal is to just allow the ability to make the call operator a static member function, instead of requiring it to be a non-static member function. We have many years of experience with member-less function objects being useful. Let's remove the unnecessary object parameter overhead. There does not seem to be any value provided by this restriction. 
+The proposal is to just allow the ability to make the call operator a static member function, instead of requiring it to be a non-static member function. We have many years of experience with member-less function objects being useful. Let's remove the unnecessary object parameter overhead. There does not seem to be any value provided by this restriction.
 
 There are other operators that are currently required to be implemented as non-static member functions - all the unary operators, assignment, subscripting, conversion functions, and class member access. We do not believe that being able to declare any of these as static will have as much value, so we are not pursuing those at this time. We're not aware of any use-case for making any of these other operators static, while the use-case of having stateless function objects is extremely common.
 
@@ -177,7 +179,7 @@ desugar into:
 ```cpp
 struct __unique {
     static constexpr auto operator()() { return 4; };
-    
+
     using P = int();
     constexpr operator P*() { return operator(); }
 };
@@ -186,7 +188,7 @@ __unique four{};
 ```
 :::
 
-Rather than desugaring to a type that has a non-static call operator along with a conversion function that has to return some other function. 
+Rather than desugaring to a type that has a non-static call operator along with a conversion function that has to return some other function.
 
 However, we can't simply change such lambdas because this could break code. There exists code that takes a template parameter of callable type and does `decltype(&F::operator())`, expecting the resulting type to be a pointer to member type (which is the only thing it can be right now). If we change captureless lambdas to have a static call operator implicitly, all such code would break for captureless lambdas. Additionally, this would be a language ABI break. While lambdas shouldn't show up in your ABI anyway, we can't with confidence state that such code doesn't exist nor that such code deserves to be broken.
 
@@ -216,7 +218,7 @@ The body of this lambda does not use the capture `lock` in any way, so there isn
 
 But could instead be:
 
-> If a lambda is `static`, then any *id-expression* within the body of the lambda that would be an odr-use of a captured entity is ill-formed. 
+> If a lambda is `static`, then any *id-expression* within the body of the lambda that would be an odr-use of a captured entity is ill-formed.
 
 However, we feel that the value of the teachability of "Just make stateless lambdas `static`" outweights the value of supporting holding capturing variables that the body of the lambda does not use. This restriction could be relaxed in the future, if it proves overly onerous (much as we are here relaxing the restriction that call operators be non-static member functions).
 
@@ -228,9 +230,9 @@ This aspect was specifically polled during the telecon, and the outcome was:
 
 ### Can the `static`-ness of lambdas be implementation-defined?
 
-Another question arose during the telecon about whether it is feasible or desirable to make it implementation-defined as to whether or not the call operator of a capture-less lambda is `static`. 
+Another question arose during the telecon about whether it is feasible or desirable to make it implementation-defined as to whether or not the call operator of a capture-less lambda is `static`.
 
-The advantage of making it implementation-defined is that implementations could, potentially, add a flag that would allow users to treat all of their capture-less lambdas as `static` without the burden of adding this extra annotation (had call operators been allowed to be static before C++11, surely capture-less lambdas would have been implicitly `static`) while still making this sufficiently opt-in as to avoid ABI-breaking changes. 
+The advantage of making it implementation-defined is that implementations could, potentially, add a flag that would allow users to treat all of their capture-less lambdas as `static` without the burden of adding this extra annotation (had call operators been allowed to be static before C++11, surely capture-less lambdas would have been implicitly `static`) while still making this sufficiently opt-in as to avoid ABI-breaking changes.
 
 The disadvantage of making it implementation-defined is that this is a fairly important property of how a lambda behaves. Right now, the observable properties of a lambda are specified and portable. The implementation freedom areas are typically not observable to the programmer. The static-ness of the operator is observable, so making that implementation-defined or unspecified seems antithetical to the design of lambdas. The rationale for doing something like this (i.e. avoiding a sea of seemingly-pointless `static` annotations when the compiler should be able to Just Do It), but it seems rather weird that a property like that wouldn't be portable.
 
@@ -260,10 +262,10 @@ This idea was previously referenced in [@EWG88], which reads:
 ::: quote
 In c++std-core-14770, Dos Reis suggests that `operator[]` and `operator()` should both be allowed to be static. In addition to that, he suggests that both should allow multiple parameters. It's well known that there's a possibility that this breaks existing code (`foo[1,2]` is valid, the thing in brackets is a comma-expression) but there are possibilities to fix such cases (by requiring parens if a comma-expression is desired). EWG should discuss whether such unification is to be strived for.
 
-Discussed in Rapperswil 2014. EWG points out that there are more issues to consider here, in terms of other operators, motivations, connections with captureless lambdas, who knows what else, so an analysis paper is requested. 
+Discussed in Rapperswil 2014. EWG points out that there are more issues to consider here, in terms of other operators, motivations, connections with captureless lambdas, who knows what else, so an analysis paper is requested.
 :::
 
-There is a separate paper proposing multi-argument subscripting [@P2128R3] already, with preexisting code such as `foo[1, 2]` already having been deprecated. 
+There is a separate paper proposing multi-argument subscripting [@P2128R3] already, with preexisting code such as `foo[1, 2]` already having been deprecated.
 
 ## Implementation Experience
 
@@ -282,7 +284,7 @@ Change [expr.prim.lambda.general]{.sref}/3:
 Change [expr.prim.lambda.closure]{.sref}/4:
 
 ::: bq
-[4]{.pnum} The function call operator or operator template is  [a static member function or static member function template ([class.static.mfct]) if the *lambda-expression*'s *parameter-declaration-clause* is followed by `static`. Otherwise, it is a non-static member function or member function template ([class.mfct.non-static]) that is]{.addu} declared `const` ([class.mfct.non-static]) if and only if the *lambda-expression*'s *parameter-declaration-clause* is not followed by `mutable`. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function. 
+[4]{.pnum} The function call operator or operator template is  [a static member function or static member function template ([class.static.mfct]) if the *lambda-expression*'s *parameter-declaration-clause* is followed by `static`. Otherwise, it is a non-static member function or member function template ([class.mfct.non-static]) that is]{.addu} declared `const` ([class.mfct.non-static]) if and only if the *lambda-expression*'s *parameter-declaration-clause* is not followed by `mutable`. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function.
 :::
 
 Add a note to [expr.prim.lambda.closure]{.sref}/7 and /10 indicating that we could just return the call operator. The wording as-is specifies the behavior of the return here, and returning the call operator already would be allowed, so no wording change is necessary. But the note would be helpful:
@@ -310,7 +312,7 @@ Add to [over.best.ics.general]{.sref} a way to compare this static member functi
 [*]{.pnum} [When the parameter is the implicit object parameter of a static member function, the implicit conversion sequence is a standard conversion sequence that is neither better nor worse than any other standard conversion sequence.]{.addu}
 :::
 
-Change [over.oper]{.sref} paragraph 6 and introduce bullets to clarify the parsing. `static void operator()() { }` is a valid function call operator that has no parameters with this proposal, so needs to be clear that the "has at least one parameter" part refers to the non-member function part of the clause. 
+Change [over.oper]{.sref} paragraph 6 and introduce bullets to clarify the parsing. `static void operator()() { }` is a valid function call operator that has no parameters with this proposal, so needs to be clear that the "has at least one parameter" part refers to the non-member function part of the clause.
 
 ::: bq
 [6]{.pnum} An operator function shall either
@@ -352,3 +354,13 @@ template <class F> packaged_task(F) -> packaged_task<@_see below_@>;
 
 [8]{.pnum} *Remarks*: The deduced type is `packaged_task<R(A...)>`.
 :::
+
+## Feature-test macro
+
+Add to [cpp.predefined]{.sref}/table 19:
+
+::: bq
+[`__cpp_static_call_operator`]{.addu}
+:::
+
+with the appropriate value. This allows define function objects or lambdas to have conditionally static call operators when possible.
