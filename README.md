@@ -7,6 +7,8 @@ make all of my papers.
 
 ### Accepted to Working Draft
 
+#### C++20
+
 - [p0704r1 - Fixing const-qualified pointers to members](0704_const_qual_pmfs/p0704r1.html).
 - [p0780r2 - Allow pack expansion in lambda init-capture](0780_lambda_pack_capture/p0780r2.html). There is a core issue (CWG 2378) as a pack of references is currently specified as `...&id` instead of `&...id`.
 - [p0848r3 - Conditionally Trivial Special Member Functions](0848_special_members/p0848r3.html), with Casey Carter.
@@ -25,19 +27,27 @@ make all of my papers.
 - [p1959r0 - Remove `std::weak_equality` and `std::strong_equality`](1959_remove_equality/p1959r0.html).
 - [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
+
+#### DRs against C++20 (or earlier)
+
+- [p2036r3 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r3.html).
 - [p2162r2 - Inheriting from `std::variant`](2162_inherit_variant/p2162r2.html).
-- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
 - [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 - [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 
-### Pending Plenary
+#### C++23
 
 - [p0847r7 - Deducing this](0847_deducing_this/p0847r7.html), with Simon Brand, Gašper Ažman, and Ben Deane.
+- [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+
+### Pending Plenary
+
+None.
 
 ### Pending CWG/LWG Review
 
-- [p2036r3 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r3.html).
+None.
 
 ### Pending EWG/LEWG Voting
 
@@ -45,6 +55,8 @@ make all of my papers.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 
 ### Pending EWG/LEWG Review
+
+None.
 
 #### Figure out packs outside of templates?
 
