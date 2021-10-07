@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: P2322R4
+document: P2322R5
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2322R4], updated wording.
 
 Since [@P2322R3], no changes in actual proposal, just some improvements in the description.
 
@@ -29,7 +31,7 @@ Since [@P2322R3], no changes in actual proposal, just some improvements in the d
 
 This revision uses different names for the initial value and no-initial value algorithms, although rather than using `fold` and `fold_right` (and coming up with how to name the no-initial value versions), this paper uses the names `foldl` and `foldr` and then `foldl1` and `foldr1`. This revision also changes the no-initial value versions from having a non-empty range as a precondition to instead returning `optional<T>`.
 
-There was also discussion around having these algorithms return an end iterator. 
+There was also discussion around having these algorithms return an end iterator.
 
 * Return the end iterator in addition to the result
 
@@ -47,11 +49,11 @@ But the primary algorithms (`foldl` and `foldl1` for left-fold) will definitely 
 
 [@P2322R1] used _`weakly-assignable-from`_ as the constraint, this elevates it to `assignable_from`. This revision also changes the return type of `fold` to no longer be the type of the initial value, see [the discussion](#return-type).
 
-[@P2322R0] used `regular_invocable` as the constraint in the `@*foldable*@` concept, but we don't need that for this algorithm and it prohibits reasonable uses like a mutating operation. `invocable` is the sufficient constraint here (in the same way that it is for `for_each`). Also restructured the API to overload on providing the initial value instead of having differently named algorithms. 
+[@P2322R0] used `regular_invocable` as the constraint in the `@*foldable*@` concept, but we don't need that for this algorithm and it prohibits reasonable uses like a mutating operation. `invocable` is the sufficient constraint here (in the same way that it is for `for_each`). Also restructured the API to overload on providing the initial value instead of having differently named algorithms.
 
 # Introduction
 
-As described in [@P2214R0], there is one very important rangified algorithm missing from the standard library: `fold`. 
+As described in [@P2214R0], there is one very important rangified algorithm missing from the standard library: `fold`.
 
 While we do have an iterator-based version of `fold` in the standard library, it is currently named `accumulate`, defaults to performing `+` on its operands, and is found in the header `<numeric>`. But `fold` is much more than addition, so as described in the linked paper, it's important to give it the more generic name and to avoid a default operator.
 
@@ -92,7 +94,7 @@ Here, `fold(v, 1, std::plus())` is an `int` because the initial value is `1`. Si
 Note that if we use `assignable_from<T&, invoke_result_t<F&, T, range_reference_t<R>>>` as the constraint on this algorithm, in this example this becomes `assignable_from<int&, double>`. We would be violating the semantic requirements of `assignable_from`, which state [concept.assignable]{.sref}/1.5:
 
 ::: bq
-[1.5]{.pnum} After evaluating `lhs = rhs`: 
+[1.5]{.pnum} After evaluating `lhs = rhs`:
 
 * [1.5.1]{.pnum} `lhs` is equal to `rcopy`, unless `rhs` is a non-const xvalue that refers to `lcopy`.
 :::
@@ -101,7 +103,7 @@ This only holds if all the `double`s happen to be whole numbers, which is not th
 
 ## Return the result of the initial invocation
 
-When we talk about the mathematical definition of fold, that's `f(f(f(f(init, x1), x2), ...), xn)`. If we actually evaluate this expression in this context, that's `((1 + 0.25) + 0.75)` which would be `2.0`. 
+When we talk about the mathematical definition of fold, that's `f(f(f(f(init, x1), x2), ...), xn)`. If we actually evaluate this expression in this context, that's `((1 + 0.25) + 0.75)` which would be `2.0`.
 
 We cannot in general get this type correctly. A hypothetical `f` could actually change its type every time which we cannot possibly implement, so we can't exactly mirror the mathematical definition regardless. But let's just put that case aside as being fairly silly.
 
@@ -116,11 +118,11 @@ auto fold(R&& r, T init, F f) -> U
 {
     ranges::iterator_t<R> first = ranges::begin(r);
     ranges::sentinel_t<R> last = ranges::end(r);
-    
+
     if (first == last) {
         return move(init);
     }
-    
+
     U accum = invoke(f, move(init), *first);
     for (++first; first != last; ++first) {
         accum = invoke(f, move(accum), *first);
@@ -138,7 +140,7 @@ auto fold(R&& r, T init, F f) -> U
 {
     ranges::iterator_t<R> first = ranges::begin(r);
     ranges::sentinel_t<R> last = ranges::end(r);
-    
+
     U accum = std::move(init);
     for (; first != last; ++first) {
         accum = invoke(f, move(accum), *first);
@@ -159,7 +161,7 @@ While the left-hand side also needs `convertible_to<invoke_result_t<F&, T, range
 
 This is a fairly complicated set of requirements.
 
-But it means that our example, `fold(v, 1, std::plus())` yields the more likely expected result of `2.0`. So this is the version this paper proposes. 
+But it means that our example, `fold(v, 1, std::plus())` yields the more likely expected result of `2.0`. So this is the version this paper proposes.
 
 # Other `fold` algorithms
 
@@ -189,7 +191,7 @@ Should we give this algorithm a different name (e.g. `fold_first` or `fold1`, si
 
 What about `fold(xs, a, b)`?  It could be:
 
-1. Using `a` as the initial value and `b` as a binary reduction of the form `(A, X) -> A`. 
+1. Using `a` as the initial value and `b` as a binary reduction of the form `(A, X) -> A`.
 2. Using `a` as a binary reduction of the form `(X, Y) -> X` and `b` as a unary projection of the form `X -> Y`.
 
 Is it possible for these to collide? It would be an uncommon situation, since `b` would have to be both a unary and a binary function. But it is definitely _possible_:
@@ -203,7 +205,7 @@ This call is ambiguous! This works with either interpretation. It would either j
 
 It's possible to force either the function or projection to ensure that it can only be interpreted one way or the other, but since the algorithm is sufficiently different (see following section), even if such ambiguity is going to be extremely rare (and possible to deal with even if it does arise), we may as well avoid the issue entirely.
 
-As such, this paper proposes a differently named algorithm for the version that takes no initial value rather than adding an overload under the same name. 
+As such, this paper proposes a differently named algorithm for the version that takes no initial value rather than adding an overload under the same name.
 
 ### `optional` or UB?
 
@@ -212,7 +214,7 @@ The result of `ranges::foldl(empty_range, init, f)` is just `init`. That is stra
 1. a disengaged `optional<T>`, or
 2. `T`, but this case is undefined behavior
 
-In other words: empty range is either a valid input for the algorithm, whose result is `nullopt`, or there is a precondition that the range is non-empty. 
+In other words: empty range is either a valid input for the algorithm, whose result is `nullopt`, or there is a precondition that the range is non-empty.
 
 Users can always recover the undefined behavior case if they want, by writing `*foldl1(empty_range, f)`, and the `optional` return allows for easy addition of other functionality, such as providing a sentinel value for the empty range case (`foldl1(empty_range, f).value_or(sentinel)` reads better than `not ranges::empty(r) ? foldl1(r, f) : sentinel`, at least to me). It's also much safer to use in the context where you may not know if the range is empty or not, because it's adapted: `foldl1(r | filter(f), op)`.
 
@@ -228,7 +230,7 @@ There are three questions that would need to be asked about `fold_right`.
 
 First, the order of operations of to the function. Given `fold_right([1, 2, 3], z, f)`, is the evaluation `f(f(f(z, 3), 2), 1)` or is the evaluation `f(1, f(2, f(3, z)))`? Note that either way, we're choosing the `3` then `2` then `1`, both are right folds. It's a question of if the initial element is the left-hand operand (as it is in the left `fold`) or the right-hand operand (as it would be if consider the right fold as a flip of the left fold).
 
-One advantage of the former - where the initial call is `f(z, 3)` - is that we can specify `fold_right(r, z, op)` as precisely `fold_left(views::reverse(r), z, op)` and leave it at that. Notably with the same `op`. With the latter - where the initial call is `f(3, z)` - we would need slightly more specification and would want to avoid saying `flip(op)` since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues. 
+One advantage of the former - where the initial call is `f(z, 3)` - is that we can specify `fold_right(r, z, op)` as precisely `fold_left(views::reverse(r), z, op)` and leave it at that. Notably with the same `op`. With the latter - where the initial call is `f(3, z)` - we would need slightly more specification and would want to avoid saying `flip(op)` since directly invoking the operation with the arguments in the correct order is a little better in the case of ranges of prvalues.
 
 If we take a look at how other languages handle left-fold and right-fold, and whether the accumulator is on the same side (and, in these cases, the accumulator is always on the right) or opposite side (the accumulator is on the left-hand side for left fold and on the right-hand side for right fold):
 
@@ -242,9 +244,9 @@ If we take a look at how other languages handle left-fold and right-fold, and wh
 <tr><td /><td>[Scala](https://www.scala-lang.org/api/2.13.3/scala/collection/immutable/List.html)</td></tr>
 </table>
 
-This paper chooses what appears to be the more common approach: the accumulator is on the left-hand side for left fold and the right-hand side for right fold. That is, `foldr(r, z, op)` is equivalent to `foldl(reverse(r), z, flip(op))`. 
+This paper chooses what appears to be the more common approach: the accumulator is on the left-hand side for left fold and the right-hand side for right fold. That is, `foldr(r, z, op)` is equivalent to `foldl(reverse(r), z, flip(op))`.
 
-Second, supporting bidirectional ranges is straightforward. Supporting forward ranges involves recursion of the size of the range. Supporting input ranges involves recursion and also copying the whole range first. Are either of these worth supporting? The paper simply supports bidirectional ranges. 
+Second, supporting bidirectional ranges is straightforward. Supporting forward ranges involves recursion of the size of the range. Supporting input ranges involves recursion and also copying the whole range first. Are either of these worth supporting? The paper simply supports bidirectional ranges.
 
 Third, the naming question.
 
@@ -270,13 +272,13 @@ All of which is to say, I don't think there's a clear answer to this question. T
 |`fold_left_first`|`fold_first`|`foldl1`|
 |`fold_right_first`|`fold_right_first`|`foldr1`|
 
-And this paper proposes option C: `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer. 
+And this paper proposes option C: `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer.
 
 ## Short-circuiting folds
 
 The folds discussed up until now have always evaluated the entirety of the range. That's very useful in of itself, and several other algorithms that we have in the standard library can be implemented in terms of such a fold (e.g. `min` or `count_if`).
 
-But for some algorithms, we really want to short circuit. For instance, we don't want to define `all_of(r, pred)` as `fold(r, true, logical_and(), pred)`. This formulation would give the correct answer, but we really don't want to keep evaluating `pred` once we got our first `false`. To do this correctly, we really need short circuiting. 
+But for some algorithms, we really want to short circuit. For instance, we don't want to define `all_of(r, pred)` as `fold(r, true, logical_and(), pred)`. This formulation would give the correct answer, but we really don't want to keep evaluating `pred` once we got our first `false`. To do this correctly, we really need short circuiting.
 
 There are (at least) three different approaches for how to have a short-circuiting fold. Here are different approaches to implementing `any_of` in terms of a short-circuiting fold:
 
@@ -288,9 +290,9 @@ There are (at least) three different approaches for how to have a short-circuiti
         return not state;
     });
     ```
-    
+
     and the main loop of the `fold_while` algorithm would look like:
-    
+
     ```cpp
     for (; first != last; ++first) {
         if (not f(init, *first)) { // NB: not moving init into "f"
@@ -299,21 +301,21 @@ There are (at least) three different approaches for how to have a short-circuiti
     }
     return init;
     ```
-    
+
 2. Same as #1, except return an enum class instead of a `bool` (like `control_flow::continue_` vs `control_flow::break_`).
 
 3. You could provide a function that returns a `variant<continue_<T>, break_<U>>`. The algorithm would then return this variant (rather than a `T`). Rust's `Itertools` crate provides this under the name [`fold_while`](https://docs.rs/itertools/0.10.0/itertools/trait.Itertools.html#method.fold_while):
 
     ```cpp
     template <typename T> struct continue_ { T value; };
-    
+
     template <typename T> struct break_ { T value; };
     template <> struct break_<void> { };
     break_() -> break_<void>;
-    
+
     template <typename T, typename U>
     using fold_while_t = variant<continue_<T>, break_<U>>;
-    
+
     return fold_while(r, true, [&](bool, auto&& elem) -> fold_while_t<bool, void> {
         if (pred(elem)) {
             return continue_{true};
@@ -322,12 +324,12 @@ There are (at least) three different approaches for how to have a short-circuiti
         }
     }).index() == 0;
     ```
-    
+
     and the main loop of the `fold_while` algorithm would look like:
-    
+
     ```cpp
     variant<continue_<T>, break_<E>> state = continue_<T>{init};
-    
+
     for (; first != last; ++first) {
         state = f(get<continue_<T>>(move(state)).value, *first);
         if (holds_alternative<break_<U>>(next_state)) {
@@ -335,8 +337,8 @@ There are (at least) three different approaches for how to have a short-circuiti
         }
     }
     return state;
-    ```    
-    
+    ```
+
 4. You could provide a function that returns an `expected<T, E>`, which then the algorithm would return an `expected<T, E>` (rather than a `T`). Rust `Iterator` trait provides this under the name [`try_fold`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_fold):
 
     ```cpp
@@ -348,9 +350,9 @@ There are (at least) three different approaches for how to have a short-circuiti
         }
     }).has_value();
     ```
-    
+
     and the main loop of the `fold_while` algorithm would look like:
-    
+
     ```cpp
     for (; first != last; ++first) {
         auto next = f(move(init), *first);
@@ -359,17 +361,17 @@ There are (at least) three different approaches for how to have a short-circuiti
         }
         init = *move(next);
     }
-    
+
     return init;
-    ```     
-    
+    ```
+
 Option (1) is a questionable option because of mutating state (note that we cannot use `predicate` as the constraint on the type, because `predicate`s are not allowed to mutate their arguments), but this approach is probably the most efficient due to not moving the accumulator at all.
 
-Option (2) seems like a strictly worse version than Option (1) for C++, due to not being able to use existing predicates. 
+Option (2) seems like a strictly worse version than Option (1) for C++, due to not being able to use existing predicates.
 
-Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `break_{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T, U>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types. 
+Option (3) is an awkward option for C++ because of general ergonomics. The provided lambda couldn't just return `continue_{x}` in one case and `break_{y}` in another since those have different types, so you'd basically always have to provide `-> fold_while_t<T, U>` as a trailing-return-type. This would also be the first (or second, see above) algorithm which actually meaningfully uses one of the standard library's sum types.
 
-Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point, as [@P0323R10] is already being discussed in LWG), and ergonomically it has the same issues as described earlier - you can't just return a `T` and an `unexpected<E>` for a lambda, you need to have a trailing return type. We'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there. Rust's name for this is `Try`, with a [new revision](https://rust-lang.github.io/rfcs/3058-try-trait-v2.html) in progress). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well. 
+Option (4) isn't a great option for C++ because we don't even have `expected<T, E>` in the standard library yet (although hopefully imminent at this point, as [@P0323R10] is already being discussed in LWG), and ergonomically it has the same issues as described earlier - you can't just return a `T` and an `unexpected<E>` for a lambda, you need to have a trailing return type. We'd also want to generalize this approach to any "truthy" type which would require coming up with a way to conceptualize (in the `concept` sense) "truthy" (since `optional<T>` would be a valid type as well, as well as any other the various user-defined versions out there. Rust's name for this is `Try`, with a [new revision](https://rust-lang.github.io/rfcs/3058-try-trait-v2.html) in progress). Because the implementation would have to wrap and unwrap the accumulator, it could potentially be less efficient than Option (1) as well.
 
 Or, to put these all in a table, given that the accumulator has type `T`:
 
@@ -381,10 +383,10 @@ Or, to put these all in a table, given that the accumulator has type `T`:
 <tr><th>4</th><td>✔️</td><td>`expected<T, E>`<br/>`optional<T>`</td><td>`expected<T, E>`<br />`optional<T>`</td></tr>
 </table>
 
-Option (3) is far too unergonomic in C++ to be reasonable, but Option (4) does have the benefit that it would allow different return types for the early-return and full-consume cases. 
+Option (3) is far too unergonomic in C++ to be reasonable, but Option (4) does have the benefit that it would allow different return types for the early-return and full-consume cases.
 
 
-Given these options, none of which stand out as being especially amazing, this paper proposes (1). 
+Given these options, none of which stand out as being especially amazing, this paper proposes (1).
 
 ## Iterator-returning folds
 
@@ -433,7 +435,7 @@ or:
 int total = ranges::sum(numbers, 0).value;
 ```
 
-`ranges::fold` should just return `T`. This would be consistent with what the other range-based folds already return in C++20 (e.g. `ranges::count` returns a `range_difference_t<R>`, `ranges::any_of` - which can't quite be a `fold` due to wanting to short-circuit - just returns `bool`). 
+`ranges::fold` should just return `T`. This would be consistent with what the other range-based folds already return in C++20 (e.g. `ranges::count` returns a `range_difference_t<R>`, `ranges::any_of` - which can't quite be a `fold` due to wanting to short-circuit - just returns `bool`).
 :::
 
 Moreover, even if we added a version of this algorithm that returned an iterator (let's call it `fold_with_iterator`), we wouldn't want `fold(first, last, init, f)` to be defined as
@@ -442,7 +444,7 @@ return fold_with_iterator(first, last, init, f).value;
 ```
 since this would have to incur an extra move of the accumulated result, due to lack of copy elision (we have different return types). So we'd want need this algorithm to be specified separately (or, perhaps, the "*Effects*: equivalent to" formulation is sufficiently permissive as to allow implementations to do the right thing?)
 
-From a usability perspective, I think it's important that `fold` just return the value. 
+From a usability perspective, I think it's important that `fold` just return the value.
 
 The problem going past that is that we end up with this combinatorial explosion of algorithms based on a lot of orthogonal choices:
 
@@ -462,11 +464,11 @@ This brings with it its own naming problem. That's a lot of names. One approach 
 * `foldr_with_iter` is a non-short-circuiting right-fold with an initial value that returns `(iterator, T)`
 * `foldr1_while_with_iter` is a short-circuiting right-fold with no initial value that returns `(iterator, T)`
 
-`with_iter` is not the best suffix, but the rest seem to work out ok. 
+`with_iter` is not the best suffix, but the rest seem to work out ok.
 
 ## The proposal: short-circuiting and iterator-returning
 
-One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that do short circuiting and return an iterator? Do we even need a short-circuiting fold that *doesn't* return an iterator? 
+One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that do short circuiting and return an iterator? Do we even need a short-circuiting fold that *doesn't* return an iterator?
 
 In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposing is six algorithms (with two overloads each):
 
@@ -499,7 +501,7 @@ Instead, you have to wrap the binary operation. Though, in general, any binary o
 ```cpp
 inline constexpr auto wrap = [](auto op){
     return [=](auto& state, auto&& elem){
-        state = op(move(state), FWD(elem)); 
+        state = op(move(state), FWD(elem));
         return true;
     };
 };
@@ -512,7 +514,7 @@ Note that for `foldl_while` and `foldl1_while`, we don't have the same kind of r
 
 # Implementation Experience
 
-Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold]. The short-circuiting alternatives will be added later. 
+Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold]. The short-circuiting alternatives will be added later.
 
 # Wording
 
@@ -545,9 +547,9 @@ namespace std {
 
     template<class I>
       struct in_found_result;
-      
+
 +   template<class I, class T>
-+     struct in_value_result;      
++     struct in_value_result;
   }
 
   // ...
@@ -561,26 +563,26 @@ and then also a bunch of fold algorithms:
 ```cpp
 namespace std {
   // ...
-    
+
   // [alg.fold], folds
   namespace ranges {
     template<class F>
     struct @*flipped*@ {  // exposition only
       F f;
-      
+
       template<class T, class U>
         requires invocable<F&, U, T>
       invoke_result_t<F&, U, T> operator()(T&&, U&&);
     };
-    
+
     template <class F, class T, class I, class U>
     concept @*indirectly-binary-left-foldable-impl*@ =  // exposition only
         movable<T> &&
         movable<U> &&
         convertible_to<T, U> &&
         invocable<F&, U, iter_reference_t<I>> &&
-        assignable_from<U&, invoke_result_t<F&, U, iter_reference_t<I>>>;    
-    
+        assignable_from<U&, invoke_result_t<F&, U, iter_reference_t<I>>>;
+
     template <class F, class T, class I>
     concept @*indirectly-binary-left-foldable*@ =      // exposition only
         copy_constructible<F> &&
@@ -588,8 +590,8 @@ namespace std {
         invocable<F&, T, iter_reference_t<I>> &&
         convertible_to<invoke_result_t<F&, T, iter_reference_t<I>>,
                decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>> &&
-        @*indirectly-binary-left-foldable-impl*@<F, T, I, decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>>; 
-        
+        @*indirectly-binary-left-foldable-impl*@<F, T, I, decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>>;
+
     template <class F, class T, class I>
     concept @*indirectly-short-circuit-left-foldable*@ = // exposition only
         copy_constructible<F> &&
@@ -600,8 +602,8 @@ namespace std {
 
     template <class F, class T, class I>
     concept @*indirectly-binary-right-foldable*@ =    // exposition only
-        @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;    
-  
+        @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;
+
     template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
     constexpr auto foldl(I first, S last, T init, F f, Proj proj = {});
@@ -619,7 +621,7 @@ namespace std {
       @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
     constexpr auto foldl1(R&& r, F f, Proj proj = {});
-    
+
     template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-binary-right-foldable*@<T, projected<I, Proj>> F>
     constexpr auto foldr(I first, S last, T init, F f, Proj proj = {});
@@ -636,7 +638,7 @@ namespace std {
     template <bidirectional_range R, class Proj = identity,
       @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr auto foldr1(R&& r, F f, Proj proj = {});  
+    constexpr auto foldr1(R&& r, F f, Proj proj = {});
 
     template<class I, class T>
       using fold_while_result = in_value_result<I, T>;
@@ -644,10 +646,10 @@ namespace std {
     template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
     constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
-    
+
     template <input_range R, class T, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-    constexpr fold_while_result<borrowed_iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});    
+    constexpr fold_while_result<borrowed_iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});
 
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
@@ -657,7 +659,7 @@ namespace std {
     template <input_range R, class Proj = identity,
       @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});       
+    constexpr fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});
   }
 }
 ```
@@ -669,7 +671,7 @@ Add a new result type to [algorithms.results]{.sref}:
 ```diff
 namespace std::ranges {
   // ...
-  
+
   template<class I>
   struct in_found_result {
     [[no_unique_address]] I in;
@@ -703,7 +705,7 @@ namespace std::ranges {
 +   constexpr operator in_value_result<I2, T2>() && {
 +     return {std::move(in), std::move(value)};
 +   }
-+ };  
++ };
 }
 ```
 :::
@@ -725,7 +727,7 @@ constexpr auto ranges::foldl(R&& r, T init, F f, Proj proj = {});
 
 ::: bq
 ```cpp
-using U = invoke_result_t<F&, T, indirect_result_t<Proj&, I>>;
+using U = decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>;
 if (first == last) {
     return U(std::move(init));
 }
@@ -781,7 +783,7 @@ constexpr auto ranges::foldr(R&& r, T init, F f, Proj proj = {});
 
 ::: bq
 ```cpp
-using U = invoke_result_t<F&, indirect_result_t<Proj&, I>, T>;
+using U = decay_t<invoke_result_t<F&, indirect_result_t<Proj&, I>, T>>;
 
 if (first == last) {
     return U(std::move(init));
@@ -805,7 +807,7 @@ constexpr auto ranges::foldr1(I first, S last, F f, Proj proj = {});
 template <bidirectional_range R, class Proj = identity,
   @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr auto ranges::foldr1(R&& r, F f, Proj proj = {});  
+constexpr auto ranges::foldr1(R&& r, F f, Proj proj = {});
 ```
 
 [#]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f, proj))`.
@@ -831,7 +833,7 @@ constexpr ranges::fold_while_result<I, T> ranges::foldl_while(I first, S last, T
 
 template <input_range R, class T, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-constexpr ranges::fold_while_result<borrowed_iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {}); 
+constexpr ranges::fold_while_result<borrowed_iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {});
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -859,7 +861,7 @@ template <input_range R, class Proj = identity,
   @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
 constexpr ranges::fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>>
-  ranges::foldl1_while(R&& r, F f, Proj proj = {});   
+  ranges::foldl1_while(R&& r, F f, Proj proj = {});
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -888,14 +890,14 @@ references:
         - family: Ashley Mannix
       issued:
         year: 2020
-      URL: https://github.com/rust-lang/rust/issues/68125  
+      URL: https://github.com/rust-lang/rust/issues/68125
     - id: stepanov
       citation-label: stepanov
       title: From Mathematics to Generic Programming
       author:
         - family: Alexander A. Stepanov
       issued:
-        year: 2014      
+        year: 2014
     - id: P2322-minutes
       citation-label: P2322-minutes
       title: "P2322 Minutes"

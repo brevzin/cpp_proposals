@@ -44,7 +44,7 @@
 - 2280 Using unknown pointers and references in constant expressions: [p2280r0](2280_unknown_reference/p2280r0.html) [p2280r1](2280_unknown_reference/p2280r1.html) [p2280r2](2280_unknown_reference/p2280r2.html) [p2280r3](2280_unknown_reference/p2280r3.html)
 - 2286 Formatting Ranges: [p2286r0](2286_fmt_ranges/p2286r0.html) [p2286r1](2286_fmt_ranges/p2286r1.html) [p2286r2](2286_fmt_ranges/p2286r2.html) [p2286r3](2286_fmt_ranges/p2286r3.html)
 - 2287 Designated-initializers for Base Classes: [p2287r0](2287_designated_base/p2287r0.html) [p2287r1](2287_designated_base/p2287r1.html)
-- 2322 <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>: [p2322r0](2322_fold/p2322r0.html) [p2322r1](2322_fold/p2322r1.html) [p2322r2](2322_fold/p2322r2.html) [p2322r3](2322_fold/p2322r3.html) [p2322r4](2322_fold/p2322r4.html)
+- 2322 <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>: [p2322r0](2322_fold/p2322r0.html) [p2322r1](2322_fold/p2322r1.html) [p2322r2](2322_fold/p2322r2.html) [p2322r3](2322_fold/p2322r3.html) [p2322r4](2322_fold/p2322r4.html) [p2322r5](2322_fold/p2322r5.html)
 - 2325 Views should not be required to be default constructible: [p2325r0](2325_views_default/p2325r0.html) [p2325r1](2325_views_default/p2325r1.html) [p2325r2](2325_views_default/p2325r2.html) [p2325r3](2325_views_default/p2325r3.html)
 - 2387 Pipe support for user-defined range adaptors: [p2387r0](2387_ranges_pipes/p2387r0.html) [p2387r1](2387_ranges_pipes/p2387r1.html)
 - 2415 What is a  <code class="sourceCode cpp">view</code> ?: [p2415r0](2415_what_view/p2415r0.html) [p2415r1](2415_what_view/p2415r1.html) [p2415r2](2415_what_view/p2415r2.html)
