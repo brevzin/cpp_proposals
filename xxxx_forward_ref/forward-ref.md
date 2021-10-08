@@ -384,7 +384,7 @@ Whereas a parameter of the form `Q<T>& x` or `Q<T>&&` will deduce `Q` either as:
 
 The significant advantage here is that applying the `const` and reference qualifiers that we just deduced is trivial, since we already have exactly the tool we need to do that: `Q`. This makes all the implementations simpler. It also gives you a way to name the parameter other than `decltype(param)`, since there is a proper C++ spelling for the parameter itself in all cases.
 
-The disadvantage is that _extremely_ novel for C++, and thus extremely weird. Even more dramatically weird than the other two solutions. And that's even with using the nice name of `qualifiers`, which is probably untenable (although `cvrefquals` might be available?). Also `Q<T> x` does not look like a forwarding reference, but since `Q<T>& x` is the only meaningful way to deduce just `const` - this suggests that `Q<T>&& x` _also_ needs to deduce just `const` (even though why would anyone write this), which leaves `Q<T> x` alone.
+The disadvantage is that _extremely_ novel for C++, and thus extremely weird. Even more dramatically weird than the other two solutions. And that's even with using the nice name of `qualifiers`, which is probably untenable (although `cvrefquals` or `refqual` might be available?). Also `Q<T> x` does not look like a forwarding reference, but since `Q<T>& x` is the only meaningful way to deduce just `const` - this suggests that `Q<T>&& x` _also_ needs to deduce just `const` (even though why would anyone write this), which leaves `Q<T> x` alone.
 
 ## Something else
 
