@@ -711,6 +711,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-16"><a href="#cb8-16"></a>  U<span class="op">&gt;</span>;</span></code></pre></div>
 </blockquote>
 <h2 data-number="2.1" id="t-auto"><span class="header-section-number">2.1</span> <code class="sourceCode cpp">T <span class="kw">auto</span><span class="op">&amp;&amp;</span></code><a href="#t-auto" class="self-link"></a></h2>
+<p>The principle here is that in the same say that <code class="sourceCode cpp">range <span class="kw">auto</span><span class="op">&amp;&amp;</span></code>is some kind of <code class="sourceCode cpp">range</code>, that <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span></code> is some kind of <code class="sourceCode cpp"><span class="dt">int</span></code>. It kind of makes sense, kind of doesn’t. Depends on how you think about it.</p>
 <table>
 <tr>
 <th>
@@ -766,7 +767,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </td>
 </tr>
 </table>
-<p>The principle here is that in the same say that <code class="sourceCode cpp">range <span class="kw">auto</span><span class="op">&amp;&amp;</span></code>is some kind of <code class="sourceCode cpp">range</code>, that <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span></code> is some kind of <code class="sourceCode cpp"><span class="dt">int</span></code>. It kind of makes sense, kind of doesn’t. Depends on how you think about it.</p>
 <p>The advantage of this syntax is that it’s concise and lets you do what you need to do.</p>
 <p>The disadvantage of this syntax is that the only way you can get the type is by writing <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>param<span class="op">)</span></code> - and the only way to can pass through the <code class="sourceCode cpp"><span class="kw">const</span></code>-ness and qualifiers is by grabbing them off of <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>param<span class="op">)</span></code>. That’s fine is the type itself is all that is necessary (as it the case for <code class="sourceCode cpp">view_interface</code>) but not so much when you actually need to apply them (as is the case for <code class="sourceCode cpp">tuple</code>). This also means that the only place you can put the <code class="sourceCode cpp"><span class="kw">requires</span></code> clause is after the parameters. Another disadvantage is that the derived-to-base conversion aspect of this makes it inconsistent with what <code class="sourceCode cpp">Concept <span class="kw">auto</span></code> actually means - which is not actually doing any conversion.</p>
 <h2 data-number="2.2" id="t"><span class="header-section-number">2.2</span> <code class="sourceCode cpp">T<span class="op">&amp;&amp;&amp;</span></code><a href="#t" class="self-link"></a></h2>

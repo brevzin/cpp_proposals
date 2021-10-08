@@ -189,6 +189,8 @@ using copy_cvref_t = apply_const_ref<
 
 ## `T auto&&`
 
+The principle here is that in the same say that `range auto&& `is some kind of `range`, that `int auto&&` is some kind of `int`. It kind of makes sense, kind of doesn't. Depends on how you think about it.
+
 <table>
 <tr><th>`tuple`</th><td>
 ```cpp
@@ -235,8 +237,6 @@ struct view_interface {
 ```
 </td></tr>
 </table>
-
-The principle here is that in the same say that `range auto&& `is some kind of `range`, that `int auto&&` is some kind of `int`. It kind of makes sense, kind of doesn't. Depends on how you think about it.
 
 The advantage of this syntax is that it's concise and lets you do what you need to do.
 
