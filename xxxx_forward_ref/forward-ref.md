@@ -320,6 +320,8 @@ The advantages are that it's clearer that we're only deducing `const`-ness and r
 
 The disadvantages are the obvious weirdness of the syntax, _especially_ for figuring out the value category, and the mandatory metaprogramming around applying those boolean values that we deduce through the types. `apply_const` and `apply_const_ref` (as I'm arbitrarily calling them here, the former appears as an exposition-only trait in Ranges under the name `$maybe-const$`) will be _everywhere_, and those aren't exactly obvious to understand either. It may be tempting to allow writing `int const(false) &&(true)` as a type directly to facilitate writing such code (this would be `int&&`), but this seems facially terrible.
 
+There's further issues that `int const(true)` isn't quite valid grammar today, but it's pretty close. `const(true)` looks like a cast, and it's not unreasonable that we may at some point consider `const(x)` as a language cast version of `std::as_const(x)`.
+
 ## `qualifiers Q`
 
 This approach is quite different and involves introducing a new kind of template parameter, which I'm calling `qualifiers`, which will deduce an _alias template_. It may be easier to look at the examples:
