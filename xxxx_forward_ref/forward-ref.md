@@ -171,7 +171,7 @@ Here are those syntax options. I will, for each option, demonstrate how to imple
 #define FWD(e) static_cast<decltype(e)&&>(e)
 
 template <bool RV, typename T>
-using apply_ref = std::conditional_T<RV, T&&, T&>;
+using apply_ref = std::conditional_t<RV, T&&, T&>;
 
 template <bool C, typename T>
 using apply_const = std::conditional_t<C, T const, T>;
@@ -240,11 +240,11 @@ struct view_interface {
 
 The advantage of this syntax is that it's concise and lets you do what you need to do.
 
-The disadvantage of this syntax is that the only way you can get the type is by writing `decltype(param)` - and the only way to can pass through the `const`-ness and qualifiers is by grabbing them off of `decltype(param)`. That's fine is the type itself is all that is necessary (as it the case for `view_interface`) but not so much when you actually need to apply them (as is the case for `tuple`). This also means that the only place you can put the `requires` clause is after the parameters. Another disadvantage is that the derived-to-base conversion aspect of this makes it inconsistent with what `Concept auto` actually means - which is not actually doing any conversion.
+The disadvantage of this syntax is that the only way you can get the type is by writing `decltype(param)` - and the only way to can pass through the `const`-ness and qualifiers is by grabbing them off of `decltype(param)`. That's fine if the type itself is all that is necessary (as it the case for `view_interface`) but not so much when you actually need to apply them (as is the case for `tuple`). This also means that the only place you can put the `requires` clause is after the parameters. Another disadvantage is that the derived-to-base conversion aspect of this makes it inconsistent with what `Concept auto` actually means - which is not actually doing any conversion.
 
 ## `T&&&`
 
-Rather than writing `tuple<U...> auto&& rhs` we can instead introduce a new kind of reference and spell it `tuple<U...> &&& rhs`. This syntactically looks nearly the same as the previous version, so I'm not going to copy it.
+Rather than writing `tuple<U...> auto&& rhs` we can instead introduce a new kind of reference and spell it `tuple<U...>&&& rhs`. This syntactically looks nearly the same as the `T auto&&` version, so I'm not going to copy it.
 
 If we went this route, we would naturally have to also allow:
 
