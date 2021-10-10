@@ -13,7 +13,7 @@ toc: true
 
 # Revision History
 
-Since [@P1169R2], added missing feature-test macro.
+Since [@P1169R2], added missing feature-test macro and updated wording to include [@LWG3617].
 
 [@P1169R1] was approved for electronic polling by EWG, but two issues came up that while this paper does not *change* are still worth commenting on: can [static lambdas still have capture](#static-lambdas-with-capture) and can whether or not stateless lambdas be `static` be [implementation-defined](#can-the-static-ness-of-lambdas-be-implementation-defined)?
 
@@ -331,26 +331,38 @@ Change [over.call]{.sref} paragraph 1:
 
 ## Library Wording
 
-Change the deduction guide for `function` in [func.wrap.func.con]{.sref}/14-15:
+Change the deduction guide for `function` in [func.wrap.func.con]{.sref}/16-17, adding new bullets. [This assumes the wording change in [@LWG3617]. This relies on the fact that `f.operator()` would be valid for a static member function, but not an explicit object member function - which like other non-static member functions you can't just write `x.f` you can only write `x.f(args...)`.]{.ednote}:
 
 ::: bq
 ```cpp
 template <class F> function(F) -> function<@_see below_@>;
 ```
 
-[14]{.pnum} *Constraints*: `&F​::​operator()` is well-formed when treated as an unevaluated operand and `decltype(​&F​::​operator())` is [either]{.addu} of the form `R(G​::​*)(A...) cv &@~opt~@ noexcept@~opt~@` for a class type `G` [or of the form `R(*)(A...) noexcept@~opt~@`]{.addu}.
+[15]{.pnum} *Constraints*: `&F​::​operator()` is well-formed when treated as an unevaluated operand and [either]{.addu}
 
-[15]{.pnum} *Remarks*: The deduced type is `function<R(A...)>`.
+* [#.#]{.pnum} `decltype(​&F​::​operator())` is [either]{.rm} of the form `R(G​::​*)(A...) cv &@~opt~@ noexcept@~opt~@` [or of the form `R(*)(G $cv$ $ref$@~opt~@, A...) noexcept@~opt~@`]{.rm} for a class type `G`[.]{.rm} [, or]{.addu}
+
+* [#.#]{.pnum} [`decltype(​&F​::​operator())` is of the form `R(*)(A...)  noexcept@~opt~@` and `f.operator()` is well-formed when treated as an unevaluated operand for an lvalue `f` of type `F`, or]{.addu}
+
+* [#.#]{.pnum} [`decltype(&F::operator())` is of the form `R(*)(G $cv$ $ref$@~opt~@, A...) noexcept@~opt~@` for a class type `G`.]{.addu}
+
+[16]{.pnum} *Remarks*: The deduced type is `function<R(A...)>`.
 :::
 
-Change the deduction guide for `packaged_task` in [futures.task.members]{.sref}/7-8 in the same way (it's nearly the same wording today):
+Change the deduction guide for `packaged_task` in [futures.task.members]{.sref}/7-8 in the same way:
 
 ::: bq
 ```cpp
 template <class F> packaged_task(F) -> packaged_task<@_see below_@>;
 ```
 
-[7]{.pnum} *Constraints*: `&F​::​operator()` is well-formed when treated as an unevaluated operand and `decltype(​&F​::​operator())` is [either]{.addu} of the form `R(G​::​*)(A...) cv &@~opt~@ noexcept@~opt~@` for a class type `G` [or of the form `R(*)(A...) noexcept@~opt~@`]{.addu}.
+[7]{.pnum} *Constraints*: `&F​::​operator()` is well-formed when treated as an unevaluated operand and [either]{.addu}
+
+* [#.#]{.pnum} `decltype(​&F​::​operator())` is [either]{.rm} of the form `R(G​::​*)(A...) cv &@~opt~@ noexcept@~opt~@` [or of the form `R(*)(G $cv$ $ref$@~opt~@, A...) noexcept@~opt~@`]{.rm} for a class type `G`[.]{.rm} [, or]{.addu}
+
+* [#.#]{.pnum} [`decltype(​&F​::​operator())` is of the form `R(*)(A...)  noexcept@~opt~@` and `f.operator()` is well-formed when treated as an unevaluated operand for an lvalue `f` of type `F`, or]{.addu}
+
+* [#.#]{.pnum} [`decltype(&F::operator())` is of the form `R(*)(G $cv$ $ref$@~opt~@, A...) noexcept@~opt~@` for a class type `G`.]{.addu}
 
 [8]{.pnum} *Remarks*: The deduced type is `packaged_task<R(A...)>`.
 :::
@@ -364,3 +376,16 @@ Add to [cpp.predefined]{.sref}/table 19:
 :::
 
 with the appropriate value. This allows define function objects or lambdas to have conditionally static call operators when possible.
+
+
+---
+references:
+    - id: LWG3617
+      citation-label: LWG3617
+      title: "`function`/`packaged_task` deduction guides and deducing `this`"
+      author:
+        - family: Barry Revzin
+      issued:
+        year: 2021
+      URL: https://cplusplus.github.io/LWG/issue3617
+---
