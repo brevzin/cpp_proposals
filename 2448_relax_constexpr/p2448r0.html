@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-10-05" />
+  <meta name="dcterms.date" content="2021-10-13" />
   <title>Relaxing some constexpr restrictions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-10-05</td>
+    <td>2021-10-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      EWG<br>
+      CWG<br>
     </td>
   </tr>
   <tr>
@@ -564,16 +564,53 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#abstract"><span class="toc-section-number">1</span> Abstract<span></span></a></li>
-<li><a href="#maybe-not-now-but-soon"><span class="toc-section-number">2</span> Maybe Not Now, But Soon<span></span></a></li>
-<li><a href="#sometimes-maybe-sometimes-always"><span class="toc-section-number">3</span> Sometimes Maybe, Sometimes Always<span></span></a></li>
-<li><a href="#onwards-to-constexpr-classes"><span class="toc-section-number">4</span> Onwards to constexpr classes<span></span></a></li>
-<li><a href="#proposal"><span class="toc-section-number">5</span> Proposal<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#revision-history"><span class="toc-section-number">2</span> Revision History<span></span></a></li>
+<li><a href="#maybe-not-now-but-soon"><span class="toc-section-number">3</span> Maybe Not Now, But Soon<span></span></a></li>
+<li><a href="#sometimes-maybe-sometimes-always"><span class="toc-section-number">4</span> Sometimes Maybe, Sometimes Always<span></span></a></li>
+<li><a href="#onwards-to-constexpr-classes"><span class="toc-section-number">5</span> Onwards to constexpr classes<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">6</span> Proposal<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
 <p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> that might never evaluate to a constant expression. But… so what if they don’t? The goal of this paper is to stop diagnosing problems that don’t exist.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="maybe-not-now-but-soon"><span class="header-section-number">2</span> Maybe Not Now, But Soon<a href="#maybe-not-now-but-soon" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">2</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>A draft of the first revision of this paper was discussed in an <a href="https://wiki.edg.com/bin/view/Wg21telecons2021/EWG-2021-10-13">EWG telecon</a>, where the following poll was taken:</p>
+<blockquote>
+<p>send P2448 to electronic polling, targeting CWG for C++23.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10</td>
+<td>8</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p>This first published revision thus targets CWG.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="maybe-not-now-but-soon"><span class="header-section-number">3</span> Maybe Not Now, But Soon<a href="#maybe-not-now-but-soon" class="self-link"></a></h1>
 <p><code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions and function templates in C++ generally speaking mean <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. Not all instantiations or evaluations must be invocable at compile time, it’s just that there must be at least one set of function arguments in at least one instantiation that works.</p>
 <p>And this isn’t just generally speaking, this is enshrined as a rule: <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6:</p>
 <div class="quote">
@@ -616,7 +653,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Moreover, while it’s possible to write the above for <code class="sourceCode cpp">std<span class="op">::</span>optional</code>, I’m not sure that it’s common for other library to provide macros that can be used to mark functions conditionally <code class="sourceCode cpp"><span class="kw">constexpr</span></code> like this. Or, indeed, if there is even another such example. So if I’m a consumer of a library that might have some functionality <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in one version but more functionality <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in the next, I always have to lag.</p>
 <p>Such diagnosis may have made sense in the C++11 days, but now that we’re approaching C++23 where more and more things are <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and more and more libraries will mark more of their functions <code class="sourceCode cpp"><span class="kw">constexpr</span></code> because they can be, it seems strictly better to just reserve diagnosing <code class="sourceCode cpp"><span class="kw">constexpr</span></code> violations to the place where we already have to diagnose them: when you write code that <em>must</em> be evaluated at compile time.</p>
 <p>Put differently, the current rule is there must be some tuple (function arguments, template arguments) for which a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function invocation is a constant expression. But there’s really another input here: (function arguments, template arguments, version). The version here might be the language version, it might be a bunch of library versions. Ultimately, it’s a question of time. A function may not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> today, but it may be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> soon. Diagnosing it as not being <code class="sourceCode cpp"><span class="kw">constexpr</span></code> <em>yet</em> seems harmful to the question of evolving code.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="sometimes-maybe-sometimes-always"><span class="header-section-number">3</span> Sometimes Maybe, Sometimes Always<a href="#sometimes-maybe-sometimes-always" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="sometimes-maybe-sometimes-always"><span class="header-section-number">4</span> Sometimes Maybe, Sometimes Always<a href="#sometimes-maybe-sometimes-always" class="self-link"></a></h1>
 <p><code class="sourceCode cpp"><span class="kw">constexpr</span></code> usually means <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. But sometimes it actually means <em>always</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. That case comes up with explicitly defaulted functions. From <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3:</p>
 <div class="quote">
 <p>An explicitly-defaulted function that is not defined as deleted may be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> only if it is <code class="sourceCode cpp"><span class="kw">constexpr</span></code>-compatible ([special], [class.compare.default]). A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.</p>
@@ -628,7 +665,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">constexpr</span> Wrapper<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb4-4"><a href="#cb4-4"></a>    <span class="kw">constexpr</span> Wrapper<span class="op">(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb4-5"><a href="#cb4-5"></a>    <span class="kw">constexpr</span> Wrapper<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>    </span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
 <span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">constexpr</span> T get<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> t; <span class="op">}</span></span>
 <span id="cb4-8"><a href="#cb4-8"></a>    <span class="kw">constexpr</span> <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb4-9"><a href="#cb4-9"></a><span class="kw">private</span><span class="op">:</span></span>
@@ -660,7 +697,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-3"><a href="#cb7-3"></a>    Wrapper<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb7-4"><a href="#cb7-4"></a>    Wrapper<span class="op">(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb7-5"><a href="#cb7-5"></a>    <span class="kw">constexpr</span> Wrapper<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>    </span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
 <span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">constexpr</span> T get<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> t; <span class="op">}</span></span>
 <span id="cb7-8"><a href="#cb7-8"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb7-9"><a href="#cb7-9"></a><span class="kw">private</span><span class="op">:</span></span>
@@ -668,7 +705,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-11"><a href="#cb7-11"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>So I have some functions marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and some not, but all of them are still usable during constant evaluation time (where appropriate based on <code class="sourceCode cpp">T</code>). The lack of consistency here is a bit jarring. <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions should always be <em>maybe</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, not <em>must be</em> <code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="onwards-to-constexpr-classes"><span class="header-section-number">4</span> Onwards to constexpr classes<a href="#onwards-to-constexpr-classes" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="onwards-to-constexpr-classes"><span class="header-section-number">5</span> Onwards to constexpr classes<a href="#onwards-to-constexpr-classes" class="self-link"></a></h1>
 <p>We have a proposal in front of us to allow annotating the entire class as being <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, to avoid all these extra annotations <span class="citation" data-cites="P2350R1">[<a href="#ref-P2350R1" role="doc-biblioref">P2350R1</a>]</span>. And that proposal currently runs into both issues:</p>
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
@@ -676,7 +713,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-3"><a href="#cb8-3"></a>    Wrapper<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb8-4"><a href="#cb8-4"></a>    Wrapper<span class="op">(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb8-5"><a href="#cb8-5"></a>    Wrapper<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb8-6"><a href="#cb8-6"></a>    </span>
+<span id="cb8-6"><a href="#cb8-6"></a></span>
 <span id="cb8-7"><a href="#cb8-7"></a>    <span class="dt">void</span> reset<span class="op">()</span> <span class="op">{</span> t<span class="op">.</span>reset<span class="op">()</span>; <span class="op">}</span></span>
 <span id="cb8-8"><a href="#cb8-8"></a>    <span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>Wrapper <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb8-9"><a href="#cb8-9"></a><span class="kw">private</span><span class="op">:</span></span>
@@ -685,7 +722,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Are all of these functions okay? I would argue that they <em>should</em> all be okay, but per the wording they’re currently not.</p>
 <p>I want <code class="sourceCode cpp">Wrapper</code> to be entirely <code class="sourceCode cpp"><span class="kw">constexpr</span></code> where feasible. Some of those functions may not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> for all types, and that’s fine. Some of these functions may not be able to be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in C++N but may be later, and I don’t want to have to go back and either annotate against this (which I don’t think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">6</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Strike <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6 and the example following it, in its entirety, along with the second sentence in /7:</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
@@ -728,7 +765,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-8"><a href="#cb10-8"></a>    S(S&amp;);                                // OK: private copy constructor</span>
 <span id="cb10-9"><a href="#cb10-9"></a>  };</span>
 <span id="cb10-10"><a href="#cb10-10"></a>  S::S(S&amp;) = default;                     // OK: defines copy constructor</span>
-<span id="cb10-11"><a href="#cb10-11"></a>  </span>
+<span id="cb10-11"><a href="#cb10-11"></a></span>
 <span id="cb10-12"><a href="#cb10-12"></a>  struct T {</span>
 <span id="cb10-13"><a href="#cb10-13"></a>    T();</span>
 <span id="cb10-14"><a href="#cb10-14"></a>    T(T &amp;&amp;) noexcept(false);</span>
@@ -743,7 +780,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P2231R1">
 <p>[P2231R1] Barry Revzin. 2021-02-12. Add further constexpr support for optional/variant. <br />
