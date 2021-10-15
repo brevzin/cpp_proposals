@@ -35,6 +35,7 @@ make all of my papers.
 - [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 - [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
+- [p2415r1 - What is a `view`?](2415_what_view/p2415r1.html)
 
 #### C++23
 
@@ -72,7 +73,6 @@ None.
 - [p2286r2 - Formatting Ranges](2286_fmt_ranges/p2286r2.html).
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
 - [p2387r1 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r1.html).
-- [p2415r1 - What is a `view`?](2415_what_view/p2415r1.html)
 - [p2441r0 - `views::join_with`](2441_join_with/p2441r0.html)
 - [p2446r0 - `views::move`](2441_move_view/p2446r0.html)
 
@@ -85,6 +85,7 @@ None.
 
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
+- [p2481r0 - Forwarding reference to specific type/template](2481_forward_ref/forward-ref.md).
 
 ### Rejected
 
