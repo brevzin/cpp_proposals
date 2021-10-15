@@ -1,6 +1,6 @@
 ---
 title: "Forwarding reference to specific type/template"
-document: DxxxxR0
+document: P2481R0
 date: today
 audience: EWG
 author:
@@ -321,6 +321,48 @@ The advantages are that it's clearer that we're only deducing `const`-ness and r
 The disadvantages are the obvious weirdness of the syntax, _especially_ for figuring out the value category, and the mandatory metaprogramming around applying those boolean values that we deduce through the types. `apply_const` and `apply_const_ref` (as I'm arbitrarily calling them here, the former appears as an exposition-only trait in Ranges under the name `$maybe-const$`) will be _everywhere_, and those aren't exactly obvious to understand either. It may be tempting to allow writing `int const(false) &&(true)` as a type directly to facilitate writing such code (this would be `int&&`), but this seems facially terrible.
 
 There's further issues that `int const(true)` isn't quite valid grammar today, but it's pretty close. `const(true)` looks like a cast, and it's not unreasonable that we may at some point consider `const(x)` as a language cast version of `std::as_const(x)`.
+
+But there is one entirely unrelated benefit. Consider trying to write a function that accepts any function pointer:
+
+::: bq
+```cpp
+template <typename R, typename... Args, bool B>
+void accepts_function_ptr(R (*p)(Args...) noexcept(B));
+```
+:::
+
+That's all you need (if we ignore varargs, assume the adoption of [@CWG2355] - which was accepted but not fully processed yet). And note here the deduction of `noexcept`-ness (and the usage of it on a function type) very closely resembles the kind of deduction of `const` and value category discussed in this section.
+
+But today if we wanted to deduce a pointer to _member_ function, we have to write a whole lot more - precisely because we can't deduce all the other stuff at the end of the type:
+
+::: bq
+```cpp
+// this only accepts non-const pointers to member functions that have no ref-qualifier
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) noexcept(B));
+
+// so we also need this one
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) const noexcept(B));
+
+// ... and this one
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) & noexcept(B));
+
+// ... and also this one
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) && noexcept(B));
+
+// ... and then also these two
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) const& noexcept(B));
+
+template <typename R, typename C, typename... Args, bool B>
+void accepts_member_function_ptr(R (C::*p)(Args...) const&& noexcept(B));
+```
+:::
+
+The direction where we can deduce `const` in the same way that we can deduce `noexcept` provides a much better solution for this. Although here, unlike the examples presented earlier, we're not simply selecting between `&` and `&&`. Here, we have three options. Does that mean a different design then? And what would it look like to handle both cases? It's a bit unclear.
 
 ## `qualifiers Q`
 
