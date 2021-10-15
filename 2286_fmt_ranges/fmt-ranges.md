@@ -13,8 +13,8 @@ toc: true
 
 Since [@P2286R2], several major changes:
 
-* This paper assumes the adoption of [@P2418R0], which affects how [non-`const`-iterable views](#how-to-support-those-views-which-are-not-const-iterable) are handled. This paper now introduces two concepts (`formattable` and `const_formattable`) instead of just one. 
-* Extended discussion and functionality for various [representations](#what-representation), including how to quote strings properly and how to format associative ranges. 
+* This paper assumes the adoption of [@P2418R0], which affects how [non-`const`-iterable views](#how-to-support-those-views-which-are-not-const-iterable) are handled. This paper now introduces two concepts (`formattable` and `const_formattable`) instead of just one.
+* Extended discussion and functionality for various [representations](#what-representation), including how to quote strings properly and how to format associative ranges.
 * Introduction of format specifiers of all kinds and discussion of how to make them work more broadly.
 * Removed the wording, since the priority is the design.
 
@@ -46,11 +46,11 @@ Java (where the obvious thing prints something useless, but there's a non-obviou
 ```java
 import java.util.Arrays;
 
-class Main {  
-  public static void main(String args[]) { 
+class Main {
+  public static void main(String args[]) {
     System.out.println("xyx".split("x"));
     System.out.println(Arrays.toString("xyx".split("x")));
-  } 
+  }
 }
 ```
 outputs
@@ -139,28 +139,28 @@ int main() {
     // need to predeclare this because we can't split an rvalue string
     std::string s = "xyx";
     auto parts = s | std::views::split('x');
-    
+
     // nope
     std::cout << parts;
-    
+
     // nope (assuming std::print from P2093)
     std::print("{}", parts);
-    
-    
+
+
     std::cout << "[";
     char const* delim = "";
     for (auto part : parts) {
         std::cout << delim;
-        
+
         // still nope
         std::cout << part;
-        
+
         // also nope
         std::print("{}", part);
-        
+
         // this finally works
         std::ranges::copy(part, std::ostream_iterator<char>(std::cout));
-        
+
         // as does this
         for (char c : part) {
             std::cout << c;
@@ -172,9 +172,9 @@ int main() {
 ```
 :::
 
-This took me more time to write than any of the solutions in any of the other languages. Including the Go solution, which contains 100% of all the lines of Go I've written in my life. 
+This took me more time to write than any of the solutions in any of the other languages. Including the Go solution, which contains 100% of all the lines of Go I've written in my life.
 
-Printing is a fairly fundamental and universal mechanism to see what's going on in your program. In the context of ranges, it's probably the most useful way to see and understand what the various range adapters actually do. But none of these things provides an `operator<<` (for `std::cout`) or a formatter specialization (for `format`). And the further problem is that as a user, I can't even do anything about this. I can't just provide an `operator<<` in `namespace std` or a very broad specialization of `formatter` - none of these are program-defined types, so it's just asking for clashes once you start dealing with bigger programs. 
+Printing is a fairly fundamental and universal mechanism to see what's going on in your program. In the context of ranges, it's probably the most useful way to see and understand what the various range adapters actually do. But none of these things provides an `operator<<` (for `std::cout`) or a formatter specialization (for `format`). And the further problem is that as a user, I can't even do anything about this. I can't just provide an `operator<<` in `namespace std` or a very broad specialization of `formatter` - none of these are program-defined types, so it's just asking for clashes once you start dealing with bigger programs.
 
 The only mechanisms I have at my disposal to print something like this is either
 
@@ -257,7 +257,7 @@ There are several questions to ask about what the representation should be for p
 
 Should `std::vector<int>{1, 2, 3}` be printed as `{1, 2, 3}` or `[1, 2, 3]`? At the time of [@P2286R1], `fmt` used `{}`s but changed to use `[]`s for consistency with Python ([400b953f](https://github.com/fmtlib/fmt/commit/400b953fbb420ff1e47565303c64223445a51955)).
 
-Even though in C++ we initialize `vector`s (and, generally, other containers as well) with `{}`s while Python's uses `[1, 2, 3]` (and likewise Rust has `vec![1, 2, 3]`), `[]` is typical representationally so seems like the clear best choice here. 
+Even though in C++ we initialize `vector`s (and, generally, other containers as well) with `{}`s while Python's uses `[1, 2, 3]` (and likewise Rust has `vec![1, 2, 3]`), `[]` is typical representationally so seems like the clear best choice here.
 
 ### `pair` and `tuple`
 
@@ -267,7 +267,7 @@ Should `std::pair<int, int>{4, 5}` be printed as `{4, 5}` or `(4, 5)`? Here, eit
 
 Should `std::map<int, int>{@{@1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (as follows directly from the two previous choices) or as `{1: 2, 3: 4}` (which makes the *association* clearer in the printing)? Both Python and Rust print their associating containers this latter way.
 
-The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`? 
+The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`?
 
 If we print `map`s as any other range of pairs, there's nothing left to do. If we print `map`s as associations, then we additionally have to answer the question of how user-defined associative containers can get printed in the same way. Hold onto this thought for a minute.
 
@@ -290,13 +290,13 @@ or
 ```
 :::
 
-While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well. 
+While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well.
 
-Escaping seems like the most desirable behavior. Following Rust's behavior, we escape `\t`, `\r`, `\n`, `\\`, `"` (for `string` types only), `'` (for `char` types only), and extended graphemes (if Unicode). 
+Escaping seems like the most desirable behavior. Following Rust's behavior, we escape `\t`, `\r`, `\n`, `\\`, `"` (for `string` types only), `'` (for `char` types only), and extended graphemes (if Unicode).
 
-Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior?
+Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior for their own string-like types? And `char` and `string` aren't the only types that may desire to have some kind of _debug_ format and some kind of regular format, how to differentiate those?
 
-Moreover, it's all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings *unescaped*? 
+Moreover, it's all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings *unescaped*? I'll get back to this.
 
 ### Format Specifiers
 
@@ -315,16 +315,40 @@ fmt::format("{:*^30}", "centered");  // use '*' as a fill char
 ```
 :::
 
-Earlier revisions of this paper suggested that formatting ranges and tuples would accept no format specifiers, but there ineed are quite a few things we may want to do here (as by Tomasz Kamiński and Peter Dimov):
+Earlier revisions of this paper suggested that formatting ranges and tuples would accept no format specifiers, but there indeed are quite a few things we may want to do here (as by Tomasz Kamiński and Peter Dimov):
 
 * Formatting a range of pairs as a map (the `key: value` syntax rather than the `(key, value)` one)
 * Formatting a range of chars as a string (i.e. to print `hello` rather than `['h', 'e', 'l', 'l', 'o']`)
 
 But these are just providing a specifier for how we format the range itself. How about how we format the elements of the range? Can I conveniently format a range of integers, printing their values as hex? Or as characters? Or print a range of chrono time points in whatever format I want? That's fairly powerful.
 
-The problem is how do we actually *do that*.
+The problem is how do we actually *do that*. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I'll start with a table of examples and follow up with a more detailed explanation. Instead of writing a bunch of examples like `print("{:?}\n", v)`, I'm just displaying the format string in one column (the `"{:?}"` here) and the argument in another (the `v`):
 
-
+|Format String|Contents|Formatted Output|
+|-|-|-|
+|`{}`{.x}|`"hello"s`|`hello`{.x}|
+|`{:?}`{.x}|`"hello"s`|`"hello"`{.x}|
+|`{}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
+|`{:}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
+|`{:?}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
+|`{::*^10}`{.x}|`vector{"hello"s, "world"s}`|`[**hello***, **world***]`{.x}|
+|`{:}`{.x}|`42`|`42`{.x}|
+|`{:#x}`{.x}|`42`|`0x2a`{.x}|
+|`{}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`[72, 101, 108, 108, 111]`{.x}|
+|`{::#x}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`[0x48, 0x65, 0x6c, 0x6c, 0x6f]`{.x}|
+|`{::c}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`[H, e, l, l, o]`{.x}|
+|`{::?c}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`['H', 'e', 'l', 'l', 'o']`{.x}|
+|`{:s}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`Hello`{.x}|
+|`{:?s}`{.x}|`vector<int>{72, 101, 108, 108, 111}`|`"Hello"`{.x}|
+|`{}`{.x}|`pair{42, "hello"s}`|`(42, "hello")`{.x}|
+|`{::#x:*^10}`{.x}|`pair{42, "hello"s}`|`(0x2a, **hello***)`{.x}|
+|`{:|#x|*^10}`{.x}|`pair{42, "hello"s}`|`(0x2a, **hello***)`{.x}|
+|`{}`{.x}|`vector{pair{42, "hello"s}}`|`[(42, "hello")]`{.x}|
+|`{:m}`{.x}|`vector{pair{42, "hello"s}}`|`{42: "hello"}`{.x}|
+|`{:m::#x:*^10}`{.x}|`vector{pair{42, "hello"s}}`|`{0x2a: **hello***}`{.x}|
+|`{}`{.x}|`vector{vector{65}, vector{72, 101}}`|`[[65], [72, 101]]`{.x}|
+|`{:::c}`{.x}|`vector{vector{65}, vector{72, 101}}`|`[[A], [H, e]]`{.x}|
+|`{::?s}`{.x}|`vector{vector{65}, vector{72, 101}}`|`["A", "He"]`{.x}|
 
 ### Customization
 
@@ -355,7 +379,7 @@ struct formatter<Foo, char> {
     constexpr auto format(Foo const& f, FormatContext& ctx) {
         return format_to(ctx.out(), "Foo(bar={}, baz={})", f.bar, /* ???? */);
     }
-}; 
+};
 ```
 :::
 
@@ -368,7 +392,7 @@ Let's say you have your own implementation of `Optional`, that you want to forma
 template <formattable<char> T>
 struct formatter<Optional<T>, char> {
     // we'll skip parse for now
-    
+
     template <typename FormatContext>
     auto format(Optional<T> const& opt, FormatContext& ctx) {
         if (not opt) {
@@ -377,11 +401,11 @@ struct formatter<Optional<T>, char> {
             return format_to(ctx.out(), "Some({})", *opt);
         }
     }
-}; 
+};
 ```
 :::
 
-If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules we just went through. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context? 
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules we just went through. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context?
 
 Put differently, how does the library implement formatting `pair` and `tuple` and arbitrary `range`s, which also would have to do this dance of conditionally quoting character and string types? Users need that functionality too, and we need to provide it.
 
@@ -396,7 +420,7 @@ Put differently, how does the library implement formatting `pair` and `tuple` an
 
 
 
-Having a type trait ([@P2286R2] proposed `enable_formatting_as_string` as a variable template to opt into 
+Having a type trait ([@P2286R2] proposed `enable_formatting_as_string` as a variable template to opt into
 
 There's basically two different approaches to customization here:
 
@@ -452,7 +476,7 @@ std::print("{}\n", words);   // ["  some  ", " words  ", "here"]
 
 auto trimmed = words | transform(views::trim_whitespace);
 std::print("{}\n", trimmed); // [['s', 'o', 'm', 'e'], ['w', 'o', 'r', 'd', 's'], ['h', 'e', 'r', 'e']]
-std::print("{}\n", trimmed | views::transform(format_as_string));  
+std::print("{}\n", trimmed | views::transform(format_as_string));
                              // ["some", "words", "here"]
 ```
 :::
@@ -466,7 +490,7 @@ Let's say you have your own implementation of `Optional`, that you want to forma
 template <formattable<char> T>
 struct formatter<Optional<T>, char> {
     // we'll skip parse for now
-    
+
     template <typename FormatContext>
     auto format(Optional<T> const& opt, FormatContext& ctx) {
         if (not opt) {
@@ -475,11 +499,11 @@ struct formatter<Optional<T>, char> {
             return format_to(ctx.out(), "Some({})", *opt);
         }
     }
-}; 
+};
 ```
 :::
 
-If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which is fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advanage of the quoting rules we just went through. Put differently: how would the standard library implement any of the functionality I'm talking about here? 
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which is fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advanage of the quoting rules we just went through. Put differently: how would the standard library implement any of the functionality I'm talking about here?
 
 Well, we could start by being very explicit about this:
 
@@ -503,7 +527,7 @@ auto formatter<Optional<T>, char>::format(Optional<T> const& opt, FormatContext&
 ```
 :::
 
-Note that we need *both* `enable_formatting_as_string` here *and also* `format_as_string`. Because these types inherently have two different formatting rules. 
+Note that we need *both* `enable_formatting_as_string` here *and also* `format_as_string`. Because these types inherently have two different formatting rules.
 
 I don't want every wrapper type to have to write all of that, so we clearly need another standard facility to do this. We can call it `format_as_quoted`:
 
@@ -528,9 +552,9 @@ In short:
 1. Ranges format as `[a, b, c]`
 2. Tuples and pairs format as `(x, y, z)`
 3. Chars and strings when in ranges and tuples format as quoted. User-defined strings can opt in to this quoting by specializing `enable_formatting_as_string`.
-4. Standard library associative containers format as `{k1: v1, k2: v2}` or `{k1, k2}`. 
+4. Standard library associative containers format as `{k1: v1, k2: v2}` or `{k1, k2}`.
 5. Different formatting can be opted into by wrapping a type in `format_as_char`, `format_as_string`, `format_as_set`, `format_as_map`. The function `format_as_meow` returns a `meow_format_wrapper<T>` (which contains a single member of type `T*`).
-6. A generic type can be formatted as quoted by wrapping it with `format_as_quoted` (which may perform either `format_as_char`, `format_as_string`, or identity). 
+6. A generic type can be formatted as quoted by wrapping it with `format_as_quoted` (which may perform either `format_as_char`, `format_as_string`, or identity).
 
 ## What additional functionality?
 
@@ -549,16 +573,16 @@ There's three layers of potential functionality:
     assert_eq!(format!("{}", matrix_formatter),
                "1, 2, 3\n4, 5, 6");
     ```
-    
+
 This paper suggests the first two and encourages research into the third.
 
 ## What about format specifiers?
 
 The implementation experience in `fmt` is that directly formatting ranges does _not_ support any format specifiers, but `fmt::join` supports providing a specifier per element as well as providing the delimiter and wrapping brackets.
 
-We could add the same format specifier support for direct formatting of ranges as `fmt::join` supports, but it doesn't seem especially worthwhile. If you don't care about formatting, `"{}"` is all you need. If you do care about formatting, it's likely that you care about more than just the formatting of each individual element &mdash; you probably care about other things do. At which point, you'd likely need to use `fmt::join` anyway. 
+We could add the same format specifier support for direct formatting of ranges as `fmt::join` supports, but it doesn't seem especially worthwhile. If you don't care about formatting, `"{}"` is all you need. If you do care about formatting, it's likely that you care about more than just the formatting of each individual element &mdash; you probably care about other things do. At which point, you'd likely need to use `fmt::join` anyway.
 
-That seems like the right mix of functionality to me. 
+That seems like the right mix of functionality to me.
 
 ## How to support those views which are not `const`-iterable?
 
@@ -574,9 +598,9 @@ std::print("{}\n", cannot_even);
 ```
 :::
 
-`cannot_even` isn't iterable, because it's `const`. But it *is* copyable and it *is* a view. Prior revisions of this paper supported this case by copying it, which is what the `fmt` library also used to do. But as of yesterday ([111de881](https://github.com/fmtlib/fmt/commit/111de881)), this situation is no longer supported. If you want to print a `const` object that is a copyable `view` that is not `const`-iterable, it is up to you to copy it to produce a non-`const` object. This has the benefit of making the copy more obvious to the user. 
+`cannot_even` isn't iterable, because it's `const`. But it *is* copyable and it *is* a view. Prior revisions of this paper supported this case by copying it, which is what the `fmt` library also used to do. But as of yesterday ([111de881](https://github.com/fmtlib/fmt/commit/111de881)), this situation is no longer supported. If you want to print a `const` object that is a copyable `view` that is not `const`-iterable, it is up to you to copy it to produce a non-`const` object. This has the benefit of making the copy more obvious to the user.
 
-Alternatively, users can use the proposed equivalent of `fmt::join` to avoid the copy. 
+Alternatively, users can use the proposed equivalent of `fmt::join` to avoid the copy.
 
 ## Specifying formatters for ranges
 
@@ -586,7 +610,7 @@ This would basically fall out no matter how we approach implementing such a thin
 
 ## `format` or `std::cout`?
 
-Just `format` is sufficient. 
+Just `format` is sufficient.
 
 ## What about `vector<bool>`?
 
@@ -598,7 +622,7 @@ For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there's no 
 
 `vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn't offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it's also very cheap to provide a formatter specialization for `vector<bool>::reference`.
 
-Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. Or, rather, since it's actually defined as `vector<bool, Alloc>::reference`, this isn't necessarily feasible, so instead this paper proposes a specialization for `vector<bool, Alloc>` at top level. 
+Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. Or, rather, since it's actually defined as `vector<bool, Alloc>::reference`, this isn't necessarily feasible, so instead this paper proposes a specialization for `vector<bool, Alloc>` at top level.
 
 
 # Proposal
@@ -612,7 +636,7 @@ The standard library should add specializations of `formatter` for:
 
 Ranges should be formatted as `[x, y, z]` while tuples should be formatted as `(a, b, c)`. `std::array` is tuple-like, but not a tuple, it's treated as a range. In the context of formatting ranges, pairs, and tuples, character types (in the [basic.fundamental]{.sref} sense) or string-like (e.g. `string`, `string_view`, controlled by `enable_formatting_as_string`) should be formatted as being quoted (characters using `'` and strings using `"`).
 
-Formatting ranges does not support any additional format specifiers. 
+Formatting ranges does not support any additional format specifiers.
 
 The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted.
 
@@ -636,5 +660,5 @@ references:
         - family: Victor Zverovich
       issued:
         -year: 2021
-      URL: https://wg21.link/p2418r0  
+      URL: https://wg21.link/p2418r0
 ---
