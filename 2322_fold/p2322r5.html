@@ -1207,7 +1207,7 @@ Algorithm returns…
 <p>But that’s not actually required to be valid. The projection is required to take either <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code> or <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;&amp;</span></code> (specifically an <em>lvalue</em> of the value type). So you <em>have</em> to write this:</p>
 <blockquote>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span> init_<span class="op">(*</span>first<span class="op">)</span>;</span>
-<span id="cb23-2"><a href="#cb23-2"></a>optional<span class="op">&lt;</span>U<span class="op">&gt;</span> init<span class="op">(</span>in_place, invoke<span class="op">(</span>proj, init_<span class="op">))</span>;</span></code></pre></div>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">auto</span> init <span class="op">=</span> invoke<span class="op">(</span>proj, init_<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>Which means that the only way to get this right is to incur an extra copy.</p>
 <p>Which means we’re performing an extra copy in the typical case (the iterator does not yield a proxy reference and there is no projection) simply to be able to support the rare case. That seems problematic. And we don’t have any other algorithm where we’d need to get a projected <em>value</em>, we only ever need projected <em>references</em> (algorithms like <code class="sourceCode cpp">min</code> which return a value type return the value type of the original range, not the projected range).</p>
@@ -1304,7 +1304,7 @@ Algorithm returns…
 <span id="cb28-33"><a href="#cb28-33"></a>    <span class="kw">concept</span> <em>indirectly-binary-right-foldable</em> <span class="op">=</span>    <span class="co">// exposition only</span></span>
 <span id="cb28-34"><a href="#cb28-34"></a>        <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span><em>flipped</em><span class="op">&lt;</span>F<span class="op">&gt;</span>, T, I<span class="op">&gt;</span>;</span>
 <span id="cb28-35"><a href="#cb28-35"></a></span>
-<span id="cb28-36"><a href="#cb28-36"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T</span>
+<span id="cb28-36"><a href="#cb28-36"></a>    <span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> T,</span>
 <span id="cb28-37"><a href="#cb28-37"></a>      <em>indirectly-binary-left-foldable</em><span class="op">&lt;</span>T, I<span class="op">&gt;</span> F<span class="op">&gt;</span></span>
 <span id="cb28-38"><a href="#cb28-38"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> foldl<span class="op">(</span>I first, S last, T init, F f<span class="op">)</span>;</span>
 <span id="cb28-39"><a href="#cb28-39"></a></span>

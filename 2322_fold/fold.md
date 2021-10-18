@@ -542,7 +542,7 @@ But that's not actually required to be valid. The projection is required to take
 ::: bq
 ```cpp
 iter_value_t<I> init_(*first);
-optional<U> init(in_place, invoke(proj, init_));
+auto init = invoke(proj, init_);
 ```
 :::
 
@@ -666,7 +666,7 @@ namespace std {
     concept @*indirectly-binary-right-foldable*@ =    // exposition only
         @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;
 
-    template<input_iterator I, sentinel_for<I> S, class T
+    template<input_iterator I, sentinel_for<I> S, class T,
       @*indirectly-binary-left-foldable*@<T, I> F>
     constexpr auto foldl(I first, S last, T init, F f);
 
