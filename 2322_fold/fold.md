@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2322R4], removed the short-circuiting fold with one that simply returns the end iterator in addition to the value.
+Since [@P2322R4], removed the short-circuiting fold with one that simply returns the end iterator in addition to the value. Also removed the projections, see [the discussion](#no-projections).
 
 Since [@P2322R3], no changes in actual proposal, just some improvements in the description.
 
@@ -496,9 +496,82 @@ auto [iterator, value] = ranges::foldl_with_iter(r, init, op);
 
 Instead, you have to flip the binary operation - and we have no `flip` function adapter ([Boost.HOF](https://www.boost.org/doc/libs/1_77_0/libs/hof/doc/html/include/boost/hof/flip.html) does though).
 
+## No projections
+
+All the algorithms in `std::ranges` take a projection, but there's a problem in this case. For `foldl`, there's no problem - we just look over the iterators and do `invoke(proj, *first)` before passing that into the call to `f`.
+
+But for `foldl1`, we need to produce an initial _value_, rather than an initial _reference_. And with a projection, we can't... do that for iterators that give proxy references. Let's start by writing out what `foldl1` would be implemented as, without a projection, and then try to add it in:
+
+::: bq
+```cpp
+template <input_iterator I, sentinel_for<I> S,
+  indirectly-binary-left-foldable<iter_value_t<I>, I> F>
+  requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
+constexpr auto foldl1(I first, S last, F f) {
+  using U = decltype(ranges::foldl(first, last, iter_value_t<I>(*first), f));
+  if (first == last) {
+    return optional<U>(nullopt);
+  }
+
+  iter_value_t<I> init(*first); // <==
+  ++first;
+  return optional<U>(in_place,
+    ranges::foldl(std::move(first), std::move(last), std::move(init), std::move(f)));
+}
+```
+:::
+
+Now, how do we replace the commented line with a projected version of the same? We need a *value*. Imagine if `*first` yielded a `tuple<T&>` (as it does for `zip`) and our projection is `identity` (the common case). If we did:
+
+::: bq
+```cpp
+iter_value_t<projected<I, Proj>> init(invoke(proj, *first));
+```
+:::
+
+We'd still end up with a `tuple<T&>`, whereas we'd need to end up with a `tuple<T>`. The only way to get this right is to get a copy of the value first and _then_ project it, so that the projection takes `iter_value_t<I>` rather than `iter_reference_t<I>`:
+
+::: bq
+```cpp
+auto init = invoke(proj, iter_value_t<I>(*first));
+```
+:::
+
+But that means means we're performing an extra copy in the typical case (the iterator does not yield a proxy reference and there is no projection) simply to be able to support the rare case. That seems problematic. And we don't have any other algorithm where we'd need to get a projected _value_, we only ever need projected _references_ (algorithms like `min` which return a value type return the value type of the original range, not the projected range).
+
+This suggests dropping the projections for the `*1` variants (`foldl1`, `foldr1`, and `fold1_with_iter`). But then they're more inconsistent with the other variants, so this paper suggests simply not having projections at all. This doesn't cost you anything for some of the algorithms, since projections in these case can always be provided either as range adaptors or function adaptors.
+
+The expression that I'm not supporting:
+
+::: bq
+```cpp
+foldl(r, init, f, proj)
+```
+:::
+
+means the same as either this version using a range adaptor:
+
+::: bq
+```cpp
+foldl(r | views::transform(proj), init, f)
+```
+:::
+
+or this version using a function adaptor (Boost.HOF defines an adaptor `proj` such that `proj(p, f)(xs...)` means `f(p(xs)...)`. We need to project only the right hand argument, so here `proj_rhs(p, f)(x, y)` means `f(x, p(y))` as desired)
+
+::: bq
+```cpp
+foldl(r, init, proj_rhs(proj, f))
+```
+:::
+
+The version using `views::transform` is probably more familiar, but it won't work as well for `foldl_with_iter` since this would return `dangling` (since `transform` is never a borrowed range) but even with adjustment would return an iterator into the transformed range rather than the original range. This issue is one of the original cited motivations for projections in [@N4128]. The version using the function adaptor has no such issue, although proposing more function adaptors into the standard library is out of scope for this paper.
+
+In short, there are good reasons to avoid projections for `foldl1`, `foldr1`, and `foldl1_with_iter`. For consistency, I'm also removing the projections for `foldl`, `foldr`, and `foldl_with_iter`. This makes the folds inconsistent with the rest of the standard library algorithms (although at least internally consistent), but it doesn't actually cost them functionality.
+
 # Implementation Experience
 
-Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold].
+Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold] (with projections, although not quite correctly as it turns out).
 
 The algorithms returning an iterator have not been implemented in range-v3 yet, but they're exactly the same as their non-iterator-returning counterparts.
 
@@ -582,64 +655,64 @@ namespace std {
     concept @*indirectly-binary-right-foldable*@ =    // exposition only
         @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;
 
-    template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-    constexpr auto foldl(I first, S last, T init, F f, Proj proj = {});
+    template<input_iterator I, sentinel_for<I> S, class T
+      @*indirectly-binary-left-foldable*@<T, I> F>
+    constexpr auto foldl(I first, S last, T init, F f);
 
-    template<input_range R, class T, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-    constexpr auto foldl(R&& r, T init, F f, Proj proj = {});
+    template<input_range R, class T,
+      @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
+    constexpr auto foldl(R&& r, T init, F f);
 
-    template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+    template <input_iterator I, sentinel_for<I> S,
+      @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr auto foldl1(I first, S last, F f, Proj proj = {});
+    constexpr auto foldl1(I first, S last, F f);
 
-    template <input_range R, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
+    template <input_range R,
+      @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr auto foldl1(R&& r, F f, Proj proj = {});
+    constexpr auto foldl1(R&& r, F f);
 
-    template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-      @*indirectly-binary-right-foldable*@<T, projected<I, Proj>> F>
-    constexpr auto foldr(I first, S last, T init, F f, Proj proj = {});
+    template<bidirectional_iterator I, sentinel_for<I> S, class T,
+      @*indirectly-binary-right-foldable*@<T, I> F>
+    constexpr auto foldr(I first, S last, T init, F f);
 
-    template<bidirectional_range R, class T, class Proj = identity,
-      @*indirectly-binary-right-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-    constexpr auto foldr(R&& r, T init, F f, Proj proj = {});
+    template<bidirectional_range R, class T,
+      @*indirectly-binary-right-foldable*@<T, iterator_t<R>> F>
+    constexpr auto foldr(R&& r, T init, F f);
 
-    template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
-      @*indirectly-binary-right-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+    template <bidirectional_iterator I, sentinel_for<I> S,
+      @*indirectly-binary-right-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr auto foldr1(I first, S last, F f, Proj proj = {});
+    constexpr auto foldr1(I first, S last, F f);
 
-    template <bidirectional_range R, class Proj = identity,
-      @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
+    template <bidirectional_range R,
+      @*indirectly-binary-right-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr auto foldr1(R&& r, F f, Proj proj = {});
+    constexpr auto foldr1(R&& r, F f);
 
     template<class I, class T>
       using foldl_with_iter_result = in_value_result<I, T>;
     template<class I, class T>
       using foldl1_with_iter_result = in_value_result<I, T>;
 
-    template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-       @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-    constexpr $see below$ foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
+    template<input_iterator I, sentinel_for<I> S, class T,
+       @*indirectly-binary-left-foldable*@<T, I> F>
+    constexpr $see below$ foldl_with_iter(I first, S last, T init, F f);
 
-    template<input_range R, class T, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-    constexpr $see below$ foldl_with_iter(R&& r, T init, F f, Proj proj = {});
+    template<input_range R, class T,
+      @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
+    constexpr $see below$ foldl_with_iter(R&& r, T init, F f);
 
-    template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+    template <input_iterator I, sentinel_for<I> S,
+      @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr $see below$ foldl1_with_iter(I first, S last, F f, Proj proj = {});
+    constexpr $see below$ foldl1_with_iter(I first, S last, F f);
 
-    template <input_range R, class Proj = identity,
-      @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
+    template <input_range R,
+      @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr $see below$ foldl1_with_iter(R&& r, F f, Proj proj = {});
+    constexpr $see below$ foldl1_with_iter(R&& r, F f);
   }
 }
 ```
@@ -694,74 +767,74 @@ And add a new clause, [alg.fold]:
 
 ::: bq
 ```cpp
-template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-constexpr auto ranges::foldl(I first, S last, T init, F f, Proj proj = {});
+template<input_iterator I, sentinel_for<I> S, class T,
+  @*indirectly-binary-left-foldable*@<T, I> F>
+constexpr auto ranges::foldl(I first, S last, T init, F f);
 
-template<input_range R, class T, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-constexpr auto ranges::foldl(R&& r, T init, F f, Proj proj = {});
+template<input_range R, class T,
+  @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
+constexpr auto ranges::foldl(R&& r, T init, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f, proj).value`
+[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f).value`
 
 ```cpp
-template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+template <input_iterator I, sentinel_for<I> S,
+  @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto ranges::foldl1(I first, S last, F f, Proj proj = {});
+constexpr auto ranges::foldl1(I first, S last, F f);
 
-template <input_range R, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
+template <input_range R,
+  @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr auto ranges::foldl1(R&& r, F f, Proj proj = {});
+constexpr auto ranges::foldl1(R&& r, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f, proj).value`
+[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f).value`
 
 
 ```cpp
-template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-  @*indirectly-binary-right-foldable*@<T, projected<I, Proj>> F>
-constexpr auto ranges::foldr(I first, S last, T init, F f, Proj proj = {});
+template<bidirectional_iterator I, sentinel_for<I> S, class T,
+  @*indirectly-binary-right-foldable*@<T, I> F>
+constexpr auto ranges::foldr(I first, S last, T init, F f);
 
-template<bidirectional_range R, class T, class Proj = identity,
-  @*indirectly-binary-right-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-constexpr auto ranges::foldr(R&& r, T init, F f, Proj proj = {});
+template<bidirectional_range R, class T,
+  @*indirectly-binary-right-foldable*@<T, iterator_t<R>> F>
+constexpr auto ranges::foldr(R&& r, T init, F f);
 ```
 
 [4]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
-using U = decay_t<invoke_result_t<F&, indirect_result_t<Proj&, I>, T>>;
+using U = decay_t<invoke_result_t<F&, iter_reference_t<I>, T>>;
 
 if (first == last) {
     return U(std::move(init));
 }
 
 I tail = ranges::next(first, last);
-U accum = invoke(f, invoke(proj, *--tail), std::move(init));
+U accum = invoke(f, *--tail, std::move(init));
 while (first != tail) {
-    accum = invoke(f, invoke(proj, *--tail), std::move(accum));
+    accum = invoke(f, *--tail, std::move(accum));
 }
 return accum;
 ```
 :::
 
 ```cpp
-template <bidirectional_iterator I, sentinel_for<I> S, class Proj = identity,
-  @*indirectly-binary-right-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+template <bidirectional_iterator I, sentinel_for<I> S,
+  @*indirectly-binary-right-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto ranges::foldr1(I first, S last, F f, Proj proj = {});
+constexpr auto ranges::foldr1(I first, S last, F f);
 
-template <bidirectional_range R, class Proj = identity,
-  @*indirectly-binary-right-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
+template <bidirectional_range R,
+  @*indirectly-binary-right-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr auto ranges::foldr1(R&& r, F f, Proj proj = {});
+constexpr auto ranges::foldr1(R&& r, F f);
 ```
 
-[#]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f, proj))`.
+[#]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f))`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
@@ -773,21 +846,21 @@ if (first == last) {
 
 I tail = ranges::prev(ranges::next(first, std::move(last)));
 return optional<U>(in_place,
-    ranges::foldr(std::move(first), tail, iter_value_t<I>(*tail), std::move(f), std::move(proj)));
+    ranges::foldr(std::move(first), tail, iter_value_t<I>(*tail), std::move(f)));
 ```
 :::
 
 ```cpp
-template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-constexpr $see below$ foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
+template<input_iterator I, sentinel_for<I> S, class T,
+  @*indirectly-binary-left-foldable*@<T, I> F>
+constexpr $see below$ foldl_with_iter(I first, S last, T init, F f);
 
-template<input_range R, class T, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-constexpr $see below$ foldl_with_iter(R&& r, T init, F f, Proj proj = {});
+template<input_range R, class T,
+  @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
+constexpr $see below$ foldl_with_iter(R&& r, T init, F f);
 ```
 
-[#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>`
+[#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>`
 
 [#]{.pnum} *Effects*: Equivalent to:
 
@@ -797,9 +870,9 @@ if (first == last) {
     return {std::move(first), U(std::move(init))};
 }
 
-U accum = invoke(f, std::move(init), invoke(proj, *first));
+U accum = invoke(f, std::move(init), *first);
 for (++first; first != last; ++first) {
-    accum = invoke(f, std::move(accum), invoke(proj, *first));
+    accum = invoke(f, std::move(accum), *first);
 }
 return {std::move(first), std::move(accum)};
 ```
@@ -808,18 +881,18 @@ return {std::move(first), std::move(accum)};
 [#]{.pnum} *Remarks*: The return type is `foldl_with_iter_result<I, U>` for the first overload and `foldl_with_iter_result<borrowed_iterator_t<R>, U>` for the second overload.
 
 ```cpp
-template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+template <input_iterator I, sentinel_for<I> S,
+  @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr $see below$ foldl1_with_iter(I first, last, F f, Proj proj = {})
+constexpr $see below$ foldl1_with_iter(I first, last, F f)
 
-template <input_range R, class Proj = identity,
-  @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>F>
+template <input_range R,
+  @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr $see below$ foldl1_with_iter(R&& r, F f, Proj proj = {});
+constexpr $see below$ foldl1_with_iter(R&& r, F f);
 ```
 
-[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
+[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f))`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
@@ -831,7 +904,7 @@ if (first == last) {
 
 optional<U> init(in_place, *first);
 for (++first; first != last; ++first) {
-    *init = invoke(f, std::move(*init), invoke(proj, *first));
+    *init = invoke(f, std::move(*init), *first);
 }
 return {std::move(first), std::move(init)};
 ```
