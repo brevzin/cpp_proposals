@@ -568,7 +568,7 @@ foldl(r | views::transform(proj), init, f)
 ```
 :::
 
-or this version using a function adaptor (Boost.HOF defines an adaptor `proj` such that `proj(p, f)(xs...)` means `f(p(xs)...)`. We need to project only the right hand argument, so here `proj_rhs(p, f)(x, y)` means `f(x, p(y))` as desired)
+or this version using a function adaptor. Boost.HOF defines an adaptor `proj` such that `proj(p, f)(xs...)` means `f(p(xs)...)`. We need to project only the right hand argument, so here `proj_rhs(p, f)(x, y)` means `f(x, p(y))` as desired. One way to implement this is `std::bind(f, _1, std::bind(proj, _2))`.
 
 ::: bq
 ```cpp
@@ -787,7 +787,7 @@ template<input_range R, class T,
 constexpr auto ranges::foldl(R&& r, T init, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f).value`
+[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f).value`.
 
 ```cpp
 template <input_iterator I, sentinel_for<I> S,
@@ -801,7 +801,7 @@ template <input_range R,
 constexpr auto ranges::foldl1(R&& r, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f).value`
+[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f).value`.
 
 
 ```cpp
@@ -814,7 +814,7 @@ template<bidirectional_range R, class T,
 constexpr auto ranges::foldr(R&& r, T init, F f);
 ```
 
-[4]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
@@ -871,7 +871,7 @@ template<input_range R, class T,
 constexpr $see below$ foldl_with_iter(R&& r, T init, F f);
 ```
 
-[#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>`
+[#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
