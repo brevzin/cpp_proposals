@@ -1,6 +1,6 @@
 ---
 title: "Pipe support for user-defined range adaptors"
-document: P2387R1
+document: P2387R2
 date: today
 audience: LEWG
 author:
@@ -11,17 +11,19 @@ toc: true
 
 # Revision History
 
+Since [@P2387R1], added another feature test macro.
+
 Since [@P2387R0], added a feature test macro.
 
 # Introduction
 
-When we presented the C++23 Ranges Plan [@P2214R0] to LEWG, one of the arguments we made was that the top priority item on the list was the ability to eagerly collect a range into a type (`ranges::to` [@P1206R3]). During the telecon discussing that paper, Walter Brown made an excellent observation: if we gave users the tools to write their own range adaptors that would properly inter-operate with standard library adaptors (as well as other users' adaptors), then it becomes less important to provide more adaptors in the standard library. 
+When we presented the C++23 Ranges Plan [@P2214R0] to LEWG, one of the arguments we made was that the top priority item on the list was the ability to eagerly collect a range into a type (`ranges::to` [@P1206R3]). During the telecon discussing that paper, Walter Brown made an excellent observation: if we gave users the tools to write their own range adaptors that would properly inter-operate with standard library adaptors (as well as other users' adaptors), then it becomes less important to provide more adaptors in the standard library.
 
-The goal of this paper is provide that functionality: provide a standard customization mechanism for range adaptors, so that everybody can write their own adaptors. 
+The goal of this paper is provide that functionality: provide a standard customization mechanism for range adaptors, so that everybody can write their own adaptors.
 
 # Implementation Experience
 
-To start with, there have been several implementations of the range adaptor design, that are all a little bit different. It is worth going through them all to compare how they solved the problem. 
+To start with, there have been several implementations of the range adaptor design, that are all a little bit different. It is worth going through them all to compare how they solved the problem.
 
 ## NanoRange
 
@@ -40,7 +42,7 @@ namespace nano::detail {
     constexpr auto operator|(R&& lhs, C&& rhs) -> decltype(auto) {
         return FWD(rhs)(FWD(lhs));
     }
-    
+
     // a type to handle merging two Range Adaptor Closure Objects together
     template <typename LHS, typename RHS>
     struct raco_pipe {
@@ -48,21 +50,21 @@ namespace nano::detail {
         RHS rhs;
 
         // ...
-        
+
         template <viewable_range R>
             requires invocable<LHS&, R>
                   && invocable<RHS&, invoke_result_t<LHS&, R>>
         constexpr auto operator()(R&& r) const {
             return rhs(lhs(FWD(r)));
         }
-        
+
         // ...
     };
-    
+
     // ... which is itself a Range Adaptor Closure Object
     template <typename LHS, typename RHS>
     inline constexpr bool is_raco<raco_pipe<LHS, RHS>> = true;
-    
+
     // support for C | D to produce a new Range Adaptor Closure Object
     // so that (R | C) | D and R | (C | D) can be equivalent
     template <typename LHS, typename RHS>
@@ -71,13 +73,13 @@ namespace nano::detail {
     constexpr auto operator|(LHS&&, RHS&&) {
         return raco_pipe<decay_t<LHS>, decay_t<RHS>>(FWD(lhs), FWD(rhs));
     }
-    
+
     // ... and a convenience type for creating range adaptor objects
     template <typename F>
     struct rao_proxy : F {
         constexpr explicit rao_proxy(F&& f) : F(std::move(f)) { }
     };
-    
+
     template <typename F>
     inline constexpr bool is_raco<rao_proxy<F>> = true;
 }
@@ -95,7 +97,7 @@ namespace nano::detail {
     constexpr auto operator(R&& r)
         -> join_view<all_t<R>>;
   };
-  
+
   template <>
   inline constexpr is_raco<join_view_fn> = true;
 }
@@ -115,7 +117,7 @@ namespace nano::detail {
         requires /* ... */
     constexpr auto operator()(E&& e, F&& f) const
         -> transform_view<all_t<E>, decay_t<F>>;
-    
+
     // the partial overload
     template <typename F>
     constexpr auto operator()(F f) const {
@@ -160,7 +162,7 @@ template <typename ViewFn>
 struct view_closure : view_closure_base, ViewFn
 {
     view_closure() = default;
-    
+
     constexpr explicit view_closure(ViewFn fn) : ViewFn(std::move(fn)) { }
 };
 ```
@@ -172,28 +174,28 @@ The interesting class is the intermediate `view_closure_base`, which has all the
 namespace ranges::views {
     // this type is its own namespace for ADL inhibition
     namespace view_closure_base_ns { struct view_closure_base; }
-    using view_closure_base_ns::view_closure_base;    
+    using view_closure_base_ns::view_closure_base;
     namespace detail { struct view_closure_base_; }
-    
+
     // Piping a value into a range adaptor closure object should not yield another closure
     template <typename ViewFn, typename Rng>
     concept invocable_view_closure =
         invocable<ViewFn, Rng>
         && (not derived_from<invoke_result_t<ViewFn, Rng>, detail::view_closure_base_>);
-    
+
     struct view_closure_base_ns::view_closure_base : detail::view_closure_base_ {
         // support for R | C to evaluate as C(R)
         template <viewable_range R, invocable_view_closure<R> ViewFn>
         friend constexpr auto operator|(R&& rng, view_closure<ViewFn> vw) {
             return std::move(vw)(FWD(rng));
         }
-        
+
         // for diagnostic purposes, we delete the overload for R | C
         // if R is a range but not a viewable_range
         template <range R, typename ViewFn>
             requires (not viewable_range<R>)
         friend constexpr auto operator|(R&&, view_closure<ViewFn>) = delete;
-        
+
         // support for C | D to produce a new Range Adaptor Closure Object
         // so that (R | C) | D and R | (C | D) can be equivalent
         template <typename ViewFn, derived_from<detail::view_closure_base_> Pipeable>
@@ -217,7 +219,7 @@ namespace ranges::views {
     constexpr auto operator(R&& r)
         -> join_view<all_t<R>>;
   };
-  
+
   // for user consumption
   inline constexpr view_closure<join_view_fn> join{};
 }
@@ -233,12 +235,12 @@ namespace ranges::views {
     constexpr auto operator()(E&& e, F&& f) const
         -> transform_view<all_t<E>, decay_t<F>>;
   };
-    
+
   struct transform_view_fn
     : transform_view_fn_base
   {
     using transform_view_fn_base::operator();
-  
+
     // the partial overload
     template <typename F>
     constexpr auto operator()(F f) const {
@@ -246,7 +248,7 @@ namespace ranges::views {
         transform_view_fn_base{}, std::move(f)));
     }
   };
-  
+
   // for user consumption
   inline constexpr transform_view_fn transform{};
 }
@@ -257,7 +259,7 @@ Compared to NanoRange, this looks very similar. We have to manually write both o
 
 ## gcc 10
 
-The implementation of pipe support in [@gcc-10] is quite different from either NanoRange or range-v3. There, we had two class templates: `__adaptor::_RangeAdaptorClosure<F>` and `__adaptor::_RangeAdaptor<F>`, which represent range adaptor closure objects and range adaptors, respectively. 
+The implementation of pipe support in [@gcc-10] is quite different from either NanoRange or range-v3. There, we had two class templates: `__adaptor::_RangeAdaptorClosure<F>` and `__adaptor::_RangeAdaptor<F>`, which represent range adaptor closure objects and range adaptors, respectively.
 
 The latter either invokes `F` if possible (to handle the `adaptor(range, args...)` case) or, if not, returns a `_RangeAdaptorClosure` specialization (to handle the `adaptor(args...)` case). The following implementation is reduced a bit, to simply convey how it works (and to use non-uglified names):
 
@@ -265,7 +267,7 @@ The latter either invokes `F` if possible (to handle the `adaptor(range, args...
 template <typename Callable>
 struct _RangeAdaptor {
     [[no_unique_address]] Callable callable;
-    
+
     template <typename... Args>
         requires (sizeof...(Args) >= 1)
     constexpr auto operator()(Args&&... args) const {
@@ -294,15 +296,15 @@ struct _RangeAdaptorClosure : _RangeAdaptor<Callable>
     constexpr auto operator()(R&& r) const {
         return callable(FWD(r));
     }
-    
+
     // support for R | C to evaluate as C(R)
     template <viewable_range R> requires invocable<Callable, R>
     friend constexpr auto operator|(R&& r, _RangeAdaptorClosure const& o) {
         return o.callable(FWD(r));
     }
-    
+
     // support for C | D to produce a new Range Adaptor Closure Object
-    // so that (R | C) | D and R | (C | D) can be equivalent    
+    // so that (R | C) | D and R | (C | D) can be equivalent
     template <typename T>
     friend constexpr auto operator|(_RangeAdaptorClosure<T> const& lhs, _RangeAdaptorClosure const& rhs) {
         return _RangeAdaptorClosure([lhs, rhs]<typename R>(R&& r){
@@ -341,7 +343,7 @@ namespace std::ranges::views {
 ```
 :::
 
-Compared to either NanoRange or range-v3, this implementation strategy has the significant advantage that we don't have to write both overloads of `transform` manually: we just write a single lambda and use class template argument deduction to wrap its type in the right facility (`_RangeAdaptorClosure` for `join` and `_RangeAdaptor` for `transform`) to provide `|` support. 
+Compared to either NanoRange or range-v3, this implementation strategy has the significant advantage that we don't have to write both overloads of `transform` manually: we just write a single lambda and use class template argument deduction to wrap its type in the right facility (`_RangeAdaptorClosure` for `join` and `_RangeAdaptor` for `transform`) to provide `|` support.
 
 This becomes clearer if we look at gcc 10's implementation of `views::transform` vs range-v3's directly:
 
@@ -356,12 +358,12 @@ namespace ranges::views {
     constexpr auto operator()(E&& e, F&& f) const
         -> transform_view<all_t<E>, decay_t<F>>;
   };
-    
+
   struct transform_view_fn
     : transform_view_fn_base
   {
     using transform_view_fn_base::operator();
-  
+
     // the partial overload
     template <typename F>
     constexpr auto operator()(F f) const {
@@ -369,7 +371,7 @@ namespace ranges::views {
         transform_view_fn_base(), std::move(f)));
     }
   };
-  
+
   // for user consumption
   inline constexpr transform_view_fn transform{};
 }
@@ -392,7 +394,7 @@ namespace std::ranges::views {
 
 ## gcc 11
 
-The implementation of pipe support in [@gcc-11] is closer to the range-v3/NanoRange implementations than the gcc 10 one. 
+The implementation of pipe support in [@gcc-11] is closer to the range-v3/NanoRange implementations than the gcc 10 one.
 
 In this implementation, `_RangeAdaptorClosure` is an empty type that is the base class of every range adaptor closure, equivalent to range-v3's `view_closure_base`:
 
@@ -405,9 +407,9 @@ struct _RangeAdaptorClosure {
     friend constexpr auto operator|(Range&& r, Self&& self) {
         return FWD(self)(FWD(r));
     }
-    
+
     // support for C | D to produce a new Range Adaptor Closure Object
-    // so that (R | C) | D and R | (C | D) can be equivalent    
+    // so that (R | C) | D and R | (C | D) can be equivalent
     template <typename Lhs, typename Rhs>
         requires derived_from<Lhs, _RangeAdaptorClosure>
               && derived_from<Rhs, _RangeAdaptorClosure>
@@ -437,7 +439,7 @@ struct _RangeAdaptor {
 
 The interesting point here is that every adaptor has to specify an `arity`, and the partial call must take all but one of those arguments. As we'll see shortly, `transform` has arity `2` and so this call operator is only viable for a single argument. As such, the library still implements every partial call, but it requires more input from the adaptor declaration itself.
 
-The types `_Pipe<T, U>` and `_Partial<D, Args...>` are both `_RangeAdaptorClosure`s that provide call operators that accept a `viewable_range` and eagerly invoke the appropriate functions (both, in the case of `_Pipe`, and a `bind_back`, in the case of `_Partial`). Both types have appeared in other implementations already. 
+The types `_Pipe<T, U>` and `_Partial<D, Args...>` are both `_RangeAdaptorClosure`s that provide call operators that accept a `viewable_range` and eagerly invoke the appropriate functions (both, in the case of `_Pipe`, and a `bind_back`, in the case of `_Partial`). Both types have appeared in other implementations already.
 
 And with that, we can implement `join` and `transform` as follows:
 
@@ -451,7 +453,7 @@ namespace std::ranges::views {
     constexpr auto operator()(R&& r) const
         -> join_view<all_t<R>>;
   };
-  
+
   // for user consumption
   inline constexpr Join join;
 }
@@ -465,11 +467,11 @@ namespace std::ranges::views {
       requires /* ... */
     constexpr auto operator()(R&& r, F&& f) const
       -> transform_view<all_t<R>, F>;
-      
+
     using _RangeAdaptor<Transform>::operator();
     static constexpr int arity = 2;
   };
-  
+
   // for user consumption
   inline constexpr Transform transform;
 }
@@ -480,7 +482,7 @@ This is longer than the gcc 10 implementation in that we need both a type and a 
 
 ## msvc
 
-The [@msvc] implementation is also worth sharing as it is probably the most manual of all the implementations. While range-v3 and NanoRange require you to manually write the partial calls yourself, they both provide library wrappers that do the binding for you (`bind_back` and `rao_proxy`, respectively), in the msvc implementation, each range adaptor actually has its own private partial call implementation. 
+The [@msvc] implementation is also worth sharing as it is probably the most manual of all the implementations. While range-v3 and NanoRange require you to manually write the partial calls yourself, they both provide library wrappers that do the binding for you (`bind_back` and `rao_proxy`, respectively), in the msvc implementation, each range adaptor actually has its own private partial call implementation.
 
 As such, the implementations of just `join` and `transform` look like (slightly reduced for paper-ware):
 
@@ -494,7 +496,7 @@ namespace std::ranges::views {
     constexpr auto operator()(R&& r)
       -> join_view<all_t<R>>;
   };
-  
+
   inline constexpr _Join_fn join;
 }
 ```
@@ -506,22 +508,22 @@ namespace std::ranges::views {
     template <class F>
     struct Partial : _Pipe::_Base<_Partial<F>> {
       F f;
-      
+
       template <viewable_range R>
       constexpr auto operator()(R&& r) const&
         -> decltype(transform_view(FWD(r), f))
       {
         return transform_view(FWD(r), f);
       }
-      
+
       template <viewable_range R>
       constexpr auto operator()(R&& r) &&
         -> decltype(transform_view(FWD(r), move(f)))
       {
         return transform_view(FWD(r), move(f));
-      }      
+      }
     };
-    
+
   public:
     // the overload that has all the information
     template <viewable_range R, class F>
@@ -530,14 +532,14 @@ namespace std::ranges::views {
     {
       return transform_view(FWD(r), move(f));
     }
-    
+
     // the partial overload
     template <copy_constructible F>
     constexpr auto operator()(F f) {
       return Partial<F>{.f=move(f)};
     }
   };
-  
+
   inline constexpr _Transform_fn transform;
 }
 ```
@@ -564,7 +566,7 @@ Because the library needs to provide operator overloads, the design needs to be 
 2. The closure object type inherits from a regular base class (gcc 11) or CRTP base class (MSVC) which defines those `operator|`s.
 3. The closure object type is a specialization of a library class template, with the actual function object type as a template parameter (range-v3, gcc 10).
 
-Of these, the NanoRange option is a non-starter since we don't want to have everyone adding all of their types into `std::ranges`. 
+Of these, the NanoRange option is a non-starter since we don't want to have everyone adding all of their types into `std::ranges`.
 
 While a regular base class (gcc 11) is easier to use (by virtue of simply being less to type) than a CRTP base class (msvc), it has the downside of the multiple-instances-of-the-same-empty-base problem (see also [@LWG3549]). In gcc 11's implementation, the `C | D` overload produces an object that [looks like](https://github.com/gcc-mirror/gcc/blob/5e0236d3b0e0d7ad98bcee36128433fa755b5558/libstdc%2B%2B-v3/include/std/ranges#L872-L878):
 
@@ -582,9 +584,9 @@ template<typename _Lhs, typename _Rhs>
 ```
 :::
 
-This object contains three copies of `_RangeAdaptorClosure`, which means it has to be at least 3 bytes wide, even if `_Lhs` and `_Rhs` are both empty. 
+This object contains three copies of `_RangeAdaptorClosure`, which means it has to be at least 3 bytes wide, even if `_Lhs` and `_Rhs` are both empty.
 
-That reduces our choice to either providing a class template that users inherit from CRTP-style (MSVC) or a class template that users use to wrap their type (gcc 10/range-v3). There isn't that much of a difference between the two as far as implementing a range adaptor closure object goes - it's just a question of where you put the library type. But there _is_ a different as far as diagnostics are concerned. With the `views::join` example, it's a question of whether an error message will contain the type `JoinFn` or whether it will contain the type `std::ranges::range_adaptor_closure<JoinFn>` in it. Having the former is strictly better. 
+That reduces our choice to either providing a class template that users inherit from CRTP-style (MSVC) or a class template that users use to wrap their type (gcc 10/range-v3). There isn't that much of a difference between the two as far as implementing a range adaptor closure object goes - it's just a question of where you put the library type. But there _is_ a different as far as diagnostics are concerned. With the `views::join` example, it's a question of whether an error message will contain the type `JoinFn` or whether it will contain the type `std::ranges::range_adaptor_closure<JoinFn>` in it. Having the former is strictly better.
 
 This paper proposes the MSVC approach: having a CRTP base class that implements the range adaptor closure design.
 
@@ -600,7 +602,7 @@ Where `adaptor(args...)` produces a range adaptor closure object.
 
 While the various implementation approaches for the range adaptor closure problem were fairly similar (the library has to provide two `operator|`s, there really aren't that many ways to provide them), the implementations presented here have very different approaches to making multi-argument range adaptors more convenient - which range from extremely manual (MSVC) to effortless (gcc 10). There's such a range of implementations here that it's quite difficult to actually say which is the "right" one, or which one could be considered "standard practice." This is still an area being experimented on.
 
-But importantly, the standard library also doesn't *need* to solve this problem. As soon as the standard library can provide a common mechanism for users to create a range adaptor closure object that can play well with others, users can implement their range adaptors any way they like. Perhaps some new, as-yet undiscovered approach comes around in a few years that is superior to the other alternatives and we can standardize that one for C++26. Perhaps a language solution (like `|>`) gets finalized and this becomes less important too. 
+But importantly, the standard library also doesn't *need* to solve this problem. As soon as the standard library can provide a common mechanism for users to create a range adaptor closure object that can play well with others, users can implement their range adaptors any way they like. Perhaps some new, as-yet undiscovered approach comes around in a few years that is superior to the other alternatives and we can standardize that one for C++26. Perhaps a language solution (like `|>`) gets finalized and this becomes less important too.
 
 Rather than try to introduce a mechanism like gcc 10's or gcc 11's approach, this paper actually proposes no approach. Or, put differently, this paper proposes the MSVC approach for the range adaptor object problem too.
 
@@ -615,7 +617,7 @@ class closure : public std::ranges::range_adaptor_closure<closure<F>> {
     F f;
 public:
     constexpr closure(F f) : f(f) { }
-    
+
     template <std::ranges::viewable_range R>
         requires std::invocable<F const&, R>
     constexpr operator()(R&& r) const {
@@ -628,7 +630,7 @@ class adaptor {
     F f;
 public:
     constexpr adaptor(F f) : f(f) { }
-    
+
     template <typename... Args>
     constexpr operator()(Args&&... args) const {
         if constexpr (std::invocable<F const&, Args...>) {
@@ -650,7 +652,7 @@ inline constexpr closure join
       (R&& r) {
         return join_view(FWD(r));
       };
-      
+
 inline constexpr adaptor transform
     = []<viewable_range R, typename F> requires /* ... */
       (R&& r, F&& f){
@@ -770,11 +772,15 @@ For each `T@~i~@` in `BoundArgs`, if `T@~i~@` is an object type, `T@~i~@` meets 
 [5]{.pnum} *Throws*: Any exception thrown by the initialization of the state entities of `g` ([func.def]).
 :::
 
-## Feature-test macro
+## Feature-test macros
 
-Bump the value of `__cpp_lib_ranges` in [version.syn]{.sref}:
+Bump the value of `__cpp_lib_ranges` and introduce a new `__cpp_lib_bind_back` in [version.syn]{.sref}:
 
 ```diff
+  // ...
++ #define __cpp_­lib_­bind_back                         2021XXL // also in <functional>
+  #define __cpp_­lib_­bind_­front                        201907L // also in <functional>
+  // ...
 - #define __cpp_lib_ranges                            @[202106L]{.diffdel}@
 + #define __cpp_lib_ranges                            @[2021XXL]{.diffins}@
     // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
@@ -821,5 +827,5 @@ references:
           - family: Casey Carter
       issued:
           - year: 2020
-      URL: https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges      
+      URL: https://github.com/microsoft/STL/blob/18c12ab01896e73e95a69ceba9fbd7250304f895/stl/inc/ranges
 ---
