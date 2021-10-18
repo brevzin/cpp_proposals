@@ -544,6 +544,7 @@ But that's not actually required to be valid. The projection is required to take
 iter_value_t<I> init_(*first);
 optional<U> init(in_place, invoke(proj, init_));
 ```
+:::
 
 Which means that the only way to get this right is to incur an extra copy.
 
