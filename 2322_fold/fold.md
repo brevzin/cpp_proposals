@@ -281,12 +281,14 @@ With the versions of algorithms that use an element from the range as the initia
 Or, putting it all together, we have the following name banks:
 
 <table>
-<tr><th>A</th><td>`fold`, `fold_first`, `fold_right`, `fold_right_first`</td><tr/>
-<tr><th>B</th><td>`fold`, `fold_first`, `fold_right`, `fold_right_last`</td><tr/>
-<tr><th>C</th><td>`fold_left`, `fold_left_first`, `fold_right`, `fold_right_first`</td><tr/>
-<tr><th>D</th><td>`fold_left`, `fold_left_first`, `fold_right`, `fold_right_last`</td><tr/>
-<tr><th>E</th><td>`fold == fold_left`, `fold_first == fold_left_first`, `fold_right`, `fold_right_first`</td><tr/>
-<tr><th>F</th><td>`fold == fold_left`, `fold_first == fold_left_first`, `fold_right`, `fold_right_last`</td><tr/>
+<tr><th/><th colspan="2">Left Folds</th><th colspan="2">Right Folds</th></tr>
+<tr><th/><th>With Init</th><th>No Init</th><th>With Init</th><th>No Init</th></tr>
+<tr><th>A</th><td>`fold`</td><td>`fold_first`</td><td>`fold_right`</td><td>`fold_right_first`</td><tr/>
+<tr><th>B</th><td>`fold`</td><td>`fold_first`</td><td>`fold_right`</td><td>`fold_right_last`</td><tr/>
+<tr><th>C</th><td>`fold_left`</td><td>`fold_left_first`</td><td>`fold_right`</td><td>`fold_right_first`</td><tr/>
+<tr><th>D</th><td>`fold_left`</td><td>`fold_left_first`</td><td>`fold_right`</td><td>`fold_right_last`</td><tr/>
+<tr><th>E</th><td>`fold == fold_left`</td><td>`fold_first == fold_left_first`</td><td>`fold_right`</td><td>`fold_right_first`</td><tr/>
+<tr><th>F</th><td>`fold == fold_left`</td><td>`fold_first == fold_left_first`</td><td>`fold_right`</td><td>`fold_right_last`</td><tr/>
 </table>
 
 The current revision of this paper proposes Option D: the symmetric names (no `fold` by itself, whether an alias or not) and `_last` as the suffix rather than `_first`. There was previously preference for `fold` over `fold_left`, but this will have to be discussed again separately.
