@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2322R4], updated wording.
+Since [@P2322R4], removed the short-circuiting fold with one that simply returns the end iterator in addition to the value.
 
 Since [@P2322R3], no changes in actual proposal, just some improvements in the description.
 
@@ -385,8 +385,7 @@ Or, to put these all in a table, given that the accumulator has type `T`:
 
 Option (3) is far too unergonomic in C++ to be reasonable, but Option (4) does have the benefit that it would allow different return types for the early-return and full-consume cases.
 
-
-Given these options, none of which stand out as being especially amazing, this paper proposes (1).
+None of these options stand out as particularly promising. Moreover, I've been unable to find any other other than Rust which provides such an algorithm (even though basically every language provides algorithms that reduce to a short-circuiting fold, like `any` and `all`), and in Rust, this algorithm is quite ergonomic due to language features that C++ does not possess. As such, while a previous revision of this paper proposed a short-circuiting fold (specifically, Option 1), this paper does not.
 
 ## Iterator-returning folds
 
@@ -466,9 +465,9 @@ This brings with it its own naming problem. That's a lot of names. One approach 
 
 `with_iter` is not the best suffix, but the rest seem to work out ok.
 
-## The proposal: short-circuiting and iterator-returning
+## The proposal: iterator-returning left folds
 
-One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that do short circuiting and return an iterator? Do we even need a short-circuiting fold that *doesn't* return an iterator?
+One solution to the combinatorial explosion problem, as suggested by Tristan Brindle, is to simply not consider all of these options as being necessarily orthogonal. That is, providing a left-fold that returns a value is very valuable and highly desired. But having both a left- and right-fold that return an iterator?
 
 In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposing is six algorithms (with two overloads each):
 
@@ -476,10 +475,10 @@ In other words, if you want the common and convenient thing, we'll provide that:
 2. `foldl1` (a left-fold with no initial value that returns `T`)
 3. `foldr` (a right-fold with an initial value that returns `T`)
 4. `foldr1` (a right-fold with no initial value that returns `T`)
-5. `foldl_while` (a short-circuiting left-fold with an initial value that returns `(iterator, T)`)
-6. `foldl1_while` (a short-circuiting left-fold with no initial value that returns `(iterator, T)`)
+5. `foldl_with_iter` (a left-fold with an initial value that returns `(iterator, T)`)
+6. `foldl1_with_iter` (a left-fold with no initial value that returns `(iterator, T)`)
 
-There is no short-circuiting right-fold, since you can use `views::reverse`. This is a little harder to use since the transition from a fold that just returns `T` to a fold that actually produces an `iterator` as well isn't as easy as going from:
+There is no right-fold that returns an iterator, since you can use `views::reverse`. This is a little harder to use since the transition from a fold that just returns `T` to a fold that actually produces an `iterator` as well isn't as easy as going from:
 
 ::: bq
 ```cpp
@@ -491,30 +490,17 @@ to:
 
 ::: bq
 ```cpp
-auto [iterator, value] = ranges::foldl_while(r, init, op);
+auto [iterator, value] = ranges::foldl_with_iter(r, init, op);
 ```
 :::
 
-Instead, you have to wrap the binary operation. Though, in general, any binary operation suitable for `foldl` could be turned into a non-short-circuiting binary operation suitable for `foldl_while` via (although for specific operations, it could be more efficient to write it by hand):
-
-::: bq
-```cpp
-inline constexpr auto wrap = [](auto op){
-    return [=](auto& state, auto&& elem){
-        state = op(move(state), FWD(elem));
-        return true;
-    };
-};
-
-auto [iterator, value] = ranges::foldl_while(r, init, wrap(op));
-```
-:::
-
-Note that for `foldl_while` and `foldl1_while`, we don't have the same kind of return type shenanigans that we have with `foldl` and `foldr` - `foldl_while` takes a `T` as the initial value and returns that same type (since we have to pass a mutable reference to it into the binary operation).
+Instead, you have to flip the binary operation - and we have no `flip` function adapter ([Boost.HOF](https://www.boost.org/doc/libs/1_77_0/libs/hof/doc/html/include/boost/hof/flip.html) does though).
 
 # Implementation Experience
 
-Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold]. The short-circuiting alternatives will be added later.
+Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold].
+
+The algorithms returning an iterator have not been implemented in range-v3 yet, but they're exactly the same as their non-iterator-returning counterparts.
 
 # Wording
 
@@ -641,25 +627,31 @@ namespace std {
     constexpr auto foldr1(R&& r, F f, Proj proj = {});
 
     template<class I, class T>
-      using fold_while_result = in_value_result<I, T>;
+      using foldl_with_iter_result = in_value_result<I, T>;
+    template<class I, class T>
+      using foldl1_with_iter_result = in_value_result<I, T>;
 
-    template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-      @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
-    constexpr fold_while_result<I, T> foldl_while(I first, S last, T init, F f, Proj proj = {});
+    template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
+       @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
+    constexpr foldl_with_iter_result<I, $see below$>
+      foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
 
-    template <input_range R, class T, class Proj = identity,
-      @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-    constexpr fold_while_result<borrowed_iterator_t<R>, T> foldl_while(R&& r, T init, F f, Proj proj = {});
+    template<input_range R, class T, class Proj = identity,
+      @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
+    constexpr foldl_with_iter_result<borrowed_iterator_t<R>, $see below$>
+      foldl_with_iter(R&& r, T init, F f, Proj proj = {});
 
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-      @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+      @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr fold_while_result<I, optional<iter_value_t<I>>> foldl1_while(I first, S last, F f, Proj proj = {});
+    constexpr foldl1_with_iter_result<I, optional<$see below$>>
+      foldl1_with_iter(I first, S last, F f, Proj proj = {});
 
     template <input_range R, class Proj = identity,
-      @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
+      @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>> foldl1_while(R&& r, F f, Proj proj = {});
+    constexpr foldl1_with_iter_result<borrowed_iterator_t<R>, optional<$see below$>>
+      foldl1_with_iter(R&& r, F f, Proj proj = {});
   }
 }
 ```
@@ -723,22 +715,7 @@ template<input_range R, class T, class Proj = identity,
 constexpr auto ranges::foldl(R&& r, T init, F f, Proj proj = {});
 ```
 
-[#]{.pnum} *Effects*: Equivalent to:
-
-::: bq
-```cpp
-using U = decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>;
-if (first == last) {
-    return U(std::move(init));
-}
-
-U accum = invoke(f, std::move(init), invoke(proj, *first));
-for (++first; first != last; ++first) {
-    accum = invoke(f, std::move(accum), invoke(proj, *first));
-}
-return accum;
-```
-:::
+[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f, proj).value`
 
 ```cpp
 template <input_iterator I, sentinel_for<I> S, class Proj = identity,
@@ -752,22 +729,8 @@ template <input_range R, class Proj = identity,
 constexpr auto ranges::foldl1(R&& r, F f, Proj proj = {});
 ```
 
-[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
+[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f, proj).value`
 
-[#]{.pnum} *Effects*: Equivalent to:
-
-::: bq
-```cpp
-if (first == last) {
-    return optional<U>();
-}
-
-iter_value_t<I> init(*first);
-++first;
-return optional<U>(in_place,
-    ranges::foldl(std::move(first), std::move(last), std::move(init), std::move(f), std::move(proj)));
-```
-:::
 
 ```cpp
 template<bidirectional_iterator I, sentinel_for<I> S, class T, class Proj = identity,
@@ -827,56 +790,70 @@ return optional<U>(in_place,
 :::
 
 ```cpp
-template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
-  @*indirectly-short-circuit-left-foldable*@<T, projected<I, Proj>> F>
-constexpr ranges::fold_while_result<I, T> ranges::foldl_while(I first, S last, T init, F f, Proj proj = {});
+template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
+  @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
+constexpr foldl_with_iter_result<I, $see below$>
+  foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
 
-template <input_range R, class T, class Proj = identity,
-  @*indirectly-short-circuit-left-foldable*@<T, projected<iterator_t<R>>, Proj>> F>
-constexpr ranges::fold_while_result<borrowed_iterator_t<R>, T> ranges::foldl_while(R&& r, T init, F f, Proj proj = {});
+template<input_range R, class T, class Proj = identity,
+  @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
+constexpr foldl_with_iter_result<borrowed_iterator_t<R>, $see below$>
+  foldl_with_iter(R&& r, T init, F f, Proj proj = {});
 ```
+
+[#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>`
 
 [#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
-for (; first != last; ++first) {
-    if (!invoke(f, init, invoke(proj, *first))) {
-        break;
-    }
+using U = decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>;
+
+if (first == last) {
+    return {first, U(std::move(init))};
 }
 
-return {std::move(first), std::move(init)};
+U accum = invoke(f, std::move(init), invoke(proj, *first));
+for (++first; first != last; ++first) {
+    accum = invoke(f, std::move(accum), invoke(proj, *first));
+}
+return {accum, first};
 ```
 :::
 
+[#]{.pnum} *Remarks*: The return type is `foldl_with_iter_result<I, U>` for the first overload and `foldl_with_iter_result<borrowed_iterator_t<R>, U>` for the second overload.
+
 ```cpp
 template <input_iterator I, sentinel_for<I> S, class Proj = identity,
-  @*indirectly-short-circuit-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
+  @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr ranges::fold_while_result<I, optional<iter_value_t<I>>>
-  ranges::foldl1_while(I first, S last, F f, Proj proj = {});
+constexpr foldl1_with_iter_result<I, optional<$see below$>>
+  foldl1_with_iter(I first, last, F f, Proj proj = {})
 
 template <input_range R, class Proj = identity,
-  @*indirectly-short-circuit-left-foldable*@<range_value_t<R>, projected<iterator_t<R>>, Proj>> F>
+  @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr ranges::fold_while_result<borrowed_iterator_t<R>, optional<range_value_t<R>>>
-  ranges::foldl1_while(R&& r, F f, Proj proj = {});
+constexpr foldl1_with_iter_result<borrowed_iterator_t<R>, optional<$see below$>>
+  foldl1_with_iter(R&& r, F f, Proj proj = {});
 ```
+
+[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
 ::: bq
 ```cpp
 if (first == last) {
-    return {std::move(first), nullopt};
+    return {first, optional<U>()};
 }
 
 iter_value_t<I> init(*first);
 ++first;
-return ranges::foldl_while(std::move(first), std::move(last), std::move(init), std::move(proj));
+return ranges::foldl_with_iter(std::move(first), std::move(last), std::move(init), std::move(f), std::move(proj)));
 ```
 :::
+
+[#]{.pnum} *Remarks*: The return type is `foldl1_with_iter_result<I, optional<U>>` for the first overload and `foldl1_with_iter_result<borrowed_iterator_t<R>, optional<U>>` for the second overload.
 
 
 :::
