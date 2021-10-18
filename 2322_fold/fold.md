@@ -13,6 +13,14 @@ toc: true
 
 Since [@P2322R4], removed the short-circuiting fold with one that simply returns the end iterator in addition to the value. Also removed the projections, see [the discussion](#no-projections).
 
+LEWG also reconfirmed having `foldl` and `foldl1` under different names, polling "fold with an initial value and fold with no initial value should have the same name (presumably just foldl)" (since once the projections were removed, there is no more ambiguity between the two algorithms)
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|0|3|4|8|3|
+
+LEWG also voted to rename the `*1` suffix to `*_first`. `fold_left` was also preferred to `foldl` (10-6), but there was no consensus between choosing the name `fold` for the simple left fold (as previously preferred) or `fold_left` (for symmetry). This revision has been tentatively updated to use the symmetric names `fold_left`, `fold_left_first`, `fold_right`, and `fold_right_last`, although this will need further discussion.
+
 Since [@P2322R3], no changes in actual proposal, just some improvements in the description.
 
 [@P2322R2] used the names `fold_left` and `fold_right` to refer to the left- and right- folds and used the same names for the initial value and no-initial value algorithms. LEWG took the following polls [@P2322-minutes]:
@@ -263,16 +271,25 @@ There's language precedents for any of these cases. F# and Kotlin both provide `
 
 In C++, we don't have precedent in the library at this point for providing an alias for an algorithm, although we do have precedent in the library for providing an alias for a range adapter (`keys` and `values` for `elements<0>` and `elements<1>`, and [@P2321R0] proposes `pairwise` and `pairwise_transform` as aliases for `adjacent<2>` and `adjacent_transform<2>`). We also have precedent in the library for asymmetric names (`sort` vs `stable_sort` vs `partial_sort`) and symmetric ones (`shift_left` vs `shift_right`), even symmetric ones with terse names (`rotl` and `rotr`, although the latter are basically instructions).
 
-All of which is to say, I don't think there's a clear answer to this question. There are, I think, three sane option banks:
+All of which is to say, I don't think there's a clear answer to this question. I think at this point, all possible options have appeared in some revision of this paper. This current revision uses Option 2.
 
-|A|B|C|
-|-|-|-|
-|`fold_left`|`fold`|`foldl`|
-|`fold_right`|`fold_right`|`foldr`|
-|`fold_left_first`|`fold_first`|`foldl1`|
-|`fold_right_first`|`fold_right_first`|`foldr1`|
+With the versions of algorithms that use an element from the range as the initializer, there's a further choice. LEWG recently voted to prefer `_first` as a suffix to `1`, which is fine for a left fold but with a right fold `_first` seems like a poor choice of suffix because it's really the _last_ element that is the initializer. If we drop Option 4 above (LEWG prefers `_left` and `_right` as suffixes to `l` and `r`), we additionally have two options:
 
-And this paper proposes option C: `foldl` and `foldr`. It's the right mix of having symmetry between the two names, while also not making them too long. There is preference for `fold` over `fold_left` (both because it's more common than right-fold and thus having it shorter matters), and `foldl` is only a single character longer.
+1. `fold_right_first`
+2. `fold_right_last`
+
+Or, putting it all together, we have the following name banks:
+
+<table>
+<tr><th>A</th><td>`fold`, `fold_first`, `fold_right`, `fold_right_first`</td><tr/>
+<tr><th>B</th><td>`fold`, `fold_first`, `fold_right`, `fold_right_last`</td><tr/>
+<tr><th>C</th><td>`fold_left`, `fold_left_first`, `fold_right`, `fold_right_first`</td><tr/>
+<tr><th>D</th><td>`fold_left`, `fold_left_first`, `fold_right`, `fold_right_last`</td><tr/>
+<tr><th>E</th><td>`fold == fold_left`, `fold_first == fold_left_first`, `fold_right`, `fold_right_first`</td><tr/>
+<tr><th>F</th><td>`fold == fold_left`, `fold_first == fold_left_first`, `fold_right`, `fold_right_last`</td><tr/>
+</table>
+
+The current revision of this paper proposes Option D: the symmetric names (no `fold` by itself, whether an alias or not) and `_last` as the suffix rather than `_first`. There was previously preference for `fold` over `fold_left`, but this will have to be discussed again separately.
 
 ## Short-circuiting folds
 
@@ -403,7 +420,7 @@ struct fold_result {
 template <input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
     @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F,
     typename R = invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>
-constexpr auto foldl(I first, S last, T init, F f, Proj proj = {})
+constexpr auto fold_left(I first, S last, T init, F f, Proj proj = {})
     -> fold_result<I, R>;
 ```
 
@@ -457,11 +474,11 @@ Which would be... 32 distinct functions (under 16 different names) if we go all 
 
 This brings with it its own naming problem. That's a lot of names. One approach there could be a suffix system:
 
-* `foldl` is a non-short-circuiting left-fold with an initial value that returns `T`
-* `foldl1` is a non-short-circuiting left-fold with no initial value that returns `T`
-* `foldl1_while` is a short-circuiting left-fold with no initial value that returns `T`
-* `foldr_with_iter` is a non-short-circuiting right-fold with an initial value that returns `(iterator, T)`
-* `foldr1_while_with_iter` is a short-circuiting right-fold with no initial value that returns `(iterator, T)`
+* `fold_left` is a non-short-circuiting left-fold with an initial value that returns `T`
+* `fold_left_first` is a non-short-circuiting left-fold with no initial value that returns `T`
+* `fold_left_first_while` is a short-circuiting left-fold with no initial value that returns `T`
+* `fold_right_with_iter` is a non-short-circuiting right-fold with an initial value that returns `(iterator, T)`
+* `fold_right_last_while_with_iter` is a short-circuiting right-fold with no initial value that returns `(iterator, T)`
 
 `with_iter` is not the best suffix, but the rest seem to work out ok.
 
@@ -471,18 +488,18 @@ One solution to the combinatorial explosion problem, as suggested by Tristan Bri
 
 In other words, if you want the common and convenient thing, we'll provide that: `foldl` and `foldl1` will exist and just return a value. But if you want a more complex tool, it'll be a little more complicated to use. In other words, what this paper is proposing is six algorithms (with two overloads each):
 
-1. `foldl` (a left-fold with an initial value that returns `T`)
-2. `foldl1` (a left-fold with no initial value that returns `T`)
-3. `foldr` (a right-fold with an initial value that returns `T`)
-4. `foldr1` (a right-fold with no initial value that returns `T`)
-5. `foldl_with_iter` (a left-fold with an initial value that returns `(iterator, T)`)
-6. `foldl1_with_iter` (a left-fold with no initial value that returns `(iterator, T)`)
+1. `fold_left` (a left-fold with an initial value that returns `T`)
+2. `fold_left_first` (a left-fold with no initial value that returns `T`)
+3. `fold_right` (a right-fold with an initial value that returns `T`)
+4. `fold_right_last` (a right-fold with no initial value that returns `T`)
+5. `fold_left_with_iter` (a left-fold with an initial value that returns `(iterator, T)`)
+6. `fold_left_first_with_iter` (a left-fold with no initial value that returns `(iterator, T)`)
 
 There is no right-fold that returns an iterator, since you can use `views::reverse`. This is a little harder to use since the transition from a fold that just returns `T` to a fold that actually produces an `iterator` as well isn't as easy as going from:
 
 ::: bq
 ```cpp
-auto value = ranges::foldl(r, init, op);
+auto value = ranges::fold_left(r, init, op);
 ```
 :::
 
@@ -490,7 +507,7 @@ to:
 
 ::: bq
 ```cpp
-auto [iterator, value] = ranges::foldl_with_iter(r, init, op);
+auto [iterator, value] = ranges::fold_left_with_iter(r, init, op);
 ```
 :::
 
@@ -498,17 +515,17 @@ Instead, you have to flip the binary operation - and we have no `flip` function 
 
 ## No projections
 
-All the algorithms in `std::ranges` take a projection, but there's a problem in this case. For `foldl`, there's no problem - we just look over the iterators and do `invoke(proj, *first)` before passing that into the call to `f`.
+All the algorithms in `std::ranges` take a projection, but there's a problem in this case. For `fold_left`, there's no problem - we just look over the iterators and do `invoke(proj, *first)` before passing that into the call to `f`.
 
-But for `foldl1`, we need to produce an initial _value_, rather than an initial _reference_. And with a projection, we can't... do that for iterators that give proxy references. Let's start by writing out what `foldl1` would be implemented as, without a projection, and then try to add it in:
+But for `fold_left_first`, we need to produce an initial _value_, rather than an initial _reference_. And with a projection, we can't... do that for iterators that give proxy references. Let's start by writing out what `fold_left_first` would be implemented as, without a projection, and then try to add it in:
 
 ::: bq
 ```cpp
 template <input_iterator I, sentinel_for<I> S,
   indirectly-binary-left-foldable<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto foldl1(I first, S last, F f) {
-  using U = decltype(ranges::foldl(first, last, iter_value_t<I>(*first), f));
+constexpr auto fold_left_first(I first, S last, F f) {
+  using U = decltype(ranges::fold_left(first, last, iter_value_t<I>(*first), f));
   if (first == last) {
     return optional<U>(nullopt);
   }
@@ -516,7 +533,7 @@ constexpr auto foldl1(I first, S last, F f) {
   iter_value_t<I> init(*first); // <==
   ++first;
   return optional<U>(in_place,
-    ranges::foldl(std::move(first), std::move(last), std::move(init), std::move(f)));
+    ranges::fold_left(std::move(first), std::move(last), std::move(init), std::move(f)));
 }
 ```
 :::
@@ -550,13 +567,13 @@ Which means that the only way to get this right is to incur an extra copy.
 
 Which means we're performing an extra copy in the typical case (the iterator does not yield a proxy reference and there is no projection) simply to be able to support the rare case. That seems problematic. And we don't have any other algorithm where we'd need to get a projected _value_, we only ever need projected _references_ (algorithms like `min` which return a value type return the value type of the original range, not the projected range).
 
-This suggests dropping the projections for the `*1` variants (`foldl1`, `foldr1`, and `fold1_with_iter`). But then they're more inconsistent with the other variants, so this paper suggests simply not having projections at all. This doesn't cost you anything for some of the algorithms, since projections in these case can always be provided either as range adaptors or function adaptors.
+This suggests dropping the projections for the `*_first`/`*_last` variants (`fold_left_first`, `fold_right_last`, and `fold_left_first_with_iter`). But then they're more inconsistent with the other variants, so this paper suggests simply not having projections at all. This doesn't cost you anything for some of the algorithms, since projections in these case can always be provided either as range adaptors or function adaptors.
 
 The expression that I'm not supporting:
 
 ::: bq
 ```cpp
-foldl(r, init, f, proj)
+fold_left(r, init, f, proj)
 ```
 :::
 
@@ -564,7 +581,7 @@ means the same as either this version using a range adaptor:
 
 ::: bq
 ```cpp
-foldl(r | views::transform(proj), init, f)
+fold_left(r | views::transform(proj), init, f)
 ```
 :::
 
@@ -572,17 +589,17 @@ or this version using a function adaptor. Boost.HOF defines an adaptor `proj` su
 
 ::: bq
 ```cpp
-foldl(r, init, proj_rhs(proj, f))
+fold_left(r, init, proj_rhs(proj, f))
 ```
 :::
 
-The version using `views::transform` is probably more familiar, but it won't work as well for `foldl_with_iter` since this would return `dangling` (since `transform` is never a borrowed range) but even with adjustment would return an iterator into the transformed range rather than the original range. This issue is one of the original cited motivations for projections in [@N4128]. The version using the function adaptor has no such issue, although proposing more function adaptors into the standard library is out of scope for this paper.
+The version using `views::transform` is probably more familiar, but it won't work as well for `fold_left_with_iter` since this would return `dangling` (since `transform` is never a borrowed range) but even with adjustment would return an iterator into the transformed range rather than the original range. This issue is one of the original cited motivations for projections in [@N4128]. The version using the function adaptor has no such issue, although proposing more function adaptors into the standard library is out of scope for this paper.
 
-In short, there are good reasons to avoid projections for `foldl1`, `foldr1`, and `foldl1_with_iter`. For consistency, I'm also removing the projections for `foldl`, `foldr`, and `foldl_with_iter`. This makes the folds inconsistent with the rest of the standard library algorithms (although at least internally consistent), but it doesn't actually cost them functionality.
+In short, there are good reasons to avoid projections for `fold_left_first`, `fold_right_last`, and `fold_left_first_with_iter`. For consistency, I'm also removing the projections for `fold_left`, `fold_right`, and `fold_left_with_iter`. This makes the folds inconsistent with the rest of the standard library algorithms (although at least internally consistent), but it doesn't actually cost them functionality.
 
 # Implementation Experience
 
-Part of this paper (containing the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold] (with projections, although not quite correctly as it turns out).
+Part of this paper (naming the algorithms `foldl`, `foldl1`, `foldr`, and `foldr1`, where the `*1` algorithms return an `optional`) has been implemented in range-v3 [@range-v3-fold] (with projections, although not quite correctly as it turns out).
 
 The algorithms returning an iterator have not been implemented in range-v3 yet, but they're exactly the same as their non-iterator-returning counterparts.
 
@@ -668,62 +685,62 @@ namespace std {
 
     template<input_iterator I, sentinel_for<I> S, class T,
       @*indirectly-binary-left-foldable*@<T, I> F>
-    constexpr auto foldl(I first, S last, T init, F f);
+    constexpr auto fold_left(I first, S last, T init, F f);
 
     template<input_range R, class T,
       @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
-    constexpr auto foldl(R&& r, T init, F f);
+    constexpr auto fold_left(R&& r, T init, F f);
 
     template <input_iterator I, sentinel_for<I> S,
       @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr auto foldl1(I first, S last, F f);
+    constexpr auto fold_left_first(I first, S last, F f);
 
     template <input_range R,
       @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr auto foldl1(R&& r, F f);
+    constexpr auto fold_left_first(R&& r, F f);
 
     template<bidirectional_iterator I, sentinel_for<I> S, class T,
       @*indirectly-binary-right-foldable*@<T, I> F>
-    constexpr auto foldr(I first, S last, T init, F f);
+    constexpr auto fold_right(I first, S last, T init, F f);
 
     template<bidirectional_range R, class T,
       @*indirectly-binary-right-foldable*@<T, iterator_t<R>> F>
-    constexpr auto foldr(R&& r, T init, F f);
+    constexpr auto fold_right(R&& r, T init, F f);
 
     template <bidirectional_iterator I, sentinel_for<I> S,
       @*indirectly-binary-right-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr auto foldr1(I first, S last, F f);
+    constexpr auto fold_right_last(I first, S last, F f);
 
     template <bidirectional_range R,
       @*indirectly-binary-right-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr auto foldr1(R&& r, F f);
+    constexpr auto fold_right_last(R&& r, F f);
 
     template<class I, class T>
-      using foldl_with_iter_result = in_value_result<I, T>;
+      using fold_left_with_iter_result = in_value_result<I, T>;
     template<class I, class T>
-      using foldl1_with_iter_result = in_value_result<I, T>;
+      using fold_left_first_with_iter_result = in_value_result<I, T>;
 
     template<input_iterator I, sentinel_for<I> S, class T,
        @*indirectly-binary-left-foldable*@<T, I> F>
-    constexpr $see below$ foldl_with_iter(I first, S last, T init, F f);
+    constexpr $see below$ fold_left_with_iter(I first, S last, T init, F f);
 
     template<input_range R, class T,
       @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
-    constexpr $see below$ foldl_with_iter(R&& r, T init, F f);
+    constexpr $see below$ fold_left_with_iter(R&& r, T init, F f);
 
     template <input_iterator I, sentinel_for<I> S,
       @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr $see below$ foldl1_with_iter(I first, S last, F f);
+    constexpr $see below$ fold_left_first_with_iter(I first, S last, F f);
 
     template <input_range R,
       @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr $see below$ foldl1_with_iter(R&& r, F f);
+    constexpr $see below$ fold_left_first_with_iter(R&& r, F f);
   }
 }
 ```
@@ -780,38 +797,38 @@ And add a new clause, [alg.fold]:
 ```cpp
 template<input_iterator I, sentinel_for<I> S, class T,
   @*indirectly-binary-left-foldable*@<T, I> F>
-constexpr auto ranges::foldl(I first, S last, T init, F f);
+constexpr auto ranges::fold_left(I first, S last, T init, F f);
 
 template<input_range R, class T,
   @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
-constexpr auto ranges::foldl(R&& r, T init, F f);
+constexpr auto ranges::fold_left(R&& r, T init, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl_with_iter(std::move(first), last, std::move(init), f).value`.
+[#]{.pnum} *Returns*: `ranges::fold_left_with_iter(std::move(first), last, std::move(init), f).value`.
 
 ```cpp
 template <input_iterator I, sentinel_for<I> S,
   @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto ranges::foldl1(I first, S last, F f);
+constexpr auto ranges::fold_left_first(I first, S last, F f);
 
 template <input_range R,
   @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr auto ranges::foldl1(R&& r, F f);
+constexpr auto ranges::fold_left_first(R&& r, F f);
 ```
 
-[#]{.pnum} *Returns*: `ranges::foldl1_with_iter(std::move(first), last, f).value`.
+[#]{.pnum} *Returns*: `ranges::fold_left_first_with_iter(std::move(first), last, f).value`.
 
 
 ```cpp
 template<bidirectional_iterator I, sentinel_for<I> S, class T,
   @*indirectly-binary-right-foldable*@<T, I> F>
-constexpr auto ranges::foldr(I first, S last, T init, F f);
+constexpr auto ranges::fold_right(I first, S last, T init, F f);
 
 template<bidirectional_range R, class T,
   @*indirectly-binary-right-foldable*@<T, iterator_t<R>> F>
-constexpr auto ranges::foldr(R&& r, T init, F f);
+constexpr auto ranges::fold_right(R&& r, T init, F f);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -837,15 +854,15 @@ return accum;
 template <bidirectional_iterator I, sentinel_for<I> S,
   @*indirectly-binary-right-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr auto ranges::foldr1(I first, S last, F f);
+constexpr auto ranges::fold_right_last(I first, S last, F f);
 
 template <bidirectional_range R,
   @*indirectly-binary-right-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr auto ranges::foldr1(R&& r, F f);
+constexpr auto ranges::fold_right_last(R&& r, F f);
 ```
 
-[#]{.pnum} Let `U` be `decltype(ranges::foldr(first, last, iter_value_t<I>(*first), f))`.
+[#]{.pnum} Let `U` be `decltype(ranges::fold_right(first, last, iter_value_t<I>(*first), f))`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
@@ -857,18 +874,18 @@ if (first == last) {
 
 I tail = ranges::prev(ranges::next(first, std::move(last)));
 return optional<U>(in_place,
-    ranges::foldr(std::move(first), tail, iter_value_t<I>(*tail), std::move(f)));
+    ranges::fold_right(std::move(first), tail, iter_value_t<I>(*tail), std::move(f)));
 ```
 :::
 
 ```cpp
 template<input_iterator I, sentinel_for<I> S, class T,
   @*indirectly-binary-left-foldable*@<T, I> F>
-constexpr $see below$ foldl_with_iter(I first, S last, T init, F f);
+constexpr $see below$ fold_left_with_iter(I first, S last, T init, F f);
 
 template<input_range R, class T,
   @*indirectly-binary-left-foldable*@<T, iterator_t<R>> F>
-constexpr $see below$ foldl_with_iter(R&& r, T init, F f);
+constexpr $see below$ fold_left_with_iter(R&& r, T init, F f);
 ```
 
 [#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>`.
@@ -889,21 +906,21 @@ return {std::move(first), std::move(accum)};
 ```
 :::
 
-[#]{.pnum} *Remarks*: The return type is `foldl_with_iter_result<I, U>` for the first overload and `foldl_with_iter_result<borrowed_iterator_t<R>, U>` for the second overload.
+[#]{.pnum} *Remarks*: The return type is `fold_left_with_iter_result<I, U>` for the first overload and `fold_left_with_iter_result<borrowed_iterator_t<R>, U>` for the second overload.
 
 ```cpp
 template <input_iterator I, sentinel_for<I> S,
   @*indirectly-binary-left-foldable*@<iter_value_t<I>, I> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr $see below$ foldl1_with_iter(I first, last, F f)
+constexpr $see below$ fold_left_first_with_iter(I first, last, F f)
 
 template <input_range R,
   @*indirectly-binary-left-foldable*@<range_value_t<R>, iterator_t<R>> F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr $see below$ foldl1_with_iter(R&& r, F f);
+constexpr $see below$ fold_left_first_with_iter(R&& r, F f);
 ```
 
-[#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f))`.
+[#]{.pnum} Let `U` be `decltype(ranges::fold_left(std::move(first), last, iter_value_t<I>(*first), f))`.
 
 [#]{.pnum} *Effects*: Equivalent to:
 
@@ -921,7 +938,7 @@ return {std::move(first), std::move(init)};
 ```
 :::
 
-[#]{.pnum} *Remarks*: The return type is `foldl1_with_iter_result<I, optional<U>>` for the first overload and `foldl1_with_iter_result<borrowed_iterator_t<R>, optional<U>>` for the second overload.
+[#]{.pnum} *Remarks*: The return type is `fold_left_first_with_iter_result<I, optional<U>>` for the first overload and `fold_left_first_with_iter_result<borrowed_iterator_t<R>, optional<U>>` for the second overload.
 
 
 :::
