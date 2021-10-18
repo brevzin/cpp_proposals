@@ -607,6 +607,14 @@ The algorithms returning an iterator have not been implemented in range-v3 yet, 
 
 # Wording
 
+Add a feature-test macro to [version.syn]{.sref}:
+
+::: bq
+```
+#define __cpp_­lib_fold 2021XXL // also in <algorithm>
+```
+:::
+
 Append to [algorithm.syn]{.sref}, first a new result type:
 
 ::: bq
