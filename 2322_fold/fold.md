@@ -579,14 +579,6 @@ namespace std {
         @*indirectly-binary-left-foldable-impl*@<F, T, I, decay_t<invoke_result_t<F&, T, iter_reference_t<I>>>>;
 
     template <class F, class T, class I>
-    concept @*indirectly-short-circuit-left-foldable*@ = // exposition only
-        copy_constructible<F> &&
-        movable<T> &&
-        indirectly_readable<I> &&
-        invocable<F&, T&, iter_reference_t<I>> &&
-        @*boolean-testable*@<invoke_result_t<F&, T&, iter_reference_t<I>>>;
-
-    template <class F, class T, class I>
     concept @*indirectly-binary-right-foldable*@ =    // exposition only
         @*indirectly-binary-left-foldable*@<@*flipped*@<F>, T, I>;
 
@@ -633,25 +625,21 @@ namespace std {
 
     template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
        @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-    constexpr foldl_with_iter_result<I, $see below$>
-      foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
+    constexpr $see below$ foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
 
     template<input_range R, class T, class Proj = identity,
       @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-    constexpr foldl_with_iter_result<borrowed_iterator_t<R>, $see below$>
-      foldl_with_iter(R&& r, T init, F f, Proj proj = {});
+    constexpr $see below$ foldl_with_iter(R&& r, T init, F f, Proj proj = {});
 
     template <input_iterator I, sentinel_for<I> S, class Proj = identity,
       @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
       requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-    constexpr foldl1_with_iter_result<I, optional<$see below$>>
-      foldl1_with_iter(I first, S last, F f, Proj proj = {});
+    constexpr $see below$ foldl1_with_iter(I first, S last, F f, Proj proj = {});
 
     template <input_range R, class Proj = identity,
       @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>> F>
       requires constructible_from<range_value_t<R>, range_reference_t<R>>
-    constexpr foldl1_with_iter_result<borrowed_iterator_t<R>, optional<$see below$>>
-      foldl1_with_iter(R&& r, F f, Proj proj = {});
+    constexpr $see below$ foldl1_with_iter(R&& r, F f, Proj proj = {});
   }
 }
 ```
@@ -792,13 +780,11 @@ return optional<U>(in_place,
 ```cpp
 template<input_iterator I, sentinel_for<I> S, class T, class Proj = identity,
   @*indirectly-binary-left-foldable*@<T, projected<I, Proj>> F>
-constexpr foldl_with_iter_result<I, $see below$>
-  foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
+constexpr $see below$ foldl_with_iter(I first, S last, T init, F f, Proj proj = {});
 
 template<input_range R, class T, class Proj = identity,
   @*indirectly-binary-left-foldable*@<T, projected<iterator_t<R>, Proj>> F>
-constexpr foldl_with_iter_result<borrowed_iterator_t<R>, $see below$>
-  foldl_with_iter(R&& r, T init, F f, Proj proj = {});
+constexpr $see below$ foldl_with_iter(R&& r, T init, F f, Proj proj = {});
 ```
 
 [#]{.pnum} Let `U` be `decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>`
@@ -825,14 +811,12 @@ return {accum, first};
 template <input_iterator I, sentinel_for<I> S, class Proj = identity,
   @*indirectly-binary-left-foldable*@<iter_value_t<I>, projected<I, Proj>> F>
   requires constructible_from<iter_value_t<I>, iter_reference_t<I>>
-constexpr foldl1_with_iter_result<I, optional<$see below$>>
-  foldl1_with_iter(I first, last, F f, Proj proj = {})
+constexpr $see below$ foldl1_with_iter(I first, last, F f, Proj proj = {})
 
 template <input_range R, class Proj = identity,
   @*indirectly-binary-left-foldable*@<range_value_t<R>, projected<iterator_t<R>, Proj>F>
   requires constructible_from<range_value_t<R>, range_reference_t<R>>
-constexpr foldl1_with_iter_result<borrowed_iterator_t<R>, optional<$see below$>>
-  foldl1_with_iter(R&& r, F f, Proj proj = {});
+constexpr $see below$ foldl1_with_iter(R&& r, F f, Proj proj = {});
 ```
 
 [#]{.pnum} Let `U` be `decltype(ranges::foldl(std::move(first), last, iter_value_t<I>(*first), f, proj))`.
