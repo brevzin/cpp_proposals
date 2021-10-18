@@ -1431,14 +1431,14 @@ Algorithm returns…
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">8</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a>    <span class="cf">return</span> <span class="op">{</span>first, U<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">))}</span>;</span>
+<span id="cb30-2"><a href="#cb30-2"></a>    <span class="cf">return</span> <span class="op">{</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, U<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">))}</span>;</span>
 <span id="cb30-3"><a href="#cb30-3"></a><span class="op">}</span></span>
 <span id="cb30-4"><a href="#cb30-4"></a></span>
 <span id="cb30-5"><a href="#cb30-5"></a>U accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
 <span id="cb30-6"><a href="#cb30-6"></a><span class="cf">for</span> <span class="op">(++</span>first; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb30-7"><a href="#cb30-7"></a>    accum <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(</span>accum<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
 <span id="cb30-8"><a href="#cb30-8"></a><span class="op">}</span></span>
-<span id="cb30-9"><a href="#cb30-9"></a><span class="cf">return</span> <span class="op">{</span>accum, first<span class="op">}</span>;</span></code></pre></div>
+<span id="cb30-9"><a href="#cb30-9"></a><span class="cf">return</span> <span class="op">{</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>accum<span class="op">)}</span>;</span></code></pre></div>
 </blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">9</a></span> <em>Remarks</em>: The return type is <code class="sourceCode cpp">foldl_with_iter_result<span class="op">&lt;</span>I, U<span class="op">&gt;</span></code> for the first overload and <code class="sourceCode cpp">foldl_with_iter_result<span class="op">&lt;</span>borrowed_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, U<span class="op">&gt;</span></code> for the second overload.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
@@ -1454,12 +1454,14 @@ Algorithm returns…
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">11</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="cf">if</span> <span class="op">(</span>first <span class="op">==</span> last<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2"></a>    <span class="cf">return</span> <span class="op">{</span>first, optional<span class="op">&lt;</span>U<span class="op">&gt;()}</span>;</span>
+<span id="cb32-2"><a href="#cb32-2"></a>    <span class="cf">return</span> <span class="op">{</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, optional<span class="op">&lt;</span>U<span class="op">&gt;()}</span>;</span>
 <span id="cb32-3"><a href="#cb32-3"></a><span class="op">}</span></span>
 <span id="cb32-4"><a href="#cb32-4"></a></span>
-<span id="cb32-5"><a href="#cb32-5"></a>iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;</span> init<span class="op">(*</span>first<span class="op">)</span>;</span>
-<span id="cb32-6"><a href="#cb32-6"></a><span class="op">++</span>first;</span>
-<span id="cb32-7"><a href="#cb32-7"></a><span class="cf">return</span> ranges<span class="op">::</span>foldl_with_iter<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>last<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>f<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>proj<span class="op">)))</span>;</span></code></pre></div>
+<span id="cb32-5"><a href="#cb32-5"></a>optional<span class="op">&lt;</span>U<span class="op">&gt;</span> init<span class="op">(</span>in_place, <span class="op">*</span>first<span class="op">)</span>;</span>
+<span id="cb32-6"><a href="#cb32-6"></a><span class="cf">for</span> <span class="op">(++</span>first; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a>    <span class="op">*</span>init <span class="op">=</span> invoke<span class="op">(</span>f, std<span class="op">::</span>move<span class="op">(*</span>init<span class="op">)</span>, invoke<span class="op">(</span>proj, <span class="op">*</span>first<span class="op">))</span>;</span>
+<span id="cb32-8"><a href="#cb32-8"></a><span class="op">}</span></span>
+<span id="cb32-9"><a href="#cb32-9"></a><span class="cf">return</span> <span class="op">{</span>std<span class="op">::</span>move<span class="op">(</span>first<span class="op">)</span>, std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)}</span>;</span></code></pre></div>
 </blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">12</a></span> <em>Remarks</em>: The return type is <code class="sourceCode cpp">foldl1_with_iter_result<span class="op">&lt;</span>I, optional<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span></code> for the first overload and <code class="sourceCode cpp">foldl1_with_iter_result<span class="op">&lt;</span>borrowed_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, optional<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span></code> for the second overload.</p>
 </blockquote>

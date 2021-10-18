@@ -794,14 +794,14 @@ constexpr $see below$ foldl_with_iter(R&& r, T init, F f, Proj proj = {});
 ::: bq
 ```cpp
 if (first == last) {
-    return {first, U(std::move(init))};
+    return {std::move(first), U(std::move(init))};
 }
 
 U accum = invoke(f, std::move(init), invoke(proj, *first));
 for (++first; first != last; ++first) {
     accum = invoke(f, std::move(accum), invoke(proj, *first));
 }
-return {accum, first};
+return {std::move(first), std::move(accum)};
 ```
 :::
 
@@ -826,12 +826,14 @@ constexpr $see below$ foldl1_with_iter(R&& r, F f, Proj proj = {});
 ::: bq
 ```cpp
 if (first == last) {
-    return {first, optional<U>()};
+    return {std::move(first), optional<U>()};
 }
 
-iter_value_t<I> init(*first);
-++first;
-return ranges::foldl_with_iter(std::move(first), std::move(last), std::move(init), std::move(f), std::move(proj)));
+optional<U> init(in_place, *first);
+for (++first; first != last; ++first) {
+    *init = invoke(f, std::move(*init), invoke(proj, *first));
+}
+return {std::move(first), std::move(init)};
 ```
 :::
 
