@@ -529,7 +529,7 @@ iter_value_t<projected<I, Proj>> init(invoke(proj, *first));
 ```
 :::
 
-We'd still end up with a `tuple<T&>`, whereas we'd need to end up with a `tuple<T>`. The only way to get this right is to get a copy of the value first and _then_ project it, so that the projection takes `iter_value_t<I>` rather than `iter_reference_t<I>`:
+We'd still end up with a `tuple<T&>`, whereas we'd need to end up with a `tuple<T>`. The only way to get this right is to project the value type first:
 
 ::: bq
 ```cpp
@@ -537,7 +537,17 @@ auto init = invoke(proj, iter_value_t<I>(*first));
 ```
 :::
 
-But that means means we're performing an extra copy in the typical case (the iterator does not yield a proxy reference and there is no projection) simply to be able to support the rare case. That seems problematic. And we don't have any other algorithm where we'd need to get a projected _value_, we only ever need projected _references_ (algorithms like `min` which return a value type return the value type of the original range, not the projected range).
+But that's not actually required to be valid. The projection is required to take either `iter_reference_t<I>` or `iter_value_t<I>&` (specifically an _lvalue_ of the value type). So you _have_ to write this:
+
+::: bq
+```cpp
+iter_value_t<I> init_(*first);
+optional<U> init(in_place, invoke(proj, init_));
+```
+
+Which means that the only way to get this right is to incur an extra copy.
+
+Which means we're performing an extra copy in the typical case (the iterator does not yield a proxy reference and there is no projection) simply to be able to support the rare case. That seems problematic. And we don't have any other algorithm where we'd need to get a projected _value_, we only ever need projected _references_ (algorithms like `min` which return a value type return the value type of the original range, not the projected range).
 
 This suggests dropping the projections for the `*1` variants (`foldl1`, `foldr1`, and `fold1_with_iter`). But then they're more inconsistent with the other variants, so this paper suggests simply not having projections at all. This doesn't cost you anything for some of the algorithms, since projections in these case can always be provided either as range adaptors or function adaptors.
 
