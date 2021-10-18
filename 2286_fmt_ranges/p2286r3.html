@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-10-14" />
+  <meta name="dcterms.date" content="2021-10-15" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-10-14</td>
+    <td>2021-10-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -768,7 +768,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The same question holds for sets as well as maps, it’s just a question for whether <code class="sourceCode cpp">std<span class="op">::</span>set<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span></code> prints as <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">]</span></code> (i.e. as any other range of <code class="sourceCode cpp"><span class="dt">int</span></code>) or <code class="sourceCode cpp"><span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span></code>?</p>
 <p>If we print <code class="sourceCode cpp">map</code>s as any other range of pairs, there’s nothing left to do. If we print <code class="sourceCode cpp">map</code>s as associations, then we additionally have to answer the question of how user-defined associative containers can get printed in the same way. Hold onto this thought for a minute.</p>
 <h3 data-number="3.2.4" id="char-and-string-and-other-string-like-types-in-ranges-or-tuples"><span class="header-section-number">3.2.4</span> <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> (and other string-like types) in ranges or tuples<a href="#char-and-string-and-other-string-like-types-in-ranges-or-tuples" class="self-link"></a></h3>
-<p>Should <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">char</span>, string<span class="op">&gt;(</span><span class="ch">&#39;x&#39;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code> print as <code class="sourceCode cpp"><span class="op">(</span>x, hello<span class="op">)</span></code> or <code class="sourceCode cpp"><span class="op">(</span><span class="ch">&#39;x&#39;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code>? Should <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">char</span>, string<span class="op">&gt;(</span><span class="ch">&#39;y&#39;</span>, <span class="st">&quot;with</span><span class="sc">\n\&quot;</span><span class="st">quotes</span><span class="sc">\&quot;</span><span class="st">&quot;</span><span class="op">)</span></code> print as:</p>
+<p>Should <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">char</span>, string<span class="op">&gt;(</span><span class="ch">&#39;x&#39;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code> print as <code class="x">(x, hello)</code> or <code class="x">(&#39;x&#39;, &quot;hello&quot;)</code>? Should <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">char</span>, string<span class="op">&gt;(</span><span class="ch">&#39;y&#39;</span>, <span class="st">&quot;with</span><span class="sc">\n\&quot;</span><span class="st">quotes</span><span class="sc">\&quot;</span><span class="st">&quot;</span><span class="op">)</span></code> print as:</p>
 <blockquote>
 <div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>(y, with</span>
 <span id="cb14-2"><a href="#cb14-2"></a>&quot;quotes&quot;)</span></code></pre></div>
@@ -796,10 +796,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Earlier revisions of this paper suggested that formatting ranges and tuples would accept no format specifiers, but there indeed are quite a few things we may want to do here (as by Tomasz Kamiński and Peter Dimov):</p>
 <ul>
 <li>Formatting a range of pairs as a map (the <code class="sourceCode cpp">key<span class="op">:</span> value</code> syntax rather than the <code class="sourceCode cpp"><span class="op">(</span>key, value<span class="op">)</span></code> one)</li>
-<li>Formatting a range of chars as a string (i.e. to print <code class="sourceCode cpp">hello</code> rather than <code class="sourceCode cpp"><span class="op">[</span><span class="ch">&#39;h&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">]</span></code>)</li>
+<li>Formatting a range of chars as a string (i.e. to print <code class="x">hello</code> or <code class="x">&quot;hello&quot;</code> rather than <code class="x">[&#39;h&#39;, &#39;e&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code>)</li>
 </ul>
 <p>But these are just providing a specifier for how we format the range itself. How about how we format the elements of the range? Can I conveniently format a range of integers, printing their values as hex? Or as characters? Or print a range of chrono time points in whatever format I want? That’s fairly powerful.</p>
-<p>The problem is how do we actually <em>do that</em>. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I’ll start with a table of examples and follow up with a more detailed explanation. Instead of writing a bunch of examples like <code class="sourceCode cpp">print<span class="op">(</span><span class="st">&quot;{:?}</span><span class="sc">\n</span><span class="st">&quot;</span>, v<span class="op">)</span></code>, I’m just displaying the format string in one column (the <code class="sourceCode cpp"><span class="st">&quot;{:?}&quot;</span></code> here) and the argument in another (the <code class="sourceCode cpp">v</code>):</p>
+<p>The problem is how do we actually <em>do that</em>. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I’ll start with a table of examples and follow up with a more detailed explanation.</p>
+<p>Instead of writing a bunch of examples like <code class="sourceCode cpp">print<span class="op">(</span><span class="st">&quot;{:?}</span><span class="sc">\n</span><span class="st">&quot;</span>, v<span class="op">)</span></code>, I’m just displaying the format string in one column (the <code class="sourceCode cpp"><span class="st">&quot;{:?}&quot;</span></code> here) and the argument in another (the <code class="sourceCode cpp">v</code>):</p>
 <table>
 <thead>
 <tr class="header">

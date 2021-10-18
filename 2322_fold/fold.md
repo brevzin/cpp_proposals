@@ -807,8 +807,6 @@ constexpr foldl_with_iter_result<borrowed_iterator_t<R>, $see below$>
 
 ::: bq
 ```cpp
-using U = decay_t<invoke_result_t<F&, T, indirect_result_t<Proj&, I>>>;
-
 if (first == last) {
     return {first, U(std::move(init))};
 }

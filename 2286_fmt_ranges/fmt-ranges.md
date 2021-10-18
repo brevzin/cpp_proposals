@@ -273,7 +273,7 @@ If we print `map`s as any other range of pairs, there's nothing left to do. If w
 
 ### `char` and `string` (and other string-like types) in ranges or tuples
 
-Should `pair<char, string>('x', "hello")` print as `(x, hello)` or `('x', "hello")`? Should `pair<char, string>('y', "with\n\"quotes\"")` print as:
+Should `pair<char, string>('x', "hello")` print as `(x, hello)`{.x} or `('x', "hello")`{.x}? Should `pair<char, string>('y', "with\n\"quotes\"")` print as:
 
 ::: bq
 ```
@@ -318,11 +318,13 @@ fmt::format("{:*^30}", "centered");  // use '*' as a fill char
 Earlier revisions of this paper suggested that formatting ranges and tuples would accept no format specifiers, but there indeed are quite a few things we may want to do here (as by Tomasz Kamiński and Peter Dimov):
 
 * Formatting a range of pairs as a map (the `key: value` syntax rather than the `(key, value)` one)
-* Formatting a range of chars as a string (i.e. to print `hello` rather than `['h', 'e', 'l', 'l', 'o']`)
+* Formatting a range of chars as a string (i.e. to print `hello`{.x} or `"hello"`{.x} rather than `['h', 'e', 'l', 'l', 'o']`{.x})
 
 But these are just providing a specifier for how we format the range itself. How about how we format the elements of the range? Can I conveniently format a range of integers, printing their values as hex? Or as characters? Or print a range of chrono time points in whatever format I want? That's fairly powerful.
 
-The problem is how do we actually *do that*. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I'll start with a table of examples and follow up with a more detailed explanation. Instead of writing a bunch of examples like `print("{:?}\n", v)`, I'm just displaying the format string in one column (the `"{:?}"` here) and the argument in another (the `v`):
+The problem is how do we actually *do that*. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I'll start with a table of examples and follow up with a more detailed explanation.
+
+Instead of writing a bunch of examples like `print("{:?}\n", v)`, I'm just displaying the format string in one column (the `"{:?}"` here) and the argument in another (the `v`):
 
 |Format String|Contents|Formatted Output|
 |-|-|-|
