@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-10-15" />
+  <meta name="dcterms.date" content="2021-10-24" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-10-15</td>
+    <td>2021-10-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -578,8 +578,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#map-and-set-and-other-associative-containers"><span class="toc-section-number">3.2.3</span> <code class="sourceCode cpp">map</code> and <code class="sourceCode cpp">set</code> (and other associative containers)<span></span></a></li>
 <li><a href="#char-and-string-and-other-string-like-types-in-ranges-or-tuples"><span class="toc-section-number">3.2.4</span> <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> (and other string-like types) in ranges or tuples<span></span></a></li>
 <li><a href="#format-specifiers"><span class="toc-section-number">3.2.5</span> Format Specifiers<span></span></a></li>
-<li><a href="#customization"><span class="toc-section-number">3.2.6</span> Customization<span></span></a></li>
-<li><a href="#summary-of-fancied-formatting-facilities"><span class="toc-section-number">3.2.7</span> Summary of Fancied Formatting Facilities<span></span></a></li>
+<li><a href="#explanation-of-added-specifiers"><span class="toc-section-number">3.2.6</span> Explanation of Added Specifiers<span></span></a></li>
+<li><a href="#customization"><span class="toc-section-number">3.2.7</span> Customization<span></span></a></li>
+<li><a href="#summary-of-fancied-formatting-facilities"><span class="toc-section-number">3.2.8</span> Summary of Fancied Formatting Facilities<span></span></a></li>
 </ul></li>
 <li><a href="#what-additional-functionality"><span class="toc-section-number">3.3</span> What additional functionality?<span></span></a></li>
 <li><a href="#what-about-format-specifiers"><span class="toc-section-number">3.4</span> What about format specifiers?<span></span></a></li>
@@ -802,6 +803,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The problem is how do we actually <em>do that</em>. After a lengthy discussion with Peter Dimov, Tim Song, and Victor Zverovich, this is what we came up with. I’ll start with a table of examples and follow up with a more detailed explanation.</p>
 <p>Instead of writing a bunch of examples like <code class="sourceCode cpp">print<span class="op">(</span><span class="st">&quot;{:?}</span><span class="sc">\n</span><span class="st">&quot;</span>, v<span class="op">)</span></code>, I’m just displaying the format string in one column (the <code class="sourceCode cpp"><span class="st">&quot;{:?}&quot;</span></code> here) and the argument in another (the <code class="sourceCode cpp">v</code>):</p>
 <table>
+<colgroup>
+<col style="width: 14%"></col>
+<col style="width: 42%"></col>
+<col style="width: 42%"></col>
+</colgroup>
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
@@ -858,82 +864,548 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 <tr class="odd">
 <td><code class="x">{}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
-<td><code class="x">[72, 101, 108, 108, 111]</code></td>
-</tr>
-<tr class="even">
-<td><code class="x">{::#x}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
-<td><code class="x">[0x48, 0x65, 0x6c, 0x6c, 0x6f]</code></td>
-</tr>
-<tr class="odd">
-<td><code class="x">{::c}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
-<td><code class="x">[H, e, l, l, o]</code></td>
-</tr>
-<tr class="even">
-<td><code class="x">{::?c}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
 <td><code class="x">[&#39;H&#39;, &#39;e&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code></td>
 </tr>
+<tr class="even">
+<td><code class="x">{::}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[H, e, l, l, o]</code></td>
+</tr>
 <tr class="odd">
-<td><code class="x">{:s}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
-<td><code class="x">Hello</code></td>
+<td><code class="x">{::?c}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[&#39;H&#39;, &#39;e&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code></td>
 </tr>
 <tr class="even">
-<td><code class="x">{:?s}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">72</span>, <span class="dv">101</span>, <span class="dv">108</span>, <span class="dv">108</span>, <span class="dv">111</span><span class="op">}</span></code></td>
-<td><code class="x">&quot;Hello&quot;</code></td>
+<td><code class="x">{::d}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[72, 101, 108, 108, 111]</code></td>
 </tr>
 <tr class="odd">
+<td><code class="x">{::#x}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[0x48, 0x65, 0x6c, 0x6c, 0x6f]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:s}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">Hello</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:?s}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">&quot;Hello&quot;</code></td>
+</tr>
+<tr class="even">
 <td><code class="x">{}</code></td>
 <td><code class="sourceCode cpp">pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}</span></code></td>
 <td><code class="x">(42, &quot;hello&quot;)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="x">{::#x:*^10}</code></td>
 <td><code class="sourceCode cpp">pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}</span></code></td>
 <td><code class="x">(0x2a, **hello***)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="x">{:|#x|*^10}</code></td>
 <td><code class="sourceCode cpp">pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}</span></code></td>
 <td><code class="x">(0x2a, **hello***)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="x">{}</code></td>
 <td><code class="sourceCode cpp">vector<span class="op">{</span>pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}}</span></code></td>
 <td><code class="x">[(42, &quot;hello&quot;)]</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="x">{:m}</code></td>
 <td><code class="sourceCode cpp">vector<span class="op">{</span>pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}}</span></code></td>
 <td><code class="x">{42: &quot;hello&quot;}</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="x">{:m::#x:*^10}</code></td>
 <td><code class="sourceCode cpp">vector<span class="op">{</span>pair<span class="op">{</span><span class="dv">42</span>, <span class="st">&quot;hello&quot;</span><span class="bu">s</span><span class="op">}}</span></code></td>
 <td><code class="x">{0x2a: **hello***}</code></td>
 </tr>
-<tr class="odd">
-<td><code class="x">{}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="dv">65</span><span class="op">}</span>, vector<span class="op">{</span><span class="dv">72</span>, <span class="dv">101</span><span class="op">}}</span></code></td>
-<td><code class="x">[[65], [72, 101]]</code></td>
-</tr>
 <tr class="even">
-<td><code class="x">{:::c}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="dv">65</span><span class="op">}</span>, vector<span class="op">{</span><span class="dv">72</span>, <span class="dv">101</span><span class="op">}}</span></code></td>
-<td><code class="x">[[A], [H, e]]</code></td>
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[[&#39;a&#39;], [&#39;b&#39;, &#39;c&#39;]]</code></td>
 </tr>
 <tr class="odd">
 <td><code class="x">{::?s}</code></td>
-<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="dv">65</span><span class="op">}</span>, vector<span class="op">{</span><span class="dv">72</span>, <span class="dv">101</span><span class="op">}}</span></code></td>
-<td><code class="x">[&quot;A&quot;, &quot;He&quot;]</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[&quot;a&quot;, &quot;bc&quot;]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:::d}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[[97], [98, 99]]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{}</span></code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span>system_clock<span class="op">::</span>now<span class="op">()</span>, system_clock<span class="op">::</span>now<span class="op">())</span></code></td>
+<td><code class="x">(2021-10-24 20:33:37, 2021-10-24 20:33:37)</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{:|%</span>Y<span class="op">-%</span>m<span class="op">-%</span>d<span class="op">|%</span>H<span class="op">:%</span>M<span class="op">:%</span>S<span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span>system_clock<span class="op">::</span>now<span class="op">()</span>, system_clock<span class="op">::</span>now<span class="op">())</span></code></td>
+<td><code class="x">(2021-10-24, 20:33:37)</code></td>
 </tr>
 </tbody>
 </table>
-<h3 data-number="3.2.6" id="customization"><span class="header-section-number">3.2.6</span> Customization<a href="#customization" class="self-link"></a></h3>
+<h3 data-number="3.2.6" id="explanation-of-added-specifiers"><span class="header-section-number">3.2.6</span> Explanation of Added Specifiers<a href="#explanation-of-added-specifiers" class="self-link"></a></h3>
+<h4 data-number="3.2.6.1" id="the-debug-specifier"><span class="header-section-number">3.2.6.1</span> The debug specifier <code class="sourceCode cpp"><span class="op">?</span></code><a href="#the-debug-specifier" class="self-link"></a></h4>
+<p><code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> and <code class="sourceCode cpp">string_view</code> will start to support the <code class="sourceCode cpp"><span class="op">?</span></code> specifier. This will cause the character/string to be printed as quoted (characters with <code class="sourceCode cpp"><span class="ch">&#39;</span></code> and strings with <code class="sourceCode cpp"><span class="st">&quot;</span></code>) and all characters to be escaped, as <a href="char-and-string-and-other-string-like-types-in-ranges-or-tuples">described earlier</a>.</p>
+<p>This facility will be generated by the formatters for these types providing an addition member function (on top of <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code>):</p>
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">void</span> format_as_debug<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>Which other formatting types may conditionally invoke when they parse a <code class="sourceCode cpp"><span class="op">?</span></code>. For instance, since the intent is that range formatters print escaped by default, the logic for a simple range formatter that accepts no specifiers might look like this (note that this paper is proposing something more complicated than this, this is just an example):</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> V<span class="op">&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">struct</span> range_formatter <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>    std<span class="op">::</span>formatter<span class="op">&lt;</span>V<span class="op">&gt;</span> underlying;</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a>        <span class="co">// ensure that the format specifier is empty</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a>        <span class="cf">if</span> <span class="op">(</span>ctx<span class="op">.</span>begin<span class="op">()</span> <span class="op">!=</span> ctx<span class="op">.</span>end<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">*</span>ctx<span class="op">.</span>begin<span class="op">()</span> <span class="op">!=</span> <span class="ch">&#39;}&#39;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-9"><a href="#cb18-9"></a>            <span class="cf">throw</span> std<span class="op">::</span>format_error<span class="op">(</span><span class="st">&quot;invalid format&quot;</span><span class="op">)</span>;</span>
+<span id="cb18-10"><a href="#cb18-10"></a>        <span class="op">}</span></span>
+<span id="cb18-11"><a href="#cb18-11"></a></span>
+<span id="cb18-12"><a href="#cb18-12"></a>        <span class="co">// ensure that the underlying type can parse an empty specifier</span></span>
+<span id="cb18-13"><a href="#cb18-13"></a>        <span class="kw">auto</span> out <span class="op">=</span> underlying<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
+<span id="cb18-14"><a href="#cb18-14"></a></span>
+<span id="cb18-15"><a href="#cb18-15"></a>        <span class="co">// conditionally format as debug, if the type supports it</span></span>
+<span id="cb18-16"><a href="#cb18-16"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> underlying<span class="op">.</span>format_as_debug<span class="op">()</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb18-17"><a href="#cb18-17"></a>            underlying<span class="op">.</span>format_as_debug<span class="op">()</span>;</span>
+<span id="cb18-18"><a href="#cb18-18"></a>        <span class="op">}</span></span>
+<span id="cb18-19"><a href="#cb18-19"></a>        <span class="cf">return</span> out;</span>
+<span id="cb18-20"><a href="#cb18-20"></a>    <span class="op">}</span></span>
+<span id="cb18-21"><a href="#cb18-21"></a></span>
+<span id="cb18-22"><a href="#cb18-22"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb18-23"><a href="#cb18-23"></a>        <span class="kw">requires</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, V<span class="op">&gt;</span></span>
+<span id="cb18-24"><a href="#cb18-24"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-25"><a href="#cb18-25"></a>        <span class="kw">auto</span> out <span class="op">=</span> ctx<span class="op">.</span>out<span class="op">()</span>;</span>
+<span id="cb18-26"><a href="#cb18-26"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;[&#39;</span>;</span>
+<span id="cb18-27"><a href="#cb18-27"></a>        <span class="kw">auto</span> first <span class="op">=</span> std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb18-28"><a href="#cb18-28"></a>        <span class="kw">auto</span> last <span class="op">=</span> std<span class="op">::</span>ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb18-29"><a href="#cb18-29"></a>        <span class="cf">if</span> <span class="op">(</span>first <span class="op">!=</span> last<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-30"><a href="#cb18-30"></a>            <span class="co">// have to format every element via the underlying formatter</span></span>
+<span id="cb18-31"><a href="#cb18-31"></a>            ctx<span class="op">.</span>advance_to<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>out<span class="op">))</span>;</span>
+<span id="cb18-32"><a href="#cb18-32"></a>            out <span class="op">=</span> underlying<span class="op">.</span>format<span class="op">(*</span>first, ctx<span class="op">))</span>;</span>
+<span id="cb18-33"><a href="#cb18-33"></a>            <span class="cf">for</span> <span class="op">(++</span>first; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-34"><a href="#cb18-34"></a>                <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;,&#39;</span>;</span>
+<span id="cb18-35"><a href="#cb18-35"></a>                <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39; &#39;</span>;</span>
+<span id="cb18-36"><a href="#cb18-36"></a>                ctx<span class="op">.</span>advance_to<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>out<span class="op">))</span>;</span>
+<span id="cb18-37"><a href="#cb18-37"></a>                out <span class="op">=</span> underlying<span class="op">.</span>format<span class="op">(*</span>first, ctx<span class="op">)</span>;</span>
+<span id="cb18-38"><a href="#cb18-38"></a>            <span class="op">}</span></span>
+<span id="cb18-39"><a href="#cb18-39"></a>        <span class="op">}</span></span>
+<span id="cb18-40"><a href="#cb18-40"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;]&#39;</span>;</span>
+<span id="cb18-41"><a href="#cb18-41"></a>        <span class="cf">return</span> out;</span>
+<span id="cb18-42"><a href="#cb18-42"></a>    <span class="op">}</span></span>
+<span id="cb18-43"><a href="#cb18-43"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<h4 data-number="3.2.6.2" id="range-specifiers"><span class="header-section-number">3.2.6.2</span> Range specifiers<a href="#range-specifiers" class="self-link"></a></h4>
+<p>Range format specifiers come in two kinds: specifiers for the range itself and specifiers for the underlying elements of the range. They must be provided in order: the range specifiers (optionally), then if desired, a colon and then the underlying specifier (optionally). For instance:</p>
+<table>
+<colgroup>
+<col style="width: 50%"></col>
+<col style="width: 50%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>meaning</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td>No specifiers</td>
+</tr>
+<tr class="even">
+<td><code class="x">{:}</code></td>
+<td>No specifiers</td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:m}</code></td>
+<td>Apply the <code class="sourceCode cpp">m</code> specifier to the range</td>
+</tr>
+<tr class="even">
+<td><code class="x">{::d}</code></td>
+<td>Apply the <code class="sourceCode cpp">d</code> specifier to each element of the range</td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:?s}</code></td>
+<td>Apply the <code class="sourceCode cpp"><span class="op">?</span>s</code> specifier to the range</td>
+</tr>
+<tr class="even">
+<td><code class="x">{:m::#x:#x}</code></td>
+<td>Apply the <code class="sourceCode cpp">m</code> specifier to the range and the <code class="x">:#x:#x</code> specifier to each element of the range</td>
+</tr>
+</tbody>
+</table>
+<p>There are only a few top-level range specifiers proposed:</p>
+<ul>
+<li><code class="sourceCode cpp">s</code>: for ranges of char, only: formats the range as a string.</li>
+<li><code class="sourceCode cpp"><span class="op">?</span>s</code> for ranges of char, only: same as <code class="sourceCode cpp">s</code> except will additionally quote and escape the string</li>
+<li><code class="sourceCode cpp">m</code>: for ranges of <code class="sourceCode cpp">pair</code>s (or <code class="sourceCode cpp">tuple</code>s of size 2) will format as <code class="sourceCode cpp"><span class="op">{</span>k1<span class="op">:</span> v1, k2<span class="op">:</span> v2<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[(</span>k1, v1<span class="op">)</span>, <span class="op">(</span>k2, v2<span class="op">)]</span></code> (i.e. as a <code class="sourceCode cpp">map</code>). For other ranges, will format as <code class="sourceCode cpp"><span class="op">{</span>a, b, c<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[</span>a, b, c<span class="op">]</span></code> (i.e. as a <code class="sourceCode cpp">set</code>).</li>
+</ul>
+<p>If no element-specific formatter is provided (i.e. there is no inner colon - an empty element-specific formatter is still an element-specific formatter), the range will be formatted as debug. Otherwise, the element-specific formatter will be parsed and used.</p>
+<p>To revisit a few rows from the earlier table:</p>
+<table>
+<colgroup>
+<col style="width: 11%"></col>
+<col style="width: 44%"></col>
+<col style="width: 44%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Contents</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[&#39;H&#39;, &#39;e&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{::}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[H, e, l, l, o]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{::?c}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[&#39;H&#39;, &#39;e&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{::d}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[72, 101, 108, 108, 111]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{::#x}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">[0x48, 0x65, 0x6c, 0x6c, 0x6f]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:s}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">Hello</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:?s}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;e&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
+<td><code class="x">&quot;Hello&quot;</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">&lt;{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[[&#39;a&#39;], [&#39;b&#39;, &#39;c&#39;]]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{::?s}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[&quot;a&quot;, &quot;bc&quot;]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:::d}</code></td>
+<td><code class="sourceCode cpp">vector<span class="op">{</span>vector<span class="op">{</span><span class="ch">&#39;a&#39;</span><span class="op">}</span>, vector<span class="op">{</span><span class="ch">&#39;b&#39;</span>, <span class="ch">&#39;c&#39;</span><span class="op">}}</span></code></td>
+<td><code class="x">[[97], [98, 99]]</code></td>
+</tr>
+</tbody>
+</table>
+<p>The second row is not printed quoted, because an empty element specifier is provided. The third row is printed quoted again because it was explicitly asked for using the <code class="sourceCode cpp"><span class="op">?</span>c</code> specifier, applied to each character.</p>
+<p>The last row, <code class="sourceCode cpp"><span class="op">:::</span>d</code>, is parsed as:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th><div style="text-align:center">
+<strong>top level outer vector</strong>
+</div></th>
+<th></th>
+<th><div style="text-align:center">
+<strong>top level inner vector</strong>
+</div></th>
+<th></th>
+<th><div style="text-align:center">
+<strong>inner vector each element</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td>(none)</td>
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td>(none)</td>
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td><code class="sourceCode cpp">d</code></td>
+</tr>
+</tbody>
+</table>
+<p>That is, the <code class="sourceCode cpp">d</code> format specifier is applied to each underlying <code class="sourceCode cpp"><span class="dt">char</span></code>, which causes them to be printed as integers instead of characters.</p>
+<h4 data-number="3.2.6.3" id="pair-and-tuple-specifiers"><span class="header-section-number">3.2.6.3</span> Pair and Tuple Specifiers<a href="#pair-and-tuple-specifiers" class="self-link"></a></h4>
+<p>This is the hard part.</p>
+<p>For ranges, we can have the underlying element’s <code class="sourceCode cpp">formatter</code> simply parse the whole format specifier string from the character past the <code class="sourceCode cpp"><span class="op">:</span></code> to the <code class="sourceCode cpp"><span class="op">}</span></code>. The range doesn’t care anymore at that point, and what we’re left with is a specifier that the underlying element should understand (or not).</p>
+<p>For <code class="sourceCode cpp">pair</code>, it’s not so easy, because format strings can contain <em>anything</em>. Absolutely anything. So when trying to parse a format specifier for a <code class="sourceCode cpp">pair<span class="op">&lt;</span>X, Y<span class="op">&gt;</span></code>, how do you know where <code class="sourceCode cpp">X</code>’s format specifier ends and <code class="sourceCode cpp">Y</code>’s format specifier begins? This is, in general, impossible.</p>
+<p>But Tim’s insight was to take a page out of <code class="sourceCode cpp">sed</code>’s book and rely on the user providing the specifier string to actually know what they’re doing, and thus provide their own delimiter. <code class="sourceCode cpp">pair</code> will recognize the first character that is not one of its formatters as the delimiter, and then delimit based on that.</p>
+<p>Let’s start with some easy examples:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Contents</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">10</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(10, 1729)</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">10</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(10, 1729)</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{::#x:04X}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">10</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(0xa, 06C1)</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:|#x|04X}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">10</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(0xa, 06C1)</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:Y#xY04X}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">10</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(0xa, 06C1)</code></td>
+</tr>
+</tbody>
+</table>
+<p>In the first two rows, there are no specifiers for the underlying elements. The last three rows each provide the same specifiers, but use a different delimiter:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th><div style="text-align:center">
+<strong>pair specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>delimiter</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">first</code> specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>delimiter</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">second</code> specifier</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td>(none)</td>
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td><code class="x">#x</code></td>
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td><code class="x">04X</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td>(none)</td>
+<td><code class="sourceCode cpp"><span class="op">|</span></code></td>
+<td><code class="x">#x</code></td>
+<td><code class="sourceCode cpp"><span class="op">|</span></code></td>
+<td><code class="x">04X</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td>(none)</td>
+<td><code class="sourceCode cpp">Y</code></td>
+<td><code class="x">#x</code></td>
+<td><code class="sourceCode cpp">Y</code></td>
+<td><code class="x">04X</code></td>
+</tr>
+</tbody>
+</table>
+<p>If you provide the <code class="sourceCode cpp">first</code> specifier, you must provide all the specifiers. In other words, <code class="x">::#x</code> would be an invalid format specifier for a <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span></code>.</p>
+<p>To demonstrate why such a scheme is necessary, and simply using <code class="sourceCode cpp"><span class="op">:</span></code> as a delimiter is insufficient, consider chrono formatters. Chrono format strings allow anything, including <code class="sourceCode cpp"><span class="op">:</span></code>. Consider trying to format <code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>system_clock<span class="op">::</span>now<span class="op">()</span></code> using various specifiers:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{}</span></code></td>
+<td><code class="x">2021-10-24 20:33:37</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{:%</span>Y<span class="op">-%</span>m<span class="op">-%</span>d<span class="op">}</span></code></td>
+<td><code class="x">2021-10-24</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{:%</span>H<span class="op">:%</span>M<span class="op">:%</span>S<span class="op">}</span></code></td>
+<td><code class="x">20:33:37</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{:%</span>H hours, <span class="op">%</span>M minutes, <span class="op">%</span>S seconds<span class="op">}</span></code></td>
+<td><code class="x">20 hours, 33 minutes, 37 seconds</code></td>
+</tr>
+</tbody>
+</table>
+<p>How could <code class="sourceCode cpp">pair</code> <em>possibly</em> know when to stop parsing <code class="sourceCode cpp">first</code>’s specifier given… that? It can’t. But if allow an arbitrary choice of delimiter, the user can pick one that won’t interfere:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Contents</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span>now<span class="op">()</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">(2021-10-24 20:33:37, 1729)</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:m|%Y-%m-%d|#x}</code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span>now<span class="op">()</span>, <span class="dv">1729</span><span class="op">)</span></code></td>
+<td><code class="x">2021-10-24: 0x6c1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Which is parsed as:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th><div style="text-align:center">
+<strong>pair specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>delimiter</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">first</code> specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>delimiter</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">second</code> specifier</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">:</span></code></td>
+<td><code class="sourceCode cpp">m</code></td>
+<td><code class="sourceCode cpp"><span class="op">|</span></code></td>
+<td><code class="sourceCode cpp"><span class="op">%</span>Y<span class="op">-%</span>m<span class="op">-%</span>d</code></td>
+<td><code class="sourceCode cpp"><span class="op">|</span></code></td>
+<td><code class="x">#x</code></td>
+</tr>
+</tbody>
+</table>
+<p>The above also introduces the only top-level specifier for <code class="sourceCode cpp">pair</code>: <code class="sourceCode cpp">m</code>. As with Ranges described in the previous section (and, indeed, necessary to support the Ranges functionality described there), the <code class="sourceCode cpp">m</code> specifier formatters pairs and 2-tuples as associations (i.e. <code class="sourceCode cpp">k<span class="op">:</span> v</code>) instead of as a pair/tuple (i.e. <code class="sourceCode cpp"><span class="op">(</span>k, v<span class="op">)</span></code>):</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Contents</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{}</span></code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">)</span></code></td>
+<td><code class="x">(1, 2)</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{:</span>m<span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">pair<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">)</span></code></td>
+<td><code class="x">1: 2</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{:</span>m<span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">tuple<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">)</span></code></td>
+<td><code class="x">1: 2</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{}</span></code></td>
+<td><code class="sourceCode cpp">tuple<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="x">(1)</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{:</span>m<span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">tuple<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code></td>
+<td><code class="x">1</code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">{}</span></code></td>
+<td><code class="sourceCode cpp">tuple<span class="op">(</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">)</span></code></td>
+<td><code class="x">(1, 2, 3)</code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">{:</span>m<span class="op">}</span></code></td>
+<td><code class="sourceCode cpp">tuple<span class="op">(</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">)</span></code></td>
+<td>ill-formed</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="3.2.7" id="customization"><span class="header-section-number">3.2.7</span> Customization<a href="#customization" class="self-link"></a></h3>
 <p>There are actually multiple questions when it comes to customization:</p>
 <ol type="1">
 <li>How do you opt in a user-defined string type to being formatted without delimiters (when printed normally) or being formatted as quoted (when as part of a range or tuple)?</li>
@@ -942,37 +1414,37 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ol>
 <p>These are all important questions, since even regardless of how we do customization, we need to give the user the tools to format their types the way they want, conveniently. For instance, a user might have a type like:</p>
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">struct</span> Foo <span class="op">{</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a>    <span class="dt">int</span> bar;</span>
-<span id="cb17-3"><a href="#cb17-3"></a>    std<span class="op">::</span>string baz;</span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">struct</span> Foo <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>    <span class="dt">int</span> bar;</span>
+<span id="cb19-3"><a href="#cb19-3"></a>    std<span class="op">::</span>string baz;</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>And want to format <code class="sourceCode cpp">Foo<span class="op">{.</span>bar<span class="op">=</span><span class="dv">10</span>, <span class="op">.</span>baz<span class="op">=</span><span class="st">&quot;Hello World&quot;</span><span class="op">}</span></code> as the string <code class="sourceCode cpp">Foo<span class="op">(</span>bar<span class="op">=</span><span class="dv">10</span>, baz<span class="op">=</span><span class="st">&quot;Hello World&quot;</span><span class="op">)</span></code>. This requires giving the user some way to choose to print the <code class="sourceCode cpp">baz</code> member as being quoted, rather than not. They need to have something to be able to write here:</p>
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Foo, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>Foo <span class="kw">const</span><span class="op">&amp;</span> f, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb18-5"><a href="#cb18-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Foo(bar={}, baz={})&quot;</span>, f<span class="op">.</span>bar, <span class="co">/* ???? */</span><span class="op">)</span>;</span>
-<span id="cb18-6"><a href="#cb18-6"></a>    <span class="op">}</span></span>
-<span id="cb18-7"><a href="#cb18-7"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Foo, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>Foo <span class="kw">const</span><span class="op">&amp;</span> f, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Foo(bar={}, baz={})&quot;</span>, f<span class="op">.</span>bar, <span class="co">/* ???? */</span><span class="op">)</span>;</span>
+<span id="cb20-6"><a href="#cb20-6"></a>    <span class="op">}</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>Extending this question out further: how do you format wrappers?</p>
 <p>Let’s say you have your own implementation of <code class="sourceCode cpp">Optional</code>, that you want to format the same way that Rust does: so that a disengaged one formats as <code class="sourceCode cpp">None</code> and an engaged one formats as <code class="sourceCode cpp">Some<span class="op">(??)</span></code>. We can start by:</p>
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a></span>
-<span id="cb19-5"><a href="#cb19-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb19-6"><a href="#cb19-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb19-9"><a href="#cb19-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
-<span id="cb19-11"><a href="#cb19-11"></a>        <span class="op">}</span></span>
-<span id="cb19-12"><a href="#cb19-12"></a>    <span class="op">}</span></span>
-<span id="cb19-13"><a href="#cb19-13"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a></span>
+<span id="cb21-5"><a href="#cb21-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-7"><a href="#cb21-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb21-9"><a href="#cb21-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
+<span id="cb21-11"><a href="#cb21-11"></a>        <span class="op">}</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a>    <span class="op">}</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>If we had an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>string<span class="op">&gt;(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code>, this would format as <code class="sourceCode cpp">Some<span class="op">(</span>hello<span class="op">)</span></code>. Which may be fine. But what if we wanted to format it as <code class="sourceCode cpp">Some<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code> instead? That is, take advantage of the quoting rules we just went through. What do you write instead of <code class="sourceCode cpp"><span class="op">*</span>opt</code> to format <code class="sourceCode cpp">string</code>s (or <code class="sourceCode cpp"><span class="dt">char</span></code>s or user-defined string-like types) as quoted in this context?</p>
 <p>Put differently, how does the library implement formatting <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code> and arbitrary <code class="sourceCode cpp">range</code>s, which also would have to do this dance of conditionally quoting character and string types? Users need that functionality too, and we need to provide it.</p>
@@ -996,93 +1468,93 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a>  <span class="kw">struct</span> my_string <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="op">}</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a></span>
-<span id="cb20-5"><a href="#cb20-5"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
-<span id="cb20-6"><a href="#cb20-6"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span></span>
-<span id="cb20-7"><a href="#cb20-7"></a>std<span class="op">::</span>enable_formatting_as_string<span class="op">&lt;</span></span>
-<span id="cb20-8"><a href="#cb20-8"></a>  N<span class="op">::</span>my_string<span class="op">&gt;</span> <span class="op">=</span> <span class="kw">true</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a>  <span class="kw">struct</span> my_string <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="op">}</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a></span>
-<span id="cb21-5"><a href="#cb21-5"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb21-6"><a href="#cb21-6"></a>  <span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
-<span id="cb21-7"><a href="#cb21-7"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>N<span class="op">::</span>my_string, <span class="dt">char</span><span class="op">&gt;</span></span>
-<span id="cb21-8"><a href="#cb21-8"></a>    <span class="op">:</span> formatter<span class="op">&lt;</span>string_format_wrapper<span class="op">&lt;</span>N<span class="op">::</span>my_string<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span></span>
-<span id="cb21-9"><a href="#cb21-9"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb21-10"><a href="#cb21-10"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="kw">struct</span> my_string <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="op">}</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a>std<span class="op">::</span>enable_formatting_as_string<span class="op">&lt;</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>  N<span class="op">::</span>my_string<span class="op">&gt;</span> <span class="op">=</span> <span class="kw">true</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>  <span class="kw">struct</span> my_string <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a></span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a>  <span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>N<span class="op">::</span>my_string, <span class="dt">char</span><span class="op">&gt;</span></span>
+<span id="cb23-8"><a href="#cb23-8"></a>    <span class="op">:</span> formatter<span class="op">&lt;</span>string_format_wrapper<span class="op">&lt;</span>N<span class="op">::</span>my_string<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a>  <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb23-10"><a href="#cb23-10"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
 <p>The latter is clearly more verbose, but has the advantage that if you want to treat a type as a string/set/map that isn’t always formatted that way, the custom formatters would let you do that:</p>
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;&gt;</span> v <span class="op">=</span> <span class="op">{</span>{<span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span><span class="op">}}</span>;</span>
-<span id="cb22-2"><a href="#cb22-2"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, v<span class="op">)</span>;                <span class="co">// [(1, 2), (3, 4)]</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, format_as_map<span class="op">(</span>v<span class="op">))</span>; <span class="co">// {1: 2, 3: 4}</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;&gt;</span> v <span class="op">=</span> <span class="op">{</span>{<span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span><span class="op">}}</span>;</span>
+<span id="cb24-2"><a href="#cb24-2"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, v<span class="op">)</span>;                <span class="co">// [(1, 2), (3, 4)]</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, format_as_map<span class="op">(</span>v<span class="op">))</span>; <span class="co">// {1: 2, 3: 4}</span></span></code></pre></div>
 </blockquote>
 <p>Which especially comes into play when you’re dealing with range adaptors and just construct some range of pairs or range of range of char and wish to print that as a map or string, accordingly. For example:</p>
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="op">{</span><span class="st">&quot;  some  &quot;</span>, <span class="st">&quot; words   &quot;</span>, <span class="st">&quot;here&quot;</span><span class="op">}</span>;</span>
-<span id="cb23-2"><a href="#cb23-2"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, words<span class="op">)</span>;   <span class="co">// [&quot;  some  &quot;, &quot; words  &quot;, &quot;here&quot;]</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a></span>
-<span id="cb23-4"><a href="#cb23-4"></a><span class="kw">auto</span> trimmed <span class="op">=</span> words <span class="op">|</span> transform<span class="op">(</span>views<span class="op">::</span>trim_whitespace<span class="op">)</span>;</span>
-<span id="cb23-5"><a href="#cb23-5"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, trimmed<span class="op">)</span>; <span class="co">// [[&#39;s&#39;, &#39;o&#39;, &#39;m&#39;, &#39;e&#39;], [&#39;w&#39;, &#39;o&#39;, &#39;r&#39;, &#39;d&#39;, &#39;s&#39;], [&#39;h&#39;, &#39;e&#39;, &#39;r&#39;, &#39;e&#39;]]</span></span>
-<span id="cb23-6"><a href="#cb23-6"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, trimmed <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>format_as_string<span class="op">))</span>;</span>
-<span id="cb23-7"><a href="#cb23-7"></a>                             <span class="co">// [&quot;some&quot;, &quot;words&quot;, &quot;here&quot;]</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="op">{</span><span class="st">&quot;  some  &quot;</span>, <span class="st">&quot; words   &quot;</span>, <span class="st">&quot;here&quot;</span><span class="op">}</span>;</span>
+<span id="cb25-2"><a href="#cb25-2"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, words<span class="op">)</span>;   <span class="co">// [&quot;  some  &quot;, &quot; words  &quot;, &quot;here&quot;]</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a></span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">auto</span> trimmed <span class="op">=</span> words <span class="op">|</span> transform<span class="op">(</span>views<span class="op">::</span>trim_whitespace<span class="op">)</span>;</span>
+<span id="cb25-5"><a href="#cb25-5"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, trimmed<span class="op">)</span>; <span class="co">// [[&#39;s&#39;, &#39;o&#39;, &#39;m&#39;, &#39;e&#39;], [&#39;w&#39;, &#39;o&#39;, &#39;r&#39;, &#39;d&#39;, &#39;s&#39;], [&#39;h&#39;, &#39;e&#39;, &#39;r&#39;, &#39;e&#39;]]</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, trimmed <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>format_as_string<span class="op">))</span>;</span>
+<span id="cb25-7"><a href="#cb25-7"></a>                             <span class="co">// [&quot;some&quot;, &quot;words&quot;, &quot;here&quot;]</span></span></code></pre></div>
 </blockquote>
 <p>But perhaps the most important question here is: how do you format wrappers?</p>
 <p>Let’s say you have your own implementation of <code class="sourceCode cpp">Optional</code>, that you want to format the same way that Rust does: so that a disengaged one formats as <code class="sourceCode cpp">None</code> and an engaged one formats as <code class="sourceCode cpp">Some<span class="op">(??)</span></code>. We can start by:</p>
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a></span>
-<span id="cb24-5"><a href="#cb24-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb24-6"><a href="#cb24-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-7"><a href="#cb24-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb24-9"><a href="#cb24-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb24-10"><a href="#cb24-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
-<span id="cb24-11"><a href="#cb24-11"></a>        <span class="op">}</span></span>
-<span id="cb24-12"><a href="#cb24-12"></a>    <span class="op">}</span></span>
-<span id="cb24-13"><a href="#cb24-13"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
+<span id="cb26-4"><a href="#cb26-4"></a></span>
+<span id="cb26-5"><a href="#cb26-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb26-9"><a href="#cb26-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb26-10"><a href="#cb26-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
+<span id="cb26-11"><a href="#cb26-11"></a>        <span class="op">}</span></span>
+<span id="cb26-12"><a href="#cb26-12"></a>    <span class="op">}</span></span>
+<span id="cb26-13"><a href="#cb26-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>If we had an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>string<span class="op">&gt;(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code>, this would format as <code class="sourceCode cpp">Some<span class="op">(</span>hello<span class="op">)</span></code>. Which is fine. But what if we wanted to format it as <code class="sourceCode cpp">Some<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code> instead? That is, take advanage of the quoting rules we just went through. Put differently: how would the standard library implement any of the functionality I’m talking about here?</p>
 <p>Well, we could start by being very explicit about this:</p>
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">auto</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;::</span>format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-4"><a href="#cb25-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-5"><a href="#cb25-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb25-6"><a href="#cb25-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb25-7"><a href="#cb25-7"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb25-8"><a href="#cb25-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_char<span class="op">(*</span>opt<span class="op">))</span>;</span>
-<span id="cb25-9"><a href="#cb25-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>enable_formatting_as_string<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb25-10"><a href="#cb25-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_string<span class="op">(*</span>opt<span class="op">))</span>;</span>
-<span id="cb25-11"><a href="#cb25-11"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb25-12"><a href="#cb25-12"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
-<span id="cb25-13"><a href="#cb25-13"></a>        <span class="op">}</span></span>
-<span id="cb25-14"><a href="#cb25-14"></a>    <span class="op">}</span></span>
-<span id="cb25-15"><a href="#cb25-15"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a><span class="kw">auto</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;::</span>format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-4"><a href="#cb27-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-5"><a href="#cb27-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb27-6"><a href="#cb27-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb27-7"><a href="#cb27-7"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_char<span class="op">(*</span>opt<span class="op">))</span>;</span>
+<span id="cb27-9"><a href="#cb27-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>enable_formatting_as_string<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb27-10"><a href="#cb27-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_string<span class="op">(*</span>opt<span class="op">))</span>;</span>
+<span id="cb27-11"><a href="#cb27-11"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb27-12"><a href="#cb27-12"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
+<span id="cb27-13"><a href="#cb27-13"></a>        <span class="op">}</span></span>
+<span id="cb27-14"><a href="#cb27-14"></a>    <span class="op">}</span></span>
+<span id="cb27-15"><a href="#cb27-15"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Note that we need <em>both</em> <code class="sourceCode cpp">enable_formatting_as_string</code> here <em>and also</em> <code class="sourceCode cpp">format_as_string</code>. Because these types inherently have two different formatting rules.</p>
 <p>I don’t want every wrapper type to have to write all of that, so we clearly need another standard facility to do this. We can call it <code class="sourceCode cpp">format_as_quoted</code>:</p>
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb26-3"><a href="#cb26-3"></a><span class="kw">auto</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;::</span>format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb26-4"><a href="#cb26-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb26-5"><a href="#cb26-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb26-6"><a href="#cb26-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb26-7"><a href="#cb26-7"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_quoted<span class="op">(*</span>opt<span class="op">))</span>;</span>
-<span id="cb26-8"><a href="#cb26-8"></a>    <span class="op">}</span></span>
-<span id="cb26-9"><a href="#cb26-9"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="kw">auto</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;::</span>format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb28-6"><a href="#cb28-6"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, format_as_quoted<span class="op">(*</span>opt<span class="op">))</span>;</span>
+<span id="cb28-8"><a href="#cb28-8"></a>    <span class="op">}</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<h3 data-number="3.2.7" id="summary-of-fancied-formatting-facilities"><span class="header-section-number">3.2.7</span> Summary of Fancied Formatting Facilities<a href="#summary-of-fancied-formatting-facilities" class="self-link"></a></h3>
+<h3 data-number="3.2.8" id="summary-of-fancied-formatting-facilities"><span class="header-section-number">3.2.8</span> Summary of Fancied Formatting Facilities<a href="#summary-of-fancied-formatting-facilities" class="self-link"></a></h3>
 <p>In short:</p>
 <ol type="1">
 <li>Ranges format as <code class="sourceCode cpp"><span class="op">[</span>a, b, c<span class="op">]</span></code></li>
@@ -1115,9 +1587,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>In earlier revisions of this paper, we had to deal with the problem of ranges that are neither <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable nor copyable and how to handle that situation (which earlier revisions answered by… uh… not handling that situation). With <span class="citation" data-cites="P2418R0">[<a href="#ref-P2418R0" role="doc-biblioref">P2418R0</a>]</span>, however, that is no longer a problem: just pass in your non-<code class="sourceCode cpp"><span class="kw">const</span></code>-iterable range as non-<code class="sourceCode cpp"><span class="kw">const</span></code>.</p>
 <p>This still begs the question of if this should compile:</p>
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ints <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>;</span>
-<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">auto</span> <span class="kw">const</span> cannot_even <span class="op">=</span> ints <span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">!=</span> <span class="dv">0</span>; <span class="op">})</span>;</span>
-<span id="cb27-3"><a href="#cb27-3"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, cannot_even<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ints <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>;</span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">auto</span> <span class="kw">const</span> cannot_even <span class="op">=</span> ints <span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span> <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">!=</span> <span class="dv">0</span>; <span class="op">})</span>;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, cannot_even<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p><code class="sourceCode cpp">cannot_even</code> isn’t iterable, because it’s <code class="sourceCode cpp"><span class="kw">const</span></code>. But it <em>is</em> copyable and it <em>is</em> a view. Prior revisions of this paper supported this case by copying it, which is what the <code class="sourceCode cpp">fmt</code> library also used to do. But as of yesterday (<a href="https://github.com/fmtlib/fmt/commit/111de881">111de881</a>), this situation is no longer supported. If you want to print a <code class="sourceCode cpp"><span class="kw">const</span></code> object that is a copyable <code class="sourceCode cpp">view</code> that is not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable, it is up to you to copy it to produce a non-<code class="sourceCode cpp"><span class="kw">const</span></code> object. This has the benefit of making the copy more obvious to the user.</p>
 <p>Alternatively, users can use the proposed equivalent of <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> to avoid the copy.</p>
