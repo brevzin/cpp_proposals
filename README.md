@@ -54,6 +54,8 @@ None.
 
 - [p1169r3 - static `operator()`](1169_static_call/p1169r3.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
+- [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
+- [p2387r2 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r2.html).
 
 ### Pending EWG/LEWG Review
 
@@ -71,8 +73,6 @@ None.
 - [p2214r1 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r1.html), with Conor Hoekstra and Tim Song.
 - [p2278r1 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r1.html).
 - [p2286r2 - Formatting Ranges](2286_fmt_ranges/p2286r2.html).
-- [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
-- [p2387r2 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r2.html).
 - [p2441r0 - `views::join_with`](2441_join_with/p2441r0.html)
 - [p2446r0 - `views::move`](2441_move_view/p2446r0.html)
 
