@@ -5,7 +5,9 @@ date: today
 audience: EWG
 author:
     - name: Richard Smith
-      email: <richardsmith@gmail.com>
+      email: <richard@metafoo.co.uk>
+    - name: Barry Revzin
+      email: <barry.revzin@gmail.com>
 toc: true
 ---
 
@@ -71,7 +73,7 @@ template <A a> struct X { };
 ```
 :::
 
-`A` by default is not structural (it has a private member), but its `operator template` returns `Repr`, which _is_ structural, and `A` is constructible from `Repr`. The compiler will use `Repr` to determine `A`'s template equivalence rules (as well as it's mangling).
+`A` by default is not structural (it has a private member), but its `operator template` returns `Repr`, which _is_ structural, and `A` is constructible from `Repr`. The compiler will use `Repr` to determine `A`'s template equivalence rules (as well as its mangling).
 
 `A{1}` and `A{1}` are equivalent because `A::Repr{1}` and `A::Repr{1}` are equivalent.
 
@@ -174,7 +176,7 @@ const char b[] = "Hello";
 template <string_view S> struct C { };
 ```
 :::
-Are `C<a>` and `C<b>` the same type (because `string_view(a) == string_view(b)`) or different types (because their pointers point to different storage)? Unfortunately, it basically has _has_ to be the latter interpretation. Template equivalence is not `==`, which is why we replaced P0732 with P1907 to begin with. Users that want the former interpretation will have to use `string`, not `string_view`.
+Are `C<a>` and `C<b>` the same type (because `string_view(a) == string_view(b)`) or different types (because their pointers point to different storage)? It basically has _has_ to be the latter interpretation. Template equivalence is not `==`, which is why we replaced P0732 with P1907 to begin with. Users that want the former interpretation will have to use `string`, not `string_view`.
 
 This begs the question of whether `string_view` and `span` should be usable as non-type template parameters (i.e. by providing a defaulted `operator template`), but this paper takes no position on that question.
 
@@ -210,6 +212,8 @@ But there will be cases where it is the correct behavior to return a reference t
 Because we don't have non-transient constexpr allocation yet, the only really interesting cases for `operator template` are those that let you use types with private members as non-type template parameters. So while this model presents a clear direction for how to extend support in the future to allow `vector`, `string`, and others to be usable as non-type template parameters, the C++23 paper is a lot narrower: only allow defaulted `operator template`.
 
 This direction allows `tuple`, `optional`, and `variant`, and lots and of class types. Which seems plenty useful.
+
+We also for now say that `operator template` that _cannot_ be invoked by the program - it's _solely_ for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one `operator template` per class, its *cv-qualifier-seq* must be `const` and its *ref-qualifier* must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn't deprive us of functionality.
 
 # Proposal
 
