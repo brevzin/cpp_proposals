@@ -74,7 +74,7 @@ namespace std::ranges {
 ```
 :::
 
-### 24.7.? Move view [range.all.move] {-}
+### 24.7.? All move view [range.all.move] {-}
 
 #### 24.7.?.1 Overview [range.all.move.overview] {-}
 

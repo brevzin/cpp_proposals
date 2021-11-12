@@ -39,7 +39,7 @@
 - 2214 A Plan for C++23 Ranges: [p2214r0](2214_ranges_plan/p2214r0.html) [p2214r1](2214_ranges_plan/p2214r1.html)
 - 2231 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  in  <code class="sourceCode cpp">std<span class="op">::</span>optional</code>  and  <code class="sourceCode cpp">std<span class="op">::</span>variant</code>: [p2231r0](2231_constexpr_optional_variant/p2231r0.html) [p2231r1](2231_constexpr_optional_variant/p2231r1.html)
 - 2277 Packs outside of Templates: [p2277r0](2277_packs_outside_of_templates/p2277r0.html)
-- 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [p2278r0](2278_cbegin/p2278r0.html) [p2278r1](2278_cbegin/p2278r1.html)
+- 2278 <code class="sourceCode cpp">cbegin</code>  should always return a constant iterator: [p2278r0](2278_cbegin/p2278r0.html) [p2278r1](2278_cbegin/p2278r1.html) [p2278r2](2278_cbegin/p2278r2.html)
 - 2279 We need a language mechanism for customization points: [p2279r0](2279_static_polymorphism/p2279r0.html) [d2279r1](2279_static_polymorphism/d2279r1.html)
 - 2280 Using unknown pointers and references in constant expressions: [p2280r0](2280_unknown_reference/p2280r0.html) [p2280r1](2280_unknown_reference/p2280r1.html) [p2280r2](2280_unknown_reference/p2280r2.html) [p2280r3](2280_unknown_reference/p2280r3.html)
 - 2286 Formatting Ranges: [p2286r0](2286_fmt_ranges/p2286r0.html) [p2286r1](2286_fmt_ranges/p2286r1.html) [p2286r2](2286_fmt_ranges/p2286r2.html) [p2286r3](2286_fmt_ranges/p2286r3.html)
