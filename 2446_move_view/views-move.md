@@ -74,9 +74,9 @@ namespace std::ranges {
 ```
 :::
 
-### 24.7.? Move view [range.move] {-}
+### 24.7.? Move view [range.all.move] {-}
 
-#### 24.7.?.1 Overview [range.move.overview] {-}
+#### 24.7.?.1 Overview [range.all.move.overview] {-}
 
 ::: bq
 [1]{.pnum} `all_move_view` presents a `view` of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a `all_move_view` to replace copying with moving.
@@ -95,7 +95,7 @@ std::ranges::copy(words | views::all_move, std::back_inserter(new_words)); // mo
 -*end example*]
 :::
 
-#### 24.7.?.2 Class template `all_move_view` [range.move.view] {-}
+#### 24.7.?.2 Class template `all_move_view` [range.all.move.view] {-}
 
 ::: bq
 ```cpp
@@ -152,7 +152,7 @@ constexpr explicit all_move_view(V base);
 Add the following macro definition to [version.syn]{.sref}, with the value selected by the editor to reflect the date of adoption of this paper:
 
 ```cpp
-#define __cpp_lib_ranges_move 20XXXXL // also in <ranges>
+#define __cpp_lib_ranges_all_move 20XXXXL // also in <ranges>
 ```
 
 ---

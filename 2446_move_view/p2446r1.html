@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-11-11" />
+  <meta name="dcterms.date" content="2021-11-12" />
   <title>views::all_move</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-11-11</td>
+    <td>2021-11-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -571,7 +571,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
 <ul>
-<li><a href="#move-view-range.move">24.7.? Move view [range.move]<span></span></a></li>
+<li><a href="#move-view-range.all.move">24.7.? Move view [range.all.move]<span></span></a></li>
 <li><a href="#feature-test-macro"><span class="toc-section-number">3.1</span> Feature-test macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -621,8 +621,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-18"><a href="#cb1-18"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h3 class="unnumbered" data-number id="move-view-range.move">24.7.? Move view [range.move]<a href="#move-view-range.move" class="self-link"></a></h3>
-<h4 class="unnumbered" data-number id="overview-range.move.overview">24.7.?.1 Overview [range.move.overview]<a href="#overview-range.move.overview" class="self-link"></a></h4>
+<h3 class="unnumbered" data-number id="move-view-range.all.move">24.7.? Move view [range.all.move]<a href="#move-view-range.all.move" class="self-link"></a></h3>
+<h4 class="unnumbered" data-number id="overview-range.all.move.overview">24.7.?.1 Overview [range.all.move.overview]<a href="#overview-range.all.move.overview" class="self-link"></a></h4>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <code class="sourceCode cpp">all_move_view</code> presents a <code class="sourceCode cpp">view</code> of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a <code class="sourceCode cpp">all_move_view</code> to replace copying with moving.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression and let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>all_move<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
@@ -636,7 +636,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-3"><a href="#cb2-3"></a>std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>words <span class="op">|</span> views<span class="op">::</span>all_move, std<span class="op">::</span>back_inserter<span class="op">(</span>new_words<span class="op">))</span>; <span class="co">// moves each string from words into new_words</span></span></code></pre></div>
 <p>-<em>end example</em>]</p>
 </blockquote>
-<h4 class="unnumbered" data-number id="class-template-all_move_view-range.move.view">24.7.?.2 Class template <code class="sourceCode cpp">all_move_view</code> [range.move.view]<a href="#class-template-all_move_view-range.move.view" class="self-link"></a></h4>
+<h4 class="unnumbered" data-number id="class-template-all_move_view-range.all.move.view">24.7.?.2 Class template <code class="sourceCode cpp">all_move_view</code> [range.all.move.view]<a href="#class-template-all_move_view-range.all.move.view" class="self-link"></a></h4>
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>input_range V<span class="op">&gt;</span></span>
@@ -682,7 +682,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add the following macro definition to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>, with the value selected by the editor to reflect the date of adoption of this paper:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#define __cpp_lib_ranges_move </span><span class="dv">20</span><span class="er">XXXXL</span><span class="pp"> </span><span class="co">// also in &lt;ranges&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#define __cpp_lib_ranges_all_move </span><span class="dv">20</span><span class="er">XXXXL</span><span class="pp"> </span><span class="co">// also in &lt;ranges&gt;</span></span></code></pre></div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1206R6">
