@@ -923,7 +923,7 @@ namespace std {
       inserter(Container& x, ranges::iterator_t<Container> i);
 
 + // [const.iterators], constant iterators and sentinels
-+ template <input_iterator I>
++ template <indirectly_readable I>
 +   using iter_const_reference_t = $see below$;
 + template<class Iterator>
 +   concept $constant-iterator$ = $see below$; // exposition only
@@ -969,7 +969,7 @@ Some generic algorithms can be called with constant iterators to avoid mutation.
 [#]{.pnum} The type `const_iterator<I>`, for an underlying iterator `I`, is a constant iterator.
 
 ```cpp
-template <input_iterator It>
+template <indirectly_readable It>
   using iter_const_reference_t = common_reference_t<iter_value_t<It> const&&, iter_reference_t<It>>;
 
 template <typename It>

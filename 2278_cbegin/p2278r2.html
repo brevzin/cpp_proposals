@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-11-12" />
+  <meta name="dcterms.date" content="2021-11-13" />
   <title>cbegin should always return a constant iterator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-11-12</td>
+    <td>2021-11-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1300,7 +1300,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb29-18"><a href="#cb29-18"></a>      inserter(Container&amp; x, ranges::iterator_t&lt;Container&gt; i);</span>
 <span id="cb29-19"><a href="#cb29-19"></a></span>
 <span id="cb29-20"><a href="#cb29-20"></a><span class="va">+ // [const.iterators], constant iterators and sentinels</span></span>
-<span id="cb29-21"><a href="#cb29-21"></a><span class="va">+ template &lt;input_iterator I&gt;</span></span>
+<span id="cb29-21"><a href="#cb29-21"></a><span class="va">+ template &lt;indirectly_readable I&gt;</span></span>
 <span id="cb29-22"><a href="#cb29-22"></a><span class="va">+   using iter_const_reference_t = <em>see below</em>;</span></span>
 <span id="cb29-23"><a href="#cb29-23"></a><span class="va">+ template&lt;class Iterator&gt;</span></span>
 <span id="cb29-24"><a href="#cb29-24"></a><span class="va">+   concept <em>constant-iterator</em> = <em>see below</em>; // exposition only</span></span>
@@ -1340,7 +1340,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> Class template <code class="sourceCode cpp">basic_const_iterator</code> is an iterator adaptor with the same behavior as the underlying iterator except that its indirection operator implicitly converts the value returned by the underlying iterator’s indirection operator to a type such that the adapted iterator is a constant iterator ([iterator.requirements]). Some generic algorithms can be called with constant iterators to avoid mutation.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> The type <code class="sourceCode cpp">const_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code>, for an underlying iterator <code class="sourceCode cpp">I</code>, is a constant iterator.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator It<span class="op">&gt;</span></span>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span>indirectly_readable It<span class="op">&gt;</span></span>
 <span id="cb30-2"><a href="#cb30-2"></a>  <span class="kw">using</span> iter_const_reference_t <span class="op">=</span> common_reference_t<span class="op">&lt;</span>iter_value_t<span class="op">&lt;</span>It<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;&amp;</span>, iter_reference_t<span class="op">&lt;</span>It<span class="op">&gt;&gt;</span>;</span>
 <span id="cb30-3"><a href="#cb30-3"></a></span>
 <span id="cb30-4"><a href="#cb30-4"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> It<span class="op">&gt;</span></span>
