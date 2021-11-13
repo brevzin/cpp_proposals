@@ -987,7 +987,7 @@ template<typename S>
 constexpr auto make_const_sentinel(S s);
 ```
 
-[#]{.pnum} *Returns*: If `I` satisfies `input_iterator`, `make_const_iterator(std::move(s))`. Otherwise, `s`.
+[#]{.pnum} *Returns*: If `S` satisfies `input_iterator`, `make_const_iterator(std::move(s))`. Otherwise, `s`.
 
 ```cpp
 template <input_iterator Iterator>
@@ -1055,7 +1055,9 @@ public:
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
     template <$not-same-as$<basic_const_iterator> I>
       friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
-        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I> && three_way_comparable_with<Iterator, I>;
+        requires random_access_iterator<Iterator>
+              && totally_ordered_with<Iterator, I>
+              && three_way_comparable_with<Iterator, I>;
 
     friend constexpr basic_const_iterator operator+(basic_const_iterator i, difference_type n)
       requires random_access_iterator<Iterator>;
@@ -1213,7 +1215,9 @@ template <$not-same-as$<basic_const_iterator> I>
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
 template <$not-same-as$<basic_const_iterator> I>
   friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
-    requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I> && three_way_comparable_with<Iterator, I>
+    requires random_access_iterator<Iterator>
+          && totally_ordered_with<Iterator, I>
+          && three_way_comparable_with<Iterator, I>
 ```
 
 [#]{.pnum} Let `$op$` be the operator.
@@ -1343,12 +1347,12 @@ namespace std::ranges {
 +
 + template<view V>
 +   requires input_range<V>
-+ class const_view;
++ class all_const_view;
 +
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<const_view<T>> = enable_borrowed_range<T>;
++   inline constexpr bool enable_borrowed_range<all_const_view<T>> = enable_borrowed_range<T>;
 +
-+ namespace views { inline constexpr $unspecified$ as_const = $unspecified$; }
++ namespace views { inline constexpr $unspecified$ all_const = $unspecified$; }
 
   // ...
 }
