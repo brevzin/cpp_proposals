@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-11-01" />
-  <title>Relaxing some constexpr restrictions</title>
+  <meta name="dcterms.date" content="2021-11-13" />
+  <title>Extending support for class types as non-type template parameters</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Relaxing some <code class="sourceCode cpp"><span class="kw">constexpr</span></code> restrictions</h1>
+<h1 class="title" style="text-align:center">Extending support for class types as non-type template parameters</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-11-01</td>
+    <td>2021-11-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -568,10 +568,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
 <li><a href="#proposal-operator-template"><span class="toc-section-number">3</span> Proposal: <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code><span></span></a>
 <ul>
-<li><a href="#variable-length-representation"><span class="toc-section-number">3.1</span> Variable-length representation<span></span></a></li>
-<li><a href="#string_view-and-span"><span class="toc-section-number">3.2</span> <code class="sourceCode cpp">string_view</code> and <code class="sourceCode cpp">span</code><span></span></a></li>
-<li><a href="#reference-types"><span class="toc-section-number">3.3</span> Reference types<span></span></a></li>
-<li><a href="#direction-for-c23"><span class="toc-section-number">3.4</span> Direction for C++23<span></span></a></li>
+<li><a href="#use-of-operator-template"><span class="toc-section-number">3.1</span> Use of <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code><span></span></a></li>
+<li><a href="#variable-length-representation"><span class="toc-section-number">3.2</span> Variable-length representation<span></span></a></li>
+<li><a href="#string_view-and-span"><span class="toc-section-number">3.3</span> <code class="sourceCode cpp">string_view</code> and <code class="sourceCode cpp">span</code><span></span></a></li>
+<li><a href="#reference-types"><span class="toc-section-number">3.4</span> Reference types<span></span></a></li>
+<li><a href="#direction-for-c23"><span class="toc-section-number">3.5</span> Direction for C++23<span></span></a></li>
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
 <ul>
@@ -583,7 +584,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
-<p>C++20 introduced the ability to have class types as non-type template parameters. This paper extends the set of types that can be used as non-type template parameters and provides a direction for extending it further in the future.</p>
+<p>C++20 introduced the ability to have class types as non-type template parameters. This paper extends the set of types that can be used as non-type template parameters (to allow <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>T<span class="op">...&gt;</span></code>, <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, and <code class="sourceCode cpp">std<span class="op">::</span>variant<span class="op">&lt;</span>T<span class="op">...&gt;</span></code>) and provides a direction for extending it further in the future (to eventually allow <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>string</code>).</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P0732R2">[<a href="#ref-P0732R2" role="doc-biblioref">P0732R2</a>]</span> first introduced the ability to have class types as non-type template parameters. The original design was based on defaulting <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;=&gt;</span></code>. But there were problems with and limits to this approach, as described in <span class="citation" data-cites="P1907R0">[<a href="#ref-P1907R0" role="doc-biblioref">P1907R0</a>]</span>. A subsequent design, <span class="citation" data-cites="P1907R1">[<a href="#ref-P1907R1" role="doc-biblioref">P1907R1</a>]</span>, was adopted for C++20.</p>
 <p>This design introduces the term <em>structural type</em>, as defined in <span>13.2 <a href="https://wg21.link/temp.param">[temp.param]</a></span>/7:</p>
@@ -611,7 +612,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>The expectation is that <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code> have the same type, but if template equivalence were based on the underlying pointers of the <code class="sourceCode cpp">string</code>, those two <code class="sourceCode cpp">string</code>s would have allocated their memory differently and so would have different pointers! We need something different here.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal-operator-template"><span class="header-section-number">3</span> Proposal: <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code><a href="#proposal-operator-template" class="self-link"></a></h1>
-<p>The proposal is that a type, <code class="sourceCode cpp">T</code>, can define an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> which returns a type <code class="sourceCode cpp">R</code>. <code class="sourceCode cpp">R</code> must be a structural type, and is the representation of <code class="sourceCode cpp">T</code>. <code class="sourceCode cpp">T</code> must also be constructible from <code class="sourceCode cpp">R</code>.</p>
+<p>The proposal is that a type, <code class="sourceCode cpp">T</code>, can define an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> which returns a type <code class="sourceCode cpp">R</code>. <code class="sourceCode cpp">R</code> must be a structural type, and acts as the representation of <code class="sourceCode cpp">T</code>. <code class="sourceCode cpp">T</code> must also be constructible from <code class="sourceCode cpp">R</code>.</p>
 <p>For a example:</p>
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">class</span> A <span class="op">{</span></span>
@@ -628,7 +629,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-12"><a href="#cb2-12"></a></span>
 <span id="cb2-13"><a href="#cb2-13"></a><span class="kw">template</span> <span class="op">&lt;</span>A a<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p><code class="sourceCode cpp">A</code> by default is not structural (it has a private member), but its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> returns <code class="sourceCode cpp">Repr</code>, which <em>is</em> structural, and <code class="sourceCode cpp">A</code> is constructible from <code class="sourceCode cpp">Repr</code>. The compiler will use <code class="sourceCode cpp">Repr</code> to determine <code class="sourceCode cpp">A</code>’s template equivalence rules (as well as its mangling).</p>
+<p><code class="sourceCode cpp">A</code> by default is not structural (it has a private member), but its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> returns <code class="sourceCode cpp">Repr</code> (which <em>is</em> structural) and <code class="sourceCode cpp">A</code> is constructible from <code class="sourceCode cpp">Repr</code>. The compiler will use <code class="sourceCode cpp">Repr</code> to determine <code class="sourceCode cpp">A</code>’s template equivalence rules (as well as its mangling).</p>
 <p><code class="sourceCode cpp">A<span class="op">{</span><span class="dv">1</span><span class="op">}</span></code> and <code class="sourceCode cpp">A<span class="op">{</span><span class="dv">1</span><span class="op">}</span></code> are equivalent because <code class="sourceCode cpp">A<span class="op">::</span>Repr<span class="op">{</span><span class="dv">1</span><span class="op">}</span></code> and <code class="sourceCode cpp">A<span class="op">::</span>Repr<span class="op">{</span><span class="dv">1</span><span class="op">}</span></code> are equivalent.</p>
 <p>This example can be simplified. We need some representation that can encapsulate an <code class="sourceCode cpp"><span class="dt">int</span></code>, but we don’t need a whole new type for that:</p>
 <blockquote>
@@ -670,66 +671,81 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb5-7"><a href="#cb5-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span>;</span>
 <span id="cb5-9"><a href="#cb5-9"></a></span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="kw">template</span> <span class="op">&lt;</span>D d<span class="op">&gt;</span> <span class="co">// error: D is not structural because</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="op">}</span>;  <span class="co">// B is not structural</span></span></code></pre></div>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="kw">template</span> <span class="op">&lt;</span>D d<span class="op">&gt;</span> <span class="co">// error: D is not structural because B is not structural</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="op">}</span>;  <span class="co">// ... and B is not structural because it has a private member</span></span></code></pre></div>
 </blockquote>
-<h2 data-number="3.1" id="variable-length-representation"><span class="header-section-number">3.1</span> Variable-length representation<a href="#variable-length-representation" class="self-link"></a></h2>
-<p>The above model allows for letting <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">optional</code>, and <code class="sourceCode cpp">variant</code> opt in to being used as non-type template parameters. But it doesn’t help us with <code class="sourceCode cpp">vector</code> or <code class="sourceCode cpp">string</code>. For that, we need some kind of variable-length type that the compiler recognizes as defining a representation.</p>
-<p>The obvious choice there would be: <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
-<p>That is, <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would just be usable by default, while <code class="sourceCode cpp">string</code> would opt in by doing:</p>
+<h2 data-number="3.1" id="use-of-operator-template"><span class="header-section-number">3.1</span> Use of <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code><a href="#use-of-operator-template" class="self-link"></a></h2>
+<p>The only intent of <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is to allow the compiler to determine template equivalence and mangling. No program ever need invoke it for any reason, so no provision need to made in the language for allowing it or defining what that means. This avoids the question of what exactly the return type of a defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is: it doesn’t matter, it’s just annotation.</p>
+<p>No program ever needs to invoke an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> because of the recursive nature of the definition of structural. In order to incorporate some user-defined type <code class="sourceCode cpp">C</code> into your mangling, you simply use it directly:</p>
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span> simplified_string <span class="op">{</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>    <span class="dt">char</span><span class="op">*</span> begin_;</span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="dt">char</span><span class="op">*</span> end_;</span>
-<span id="cb6-4"><a href="#cb6-4"></a>    <span class="dt">char</span><span class="op">*</span> capacity_;</span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span> A <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    C c;  <span class="co">// some user-defined type (possibly C++20 structural, possibly has operator template)</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>    D d;  <span class="co">// some other user-defined type that doesn&#39;t participate in mangling for some reason</span></span>
 <span id="cb6-5"><a href="#cb6-5"></a></span>
-<span id="cb6-6"><a href="#cb6-6"></a>    <span class="kw">struct</span> repr <span class="op">{</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> v; <span class="op">}</span>;</span>
-<span id="cb6-7"><a href="#cb6-7"></a>    <span class="kw">constexpr</span> simplified_string<span class="op">(</span>repr r<span class="op">)</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>        <span class="op">:</span> simplified_string<span class="op">(</span>r<span class="op">.</span>v<span class="op">.</span>begin<span class="op">()</span>, r<span class="op">.</span>v<span class="op">.</span>end<span class="op">())</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>    <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a></span>
-<span id="cb6-11"><a href="#cb6-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> repr <span class="op">{</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a>        <span class="cf">return</span> repr<span class="op">{.</span>v<span class="op">=</span>std<span class="op">::</span>vector<span class="op">(</span>begin_, end_<span class="op">)}</span>;</span>
-<span id="cb6-13"><a href="#cb6-13"></a>    <span class="op">}</span></span>
-<span id="cb6-14"><a href="#cb6-14"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="kw">struct</span> Repr <span class="op">{</span> C c; <span class="op">}</span>;</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> Repr<span class="op">{</span>c<span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>    <span class="kw">explicit</span> <span class="kw">constexpr</span> A<span class="op">(</span>Repr<span class="op">)</span>;</span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>If <code class="sourceCode cpp">C</code> is structural, regardless of how it gets there (whether <code class="sourceCode cpp">C</code> is an alias for <code class="sourceCode cpp"><span class="dt">int</span></code> or has a custom <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>), <code class="sourceCode cpp">Repr</code> is structural and correctly uses <code class="sourceCode cpp">C</code>’s equivalence rules. No need for any <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> invocation here.</p>
+<h2 data-number="3.2" id="variable-length-representation"><span class="header-section-number">3.2</span> Variable-length representation<a href="#variable-length-representation" class="self-link"></a></h2>
+<p>The model for defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> allows for letting <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">optional</code>, and <code class="sourceCode cpp">variant</code> opt in to being used as non-type template parameters. The simple member-wise equivalence is correct for all of these types. But it doesn’t help us with <code class="sourceCode cpp">vector</code> or <code class="sourceCode cpp">string</code>. For that, we need some kind of variable-length type that the compiler recognizes as defining a representation.</p>
+<p>The obvious choice there would be: <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+<p>That is, <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would just be usable by default (as being a <code class="sourceCode cpp">vector</code> of a structural type, <code class="sourceCode cpp"><span class="dt">int</span></code>), while <code class="sourceCode cpp">string</code> would opt in by doing:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">class</span> simplified_string <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="dt">char</span><span class="op">*</span> begin_;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="dt">char</span><span class="op">*</span> end_;</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="dt">char</span><span class="op">*</span> capacity_;</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    <span class="kw">struct</span> repr <span class="op">{</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> v; <span class="op">}</span>;</span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">constexpr</span> simplified_string<span class="op">(</span>repr r<span class="op">)</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>        <span class="op">:</span> simplified_string<span class="op">(</span>r<span class="op">.</span>v<span class="op">.</span>begin<span class="op">()</span>, r<span class="op">.</span>v<span class="op">.</span>end<span class="op">())</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>    <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> repr <span class="op">{</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>        <span class="cf">return</span> repr<span class="op">{.</span>v<span class="op">=</span>std<span class="op">::</span>vector<span class="op">(</span>begin_, end_<span class="op">)}</span>;</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="op">}</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>However, in order to support this approach, the language needs to be able to support non-transient constexpr allocation. Otherwise, non-type template parameters of <code class="sourceCode cpp">string</code> or <code class="sourceCode cpp">vector</code> type can’t even exist. <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span> originally attempted to solve this problem by introducing <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code>, but this direction was rejected. <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> proposes to solve this problem using a new <code class="sourceCode cpp">propconst</code> qualifier.</p>
 <p>Regardless of which approach is taken, once the language supports non-transient constexpr allocation, the <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> model can be extended to recognize <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as being a structural type when <code class="sourceCode cpp">T</code> is a structural type.</p>
-<h2 data-number="3.2" id="string_view-and-span"><span class="header-section-number">3.2</span> <code class="sourceCode cpp">string_view</code> and <code class="sourceCode cpp">span</code><a href="#string_view-and-span" class="self-link"></a></h2>
+<h2 data-number="3.3" id="string_view-and-span"><span class="header-section-number">3.3</span> <code class="sourceCode cpp">string_view</code> and <code class="sourceCode cpp">span</code><a href="#string_view-and-span" class="self-link"></a></h2>
 <p>While <code class="sourceCode cpp">string_view</code> compares the contents that it refers to and <code class="sourceCode cpp">span</code> should as well, the question is: how should these types behave were they to be allowed as non-type template parameters? Put differently:</p>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">const</span> <span class="dt">char</span> a<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;Hello&quot;</span>;</span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">const</span> <span class="dt">char</span> b<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;Hello&quot;</span>;</span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">template</span> <span class="op">&lt;</span>string_view S<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">const</span> <span class="dt">char</span> a<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;Hello&quot;</span>;</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">const</span> <span class="dt">char</span> b<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;Hello&quot;</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">template</span> <span class="op">&lt;</span>string_view S<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>Are <code class="sourceCode cpp">C<span class="op">&lt;</span>a<span class="op">&gt;</span></code> and <code class="sourceCode cpp">C<span class="op">&lt;</span>b<span class="op">&gt;</span></code> the same type (because <code class="sourceCode cpp">string_view<span class="op">(</span>a<span class="op">)</span> <span class="op">==</span> string_view<span class="op">(</span>b<span class="op">)</span></code>) or different types (because their pointers point to different storage)? It basically has <em>has</em> to be the latter interpretation. Template equivalence is not <code class="sourceCode cpp"><span class="op">==</span></code>, which is why we replaced P0732 with P1907 to begin with. Users that want the former interpretation will have to use <code class="sourceCode cpp">string</code>, not <code class="sourceCode cpp">string_view</code>.</p>
 <p>This begs the question of whether <code class="sourceCode cpp">string_view</code> and <code class="sourceCode cpp">span</code> should be usable as non-type template parameters (i.e. by providing a defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>), but this paper takes no position on that question.</p>
-<h2 data-number="3.3" id="reference-types"><span class="header-section-number">3.3</span> Reference types<a href="#reference-types" class="self-link"></a></h2>
+<h2 data-number="3.4" id="reference-types"><span class="header-section-number">3.4</span> Reference types<a href="#reference-types" class="self-link"></a></h2>
 <p>An earlier example in this paper illustrated a custom <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> returning an <code class="sourceCode cpp"><span class="dt">int</span></code>. It is worth considering what would happen if it were instead written, accidentally, to return an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code>:</p>
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">class</span> A4 <span class="op">{</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a>    <span class="dt">int</span> i;</span>
-<span id="cb8-4"><a href="#cb8-4"></a></span>
-<span id="cb8-5"><a href="#cb8-5"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
-<span id="cb8-6"><a href="#cb8-6"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb8-7"><a href="#cb8-7"></a>    <span class="kw">constexpr</span> A4<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">:</span> i<span class="op">(</span>i<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb8-8"><a href="#cb8-8"></a><span class="op">}</span>;</span>
-<span id="cb8-9"><a href="#cb8-9"></a></span>
-<span id="cb8-10"><a href="#cb8-10"></a><span class="kw">template</span> <span class="op">&lt;</span>A4 a<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="kw">constexpr</span> A4 i <span class="op">=</span> <span class="dv">1</span>;</span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="kw">constexpr</span> A4 j <span class="op">=</span> <span class="dv">1</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">class</span> A4 <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="dt">int</span> i;</span>
+<span id="cb9-4"><a href="#cb9-4"></a></span>
+<span id="cb9-5"><a href="#cb9-5"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    <span class="kw">constexpr</span> A4<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">:</span> i<span class="op">(</span>i<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="op">}</span>;</span>
+<span id="cb9-9"><a href="#cb9-9"></a></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="kw">template</span> <span class="op">&lt;</span>A4 a<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="kw">constexpr</span> A4 i <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="kw">constexpr</span> A4 j <span class="op">=</span> <span class="dv">1</span>;</span></code></pre></div>
 </blockquote>
-<p><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> is also a structural type (lvalue references are structural), but it is differently structural from <code class="sourceCode cpp"><span class="dt">int</span></code>. Equivalence for <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> is based on the <em>address</em>, while for <code class="sourceCode cpp"><span class="dt">int</span></code> it’s based on the value. <code class="sourceCode cpp">X<span class="op">&lt;</span>i<span class="op">&gt;</span></code> and <code class="sourceCode cpp">X<span class="op">&lt;</span>j<span class="op">&gt;</span></code> would have to be different types, because their underlying <code class="sourceCode cpp"><span class="dt">int</span></code>s are different. This mistake would be pretty broken.</p>
+<p><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> is also a structural type (lvalue references are structural), but it is <em>differently</em> structural from <code class="sourceCode cpp"><span class="dt">int</span></code>. Equivalence for <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code> is based on the <em>address</em>, while for <code class="sourceCode cpp"><span class="dt">int</span></code> it’s based on the value. <code class="sourceCode cpp">X<span class="op">&lt;</span>i<span class="op">&gt;</span></code> and <code class="sourceCode cpp">X<span class="op">&lt;</span>j<span class="op">&gt;</span></code> would have to be different types, because their underlying <code class="sourceCode cpp"><span class="dt">int</span></code>s are different. This mistake would be pretty broken.</p>
 <p>However, the compiler should be able to reject such cases, because once we create <code class="sourceCode cpp">X<span class="op">&lt;</span>i<span class="op">&gt;</span></code>, the representation of the template parameter object would be different from the representation of <code class="sourceCode cpp">i</code>.</p>
 <p>But there will be cases where it is the correct behavior to return a reference type from <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>, so it’s not something that can be rejected out of hand.</p>
-<h2 data-number="3.4" id="direction-for-c23"><span class="header-section-number">3.4</span> Direction for C++23<a href="#direction-for-c23" class="self-link"></a></h2>
+<h2 data-number="3.5" id="direction-for-c23"><span class="header-section-number">3.5</span> Direction for C++23<a href="#direction-for-c23" class="self-link"></a></h2>
 <p>Because we don’t have non-transient constexpr allocation yet, the only really interesting cases for <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> are those that let you use types with private members as non-type template parameters. So while this model presents a clear direction for how to extend support in the future to allow <code class="sourceCode cpp">vector</code>, <code class="sourceCode cpp">string</code>, and others to be usable as non-type template parameters, the C++23 paper is a lot narrower: only allow defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>.</p>
 <p>This direction allows <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">optional</code>, and <code class="sourceCode cpp">variant</code>, and lots and of class types. Which seems plenty useful.</p>
-<p>We also for now say that <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> that <em>cannot</em> be invoked by the program - it’s <em>solely</em> for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> per class, its <em>cv-qualifier-seq</em> must be <code class="sourceCode cpp"><span class="kw">const</span></code> and its <em>ref-qualifier</em> must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn’t deprive us of functionality.</p>
+<p>As discussed earlier, we also for now say that <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> that <em>cannot</em> be invoked by the program - it’s <em>solely</em> for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> per class, its <em>cv-qualifier-seq</em> must be <code class="sourceCode cpp"><span class="kw">const</span></code> and its <em>ref-qualifier</em> must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn’t deprive us of functionality.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>A class type can define <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted, returning <code class="sourceCode cpp"><span class="kw">auto</span></code>, in the body of the class. This is only valid if all base classes and non-static data members have structural types - however we don’t want to call this ill-formed if this rule is violated. If <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">int</span>, non_structural<span class="op">&gt;</span></code> providing a defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> were ill-formed, then <code class="sourceCode cpp">tuple</code> would have to constrain its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> on all the types being structural, but that’s basically the only constraint that’s ever meaningful - so it seems reasonable to have defaulting <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> actually mean that. But even a (non-template) class having a <code class="sourceCode cpp">string</code> member defining <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted doesn’t worth rejecting, for the same reasons as laid out in <span class="citation" data-cites="P2448R0">[<a href="#ref-P2448R0" role="doc-biblioref">P2448R0</a>]</span>: <code class="sourceCode cpp">string</code> will eventually be usable as a non-type template parameter, so let users write the declaration early.</p>
-<p>A class type with such an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is a structural type.</p>
+<p>A class type can define <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted (returning <code class="sourceCode cpp"><span class="kw">auto</span></code>, with a <em>cv-qualifier-eq</em> of <code class="sourceCode cpp"><span class="kw">const</span></code>, and no <em>ref-qualifier</em>, and of course declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code>) in the body of the class. A class type with such an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is a structural type if all of its base classes and non-static data members have structural type and none of them are <code class="sourceCode cpp"><span class="kw">mutable</span></code>.</p>
+<p>This is only valid if all base classes and non-static data members have structural types - however we don’t want to call this ill-formed if this rule is violated. If <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">int</span>, non_structural<span class="op">&gt;</span></code> providing a defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> were ill-formed, then <code class="sourceCode cpp">tuple</code> would have to constrain its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> on all the types being structural, but that’s basically the only constraint that’s ever meaningful - so it seems reasonable to have defaulting <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> actually mean that. But even a (non-template) class having a <code class="sourceCode cpp">string</code> member defining <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted doesn’t worth rejecting, for the same reasons as laid out in <span class="citation" data-cites="P2448R0">[<a href="#ref-P2448R0" role="doc-biblioref">P2448R0</a>]</span>: <code class="sourceCode cpp">string</code> will eventually be usable as a non-type template parameter, so let users write the declaration early.</p>
 <p>Add defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>, <code class="sourceCode cpp">std<span class="op">::</span>optional</code>, and <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
 <h2 data-number="4.1" id="language-wording"><span class="header-section-number">4.1</span> Language Wording<a href="#language-wording" class="self-link"></a></h2>
 <p>Somewhere, need to add grammar for <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> and allow for defining it as defaulted in the <em>member-specification</em> (but not defining it not-defaulted or providing a body for it).</p>
@@ -752,78 +768,78 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add to <span>20.5.3 <a href="https://wg21.link/tuple.tuple">[tuple.tuple]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1"></a>namespace std {</span>
-<span id="cb9-2"><a href="#cb9-2"></a>  template&lt;class... Types&gt;</span>
-<span id="cb9-3"><a href="#cb9-3"></a>  class tuple {</span>
-<span id="cb9-4"><a href="#cb9-4"></a>  public:</span>
-<span id="cb9-5"><a href="#cb9-5"></a>    // ...</span>
-<span id="cb9-6"><a href="#cb9-6"></a></span>
-<span id="cb9-7"><a href="#cb9-7"></a>    // [tuple.swap], tuple swap</span>
-<span id="cb9-8"><a href="#cb9-8"></a>    constexpr void swap(tuple&amp;) noexcept(see below);</span>
-<span id="cb9-9"><a href="#cb9-9"></a>    constexpr void swap(const tuple&amp;) const noexcept(see below);</span>
-<span id="cb9-10"><a href="#cb9-10"></a></span>
-<span id="cb9-11"><a href="#cb9-11"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb9-12"><a href="#cb9-12"></a>  };</span>
-<span id="cb9-13"><a href="#cb9-13"></a></span>
-<span id="cb9-14"><a href="#cb9-14"></a>  // ...</span>
-<span id="cb9-15"><a href="#cb9-15"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;class... Types&gt;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>  class tuple {</span>
+<span id="cb10-4"><a href="#cb10-4"></a>  public:</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    // ...</span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a>    // [tuple.swap], tuple swap</span>
+<span id="cb10-8"><a href="#cb10-8"></a>    constexpr void swap(tuple&amp;) noexcept(see below);</span>
+<span id="cb10-9"><a href="#cb10-9"></a>    constexpr void swap(const tuple&amp;) const noexcept(see below);</span>
+<span id="cb10-10"><a href="#cb10-10"></a></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>  };</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>  // ...</span>
+<span id="cb10-15"><a href="#cb10-15"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to <span>20.6.3.1 <a href="https://wg21.link/optional.optional.general">[optional.optional.general]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
-<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;class T&gt;</span>
-<span id="cb10-3"><a href="#cb10-3"></a>  class optional {</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  public:</span>
-<span id="cb10-5"><a href="#cb10-5"></a>    using value_type = T;</span>
-<span id="cb10-6"><a href="#cb10-6"></a></span>
-<span id="cb10-7"><a href="#cb10-7"></a>    // ...</span>
-<span id="cb10-8"><a href="#cb10-8"></a></span>
-<span id="cb10-9"><a href="#cb10-9"></a>    // [optional.mod], modifiers</span>
-<span id="cb10-10"><a href="#cb10-10"></a>    constexpr void reset() noexcept;</span>
-<span id="cb10-11"><a href="#cb10-11"></a></span>
-<span id="cb10-12"><a href="#cb10-12"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb10-13"><a href="#cb10-13"></a></span>
-<span id="cb10-14"><a href="#cb10-14"></a>  private:</span>
-<span id="cb10-15"><a href="#cb10-15"></a>    T *val;         // exposition only</span>
-<span id="cb10-16"><a href="#cb10-16"></a>  };</span>
-<span id="cb10-17"><a href="#cb10-17"></a></span>
-<span id="cb10-18"><a href="#cb10-18"></a>  template&lt;class T&gt;</span>
-<span id="cb10-19"><a href="#cb10-19"></a>    optional(T) -&gt; optional&lt;T&gt;;</span>
-<span id="cb10-20"><a href="#cb10-20"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class T&gt;</span>
+<span id="cb11-3"><a href="#cb11-3"></a>  class optional {</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  public:</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    using value_type = T;</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a>    // ...</span>
+<span id="cb11-8"><a href="#cb11-8"></a></span>
+<span id="cb11-9"><a href="#cb11-9"></a>    // [optional.mod], modifiers</span>
+<span id="cb11-10"><a href="#cb11-10"></a>    constexpr void reset() noexcept;</span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb11-13"><a href="#cb11-13"></a></span>
+<span id="cb11-14"><a href="#cb11-14"></a>  private:</span>
+<span id="cb11-15"><a href="#cb11-15"></a>    T *val;         // exposition only</span>
+<span id="cb11-16"><a href="#cb11-16"></a>  };</span>
+<span id="cb11-17"><a href="#cb11-17"></a></span>
+<span id="cb11-18"><a href="#cb11-18"></a>  template&lt;class T&gt;</span>
+<span id="cb11-19"><a href="#cb11-19"></a>    optional(T) -&gt; optional&lt;T&gt;;</span>
+<span id="cb11-20"><a href="#cb11-20"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to <span>20.7.3.1 <a href="https://wg21.link/variant.variant.general">[variant.variant.general]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class... Types&gt;</span>
-<span id="cb11-3"><a href="#cb11-3"></a>  class variant {</span>
-<span id="cb11-4"><a href="#cb11-4"></a>  public:</span>
-<span id="cb11-5"><a href="#cb11-5"></a>    // ...</span>
-<span id="cb11-6"><a href="#cb11-6"></a></span>
-<span id="cb11-7"><a href="#cb11-7"></a>    // [variant.swap], swap</span>
-<span id="cb11-8"><a href="#cb11-8"></a>    constexpr void swap(variant&amp;) noexcept(see below);</span>
-<span id="cb11-9"><a href="#cb11-9"></a></span>
-<span id="cb11-10"><a href="#cb11-10"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb11-11"><a href="#cb11-11"></a>  };</span>
-<span id="cb11-12"><a href="#cb11-12"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class... Types&gt;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  class variant {</span>
+<span id="cb12-4"><a href="#cb12-4"></a>  public:</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    // ...</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a>    // [variant.swap], swap</span>
+<span id="cb12-8"><a href="#cb12-8"></a>    constexpr void swap(variant&amp;) noexcept(see below);</span>
+<span id="cb12-9"><a href="#cb12-9"></a></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>  };</span>
+<span id="cb12-12"><a href="#cb12-12"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <h2 data-number="4.3" id="feature-test-macros"><span class="header-section-number">4.3</span> Feature-test macros<a href="#feature-test-macros" class="self-link"></a></h2>
 <p>Bump the non-type template argument macro in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>__cpp_­nontype_­template_­args <span class="diffdel">201911L</span> <span class="diffins">2022XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>__cpp_­nontype_­template_­args <span class="diffdel">201911L</span> <span class="diffins">2022XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Bump the corresponding library feature test macros in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>. These seem like the most appropriate choices:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>#define __cpp_­lib_­constexpr_­tuple   <span class="diffdel">201811L</span> <span class="diffins">2022XXL</span> // also in &lt;tuple&gt;</span>
-<span id="cb13-2"><a href="#cb13-2"></a>#define __cpp_­lib_­optional          <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;optional&gt;</span>
-<span id="cb13-3"><a href="#cb13-3"></a>#define __cpp_­lib_­variant           <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;variant&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>#define __cpp_­lib_­constexpr_­tuple   <span class="diffdel">201811L</span> <span class="diffins">2022XXL</span> // also in &lt;tuple&gt;</span>
+<span id="cb14-2"><a href="#cb14-2"></a>#define __cpp_­lib_­optional          <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;optional&gt;</span>
+<span id="cb14-3"><a href="#cb14-3"></a>#define __cpp_­lib_­variant           <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;variant&gt;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>

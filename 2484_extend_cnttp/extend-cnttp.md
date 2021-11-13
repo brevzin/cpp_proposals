@@ -1,5 +1,5 @@
 ---
-title: "Relaxing some `constexpr` restrictions"
+title: "Extending support for class types as non-type template parameters"
 document: P2484R0
 date: today
 audience: EWG
@@ -13,7 +13,7 @@ toc: true
 
 # Abstract
 
-C++20 introduced the ability to have class types as non-type template parameters. This paper extends the set of types that can be used as non-type template parameters and provides a direction for extending it further in the future.
+C++20 introduced the ability to have class types as non-type template parameters. This paper extends the set of types that can be used as non-type template parameters (to allow `std::tuple<T...>`, `std::optional<T>`, and `std::variant<T...>`) and provides a direction for extending it further in the future (to eventually allow `std::vector<T>` and `std::string`).
 
 # Introduction
 
@@ -51,7 +51,7 @@ The expectation is that `a` and `b` have the same type, but if template equivale
 
 # Proposal: `operator template()`
 
-The proposal is that a type, `T`, can define an `operator template` which returns a type `R`. `R` must be a structural type, and is the representation of `T`. `T` must also be constructible from `R`.
+The proposal is that a type, `T`, can define an `operator template` which returns a type `R`. `R` must be a structural type, and acts as the representation of `T`. `T` must also be constructible from `R`.
 
 For a example:
 
@@ -73,7 +73,7 @@ template <A a> struct X { };
 ```
 :::
 
-`A` by default is not structural (it has a private member), but its `operator template` returns `Repr`, which _is_ structural, and `A` is constructible from `Repr`. The compiler will use `Repr` to determine `A`'s template equivalence rules (as well as its mangling).
+`A` by default is not structural (it has a private member), but its `operator template` returns `Repr` (which _is_ structural) and `A` is constructible from `Repr`. The compiler will use `Repr` to determine `A`'s template equivalence rules (as well as its mangling).
 
 `A{1}` and `A{1}` are equivalent because `A::Repr{1}` and `A::Repr{1}` are equivalent.
 
@@ -129,18 +129,40 @@ class D : B {
     constexpr auto operator template() const = default;
 };
 
-template <D d> // error: D is not structural because
-struct Y { };  // B is not structural
+template <D d> // error: D is not structural because B is not structural
+struct Y { };  // ... and B is not structural because it has a private member
 ```
 :::
 
+## Use of `operator template`
+
+The only intent of `operator template` is to allow the compiler to determine template equivalence and mangling. No program ever need invoke it for any reason, so no provision need to made in the language for allowing it or defining what that means. This avoids the question of what exactly the return type of a defaulted `operator template` is: it doesn't matter, it's just annotation.
+
+No program ever needs to invoke an `operator template` because of the recursive nature of the definition of structural. In order to incorporate some user-defined type `C` into your mangling, you simply use it directly:
+
+::: bq
+```cpp
+class A {
+private:
+    C c;  // some user-defined type (possibly C++20 structural, possibly has operator template)
+    D d;  // some other user-defined type that doesn't participate in mangling for some reason
+
+    struct Repr { C c; };
+    constexpr auto operator template() const { return Repr{c}; }
+    explicit constexpr A(Repr);
+};
+```
+:::
+
+If `C` is structural, regardless of how it gets there (whether `C` is an alias for `int` or has a custom `operator template`), `Repr` is structural and correctly uses `C`'s equivalence rules. No need for any `operator template` invocation here.
+
 ## Variable-length representation
 
-The above model allows for letting `tuple`, `optional`, and `variant` opt in to being used as non-type template parameters. But it doesn't help us with `vector` or `string`. For that, we need some kind of variable-length type that the compiler recognizes as defining a representation.
+The model for defaulted `operator template` allows for letting `tuple`, `optional`, and `variant` opt in to being used as non-type template parameters. The simple member-wise equivalence is correct for all of these types. But it doesn't help us with `vector` or `string`. For that, we need some kind of variable-length type that the compiler recognizes as defining a representation.
 
 The obvious choice there would be: `vector<T>`.
 
-That is, `vector<int>` would just be usable by default, while `string` would opt in by doing:
+That is, `vector<int>` would just be usable by default (as being a `vector` of a structural type, `int`), while `string` would opt in by doing:
 
 ::: bq
 ```cpp
@@ -201,7 +223,7 @@ constexpr A4 j = 1;
 ```
 :::
 
-`int const&` is also a structural type (lvalue references are structural), but it is differently structural from `int`. Equivalence for `int const&` is based on the _address_, while for `int` it's based on the value. `X<i>` and `X<j>` would have to be different types, because their underlying `int`s are different. This mistake would be pretty broken.
+`int const&` is also a structural type (lvalue references are structural), but it is _differently_ structural from `int`. Equivalence for `int const&` is based on the _address_, while for `int` it's based on the value. `X<i>` and `X<j>` would have to be different types, because their underlying `int`s are different. This mistake would be pretty broken.
 
 However, the compiler should be able to reject such cases, because once we create `X<i>`, the representation of the template parameter object would be different from the representation of `i`.
 
@@ -213,13 +235,13 @@ Because we don't have non-transient constexpr allocation yet, the only really in
 
 This direction allows `tuple`, `optional`, and `variant`, and lots and of class types. Which seems plenty useful.
 
-We also for now say that `operator template` that _cannot_ be invoked by the program - it's _solely_ for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one `operator template` per class, its *cv-qualifier-seq* must be `const` and its *ref-qualifier* must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn't deprive us of functionality.
+As discussed earlier, we also for now say that `operator template` that _cannot_ be invoked by the program - it's _solely_ for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one `operator template` per class, its *cv-qualifier-seq* must be `const` and its *ref-qualifier* must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn't deprive us of functionality.
 
 # Proposal
 
-A class type can define `operator template` as defaulted, returning `auto`, in the body of the class. This is only valid if all base classes and non-static data members have structural types - however we don't want to call this ill-formed if this rule is violated. If `tuple<int, non_structural>` providing a defaulted `operator template` were ill-formed, then `tuple` would have to constrain its `operator template` on all the types being structural, but that's basically the only constraint that's ever meaningful - so it seems reasonable to have defaulting `operator template` actually mean that. But even a (non-template) class having a `string` member defining `operator template` as defaulted doesn't worth rejecting, for the same reasons as laid out in [@P2448R0]: `string` will eventually be usable as a non-type template parameter, so let users write the declaration early.
+A class type can define `operator template` as defaulted (returning `auto`, with a *cv-qualifier-eq* of `const`, and no *ref-qualifier*, and of course declared `constexpr`) in the body of the class. A class type with such an `operator template` is a structural type if all of its base classes and non-static data members have structural type and none of them are `mutable`.
 
-A class type with such an `operator template` is a structural type.
+This is only valid if all base classes and non-static data members have structural types - however we don't want to call this ill-formed if this rule is violated. If `tuple<int, non_structural>` providing a defaulted `operator template` were ill-formed, then `tuple` would have to constrain its `operator template` on all the types being structural, but that's basically the only constraint that's ever meaningful - so it seems reasonable to have defaulting `operator template` actually mean that. But even a (non-template) class having a `string` member defining `operator template` as defaulted doesn't worth rejecting, for the same reasons as laid out in [@P2448R0]: `string` will eventually be usable as a non-type template parameter, so let users write the declaration early.
 
 Add defaulted `operator template` to `std::tuple`, `std::optional`, and `std::variant`.
 
