@@ -1068,8 +1068,11 @@ public:
       requires random_access_iterator<Iterator>;
     friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, difference_type n)
       requires random_access_iterator<Iterator>;
-    friend constexpr difference_type operator-(const basic_const_iterator& x, const basic_const_iterator& y)
-      requires sized_sentinel_for<Iterator, Iterator>;
+    template <sized_sentinel_for<Iterator> S>
+      friend constexpr difference_type operator-(const basic_const_iterator& x, const S& y);
+    template <$not-same-as$<basic_const_iterator> S>
+        requires sized_sentinel_for<S, Iterator>
+      friend constexpr difference_type operator-(const S& x, const basic_const_iterator& y);
 };
 ```
 
@@ -1239,11 +1242,19 @@ friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, d
 [#]{.pnum} *Effects*: Equivalent to: `return basic_const_iterator(i.$current_$ - n);`
 
 ```cpp
-friend constexpr difference_type operator-(const basic_const_iterator& x, const basic_const_iterator& y)
-  requires sized_sentinel_for<Iterator, Iterator>;
+template <sized_sentinel_for<Iterator> S>
+  friend constexpr difference_type operator-(const basic_const_iterator& x, const S& y);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ - y.$current_$;`
+[#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ - y`
+
+```cpp
+template <$not-same-as$<basic_const_iterator> S>
+    requires sized_sentinel_for<S, Iterator>
+  friend constexpr difference_type operator-(const S& x, const basic_const_iterator& y);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return x - y.$current_$;`
 :::
 
 ### Ranges
