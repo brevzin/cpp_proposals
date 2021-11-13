@@ -1457,7 +1457,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a><span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">12</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">*</span><em>current_</em>;</code></p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">constexpr</span> <span class="kw">const</span> value_type<span class="op">*</span> <span class="kw">operator</span><span class="op">-&gt;()</span> <span class="kw">const</span> <span class="kw">requires</span> contiguous_iterator<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">13</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">&amp;*</span><em>current_</em>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">13</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>to_address<span class="op">(</span><em>current_</em><span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">constexpr</span> basic_const_iterator<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">++()</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">14</a></span> <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a><span class="op">++</span><em>current_</em>;</span>
@@ -1559,7 +1559,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb58-21"><a href="#cb58-21"></a>  template&lt;range R&gt;</span>
 <span id="cb58-22"><a href="#cb58-22"></a>    using sentinel_t = decltype(ranges::end(declval&lt;R&amp;&gt;()));</span>
 <span id="cb58-23"><a href="#cb58-23"></a><span class="va">+ template&lt;range R&gt;</span></span>
-<span id="cb58-24"><a href="#cb58-24"></a><span class="va">+   using range_const_iterator_t = const_iterator&lt;iterator_t&lt;R&gt;&gt;;</span></span>
+<span id="cb58-24"><a href="#cb58-24"></a><span class="va">+   using const_iterator_t = const_iterator&lt;iterator_t&lt;R&gt;&gt;;</span></span>
 <span id="cb58-25"><a href="#cb58-25"></a>  template&lt;range R&gt;</span>
 <span id="cb58-26"><a href="#cb58-26"></a>    using range_difference_t = iter_difference_t&lt;iterator_t&lt;R&gt;&gt;;</span>
 <span id="cb58-27"><a href="#cb58-27"></a>  template&lt;sized_­range R&gt;</span>

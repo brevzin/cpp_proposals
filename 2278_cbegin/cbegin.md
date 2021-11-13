@@ -1117,7 +1117,7 @@ constexpr decltype(auto) operator*() const;
 ```cpp
 constexpr const value_type* operator->() const requires contiguous_iterator<Iterator>;
 ```
-[#]{.pnum} *Effects*: Equivalent to: `return &*$current_$;`
+[#]{.pnum} *Effects*: Equivalent to: `return std::to_address($current_$);`
 ```cpp
 constexpr basic_const_iterator& operator++();
 ```
@@ -1274,7 +1274,7 @@ namespace std::ranges {
   template<range R>
     using sentinel_t = decltype(ranges::end(declval<R&>()));
 + template<range R>
-+   using range_const_iterator_t = const_iterator<iterator_t<R>>;
++   using const_iterator_t = const_iterator<iterator_t<R>>;
   template<range R>
     using range_difference_t = iter_difference_t<iterator_t<R>>;
   template<sized_­range R>
