@@ -1027,8 +1027,7 @@ public:
     constexpr decltype(auto) operator[](difference_type n) const requires random_access_iterator<Iterator>;
 
     template <sentinel_for<Iterator> S>
-    friend constexpr bool operator==(const basic_const_iterator& x, const S& s)
-      requires equality_comparable<Iterator>;
+    friend constexpr bool operator==(const basic_const_iterator& x, const S& s);
 
     friend constexpr bool operator<(const basic_const_iterator& x, const basic_const_iterator& y)
       requires random_access_iterator<Iterator>;
@@ -1059,11 +1058,11 @@ public:
               && totally_ordered_with<Iterator, I>
               && three_way_comparable_with<Iterator, I>;
 
-    friend constexpr basic_const_iterator operator+(basic_const_iterator i, difference_type n)
+    friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
       requires random_access_iterator<Iterator>;
-    friend constexpr basic_const_iterator operator+(difference_type n, basic_const_iterator i)
+    friend constexpr basic_const_iterator operator+(difference_type n, const basic_const_iterator& i)
       requires random_access_iterator<Iterator>;
-    friend constexpr basic_const_iterator operator-(basic_const_iterator i, difference_type n)
+    friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, difference_type n)
       requires random_access_iterator<Iterator>;
     friend constexpr difference_type operator-(const basic_const_iterator& x, basic_const_iterator& y)
       requires sized_sentinel_for<Iterator, Iterator>;
@@ -1078,10 +1077,7 @@ public:
 * [#.#]{.pnum} Otherwise, if `Iterator` models `forward_iterator`, then `iterator_concept` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag`.
 
-[#]{.pnum} `basic_const_iterator<Iterator>::iterator_category` is defined as follows:
-
-* [#.#]{.pnum} If `Iterator` models `forward_iterator`, then `iterator_category` denotes `iterator_traits<Iterator>::iterator_category`.
-* [#.#]{.pnum} Otherwise, `iterator_category` is not present.
+[#]{.pnum} The member *typedef-name* `iterator_category` is defined if and only if `Iterator` models `forward_iterator`. In that case, `basic_const_iterator<Iterator>::iterator_category` denotes the type `iterator_traits<Iterator>::iterator_category`.
 
 ```cpp
 constexpr basic_const_iterator(Iterator current);
@@ -1119,7 +1115,7 @@ constexpr decltype(auto) operator*() const;
 ```cpp
 constexpr const value_type* operator->() const requires contiguous_iterator<Iterator>;
 ```
-[#]{.pnum} *Effects*: Equivalent to: `return std::to_address($current_$);`
+[#]{.pnum} *Effects*: Equivalent to: `return to_address($current_$);`
 ```cpp
 constexpr basic_const_iterator& operator++();
 ```
@@ -1177,8 +1173,7 @@ constexpr decltype(auto) operator[](difference_type n) const requires random_acc
 
 ```cpp
 template <sentinel_for<Iterator> S>
-friend constexpr bool operator==(const basic_const_iterator& x, const S& s)
-  requires equality_comparable<Iterator>
+friend constexpr bool operator==(const basic_const_iterator& x, const S& s);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ == s;`
@@ -1225,15 +1220,15 @@ template <$not-same-as$<basic_const_iterator> I>
 [#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ $op$ y;`
 
 ```cpp
-friend constexpr basic_const_iterator operator+(basic_const_iterator i, difference_type n)
+friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
   requires random_access_iterator<Iterator>;
-friend constexpr basic_const_iterator operator+(difference_type n, basic_const_iterator i)
+friend constexpr basic_const_iterator operator+(difference_type n, const basic_const_iterator& i)
   requires random_access_iterator<Iterator>;
 ```
 [#]{.pnum} *Effects*: Equivalent to: `return basic_const_iterator(i.$current_$ + n);`
 
 ```cpp
-friend constexpr basic_const_iterator operator-(basic_const_iterator i, difference_type n)
+friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, difference_type n)
   requires random_access_iterator<Iterator>;
 ```
 
