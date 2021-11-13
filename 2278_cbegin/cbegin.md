@@ -1064,7 +1064,7 @@ public:
       requires random_access_iterator<Iterator>;
     friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, difference_type n)
       requires random_access_iterator<Iterator>;
-    friend constexpr difference_type operator-(const basic_const_iterator& x, basic_const_iterator& y)
+    friend constexpr difference_type operator-(const basic_const_iterator& x, const basic_const_iterator& y)
       requires sized_sentinel_for<Iterator, Iterator>;
 };
 ```
@@ -1212,7 +1212,7 @@ template <$not-same-as$<basic_const_iterator> I>
   friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator>
           && totally_ordered_with<Iterator, I>
-          && three_way_comparable_with<Iterator, I>
+          && three_way_comparable_with<Iterator, I>;
 ```
 
 [#]{.pnum} Let `$op$` be the operator.
@@ -1235,8 +1235,8 @@ friend constexpr basic_const_iterator operator-(const basic_const_iterator& i, d
 [#]{.pnum} *Effects*: Equivalent to: `return basic_const_iterator(i.$current_$ - n);`
 
 ```cpp
-friend constexpr difference_type operator-(const basic_const_iterator& x, basic_const_iterator& y)
-  requires sized_sentinel_for<Iterator, Iterator>
+friend constexpr difference_type operator-(const basic_const_iterator& x, const basic_const_iterator& y)
+  requires sized_sentinel_for<Iterator, Iterator>;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ - y.$current_$;`
