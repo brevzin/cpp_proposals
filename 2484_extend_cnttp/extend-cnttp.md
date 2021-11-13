@@ -239,7 +239,7 @@ As discussed earlier, we also for now say that `operator template` that _cannot_
 
 # Proposal
 
-A class type can define `operator template` as defaulted (returning `auto`, with a *cv-qualifier-eq* of `const`, and no *ref-qualifier*, and of course declared `constexpr`) in the body of the class. A class type with such an `operator template` is a structural type if all of its base classes and non-static data members have structural type and none of them are `mutable`.
+A class type can define `operator template` as defaulted (returning `auto`, with a *cv-qualifier-seq* of `const`, and no *ref-qualifier*, and of course declared `constexpr`) in the body of the class. A class type with such an `operator template` is a structural type if all of its base classes and non-static data members have structural type and none of them are `mutable`.
 
 This is only valid if all base classes and non-static data members have structural types - however we don't want to call this ill-formed if this rule is violated. If `tuple<int, non_structural>` providing a defaulted `operator template` were ill-formed, then `tuple` would have to constrain its `operator template` on all the types being structural, but that's basically the only constraint that's ever meaningful - so it seems reasonable to have defaulting `operator template` actually mean that. But even a (non-template) class having a `string` member defining `operator template` as defaulted doesn't worth rejecting, for the same reasons as laid out in [@P2448R0]: `string` will eventually be usable as a non-type template parameter, so let users write the declaration early.
 
@@ -247,7 +247,17 @@ Add defaulted `operator template` to `std::tuple`, `std::optional`, and `std::va
 
 ## Language Wording
 
-Somewhere, need to add grammar for `operator template` and allow for defining it as defaulted in the *member-specification* (but not defining it not-defaulted or providing a body for it).
+Add a new clause called "Template representation functions" after [class.conv.fct]{.sref} that will define `operator template`:
+
+::: bq
+[#]{.pnum} A member function of the form:
+
+```
+$template-representation-function$:
+    operator template
+```
+shall have no parameters, have a *cv-qualifier-seq* consisting of exactly `const`, have no *ref-qualifier*, have a return type of `auto`, and shall be defined as defaulted on its first declaration. Such a function is called a _template representation function_. [*Note*: A template representation function can be used to opt a class type with private data members or private base classes into being a structural type ([temp.param]). -*end note*]
+:::
 
 Change [temp.param]{.sref}/7:
 
@@ -258,7 +268,7 @@ Change [temp.param]{.sref}/7:
 - [#.#]{.pnum} an lvalue reference type, or
 - [#.#]{.pnum} a literal class type with the following properties:
   - [#.#.#]{.pnum} [no direct or indirect subobject is mutable]{.addu} and
-  - [#.#.#]{.pnum} [either the class defines an `operator template` or]{.addu} all base classes and non-static data members are public [and non-mutable]{.rm} [and]{.addu}
+  - [#.#.#]{.pnum} [either the class defines a template representation function ([???]) or]{.addu} all base classes and non-static data members are public [and non-mutable]{.rm} [and]{.addu}
   - [#.#.#]{.pnum} the types of all bases classes and non-static data members are structural types or (possibly multi-dimensional) array thereof.
 :::
 

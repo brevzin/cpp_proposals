@@ -744,22 +744,28 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This direction allows <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">optional</code>, and <code class="sourceCode cpp">variant</code>, and lots and of class types. Which seems plenty useful.</p>
 <p>As discussed earlier, we also for now say that <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> that <em>cannot</em> be invoked by the program - it’s <em>solely</em> for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> per class, its <em>cv-qualifier-seq</em> must be <code class="sourceCode cpp"><span class="kw">const</span></code> and its <em>ref-qualifier</em> must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn’t deprive us of functionality.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>A class type can define <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted (returning <code class="sourceCode cpp"><span class="kw">auto</span></code>, with a <em>cv-qualifier-eq</em> of <code class="sourceCode cpp"><span class="kw">const</span></code>, and no <em>ref-qualifier</em>, and of course declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code>) in the body of the class. A class type with such an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is a structural type if all of its base classes and non-static data members have structural type and none of them are <code class="sourceCode cpp"><span class="kw">mutable</span></code>.</p>
+<p>A class type can define <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted (returning <code class="sourceCode cpp"><span class="kw">auto</span></code>, with a <em>cv-qualifier-seq</em> of <code class="sourceCode cpp"><span class="kw">const</span></code>, and no <em>ref-qualifier</em>, and of course declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code>) in the body of the class. A class type with such an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> is a structural type if all of its base classes and non-static data members have structural type and none of them are <code class="sourceCode cpp"><span class="kw">mutable</span></code>.</p>
 <p>This is only valid if all base classes and non-static data members have structural types - however we don’t want to call this ill-formed if this rule is violated. If <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">int</span>, non_structural<span class="op">&gt;</span></code> providing a defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> were ill-formed, then <code class="sourceCode cpp">tuple</code> would have to constrain its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> on all the types being structural, but that’s basically the only constraint that’s ever meaningful - so it seems reasonable to have defaulting <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> actually mean that. But even a (non-template) class having a <code class="sourceCode cpp">string</code> member defining <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> as defaulted doesn’t worth rejecting, for the same reasons as laid out in <span class="citation" data-cites="P2448R0">[<a href="#ref-P2448R0" role="doc-biblioref">P2448R0</a>]</span>: <code class="sourceCode cpp">string</code> will eventually be usable as a non-type template parameter, so let users write the declaration early.</p>
 <p>Add defaulted <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>, <code class="sourceCode cpp">std<span class="op">::</span>optional</code>, and <code class="sourceCode cpp">std<span class="op">::</span>variant</code>.</p>
 <h2 data-number="4.1" id="language-wording"><span class="header-section-number">4.1</span> Language Wording<a href="#language-wording" class="self-link"></a></h2>
-<p>Somewhere, need to add grammar for <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> and allow for defining it as defaulted in the <em>member-specification</em> (but not defining it not-defaulted or providing a body for it).</p>
+<p>Add a new clause called “Template representation functions” after <span>11.4.8.3 <a href="https://wg21.link/class.conv.fct">[class.conv.fct]</a></span> that will define <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">1</a></span> A member function of the form:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a><em>template-representation-function</em>:</span>
+<span id="cb10-2"><a href="#cb10-2"></a>    operator template</span></code></pre></div>
+<p>shall have no parameters, have a <em>cv-qualifier-seq</em> consisting of exactly <code class="sourceCode cpp"><span class="kw">const</span></code>, have no <em>ref-qualifier</em>, have a return type of <code class="sourceCode cpp"><span class="kw">auto</span></code>, and shall be defined as defaulted on its first declaration. Such a function is called a <em>template representation function</em>. [<em>Note</em>: A template representation function can be used to opt a class type with private data members or private base classes into being a structural type ([temp.param]). -<em>end note</em>]</p>
+</blockquote>
 <p>Change <span>13.2 <a href="https://wg21.link/temp.param">[temp.param]</a></span>/7:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">7</a></span> A <em>structural type</em> is one of the following:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">7</a></span> A <em>structural type</em> is one of the following:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(7.1)</a></span> a scalar type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.2)</a></span> an lvalue reference type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(7.3)</a></span> a literal class type with the following properties:
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.1)</a></span> a scalar type, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(7.2)</a></span> an lvalue reference type, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(7.3)</a></span> a literal class type with the following properties:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(7.3.1)</a></span> <span class="addu">no direct or indirect subobject is mutable</span> and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(7.3.2)</a></span> <span class="addu">either the class defines an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code> or</span> all base classes and non-static data members are public <span class="rm" style="color: #bf0303"><del>and non-mutable</del></span> <span class="addu">and</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(7.3.3)</a></span> the types of all bases classes and non-static data members are structural types or (possibly multi-dimensional) array thereof.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(7.3.1)</a></span> <span class="addu">no direct or indirect subobject is mutable</span> and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(7.3.2)</a></span> <span class="addu">either the class defines a template representation function ([???]) or</span> all base classes and non-static data members are public <span class="rm" style="color: #bf0303"><del>and non-mutable</del></span> <span class="addu">and</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(7.3.3)</a></span> the types of all bases classes and non-static data members are structural types or (possibly multi-dimensional) array thereof.</li>
 </ul></li>
 </ul>
 </blockquote>
@@ -768,78 +774,78 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add to <span>20.5.3 <a href="https://wg21.link/tuple.tuple">[tuple.tuple]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
-<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;class... Types&gt;</span>
-<span id="cb10-3"><a href="#cb10-3"></a>  class tuple {</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  public:</span>
-<span id="cb10-5"><a href="#cb10-5"></a>    // ...</span>
-<span id="cb10-6"><a href="#cb10-6"></a></span>
-<span id="cb10-7"><a href="#cb10-7"></a>    // [tuple.swap], tuple swap</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    constexpr void swap(tuple&amp;) noexcept(see below);</span>
-<span id="cb10-9"><a href="#cb10-9"></a>    constexpr void swap(const tuple&amp;) const noexcept(see below);</span>
-<span id="cb10-10"><a href="#cb10-10"></a></span>
-<span id="cb10-11"><a href="#cb10-11"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb10-12"><a href="#cb10-12"></a>  };</span>
-<span id="cb10-13"><a href="#cb10-13"></a></span>
-<span id="cb10-14"><a href="#cb10-14"></a>  // ...</span>
-<span id="cb10-15"><a href="#cb10-15"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class... Types&gt;</span>
+<span id="cb11-3"><a href="#cb11-3"></a>  class tuple {</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  public:</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    // ...</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a>    // [tuple.swap], tuple swap</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    constexpr void swap(tuple&amp;) noexcept(see below);</span>
+<span id="cb11-9"><a href="#cb11-9"></a>    constexpr void swap(const tuple&amp;) const noexcept(see below);</span>
+<span id="cb11-10"><a href="#cb11-10"></a></span>
+<span id="cb11-11"><a href="#cb11-11"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb11-12"><a href="#cb11-12"></a>  };</span>
+<span id="cb11-13"><a href="#cb11-13"></a></span>
+<span id="cb11-14"><a href="#cb11-14"></a>  // ...</span>
+<span id="cb11-15"><a href="#cb11-15"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to <span>20.6.3.1 <a href="https://wg21.link/optional.optional.general">[optional.optional.general]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class T&gt;</span>
-<span id="cb11-3"><a href="#cb11-3"></a>  class optional {</span>
-<span id="cb11-4"><a href="#cb11-4"></a>  public:</span>
-<span id="cb11-5"><a href="#cb11-5"></a>    using value_type = T;</span>
-<span id="cb11-6"><a href="#cb11-6"></a></span>
-<span id="cb11-7"><a href="#cb11-7"></a>    // ...</span>
-<span id="cb11-8"><a href="#cb11-8"></a></span>
-<span id="cb11-9"><a href="#cb11-9"></a>    // [optional.mod], modifiers</span>
-<span id="cb11-10"><a href="#cb11-10"></a>    constexpr void reset() noexcept;</span>
-<span id="cb11-11"><a href="#cb11-11"></a></span>
-<span id="cb11-12"><a href="#cb11-12"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb11-13"><a href="#cb11-13"></a></span>
-<span id="cb11-14"><a href="#cb11-14"></a>  private:</span>
-<span id="cb11-15"><a href="#cb11-15"></a>    T *val;         // exposition only</span>
-<span id="cb11-16"><a href="#cb11-16"></a>  };</span>
-<span id="cb11-17"><a href="#cb11-17"></a></span>
-<span id="cb11-18"><a href="#cb11-18"></a>  template&lt;class T&gt;</span>
-<span id="cb11-19"><a href="#cb11-19"></a>    optional(T) -&gt; optional&lt;T&gt;;</span>
-<span id="cb11-20"><a href="#cb11-20"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class T&gt;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  class optional {</span>
+<span id="cb12-4"><a href="#cb12-4"></a>  public:</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    using value_type = T;</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a>    // ...</span>
+<span id="cb12-8"><a href="#cb12-8"></a></span>
+<span id="cb12-9"><a href="#cb12-9"></a>    // [optional.mod], modifiers</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    constexpr void reset() noexcept;</span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a>  private:</span>
+<span id="cb12-15"><a href="#cb12-15"></a>    T *val;         // exposition only</span>
+<span id="cb12-16"><a href="#cb12-16"></a>  };</span>
+<span id="cb12-17"><a href="#cb12-17"></a></span>
+<span id="cb12-18"><a href="#cb12-18"></a>  template&lt;class T&gt;</span>
+<span id="cb12-19"><a href="#cb12-19"></a>    optional(T) -&gt; optional&lt;T&gt;;</span>
+<span id="cb12-20"><a href="#cb12-20"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to <span>20.7.3.1 <a href="https://wg21.link/variant.variant.general">[variant.variant.general]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
-<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class... Types&gt;</span>
-<span id="cb12-3"><a href="#cb12-3"></a>  class variant {</span>
-<span id="cb12-4"><a href="#cb12-4"></a>  public:</span>
-<span id="cb12-5"><a href="#cb12-5"></a>    // ...</span>
-<span id="cb12-6"><a href="#cb12-6"></a></span>
-<span id="cb12-7"><a href="#cb12-7"></a>    // [variant.swap], swap</span>
-<span id="cb12-8"><a href="#cb12-8"></a>    constexpr void swap(variant&amp;) noexcept(see below);</span>
-<span id="cb12-9"><a href="#cb12-9"></a></span>
-<span id="cb12-10"><a href="#cb12-10"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
-<span id="cb12-11"><a href="#cb12-11"></a>  };</span>
-<span id="cb12-12"><a href="#cb12-12"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>namespace std {</span>
+<span id="cb13-2"><a href="#cb13-2"></a>  template&lt;class... Types&gt;</span>
+<span id="cb13-3"><a href="#cb13-3"></a>  class variant {</span>
+<span id="cb13-4"><a href="#cb13-4"></a>  public:</span>
+<span id="cb13-5"><a href="#cb13-5"></a>    // ...</span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a>    // [variant.swap], swap</span>
+<span id="cb13-8"><a href="#cb13-8"></a>    constexpr void swap(variant&amp;) noexcept(see below);</span>
+<span id="cb13-9"><a href="#cb13-9"></a></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="va">+   constexpr auto operator template() const = default;</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>  };</span>
+<span id="cb13-12"><a href="#cb13-12"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <h2 data-number="4.3" id="feature-test-macros"><span class="header-section-number">4.3</span> Feature-test macros<a href="#feature-test-macros" class="self-link"></a></h2>
 <p>Bump the non-type template argument macro in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>__cpp_­nontype_­template_­args <span class="diffdel">201911L</span> <span class="diffins">2022XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>__cpp_­nontype_­template_­args <span class="diffdel">201911L</span> <span class="diffins">2022XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Bump the corresponding library feature test macros in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>. These seem like the most appropriate choices:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>#define __cpp_­lib_­constexpr_­tuple   <span class="diffdel">201811L</span> <span class="diffins">2022XXL</span> // also in &lt;tuple&gt;</span>
-<span id="cb14-2"><a href="#cb14-2"></a>#define __cpp_­lib_­optional          <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;optional&gt;</span>
-<span id="cb14-3"><a href="#cb14-3"></a>#define __cpp_­lib_­variant           <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;variant&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>#define __cpp_­lib_­constexpr_­tuple   <span class="diffdel">201811L</span> <span class="diffins">2022XXL</span> // also in &lt;tuple&gt;</span>
+<span id="cb15-2"><a href="#cb15-2"></a>#define __cpp_­lib_­optional          <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;optional&gt;</span>
+<span id="cb15-3"><a href="#cb15-3"></a>#define __cpp_­lib_­variant           <span class="diffdel">202106L</span> <span class="diffins">2022XXL</span> // also in &lt;variant&gt;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
