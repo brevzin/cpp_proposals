@@ -1,6 +1,6 @@
 ---
 title: "`views::join_with`"
-document: P2441R0
+document: P2441R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2441R0], added a feature-test macro.
 
 # Introduction
 
@@ -23,9 +27,9 @@ There are several aspects to `join_with` that are more complicated than `join`, 
 
 Why `views::join_with` rather than supporting an extra argument to `views::join`? The issue here is ultimately ambiguity. In this potential design where we simply overload `join`, `views::join(x)` could mean either (a) produce a range that joins the ranges of `x`, or (b) it is a partial call that produces a range adaptor closure object to where `x` is a delimiter for some other range to be provided in the future.
 
-This ambiguity is... rare. `x` needs to be a range of ranges (i.e. `[[T]]`) in order to be joinable, which means that in order for it to be a delimiter, the range it's doing needs to be a range of range of ranges (i.e. `[[[T]]]`). These don't come up very often. range-v3 simply treats `join(x)` if `x` is a joinable range (i.e. a range whose reference type is also a range) a request to produce a `join_view`. That's one option. 
+This ambiguity is... rare. `x` needs to be a range of ranges (i.e. `[[T]]`) in order to be joinable, which means that in order for it to be a delimiter, the range it's doing needs to be a range of range of ranges (i.e. `[[[T]]]`). These don't come up very often. range-v3 simply treats `join(x)` if `x` is a joinable range (i.e. a range whose reference type is also a range) a request to produce a `join_view`. That's one option.
 
-However, eventually somebody is going to want to join a `[[[T]]]` on a `[[T]]` and it will end up just not working. 
+However, eventually somebody is going to want to join a `[[[T]]]` on a `[[T]]` and it will end up just not working.
 
 Regardless, joining with a delimiter will produce a different view than joining without a delimiter (it's `r | views::join` does not produce a `join_with_view<all_t<R>, empty_view<T>>`, that would be needlessly inefficient... it just produces a `join_with_view<all_t<R>>`), so we don't gain anything on either the implementation front or the specification front by overloading `join`. The only difference of introducing a new name would be that users would have to write `r | views::join_with(' ')` instead of `r | views::join(' ')`. That doesn't seem like an unreasonable burden on users, at the cost of avoiding any future ambiguity.
 
@@ -33,7 +37,7 @@ Regardless, joining with a delimiter will produce a different view than joining 
 
 Like `views::join`, and following [@P2328R1], `views::join_with` is input-only if the primary range (the one we're `join`ing) is a range of prvalue non-view ranges.
 
-Otherwise, if `Rng`, `Inner`, and `Pattern` are all bidirectional and `Inner` and `Pattern` are common, then bidirectional. Otherwise, if `Rng`, `Inner`, and `Pattern` are all forward. Otherwise, input. 
+Otherwise, if `Rng`, `Inner`, and `Pattern` are all bidirectional and `Inner` and `Pattern` are common, then bidirectional. Otherwise, if `Rng`, `Inner`, and `Pattern` are all forward. Otherwise, input.
 
 ## Value and Reference Type
 
@@ -45,9 +49,9 @@ using reference = common_reference_t<range_reference_t<Inner>, range_reference_t
 using rvalue_reference = common_reference_t<range_rvalue_reference_t<Inner>, range_rvalue_reference_t<Pattern>>;
 ```
 
-Those types all existing is an added constraint on constructing a `join_with_view`. 
+Those types all existing is an added constraint on constructing a `join_with_view`.
 
-I'm not sure I see a need to deviate from the implementation here. 
+I'm not sure I see a need to deviate from the implementation here.
 
 ## Various Properties
 
@@ -69,7 +73,7 @@ If `Rng` and `Pattern` are, and `Inner` is glvalue range. This is the same requi
 
 ## Implementation Experience
 
-Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/b1fdabW3s) from scratch. 
+Up until recently, the `join_with_view` in range-v3 was input-only, never common, and never const-iterable. I have implemented conditionally-bidirectional support in range-v3 and also implemented [this design](https://godbolt.org/z/b1fdabW3s) from scratch.
 
 # Wording
 
@@ -86,7 +90,7 @@ namespace std::ranges {
   // [range.join.with], join with view
   template<class R, class P>
     concept $compatible-joinable-ranges$ = $see below$; // exposition only
-  
+
   template<input_range V, forward_range Pattern>
     requires view<V>
           && input_range<range_reference_t<V>>
@@ -118,10 +122,10 @@ Add the following subclause to [range.adaptors]{.sref}.
 
 ```cpp
 vector<string> vs = {"the", "quick", "brown", "fox"};
-for (char c : vs | join_with(' ')) {
+for (char c : vs | join_with('-')) {
     cout << c;
 }
-// the above prints: the quick brown fox
+// the above prints: the-quick-brown-fox
 ```
 
 -*end example*]
@@ -137,10 +141,10 @@ namespace std::ranges {
         common_with<range_value_t<R>, range_value_t<P>> &&
         common_reference_with<range_reference_t<R>, range_reference_t<P>> &&
         common_reference_with<range_rvalue_reference_t<R>, range_rvalue_reference_t<P>>;
-        
+
   template <class R>
     concept $bidi-common$ = bidirectional_range<R> && common_range<R>;  // exposition only
-        
+
   template<input_range V, forward_range Pattern>
     requires view<V>
           && input_range<range_reference_t<V>>
@@ -148,28 +152,28 @@ namespace std::ranges {
           && $compatible-joinable-ranges$<range_reference_t<V>, Pattern>
   class join_with_view : public view_interface<join_with_view<V, Pattern>> {
     using $InnerRng$ = range_reference_t<V>;
-    
+
     V $base_$ = V();                                          // exposition only
     $non-propagating-cache$<remove_cv_t<$InnerRng$>> $inner_$;    // exposition only, present only
                                                             // when !is_reference_v<InnerRng>
     Pattern $pattern_$ = Pattern();                           // exposition only
-    
+
     template<bool Const> struct $iterator$;                   // exposition only
     template<bool Const> struct $sentinel$;                   // exposition only
-   
+
   public:
     join_with_view() requires default_initializable<V> && default_initializable<Pattern> = default;
     constexpr join_with_view(V base, Pattern pattern);
-    
+
     template<input_range R>
       requires constructible_from<V, views::all_t<R>> &&
                constructible_from<Pattern, single_view<range_value_t<$InnerRng$>>>
     constexpr join_with_view(R&& r, range_value_t<$InnerRng$> e);
 
-    
+
     constexpr V base() const& requires copy_constructible<V> { return $base_$; }
     constexpr V base() && { return std::move($base_$); }
-    
+
     constexpr auto begin() {
       constexpr bool use_const = $simple-view$<V> && is_reference_v<$InnerRng$> && $simple-view$<Pattern>;
       return $iterator$<use_const>{*this, ranges::begin($base_$)};
@@ -179,7 +183,7 @@ namespace std::ranges {
                                           is_reference_v<$InnerRng$> {
       return $iterator$<true>{*this, ranges::begin($base_$)};
     }
-    
+
     constexpr auto end() {
       if constexpr (forward_range<V> &&
                     is_reference_v<$InnerRng$> && forward_range<$InnerRng$> &&
@@ -198,13 +202,13 @@ namespace std::ranges {
         return $iterator$<true>{*this, ranges::end($base_$)};
       } else {
         return $sentinel$<true>{*this};
-      }    
+      }
     }
   };
-  
+
   template<class R, class P>
     join_with_view(R&&, P&&) -> join_with_view<views::all_t<R>, views::all_t<P>>;
-  
+
   template<input_range R>
     join_with_view(R&&, range_value_t<range_reference_t<R>>)
       -> join_with_view<views::all_t<R>, single_view<range_value_t<range_reference_t<R>>>>;
@@ -244,17 +248,17 @@ namespace std::ranges {
     using $Base$ = $maybe-const$<Const, V>;                               // exposition only
     using $InnerBase$ = range_reference_t<$Base$>;                        // exposition only
     using $PatternBase$ = $maybe-const$<Const, Pattern>;                  // exposition only
-    
+
     using $OuterIter$ = iterator_t<$Base$>;                               // exposition only
     using $InnerIter$ = iterator_t<$InnerBase$>;                          // exposition only
     using $PatternIter$ = iterator_t<$PatternBase$>;                      // exposition only
-    
+
     static constexpr bool $ref-is-glvalue$ = is_reference_v<$InnerBase$>; // exposition only
-    
+
     $Parent$* $parent_$ = nullptr;                                        // exposition only
     $OuterIter$ $outer_it_$ = $OuterIter$();                                // exposition only
     variant<$PatternIter$, $InnerIter$> $inner_it_$;                        // exposition only
-    
+
     constexpr auto&& $update-inner$(const $OuterIter$&);                  // exposition only
     constexpr decltype(auto) $get-inner$(const $OuterIter$&);             // exposition only
     constexpr void $satisfy$();                                         // exposition only
@@ -263,7 +267,7 @@ namespace std::ranges {
     using iterator_category = $see below$;                              // not always present
     using value_type = $see below$;
     using difference_type = $see below$;
-    
+
     $iterator$() requires default_initializable<$OuterIter$> = default;
     constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);
     constexpr $iterator$($iterator$<!Const> i)
@@ -271,26 +275,26 @@ namespace std::ranges {
                  convertible_to<iterator_t<V>, $OuterIter$> &&
                  convertible_to<iterator_t<$InnerRng$>, $InnerIter$> &&
                  convertible_to<iterator_t<$Pattern$>, $PatternIter$>;
-                 
+
     constexpr decltype(auto) operator*() const;
-    
+
     constexpr $iterator$& operator++();
     constexpr void operator++(int);
     constexpr $iterator$ operator++(int)
         requires $ref-is-glvalue$ && forward_iterator<$OuterIter$> &&
                  forward_iterator<$InnerIter$>;
-                 
+
     constexpr $iterator$& operator--()
         requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
                  $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
     constexpr $iterator$ operator--(int)
         requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
                  $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
-                 
+
     friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
         requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
                  equality_comparable<$InnerIter$>;
-                 
+
     friend constexpr decltype(auto) iter_move(const $iterator$& x)
     {
       using rvalue_reference = common_reference_t<
@@ -298,12 +302,12 @@ namespace std::ranges {
         iter_rvalue_reference_t<$PatternIter$>>;
       return std::visit<rvalue_reference>(ranges::iter_move, x.$inner_it_$);
     }
-    
+
     friend constexpr void iter_swap(const $iterator$& x, const $iterator$& y)
         requires indirectly_swappable<$InnerIter$, $PatternIter$>
     {
       std::visit(ranges::iter_swap, x.$inner_it_$, y.$inner_it_$);
-    }    
+    }
   };
 }
 ```
@@ -494,8 +498,8 @@ $iterator$ tmp = *this;
 return tmp;
 ```
 :::
-   
-```cpp   
+
+```cpp
 constexpr $iterator$& operator--()
     requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
              $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
@@ -549,7 +553,7 @@ return tmp;
 ```
 :::
 
-```cpp             
+```cpp
 friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
     requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
              equality_comparable<$InnerIter$>;
@@ -606,6 +610,15 @@ friend constexpr bool operator==(const $iterator$<OtherConst>& x, const $sentine
 
 [#]{.pnum} *Effects*: Equivalent to `return x.$outer_it_$ == y.$end_$;`
 :::
+
+## Feature-test macro
+
+Add the following macro definition to [version.syn]{.sref}, with the value selected by the editor to reflect the date of adoption of this paper:
+
+```cpp
+#define __cpp_lib_ranges_join_with 20XXXXL // also in <ranges>
+```
+
 
 ---
 references:
