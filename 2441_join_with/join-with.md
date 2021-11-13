@@ -116,7 +116,7 @@ Add the following subclause to [range.adaptors]{.sref}.
 ::: bq
 [#]{.pnum} `join_with_view` takes a `view` and a delimiter, and flattens the `view`, inserting every element of the delimiter in between elements of the `view`. The delimiter can be a single element or a `view` of elements.
 
-[#]{.pnum} The name `views::join_with` denotes a range adaptor object ([range.adaptor.object]). Given subexpressions `E` and `F`, the expression `views::join_with(E, F)` is expression-equivalent to `join_with_view{E, F}`.
+[#]{.pnum} The name `views::join_with` denotes a range adaptor object ([range.adaptor.object]). Given subexpressions `E` and `F`, the expression `views::join_with(E, F)` is expression-equivalent to `join_with_view(E, F)`.
 
 [#]{.pnum} [*Example*:
 

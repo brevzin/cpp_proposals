@@ -84,7 +84,7 @@ namespace std::ranges {
 [#]{.pnum} The name `views::all_move` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression and let `T` be `decltype((E))`. The expression `views::all_move(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} `views::all(E)` if `same_as<range_rvalue_reference_t<T>, range_reference_t<T>>` is `true`
-* [#.#]{.pnum} Otherwise, `ranges::all_move_view{E}`.
+* [#.#]{.pnum} Otherwise, `ranges::all_move_view(E)`.
 
 [#]{.pnum} [*Example*:
 ```cpp

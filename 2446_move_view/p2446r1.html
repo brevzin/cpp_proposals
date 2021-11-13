@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-11-12" />
+  <meta name="dcterms.date" content="2021-11-13" />
   <title>views::all_move</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-11-12</td>
+    <td>2021-11-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -571,7 +571,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
 <ul>
-<li><a href="#move-view-range.all.move">24.7.? Move view [range.all.move]<span></span></a></li>
+<li><a href="#all-move-view-range.all.move">24.7.? All move view [range.all.move]<span></span></a></li>
 <li><a href="#feature-test-macro"><span class="toc-section-number">3.1</span> Feature-test macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -621,14 +621,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-18"><a href="#cb1-18"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h3 class="unnumbered" data-number id="move-view-range.all.move">24.7.? Move view [range.all.move]<a href="#move-view-range.all.move" class="self-link"></a></h3>
+<h3 class="unnumbered" data-number id="all-move-view-range.all.move">24.7.? All move view [range.all.move]<a href="#all-move-view-range.all.move" class="self-link"></a></h3>
 <h4 class="unnumbered" data-number id="overview-range.all.move.overview">24.7.?.1 Overview [range.all.move.overview]<a href="#overview-range.all.move.overview" class="self-link"></a></h4>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <code class="sourceCode cpp">all_move_view</code> presents a <code class="sourceCode cpp">view</code> of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a <code class="sourceCode cpp">all_move_view</code> to replace copying with moving.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression and let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>all_move<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.1)</a></span> <code class="sourceCode cpp">views<span class="op">::</span>all<span class="op">(</span>E<span class="op">)</span></code> if <code class="sourceCode cpp">same_as<span class="op">&lt;</span>range_rvalue_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">ranges<span class="op">::</span>all_move_view<span class="op">{</span>E<span class="op">}</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">ranges<span class="op">::</span>all_move_view<span class="op">(</span>E<span class="op">)</span></code>.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">3</a></span> [<em>Example</em>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="op">{</span><span class="st">&quot;the&quot;</span>, <span class="st">&quot;quick&quot;</span>, <span class="st">&quot;brown&quot;</span>, <span class="st">&quot;fox&quot;</span>, <span class="st">&quot;ate&quot;</span>, <span class="st">&quot;a&quot;</span>, <span class="st">&quot;pterodactyl&quot;</span><span class="op">}</span>;</span>

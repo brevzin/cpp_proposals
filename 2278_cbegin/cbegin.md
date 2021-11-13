@@ -952,6 +952,10 @@ namespace std {
 +
 + template<class I>
 +   using const_iterator = decltype(make_const_iterator(declval<I>()));
++
++ template<class S>
++   using const_sentinel = decltype(make_const_sentinel(declval<S>()));
+
 
   // [move.iterators], move iterators and sentinels
   template<class Iterator> class move_iterator;
@@ -1354,7 +1358,7 @@ namespace std::ranges {
 ```
 :::
 
-Update `ranges::cbegin` in [range.access.cbegin]{.sref}:
+Update `ranges::cbegin` in [range.access.cbegin]{.sref} [The complicated formulation (here and throughout) avoids an extra move in the case that we don't need to do additional wrapping]{.draftnote}:
 
 ::: bq
 [1]{.pnum} The name `ranges​::​cbegin` denotes a customization point object ([customization.point.object]).
@@ -1366,7 +1370,7 @@ Update `ranges::cbegin` in [range.access.cbegin]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​begin(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::cbegin(E)` is expression-equivalent to `make_const_iterator(ranges::begin($possibly-const$(t)))`.
+* [1.2]{.pnum} Otherwise, let `I` denote the expression `ranges::begin($possibly-const$(t))`. `ranges::cbegin(E)` is expression-equivalent to `const_iterator<decltype(I)>(I)`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
@@ -1385,7 +1389,7 @@ Update `ranges::cend` in [range.access.cend]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::cend(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::cend(E)` is expression-equivalent to `make_const_sentinel(ranges::end($possibly-const$(t)))`.
+* [1.2]{.pnum} Otherwise, let `S` denote the expression `ranges::end($possibly-const$(t))`. `ranges::cend(E)` is expression-equivalent to `const_sentinel<decltype(S)>(S)`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::cend(E)` and `ranges::cbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
@@ -1404,7 +1408,7 @@ Update `ranges::crbegin` in [range.access.crbegin]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::cr​begin(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::crbegin(E)` is expression-equivalent to `make_const_iterator(ranges::rbegin($possibly-const$(t)))`.
+* [1.2]{.pnum} Otherwise, let `I` denote the expression `ranges::rbegin($possibly-const$(t))`. `ranges::crbegin(E)` is expression-equivalent to `const_iterator<decltype(I)>(I)`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​crbegin(E)` is a valid expression, its type models `input_or_output_iterator` [and `$constant-iterator$`]{.addu}.
@@ -1423,7 +1427,7 @@ Update `ranges::crend` in [range.access.crend]{.sref}:
 :::
 ::: addu
 * [1.1]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::c​rend(E)` is ill-formed.
-* [1.2]{.pnum} Otherwise, `ranges::crend(E)` is expression-equivalent to `make_const_sentinel(ranges::rend($possibly-const$(t)))`.
+* [1.2]{.pnum} Otherwise, let `S` denote the expression `ranges::rend($possibly-const$(t))`. `ranges::crend(E)` is expression-equivalent to `const_sentinel<decltype(S)>(S)`.
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cend(E)` is a valid expression, the types `S` and `I` of the expressions `ranges::crend(E)` and `ranges::crbegin(E)` model `sentinel_for<S, I>`. [If `S` models `input_iterator`, then `S` also models `$constant-iterator$`.]{.addu}
@@ -1503,13 +1507,13 @@ namespace std::ranges {
 #### 24.7.?.1 Overview [range.all.const.overview] {-}
 
 ::: bq
-[1]{.pnum} `all_const_view` presents a `view` of an underlying sequence as constant. That is, the elements of a `all_const_view` cannot be modified.
+[1]{.pnum} `all_const_view` presents a `view` of an underlying sequence as constant. That is, the elements of an `all_const_view` cannot be modified.
 
 [#]{.pnum} The name `views::all_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U` be `remove_cvref_t<T>`. The expression `views::all_const(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} If `views::all_t<T>` models `constant_range`, then `views::all(E)` .
 * [#.#]{.pnum} Otherwise, if `E` is an lvalue, `const U` models `constant_range`, and `U` does not model `view`, then `views::all(static_cast<const U&>(E))`.
-* [#.#]{.pnum} Otherwise, `ranges::all_const_view{E}`.
+* [#.#]{.pnum} Otherwise, `ranges::all_const_view(E)`.
 
 [#]{.pnum} [*Example*:
 ```cpp
