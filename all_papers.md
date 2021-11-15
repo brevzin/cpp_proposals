@@ -53,6 +53,7 @@
 - 2448 Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [p2448r0](2448_relax_constexpr/p2448r0.html)
 - 2481 Forwarding reference to specific type/template: [p2481r0](2481_forward_ref/p2481r0.html)
 - 2484 Extending support for class types as non-type template parameters: [p2484r0](2484_extend_cnttp/p2484r0.html)
+- 2493 Missing  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  feature-test macros: [p2493r0](2493_constexpr_feature_test/p2493r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
