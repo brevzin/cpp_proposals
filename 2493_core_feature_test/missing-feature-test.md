@@ -1,5 +1,5 @@
 ---
-title: "Missing `constexpr` feature-test macros"
+title: "Missing feature test macros for C++20 core papers"
 document: P2493R0
 date: today
 audience: CWG, SG10
