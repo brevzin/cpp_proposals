@@ -53,7 +53,7 @@ The expectation is that `a` and `b` have the same type, but if template equivale
 
 The proposal is that a type, `T`, can define an `operator template` which returns a type `R`. `R` must be a structural type, and acts as the representation of `T`. `T` must also be constructible from `R`.
 
-For a example:
+For example:
 
 ::: bq
 ```cpp
@@ -136,7 +136,7 @@ struct Y { };  // ... and B is not structural because it has a private member
 
 ## Use of `operator template`
 
-The only intent of `operator template` is to allow the compiler to determine template equivalence and mangling. No program ever need invoke it for any reason, so no provision need to made in the language for allowing it or defining what that means. This avoids the question of what exactly the return type of a defaulted `operator template` is: it doesn't matter, it's just annotation.
+The only intent of `operator template` is to allow the compiler to determine template equivalence and mangling. No program need ever invoke it for any reason, so no provisions need to made in the language for allowing it or defining what that means. This avoids the question of what exactly the return type of a defaulted `operator template` is: it doesn't matter, it's just annotation.
 
 No program ever needs to invoke an `operator template` because of the recursive nature of the definition of structural. In order to incorporate some user-defined type `C` into your mangling, you simply use it directly:
 
@@ -233,13 +233,13 @@ But there will be cases where it is the correct behavior to return a reference t
 
 Because we don't have non-transient constexpr allocation yet, the only really interesting cases for `operator template` are those that let you use types with private members as non-type template parameters. So while this model presents a clear direction for how to extend support in the future to allow `vector`, `string`, and others to be usable as non-type template parameters, the C++23 paper is a lot narrower: only allow defaulted `operator template`.
 
-This direction allows `tuple`, `optional`, and `variant`, and lots and of class types. Which seems plenty useful.
+This direction allows `tuple`, `optional`, and `variant`, and lots of other class types. Which seems plenty useful.
 
-As discussed earlier, we also for now say that `operator template` that _cannot_ be invoked by the program - it's _solely_ for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one `operator template` per class, its *cv-qualifier-seq* must be `const` and its *ref-qualifier* must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn't deprive us of functionality.
+As discussed earlier, we also for now say that `operator template` _cannot_ be invoked by the program - it's _solely_ for use by the compiler. This avoids the question of what happens if a program refers to it and what return type they see: there simply will be no such reference. There can be only one `operator template` per class, its *cv-qualifier-seq* must be `const` and its *ref-qualifier* must be empty. Perhaps in the future, these restrictions can be lifted if the need arises, but being conservative here doesn't deprive us of functionality.
 
 # Proposal
 
-A class type can define `operator template` as defaulted (returning `auto`, with a *cv-qualifier-seq* of `const`, and no *ref-qualifier*, and of course declared `constexpr`) in the body of the class. A class type with such an `operator template` is a structural type if all of its base classes and non-static data members have structural type and none of them are `mutable`.
+A class type can define `operator template` as defaulted (returning `auto`, with a *cv-qualifier-seq* of `const`, and no *ref-qualifier*) in the body of the class. A class type with such an `operator template` is a structural type if all of its base classes and non-static data members have structural type and none of them are `mutable`.
 
 This is only valid if all base classes and non-static data members have structural types - however we don't want to call this ill-formed if this rule is violated. If `tuple<int, non_structural>` providing a defaulted `operator template` were ill-formed, then `tuple` would have to constrain its `operator template` on all the types being structural, but that's basically the only constraint that's ever meaningful - so it seems reasonable to have defaulting `operator template` actually mean that. But even a (non-template) class having a `string` member defining `operator template` as defaulted doesn't worth rejecting, for the same reasons as laid out in [@P2448R0]: `string` will eventually be usable as a non-type template parameter, so let users write the declaration early.
 
@@ -247,13 +247,48 @@ Add defaulted `operator template` to `std::tuple`, `std::optional`, and `std::va
 
 ## Language Wording
 
+Extend [basic.pre]{.sref}:
+
+::: bq
+[4]{.pnum} A `$name$` is an `$identifier$` ([lex.name]), `$operator-function-id$` ([over.oper]), `$literal-operator-id$` ([over.literal]), [`$template-representation-function-id$` ([class.conv.template]),]{.addu} or `$conversion-function-id$` ([class.conv.fct]).
+
+[9]{.pnum} Two names are the same if
+
+* [...]
+* [9.3]{.pnum} they are `$conversion-function-id$`s formed with equivalent ([temp.over.link]) types, or
+* [9.3*]{.pnum} [they are both `$template-representation-function-id$`s ([class.conv.template]), or]{.addu}
+* [9.4]{.pnum} they are `$literal-operator-id$`s ([over.literal]) formed with the same literal suffix identifier.
+
+:::
+
+Add to the grammar of _unqualified-id_ in [expr.prim.id.unqual]{.sref}:
+
+::: bq
+```diff
+$unqualified-id$:
+    $identifier$
+    $operator-function-id$
+    $conversion-function-id$
++   $template-representation-function-id$
+    $literal-operator-id$
+    ~ $type-name$
+    ~ $decltype-specifier$
+    $template-id$
+```
+
+[1]{.pnum} An `$identifier$` is only an `$id-expression$` if it has been suitably declared ([dcl.dcl]) or if it appears as part of a `$declarator-id$` ([dcl.decl]). An identifier that names a coroutine parameter refers to the copy of the parameter ([dcl.fct.def.coroutine]). [A `$template-representation-function-id$` shall only appear as part of a `$declarator-id$`.]{.addu}
+
+[_Note 1_: For `$operator-function-id$`s, see [over.oper]; for `$conversion-function-id$`s, see [class.conv.fct]; [for `$template-representation-function-id$`s, see [class.conv.template];]{.addu} for `$literal-operator-id$`s, see [over.literal]; for `$template-id$`s, see [temp.names]. ... — _end note_]
+
+:::
+
 Add a new clause called "Template representation functions" after [class.conv.fct]{.sref} that will define `operator template`:
 
 ::: bq
-[#]{.pnum} A member function of the form:
+[#]{.pnum} A member function with a name of the form:
 
 ```
-$template-representation-function$:
+$template-representation-function-id$:
     operator template
 ```
 shall have no parameters, have a *cv-qualifier-seq* consisting of exactly `const`, have no *ref-qualifier*, have a return type of `auto`, and shall be defined as defaulted on its first declaration. Such a function is called a _template representation function_. [*Note*: A template representation function can be used to opt a class type with private data members or private base classes into being a structural type ([temp.param]). -*end note*]
@@ -274,74 +309,46 @@ Change [temp.param]{.sref}/7:
 
 No changes to [temp.type]{.sref} necessary, since the class type equivalence rule ("their corresponding direct subobjects and reference members are template-argument-equivalent") is still preserved with this change.
 
+Add a note to [temp.explicit]{.sref}:
+
+::: bq
+[12]{.pnum} An explicit instantiation of a prospective destructor ([class.dtor]) shall correspond to the selected destructor of the class.
+
+::: addu
+[*Note*: an explicit instantiation of a `$template-representation-function-id$` is not allowed. *-end note*]
+:::
+
+:::
+
 ## Library Wording
 
-Add to [tuple.tuple]{.sref}:
+Add to [tuple.tuple]{.sref} the wording we have for structurality. We don't provide a defaulted `operator template` here, since implementers can achieve this however they want (maybe by making everything public?). The important thing is that we define that it must work and what it means:
 
 ::: bq
-```diff
-namespace std {
-  template<class... Types>
-  class tuple {
-  public:
-    // ...
-
-    // [tuple.swap], tuple swap
-    constexpr void swap(tuple&) noexcept(see below);
-    constexpr void swap(const tuple&) const noexcept(see below);
-
-+   constexpr auto operator template() const = default;
-  };
-
-  // ...
-}
-```
+[1]{.pnum} [`tuple<Types...>` is a structural type ([temp.param]) if every `Type` in `Types...` is a structural type.
+Two values `t1` and `t2` of type `tuple<Types..>` are template-argument-equivalent ([temp.type]) if and only if each pair of corresponding elements from `t1` and `t2` are template-argument-equivalent.]{.addu}
 :::
 
-Add to [optional.optional.general]{.sref}:
+Add similar to [optional.optional.general]{.sref}:
 
 ::: bq
-```diff
-namespace std {
-  template<class T>
-  class optional {
-  public:
-    using value_type = T;
+[2]{.pnum} Member `val` is provided for exposition only. When an `optional<T>` object contains a value, `val` points to the contained value.
 
-    // ...
+[3]{.pnum} `T` shall be a type other than `$cv$ in_­place_­t` or `$cv$ nullopt_­t` that meets the _Cpp17Destructible_ requirements (Table 34).
 
-    // [optional.mod], modifiers
-    constexpr void reset() noexcept;
-
-+   constexpr auto operator template() const = default;
-
-  private:
-    T *val;         // exposition only
-  };
-
-  template<class T>
-    optional(T) -> optional<T>;
-}
-```
+[4]{.pnum} [`optional<T>` is a structural type ([temp.param]) if `T` is a structural type.
+Two values `o1` and `o2` of type `optional<T>` are template-argument-equivalent ([temp.type]) if and only if either neither `o1` nor `o2` contain a value or if both contain a value and `*o1` and `*o2` are template-argument-equivalent]{.addu}
 :::
 
-Add to [variant.variant.general]{.sref}:
+And similar to [variant.variant.general]{.sref}:
 
 ::: bq
-```diff
-namespace std {
-  template<class... Types>
-  class variant {
-  public:
-    // ...
+[2]{.pnum} All types in Types shall meet the _Cpp17Destructible_ requirements (Table 34).
 
-    // [variant.swap], swap
-    constexpr void swap(variant&) noexcept(see below);
+[3]{.pnum} A program that instantiates the definition of variant with no template arguments is ill-formed.
 
-+   constexpr auto operator template() const = default;
-  };
-}
-```
+[4]{.pnum} [`variant<Types...>` is a structural type ([temp.param]) if every `Type` in `Types...` is a structural type.
+Two values `v1` and `v2` of type `variant<Types..>` are template-argument-equivalent ([temp.type]) if and only if both `v1` and `v2` hold a value, `v1.index() == v2.index()`, and `get<v1.index()>(v1)` and `get<v2.index()>(v2)` are template-argument-equivalent.]{.addu}
 :::
 
 ## Feature-test macros
