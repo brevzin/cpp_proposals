@@ -632,7 +632,9 @@ constexpr auto format(R&& r, FormatContext& ctx) {
 ```
 :::
 
-It's mostly the same - we format into `bctx` instead of `ctx` and then `write` into `ctx` later using the `specs` that we already parsed. The problem comes up in constructing this new context. We need some kind of `fmt::basic_format_context<???, char>`, and we need to write into some kind of dynamic buffer, so `fmt::appender` is the appropriate choice for iterator. But the issue here is that `fmt::basic_format_context<Out, CharT>` has a member `fmt::basic_format_args<basic_format_context>` - the underlying arguments are templates _on the context_. We can't just... change the `basic_format_args` to have a different context, this is a fairly fundamental attachment in the design.
+It's mostly the same - we format into `bctx` instead of `ctx` and then `write` into `ctx` later using the `specs` that we already parsed. The code seems straightforward enough, except...
+
+First, we don't even expose a way to construct `basic_format_context` so can't do this at all. Nor do we expose a way of constructing an iterator type for formatting into some buffer. And if we could construct these things, the real problem hits when we try to construct this new context. We need some kind of `fmt::basic_format_context<???, char>`, and we need to write into some kind of dynamic buffer, so `fmt::appender` is the appropriate choice for iterator. But the issue here is that `fmt::basic_format_context<Out, CharT>` has a member `fmt::basic_format_args<basic_format_context>` - the underlying arguments are templates _on the context_. We can't just... change the `basic_format_args` to have a different context, this is a fairly fundamental attachment in the design.
 
 The _only_ type for the output iterator that I can support in this implementation is precisely `fmt::appender`.
 
@@ -692,6 +694,28 @@ The suggestion would be that the only contexts that need be supported are `std::
 That reduces the problem quite a bit, but it's still not enough. We're not exposing what the buffer type needs to be, so even if I knew I only had to deal with `std::format_context`, I still wouldn't know how to construct a dynamic buffer that `std::format_context::iterator` is an extending output iterator into. That is, we need to expose/standardize `fmt::memory_buffer` (or provide it as an typedef somewhere).
 
 If we don't require _just_ one format context per character type, we can simply throw more type erasure at the problem. Say the only allowed iterators are either (using libfmt's names) `fmt::appender` or `variant<fmt::appender, Out>`. The latter still allows support for other iterator types, while still letting other formatters use `fmt::appender` which they know how to do. This has some cost of course, but it does provide extra flexibility.
+
+At a minimum, the API we need is:
+
+::: bq
+```cpp
+template <typename V, typename FormatContext>
+constexpr auto format(V&& value, FormatContext& ctx) -> typename FormatContext::iterator
+{
+    // ctx here is a basic_format_context<OutIt, CharT>, for some output iterator
+    // and some character type
+
+    // can use a vector<CharT>, basic_string<CharT>, or some custom buffer like
+    // fmt::buffer, user's choice
+    some_sort_of_buffer buf;
+
+    // a (w)format_context writing into buf
+    auto bctx = make_buffer_format_context(buf, ctx);
+}
+```
+:::
+
+This can be made to work if `basic_format_context<OutIt, CharT>` erases _both_ `OutIt` _and_ the special type-erased iterator type. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.
 
 ### Manipulating `basic_format_parse_context` to search for sentinels
 
