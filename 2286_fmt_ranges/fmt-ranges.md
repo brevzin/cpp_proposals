@@ -805,6 +805,46 @@ struct formatter<R> : range_formatter<range_reference_t<R>>
 
 `range_formatter` allows reducing unnecessary template instantiations. Any range of `int` is going to `parse` its specifiers the same way, there's no need to re-instantiate that code n times. Such a type will also help users to write their own formatters.
 
+## What additional functionality?
+
+There’s three layers of potential functionality:
+
+1. Top-level printing of ranges: this is `fmt::print("{}", r)`;
+
+2. A format-joiner which allows providing a a custom delimiter: this is `fmt::print("{:02x}", fmt::join(r, ":"))`. This revision of the paper allows providing a format specifier and removed in the brackets in the top-level case too, as in `fmt::print("{:e:02x}", r)`, but does not allow for providing a custom delimiter.
+
+3. A more involved version of a format-joiner which takes a delimiter and a callback that gets invoked on each element. fmt does not provide such a mechanism, though the Rust itertools library does:
+
+::: bq
+```rust
+let matrix = [[1., 2., 3.],
+              [4., 5., 6.]];
+let matrix_formatter = matrix.iter().format_with("\n", |row, f| {
+                                f(&row.iter().format_with(", ", |elt, g| g(&elt)))
+                              });
+assert_eq!(format!("{}", matrix_formatter),
+           "1, 2, 3\n4, 5, 6");
+```
+:::
+
+This paper suggests the first two and encourages research into the third.
+
+## `format` or `std::cout`?
+
+Just `format` is sufficient.
+
+## What about `vector<bool>`?
+
+Nobody expected this section.
+
+The `value_type` of this range is `bool`, which is formattable. But the `reference` type of this range is `vector<bool>::reference`, which is not. In order to make the whole type formattable, we can either make `vector<bool>::reference` formattable (and thus, in general, a range is formattable if its `reference` types is formattable) or allow formatting to fall back to constructing a `value_type` for each `reference` (and thus, in general, a range is formattable if either its `reference` type or its `value_type` is formattable).
+
+For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there’s no distinction here between the two options. And even for `zip` [@P2321R2], there’s still not much distinction since it just wraps this question in tuple since again for most ranges the types will be something like `tuple<T, U>` vs `tuple<T&, U const&>`, so again there isn’t much distinction.
+
+`vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn’t offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it’s also very cheap to provide a formatter specialization for `vector<bool>::reference`.
+
+Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. Or, rather, since it’s actually defined as `vector<bool, Alloc>::reference`, this isn’t necessarily feasible, so instead this paper proposes a specialization for `vector<bool, Alloc>` at top level.
+
 # Proposal
 
 The standard library will provide the following utilities:
@@ -813,17 +853,17 @@ The standard library will provide the following utilities:
 * A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).
 * A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).
 * A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
-* A `context_end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes.
+* An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes.
 
 The standard library should add specializations of `formatter` for:
 
-* any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<ranges::range_reference_t<R>>`
-* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<T, U>`
-* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<Ts...>`
+* any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
+* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<T>, remove_cvref_t<U>>`
+* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<Ts>...>`
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
-* `vector<bool, Alloc>::reference` (which formats as a `bool`)
+* `vector<bool, Alloc>` (which formats as a range of `bool`)
 * all the associative maps (`map`, `multimap`, `unordered_map`, `unordered_multimap`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{k: v, k: v}` instead of `[(k, v), (k, v)]`
 * all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
 
