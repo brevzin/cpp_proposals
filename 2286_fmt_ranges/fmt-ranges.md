@@ -333,7 +333,8 @@ Instead of writing a bunch of examples like `print("{:?}\n", v)`, I'm just displ
 |`{}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
 |`{:}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
 |`{:?}`{.x}|`vector{"hello"s, "world"s}`|`["hello", "world"]`{.x}|
-|`{::*^10}`{.x}|`vector{"hello"s, "world"s}`|`[**hello***, **world***]`{.x}|
+|`{:*^14}`{.x}|`vector{"he"s, "wo"s}`|`*["he", "wo"]*`{.x}|
+|`{::*^14}`{.x}|`vector{"he"s, "wo"s}`|`[******he******, ******wo******]`{.x}|
 |`{:}`{.x}|`42`|`42`{.x}|
 |`{:#x}`{.x}|`42`|`0x2a`{.x}|
 |`{}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`['H', 'e', 'l', 'l', 'o']`{.x}|
@@ -404,7 +405,7 @@ struct range_formatter {
         if (first != last) {
             // have to format every element via the underlying formatter
             ctx.advance_to(std::move(out));
-            out = underlying.format(*first, ctx));
+            out = underlying.format(*first, ctx);
             for (++first; first != last; ++first) {
                 *out++ = ',';
                 *out++ = ' ';
@@ -427,16 +428,21 @@ Range format specifiers come in two kinds: specifiers for the range itself and s
 |-|-|
 |`{}`{.x}|No specifiers|
 |`{:}`{.x}|No specifiers|
+|`{:<10}`|The whole range formatting is left-aligned, with a width of 10|
+|`{:*^20}`|The whole range formatting is center-aligned, with a width of 20, padded with `*`s|
 |`{:m}`{.x}|Apply the `m` specifier to the range|
 |`{::d}`{.x}|Apply the `d` specifier to each element of the range|
 |`{:?s}`{.x}|Apply the `?s` specifier to the range|
 |`{:m::#x:#x}`{.x}|Apply the `m` specifier to the range and the `:#x:#x`{.x} specifier to each element of the range|
 
-There are only a few top-level range specifiers proposed:
+There are only a few top-level range-specific specifiers proposed:
 
 * `s`: for ranges of char, only: formats the range as a string.
 * `?s` for ranges of char, only: same as `s` except will additionally quote and escape the string
-* `m`: for ranges of `pair`s (or `tuple`s of size 2) will format as `{k1: v1, k2: v2}` instead of `[(k1, v1), (k2, v2)]` (i.e. as a `map`). For other ranges, will format as `{a, b, c}` instead of `[a, b, c]` (i.e. as a `set`).
+* `m`: for ranges of `pair`s (or `tuple`s of size 2) will format as `{k1: v1, k2: v2}` instead of `[(k1, v1), (k2, v2)]` (i.e. as a `map`).
+* `e`: will format without the `[]`s. This will let you, for instance, format a range as `a, b, c` or `{a, b, c}` or `(a, b, c)` or however else you want, simply by providing the desired format string.
+
+Additionally, ranges will support the same fill/align/width specifiers as in _std-format-spec_, for convenience and consistency.
 
 If no element-specific formatter is provided (i.e. there is no inner colon - an empty element-specific formatter is still an element-specific formatter), the range will be formatted as debug. Otherwise, the element-specific formatter will be parsed and used.
 
@@ -449,9 +455,9 @@ To revisit a few rows from the earlier table:
 |`{::?c}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`['H', 'e', 'l', 'l', 'o']`{.x}|
 |`{::d}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`[72, 101, 108, 108, 111]`{.x}|
 |`{::#x}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`[0x48, 0x65, 0x6c, 0x6c, 0x6f]`{.x}|
-|`{:s}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`Hello`{.x}|
-|`{:?s}`{.x}|`vector<char>{'H', 'e', 'l', 'l', 'o'}`|`"Hello"`{.x}|
-|`{}`{.x}|`vector<{vector{'a'}, vector{'b', 'c'}}`|`[['a'], ['b', 'c']]`{.x}|
+|`{:s}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`H    llo`{.x}|
+|`{:?s}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`"H\tllo"`{.x}|
+|`{}`{.x}|`vector{vector{'a'}, vector{'b', 'c'}}`|`[['a'], ['b', 'c']]`{.x}|
 |`{::?s}`{.x}|`vector{vector{'a'}, vector{'b', 'c'}}`|`["a", "bc"]`{.x}|
 |`{:::d}`{.x}|`vector{vector{'a'}, vector{'b', 'c'}}`|`[[97], [98, 99]]`{.x}|
 
@@ -465,11 +471,23 @@ The last row, `:::d`, is parsed as:
 
 That is, the `d` format specifier is applied to each underlying `char`, which causes them to be printed as integers instead of characters.
 
+Note that you can provide both a fill/align/width specifier to the range itself as well as to each element:
+
+|Format String|Contents|Formatted Output|
+|-|----|----|
+|`{}`{.x}|`vector<int>{1, 2, 3}`|`[1, 2, 3]`{.x}|
+|`{::*^5}`{.x}|`vector<int>{1, 2, 3}`|`[**1**, **2**, **3**]`{.x}|
+|`{:o^17}`{.x}|`vector<int>{1, 2, 3}`|`oooo[1, 2, 3]oooo`{.x}|
+|`{:o^29:*^5}`{.x}|`vector<int>{1, 2, 3}`|`oooo[**1**, **2**, **3**]oooo`{.x}|
+
+
 #### Pair and Tuple Specifiers
 
 This is the hard part.
 
-For ranges, we can have the underlying element's `formatter` simply parse the whole format specifier string from the character past the `:` to the `}`. The range doesn't care anymore at that point, and what we're left with is a specifier that the underlying element should understand (or not).
+To start with, we for consistency will support the same fill/align/width specifiers as usual.
+
+But for ranges, we can have the underlying element's `formatter` simply parse the whole format specifier string from the character past the `:` to the `}`. The range doesn't care anymore at that point, and what we're left with is a specifier that the underlying element should understand (or not).
 
 For `pair`, it's not so easy, because format strings can contain _anything_. Absolutely anything. So when trying to parse a format specifier for a `pair<X, Y>`, how do you know where `X`'s format specifier ends and `Y`'s format specifier begins? This is, in general, impossible.
 
@@ -525,10 +543,209 @@ The above also introduces the only top-level specifier for `pair`: `m`. As with 
 |`{:m}`|`pair(1, 2)`|`1: 2`{.x}|
 |`{:m}`|`tuple(1, 2)`|`1: 2`{.x}|
 |`{}`|`tuple(1)`|`(1)`{.x}|
-|`{:m}`|`tuple(1)`|`1`{.x}|
+|`{:m}`|`tuple(1)`|ill-formed|
 |`{}`|`tuple(1,2,3)`|`(1, 2, 3)`{.x}|
 |`{:m}`|`tuple(1,2,3)`|ill-formed|
 
+Similarly to how in the debug specifier is handled by introducing a:
+
+::: bq
+```cpp
+void format_as_debug();
+```
+:::
+
+function, `pair` and `tuple` will provide a:
+
+::: bq
+```cpp
+void format_as_map();
+```
+:::
+
+function, that for `tuple` of size other than 2 will throw an exception (since you cannot format those as a map).
+
+Tuple and pair will also provide the same fill/align/width specifiers as other types, again for consistency and convenience.
+
+## Implementation Challenges
+
+I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily [share the implementation](https://godbolt.org/z/o8nfvdYxM), as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
+
+### Wrapping `basic_format_context` is not generally possible
+
+In order to be able to provide an arbitrary type's specifiers to format a range, you have to have a `formatter<V>` for the underlying type and use that specific `formatter` in order to `parse` the format specifier and then `format` into the given context. If that's all you're doing, this isn't that big a deal, and I showed a simplified implementation of `range_formatter<V>` [earlier](#the-debug-specifier).
+
+However, if you additionally want to support fill/pad/align, then the game changes. You can't format into the provided context - you have to format into _something else_ first and then do the adjustments later. Adding padding support ends up doing something more like this:
+
+::: cmptable
+### No padding
+```cpp
+template <typename R, typename FormatContext>
+constexpr auto format(R&& r, FormatContext& ctx) {
+    auto out = ctx.out();
+    *out++ = '[';
+    auto first = std::ranges::begin(r);
+    auto last = std::ranges::end(r);
+    if (first != last) {
+        ctx.advance_to(std::move(out));
+        out = underlying.format(*first, ctx);
+        for (++first; first != last; ++first) {
+            *out++ = ',';
+            *out++ = ' ';
+            ctx.advance_to(std::move(out));
+            out = underlying.format(*first, ctx);
+        }
+    }
+    *out++ = ']';
+    return out;
+}
+```
+
+### With padding
+```cpp
+template <typename R, typename FormatContext>
+constexpr auto format(R&& r, FormatContext& ctx) {
+    fmt::memory_buffer buf;
+    fmt::basic_format_context<fmt::appender, char>
+      bctx(appender(buf), ctx.args(), ctx.locale());
+
+    auto out = bctx.out();
+    *out++ = '[';
+    auto first = std::ranges::begin(r);
+    auto last = std::ranges::end(r);
+    if (first != last) {
+        bctx.advance_to(std::move(out));
+        out = underlying.format(*first, bctx);
+        for (++first; first != last; ++first) {
+            *out++ = ',';
+            *out++ = ' ';
+            bctx.advance_to(std::move(out));
+            out = underlying.format(*first, bctx);
+        }
+    }
+    *out++ = ']';
+
+    return fmt::write(ctx.out(),
+      fmt::string_view(buf.data(), buf.size()),
+      this->specs);
+}
+```
+:::
+
+It's mostly the same - we format into `bctx` instead of `ctx` and then `write` into `ctx` later using the `specs` that we already parsed. The problem comes up in constructing this new context. We need some kind of `fmt::basic_format_context<???, char>`, and we need to write into some kind of dynamic buffer, so `fmt::appender` is the appropriate choice for iterator. But the issue here is that `fmt::basic_format_context<Out, CharT>` has a member `fmt::basic_format_args<basic_format_context>` - the underlying arguments are templates _on the context_. We can't just... change the `basic_format_args` to have a different context, this is a fairly fundamental attachment in the design.
+
+The _only_ type for the output iterator that I can support in this implementation is precisely `fmt::appender`.
+
+This seems like it'd be extremely limiting. Except it runs out that actually nearly all of libfmt uses exactly this iterator. `fmt::print`, `fmt::format`, `fmt::format_to`, `fmt::format_to_n`, `fmt::vformat`, etc., all only use this one iterator type. This is because of [@P2216R3]'s efforts to reduce code bloat by type erasing the output iterator.
+
+However, there is one part of libfmt that uses a different iterator type, which now the above implementation fails on:
+
+::: bq
+```cpp
+fmt::format("{:::d}", vector{vector{'a'}, vector{'b', 'c'}});              // ok: [[97], [98, 99]]
+fmt::format(FMT_COMPILE("{:::d}"), vector{vector{'a'}, vector{'b', 'c'}}); // ill-formed
+```
+:::
+
+The latter fails because now the initial output iterator type is `std::back_insert_iterator<std::string>`, and the implementation fails to compile, erroring on the construction of `bctx` because of the mismatch in the types of the `basic_format_args` specializations.
+
+This can be worked around (I just need to know what the type of the buffer needs to be, in the usual case it's `fmt::memory_buffer` and here it becomes `std::string`, that's fine), but it means we really need to nail down what the requirements of the `formatter` API are. One of the things we need to do in this paper is provide a `formattable` concept. From a previous revision of that paper, dropping the `char` parameter for simplicity, that looks like:
+
+::: bq
+```cpp
+template <class T>
+concept $formattable-impl$ =
+    std::semiregular<fmt::formatter<T>> &&
+    requires (fmt::formatter<T> f,
+              const T t,
+              fmt::basic_format_context<char*, char> fc,
+              fmt::basic_format_parse_context<char> pc)
+    {
+        { f.parse(pc) } -> std::same_as<fmt::basic_format_parse_context<char>::iterator>;
+        { f.format(t, fc) } -> std::same_as<char*>;
+    };
+
+template <class T>
+concept formattable = $formattable-impl$<std::remove_cvref_t<T>>;
+```
+:::
+
+I use `char*` as the output iterator, but my `range_formatter<V>` cannot support `char*` as an output iterator type at all. Do `formatter` specializations need to support any output iterator type? If so, how can we implement fill/align/pad support in `range_formatter`?
+
+The simplest approach would be to state that there actually is only one output iterator type that need be support per character type. This is mostly already the case in libfmt, and seems to be how MSVC implements `<format>` as well. That is, we already have in [format.syn]{.sref}:
+
+::: bq
+```cpp
+namespace std {
+  // [format.context], class template basic_­format_­context
+  template<class Out, class charT> class basic_format_context;
+  using format_context = basic_format_context<$unspecified$, char>;
+  using wformat_context = basic_format_context<$unspecified$, wchar_t>;
+}
+```
+:::
+
+The suggestion would be that the only contexts that need be supported are `std::format_context` and/or `std::wformat_context`. Only one context for each character type.
+
+That reduces the problem quite a bit, but it's still not enough. We're not exposing what the buffer type needs to be, so even if I knew I only had to deal with `std::format_context`, I still wouldn't know how to construct a dynamic buffer that `std::format_context::iterator` is an extending output iterator into. That is, we need to expose/standardize `fmt::memory_buffer` (or provide it as an typedef somewhere).
+
+If we don't require _just_ one format context per character type, we can simply throw more type erasure at the problem. Say the only allowed iterators are either (using libfmt's names) `fmt::appender` or `variant<fmt::appender, Out>`. The latter still allows support for other iterator types, while still letting other formatters use `fmt::appender` which they know how to do. This has some cost of course, but it does provide extra flexibility.
+
+### Manipulating `basic_format_parse_context` to search for sentinels
+
+Take a look at one of the `pair` formatting examples:
+
+::: bq
+```cpp
+fmt::format("{:|#x|*^10}", std::pair(42, "hello"s));
+```
+:::
+
+In order for this to work, the `formatter<int>` object needs to be passed a context that just contains the string `"#x"` and the `formatter<string>` object needs to be passed a context that just contains the string `"*^10"` (or possibly `"*^10}"`). This is because `formatter<T>::parse` must consume the whole context. That's the API.
+
+But `basic_format_parse_context` does not provide a way for you to take a slice of it, and we can't just construct a new object because of the dynamic argument counting support. Not just _any_ context, but _specifically that one_.
+
+Tim's suggested design for how to even do specifiers for `pair` also came with a suggested implementation: use a `sentry`-like type that temporarily modifies the context and restores it later. The use of this type looks like this:
+
+::: bq
+```cpp
+auto const delim = *begin++;
+ctx.advance_to(begin);
+tuple_for_each_index(underlying, [&](auto I, auto& f){
+    auto next_delim = std::find(ctx.begin(), end, delim);
+    if constexpr (I + 1 < sizeof...(Ts)) {
+        if (next_delim == end) {
+            throw fmt::format_error("ran out of specifiers");
+        }
+    }
+
+    end_sentry _(ctx, next_delim);
+    auto i = f.parse(ctx);
+    if (i != next_delim && *i != '}') {
+        throw fmt::format_error("this is broken");
+    }
+
+    if (next_delim != end) {
+        ++i;
+    }
+    ctx.advance_to(i);
+});
+```
+:::
+
+This ensures that each element of the `pair`/`tuple` only sees its part of the whole parse string, which is the only part that it knows what to do anything with.
+
+Without something like this in the library, it'd be impossible to do this sort of complex specifier parsing. You could support ranges (there, we only have one underlying element, so it parses to the end), but not pair or tuple. We _could_ say that since pair and tuple are library types, the library should just Make This Work, but there are surely other examples of wanting to do this sort of thing and it doesn't feel right to not allow users to do it too.
+
+This design space is, thankfully, slightly easier than the previous problem: this is basically what you have to do. Not much choice, I don't think.
+
+### Parsing of alignment, padding, and width
+
+The first two issues in this section are serious implementation issues that require design changes to `<format>`. This one doesn't *require* changes, and this paper won't propose changes, but it's worth pointing out nevertheless. Alignment, padding, and width are the most common and fairly universal specifiers. But we don't provide a public API to actually parse them.
+
+When implementing this in `fmt`, I just took advantage of `fmt`'s implementation details to make this a lot easier for myself: a type (`dynamic_format_specs<char>`) that holds all the specifier results, a function that understands those to let you write a padded/aligned string (`write`), and several parsing functions that are well designed to do the right thing if you have a unique set of specifiers you wish to parse (the appropriately-named `parse_align` and `parse_width`).
+
+These don't have to be standardized, as nothing in these functions is something that a user couldn't write on their own. And this paper is big enough already, so it, again, won't propose anything in this space. But it's worth considering for the future.
 
 ---
 references:
