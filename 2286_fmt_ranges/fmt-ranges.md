@@ -640,7 +640,7 @@ This seems like it'd be _extremely_ limiting.
 
 Except it turns out that actually nearly all of libfmt uses exactly this iterator. `fmt::print`, `fmt::format`, `fmt::format_to`, `fmt::format_to_n`, `fmt::vformat`, etc., all only use this one iterator type. This is because of [@P2216R3]'s efforts to reduce code bloat by type erasing the output iterator.
 
-However, there is one part of libfmt that uses a different iterator type, which now the above implementation fails on:
+However, there is one part of libfmt that uses a different iterator type, which the above implementation fails on:
 
 ::: bq
 ```cpp
@@ -649,7 +649,7 @@ fmt::format(FMT_COMPILE("{:::d}"), vector{vector{'a'}, vector{'b', 'c'}}); // il
 ```
 :::
 
-The latter fails because now the initial output iterator type is `std::back_insert_iterator<std::string>`, and the implementation fails to compile, erroring on the construction of `bctx` because of the mismatch in the types of the `basic_format_args` specializations.
+The latter fails because there the initial output iterator type is `std::back_insert_iterator<std::string>`. This is a different iterator type from `fmt::appender`, so we get a mismatch in the types of the `basic_format_args` specializations, and cannot compile the construction of `bctx`.
 
 This can be worked around (I just need to know what the type of the buffer needs to be, in the usual case it's `fmt::memory_buffer` and here it becomes `std::string`, that's fine), but it means we really need to nail down what the requirements of the `formatter` API are. One of the things we need to do in this paper is provide a `formattable` concept. From a previous revision of that paper, dropping the `char` parameter for simplicity, that looks like:
 
