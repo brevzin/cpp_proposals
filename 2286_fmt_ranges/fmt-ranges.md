@@ -721,6 +721,8 @@ constexpr auto format(V&& value, FormatContext& ctx) -> typename FormatContext::
 
 This can be made to work by `retargeted_format_context` simply doing the type erasure itself, and providing the user with the type-erased iterator result. Same as the library is already doing for all of its other entry points. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.
 
+This could theoretically have been an ABI break, except that everything in the standard library today uses the one type-erased iterator (in which case the issue here is not a problem, except insofar as there is no way to actually create a new `format_context`).
+
 ### Manipulating `basic_format_parse_context` to search for sentinels
 
 Take a look at one of the `pair` formatting examples:
@@ -810,6 +812,8 @@ The standard library will provide the following utilities:
 * A `formattable` concept.
 * A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).
 * A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).
+* A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
+* A `context_end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes.
 
 The standard library should add specializations of `formatter` for:
 
