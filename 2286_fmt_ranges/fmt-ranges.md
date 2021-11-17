@@ -565,8 +565,6 @@ void format_as_map();
 
 function, that for `tuple` of size other than 2 will throw an exception (since you cannot format those as a map).
 
-Tuple and pair will also provide the same fill/align/width specifiers as other types, again for consistency and convenience.
-
 ## Implementation Challenges
 
 I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily [share the implementation](https://godbolt.org/z/o8nfvdYxM), as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
@@ -707,15 +705,21 @@ constexpr auto format(V&& value, FormatContext& ctx) -> typename FormatContext::
 
     // can use a vector<CharT>, basic_string<CharT>, or some custom buffer like
     // fmt::buffer, user's choice
-    some_sort_of_buffer buf;
+    vector<CharT> buf;
 
-    // a (w)format_context writing into buf
-    auto bctx = make_buffer_format_context(buf, ctx);
+    // The retargeted_format_context class template can keep extra state if
+    // necessary, but bctx is still definitely a (w)format_context. The library
+    // ensures that regardless of the provided iterator, it gets type-erased as
+    // necessary
+    retargeted_format_context rctx(ctx, std::back_inserter(buf));
+    auto& bctx = rctx.context();
+
+    // format into bctx...
 }
 ```
 :::
 
-This can be made to work if `basic_format_context<OutIt, CharT>` erases _both_ `OutIt` _and_ the special type-erased iterator type. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.
+This can be made to work by `retargeted_format_context` simply doing the type erasure itself, and providing the user with the type-erased iterator result. Same as the library is already doing for all of its other entry points. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.
 
 ### Manipulating `basic_format_parse_context` to search for sentinels
 
@@ -772,6 +776,60 @@ The first two issues in this section are serious implementation issues that requ
 When implementing this in `fmt`, I just took advantage of `fmt`'s implementation details to make this a lot easier for myself: a type (`dynamic_format_specs<char>`) that holds all the specifier results, a function that understands those to let you write a padded/aligned string (`write`), and several parsing functions that are well designed to do the right thing if you have a unique set of specifiers you wish to parse (the appropriately-named `parse_align` and `parse_width`).
 
 These don't have to be standardized, as nothing in these functions is something that a user couldn't write on their own. And this paper is big enough already, so it, again, won't propose anything in this space. But it's worth considering for the future.
+
+## How to support those views which are not `const`-iterable?
+
+In a previous revision of this paper, this was a real problem since at the time `std::format` accepted its arguments by `const Args&...`
+
+However, [@P2418R2] was speedily adopted specifically to address this issue, and now `std::format` accepts its arguments by `Args&&...` This allows those views which are not `const`-iterable to be mutably passed into `format()` and `print()` and then mutably into its formatter. To support both `const` and non-`const` formatting of ranges without too much boilerplate, we can do it this way:
+
+::: bq
+```cpp
+template <formattable V>
+struct range_formatter {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext&);
+
+    template <range R, typename FormatContext>
+        requires same_as<remove_cvref_t<range_reference_t<R>>, V>
+    constexpr auto format(R&&, FormatContext&);
+};
+
+template <range R> requires formattable<range_reference_t<R>>
+struct formatter<R> : range_formatter<range_reference_t<R>>
+{ };
+```
+:::
+
+`range_formatter` allows reducing unnecessary template instantiations. Any range of `int` is going to `parse` its specifiers the same way, there's no need to re-instantiate that code n times. Such a type will also help users to write their own formatters.
+
+# Proposal
+
+The standard library will provide the following utilities:
+
+* A `formattable` concept.
+* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).
+* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).
+
+The standard library should add specializations of `formatter` for:
+
+* any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<ranges::range_reference_t<R>>`
+* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<T, U>`
+* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<Ts...>`
+
+Additionally, the standard library should provide the following more specific specializations of `formatter`:
+
+* `vector<bool, Alloc>::reference` (which formats as a `bool`)
+* all the associative maps (`map`, `multimap`, `unordered_map`, `unordered_multimap`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{k: v, k: v}` instead of `[(k, v), (k, v)]`
+* all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
+
+Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
+
+The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted. Even though this paper allows you to provide a specifier for each element in the range, it does not let you change the delimiter in the specifier (that's... a bit much), so `fmt::join` is still a useful and necessary facility for that.
+
+## Wording
+
+None yet, since spent all my time on implementation but nevertheless wanted to get this paper out sooner.
 
 ---
 references:

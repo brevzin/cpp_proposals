@@ -586,8 +586,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#manipulating-basic_format_parse_context-to-search-for-sentinels"><span class="toc-section-number">3.3.2</span> Manipulating <code class="sourceCode cpp">basic_format_parse_context</code> to search for sentinels<span></span></a></li>
 <li><a href="#parsing-of-alignment-padding-and-width"><span class="toc-section-number">3.3.3</span> Parsing of alignment, padding, and width<span></span></a></li>
 </ul></li>
+<li><a href="#how-to-support-those-views-which-are-not-const-iterable"><span class="toc-section-number">3.4</span> How to support those views which are not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable?<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">4.1</span> Wording<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
@@ -1465,7 +1470,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="dt">void</span> format_as_map<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
 <p>function, that for <code class="sourceCode cpp">tuple</code> of size other than 2 will throw an exception (since you cannot format those as a map).</p>
-<p>Tuple and pair will also provide the same fill/align/width specifiers as other types, again for consistency and convenience.</p>
 <h2 data-number="3.3" id="implementation-challenges"><span class="header-section-number">3.3</span> Implementation Challenges<a href="#implementation-challenges" class="self-link"></a></h2>
 <p>I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily <a href="https://godbolt.org/z/o8nfvdYxM">share the implementation</a>, as such I could not implement <code class="sourceCode cpp"><span class="op">?</span></code> support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.</p>
 <h3 data-number="3.3.1" id="wrapping-basic_format_context-is-not-generally-possible"><span class="header-section-number">3.3.1</span> Wrapping <code class="sourceCode cpp">basic_format_context</code> is not generally possible<a href="#wrapping-basic_format_context-is-not-generally-possible" class="self-link"></a></h3>
@@ -1583,13 +1587,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb26-6"><a href="#cb26-6"></a></span>
 <span id="cb26-7"><a href="#cb26-7"></a>    <span class="co">// can use a vector&lt;CharT&gt;, basic_string&lt;CharT&gt;, or some custom buffer like</span></span>
 <span id="cb26-8"><a href="#cb26-8"></a>    <span class="co">// fmt::buffer, user&#39;s choice</span></span>
-<span id="cb26-9"><a href="#cb26-9"></a>    some_sort_of_buffer buf;</span>
+<span id="cb26-9"><a href="#cb26-9"></a>    vector<span class="op">&lt;</span>CharT<span class="op">&gt;</span> buf;</span>
 <span id="cb26-10"><a href="#cb26-10"></a></span>
-<span id="cb26-11"><a href="#cb26-11"></a>    <span class="co">// a (w)format_context writing into buf</span></span>
-<span id="cb26-12"><a href="#cb26-12"></a>    <span class="kw">auto</span> bctx <span class="op">=</span> make_buffer_format_context<span class="op">(</span>buf, ctx<span class="op">)</span>;</span>
-<span id="cb26-13"><a href="#cb26-13"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb26-11"><a href="#cb26-11"></a>    <span class="co">// The retargeted_format_context class template can keep extra state if</span></span>
+<span id="cb26-12"><a href="#cb26-12"></a>    <span class="co">// necessary, but bctx is still definitely a (w)format_context. The library</span></span>
+<span id="cb26-13"><a href="#cb26-13"></a>    <span class="co">// ensures that regardless of the provided iterator, it gets type-erased as</span></span>
+<span id="cb26-14"><a href="#cb26-14"></a>    <span class="co">// necessary</span></span>
+<span id="cb26-15"><a href="#cb26-15"></a>    retargeted_format_context rctx<span class="op">(</span>ctx, std<span class="op">::</span>back_inserter<span class="op">(</span>buf<span class="op">))</span>;</span>
+<span id="cb26-16"><a href="#cb26-16"></a>    <span class="kw">auto</span><span class="op">&amp;</span> bctx <span class="op">=</span> rctx<span class="op">.</span>context<span class="op">()</span>;</span>
+<span id="cb26-17"><a href="#cb26-17"></a></span>
+<span id="cb26-18"><a href="#cb26-18"></a>    <span class="co">// format into bctx...</span></span>
+<span id="cb26-19"><a href="#cb26-19"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>This can be made to work if <code class="sourceCode cpp">basic_format_context<span class="op">&lt;</span>OutIt, CharT<span class="op">&gt;</span></code> erases <em>both</em> <code class="sourceCode cpp">OutIt</code> <em>and</em> the special type-erased iterator type. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.</p>
+<p>This can be made to work by <code class="sourceCode cpp">retargeted_format_context</code> simply doing the type erasure itself, and providing the user with the type-erased iterator result. Same as the library is already doing for all of its other entry points. For the typical case where all the entry points are already this type-erased iterator type, this is trivial. And if we allow arbitrary iterator types in the future, that entry point will have to erase both ways. Which is work, but it seems both quite feasible and in line with the rest of the design.</p>
 <h3 data-number="3.3.2" id="manipulating-basic_format_parse_context-to-search-for-sentinels"><span class="header-section-number">3.3.2</span> Manipulating <code class="sourceCode cpp">basic_format_parse_context</code> to search for sentinels<a href="#manipulating-basic_format_parse_context-to-search-for-sentinels" class="self-link"></a></h3>
 <p>Take a look at one of the <code class="sourceCode cpp">pair</code> formatting examples:</p>
 <blockquote>
@@ -1628,7 +1638,49 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The first two issues in this section are serious implementation issues that require design changes to <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code>. This one doesn’t <em>require</em> changes, and this paper won’t propose changes, but it’s worth pointing out nevertheless. Alignment, padding, and width are the most common and fairly universal specifiers. But we don’t provide a public API to actually parse them.</p>
 <p>When implementing this in <code class="sourceCode cpp">fmt</code>, I just took advantage of <code class="sourceCode cpp">fmt</code>’s implementation details to make this a lot easier for myself: a type (<code class="sourceCode cpp">dynamic_format_specs<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>) that holds all the specifier results, a function that understands those to let you write a padded/aligned string (<code class="sourceCode cpp">write</code>), and several parsing functions that are well designed to do the right thing if you have a unique set of specifiers you wish to parse (the appropriately-named <code class="sourceCode cpp">parse_align</code> and <code class="sourceCode cpp">parse_width</code>).</p>
 <p>These don’t have to be standardized, as nothing in these functions is something that a user couldn’t write on their own. And this paper is big enough already, so it, again, won’t propose anything in this space. But it’s worth considering for the future.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h2 data-number="3.4" id="how-to-support-those-views-which-are-not-const-iterable"><span class="header-section-number">3.4</span> How to support those views which are not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable?<a href="#how-to-support-those-views-which-are-not-const-iterable" class="self-link"></a></h2>
+<p>In a previous revision of this paper, this was a real problem since at the time <code class="sourceCode cpp">std<span class="op">::</span>format</code> accepted its arguments by <code class="sourceCode cpp"><span class="kw">const</span> Args<span class="op">&amp;...</span></code></p>
+<p>However, <span class="citation" data-cites="P2418R2">[<a href="#ref-P2418R2" role="doc-biblioref">P2418R2</a>]</span> was speedily adopted specifically to address this issue, and now <code class="sourceCode cpp">std<span class="op">::</span>format</code> accepts its arguments by <code class="sourceCode cpp">Args<span class="op">&amp;&amp;...</span></code> This allows those views which are not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable to be mutably passed into <code class="sourceCode cpp">format<span class="op">()</span></code> and <code class="sourceCode cpp">print<span class="op">()</span></code> and then mutably into its formatter. To support both <code class="sourceCode cpp"><span class="kw">const</span></code> and non-<code class="sourceCode cpp"><span class="kw">const</span></code> formatting of ranges without too much boilerplate, we can do it this way:</p>
+<blockquote>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable V<span class="op">&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">struct</span> range_formatter <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;)</span>;</span>
+<span id="cb29-5"><a href="#cb29-5"></a></span>
+<span id="cb29-6"><a href="#cb29-6"></a>    <span class="kw">template</span> <span class="op">&lt;</span>range R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb29-7"><a href="#cb29-7"></a>        <span class="kw">requires</span> same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, V<span class="op">&gt;</span></span>
+<span id="cb29-8"><a href="#cb29-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span>, FormatContext<span class="op">&amp;)</span>;</span>
+<span id="cb29-9"><a href="#cb29-9"></a><span class="op">}</span>;</span>
+<span id="cb29-10"><a href="#cb29-10"></a></span>
+<span id="cb29-11"><a href="#cb29-11"></a><span class="kw">template</span> <span class="op">&lt;</span>range R<span class="op">&gt;</span> <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb29-12"><a href="#cb29-12"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">:</span> range_formatter<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb29-13"><a href="#cb29-13"></a><span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p><code class="sourceCode cpp">range_formatter</code> allows reducing unnecessary template instantiations. Any range of <code class="sourceCode cpp"><span class="dt">int</span></code> is going to <code class="sourceCode cpp">parse</code> its specifiers the same way, there’s no need to re-instantiate that code n times. Such a type will also help users to write their own formatters.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The standard library will provide the following utilities:</p>
+<ul>
+<li>A <code class="sourceCode cpp">formattable</code> concept.</li>
+<li>A <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> a range whose <code class="sourceCode cpp">reference</code> is similar to <code class="sourceCode cpp">V</code>. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).</li>
+<li>A <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for each <code class="sourceCode cpp">T</code> in <code class="sourceCode cpp">Ts<span class="op">...</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> either a <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, or <code class="sourceCode cpp">array</code> with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).</li>
+</ul>
+<p>The standard library should add specializations of <code class="sourceCode cpp">formatter</code> for:</p>
+<ul>
+<li>any type <code class="sourceCode cpp">R</code> that is a <code class="sourceCode cpp">range</code> whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code></li>
+<li><code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> if <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> if all of <code class="sourceCode cpp">Ts<span class="op">...</span></code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
+</ul>
+<p>Additionally, the standard library should provide the following more specific specializations of <code class="sourceCode cpp">formatter</code>:</p>
+<ul>
+<li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> (which formats as a <code class="sourceCode cpp"><span class="dt">bool</span></code>)</li>
+<li>all the associative maps (<code class="sourceCode cpp">map</code>, <code class="sourceCode cpp">multimap</code>, <code class="sourceCode cpp">unordered_map</code>, <code class="sourceCode cpp">unordered_multimap</code>) if their respective key/value types are <code class="sourceCode cpp">formattable</code>. This accepts the same set of specifiers as any other range, except by <em>default</em> it will format as <code class="sourceCode cpp"><span class="op">{</span>k<span class="op">:</span> v, k<span class="op">:</span> v<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[(</span>k, v<span class="op">)</span>, <span class="op">(</span>k, v<span class="op">)]</span></code></li>
+<li>all the associative sets (<code class="sourceCode cpp">sets</code>, <code class="sourceCode cpp">multiset</code>, <code class="sourceCode cpp">unordered_set</code>, <code class="sourceCode cpp">unordered_multiset</code>) if their respective key/value types are <code class="sourceCode cpp">formattable</code>. This accepts the same set of specifiers as any other range, except by <em>default</em> it will format as <code class="sourceCode cpp"><span class="op">{</span>v1, v2<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[</span>v1, v2<span class="op">]</span></code></li>
+</ul>
+<p>Formatting for <code class="sourceCode cpp">string</code>, <code class="sourceCode cpp">string_view</code>, and <code class="sourceCode cpp"><span class="dt">char</span></code>/<code class="sourceCode cpp"><span class="dt">wchar_t</span></code> will gain a <code class="sourceCode cpp"><span class="op">?</span></code> specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.</p>
+<p>The standard library should also add a utility <code class="sourceCode cpp">std<span class="op">::</span>format_join</code> (or any other suitable name, knowing that <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code> already exists), following in the footsteps of <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>, which allows the user to provide more customization in how ranges and tuples get formatted. Even though this paper allows you to provide a specifier for each element in the range, it does not let you change the delimiter in the specifier (that’s… a bit much), so <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> is still a useful and necessary facility for that.</p>
+<h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>None yet, since spent all my time on implementation but nevertheless wanted to get this paper out sooner.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-LWG3478">
 <p>[LWG3478] Barry Revzin. views::split drops trailing empty range. <br />
@@ -1657,6 +1709,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2418R0">
 <p>[P2418R0] Victor Zverovich. Add support for <code class="sourceCode cpp">std<span class="op">::</span>generator</code>-like types to <code class="sourceCode cpp">std<span class="op">::</span>format</code>. <br />
 <a href="https://wg21.link/p2418r0">https://wg21.link/p2418r0</a></p>
+</div>
+<div id="ref-P2418R2">
+<p>[P2418R2] Victor Zverovich. 2021-09-24. Add support for std::generator-like types to std::format. <br />
+<a href="https://wg21.link/p2418r2">https://wg21.link/p2418r2</a></p>
 </div>
 </div>
 </div>
