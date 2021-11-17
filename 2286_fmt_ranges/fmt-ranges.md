@@ -636,7 +636,9 @@ It's mostly the same - we format into `bctx` instead of `ctx` and then `write` i
 
 The _only_ type for the output iterator that I can support in this implementation is precisely `fmt::appender`.
 
-This seems like it'd be extremely limiting. Except it runs out that actually nearly all of libfmt uses exactly this iterator. `fmt::print`, `fmt::format`, `fmt::format_to`, `fmt::format_to_n`, `fmt::vformat`, etc., all only use this one iterator type. This is because of [@P2216R3]'s efforts to reduce code bloat by type erasing the output iterator.
+This seems like it'd be _extremely_ limiting.
+
+Except it turns out that actually nearly all of libfmt uses exactly this iterator. `fmt::print`, `fmt::format`, `fmt::format_to`, `fmt::format_to_n`, `fmt::vformat`, etc., all only use this one iterator type. This is because of [@P2216R3]'s efforts to reduce code bloat by type erasing the output iterator.
 
 However, there is one part of libfmt that uses a different iterator type, which now the above implementation fails on:
 
