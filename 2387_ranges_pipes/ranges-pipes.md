@@ -1,6 +1,6 @@
 ---
 title: "Pipe support for user-defined range adaptors"
-document: P2387R2
+document: P2387R3
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2387R2], rebased and updated wording.
 
 Since [@P2387R1], added another feature test macro.
 
@@ -703,17 +705,24 @@ For a range adaptor closure object `C` and an expression `R` such that `decltype
 C(R)
 R | C
 ```
-Given an additional range adaptor closure object `D`, the expression `C | D` is well-formed and produces another range adaptor closure object such that the following two expressions are equivalent:
-```
-R | C | D
-R | (C | D)
-```
+Given an additional range adaptor closure object `D`, the expression `C | D` is well-formed and produces another range adaptor closure object `E`.
+`E` is a perfect forwarding call wrapper ([func.require]) with the following properties:
+
+* [#.#]{.pnum} Its target object is an object `d` of type `decay_­t<decltype((D))>` direct-non-list-initialized with `D`.
+* [#.#]{.pnum} It has one bound argument entity, an object `c` of type `decay_­t<decltype((C))>` direct-non-list-initialized with `C`.
+* [#.#]{.pnum} Its call pattern is `d(c(arg))`, where `arg` is the argument used in a function call expression of `E`.
+
+The expression `C | D` is well-formed if and only if the initializations of the state entities of `E` are all well-formed.
 
 ::: addu
-[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `T` models `derived_from<range_adaptor_closure<T>>`,  `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and `T` does not model `range`.
+[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `t` is a unary function object that accepts a `range` argument, `T` models `derived_from<range_adaptor_closure<T>>`,  `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and `T` does not model `range`.
+
+[?]{.pnum} The behavior of a program that adds a specialization for `range_adaptor_closure` is undefined.
 
 [?]{.pnum} The template parameter `D` for `range_adaptor_closure` may be an incomplete type.
 Before any expression of type *cv* `D` appears as an operand to the `|` operator, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`. The behavior of an expression involving an object of type *cv* `D` as an operand to the `|` operator is undefined if overload resolution selects a program-defined `operator|` function.
+
+[?]{.pnum} If an expression of type *cv* `U` is used as an operand to the `|` operator, where `U` has a base class of type `range_adaptor_closure<T>` for some `T` other than `U`, the behavior is undefined.
 :::
 :::
 
