@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R3
+document: P2286R4
 date: today
 audience: LEWG
 author:
@@ -198,13 +198,13 @@ int main() {
     auto parts = s | std::views::split('x');
 
     fmt::print("{}\n", parts);
-    fmt::print("[{}]\n", fmt::join(parts, ","));
+    fmt::print("<<{}>>\n", fmt::join(parts, "--"));
 }
 ```
 outputting
 ```
-{@{}@, {'y'}}
-[{},{'y'}]
+[[], ['y'], []]
+<<[]--['y']--[]>>
 ```
 :::
 
