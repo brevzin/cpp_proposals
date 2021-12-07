@@ -484,7 +484,7 @@ Note that you can provide both a fill/align/width specifier to the range itself 
 
 #### Dynamic Delimiter for Ranges
 
-Let's say I have a `vector<uint8_t>` that I wish to format as a MAC address. That is, I want to print every element with `02x`, delimited with `":"` (rather than the default `", "`), and without the surrounding square brackets.
+Let's say I have a `vector<uint8_t>` that I wish to format as a MAC address. That is, I want to print every element with `"02x"`, delimited with `":"` (rather than the default `", "`), and without the surrounding square brackets.
 
 I showed an example of how to do this earlier using `{fmt}`:
 
