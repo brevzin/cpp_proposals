@@ -523,7 +523,7 @@ Do we want to pursue:
 2. Just dynamic delimiter?
 3. Both?
 
-The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. Note that I'm not proposing any way of adding a static delimiter for the same reason that this paper is no longer proposing custom pair/tuple specifiers (see the [pair/tuple section](#pair-and-tuple-specifiers)).
+The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. Note that I'm not proposing any way of adding a static delimiter for the same reason that this paper is no longer proposing custom pair/tuple specifiers (see the [pair/tuple section](#pair-and-tuple-specifiers) and then the [static delimiter section](#static-delimiter-for-ranges)).
 
 But the dynamic delimiter approach does have the advantage that it supports more functionality. If I want to center-align the mac address and pad it with asterisks like I've been doing with every other example (for instance), that's just more specifiers as compared with another call to `format`:
 
@@ -608,6 +608,60 @@ which for `tuple` of size other than 2 will throw an exception (since you cannot
 |`{}`|`tuple(1, 2, "3"s)`|`(1, 2, "3")`|
 |`{:m}`|`tuple(1, 2, "3"s)`|exception or compile error|
 
+#### Static Delimiter for Ranges
+
+Earlier, I showed the idea that we might be able to support:
+
+::: bq
+```cpp
+fmt::print("{:ed{}:02x}", mac, ":");  // aa:bb:cc:dd:ee:ff
+```
+:::
+
+Now the question is, how could we do a static delimiter (i.e. built into the specifier) rather than a dynamic delimiter (i.e. provided as a format argument)? The issue here is we need bounds - the same kinds of bounds we need for pair/tuple. So a starting point might be... let's just use `[]`s. The stuff between the `[]`s is the delimiter:
+
+::: bq
+```cpp
+// dynamic delimiter, single colon
+fmt::print("{:ed{}:02x}", mac, ":"); // aa:bb:cc:dd:ee:ff
+
+// static delimiter, different amounts of colons
+fmt::print("{:ed[:]:02x}", mac);     // aa:bb:cc:dd:ee:ff
+fmt::print("{:ed[]:02x}", mac);      // aabbccddeeff
+fmt::print("{:ed[::]:02x}", mac);    // aa::bb::cc::dd::ee::ff
+
+// dynamic delimiter, brackets for whatever reason
+fmt::print("{:ed{}:02x}", mac, "[]"); // aa[]bb[]cc[]dd[]ee[]ff
+```
+:::
+
+Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick brackets), we run into the problem of: what if the user actually wants to use `]` in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.
+
+This one does have slightly easier solutions, in that we could either:
+
+1. Just not allow `]` in static delimiters, if they want to do that they have to use a dynamic one
+2. Go the lua/cmake route and rather than use `[` and `]` to delimit the static delimiter, use `[=[` and `]=]` (except with a variable amount of `=`s, they just have to match).
+3. Allow any Unicode open bracket (except `{`), that will then be matched by the corresponding close bracket.
+
+Or, in code form:
+
+::: bq
+```cpp
+// option 2) disambiguate by using ='s
+fmt::print("{:ed[=[[]]=]:02x}", mac);      // aa[]bb[]cc[]dd[]ee[]ff
+fmt::print("{:ed[==[[]]==]:02x}", mac);    // aa[]bb[]cc[]dd[]ee[]ff
+
+// .. which pessimizes the typical case
+fmt::print("{:ed[[:]]:02x}", mac);         // aa:bb:cc:dd:ee:ff
+
+// option 3) use different brackets:
+fmt::print("{:ed([]):02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
+fmt::print("{:ed«[]»:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
+fmt::print("{:ed⦕[]⦖:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
+```
+:::
+
+All of this seems needlessly complex tho. If we have any kind of direct support for delimiter outside of `fmt::join`, dynamic delimiter surely seems sufficient.
 
 ## Implementation Challenges
 
