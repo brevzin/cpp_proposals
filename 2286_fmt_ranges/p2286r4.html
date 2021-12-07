@@ -1395,7 +1395,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <h2 data-number="3.3" id="implementation-challenges"><span class="header-section-number">3.3</span> Implementation Challenges<a href="#implementation-challenges" class="self-link"></a></h2>
-<p>I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily <a href="https://godbolt.org/z/o53d3h16a">share the implementation</a>, as such I could not implement <code class="sourceCode cpp"><span class="op">?</span></code> support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.</p>
+<p>I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily share the implementation <span class="citation" data-cites="fmt-impl">[<a href="#ref-fmt-impl" role="doc-biblioref">fmt-impl</a>]</span>, as such I could not implement <code class="sourceCode cpp"><span class="op">?</span></code> support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.</p>
 <h3 data-number="3.3.1" id="wrapping-basic_format_context-is-not-generally-possible"><span class="header-section-number">3.3.1</span> Wrapping <code class="sourceCode cpp">basic_format_context</code> is not generally possible<a href="#wrapping-basic_format_context-is-not-generally-possible" class="self-link"></a></h3>
 <p>In order to be able to provide an arbitrary type’s specifiers to format a range, you have to have a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> for the underlying type and use that specific <code class="sourceCode cpp">formatter</code> in order to <code class="sourceCode cpp">parse</code> the format specifier and then <code class="sourceCode cpp">format</code> into the given context. If that’s all you’re doing, this isn’t that big a deal, and I showed a simplified implementation of <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> <a href="#the-debug-specifier">earlier</a>.</p>
 <p>However, if you additionally want to support fill/pad/align, then the game changes. You can’t format into the provided context - you have to format into <em>something else</em> first and then do the adjustments later. Adding padding support ends up doing something more like this:</p>
@@ -1625,7 +1625,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb30-101"><a href="#cb30-101"></a>    <span class="dt">void</span> flush<span class="op">()</span> <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb30-102"><a href="#cb30-102"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>You can see this in <a href="https://godbolt.org/z/o53d3h16a">the implementation I shared</a>, on lines 65-140.</p>
+<p>You can see this in the implementation I shared <span class="citation" data-cites="fmt-impl">[<a href="#ref-fmt-impl" role="doc-biblioref">fmt-impl</a>]</span>, on lines 65-140.</p>
 <p>We don’t strictly need to provide <code class="sourceCode cpp">retargeted_format_context</code> just to format ranges (the implementation would do something like this internally). But if users want to be able to solve this problem (e.g. fill/pad/align for a user-defined type where all you have is <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for unknown <code class="sourceCode cpp">T</code>) for any of their own types, they’ll need to do something like this as well, so this functionality should be provided to let them do that.</p>
 <h3 data-number="3.3.2" id="manipulating-basic_format_parse_context-to-search-for-sentinels"><span class="header-section-number">3.3.2</span> Manipulating <code class="sourceCode cpp">basic_format_parse_context</code> to search for sentinels<a href="#manipulating-basic_format_parse_context-to-search-for-sentinels" class="self-link"></a></h3>
 <p>Even though this paper is no longer proposing complex <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code> support, it’s still useful to discuss one of the examples that could have been supported:</p>
@@ -1737,6 +1737,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>None yet, since spent all my time on implementation but nevertheless wanted to get this paper out sooner.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-fmt-impl">
+<p>[fmt-impl] Barry Revzin. 2021. Implementation for range formatting on top of <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>. <br />
+<a href="https://godbolt.org/z/Kf5G5e8xc">https://godbolt.org/z/Kf5G5e8xc</a></p>
+</div>
 <div id="ref-LWG3478">
 <p>[LWG3478] Barry Revzin. views::split drops trailing empty range. <br />
 <a href="https://wg21.link/lwg3478">https://wg21.link/lwg3478</a></p>
@@ -1758,7 +1762,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="https://wg21.link/p2286r1">https://wg21.link/p2286r1</a></p>
 </div>
 <div id="ref-P2286R2">
-<p>[P2286R2] Barry Revzin. Formatting Ranges. <br />
+<p>[P2286R2] Barry Revzin. 2021. Formatting Ranges. <br />
 <a href="https://wg21.link/p2286r2">https://wg21.link/p2286r2</a></p>
 </div>
 <div id="ref-P2286R3">
@@ -1770,7 +1774,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="https://wg21.link/p2321r2">https://wg21.link/p2321r2</a></p>
 </div>
 <div id="ref-P2418R0">
-<p>[P2418R0] Victor Zverovich. Add support for <code class="sourceCode cpp">std<span class="op">::</span>generator</code>-like types to <code class="sourceCode cpp">std<span class="op">::</span>format</code>. <br />
+<p>[P2418R0] Victor Zverovich. 2021. Add support for <code class="sourceCode cpp">std<span class="op">::</span>generator</code>-like types to <code class="sourceCode cpp">std<span class="op">::</span>format</code>. <br />
 <a href="https://wg21.link/p2418r0">https://wg21.link/p2418r0</a></p>
 </div>
 <div id="ref-P2418R2">

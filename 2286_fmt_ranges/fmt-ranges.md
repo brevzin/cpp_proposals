@@ -611,7 +611,7 @@ which for `tuple` of size other than 2 will throw an exception (since you cannot
 
 ## Implementation Challenges
 
-I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily [share the implementation](https://godbolt.org/z/o53d3h16a), as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
+I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily share the implementation [@fmt-impl], as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
 
 ### Wrapping `basic_format_context` is not generally possible
 
@@ -865,7 +865,7 @@ struct retargeted_format_context<basic_format_context<OutputIt, CharT>, OutputIt
 ```
 :::
 
-You can see this in [the implementation I shared](https://godbolt.org/z/o53d3h16a), on lines 65-140.
+You can see this in the implementation I shared [@fmt-impl], on lines 65-140.
 
 We don't strictly need to provide `retargeted_format_context` just to format ranges (the implementation would do something like this internally). But if users want to be able to solve this problem (e.g. fill/pad/align for a user-defined type where all you have is `formatter<T>` for unknown `T`) for any of their own types, they'll need to do something like this as well, so this functionality should be provided to let them do that.
 
@@ -1031,7 +1031,7 @@ references:
       author:
         - family: Barry Revzin
       issued:
-        -year: 2021
+        - year: 2021
       URL: https://wg21.link/p2286r2
     - id: P2418R0
       citation-label: P2418R0
@@ -1039,6 +1039,14 @@ references:
       author:
         - family: Victor Zverovich
       issued:
-        -year: 2021
+        - year: 2021
       URL: https://wg21.link/p2418r0
+    - id: fmt-impl
+      citation-label: fmt-impl
+      title: "Implementation for range formatting on top of `{fmt}`"
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2021
+      URL: https://godbolt.org/z/Kf5G5e8xc
 ---
