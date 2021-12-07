@@ -664,6 +664,92 @@ fmt::print("{:ed⦕[]⦖:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
 
 All of this seems needlessly complex tho. If we have any kind of direct support for delimiter outside of `fmt::join`, dynamic delimiter surely seems sufficient.
 
+### Examples with user-defined types
+
+Let's say a user has a type like:
+
+::: bq
+```cpp
+struct Foo {
+    int bar;
+    std::string baz;
+};
+```
+:::
+
+And want to format `Foo{.bar=10, .baz="Hello World"}` as the string `Foo(bar=10, baz="Hello World")`. They can do so this way:
+
+::: bq
+```cpp
+template <>
+struct formatter<Foo, char> {
+    template <typename FormatContext>
+    constexpr auto format(Foo const& f, FormatContext& ctx) const {
+        return format_to(ctx.out(), "Foo(bar={}, baz={:?})", f.bar, f.baz);
+    }
+};
+```
+:::
+
+How about wrappers?
+
+Let's say you have your own implementation of `Optional`, that you want to format the same way that Rust does: so that a disengaged one formats as `None` and an engaged one formats as `Some(??)`. We can start by:
+
+::: bq
+```cpp
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    // we'll skip parse for now
+
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            return format_to(ctx.out(), "Some({})", *opt);
+        }
+    }
+};
+```
+:::
+
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules described earlier. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context?
+
+We can both add support for quoting/escaping and also arbitrary specifiers at the same time:
+
+::: bq
+```cpp
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    formatter<T, char> underlying;
+
+    template <typenaem ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        auto end = underlying.parse(ctx);
+        if constexpr (requires { underlying.set_debug_format(); }) {
+            underlying.set_debug_format();
+        }
+        return end;
+    }
+
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            ctx.advance_to(format_to(ctx.out(), "Some("));
+            auto out = underlying.format(*opt, ctx);
+            *out++ = ')';
+            return out;
+        }
+    }
+};
+```
+:::
+
+This lets me format `Optional<string>("hello")` as `Some("hello")`{.x} by default, or format `Optional<int>(42)` as `Some(0x2a)`{.x} if I provide the specifier string `"{:#x}"`.
+
+
 ## Implementation Challenges
 
 I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily share the implementation [@fmt-impl], as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
@@ -774,6 +860,8 @@ template <class T>
 concept formattable = $formattable-impl$<std::remove_cvref_t<T>>;
 ```
 :::
+
+Note that based on the resolution of [@LWG3636], the call to `format` may be on a `const fmt::formatter<T>` instead.
 
 I use `char*` as the output iterator, but my `range_formatter<V>` cannot support `char*` as an output iterator type at all. Do `formatter` specializations need to support any output iterator type? If so, how can we implement fill/align/pad support in `range_formatter`?
 
@@ -1051,7 +1139,49 @@ It works like this:
 
 `std::format_join` (since we already have a `std::views::join` and none of the formatting is in a `fmt` namespace) will accept a `viewable_range` of `formattable` (based on the range's `reference` type) and a delimiter which is convertible to `(w)string_view`, and produce an `std::$format-join-view$` object. That object will take as a specifier whatever the underlying type accepts, and use that result to format each element, using the provided delimiter. Unlike the default ranges formatter, strings and chars are not printed escaped/quoted: users need to provide `?` for that functionality.
 
-Note that `std::format_join` does not support pad/align/width. But it is a simpler construct to parse (for humans): the delimiter is right there with something named `join` (although the specifier is a bit further away).
+Note that `std::format_join` does not support pad/align/width. But it is a simpler construct to parse (for humans): the delimiter is right there with something named `join` (although the specifier is a bit further away). Because it only supports the underlying type's specifier, it's actually ends up being fairly straightforward to implement:
+
+::: bq
+```cpp
+template <std::ranges::input_range V>
+    requires std::ranges::view<V>
+          && formattable<std::ranges::range_reference_t<V>>
+struct format_join_view {
+    V v;
+    fmt::string_view delim;
+};
+
+template <std::ranges::input_range V>
+struct fmt::formatter<format_join_view<V>> {
+    fmt::formatter<std::remove_cvref_t<std::ranges::range_reference_t<V>>> underlying;
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return underlying.parse(ctx);
+    }
+
+    template <typename R, typename FormatContext>
+    constexpr auto format(R&& r, FormatContext& ctx) {
+        auto it = std::ranges::begin(r.v);
+        auto out = ctx.out();
+        if (it != std::ranges::end(r.v)) {
+            out = underlying.format(*it, ctx);
+            for (++it; it != std::ranges::end(r.v); ++it) {
+                ctx.advance_to(std::ranges::copy(r.deilm, out));
+                out = underlying.format(*it, ctx);
+            }
+        }
+        return out;
+    }
+};
+
+template <std::ranges::viewable_range R>
+    requires formattable<std::ranges::range_reference_t<R>>
+auto format_join(R&& r, fmt::string_view delim) {
+    return format_join_view{std::views::all(FWD(r)), delim};
+}
+```
+:::
 
 ## `format` or `std::cout`?
 
