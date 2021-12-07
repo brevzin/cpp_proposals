@@ -594,7 +594,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#parsing-of-alignment-padding-and-width"><span class="toc-section-number">3.3.3</span> Parsing of alignment, padding, and width<span></span></a></li>
 </ul></li>
 <li><a href="#how-to-support-those-views-which-are-not-const-iterable"><span class="toc-section-number">3.4</span> How to support those views which are not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable?<span></span></a></li>
-<li><a href="#what-additional-functionality"><span class="toc-section-number">3.5</span> What additional functionality?<span></span></a></li>
+<li><a href="#what-additional-functionality"><span class="toc-section-number">3.5</span> What additional functionality?<span></span></a>
+<ul>
+<li><a href="#stdformat_join"><span class="toc-section-number">3.5.1</span> <code class="sourceCode cpp">std<span class="op">::</span>format_join</code><span></span></a></li>
+</ul></li>
 <li><a href="#format-or-stdcout"><span class="toc-section-number">3.6</span> <code class="sourceCode cpp">format</code> or <code class="sourceCode cpp">std<span class="op">::</span>cout</code>?<span></span></a></li>
 <li><a href="#what-about-vectorbool"><span class="toc-section-number">3.7</span> What about <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code>?<span></span></a></li>
 </ul></li>
@@ -610,6 +613,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li>Removed the special <code class="sourceCode cpp">pair</code>/<code class="sourceCode cpp">tuple</code> parsing for individual elements. This proved complicated and illegible.</li>
 <li>Renaming <code class="sourceCode cpp">format_as_debug</code> to <code class="sourceCode cpp">set_debug_format</code> (since it’s not actually <em>formatting</em> anything, it’s just setting up)</li>
+<li>Adding sections on <a href="#dynamic-delimiter-for-ranges">dynamic</a> and <a href="#static-delimiter-for-ranges">static</a> delimiters for ranges, as well as one for <a href="#stdformat_join"><code class="sourceCode cpp">format_join</code></a>.</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2286R2">[<a href="#ref-P2286R2" role="doc-biblioref">P2286R2</a>]</span>, several major changes:</p>
 <ul>
@@ -1743,6 +1747,68 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-7"><a href="#cb7-7"></a>           <span class="st">&quot;1, 2, 3</span><span class="sc">\n</span><span class="st">4, 5, 6&quot;</span>)<span class="op">;</span></span></code></pre></div>
 </blockquote>
 <p>This paper suggests the first two and encourages research into the third.</p>
+<h3 data-number="3.5.1" id="stdformat_join"><span class="header-section-number">3.5.1</span> <code class="sourceCode cpp">std<span class="op">::</span>format_join</code><a href="#stdformat_join" class="self-link"></a></h3>
+<p>If we’re not going to support <a href="#dynamic-delimiter-for-ranges">dynamic</a> and <a href="#static-delimiter-for-ranges">static</a> delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> already under the name <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>.</p>
+<p>It works like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Format String</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Contents</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Formatted Output</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>, <span class="st">&quot;, &quot;</span><span class="op">)</span></code></td>
+<td><code class="x">1, 2, 3</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">[{}]</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>, <span class="st">&quot;, &quot;</span><span class="op">)</span></code></td>
+<td><code class="x">[1, 2, 3]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">[{}]</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>, <span class="st">&quot;--&quot;</span><span class="op">)</span></code></td>
+<td><code class="x">[1--2--3]</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">[{}]</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>, <span class="st">&quot;--&quot;</span><span class="bu">s</span><span class="op">)</span></code></td>
+<td><code class="x">[1--2--3]</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{:x}</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span><span class="op">}</span>, <span class="st">&quot;:&quot;</span><span class="op">)</span></code></td>
+<td><code class="x">a:14:1e</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:#04X}</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span><span class="op">}</span>, <span class="st">&quot;:&quot;</span><span class="op">)</span></code></td>
+<td><code class="x">0X0A:0X14:0X1E</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">{}</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="st">&quot;h</span><span class="sc">\t</span><span class="st">llo&quot;</span><span class="bu">s</span>, <span class="st">&quot;world&quot;</span><span class="bu">s</span><span class="op">}</span>, <span class="st">&quot;, &quot;</span><span class="op">)</span></code></td>
+<td><code class="x">h    llo, world</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">{:?}</code></td>
+<td><code class="sourceCode cpp">fmt<span class="op">::</span>join<span class="op">(</span>std<span class="op">::</span>vector<span class="op">{</span><span class="st">&quot;h</span><span class="sc">\t</span><span class="st">llo&quot;</span><span class="bu">s</span>, <span class="st">&quot;world&quot;</span><span class="bu">s</span><span class="op">}</span>, <span class="st">&quot;, &quot;</span><span class="op">)</span></code></td>
+<td><code class="x">&quot;h\tllo&quot;, &quot;world&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<p><code class="sourceCode cpp">std<span class="op">::</span>format_join</code> (since we already have a <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code> and none of the formatting is in a <code class="sourceCode cpp">fmt</code> namespace) will accept a <code class="sourceCode cpp">viewable_range</code> of <code class="sourceCode cpp">formattable</code> (based on the range’s <code class="sourceCode cpp">reference</code> type) and a delimiter which is convertible to <code class="sourceCode cpp"><span class="op">(</span>w<span class="op">)</span>string_view</code>, and produce an <code class="sourceCode cpp">std<span class="op">::</span><em>format-join-view</em></code> object. That object will take as a specifier whatever the underlying type accepts, and use that result to format each element, using the provided delimiter. Unlike the default ranges formatter, strings and chars are not printed escaped/quoted: users need to provide <code class="sourceCode cpp"><span class="op">?</span></code> for that functionality.</p>
+<p>Note that <code class="sourceCode cpp">std<span class="op">::</span>format_join</code> does not support pad/align/width. But it is a simpler construct to parse (for humans): the delimiter is right there with something named <code class="sourceCode cpp">join</code> (although the specifier is a bit further away).</p>
 <h2 data-number="3.6" id="format-or-stdcout"><span class="header-section-number">3.6</span> <code class="sourceCode cpp">format</code> or <code class="sourceCode cpp">std<span class="op">::</span>cout</code>?<a href="#format-or-stdcout" class="self-link"></a></h2>
 <p>Just <code class="sourceCode cpp">format</code> is sufficient.</p>
 <h2 data-number="3.7" id="what-about-vectorbool"><span class="header-section-number">3.7</span> What about <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code>?<a href="#what-about-vectorbool" class="self-link"></a></h2>
@@ -1756,7 +1822,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li>A <code class="sourceCode cpp">formattable</code> concept.</li>
 <li>A <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> a range whose <code class="sourceCode cpp">reference</code> is similar to <code class="sourceCode cpp">V</code>. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).</li>
-<li>A <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for each <code class="sourceCode cpp">T</code> in <code class="sourceCode cpp">Ts<span class="op">...</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> either a <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, or <code class="sourceCode cpp">array</code> with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).</li>
+<li>A <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;</span></code> for each <code class="sourceCode cpp">T</code> in <code class="sourceCode cpp">Ts<span class="op">...</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> either a <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, or <code class="sourceCode cpp">array</code> with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map), but will not accept any specifier the underlying elements.</li>
 <li>A <code class="sourceCode cpp">retargeted_format_context</code> facility that allows the user to construct a new <code class="sourceCode cpp"><span class="op">(</span>w<span class="op">)</span>format_context</code> with a custom output iterator.</li>
 <li>An <code class="sourceCode cpp">end_sentry</code> facility that allows the user to manipulate the parse context’s range, for generic parsing purposes.</li>
 </ul>
@@ -1768,12 +1834,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>Additionally, the standard library should provide the following more specific specializations of <code class="sourceCode cpp">formatter</code>:</p>
 <ul>
-<li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> (which formats as a range of <code class="sourceCode cpp"><span class="dt">bool</span></code>)</li>
+<li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> (which formats as a <code class="sourceCode cpp"><span class="dt">bool</span></code>)</li>
 <li>all the associative maps (<code class="sourceCode cpp">map</code>, <code class="sourceCode cpp">multimap</code>, <code class="sourceCode cpp">unordered_map</code>, <code class="sourceCode cpp">unordered_multimap</code>) if their respective key/value types are <code class="sourceCode cpp">formattable</code>. This accepts the same set of specifiers as any other range, except by <em>default</em> it will format as <code class="sourceCode cpp"><span class="op">{</span>k<span class="op">:</span> v, k<span class="op">:</span> v<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[(</span>k, v<span class="op">)</span>, <span class="op">(</span>k, v<span class="op">)]</span></code></li>
 <li>all the associative sets (<code class="sourceCode cpp">sets</code>, <code class="sourceCode cpp">multiset</code>, <code class="sourceCode cpp">unordered_set</code>, <code class="sourceCode cpp">unordered_multiset</code>) if their respective key/value types are <code class="sourceCode cpp">formattable</code>. This accepts the same set of specifiers as any other range, except by <em>default</em> it will format as <code class="sourceCode cpp"><span class="op">{</span>v1, v2<span class="op">}</span></code> instead of <code class="sourceCode cpp"><span class="op">[</span>v1, v2<span class="op">]</span></code></li>
 </ul>
 <p>Formatting for <code class="sourceCode cpp">string</code>, <code class="sourceCode cpp">string_view</code>, and <code class="sourceCode cpp"><span class="dt">char</span></code>/<code class="sourceCode cpp"><span class="dt">wchar_t</span></code> will gain a <code class="sourceCode cpp"><span class="op">?</span></code> specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.</p>
-<p>The standard library should also add a utility <code class="sourceCode cpp">std<span class="op">::</span>format_join</code> (or any other suitable name, knowing that <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code> already exists), following in the footsteps of <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>, which allows the user to provide more customization in how ranges and tuples get formatted. Even though this paper allows you to provide a specifier for each element in the range, it does not let you change the delimiter in the specifier (that’s… a bit much), so <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> is still a useful and necessary facility for that.</p>
+<p>The standard library should also add a utility <code class="sourceCode cpp">std<span class="op">::</span>format_join</code> (or any other suitable name, knowing that <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>join</code> already exists), following in the footsteps of <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>, which allows the user to provide more customization in how ranges get formatted.</p>
 <h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>None yet, since spent all my time on implementation but nevertheless wanted to get this paper out sooner.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>

@@ -16,6 +16,7 @@ Since [@P2286R3], several major changes:
 
 * Removed the special `pair`/`tuple` parsing for individual elements. This proved complicated and illegible.
 * Renaming `format_as_debug` to `set_debug_format` (since it's not actually _formatting_ anything, it's just setting up)
+* Adding sections on [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, as well as one for [`format_join`](#stdformat_join).
 
 Since [@P2286R2], several major changes:
 
@@ -1031,6 +1032,27 @@ assert_eq!(format!("{}", matrix_formatter),
 
 This paper suggests the first two and encourages research into the third.
 
+### `std::format_join`
+
+If we're not going to support [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in `{fmt}` already under the name `fmt::join`.
+
+It works like this:
+
+|Format String|Contents|Formatted Output|
+|-|---|---|
+|`{}`{.x}|`fmt::join(std::vector{1, 2, 3}, ", ")`|`1, 2, 3`{.x}|
+|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, ", ")`|`[1, 2, 3]`{.x}|
+|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, "--")`|`[1--2--3]`{.x}|
+|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, "--"s)`|`[1--2--3]`{.x}|
+|`{:x}`{.x}|`fmt::join(std::vector{10, 20, 30}, ":")`|`a:14:1e`{.x}|
+|`{:#04X}`{.x}|`fmt::join(std::vector{10, 20, 30}, ":")`|`0X0A:0X14:0X1E`{.x}|
+|`{}`{.x}|`fmt::join(std::vector{"h\tllo"s, "world"s}, ", ")`|`h    llo, world`{.x}|
+|`{:?}`{.x}|`fmt::join(std::vector{"h\tllo"s, "world"s}, ", ")`|`"h\tllo", "world"`{.x}|
+
+`std::format_join` (since we already have a `std::views::join` and none of the formatting is in a `fmt` namespace) will accept a `viewable_range` of `formattable` (based on the range's `reference` type) and a delimiter which is convertible to `(w)string_view`, and produce an `std::$format-join-view$` object. That object will take as a specifier whatever the underlying type accepts, and use that result to format each element, using the provided delimiter. Unlike the default ranges formatter, strings and chars are not printed escaped/quoted: users need to provide `?` for that functionality.
+
+Note that `std::format_join` does not support pad/align/width. But it is a simpler construct to parse (for humans): the delimiter is right there with something named `join` (although the specifier is a bit further away).
+
 ## `format` or `std::cout`?
 
 Just `format` is sufficient.
@@ -1053,7 +1075,7 @@ The standard library will provide the following utilities:
 
 * A `formattable` concept.
 * A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).
-* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accepted a specifier on the tuple-like (align/pad/width) as well as a specifier for each underlying element (with a custom delimiter).
+* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map), but will not accept any specifier the underlying elements.
 * A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
 * An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes.
 
@@ -1065,13 +1087,13 @@ The standard library should add specializations of `formatter` for:
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
-* `vector<bool, Alloc>` (which formats as a range of `bool`)
+* `vector<bool, Alloc>::reference` (which formats as a `bool`)
 * all the associative maps (`map`, `multimap`, `unordered_map`, `unordered_multimap`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{k: v, k: v}` instead of `[(k, v), (k, v)]`
 * all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
 
 Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
 
-The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges and tuples get formatted. Even though this paper allows you to provide a specifier for each element in the range, it does not let you change the delimiter in the specifier (that's... a bit much), so `fmt::join` is still a useful and necessary facility for that.
+The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges get formatted.
 
 ## Wording
 
