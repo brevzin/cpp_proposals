@@ -514,7 +514,7 @@ The question is, there are ultimately two ways that we could format this mac add
 ::: bq
 ```cpp
 fmt::print("{:02x}\n", fmt::join(mac, ":")); // aa:bb:cc:dd:ee:ff
-fmt::print("{:ed{}:02x}", mac, ":");         // aa:bb:cc:dd:ee:ff
+fmt::print("{:ed{}:02x}\n", mac, ":");       // aa:bb:cc:dd:ee:ff
 ```
 :::
 
@@ -526,11 +526,52 @@ Do we want to pursue:
 
 The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. Note that I'm not proposing any way of adding a static delimiter for the same reason that this paper is no longer proposing custom pair/tuple specifiers (see the [pair/tuple section](#pair-and-tuple-specifiers) and then the [static delimiter section](#static-delimiter-for-ranges)).
 
-But the dynamic delimiter approach does have the advantage that it supports more functionality. If I want to center-align the mac address and pad it with asterisks like I've been doing with every other example (for instance), that's just more specifiers as compared with another call to `format`:
+The dynamic delimiter approach is also limited to _just_ allowing `charT`, `charT const*`, and `basic_string_view<charT>` (and maybe `basic_string<charT>`) as delimiter types. The `fmt::join` approach would allow any type convertible to `basic_string_view<charT>`.
+
+But the dynamic delimiter approach has advantages too.
+
+First, it naturally nests. So if I wanted to format a _range_ of mac addresses, I can do that:
 
 ::: bq
 ```cpp
-fmt::print("{:*^23ed{}:02x}", mac, ":");                              // ***aa:bb:cc:dd:ee:ff***
+fmt::print("{:ed{}:02x}\n", one_mac, ":");     // one mac
+fmt::print("{::ed{}:02x}\n", some_macs, ":");  // range of macs
+fmt::print("{:::ed{}:02x}\n", uber_macs, ":"); // range of range of macs
+fmt::print("{:ed{}:ed{}:ed{}:02x}\n", uber_macs, "++", "**", ":");
+                                               // range of range of macs, providing all three delimiters
+```
+:::
+
+Whereas this is much more awkward with `fmt::join`:
+
+::: bq
+```cpp
+fmt::print("{:02x}\n", fmt::join(one_mac, ":")); // one mac
+fmt::print("{::02x}\n",                          // range of macs
+    some_macs | std::views::transform([](auto&& m){
+        return fmt::join(m, ":");
+    }));
+fmt::print("{:::02x}\n",                         // range of range of macs
+    uber_macs | std::views::transform([](auto&& m){
+        return m | std::views::transform([](auto&& m2){
+            return fmt::join(m2, ":");
+        });
+    }));
+fmt::print("{:02x}\n",                          // range of range of macs, providing all three delimiters
+    fmt::join(uber_macs | std::views::transform([](auto&& m){
+        return fmt::join(m | std::views::transform([](auto&& m2){
+            return fmt::join(m2, ":");
+        }), "**");
+    }),
+    "++"));
+```
+:::
+
+The dynamic delimiter approach also supports more functionality. If I want to center-align the mac address and pad it with asterisks like I've been doing with every other example (for instance), that's just more specifiers as compared with another call to `format`:
+
+::: bq
+```cpp
+fmt::print("{:*^23ed{}:02x}\n", mac, ":");                            // ***aa:bb:cc:dd:ee:ff***
 fmt::print("{:*^23}\n", fmt::format("{:02x}", fmt::join(mac, ":")));  // ***aa:bb:cc:dd:ee:ff***
 ```
 :::
@@ -648,6 +689,9 @@ Or, in code form:
 
 ::: bq
 ```cpp
+// option 1)
+fmt::print("{:ed{}:02x}", mac, "[]");      // aa[]bb[]cc[]dd[]ee[]ff
+
 // option 2) disambiguate by using ='s
 fmt::print("{:ed[=[[]]=]:02x}", mac);      // aa[]bb[]cc[]dd[]ee[]ff
 fmt::print("{:ed[==[[]]==]:02x}", mac);    // aa[]bb[]cc[]dd[]ee[]ff
@@ -662,7 +706,27 @@ fmt::print("{:ed⦕[]⦖:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
 ```
 :::
 
-All of this seems needlessly complex tho. If we have any kind of direct support for delimiter outside of `fmt::join`, dynamic delimiter surely seems sufficient.
+If we're going to go the route of static delimiter at all, option 1 seems completely sufficient: if you want to use `]` in your delimiter, you have to use dynamic delimiter. That seems like an incredibly rare choice of delimiter anyway, not nearly common enough to either pessimize the overwhelmingly common case in terms of what the specifier string looks like or to overcomplicate what the implementation has to do to make it work.
+
+Using a static delimiter, bounded by `[]`s, does end up being a few characters shorter than using a dynamic delimiter:
+
+::: bq
+```cpp
+// format a mac address
+fmt::print("{:ed{}:02x}", mac, ":");
+fmt::print("{:ed[:]:02x}", mac);
+
+// join words with a space
+fmt::print("{:d{}})", words, " ");
+fmt::print("{:d[ ]})", words);
+
+// .. or with no delimiter
+fmt::print("{:d{}})", words, "");
+fmt::print("{:d[]})", words);
+```
+:::
+
+But optimizing for length of specifier doesn't seem like the right metric here, and at this point, dynamic delimiter seems sufficient if we're going to go the route of not simply standardizing `fmt::join`. Not supporting static delimiters also might make it easier to adopt dynamic brackets (since static brackets support is harder than static delimiter support).
 
 ### Examples with user-defined types
 
@@ -895,7 +959,7 @@ constexpr auto format(V&& value, FormatContext& ctx) -> typename FormatContext::
 ```
 :::
 
-There is one fundamental limitation here that is sort of inherent in the design. If the user-defined types want to reference some other argument (i.e. something like dynamic width or dynamic precision) but what that other argument to _also_ be a user-defined type (rather than just an integer or `string_view`/`char const*`), they basically cannot. User-defined types are type erased as `handle` (see [format.arg]{.sref}), and `handle` can only be formatted with a `(w)format_parse_context` - which only the implementation would have access to.
+There is one fundamental limitation here that is sort of inherent in the design. If the user-defined types want to reference some other argument (i.e. something like dynamic width or dynamic precision) but want that other argument to _also_ be a user-defined type (rather than just an integer or `string_view`/`char const*`), they basically cannot. Thta's not an option. User-defined types are type erased as `handle` (see [format.arg]{.sref}), and `handle` can only be formatted with a `(w)format_parse_context` - which only the implementation would have access to.
 
 However, if we ignore user-defined types entirely, it is straightforward to convert all the other `format_arg`s from one context to another, since we know everything about all of those types and they are all cheap to copy.
 
@@ -933,9 +997,8 @@ struct basic_format_args<basic_format_context<custom_appender<Old>, char>> {
 
     constexpr auto get(int id) const -> format_arg {
         return visit_format_arg([]<typename T>(T const& arg) -> format_arg {
-            // I'm not sure when this is ever monostate, but for any user-defined
-            // types (i.e. handle), we can't produce a valid format_arg for them
-            // so we insetad return no format arg
+            // User-defined types or out-of-range arguments can't produce any
+            // valid format_arg, so we return no format_arg
             if constexpr (std::same_as<T, typename old_args::format_arg::handle>
                         or std::same_as<T, monostate>) {
                 return format_arg();
@@ -1197,7 +1260,7 @@ For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there’s n
 
 `vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn’t offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it’s also very cheap to provide a formatter specialization for `vector<bool>::reference`.
 
-Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. Or, rather, since it’s actually defined as `vector<bool, Alloc>::reference`, this isn’t necessarily feasible, so instead this paper proposes a specialization for `vector<bool, Alloc>` at top level.
+Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. This type is actually defined as `vector<bool, Alloc>::reference`, so the wording for this aspect will be a little awkward (we'll need to provide a type trait `$is-vector-bool-reference$<R>`, etc., but this is a problem for the wording and the implementation to deal with).
 
 # Proposal
 
