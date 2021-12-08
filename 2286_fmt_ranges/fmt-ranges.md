@@ -534,11 +534,15 @@ First, it naturally nests. So if I wanted to format a _range_ of mac addresses, 
 
 ::: bq
 ```cpp
-fmt::print("{:ed{}:02x}\n", one_mac, ":");     // one mac
-fmt::print("{::ed{}:02x}\n", some_macs, ":");  // range of macs
-fmt::print("{:::ed{}:02x}\n", uber_macs, ":"); // range of range of macs
+// one mac
+fmt::print("{:ed{}:02x}\n", one_mac, ":");
+// range of macs
+fmt::print("{::ed{}:02x}\n", some_macs, ":");
+// range of range of macs
+fmt::print("{:::ed{}:02x}\n", uber_macs, ":");
+// range of range of macs, providing all three delimiters
 fmt::print("{:ed{}:ed{}:ed{}:02x}\n", uber_macs, "++", "**", ":");
-                                               // range of range of macs, providing all three delimiters
+
 ```
 :::
 
@@ -546,18 +550,22 @@ Whereas this is much more awkward with `fmt::join`:
 
 ::: bq
 ```cpp
-fmt::print("{:02x}\n", fmt::join(one_mac, ":")); // one mac
-fmt::print("{::02x}\n",                          // range of macs
+// one mac
+fmt::print("{:02x}\n", fmt::join(one_mac, ":"));
+// range of macs
+fmt::print("{::02x}\n",
     some_macs | std::views::transform([](auto&& m){
         return fmt::join(m, ":");
     }));
-fmt::print("{:::02x}\n",                         // range of range of macs
+// range of range of macs
+fmt::print("{:::02x}\n",
     uber_macs | std::views::transform([](auto&& m){
         return m | std::views::transform([](auto&& m2){
             return fmt::join(m2, ":");
         });
     }));
-fmt::print("{:02x}\n",                          // range of range of macs, providing all three delimiters
+// range of range of macs, providing all three delimiters
+fmt::print("{:02x}\n",
     fmt::join(uber_macs | std::views::transform([](auto&& m){
         return fmt::join(m | std::views::transform([](auto&& m2){
             return fmt::join(m2, ":");

@@ -1248,32 +1248,39 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>But the dynamic delimiter approach has advantages too.</p>
 <p>First, it naturally nests. So if I wanted to format a <em>range</em> of mac addresses, I can do that:</p>
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, one_mac, <span class="st">&quot;:&quot;</span><span class="op">)</span>;     <span class="co">// one mac</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{::ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, some_macs, <span class="st">&quot;:&quot;</span><span class="op">)</span>;  <span class="co">// range of macs</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:::ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, uber_macs, <span class="st">&quot;:&quot;</span><span class="op">)</span>; <span class="co">// range of range of macs</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:ed{}:ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, uber_macs, <span class="st">&quot;++&quot;</span>, <span class="st">&quot;**&quot;</span>, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
-<span id="cb22-5"><a href="#cb22-5"></a>                                               <span class="co">// range of range of macs, providing all three delimiters</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">// one mac</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, one_mac, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="co">// range of macs</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{::ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, some_macs, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="co">// range of range of macs</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:::ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, uber_macs, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb22-7"><a href="#cb22-7"></a><span class="co">// range of range of macs, providing all three delimiters</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:ed{}:ed{}:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, uber_macs, <span class="st">&quot;++&quot;</span>, <span class="st">&quot;**&quot;</span>, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>Whereas this is much more awkward with <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>:</p>
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, fmt<span class="op">::</span>join<span class="op">(</span>one_mac, <span class="st">&quot;:&quot;</span><span class="op">))</span>; <span class="co">// one mac</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{::02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,                          <span class="co">// range of macs</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a>    some_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
-<span id="cb23-4"><a href="#cb23-4"></a>        <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
-<span id="cb23-5"><a href="#cb23-5"></a>    <span class="op">}))</span>;</span>
-<span id="cb23-6"><a href="#cb23-6"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:::02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,                         <span class="co">// range of range of macs</span></span>
-<span id="cb23-7"><a href="#cb23-7"></a>    uber_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a>        <span class="cf">return</span> m <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m2<span class="op">){</span></span>
-<span id="cb23-9"><a href="#cb23-9"></a>            <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m2, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
-<span id="cb23-10"><a href="#cb23-10"></a>        <span class="op">})</span>;</span>
-<span id="cb23-11"><a href="#cb23-11"></a>    <span class="op">}))</span>;</span>
-<span id="cb23-12"><a href="#cb23-12"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,                          <span class="co">// range of range of macs, providing all three delimiters</span></span>
-<span id="cb23-13"><a href="#cb23-13"></a>    fmt<span class="op">::</span>join<span class="op">(</span>uber_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
-<span id="cb23-14"><a href="#cb23-14"></a>        <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m2<span class="op">){</span></span>
-<span id="cb23-15"><a href="#cb23-15"></a>            <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m2, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
-<span id="cb23-16"><a href="#cb23-16"></a>        <span class="op">})</span>, <span class="st">&quot;**&quot;</span><span class="op">)</span>;</span>
-<span id="cb23-17"><a href="#cb23-17"></a>    <span class="op">})</span>,</span>
-<span id="cb23-18"><a href="#cb23-18"></a>    <span class="st">&quot;++&quot;</span><span class="op">))</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="co">// one mac</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>, fmt<span class="op">::</span>join<span class="op">(</span>one_mac, <span class="st">&quot;:&quot;</span><span class="op">))</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="co">// range of macs</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{::02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb23-5"><a href="#cb23-5"></a>    some_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a>        <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb23-7"><a href="#cb23-7"></a>    <span class="op">}))</span>;</span>
+<span id="cb23-8"><a href="#cb23-8"></a><span class="co">// range of range of macs</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:::02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb23-10"><a href="#cb23-10"></a>    uber_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
+<span id="cb23-11"><a href="#cb23-11"></a>        <span class="cf">return</span> m <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m2<span class="op">){</span></span>
+<span id="cb23-12"><a href="#cb23-12"></a>            <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m2, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb23-13"><a href="#cb23-13"></a>        <span class="op">})</span>;</span>
+<span id="cb23-14"><a href="#cb23-14"></a>    <span class="op">}))</span>;</span>
+<span id="cb23-15"><a href="#cb23-15"></a><span class="co">// range of range of macs, providing all three delimiters</span></span>
+<span id="cb23-16"><a href="#cb23-16"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:02x}</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb23-17"><a href="#cb23-17"></a>    fmt<span class="op">::</span>join<span class="op">(</span>uber_macs <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m<span class="op">){</span></span>
+<span id="cb23-18"><a href="#cb23-18"></a>        <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> m2<span class="op">){</span></span>
+<span id="cb23-19"><a href="#cb23-19"></a>            <span class="cf">return</span> fmt<span class="op">::</span>join<span class="op">(</span>m2, <span class="st">&quot;:&quot;</span><span class="op">)</span>;</span>
+<span id="cb23-20"><a href="#cb23-20"></a>        <span class="op">})</span>, <span class="st">&quot;**&quot;</span><span class="op">)</span>;</span>
+<span id="cb23-21"><a href="#cb23-21"></a>    <span class="op">})</span>,</span>
+<span id="cb23-22"><a href="#cb23-22"></a>    <span class="st">&quot;++&quot;</span><span class="op">))</span>;</span></code></pre></div>
 </blockquote>
 <p>The dynamic delimiter approach also supports more functionality. If I want to center-align the mac address and pad it with asterisks like I’ve been doing with every other example (for instance), that’s just more specifiers as compared with another call to <code class="sourceCode cpp">format</code>:</p>
 <blockquote>
