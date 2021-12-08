@@ -736,6 +736,8 @@ fmt::print("{:d[]})", words);
 
 But optimizing for length of specifier doesn't seem like the right metric here, and at this point, dynamic delimiter seems sufficient if we're going to go the route of not simply standardizing `fmt::join`. Not supporting static delimiters also might make it easier to adopt dynamic brackets (since static brackets support is harder than static delimiter support).
 
+There would also be a question (that we probably need to resolve anyway) of how to implement this. Is a `formatter` allowed to keep a `string_view` into the format specifier, to be used in `format`? If we can, then at least this would be a pretty cheap operation. If we can't, that in of itself might be a reason to eschew static delimiters. Note that `{fmt}`'s implementation today does already store `string_view`s to the format specifier in order to handle named arguments (which are not yet standardized), which at least suggests that this is a safe thing to do - although this should probably be clarified in the `formatter` requirements.
+
 ### Examples with user-defined types
 
 Let's say a user has a type like:
