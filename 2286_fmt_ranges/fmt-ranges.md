@@ -297,9 +297,9 @@ or
 ```
 :::
 
-While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges (as Python, Rust, and `fmt` do). Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well.
+While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges. This makes it obvious what the actual elements of the range and tuple are even when the string/char contains characters like comma or space. Python, Rust, and `fmt` all do this. Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well.
 
-Escaping seems like the most desirable behavior. Following Rust's behavior, we escape `\t`, `\r`, `\n`, `\\`, `"` (for `string` types only), `'` (for `char` types only), and extended graphemes (if Unicode).
+Escaping is the most desirable default behavior, and the specific escaping behavior is described [here](#escaping-behavior).
 
 Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior for their own string-like types? And `char` and `string` aren't the only types that may desire to have some kind of _debug_ format and some kind of regular format, how to differentiate those?
 
@@ -524,9 +524,9 @@ Do we want to pursue:
 2. Just dynamic delimiter?
 3. Both?
 
-The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. Note that I'm not proposing any way of adding a static delimiter for the same reason that this paper is no longer proposing custom pair/tuple specifiers (see the [pair/tuple section](#pair-and-tuple-specifiers) and then the [static delimiter section](#static-delimiter-for-ranges)).
+The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. I'll discuss [static delimiters](#static-delimiter-for-ranges) shortly.
 
-The dynamic delimiter approach is also limited to _just_ allowing `charT`, `charT const*`, and `basic_string_view<charT>` (and maybe `basic_string<charT>`) as delimiter types. The `fmt::join` approach would allow any type convertible to `basic_string_view<charT>`.
+The dynamic delimiter approach is also limited to _just_ allowing `charT`, `charT const*`, and `basic_string_view<charT>` (and maybe `basic_string<charT>`) as delimiter types. The `fmt::join` approach would allow any type convertible to `basic_string_view<charT>`. This is a consequence of `fmt::join` being a function that accepts a `string_view` argument, while going through `format` directly can't do any sort of conversions - we have to use the type-erased arguments, and we simply cannot know if some user-defined type would have been convertible to `string_view`.
 
 But the dynamic delimiter approach has advantages too.
 
@@ -588,79 +588,9 @@ And the other advantage is that it's one less thing to have to specify. And part
 
 To be honest, I'm not sure what the right answer is here.
 
-#### Pair and Tuple Specifiers
-
-This is the hard part.
-
-To start with, we for consistency will support the same fill/align/width specifiers as usual.
-
-For ranges, we can have the underlying element's `formatter` simply parse the whole format specifier string from the character past the `:` to the `}`. The range doesn't care anymore at that point, and what we're left with is a specifier that the underlying element should understand (or not).
-
-But for `pair`, it's not so easy, because format strings can contain _anything_. Absolutely anything. So when trying to parse a format specifier for a `pair<X, Y>`, how do you know where `X`'s format specifier ends and `Y`'s format specifier begins? This is, in general, impossible.
-
-In [@P2286R3], this paper used Tim's insight to take a page out of `sed`'s book and rely on the user providing the specifier string to actually know what they're doing, and thus provide their own delimiter. `pair` will recognize the first character that is not one of its formatters as the delimiter, and then delimit based on that. This previous revision had proposed the following:
-
-|Format String|Contents|Formatted Output|
-|-|----|----|
-|`{}`{.x}|`pair(10, 1729)`|`(10, 1729)`{.x}|
-|`{:}`{.x}|`pair(10, 1729)`|`(10, 1729)`{.x}|
-|`{::#x:04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
-|`{:|#x|04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
-|`{:Y#xY04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
-
-The last three rows are equivalent, the difference is which character is used to delimit the specifiers: `:` or `|` or `Y`.
-
-This approach, while technically functional, still leaves something to be desired. For one thing, these examples are already difficult to read and I haven't even shown any additional nesting. We're using to nested parentheses, brackets, or braces, but there's nothing visually nested here. And it's not even clear how to do something like that anyway. Several people expressed a desire to have a delimiter language that at least has some concept of nesting built-in - such as naturally-nesting punctuation like`()`s, `[]`s, or `{}s` (Unicode has plenty of other pairs of open/close characters. I could revisit my Russian roots with `«` and `»`, or use something prettier like `⦕` and `⦖`).
-
-The point, ultimately, is that it is difficult to comme up with a format specifier syntax that works _at all_ in the presence of types that can use arbitrary characters in their specifiers. Like formatting `std::chrono::system_clock::now()`:
-
-|Format String|Formatted Output|
-|-|----|
-|`{}`|`2021-10-24 20:33:37`{.x}|
-|`{:%Y-%m-%d}`|`2021-10-24`{.x}|
-|`{:%H:%M:%S}`|`20:33:37`{.x}|
-|`{:%H hours, %M minutes, %S seconds}`|`20 hours, 33 minutes, 37 seconds`{.x}|
-
-Because there is reasonable concern about the complexity of the initially proposed solution, and because there doesn't seem to be a lot of demand for actually being able to do this, in contrast to the very clear and present demand of being able to format pairs and tuples simply by default - this revision of this paper is withdrawing this part of the proposal in an effort to get the rest of the paper in for C++23.
-
-To summarize: `std::pair` and `std::tuple` will only support:
-
-* the fill/align/width specifiers from _std-format-spec_
-* the `?` specifier, to format as debug (which is a no-op, since it will always format as debug, since there is no opt-out provided)
-* the `m` specifier, only valid for `pair` or 2-tuple, to format as `k: v` instead of `(k, v)`
-
-
-It will additionally provide the function:
-
-::: bq
-```cpp
-void set_debug_format();
-```
-:::
-
-and `pair` and `tuple` will provide the function:
-
-::: bq
-```cpp
-void set_map_format();
-```
-:::
-
-which for `tuple` of size other than 2 will throw an exception (since you cannot format those as a map). To clarify the map specifier:
-
-|Format String|Contents|Formatted Output|
-|-|----|----|
-|`{}`|`pair(1, 2)`|`(1, 2)`|
-|`{:m}`|`pair(1, 2)`|`1: 2`|
-|`{:m}`|`tuple(1, 2)`|`1: 2`|
-|`{}`|`tuple(1)`|`(1)`|
-|`{:m}`|`tuple(1)`|exception or compile error|
-|`{}`|`tuple(1, 2, "3"s)`|`(1, 2, "3")`|
-|`{:m}`|`tuple(1, 2, "3"s)`|exception or compile error|
-
 #### Static Delimiter for Ranges
 
-Earlier, I showed the idea that we might be able to support:
+I just showed the idea that we might be able to support:
 
 ::: bq
 ```cpp
@@ -734,9 +664,183 @@ fmt::print("{:d[]})", words);
 ```
 :::
 
-But optimizing for length of specifier doesn't seem like the right metric here, and at this point, dynamic delimiter seems sufficient if we're going to go the route of not simply standardizing `fmt::join`. Not supporting static delimiters also might make it easier to adopt dynamic brackets (since static brackets support is harder than static delimiter support).
+But optimizing for length of specifier doesn't seem like the right metric here, and at this point, dynamic delimiter seems sufficient if we're going to go the route of not simply standardizing `fmt::join`. Not supporting static delimiters also might make it easier to adopt dynamic brackets (since static brackets support is harder than static delimiter support, `]` is actually a pretty common/reasonable close bracket even if it's not a very common/reasonable delimiter).
 
-There would also be a question of how to implement this. Is a `formatter` allowed to keep a `string_view` into the format specifier, to be used in `format`? If we can, then at least this would be a pretty cheap operation. If we can't, that in of itself might be a reason to eschew static delimiters. Note that `{fmt}`'s implementation today does already store `string_view`s to the format specifier in order to handle named arguments (which are not yet standardized), which at least suggests that this is a safe thing to do - although this should probably be clarified in the `formatter` requirements regardless of whether we pursue static delimiters (since just because we don't in this context, doesn't mean that users won't want to for their own types).
+There would also be a question of how to implement this. Is a `formatter` allowed to keep a `string_view` into the format specifier ([@LWG3651]), to be used in `format`? If we can, then at least this would be a pretty cheap operation. If we can't, that in of itself might be a reason to eschew static delimiters. Note that `{fmt}`'s implementation today does already store `string_view`s to the format specifier in order to handle named arguments (which are not yet standardized), which at least suggests that this is a safe thing to do - although this should probably be clarified in the `formatter` requirements regardless of whether we pursue static delimiters (since just because we don't in this context, doesn't mean that users won't want to for their own types).
+
+
+A more complete example from my own code base, where in some contexts we have a type like `span<unsigned char>` we want to print in both hex and ascii. The three different levels of functionality there are:
+
+::: bq
+```cpp
+// use fmt::join
+fmt::print("{:#04x}: \"{}\"\n",
+    fmt::join(data, ","),
+    fmt::join(data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }), ""));
+
+// use dynamic delimiter
+fmt::print("{:d{}:#04x} \"{:ed{}:}\"\n",
+    data,
+    ",",
+    data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }),
+    "");
+
+// use static delimiter
+fmt::print("{:d[,]:#04x} \"{:ed[]:}\"\n",
+    data,
+    data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }));
+```
+:::
+
+Although with this particular example, this paper provides a better way to print the second part of this. We're producing a range of `char` and we want to print it with no delimiter and quoted. That's `{:s}`. So really the right way to present these levels are:
+
+::: bq
+```cpp
+// use fmt::join
+fmt::print("{:#04x}: {:s}\n",
+    fmt::join(data, ","),
+    data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }));
+
+// use dynamic delimiter
+fmt::print("{:d{}:#04x} {:s}\n",
+    data,
+    ",",
+    data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }));
+
+// use static delimiter
+fmt::print("{:d[,]:#04x} {:s}\n",
+    data,
+    data | views::transform([](unsigned char c){
+        return std::isprint(c) ? (char)c : '.';
+    }));
+```
+:::
+
+
+
+
+#### Pair and Tuple Specifiers
+
+This is the hard part.
+
+To start with, we for consistency will support the same fill/align/width specifiers as usual.
+
+For ranges, we can have the underlying element's `formatter` simply parse the whole format specifier string from the character past the `:` to the `}`. The range doesn't care anymore at that point, and what we're left with is a specifier that the underlying element should understand (or not).
+
+But for `pair`, it's not so easy, because format strings can contain _anything_. Absolutely anything. So when trying to parse a format specifier for a `pair<X, Y>`, how do you know where `X`'s format specifier ends and `Y`'s format specifier begins? This is, in general, impossible.
+
+In [@P2286R3], this paper used Tim's insight to take a page out of `sed`'s book and rely on the user providing the specifier string to actually know what they're doing, and thus provide their own delimiter. `pair` will recognize the first character that is not one of its formatters as the delimiter, and then delimit based on that. This previous revision had proposed the following:
+
+|Format String|Contents|Formatted Output|
+|-|----|----|
+|`{}`{.x}|`pair(10, 1729)`|`(10, 1729)`{.x}|
+|`{:}`{.x}|`pair(10, 1729)`|`(10, 1729)`{.x}|
+|`{::#x:04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
+|`{:|#x|04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
+|`{:Y#xY04X}`{.x}|`pair(10, 1729)`|`(0xa, 06C1)`{.x}|
+
+The last three rows are equivalent, the difference is which character is used to delimit the specifiers: `:` or `|` or `Y`.
+
+This approach, while technically functional, still leaves something to be desired. For one thing, these examples are already difficult to read and I haven't even shown any additional nesting. We're using to nested parentheses, brackets, or braces, but there's nothing visually nested here. And it's not even clear how to do something like that anyway. Several people expressed a desire to have a delimiter language that at least has some concept of nesting built-in - such as naturally-nesting punctuation like`()`s, `[]`s, or `{}s` (Unicode has plenty of other pairs of open/close characters. I could revisit my Russian roots with `«` and `»`, or use something prettier like `⦕` and `⦖`).
+
+The point, ultimately, is that it is difficult to comme up with a format specifier syntax that works _at all_ in the presence of types that can use arbitrary characters in their specifiers. Like formatting `std::chrono::system_clock::now()`:
+
+|Format String|Formatted Output|
+|-|----|
+|`{}`|`2021-10-24 20:33:37`{.x}|
+|`{:%Y-%m-%d}`|`2021-10-24`{.x}|
+|`{:%H:%M:%S}`|`20:33:37`{.x}|
+|`{:%H hours, %M minutes, %S seconds}`|`20 hours, 33 minutes, 37 seconds`{.x}|
+
+Because there is reasonable concern about the complexity of the initially proposed solution, and because there doesn't seem to be a lot of demand for actually being able to do this, in contrast to the very clear and present demand of being able to format pairs and tuples simply by default - this revision of this paper is withdrawing this part of the proposal in an effort to get the rest of the paper in for C++23.
+
+To summarize: `std::pair` and `std::tuple` will only support:
+
+* the fill/align/width specifiers from _std-format-spec_
+* the `?` specifier, to format as debug (which is a no-op, since it will always format as debug, since there is no opt-out provided)
+* the `m` specifier, only valid for `pair` or 2-tuple, to format as `k: v` instead of `(k, v)`
+
+
+It will additionally provide the function:
+
+::: bq
+```cpp
+void set_debug_format();
+```
+:::
+
+and `pair` and `tuple` will provide the function:
+
+::: bq
+```cpp
+void set_map_format();
+```
+:::
+
+which for `tuple` of size other than 2 will throw an exception (since you cannot format those as a map). To clarify the map specifier:
+
+|Format String|Contents|Formatted Output|
+|-|----|----|
+|`{}`|`pair(1, 2)`|`(1, 2)`|
+|`{:m}`|`pair(1, 2)`|`1: 2`|
+|`{:m}`|`tuple(1, 2)`|`1: 2`|
+|`{}`|`tuple(1)`|`(1)`|
+|`{:m}`|`tuple(1)`|exception or compile error|
+|`{}`|`tuple(1, 2, "3"s)`|`(1, 2, "3")`|
+|`{:m}`|`tuple(1, 2, "3"s)`|exception or compile error|
+
+### Escaping Behavior
+
+Escaping of a string in a Unicode encoding is done by translating each code point, or a code unit if it is not a part of a valid code point, in sequence:
+
+* If a code point is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
+* Otherwise, if a code point has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code point without leading zeros.
+* Otherwise, if a code point has a Unicode property Grapheme_Extend and there are no code points preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
+* Otherwise, a code point is copied as is.
+* Otherwise, a code unit which is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
+
+The same applies to wide strings with `'...'` and `"..."` replaced with `L'...'` and `L"..."` respectively.
+
+For non-Unicode encodings an implementation-defined equivalent of Unicode properties is used.
+
+Escape rules for characters are similar except that `'\''` is escaped instead of `'"'` and `'"'` is not escaped.
+
+Examples:
+
+:::bq
+```cpp
+std::cout << std::format("{:?}", std::string("\0 \n \t \x02 \x1b ", 9));
+// Output: "\{0} \n \t \x{2} \x{1b}"
+
+std::cout << std::format("{:?}, {:?}, {:?}", " \" ' ", '"', '\'');
+// Output: " \" ' ", '"', '\''
+
+std::cout << std::format("{:?}", "\xc3\x28"); // invalid UTF-8
+// Output: "\x{c3}\x{28}"
+
+std::cout << std::format("{:?}", "\u0300"); // assuming a Unicode encoding
+// Output: "\u{300}"
+// (as opposed to "̀" with an accent on the first ")
+
+auto s = std::format("{:?}", "Привет, 🕴️!"); // assuming a Unicode encoding
+// s == "\"Привет, 🕴️!\""
+```
+:::
+
+Notes:
+
+* SG16 requested using the escape sequence format proposed by [@P2290R2], `{fmt}` uses a non-braced escape format (same as Python).
+* Grapheme_Extend part is not implemented in `{fmt}` yet.
 
 ### Examples with user-defined types
 
@@ -1277,10 +1381,10 @@ Rather than having the library provide a default fallback that lifts all the `re
 The standard library will provide the following utilities:
 
 * A `formattable` concept.
-* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range).
-* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map), but will not accept any specifier the underlying elements.
+* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/dynamic delimiter) and on the underlying element (which will be applied to every element in the range).
+* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/dynamic delimiter), but will not accept any specifier the underlying elements.
 * A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
-* An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes.
+* An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes (so that users can, if they want, write their own arbitrarily-complex pair/tuple formatting).
 
 The standard library should add specializations of `formatter` for:
 
@@ -1327,5 +1431,5 @@ references:
         - family: Barry Revzin
       issued:
         - year: 2021
-      URL: https://godbolt.org/z/Kf5G5e8xc
+      URL: https://godbolt.org/z/4q66chrP6
 ---
