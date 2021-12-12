@@ -809,7 +809,7 @@ Escaping of a string in a Unicode encoding is done by translating each code poin
 * If a code point is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
 * Otherwise, if a code point has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code point without leading zeros.
 * Otherwise, if a code point has a Unicode property Grapheme_Extend and there are no code points preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
-* Otherwise, a code unit which is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
+* Otherwise, a code unit that is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
 * Otherwise, a code point is copied as is.
 
 The same applies to wide strings with `'...'` and `"..."` replaced with `L'...'` and `L"..."` respectively.
