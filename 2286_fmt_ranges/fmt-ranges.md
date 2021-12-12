@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R4
+document: D2286R4
 date: today
 audience: LEWG
 author:
@@ -598,6 +598,8 @@ fmt::print("{:ed{}:02x}", mac, ":");  // aa:bb:cc:dd:ee:ff
 ```
 :::
 
+But practically speaking, it is extremely common to know, statically, what the delimiter is. And a lot of the time the delimiter is going to be either empty (`""`) or a single character, as opposed to the default `", "`. In these cases, having a dynamic delimiter seems like pure overhead.
+
 Now the question is, how could we do a static delimiter (i.e. built into the specifier) rather than a dynamic delimiter (i.e. provided as a format argument)? The issue here is we need bounds - the same kinds of bounds we need for pair/tuple. So a starting point might be... let's just use `[]`s. The stuff between the `[]`s is the delimiter:
 
 ::: bq
@@ -615,7 +617,9 @@ fmt::print("{:ed{}:02x}", mac, "[]"); // aa[]bb[]cc[]dd[]ee[]ff
 ```
 :::
 
-Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick brackets), we run into the problem of: what if the user actually wants to use `]` in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.
+That is, grammatically, `d{}` or `d{4}` is a dynamic delimiter (referring to the next or 5th argument, respectively), while `d[]` or `d[-]` is a static delimiter (having no delimiter and a single hyphen, respectively). This is easy enough to parse.
+
+Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick square brackets), we run into the problem of: what if the user actually wants to use `]` in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.
 
 This one does have slightly easier solutions, in that we could either:
 
@@ -726,8 +730,7 @@ fmt::print("{:d[,]:#04x} {:s}\n",
 ```
 :::
 
-
-
+Static delimiter is growing on me as a concept, but for now this paper only proposes dynamic delimiters (for both ranges and tuples).
 
 #### Pair and Tuple Specifiers
 
@@ -806,8 +809,8 @@ Escaping of a string in a Unicode encoding is done by translating each code poin
 * If a code point is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
 * Otherwise, if a code point has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code point without leading zeros.
 * Otherwise, if a code point has a Unicode property Grapheme_Extend and there are no code points preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
-* Otherwise, a code point is copied as is.
 * Otherwise, a code unit which is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
+* Otherwise, a code point is copied as is.
 
 The same applies to wide strings with `'...'` and `"..."` replaced with `L'...'` and `L"..."` respectively.
 
@@ -1431,5 +1434,5 @@ references:
         - family: Barry Revzin
       issued:
         - year: 2021
-      URL: https://godbolt.org/z/4q66chrP6
+      URL: https://godbolt.org/z/KradWP674
 ---

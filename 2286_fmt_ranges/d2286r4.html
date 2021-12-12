@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-12-11" />
+  <meta name="dcterms.date" content="2021-12-12" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P2286R4</td>
+    <td>D2286R4</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-12-11</td>
+    <td>2021-12-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1295,6 +1295,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:02x}&quot;</span>, mac, <span class="st">&quot;:&quot;</span><span class="op">)</span>;  <span class="co">// aa:bb:cc:dd:ee:ff</span></span></code></pre></div>
 </blockquote>
+<p>But practically speaking, it is extremely common to know, statically, what the delimiter is. And a lot of the time the delimiter is going to be either empty (<code class="sourceCode cpp"><span class="st">&quot;&quot;</span></code>) or a single character, as opposed to the default <code class="sourceCode cpp"><span class="st">&quot;, &quot;</span></code>. In these cases, having a dynamic delimiter seems like pure overhead.</p>
 <p>Now the question is, how could we do a static delimiter (i.e. built into the specifier) rather than a dynamic delimiter (i.e. provided as a format argument)? The issue here is we need bounds - the same kinds of bounds we need for pair/tuple. So a starting point might be… let’s just use <code class="sourceCode cpp"><span class="op">[]</span></code>s. The stuff between the <code class="sourceCode cpp"><span class="op">[]</span></code>s is the delimiter:</p>
 <blockquote>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="co">// dynamic delimiter, single colon</span></span>
@@ -1308,7 +1309,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb26-9"><a href="#cb26-9"></a><span class="co">// dynamic delimiter, brackets for whatever reason</span></span>
 <span id="cb26-10"><a href="#cb26-10"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:02x}&quot;</span>, mac, <span class="st">&quot;[]&quot;</span><span class="op">)</span>; <span class="co">// aa[]bb[]cc[]dd[]ee[]ff</span></span></code></pre></div>
 </blockquote>
-<p>Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick brackets), we run into the problem of: what if the user actually wants to use <code class="sourceCode cpp"><span class="op">]</span></code> in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.</p>
+<p>That is, grammatically, <code class="sourceCode cpp">d<span class="op">{}</span></code> or <code class="sourceCode cpp">d<span class="op">{</span><span class="dv">4</span><span class="op">}</span></code> is a dynamic delimiter (referring to the next or 5th argument, respectively), while <code class="sourceCode cpp">d<span class="op">[]</span></code> or <code class="sourceCode cpp">d<span class="op">[-]</span></code> is a static delimiter (having no delimiter and a single hyphen, respectively). This is easy enough to parse.</p>
+<p>Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick square brackets), we run into the problem of: what if the user actually wants to use <code class="sourceCode cpp"><span class="op">]</span></code> in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.</p>
 <p>This one does have slightly easier solutions, in that we could either:</p>
 <ol type="1">
 <li>Just not allow <code class="sourceCode cpp"><span class="op">]</span></code> in static delimiters, if they want to do that they have to use a dynamic one</li>
@@ -1398,6 +1400,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb30-20"><a href="#cb30-20"></a>        <span class="cf">return</span> std<span class="op">::</span>isprint<span class="op">(</span>c<span class="op">)</span> <span class="op">?</span> <span class="op">(</span><span class="dt">char</span><span class="op">)</span>c <span class="op">:</span> <span class="ch">&#39;.&#39;</span>;</span>
 <span id="cb30-21"><a href="#cb30-21"></a>    <span class="op">}))</span>;</span></code></pre></div>
 </blockquote>
+<p>Static delimiter is growing on me as a concept, but for now this paper only proposes dynamic delimiters (for both ranges and tuples).</p>
 <h4 data-number="3.2.6.5" id="pair-and-tuple-specifiers"><span class="header-section-number">3.2.6.5</span> Pair and Tuple Specifiers<a href="#pair-and-tuple-specifiers" class="self-link"></a></h4>
 <p>This is the hard part.</p>
 <p>To start with, we for consistency will support the same fill/align/width specifiers as usual.</p>
@@ -1553,8 +1556,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>If a code point is one of <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span></code> or <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code>, it is replaced with <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">t&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">r&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">n&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\\</span><span class="st">&quot;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\&quot;</span><span class="st">&quot;</span></code> respectively.</li>
 <li>Otherwise, if a code point has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">u{<em>simple-hexadecimal-digit-sequence</em>}&quot;</span></code> as proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, where <em>simple-hexadecimal-digit-sequence</em> is a hexadecimal representation of the code point without leading zeros.</li>
 <li>Otherwise, if a code point has a Unicode property Grapheme_Extend and there are no code points preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.</li>
-<li>Otherwise, a code point is copied as is.</li>
 <li>Otherwise, a code unit which is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">x{<em>simple-hexadecimal-digit-sequence</em>}&quot;</span></code> as proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, where <em>simple-hexadecimal-digit-sequence</em> is a hexadecimal representation of the code unit without leading zeros.</li>
+<li>Otherwise, a code point is copied as is.</li>
 </ul>
 <p>The same applies to wide strings with <code class="sourceCode cpp"><span class="ch">&#39;.</span><span class="er">..</span><span class="ch">&#39;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;...&quot;</span></code> replaced with <code class="sourceCode cpp"><span class="ch">L&#39;.</span><span class="er">..</span><span class="ch">&#39;</span></code> and <code class="sourceCode cpp"><span class="st">L&quot;...&quot;</span></code> respectively.</p>
 <p>For non-Unicode encodings an implementation-defined equivalent of Unicode properties is used.</p>
@@ -2093,7 +2096,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-fmt-impl">
 <p>[fmt-impl] Barry Revzin. 2021. Implementation for range formatting on top of <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>. <br />
-<a href="https://godbolt.org/z/4q66chrP6">https://godbolt.org/z/4q66chrP6</a></p>
+<a href="https://godbolt.org/z/KradWP674">https://godbolt.org/z/KradWP674</a></p>
 </div>
 <div id="ref-LWG3478">
 <p>[LWG3478] Barry Revzin. views::split drops trailing empty range. <br />
