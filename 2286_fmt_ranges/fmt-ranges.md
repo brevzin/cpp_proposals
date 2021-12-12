@@ -822,7 +822,10 @@ Examples:
 
 :::bq
 ```cpp
-std::cout << std::format("{:?}", std::string("\0 \n \t \x02 \x1b ", 9));
+std::cout << std::format("{:?}", std::string("h\tllo"));
+// Output: "h\tllo"
+
+std::cout << std::format("{:?}", std::string("\0 \n \t \x02 \x1b", 9));
 // Output: "\{0} \n \t \x{2} \x{1b}"
 
 std::cout << std::format("{:?}, {:?}, {:?}", " \" ' ", '"', '\'');
