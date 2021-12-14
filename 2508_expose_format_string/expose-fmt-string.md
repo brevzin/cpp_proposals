@@ -68,7 +68,13 @@ But we won't have `constexpr` function parameters or a hygienic macros in C++23,
 
 ## Yet another DR against C++20, are you serious?
 
-This doesn't strictly have to be a DR, and could certainly just be a C++23 feature. Although it would be nice to have sooner rather than later. At least it obviously has no ABI impact (`std::basic_format_string<char, Args...>` can just be an alias template for `std::_Ugly::_Basic_Format__Demand__More__Underscores<char, Args...>`, the original need not be renamed. Although I don't think anybody implements this yet) so I leave it up to the discretion of whether or not we ever actually want to declare C++20 complete.
+This doesn't strictly have to be a DR, and could certainly just be a C++23 feature. Although it would be nice to have sooner rather than later.
+
+Even if an implementation already ships with a `std::_Ugly::_Basic_Format__Construct__Additional__Underscores<charT, Args...>` (which Microsoft is [close to doing](https://github.com/microsoft/STL/pull/2221/), with a slightly more reasonable ugly name), they can still provide the new names (`std::basic_format_string`, `std::format_string`, and `std::wformat_string`) without having to worry about ABI, since these are templates. Or we could ask Charlie very nicely to simply rename `_Basic_format_string` to `basic_format_string` as that PR is going out the door.
+
+Either way, it would be nice to avoid specifying `std::basic_format_string` as an alias to `std::$basic-format-string$` (which, technically, is an option, and obviously has no ABI impact or take much implementation effort at all). That would be weird, but probably not even particularly notably weird.
+
+I leave it up to the discretion of whether or not we ever actually want to declare C++20 complete.
 
 # Wording
 
