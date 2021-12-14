@@ -72,9 +72,9 @@ This doesn't strictly have to be a DR, and could certainly just be a C++23 featu
 
 Even if an implementation already ships with a `std::_Ugly::_Basic_Format__Construct__Additional__Underscores<charT, Args...>` (which Microsoft is [close to doing](https://github.com/microsoft/STL/pull/2221/), with a slightly more reasonable ugly name), they can still provide the new names (`std::basic_format_string`, `std::format_string`, and `std::wformat_string`) without having to worry about ABI, since these are templates. Or we could ask Charlie very nicely to simply rename `_Basic_format_string` to `basic_format_string` as that PR is going out the door.
 
-Either way, it would be nice to avoid specifying `std::basic_format_string` as an alias to `std::$basic-format-string$` (which, technically, is an option, and obviously has no ABI impact or take much implementation effort at all). That would be weird, but probably not even particularly notably weird.
+Either way, it would be nice to avoid specifying `std::basic_format_string` as an alias to `std::$basic-format-string$` (which, technically, is an option, and obviously has no ABI impact or take much implementation effort at all). That would be weird, but probably not even particularly notably weird. Note that specifying `std::basic_format_string` as a class template does prohibit implementing it as an alias template to `std::_Basic_format_string`, as this difference is observable.
 
-I leave it up to the discretion of whether or not we ever actually want to declare C++20 complete.
+I leave it up to the discretion of LEWG, Charlie, and the ghost of C++20 Past whether or not we ever actually want to declare C++20 complete.
 
 # Wording
 
