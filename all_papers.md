@@ -54,6 +54,7 @@
 - 2481 Forwarding reference to specific type/template: [p2481r0](2481_forward_ref/p2481r0.html)
 - 2484 Extending support for class types as non-type template parameters: [p2484r0](2484_extend_cnttp/p2484r0.html)
 - 2493 Missing feature test macros for C++20 core papers: [p2493r0](2493_core_feature_test/p2493r0.html)
+- 2508 Expose  <code class="sourceCode cpp">std<span class="op">::</span><em>basic-format-string</em><span class="op">&lt;</span>charT, Args<span class="op">...&gt;</span></code>: [d2508r0](2508_expose_format_string/d2508r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
