@@ -1373,7 +1373,7 @@ struct fmt::formatter<format_join_view<V>> {
         if (it != std::ranges::end(r.v)) {
             out = underlying.format(*it, ctx);
             for (++it; it != std::ranges::end(r.v); ++it) {
-                ctx.advance_to(std::ranges::copy(r.delim, out));
+                ctx.advance_to(std::ranges::copy(r.delim, out).out);
                 out = underlying.format(*it, ctx);
             }
         }
@@ -1384,7 +1384,7 @@ struct fmt::formatter<format_join_view<V>> {
 template <std::ranges::viewable_range R>
     requires formattable<std::ranges::range_reference_t<R>>
 auto format_join(R&& r, fmt::string_view delim) {
-    return format_join_view{std::views::all(FWD(r)), delim};
+    return format_join_view{std::views::all(std::forward<R>(r)), delim};
 }
 ```
 :::
