@@ -17,6 +17,7 @@ Since [@P2286R3], several major changes:
 * Removed the special `pair`/`tuple` parsing for individual elements. This proved complicated and illegible, and led to having to deal with more issues that would make this paper harder to make it for C++23.
 * Adding sections on [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges. Removing `std::format_join` in their favor.
 * Renaming `format_as_debug` to `set_debug_format` (since it's not actually _formatting_ anything, it's just setting up)
+* Explicitly deleting the formatter for `std::filesystem::path`
 
 Since [@P2286R2], several major changes:
 
@@ -304,6 +305,23 @@ Escaping is the most desirable default behavior, and the specific escaping behav
 Also, `std::string` isn't the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior for their own string-like types? And `char` and `string` aren't the only types that may desire to have some kind of _debug_ format and some kind of regular format, how to differentiate those?
 
 Moreover, it's all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings *unescaped*? I'll get back to this.
+
+### `filesystem::path`
+
+We have a paper, [@P1636R2], that proposes `formatter` specializations for a different subset of library types: `basic_streambuf`, `bitset`, `complex`, `error_code`, `filesystem::path`, `shared_ptr`, `sub_match`, `thread::id`, and `unique_ptr`. Most of those are neither ranges nor tuples, so that paper doesn't overlap with this one. Except for one: `filesystem::path`.
+
+During the [SG16 discussion of P1636](https://github.com/sg16-unicode/sg16-meetings#september-22nd-2021), they took a poll that:
+
+::: bq
+Poll 1: Recommend removing the filesystem::path formatter from P1636 "Formatters for library types", and specifically disabling filesystem::path formatting in P2286 "Formatting ranges", pending a proposal with specific design for how to format paths properly.
+
+|SF|F|A|N|SA|
+|-|-|-|-|-|
+|5|5|1|0|0|
+:::
+
+`filesystem::path` is kind of an interesting range, since it's a range of `path`. As such, checking to see if it would be formattable as this paper currently does would lead to constraint recursion anyway. If we're not going to add a direct formatter for it, via P1636, then this paper follows SG16's suggestion and proposes explicitly deleting the `filesystem::path` formatter specialization.
+
 
 ### Format Specifiers
 
@@ -1403,7 +1421,7 @@ The standard library should add specializations of `formatter` for:
 * `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<T>, remove_cvref_t<U>>`
 * `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<Ts>...>`
 
-The standard library should explicitly delete the `formatter` for `std::filesystem::path`. Formatting `path` was originally part of [@P1636R2], but in the discussion for the paper let to SG16 suggesting for now simply explicitly deleting this format specialization.
+The standard library should add as deleted `formatter` specializations for `std::filesystem::path`.
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 

@@ -577,17 +577,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#pair-and-tuple"><span class="toc-section-number">3.2.2</span> <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code><span></span></a></li>
 <li><a href="#map-and-set-and-other-associative-containers"><span class="toc-section-number">3.2.3</span> <code class="sourceCode cpp">map</code> and <code class="sourceCode cpp">set</code> (and other associative containers)<span></span></a></li>
 <li><a href="#char-and-string-and-other-string-like-types-in-ranges-or-tuples"><span class="toc-section-number">3.2.4</span> <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> (and other string-like types) in ranges or tuples<span></span></a></li>
-<li><a href="#format-specifiers"><span class="toc-section-number">3.2.5</span> Format Specifiers<span></span></a></li>
-<li><a href="#explanation-of-added-specifiers"><span class="toc-section-number">3.2.6</span> Explanation of Added Specifiers<span></span></a>
+<li><a href="#filesystempath"><span class="toc-section-number">3.2.5</span> <code class="sourceCode cpp">filesystem<span class="op">::</span>path</code><span></span></a></li>
+<li><a href="#format-specifiers"><span class="toc-section-number">3.2.6</span> Format Specifiers<span></span></a></li>
+<li><a href="#explanation-of-added-specifiers"><span class="toc-section-number">3.2.7</span> Explanation of Added Specifiers<span></span></a>
 <ul>
-<li><a href="#the-debug-specifier"><span class="toc-section-number">3.2.6.1</span> The debug specifier <code class="sourceCode cpp"><span class="op">?</span></code><span></span></a></li>
-<li><a href="#range-specifiers"><span class="toc-section-number">3.2.6.2</span> Range specifiers<span></span></a></li>
-<li><a href="#dynamic-delimiter-for-ranges"><span class="toc-section-number">3.2.6.3</span> Dynamic Delimiter for Ranges<span></span></a></li>
-<li><a href="#static-delimiter-for-ranges"><span class="toc-section-number">3.2.6.4</span> Static Delimiter for Ranges<span></span></a></li>
-<li><a href="#pair-and-tuple-specifiers"><span class="toc-section-number">3.2.6.5</span> Pair and Tuple Specifiers<span></span></a></li>
+<li><a href="#the-debug-specifier"><span class="toc-section-number">3.2.7.1</span> The debug specifier <code class="sourceCode cpp"><span class="op">?</span></code><span></span></a></li>
+<li><a href="#range-specifiers"><span class="toc-section-number">3.2.7.2</span> Range specifiers<span></span></a></li>
+<li><a href="#dynamic-delimiter-for-ranges"><span class="toc-section-number">3.2.7.3</span> Dynamic Delimiter for Ranges<span></span></a></li>
+<li><a href="#static-delimiter-for-ranges"><span class="toc-section-number">3.2.7.4</span> Static Delimiter for Ranges<span></span></a></li>
+<li><a href="#pair-and-tuple-specifiers"><span class="toc-section-number">3.2.7.5</span> Pair and Tuple Specifiers<span></span></a></li>
 </ul></li>
-<li><a href="#escaping-behavior"><span class="toc-section-number">3.2.7</span> Escaping Behavior<span></span></a></li>
-<li><a href="#examples-with-user-defined-types"><span class="toc-section-number">3.2.8</span> Examples with user-defined types<span></span></a></li>
+<li><a href="#escaping-behavior"><span class="toc-section-number">3.2.8</span> Escaping Behavior<span></span></a></li>
+<li><a href="#examples-with-user-defined-types"><span class="toc-section-number">3.2.9</span> Examples with user-defined types<span></span></a></li>
 </ul></li>
 <li><a href="#implementation-challenges"><span class="toc-section-number">3.3</span> Implementation Challenges<span></span></a>
 <ul>
@@ -616,6 +617,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Removed the special <code class="sourceCode cpp">pair</code>/<code class="sourceCode cpp">tuple</code> parsing for individual elements. This proved complicated and illegible, and led to having to deal with more issues that would make this paper harder to make it for C++23.</li>
 <li>Adding sections on <a href="#dynamic-delimiter-for-ranges">dynamic</a> and <a href="#static-delimiter-for-ranges">static</a> delimiters for ranges. Removing <code class="sourceCode cpp">std<span class="op">::</span>format_join</code> in their favor.</li>
 <li>Renaming <code class="sourceCode cpp">format_as_debug</code> to <code class="sourceCode cpp">set_debug_format</code> (since it’s not actually <em>formatting</em> anything, it’s just setting up)</li>
+<li>Explicitly deleting the formatter for <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code></li>
 </ul>
 <p>Since <span class="citation" data-cites="P2286R2">[<a href="#ref-P2286R2" role="doc-biblioref">P2286R2</a>]</span>, several major changes:</p>
 <ul>
@@ -805,7 +807,44 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Escaping is the most desirable default behavior, and the specific escaping behavior is described <a href="#escaping-behavior">here</a>.</p>
 <p>Also, <code class="sourceCode cpp">std<span class="op">::</span>string</code> isn’t the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior for their own string-like types? And <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> aren’t the only types that may desire to have some kind of <em>debug</em> format and some kind of regular format, how to differentiate those?</p>
 <p>Moreover, it’s all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings <em>unescaped</em>? I’ll get back to this.</p>
-<h3 data-number="3.2.5" id="format-specifiers"><span class="header-section-number">3.2.5</span> Format Specifiers<a href="#format-specifiers" class="self-link"></a></h3>
+<h3 data-number="3.2.5" id="filesystempath"><span class="header-section-number">3.2.5</span> <code class="sourceCode cpp">filesystem<span class="op">::</span>path</code><a href="#filesystempath" class="self-link"></a></h3>
+<p>We have a paper, <span class="citation" data-cites="P1636R2">[<a href="#ref-P1636R2" role="doc-biblioref">P1636R2</a>]</span>, that proposes <code class="sourceCode cpp">formatter</code> specializations for a different subset of library types: <code class="sourceCode cpp">basic_streambuf</code>, <code class="sourceCode cpp">bitset</code>, <code class="sourceCode cpp">complex</code>, <code class="sourceCode cpp">error_code</code>, <code class="sourceCode cpp">filesystem<span class="op">::</span>path</code>, <code class="sourceCode cpp">shared_ptr</code>, <code class="sourceCode cpp">sub_match</code>, <code class="sourceCode cpp">thread<span class="op">::</span>id</code>, and <code class="sourceCode cpp">unique_ptr</code>. Most of those are neither ranges nor tuples, so that paper doesn’t overlap with this one. Except for one: <code class="sourceCode cpp">filesystem<span class="op">::</span>path</code>.</p>
+<p>During the <a href="https://github.com/sg16-unicode/sg16-meetings#september-22nd-2021">SG16 discussion of P1636</a>, they took a poll that:</p>
+<blockquote>
+<p>Poll 1: Recommend removing the filesystem::path formatter from P1636 “Formatters for library types”, and specifically disabling filesystem::path formatting in P2286 “Formatting ranges”, pending a proposal with specific design for how to format paths properly.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>5</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p><code class="sourceCode cpp">filesystem<span class="op">::</span>path</code> is kind of an interesting range, since it’s a range of <code class="sourceCode cpp">path</code>. As such, checking to see if it would be formattable as this paper currently does would lead to constraint recursion anyway. If we’re not going to add a direct formatter for it, via P1636, then this paper follows SG16’s suggestion and proposes explicitly deleting the <code class="sourceCode cpp">filesystem<span class="op">::</span>path</code> formatter specialization.</p>
+<h3 data-number="3.2.6" id="format-specifiers"><span class="header-section-number">3.2.6</span> Format Specifiers<a href="#format-specifiers" class="self-link"></a></h3>
 <p>One of (but hardly the only) the great selling points of <code class="sourceCode cpp">format</code> over iostreams is the ability to use specifiers. For instance, from the <code class="sourceCode cpp">fmt</code> documentation:</p>
 <blockquote>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a>fmt<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:&lt;30}&quot;</span>, <span class="st">&quot;left aligned&quot;</span><span class="op">)</span>;</span>
@@ -967,8 +1006,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h3 data-number="3.2.6" id="explanation-of-added-specifiers"><span class="header-section-number">3.2.6</span> Explanation of Added Specifiers<a href="#explanation-of-added-specifiers" class="self-link"></a></h3>
-<h4 data-number="3.2.6.1" id="the-debug-specifier"><span class="header-section-number">3.2.6.1</span> The debug specifier <code class="sourceCode cpp"><span class="op">?</span></code><a href="#the-debug-specifier" class="self-link"></a></h4>
+<h3 data-number="3.2.7" id="explanation-of-added-specifiers"><span class="header-section-number">3.2.7</span> Explanation of Added Specifiers<a href="#explanation-of-added-specifiers" class="self-link"></a></h3>
+<h4 data-number="3.2.7.1" id="the-debug-specifier"><span class="header-section-number">3.2.7.1</span> The debug specifier <code class="sourceCode cpp"><span class="op">?</span></code><a href="#the-debug-specifier" class="self-link"></a></h4>
 <p><code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> and <code class="sourceCode cpp">string_view</code> will start to support the <code class="sourceCode cpp"><span class="op">?</span></code> specifier. This will cause the character/string to be printed as quoted (characters with <code class="sourceCode cpp"><span class="ch">&#39;</span></code> and strings with <code class="sourceCode cpp"><span class="st">&quot;</span></code>) and all characters to be escaped, as <a href="char-and-string-and-other-string-like-types-in-ranges-or-tuples">described earlier</a>.</p>
 <p>This facility will be generated by the formatters for these types providing an addition member function (on top of <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code>):</p>
 <blockquote>
@@ -1020,7 +1059,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-42"><a href="#cb18-42"></a>    <span class="op">}</span></span>
 <span id="cb18-43"><a href="#cb18-43"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<h4 data-number="3.2.6.2" id="range-specifiers"><span class="header-section-number">3.2.6.2</span> Range specifiers<a href="#range-specifiers" class="self-link"></a></h4>
+<h4 data-number="3.2.7.2" id="range-specifiers"><span class="header-section-number">3.2.7.2</span> Range specifiers<a href="#range-specifiers" class="self-link"></a></h4>
 <p>Range format specifiers come in two kinds: specifiers for the range itself and specifiers for the underlying elements of the range. They must be provided in order: the range specifiers (optionally), then if desired, a colon and then the underlying specifier (optionally). For instance:</p>
 <table>
 <colgroup>
@@ -1220,7 +1259,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h4 data-number="3.2.6.3" id="dynamic-delimiter-for-ranges"><span class="header-section-number">3.2.6.3</span> Dynamic Delimiter for Ranges<a href="#dynamic-delimiter-for-ranges" class="self-link"></a></h4>
+<h4 data-number="3.2.7.3" id="dynamic-delimiter-for-ranges"><span class="header-section-number">3.2.7.3</span> Dynamic Delimiter for Ranges<a href="#dynamic-delimiter-for-ranges" class="self-link"></a></h4>
 <p>Let’s say I have a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;</span></code> that I wish to format as a MAC address. That is, I want to print every element with <code class="sourceCode cpp"><span class="st">&quot;02x&quot;</span></code>, delimited with <code class="sourceCode cpp"><span class="st">&quot;:&quot;</span></code> (rather than the default <code class="sourceCode cpp"><span class="st">&quot;, &quot;</span></code>), and without the surrounding square brackets.</p>
 <p>I showed an example of how to do this earlier using <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>:</p>
 <blockquote>
@@ -1292,7 +1331,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And the other advantage is that it’s one less thing to have to specify. And part of the problem there is what to name <code class="sourceCode cpp">fmt<span class="op">::</span>join</code>? This paper has been using the name <code class="sourceCode cpp">std<span class="op">::</span>format_join</code>. Is this one of those cases that Bjarne likes to point out as people want more syntax because it’s simply novel, or is this one of those cases where the terser syntax is just inscrutable and unnecessary?</p>
 <p>I was initially torn on dynamic delimiter, but after spending even a little bit of time working with them in the contexts of this paper, I have become a big fan. I don’t actually think <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> adds anything. In <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>, formatting ranges wouldn’t accept specifiers for each element, so <code class="sourceCode cpp">join</code> there solved two problems: adding element-specific specifiers and a custom delimiter. But this paper is already expanding the <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> functionality by allowing specifiers in direct range formatting, adding delimiters there seems in line with that further enhancement.</p>
 <p>In fact, we can even go further…</p>
-<h4 data-number="3.2.6.4" id="static-delimiter-for-ranges"><span class="header-section-number">3.2.6.4</span> Static Delimiter for Ranges<a href="#static-delimiter-for-ranges" class="self-link"></a></h4>
+<h4 data-number="3.2.7.4" id="static-delimiter-for-ranges"><span class="header-section-number">3.2.7.4</span> Static Delimiter for Ranges<a href="#static-delimiter-for-ranges" class="self-link"></a></h4>
 <p>I just showed the idea that we might be able to support:</p>
 <blockquote>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a>fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{:ed{}:02x}&quot;</span>, mac, <span class="st">&quot;:&quot;</span><span class="op">)</span>;  <span class="co">// aa:bb:cc:dd:ee:ff</span></span></code></pre></div>
@@ -1403,7 +1442,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb30-21"><a href="#cb30-21"></a>    <span class="op">}))</span>;</span></code></pre></div>
 </blockquote>
 <p>Static delimiter is limited by the fact that the delimiter must be static, so it cannot be the whole solution the problem. But it <em>is</em> a good solution to the common case where the delimiter is statically known. When it’s not (or based on user preference or other considerations), dynamic delimiter will be available as a fallback. Between these two options, that covers the complete set of functionality that <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> provides under <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> (in fact, more than complete).</p>
-<h4 data-number="3.2.6.5" id="pair-and-tuple-specifiers"><span class="header-section-number">3.2.6.5</span> Pair and Tuple Specifiers<a href="#pair-and-tuple-specifiers" class="self-link"></a></h4>
+<h4 data-number="3.2.7.5" id="pair-and-tuple-specifiers"><span class="header-section-number">3.2.7.5</span> Pair and Tuple Specifiers<a href="#pair-and-tuple-specifiers" class="self-link"></a></h4>
 <p>This is the hard part.</p>
 <p>To start with, we for consistency will support the same fill/align/width specifiers as usual.</p>
 <p>For ranges, we can have the underlying element’s <code class="sourceCode cpp">formatter</code> simply parse the whole format specifier string from the character past the <code class="sourceCode cpp"><span class="op">:</span></code> to the <code class="sourceCode cpp"><span class="op">}</span></code>. The range doesn’t care anymore at that point, and what we’re left with is a specifier that the underlying element should understand (or not).</p>
@@ -1552,7 +1591,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<h3 data-number="3.2.7" id="escaping-behavior"><span class="header-section-number">3.2.7</span> Escaping Behavior<a href="#escaping-behavior" class="self-link"></a></h3>
+<h3 data-number="3.2.8" id="escaping-behavior"><span class="header-section-number">3.2.8</span> Escaping Behavior<a href="#escaping-behavior" class="self-link"></a></h3>
 <p>Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence:</p>
 <ul>
 <li>If a UCS scalar value is one of <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span></code> or <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code>, it is replaced with <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">t&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">r&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">n&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\\</span><span class="st">&quot;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\&quot;</span><span class="st">&quot;</span></code> respectively.</li>
@@ -1590,7 +1629,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>SG16 requested using the escape sequence format proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> uses a non-braced escape format (same as Python).</li>
 <li>Grapheme_Extend part is not implemented in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> yet.</li>
 </ul>
-<h3 data-number="3.2.8" id="examples-with-user-defined-types"><span class="header-section-number">3.2.8</span> Examples with user-defined types<a href="#examples-with-user-defined-types" class="self-link"></a></h3>
+<h3 data-number="3.2.9" id="examples-with-user-defined-types"><span class="header-section-number">3.2.9</span> Examples with user-defined types<a href="#examples-with-user-defined-types" class="self-link"></a></h3>
 <p>Let’s say a user has a type like:</p>
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">struct</span> Foo <span class="op">{</span></span>
@@ -2088,7 +2127,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> if <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, remove_cvref_t<span class="op">&lt;</span>U<span class="op">&gt;&gt;</span></code></li>
 <li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> if all of <code class="sourceCode cpp">Ts<span class="op">...</span></code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>Ts<span class="op">&gt;...&gt;</span></code></li>
 </ul>
-<p>The standard library should explicitly delete the <code class="sourceCode cpp">formatter</code> for <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code>. Formatting <code class="sourceCode cpp">path</code> was originally part of <span class="citation" data-cites="P1636R2">[<a href="#ref-P1636R2" role="doc-biblioref">P1636R2</a>]</span>, but in the discussion for the paper let to SG16 suggesting for now simply explicitly deleting this format specialization.</p>
+<p>The standard library should add as deleted <code class="sourceCode cpp">formatter</code> specializations for <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code>.</p>
 <p>Additionally, the standard library should provide the following more specific specializations of <code class="sourceCode cpp">formatter</code>:</p>
 <ul>
 <li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> (which formats as a <code class="sourceCode cpp"><span class="dt">bool</span></code>)</li>
