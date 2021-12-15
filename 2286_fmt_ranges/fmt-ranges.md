@@ -807,13 +807,13 @@ which for `tuple` of size other than 2 will throw an exception (since you cannot
 
 ### Escaping Behavior
 
-Escaping of a string in a Unicode encoding is done by translating each code point, or a code unit if it is not a part of a valid code point, in sequence:
+Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence:
 
-* If a code point is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
-* Otherwise, if a code point has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code point without leading zeros.
-* Otherwise, if a code point has a Unicode property Grapheme_Extend and there are no code points preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
-* Otherwise, a code unit that is not a part of a valid code point is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
-* Otherwise, a code point is copied as is.
+* If a UCS scalar value is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
+* Otherwise, if a UCS scalar value has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the UCS scalar value without leading zeros.
+* Otherwise, if a UCS scalar value has a Unicode property Grapheme_Extend and there are no UCS scalar values preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
+* Otherwise, a code unit that is not a part of a valid UCS scalar value is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
+* Otherwise, a UCS scalar value is copied as is.
 
 The same applies to wide strings with `'...'` and `"..."` replaced with `L'...'` and `L"..."` respectively.
 
@@ -1402,6 +1402,8 @@ The standard library should add specializations of `formatter` for:
 * any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
 * `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<T>, remove_cvref_t<U>>`
 * `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<Ts>...>`
+
+The standard library should explicitly delete the `formatter` for `std::filesystem::path`. Formatting `path` was originally part of [@P1636R2], but in the discussion for the paper let to SG16 suggesting for now simply explicitly deleting this format specialization.
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
