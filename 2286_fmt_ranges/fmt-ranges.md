@@ -14,9 +14,9 @@ toc-depth: 4
 
 Since [@P2286R3], several major changes:
 
-* Removed the special `pair`/`tuple` parsing for individual elements. This proved complicated and illegible.
+* Removed the special `pair`/`tuple` parsing for individual elements. This proved complicated and illegible, and led to having to deal with more issues that would make this paper harder to make it for C++23.
+* Adding sections on [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges. Removing `std::format_join` in their favor.
 * Renaming `format_as_debug` to `set_debug_format` (since it's not actually _formatting_ anything, it's just setting up)
-* Adding sections on [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, as well as one for [`format_join`](#stdformat_join).
 
 Since [@P2286R2], several major changes:
 
@@ -443,7 +443,8 @@ There are only a few top-level range-specific specifiers proposed:
 * `s`: for ranges of char, only: formats the range as a string.
 * `?s` for ranges of char, only: same as `s` except will additionally quote and escape the string
 * `m`: for ranges of `pair`s (or `tuple`s of size 2) will format as `{k1: v1, k2: v2}` instead of `[(k1, v1), (k2, v2)]` (i.e. as a `map`).
-* `e`: will format without the `[]`s. This will let you, for instance, format a range as `a, b, c` or `{a, b, c}` or `(a, b, c)` or however else you want, simply by providing the desired format string.
+* `e`: will format without the brackets. This will let you, for instance, format a range as `a, b, c` or `{a, b, c}` or `(a, b, c)` or however else you want, simply by providing the desired format string. If printing a normal range, the brackets removed are `[]`. If printing as a map, the brackets removed are `{}`. If printing as a quoted string, the brackets removed are the `""`s (but escaping will still happen).
+* `d`: either a [dynamic delimiter](#dynamic-delimiter-for-ranges) or [static delimiter](#static-delimiter-for-ranges), depending on what follows the `d`. See those sections for more detail.
 
 Additionally, ranges will support the same fill/align/width specifiers as in _std-format-spec_, for convenience and consistency.
 
@@ -586,7 +587,9 @@ fmt::print("{:*^23}\n", fmt::format("{:02x}", fmt::join(mac, ":")));  // ***aa:b
 
 And the other advantage is that it's one less thing to have to specify. And part of the problem there is what to name `fmt::join`? This paper has been using the name `std::format_join`. Is this one of those cases that Bjarne likes to point out as people want more syntax because it's simply novel, or is this one of those cases where the terser syntax is just inscrutable and unnecessary?
 
-To be honest, I'm not sure what the right answer is here.
+I was initially torn on dynamic delimiter, but after spending even a little bit of time working with them in the contexts of this paper, I have become a big fan. I don't actually think `fmt::join` adds anything. In `{fmt}`, formatting ranges wouldn't accept specifiers for each element, so `join` there solved two problems: adding element-specific specifiers and a custom delimiter. But this paper is already expanding the `{fmt}` functionality by allowing specifiers in direct range formatting, adding delimiters there seems in line with that further enhancement.
+
+In fact, we can even go further...
 
 #### Static Delimiter for Ranges
 
@@ -668,7 +671,7 @@ fmt::print("{:d[]})", words);
 ```
 :::
 
-But optimizing for length of specifier doesn't seem like the right metric here, and at this point, dynamic delimiter seems sufficient if we're going to go the route of not simply standardizing `fmt::join`. Not supporting static delimiters also might make it easier to adopt dynamic brackets (since static brackets support is harder than static delimiter support, `]` is actually a pretty common/reasonable close bracket even if it's not a very common/reasonable delimiter).
+But the advantage here isn't that we're optimizing for the length of the specifier. The advantage here is that the specifier itself is sufficient to format the argument, so we _only_ have to deal with a single argument. I don't care about the four fewer characters. I do care about the one fewer argument and the locality of the delimiter.
 
 There would also be a question of how to implement this. Is a `formatter` allowed to keep a `string_view` into the format specifier ([@LWG3651]), to be used in `format`? If we can, then at least this would be a pretty cheap operation. If we can't, that in of itself might be a reason to eschew static delimiters. Note that `{fmt}`'s implementation today does already store `string_view`s to the format specifier in order to handle named arguments (which are not yet standardized), which at least suggests that this is a safe thing to do - although this should probably be clarified in the `formatter` requirements regardless of whether we pursue static delimiters (since just because we don't in this context, doesn't mean that users won't want to for their own types).
 
@@ -730,7 +733,7 @@ fmt::print("{:d[,]:#04x} {:s}\n",
 ```
 :::
 
-Static delimiter is growing on me as a concept, but for now this paper only proposes dynamic delimiters (for both ranges and tuples).
+Static delimiter is limited by the fact that the delimiter must be static, so it cannot be the whole solution the problem. But it _is_ a good solution to the common case where the delimiter is statically known. When it's not (or based on user preference or other considerations), dynamic delimiter will be available as a fallback. Between these two options, that covers the complete set of functionality that `{fmt}` provides under `fmt::join` (in fact, more than complete).
 
 #### Pair and Tuple Specifiers
 
@@ -1285,7 +1288,7 @@ There’s three layers of potential functionality:
 
 1. Top-level printing of ranges: this is `fmt::print("{}", r)`;
 
-2. A format-joiner which allows providing a a custom delimiter: this is `fmt::print("{:02x}", fmt::join(r, ":"))`. This revision of the paper allows providing a format specifier and removed in the brackets in the top-level case too, as in `fmt::print("{:e:02x}", r)`, but does not allow for providing a custom delimiter.
+2. A format-joiner which allows providing a a custom delimiter: this is provided in `{fmt}` under the spelling `fmt::print("{:02x}", fmt::join(r, ":"))`. Previous revisions of the paper sought to simply standardize this under the name `std::format_join`, but this paper has since evolved to both allow custom specifier directly to format `r` as well as now providing the ability to directly provide the delimiter. A `fmt::join`-like facility is thus not necessary and not proposed.
 
 3. A more involved version of a format-joiner which takes a delimiter and a callback that gets invoked on each element. fmt does not provide such a mechanism, though the Rust itertools library does:
 
@@ -1301,11 +1304,13 @@ assert_eq!(format!("{}", matrix_formatter),
 ```
 :::
 
-This paper suggests the first two and encourages research into the third.
+Even this example is also already solvable with the facilities suggested in this revision, as `format("{:ed[\n]:e}", matrix)` (or the `"\n"` delimiter can be provided dynamically). The one piece of flexibility _not_ provided in this revision is, in the case of formatting a range of ranges, there is currently no ability to provide a custom bracket to the inner range. You either get the default `[]`s or you can get nothing, but you have no way of providing, say... `()`s or `<>` or `⦕⦖`s or whatever. This would have to be provided by either the user writing a custom formatter for their custom type, or a future extension of this paper which explores how to do custom brackets.
+
+But given the wealth of functionality that is available, that's pretty great.
 
 ### `std::format_join`
 
-If we're not going to support [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in `{fmt}` already under the name `fmt::join`.
+If we were not going to support [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in `{fmt}` already under the name `fmt::join`.
 
 It works like this:
 
@@ -1322,7 +1327,7 @@ It works like this:
 
 `std::format_join` (since we already have a `std::views::join` and none of the formatting is in a `fmt` namespace) will accept a `viewable_range` of `formattable` (based on the range's `reference` type) and a delimiter which is convertible to `(w)string_view`, and produce an `std::$format-join-view$` object. That object will take as a specifier whatever the underlying type accepts, and use that result to format each element, using the provided delimiter. Unlike the default ranges formatter, strings and chars are not printed escaped/quoted: users need to provide `?` for that functionality.
 
-Note that `std::format_join` does not support pad/align/width. But it is a simpler construct to parse (for humans): the delimiter is right there with something named `join` (although the specifier is a bit further away). Because it only supports the underlying type's specifier, it's actually ends up being fairly straightforward to implement:
+Note that `std::format_join` does not (and cannot) support pad/align/width. But some people might prefer reading `join(r, "-")` in code over something like `d{}` with a `"-"` somewhere or `d[-]`. For those people, it is pretty straightforward to implement `fmt::join`, and that implementation is provided here (even though the paper is not proposing that we standardize this facility, because I've become convinced at this point that it is strictly worse than the static/dynamic delimiter approach that is proposed in this facility).
 
 ::: bq
 ```cpp
@@ -1350,7 +1355,7 @@ struct fmt::formatter<format_join_view<V>> {
         if (it != std::ranges::end(r.v)) {
             out = underlying.format(*it, ctx);
             for (++it; it != std::ranges::end(r.v); ++it) {
-                ctx.advance_to(std::ranges::copy(r.deilm, out));
+                ctx.advance_to(std::ranges::copy(r.delim, out));
                 out = underlying.format(*it, ctx);
             }
         }
@@ -1387,8 +1392,8 @@ Rather than having the library provide a default fallback that lifts all the `re
 The standard library will provide the following utilities:
 
 * A `formattable` concept.
-* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/dynamic delimiter) and on the underlying element (which will be applied to every element in the range).
-* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/dynamic delimiter), but will not accept any specifier the underlying elements.
+* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/static delimiter/dynamic delimiter) and on the underlying element (which will be applied to every element in the range).
+* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/static delimiter/dynamic delimiter), but will not accept any specifier the underlying elements.
 * A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
 * An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes (so that users can, if they want, write their own arbitrarily-complex pair/tuple formatting).
 
@@ -1405,8 +1410,6 @@ Additionally, the standard library should provide the following more specific sp
 * all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
 
 Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
-
-The standard library should also add a utility `std::format_join` (or any other suitable name, knowing that `std::views::join` already exists), following in the footsteps of `fmt::join`, which allows the user to provide more customization in how ranges get formatted.
 
 ## Wording
 
