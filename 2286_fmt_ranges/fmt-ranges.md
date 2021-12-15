@@ -1440,5 +1440,5 @@ references:
         - family: Barry Revzin
       issued:
         - year: 2021
-      URL: https://godbolt.org/z/KradWP674
+      URL: https://godbolt.org/z/fPs1Wxf8E
 ---
