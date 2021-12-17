@@ -1479,15 +1479,17 @@ The standard library will provide the following utilities:
 
 * A `formattable` concept.
 * A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/static delimiter/dynamic delimiter) and on the underlying element (which will be applied to every element in the range).
-* A `tuple_formatter<Ts...>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/static delimiter/dynamic delimiter), but will not accept any specifier the underlying elements.
+* A `tuple_formatter<tuple<Ts...>>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/static delimiter/dynamic delimiter), but will not accept any specifier the underlying elements.
 * A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
 * An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes (so that users can, if they want, write their own arbitrarily-complex pair/tuple formatting).
 
 The standard library should add specializations of `formatter` for:
 
 * any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
-* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<T>, remove_cvref_t<U>>`
-* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<Ts>...>`
+* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<T>, remove_cvref_t<U>>>`
+* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<Ts>...>>`
+
+Note that the `pair` and `tuple` formatters both inherit from `tuple_formatter<tuple<Ts...>>`. This is to keep the pattern of defaulting the `charT` parameter as the second parameter, which otherwise would have to be flipped and look exceedingly awkward.
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
@@ -1629,8 +1631,6 @@ template<class Context, class OutputIt>
    constexpr void flush();
  };
 ```
-:::
-
 [1]{.pnum} `$RetargetIt$` is an implementation-defined type that models `output_iterator<const typename Context::char_type&>`.
 
 ```cpp
@@ -1650,6 +1650,7 @@ constexpr void flush();
 ```
 
 [#]{.pnum} *Effects*: All of the possibly-buffered writes into `$new_context_$.out()` are written through the user-provided output iterator.
+:::
 :::
 
 ### An `end_sentry` for `parse_format_context`
@@ -1687,7 +1688,7 @@ struct formatter<TwoInts> {
 
     template <class ParseContext>
     constexpr auto parse(ParseContext& ctx) {
-        auto it = find(ctx.begin(), ctx.end(), ':');
+        auto it = find(ctx.begin(), ctx.end(), ',');
         if (it == ctx.end()) {
             throw format_error("invalid specifier");
         }
@@ -1719,7 +1720,7 @@ struct formatter<TwoInts> {
     }
 };
 
-print("{:#04x:#06x}\n", TwoInts{222, 173}); // prints (0xde, 0x00ad)
+print("{:#04x,#06x}\n", TwoInts{222, 173}); // prints (0xde, 0x00ad)
 ```
 
 -*end example*]
