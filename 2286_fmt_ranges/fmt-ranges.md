@@ -17,7 +17,7 @@ Since [@P2286R3], several major changes:
 * Removed the special `pair`/`tuple` parsing for individual elements. This proved complicated and illegible, and led to having to deal with more issues that would make this paper harder to make it for C++23.
 * Adding sections on [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges. Removing `std::format_join` in their favor.
 * Renaming `format_as_debug` to `set_debug_format` (since it's not actually _formatting_ anything, it's just setting up)
-* Explicitly deleting the formatter for `std::filesystem::path`
+* Discussing `std::filesystem::path`
 
 Since [@P2286R2], several major changes:
 
@@ -257,6 +257,39 @@ Another common and important set of types are `std::optional<T>` and `std::varia
 
 However, the point here isn't necessarily to produce the best possible representation (users who have very specific formatting needs will need to write custom code anyway), but rather to provide something useful. And it'd be useful to print these types as well. However, given that `optional` and `variant` are both less closely related to Ranges than `pair` and `tuple` and also have less obvious representation, they are less important.
 
+## Detecting whether a type is formattable
+
+We need to be able to conditionally provide formatters for generic types. `vector<T>` needs to be formattable when `T` is formattable. `pair<T, U>` needs to be formattable when `T` and `U` are formattable. In order to do this, we need to provide a proper `concept` version of the formatter requirements that we already have.
+
+This paper suggests the following:
+
+::: bq
+```cpp
+template<class T, class charT>
+concept $formattable-impl$ =
+    semiregular<formatter<T, charT>> &&
+    requires (formatter<T, charT> f,
+              const formatter<T, charT> cf,
+              T t,
+              basic_format_context<$fmt-iter-for$<charT>, charT> fc,
+              basic_format_parse_context<charT> pc) {
+        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
+        { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
+    };
+
+template<class T, class charT>
+concept formattable = $formattable-impl$<remove_cvref_t<T>, charT>;
+```
+:::
+
+
+The broad shape of this concept is just taking the Formatter requirements and turning them into code. There are a few important things to note though:
+
+* We don't specify what the iterator type is of `format_context` or `wformat_context`, the expectation is that formatters accept any iterator. As such, it is unspecified in the concept _which_ iterator will be checked - simply that it is _some_ `output_iterator<charT const&>`. Implementations could use `format_context::iterator` and `wformat_context::iterator`, or they could have a bespoke minimal iterator dedicated for concept checking.
+* `cf.format(t, fc)` is called on a `const` `formatter` (see [@LWG3636])
+* `cf.format(t, fc)` is called specifically on `T`, not a `const T`. Even if the typical formatter specialization will take its object as `const T&`. This is to handle cases like ranges that are not `const`-iterable.
+* `formattable<T const, char>` could be `true` even if you can't actually format a `T const`. I'm not sure that this will be a significant issue in practice.
+
 ## What representation?
 
 There are several questions to ask about what the representation should be for printing. I'll go through each kind in turn.
@@ -308,7 +341,9 @@ Moreover, it's all well and good to have the default formatting option for a ran
 
 ### `filesystem::path`
 
-We have a paper, [@P1636R2], that proposes `formatter` specializations for a different subset of library types: `basic_streambuf`, `bitset`, `complex`, `error_code`, `filesystem::path`, `shared_ptr`, `sub_match`, `thread::id`, and `unique_ptr`. Most of those are neither ranges nor tuples, so that paper doesn't overlap with this one. Except for one: `filesystem::path`.
+We have a paper, [@P1636R2], that proposes `formatter` specializations for a different subset of library types: `basic_streambuf`, `bitset`, `complex`, `error_code`, `filesystem::path`, `shared_ptr`, `sub_match`, `thread::id`, and `unique_ptr`. Most of those are neither ranges nor tuples, so that paper doesn't overlap with this one.
+
+Except for one: `filesystem::path`.
 
 During the [SG16 discussion of P1636](https://github.com/sg16-unicode/sg16-meetings#september-22nd-2021), they took a poll that:
 
@@ -320,8 +355,41 @@ Poll 1: Recommend removing the filesystem::path formatter from P1636 "Formatters
 |5|5|1|0|0|
 :::
 
-`filesystem::path` is kind of an interesting range, since it's a range of `path`. As such, checking to see if it would be formattable as this paper currently does would lead to constraint recursion anyway. If we're not going to add a direct formatter for it, via P1636, then this paper follows SG16's suggestion and proposes explicitly deleting the `filesystem::path` formatter specialization.
+`filesystem::path` is kind of an interesting range, since it's a range of `path`. As such, checking to see if it would be formattable as this paper currently does would lead to constraint recursion:
 
+::: bq
+```cpp
+template <range R>
+    requires formattable<range_reference_t<R>>
+struct formatter<R>
+    : range_formatter<range_reference_t<R>>
+{ };
+```
+:::
+
+For `R=filesystem::path`, `range_reference_t<R>` is also `filesystem::path`. Which means that our constraint for `formatter<fs::path>` requires `formattable<fs::path>` Looking at the [suggested concept](#detecting-whether-a-type-is-formattable), the first check we will do is to verify that `formatter<fs::path>` is `semiregular`. But we're currently in the process of instantiating `formatter<fs::path>`, it is still incomplete. Hard error.
+
+In order to handle this case properly, we could do what SG16 suggested:
+
+::: bq
+```cpp
+template <>
+struct formatter<filesystem::path>;
+```
+:::
+
+But this only handles `std::filesystem::path` and would not handle other ranges-of-self (the obvious example here is `boost::filesystem::path`). So instead, this paper proposes that we first reject ranges-of-self:
+
+::: bq
+```cpp
+template <range R>
+    requires (not same_as<remove_cvref_t<range_reference_t<R>>, R>)
+         and formattable<range_reference_t<R>>
+struct formatter<R>
+    : range_formatter<range_reference_t<R>>
+{ };
+```
+:::
 
 ### Format Specifiers
 
@@ -1298,7 +1366,7 @@ struct formatter<R> : range_formatter<range_reference_t<R>>
 ```
 :::
 
-`range_formatter` allows reducing unnecessary template instantiations. Any range of `int` is going to `parse` its specifiers the same way, there's no need to re-instantiate that code n times. Such a type will also help users to write their own formatters.
+`range_formatter` allows reducing unnecessary template instantiations. Any range of `int` is going to `parse` its specifiers the same way, there's no need to re-instantiate that code n times. Such a type will also help users to write their own formatters, since they can have a member `range_formatter<int>` to handle any range of `int` (or `int&` or `int const&`) rather than having to have a specific `formatter<my_special_range>`.
 
 ## What additional functionality?
 
@@ -1326,7 +1394,7 @@ Even this example is also already solvable with the facilities suggested in this
 
 But given the wealth of functionality that is available, that's pretty great.
 
-### `std::format_join`
+### `fmt::join`
 
 If we were not going to support [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in `{fmt}` already under the name `fmt::join`.
 
@@ -1421,8 +1489,6 @@ The standard library should add specializations of `formatter` for:
 * `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<T>, remove_cvref_t<U>>`
 * `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<remove_cvref_t<Ts>...>`
 
-The standard library should add as deleted `formatter` specializations for `std::filesystem::path`.
-
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
 * `vector<bool, Alloc>::reference` (which formats as a `bool`)
@@ -1433,7 +1499,224 @@ Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` spe
 
 ## Wording
 
-None yet, since spent all my time on implementation but nevertheless wanted to get this paper out sooner.
+The wording here is grouped by functionality added rather than linearly going through the standard text.
+
+### Concept `formattable`
+First, we need to define a user-facing concept. We need this because we need to constrain `formatter` specializations on whether the underlying elements of the `pair`/`tuple`/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we're trying to be good enough.
+
+Change [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+  // [format.formatter], formatter
+  template<class T, class charT = char> struct formatter;
+
+  // [format.parse.ctx], class template basic_format_parse_context
+  template<class charT> class basic_format_parse_context;
+  using format_parse_context = basic_format_parse_context<char>;
+  using wformat_parse_context = basic_format_parse_context<wchar_t>;
++ // [format.formattable], formattable
++ template<class T, class charT>
++   concept formattable = @*see below*@;
+  // ...
+}
+```
+:::
+
+Add a clause [format.formattable] under [format.formatter]{.sref} and likely after [formatter.requirements]{.sref}:
+
+::: bq
+::: addu
+[1]{.pnum} Let `$fmt-iter-for$<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
+```
+template<class T, class charT>
+concept $formattable-impl$ =
+    semiregular<formatter<T, charT>> &&
+    requires (formatter<T, charT> f,
+              const formatter<T, charT> cf,
+              T t,
+              basic_format_context<$fmt-iter-for$<charT>, charT> fc,
+              basic_format_parse_context<charT> pc) {
+        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
+        { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
+    };
+
+template<class T, class charT>
+concept formattable = $formattable-impl$<remove_cvref_t<T>, charT>;
+```
+[2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
+:::
+:::
+
+### Retargeting `format_context`
+
+Add to... somewhere:
+
+::: bq
+::: addu
+```
+// [format.retargeted.context]
+template<class Context, class OutputIt>
+ struct retargeted_format_context
+```
+:::
+:::
+
+And:
+
+::: bq
+::: addu
+[#]{.pnum} `retargeted_format_context` creates a new `basic_format_context` to allow for formatting into a custom buffer. [*Note*: This allows a `formatter` to change the output that a different `formatter` produces, for instance to add alignment or padding. *-end note*]
+
+[#]{.pnum} [*Example*:
+
+```cpp
+struct NoCapes {
+    string_view value;
+};
+
+template <>
+struct formatter<NoCapes> {
+    formatter<string_view> fmt;
+
+    template <class ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return fmt.parse(ctx);
+    }
+
+    template <class FormatContext>
+    auto format(NoCapes nc, FormatContext& ctx) const {
+        vector<char> edna;
+        retargeted_format_context new_ctx(ctx, back_inserter(edna));
+        fmt.format(nc.value, new_ctx.context());
+        new_ctx.flush();
+
+        erase_if(edna, [](char c){
+            constexpr string_view capes = "capes";
+            return capes.contains(c);
+        });
+
+        return copy(edna.begin(), edna.end(), ctx.out());
+    }
+};
+
+print("'{}'\n", NoCapes{"scathing concession"}); // prints 'thing onion'
+```
+
+-*end example*]
+:::
+:::
+
+And:
+
+::: bq
+::: addu
+```
+template<class Context, class OutputIt>
+ class retargeted_format_context {
+   using $RetargetIt$ = $unspecified$;
+   using $NewContext$ = basic_format_context<$RetargetIt$, typename Context::char_type>; // exposition only
+   $NewContext$ $new_context_$;                                                          // exposition only
+
+ public:
+   constexpr retargeted_format_context(Context& ctx, OutputIt it);
+
+   constexpr $NewContext$& context();
+   constexpr void flush();
+ };
+```
+:::
+
+[1]{.pnum} `$RetargetIt$` is an implementation-defined type that models `output_iterator<const typename Context::char_type&>`.
+
+```cpp
+constexpr retargeted_format_context(Context& ctx, OutputIt it);
+```
+
+[#]{.pnum} *Effects*: Initializes `$new_context_$` such that it holds the same formatting state as `ctx` and such that writing through the iterator yielded by `$new_context_$.out()` will write through `it`, possibly buffered.
+
+```cpp
+constexpr $NewContext$& context();
+```
+
+[#]{.pnum} *Returns*: `$new_context_$`.
+
+```cpp
+constexpr void flush();
+```
+
+[#]{.pnum} *Effects*: All of the possibly-buffered writes into `$new_context_$.out()` are written through the user-provided output iterator.
+:::
+
+
+### Formatter for `vector<bool>::reference`
+
+Add to [vector.syn]{.sref}
+
+::: bq
+```diff
+namespace std {
+  // [vector], class template vector
+  template<class T, class Allocator = allocator<T>> class vector;
+
+  // ...
+
+  // [vector.bool], class vector<bool>
+  template<class Allocator> class vector<bool, Allocator>;
+
++ template<class R>
++   inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@; // exposition only
+
++ template<class R, class charT> requires @*is-vector-bool-reference*@<R>
++   struct formatter<R, charT>;
+```
+:::
+
+Add to [vector.bool] at the end:
+
+::: bq
+::: addu
+```
+template<class R>
+  inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@;
+```
+[8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` is `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some type `Alloc` and `vector<bool, Alloc>` is not a program-defined specialization.
+
+```
+template<class R, class charT> requires @*is-vector-bool-reference*@<R>
+  class formatter<R, charT> {
+    formatter<bool, charT> @*fmt*@;     // exposition only
+
+  public:
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const R& ref, FormatContext& ctx) const;
+  };
+```
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[9]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const R& ref, FormatContext& ctx) const;
+```
+
+[10]{.pnum} *Effects*: Equivalent to `return @*fmt*@.format(ref, ctx);`
+:::
+:::
 
 ---
 references:
