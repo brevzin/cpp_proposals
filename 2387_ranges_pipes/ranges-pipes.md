@@ -715,7 +715,11 @@ Given an additional range adaptor closure object `D`, the expression `C | D` is 
 The expression `C | D` is well-formed if and only if the initializations of the state entities of `E` are all well-formed.
 
 ::: addu
-[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `t` is a unary function object that accepts a `range` argument, `T` models `derived_from<range_adaptor_closure<T>>`,  `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and `T` does not model `range`.
+[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `t` is a unary function object that accepts a `range` argument with the following properties:
+
+  * [?.1]{.pnum} `T` models `derived_from<range_adaptor_closure<T>>`,
+  * [?.2]{.pnum} `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and
+  * [?.3]{.pnum} `T` does not model `range`.
 
 [?]{.pnum} The behavior of a program that adds a specialization for `range_adaptor_closure` is undefined.
 
