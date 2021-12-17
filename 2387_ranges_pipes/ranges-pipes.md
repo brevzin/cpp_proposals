@@ -722,7 +722,6 @@ The expression `C | D` is well-formed if and only if the initializations of the 
   * [?.3]{.pnum} `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and
   * [?.4]{.pnum} `T` does not model `range`
 
-then the implementation ensures that `t` is a range adaptor closure object.
 
 [?]{.pnum} The template parameter `D` for `range_adaptor_closure` may be an incomplete type.
 If an expression of type *cv* `D` is used as an operand to the `|` operator, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`. The behavior of an expression involving an object of type *cv* `D` as an operand to the `|` operator is undefined if overload resolution selects a program-defined `operator|` function.
