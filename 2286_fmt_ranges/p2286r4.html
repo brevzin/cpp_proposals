@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D2286R4</td>
+    <td>P2286R4</td>
   </tr>
   <tr>
     <td>Date:</td>
@@ -611,7 +611,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#concept-formattable"><span class="toc-section-number">4.1.1</span> Concept <code class="sourceCode cpp">formattable</code><span></span></a></li>
 <li><a href="#retargeting-format_context"><span class="toc-section-number">4.1.2</span> Retargeting <code class="sourceCode cpp">format_context</code><span></span></a></li>
-<li><a href="#formatter-for-vectorboolreference"><span class="toc-section-number">4.1.3</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><span></span></a></li>
+<li><a href="#an-end_sentry-for-parse_format_context"><span class="toc-section-number">4.1.3</span> An <code class="sourceCode cpp">end_sentry</code> for <code class="sourceCode cpp">parse_format_context</code><span></span></a></li>
+<li><a href="#formatting-for-ranges"><span class="toc-section-number">4.1.4</span> Formatting for ranges<span></span></a></li>
+<li><a href="#formatting-for-pair-and-tuple"><span class="toc-section-number">4.1.5</span> Formatting for <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code><span></span></a></li>
+<li><a href="#formatter-for-vectorboolreference"><span class="toc-section-number">4.1.6</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -2190,6 +2193,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>Formatting for <code class="sourceCode cpp">string</code>, <code class="sourceCode cpp">string_view</code>, and <code class="sourceCode cpp"><span class="dt">char</span></code>/<code class="sourceCode cpp"><span class="dt">wchar_t</span></code> will gain a <code class="sourceCode cpp"><span class="op">?</span></code> specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.</p>
 <h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>This wording is very much incomplete, in the interests of time to try to get this paper in C++23.</p>
 <p>The wording here is grouped by functionality added rather than linearly going through the standard text.</p>
 <h3 data-number="4.1.1" id="concept-formattable"><span class="header-section-number">4.1.1</span> Concept <code class="sourceCode cpp">formattable</code><a href="#concept-formattable" class="self-link"></a></h3>
 <p>First, we need to define a user-facing concept. We need this because we need to constrain <code class="sourceCode cpp">formatter</code> specializations on whether the underlying elements of the <code class="sourceCode cpp">pair</code>/<code class="sourceCode cpp">tuple</code>/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we’re trying to be good enough.</p>
@@ -2304,53 +2308,216 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> flush<span class="op">()</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span> <em>Effects</em>: All of the possibly-buffered writes into <code class="sourceCode cpp"><em>new_context_</em><span class="op">.</span>out<span class="op">()</span></code> are written through the user-provided output iterator.</p>
 </blockquote>
-<h3 data-number="4.1.3" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.3</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
-<p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
+<h3 data-number="4.1.3" id="an-end_sentry-for-parse_format_context"><span class="header-section-number">4.1.3</span> An <code class="sourceCode cpp">end_sentry</code> for <code class="sourceCode cpp">parse_format_context</code><a href="#an-end_sentry-for-parse_format_context" class="self-link"></a></h3>
+<p>Add to <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span></p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb60"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb60-1"><a href="#cb60-1"></a>namespace std {</span>
-<span id="cb60-2"><a href="#cb60-2"></a>  // [vector], class template vector</span>
-<span id="cb60-3"><a href="#cb60-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
-<span id="cb60-4"><a href="#cb60-4"></a></span>
-<span id="cb60-5"><a href="#cb60-5"></a>  // ...</span>
-<span id="cb60-6"><a href="#cb60-6"></a></span>
-<span id="cb60-7"><a href="#cb60-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
-<span id="cb60-8"><a href="#cb60-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
-<span id="cb60-9"><a href="#cb60-9"></a></span>
-<span id="cb60-10"><a href="#cb60-10"></a><span class="va">+ template&lt;class R&gt;</span></span>
-<span id="cb60-11"><a href="#cb60-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
-<span id="cb60-12"><a href="#cb60-12"></a></span>
-<span id="cb60-13"><a href="#cb60-13"></a><span class="va">+ template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span></span>
-<span id="cb60-14"><a href="#cb60-14"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span></code></pre></div>
+<span id="cb60-2"><a href="#cb60-2"></a><span class="va">+ // [format.sentry]</span></span>
+<span id="cb60-3"><a href="#cb60-3"></a><span class="va">+ template &lt;typename Context&gt;</span></span>
+<span id="cb60-4"><a href="#cb60-4"></a><span class="va">+ struct end_sentry;</span></span>
+<span id="cb60-5"><a href="#cb60-5"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>And:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">1</a></span> <code class="sourceCode cpp">end_sentry</code> temporarily reduces the scope of the parse context to facilitate more complex parsing of format specifiers.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">2</a></span> [<em>Example</em>:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1"></a><span class="kw">struct</span> TwoInts <span class="op">{</span></span>
+<span id="cb61-2"><a href="#cb61-2"></a>    <span class="dt">int</span> i;</span>
+<span id="cb61-3"><a href="#cb61-3"></a>    <span class="dt">int</span> j;</span>
+<span id="cb61-4"><a href="#cb61-4"></a><span class="op">}</span>;</span>
+<span id="cb61-5"><a href="#cb61-5"></a></span>
+<span id="cb61-6"><a href="#cb61-6"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb61-7"><a href="#cb61-7"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>TwoInts<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb61-8"><a href="#cb61-8"></a>    formatter<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> fmt_i;</span>
+<span id="cb61-9"><a href="#cb61-9"></a>    formatter<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> fmt_j;</span>
+<span id="cb61-10"><a href="#cb61-10"></a></span>
+<span id="cb61-11"><a href="#cb61-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> ParseContext<span class="op">&gt;</span></span>
+<span id="cb61-12"><a href="#cb61-12"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb61-13"><a href="#cb61-13"></a>        <span class="kw">auto</span> it <span class="op">=</span> find<span class="op">(</span>ctx<span class="op">.</span>begin<span class="op">()</span>, ctx<span class="op">.</span>end<span class="op">()</span>, <span class="ch">&#39;:&#39;</span><span class="op">)</span>;</span>
+<span id="cb61-14"><a href="#cb61-14"></a>        <span class="cf">if</span> <span class="op">(</span>it <span class="op">==</span> ctx<span class="op">.</span>end<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb61-15"><a href="#cb61-15"></a>            <span class="cf">throw</span> format_error<span class="op">(</span><span class="st">&quot;invalid specifier&quot;</span><span class="op">)</span>;</span>
+<span id="cb61-16"><a href="#cb61-16"></a>        <span class="op">}</span></span>
+<span id="cb61-17"><a href="#cb61-17"></a></span>
+<span id="cb61-18"><a href="#cb61-18"></a>        <span class="op">{</span></span>
+<span id="cb61-19"><a href="#cb61-19"></a>            end_sentry _<span class="op">(</span>ctx, it<span class="op">)</span>;</span>
+<span id="cb61-20"><a href="#cb61-20"></a>            <span class="cf">if</span> <span class="op">(</span>fmt_i<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span> <span class="op">!=</span> it<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb61-21"><a href="#cb61-21"></a>                <span class="cf">throw</span> format_error<span class="op">(</span><span class="st">&quot;invalid specifier&quot;</span><span class="op">)</span>;</span>
+<span id="cb61-22"><a href="#cb61-22"></a>            <span class="op">}</span></span>
+<span id="cb61-23"><a href="#cb61-23"></a>        <span class="op">}</span></span>
+<span id="cb61-24"><a href="#cb61-24"></a></span>
+<span id="cb61-25"><a href="#cb61-25"></a>        <span class="op">++</span>it;</span>
+<span id="cb61-26"><a href="#cb61-26"></a>        ctx<span class="op">.</span>advance_to<span class="op">(</span>it<span class="op">)</span>;</span>
+<span id="cb61-27"><a href="#cb61-27"></a>        <span class="cf">return</span> fmt_j<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
+<span id="cb61-28"><a href="#cb61-28"></a>    <span class="op">}</span></span>
+<span id="cb61-29"><a href="#cb61-29"></a></span>
+<span id="cb61-30"><a href="#cb61-30"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb61-31"><a href="#cb61-31"></a>    <span class="kw">auto</span> format<span class="op">(</span>TwoInts ti, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb61-32"><a href="#cb61-32"></a>        <span class="kw">auto</span> out <span class="op">=</span> ctx<span class="op">.</span>out<span class="op">()</span>;</span>
+<span id="cb61-33"><a href="#cb61-33"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;(&#39;</span>;</span>
+<span id="cb61-34"><a href="#cb61-34"></a>        ctx<span class="op">.</span>advance_to<span class="op">(</span>out<span class="op">)</span>;</span>
+<span id="cb61-35"><a href="#cb61-35"></a>        out <span class="op">=</span> fmt_i<span class="op">.</span>format<span class="op">(</span>ti<span class="op">.</span>i, ctx<span class="op">)</span>;</span>
+<span id="cb61-36"><a href="#cb61-36"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;,&#39;</span>;</span>
+<span id="cb61-37"><a href="#cb61-37"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39; &#39;</span>;</span>
+<span id="cb61-38"><a href="#cb61-38"></a>        ctx<span class="op">.</span>advance_to<span class="op">(</span>out<span class="op">)</span>;</span>
+<span id="cb61-39"><a href="#cb61-39"></a>        out <span class="op">=</span> fmt_j<span class="op">.</span>format<span class="op">(</span>ti<span class="op">.</span>j, ctx<span class="op">)</span>;</span>
+<span id="cb61-40"><a href="#cb61-40"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;)&#39;</span>;</span>
+<span id="cb61-41"><a href="#cb61-41"></a>        <span class="cf">return</span> out;</span>
+<span id="cb61-42"><a href="#cb61-42"></a>    <span class="op">}</span></span>
+<span id="cb61-43"><a href="#cb61-43"></a><span class="op">}</span>;</span>
+<span id="cb61-44"><a href="#cb61-44"></a></span>
+<span id="cb61-45"><a href="#cb61-45"></a>print<span class="op">(</span><span class="st">&quot;{:#04x:#06x}</span><span class="sc">\n</span><span class="st">&quot;</span>, TwoInts<span class="op">{</span><span class="dv">222</span>, <span class="dv">173</span><span class="op">})</span>; <span class="co">// prints (0xde, 0x00ad)</span></span></code></pre></div>
+<p>-<em>end example</em>]</p>
+</div>
+</blockquote>
+<p>And</p>
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>template &lt;typename Context&gt;</span>
+<span id="cb62-2"><a href="#cb62-2"></a>struct end_sentry {</span>
+<span id="cb62-3"><a href="#cb62-3"></a>    Context&amp; <em>ctx</em>;                        // exposition only</span>
+<span id="cb62-4"><a href="#cb62-4"></a>    typename Context::iterator <em>real_end</em>; // exposition only</span>
+<span id="cb62-5"><a href="#cb62-5"></a></span>
+<span id="cb62-6"><a href="#cb62-6"></a>    constexpr end_sentry(Context&amp; ctx, typename Context::iterator it);</span>
+<span id="cb62-7"><a href="#cb62-7"></a>    constexpr ~end_sentry();</span>
+<span id="cb62-8"><a href="#cb62-8"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>constexpr end_sentry(Context&amp; ctx, typename Context::iterator it);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>ctx</em></code> with <code class="sourceCode cpp">ctx</code> and <code class="sourceCode cpp"><em>real_end</em></code> with <code class="sourceCode cpp">ctx<span class="op">.</span>end<span class="op">()</span></code>. Assigns <code class="sourceCode cpp">it</code> to <code class="sourceCode cpp"><em>ctx</em><span class="op">.</span><em>end_</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> <em>Mandates</em>: <code class="sourceCode cpp">Context</code> is a specialization of <code class="sourceCode cpp">basic_format_parse_context</code> that is not a program-defined specialization.</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>constexpr ~end_sentry();</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">3</a></span> <em>Effects</em>: Assigns <code class="sourceCode cpp"><em>real_end</em></code> to <code class="sourceCode cpp"><em>ctx</em><span class="op">.</span><em>end_</em></code></p>
+</div>
+</blockquote>
+<h3 data-number="4.1.4" id="formatting-for-ranges"><span class="header-section-number">4.1.4</span> Formatting for ranges<a href="#formatting-for-ranges" class="self-link"></a></h3>
+<p>Add to <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb65-1"><a href="#cb65-1"></a>namespace std {</span>
+<span id="cb65-2"><a href="#cb65-2"></a>  // ...</span>
+<span id="cb65-3"><a href="#cb65-3"></a></span>
+<span id="cb65-4"><a href="#cb65-4"></a>  // [format.formatter], formatter</span>
+<span id="cb65-5"><a href="#cb65-5"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
+<span id="cb65-6"><a href="#cb65-6"></a></span>
+<span id="cb65-7"><a href="#cb65-7"></a><span class="va">+ // [format.range], range formatter</span></span>
+<span id="cb65-8"><a href="#cb65-8"></a><span class="va">+ template&lt;class T, class charT = char&gt;</span></span>
+<span id="cb65-9"><a href="#cb65-9"></a><span class="va">+   struct range_formatter;</span></span>
+<span id="cb65-10"><a href="#cb65-10"></a><span class="va">+</span></span>
+<span id="cb65-11"><a href="#cb65-11"></a><span class="va">+ template&lt;ranges::range R, class charT&gt;</span></span>
+<span id="cb65-12"><a href="#cb65-12"></a><span class="va">+         requires (not same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
+<span id="cb65-13"><a href="#cb65-13"></a><span class="va">+           &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
+<span id="cb65-14"><a href="#cb65-14"></a><span class="va">+   struct formatter&lt;R, charT&gt;</span></span>
+<span id="cb65-15"><a href="#cb65-15"></a><span class="va">+     : range_formatter&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
+<span id="cb65-16"><a href="#cb65-16"></a><span class="va">+   { };</span></span>
+<span id="cb65-17"><a href="#cb65-17"></a></span>
+<span id="cb65-18"><a href="#cb65-18"></a>  // ...</span>
+<span id="cb65-19"><a href="#cb65-19"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.1.5" id="formatting-for-pair-and-tuple"><span class="header-section-number">4.1.5</span> Formatting for <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code><a href="#formatting-for-pair-and-tuple" class="self-link"></a></h3>
+<p>Add to <span>20.2.1 <a href="https://wg21.link/utility.syn">[utility.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb66-1"><a href="#cb66-1"></a>namespace std {</span>
+<span id="cb66-2"><a href="#cb66-2"></a>  // ...</span>
+<span id="cb66-3"><a href="#cb66-3"></a></span>
+<span id="cb66-4"><a href="#cb66-4"></a>  // [pairs], class template pair</span>
+<span id="cb66-5"><a href="#cb66-5"></a>  template&lt;class T1, class T2&gt;</span>
+<span id="cb66-6"><a href="#cb66-6"></a>    struct pair;</span>
+<span id="cb66-7"><a href="#cb66-7"></a></span>
+<span id="cb66-8"><a href="#cb66-8"></a><span class="va">+ template&lt;class charT, formattable&lt;charT&gt; T1, formattable&lt;charT&gt; T2&gt;</span></span>
+<span id="cb66-9"><a href="#cb66-9"></a><span class="va">+   struct formatter&lt;pair&lt;T1, T2&gt;, charT&gt;</span></span>
+<span id="cb66-10"><a href="#cb66-10"></a><span class="va">+     : tuple_formatter&lt;tuple&lt;remove_cvref_t&lt;T1&gt;, remove_cvref_t&lt;T2&gt;, charT&gt;</span></span>
+<span id="cb66-11"><a href="#cb66-11"></a><span class="va">+   { };</span></span>
+<span id="cb66-12"><a href="#cb66-12"></a></span>
+<span id="cb66-13"><a href="#cb66-13"></a>  // ...</span>
+<span id="cb66-14"><a href="#cb66-14"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add to <span>20.5.2 <a href="https://wg21.link/tuple.syn">[tuple.syn]</a></span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb67-1"><a href="#cb67-1"></a>#include &lt;compare&gt;              // see [compare.syn]</span>
+<span id="cb67-2"><a href="#cb67-2"></a></span>
+<span id="cb67-3"><a href="#cb67-3"></a>namespace std {</span>
+<span id="cb67-4"><a href="#cb67-4"></a>  // [tuple.tuple], class template tuple</span>
+<span id="cb67-5"><a href="#cb67-5"></a>  template&lt;class... Types&gt;</span>
+<span id="cb67-6"><a href="#cb67-6"></a>    class tuple;</span>
+<span id="cb67-7"><a href="#cb67-7"></a></span>
+<span id="cb67-8"><a href="#cb67-8"></a><span class="va">+ template&lt;class charT, formattable&lt;charT&gt;... Types&gt;</span></span>
+<span id="cb67-9"><a href="#cb67-9"></a><span class="va">+   struct formatter&lt;tuple&lt;Types...&gt;, charT&gt;</span></span>
+<span id="cb67-10"><a href="#cb67-10"></a><span class="va">+     : tuple_formatter&lt;tuple&lt;remove_cvref_t&lt;Types&gt;...&gt;, charT&gt;</span></span>
+<span id="cb67-11"><a href="#cb67-11"></a><span class="va">+   { };</span></span>
+<span id="cb67-12"><a href="#cb67-12"></a></span>
+<span id="cb67-13"><a href="#cb67-13"></a>  // ...</span>
+<span id="cb67-14"><a href="#cb67-14"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add to <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb68-1"><a href="#cb68-1"></a>namespace std {</span>
+<span id="cb68-2"><a href="#cb68-2"></a>  // ...</span>
+<span id="cb68-3"><a href="#cb68-3"></a></span>
+<span id="cb68-4"><a href="#cb68-4"></a>  // [format.formatter], formatter</span>
+<span id="cb68-5"><a href="#cb68-5"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
+<span id="cb68-6"><a href="#cb68-6"></a></span>
+<span id="cb68-7"><a href="#cb68-7"></a><span class="va">+ // [format.tuple], range formatter</span></span>
+<span id="cb68-8"><a href="#cb68-8"></a><span class="va">+ template&lt;class Tuple, class charT = char&gt;</span></span>
+<span id="cb68-9"><a href="#cb68-9"></a><span class="va">+   struct tuple_formatter;</span></span>
+<span id="cb68-10"><a href="#cb68-10"></a></span>
+<span id="cb68-11"><a href="#cb68-11"></a>  // ...</span>
+<span id="cb68-12"><a href="#cb68-12"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.1.6" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.6</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
+<p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb69-1"><a href="#cb69-1"></a>namespace std {</span>
+<span id="cb69-2"><a href="#cb69-2"></a>  // [vector], class template vector</span>
+<span id="cb69-3"><a href="#cb69-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
+<span id="cb69-4"><a href="#cb69-4"></a></span>
+<span id="cb69-5"><a href="#cb69-5"></a>  // ...</span>
+<span id="cb69-6"><a href="#cb69-6"></a></span>
+<span id="cb69-7"><a href="#cb69-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
+<span id="cb69-8"><a href="#cb69-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
+<span id="cb69-9"><a href="#cb69-9"></a></span>
+<span id="cb69-10"><a href="#cb69-10"></a><span class="va">+ template&lt;class R&gt;</span></span>
+<span id="cb69-11"><a href="#cb69-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
+<span id="cb69-12"><a href="#cb69-12"></a></span>
+<span id="cb69-13"><a href="#cb69-13"></a><span class="va">+ template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span></span>
+<span id="cb69-14"><a href="#cb69-14"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [vector.bool] at the end:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb61"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>template&lt;class R&gt;</span>
-<span id="cb61-2"><a href="#cb61-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span>
-<span id="cb62-2"><a href="#cb62-2"></a>  class formatter&lt;R, charT&gt; {</span>
-<span id="cb62-3"><a href="#cb62-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
-<span id="cb62-4"><a href="#cb62-4"></a></span>
-<span id="cb62-5"><a href="#cb62-5"></a>  public:</span>
-<span id="cb62-6"><a href="#cb62-6"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb62-7"><a href="#cb62-7"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb62-8"><a href="#cb62-8"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb62-9"><a href="#cb62-9"></a></span>
-<span id="cb62-10"><a href="#cb62-10"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb62-11"><a href="#cb62-11"></a>      typename FormatContext::iterator</span>
-<span id="cb62-12"><a href="#cb62-12"></a>        format(const R&amp; ref, FormatContext&amp; ctx) const;</span>
-<span id="cb62-13"><a href="#cb62-13"></a>  };</span></code></pre></div>
-<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb63-2"><a href="#cb63-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb63-3"><a href="#cb63-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb64-2"><a href="#cb64-2"></a>  typename FormatContext::iterator</span>
-<span id="cb64-3"><a href="#cb64-3"></a>    format(const R&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>template&lt;class R&gt;</span>
+<span id="cb70-2"><a href="#cb70-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb71-1"><a href="#cb71-1"></a>template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span>
+<span id="cb71-2"><a href="#cb71-2"></a>  class formatter&lt;R, charT&gt; {</span>
+<span id="cb71-3"><a href="#cb71-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
+<span id="cb71-4"><a href="#cb71-4"></a></span>
+<span id="cb71-5"><a href="#cb71-5"></a>  public:</span>
+<span id="cb71-6"><a href="#cb71-6"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb71-7"><a href="#cb71-7"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb71-8"><a href="#cb71-8"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb71-9"><a href="#cb71-9"></a></span>
+<span id="cb71-10"><a href="#cb71-10"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb71-11"><a href="#cb71-11"></a>      typename FormatContext::iterator</span>
+<span id="cb71-12"><a href="#cb71-12"></a>        format(const R&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb71-13"><a href="#cb71-13"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb72-2"><a href="#cb72-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb72-3"><a href="#cb72-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb73-2"><a href="#cb73-2"></a>  typename FormatContext::iterator</span>
+<span id="cb73-3"><a href="#cb73-3"></a>    format(const R&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>

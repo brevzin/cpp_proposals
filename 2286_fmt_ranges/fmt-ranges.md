@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: D2286R4
+document: P2286R4
 date: today
 audience: LEWG
 author:
@@ -1499,6 +1499,8 @@ Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` spe
 
 ## Wording
 
+This wording is very much incomplete, in the interests of time to try to get this paper in C++23.
+
 The wording here is grouped by functionality added rather than linearly going through the standard text.
 
 ### Concept `formattable`
@@ -1650,6 +1652,200 @@ constexpr void flush();
 [#]{.pnum} *Effects*: All of the possibly-buffered writes into `$new_context_$.out()` are written through the user-provided output iterator.
 :::
 
+### An `end_sentry` for `parse_format_context`
+
+Add to [format.syn]{.sref}
+
+::: bq
+```diff
+namespace std {
++ // [format.sentry]
++ template <typename Context>
++ struct end_sentry;
+}
+```
+:::
+
+And:
+
+::: bq
+::: addu
+[1]{.pnum} `end_sentry` temporarily reduces the scope of the parse context to facilitate more complex parsing of format specifiers.
+
+[#]{.pnum} [*Example*:
+
+```cpp
+struct TwoInts {
+    int i;
+    int j;
+};
+
+template <>
+struct formatter<TwoInts> {
+    formatter<int> fmt_i;
+    formatter<int> fmt_j;
+
+    template <class ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        auto it = find(ctx.begin(), ctx.end(), ':');
+        if (it == ctx.end()) {
+            throw format_error("invalid specifier");
+        }
+
+        {
+            end_sentry _(ctx, it);
+            if (fmt_i.parse(ctx) != it) {
+                throw format_error("invalid specifier");
+            }
+        }
+
+        ++it;
+        ctx.advance_to(it);
+        return fmt_j.parse(ctx);
+    }
+
+    template <class FormatContext>
+    auto format(TwoInts ti, FormatContext& ctx) const {
+        auto out = ctx.out();
+        *out++ = '(';
+        ctx.advance_to(out);
+        out = fmt_i.format(ti.i, ctx);
+        *out++ = ',';
+        *out++ = ' ';
+        ctx.advance_to(out);
+        out = fmt_j.format(ti.j, ctx);
+        *out++ = ')';
+        return out;
+    }
+};
+
+print("{:#04x:#06x}\n", TwoInts{222, 173}); // prints (0xde, 0x00ad)
+```
+
+-*end example*]
+:::
+:::
+
+And
+
+::: bq
+::: addu
+```
+template <typename Context>
+struct end_sentry {
+    Context& $ctx$;                        // exposition only
+    typename Context::iterator $real_end$; // exposition only
+
+    constexpr end_sentry(Context& ctx, typename Context::iterator it);
+    constexpr ~end_sentry();
+};
+```
+
+```
+constexpr end_sentry(Context& ctx, typename Context::iterator it);
+```
+[1]{.pnum} *Effects*: Initializes `$ctx$` with `ctx` and `$real_end$` with `ctx.end()`. Assigns `it` to `$ctx$.$end_$`.
+
+[2]{.pnum} *Mandates*: `Context` is a specialization of `basic_format_parse_context` that is not a program-defined specialization.
+
+```
+constexpr ~end_sentry();
+```
+
+[#]{.pnum} *Effects*: Assigns `$real_end$` to `$ctx$.$end_$`
+:::
+:::
+
+### Formatting for ranges
+
+Add to [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [format.formatter], formatter
+  template<class T, class charT = char> struct formatter;
+
++ // [format.range], range formatter
++ template<class T, class charT = char>
++   struct range_formatter;
++
++ template<ranges::range R, class charT>
++         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
++           && formattable<ranges::range_reference_t<R>, charT>
++   struct formatter<R, charT>
++     : range_formatter<ranges::range_reference_t<R>, charT>
++   { };
+
+  // ...
+}
+```
+:::
+
+### Formatting for `pair` and `tuple`
+
+Add to [utility.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [pairs], class template pair
+  template<class T1, class T2>
+    struct pair;
+
++ template<class charT, formattable<charT> T1, formattable<charT> T2>
++   struct formatter<pair<T1, T2>, charT>
++     : tuple_formatter<tuple<remove_cvref_t<T1>, remove_cvref_t<T2>, charT>
++   { };
+
+  // ...
+}
+```
+:::
+
+Add to [tuple.syn]{.sref}
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+
+namespace std {
+  // [tuple.tuple], class template tuple
+  template<class... Types>
+    class tuple;
+
++ template<class charT, formattable<charT>... Types>
++   struct formatter<tuple<Types...>, charT>
++     : tuple_formatter<tuple<remove_cvref_t<Types>...>, charT>
++   { };
+
+  // ...
+}
+```
+:::
+
+Add to [format.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+
+  // [format.formatter], formatter
+  template<class T, class charT = char> struct formatter;
+
++ // [format.tuple], range formatter
++ template<class Tuple, class charT = char>
++   struct tuple_formatter;
+
+  // ...
+}
+```
+:::
 
 ### Formatter for `vector<bool>::reference`
 
