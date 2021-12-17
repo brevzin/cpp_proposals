@@ -794,7 +794,7 @@ Bump the value of `__cpp_lib_ranges` and introduce a new `__cpp_lib_bind_back` i
 
 ```diff
   // ...
-+ #define __cpp_­lib_­bind_back                         2021XXL // also in <functional>
++ #define __cpp_­lib_­bind_back                         2022XXL // also in <functional>
   #define __cpp_­lib_­bind_­front                        201907L // also in <functional>
   // ...
 - #define __cpp_lib_ranges                            @[202106L]{.diffdel}@
