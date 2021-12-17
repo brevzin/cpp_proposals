@@ -2,7 +2,7 @@
 title: "Pipe support for user-defined range adaptors"
 document: P2387R3
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -715,18 +715,21 @@ Given an additional range adaptor closure object `D`, the expression `C | D` is 
 The expression `C | D` is well-formed if and only if the initializations of the state entities of `E` are all well-formed.
 
 ::: addu
-[?]{.pnum} An object `t` of type `T` is a range adaptor closure object if `t` is a unary function object that accepts a `range` argument with the following properties:
+[?]{.pnum} Given an object `t` of type `T`, where
 
-  * [?.1]{.pnum} `T` models `derived_from<range_adaptor_closure<T>>`,
-  * [?.2]{.pnum} `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and
-  * [?.3]{.pnum} `T` does not model `range`.
+  * [?.1]{.pnum} `t` is a unary function object that accepts a `range` argument,
+  * [?.2]{.pnum} `T` models `derived_from<range_adaptor_closure<T>>`,
+  * [?.3]{.pnum} `T` has no other base classes of type `range_adaptor_closure<U>` for any other type `U`, and
+  * [?.4]{.pnum} `T` does not model `range`
 
-[?]{.pnum} The behavior of a program that adds a specialization for `range_adaptor_closure` is undefined.
+then the implementation ensures that `t` is a range adaptor closure object.
 
 [?]{.pnum} The template parameter `D` for `range_adaptor_closure` may be an incomplete type.
-Before any expression of type *cv* `D` appears as an operand to the `|` operator, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`. The behavior of an expression involving an object of type *cv* `D` as an operand to the `|` operator is undefined if overload resolution selects a program-defined `operator|` function.
+If an expression of type *cv* `D` is used as an operand to the `|` operator, `D` shall be complete and model `derived_from<range_adaptor_closure<D>>`. The behavior of an expression involving an object of type *cv* `D` as an operand to the `|` operator is undefined if overload resolution selects a program-defined `operator|` function.
 
-[?]{.pnum} If an expression of type *cv* `U` is used as an operand to the `|` operator, where `U` has a base class of type `range_adaptor_closure<T>` for some `T` other than `U`, the behavior is undefined.
+[?]{.pnum} If an expression of type *cv* `U` is used as an operand to the `|` operator, where `U` has a base class of type `range_adaptor_closure<T>` for some type `T` other than `U`, the behavior is undefined.
+
+[?]{.pnum} The behavior of a program that adds a specialization for `range_adaptor_closure` is undefined.
 :::
 :::
 
@@ -795,7 +798,7 @@ Bump the value of `__cpp_lib_ranges` and introduce a new `__cpp_lib_bind_back` i
   #define __cpp_­lib_­bind_­front                        201907L // also in <functional>
   // ...
 - #define __cpp_lib_ranges                            @[202106L]{.diffdel}@
-+ #define __cpp_lib_ranges                            @[2021XXL]{.diffins}@
++ #define __cpp_lib_ranges                            @[2022XXL]{.diffins}@
     // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
 ```
 
