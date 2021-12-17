@@ -1,6 +1,6 @@
 ---
 title: "Expose `std::$basic-format-string$<charT, Args...>`"
-document: D2508R0
+document: P2508R0
 date: today
 audience: LEWG
 author:
