@@ -55,7 +55,7 @@ None.
 - [p1169r3 - static `operator()`](1169_static_call/p1169r3.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
-- [p2387r2 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r2.html).
+- [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
 
 ### Pending EWG/LEWG Review
 
@@ -86,6 +86,8 @@ None.
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2481r0 - Forwarding reference to specific type/template](2481_forward_ref/forward-ref.md).
+- [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
+- [p2508r0 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r0.html)
 
 ### Rejected
 
