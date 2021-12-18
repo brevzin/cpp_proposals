@@ -1563,7 +1563,7 @@ Add to... somewhere:
 ```
 // [format.retargeted.context]
 template<class Context, class OutputIt>
- struct retargeted_format_context
+ struct retargeted_format_context;
 ```
 :::
 :::
@@ -1626,6 +1626,9 @@ template<class Context, class OutputIt>
 
  public:
    constexpr retargeted_format_context(Context& ctx, OutputIt it);
+   retargeted_format_context(retargeted_format_context&&) = delete;
+   retargeted_format_context& operator=(retargeted_format_context&&) = delete;
+   constexpr ~retargeted_format_context();
 
    constexpr $NewContext$& context();
    constexpr void flush();
@@ -1638,6 +1641,12 @@ constexpr retargeted_format_context(Context& ctx, OutputIt it);
 ```
 
 [#]{.pnum} *Effects*: Initializes `$new_context_$` such that it holds the same formatting state as `ctx` and such that writing through the iterator yielded by `$new_context_$.out()` will write through `it`, possibly buffered.
+
+```cpp
+constexpr ~retargeted_format_context();
+```
+
+[#]{.pnum} *Effects*: Calls `flush()`.
 
 ```cpp
 constexpr $NewContext$& context();
@@ -1653,21 +1662,48 @@ constexpr void flush();
 :::
 :::
 
-### An `end_sentry` for `parse_format_context`
+### An `end_sentry` for `basic_parse_format_context`
 
-Add to [format.syn]{.sref}
+In [format.parse.ctx]{.sref}:
 
 ::: bq
 ```diff
 namespace std {
-+ // [format.sentry]
-+ template <typename Context>
-+ struct end_sentry;
+  template<class charT>
+  class basic_format_parse_context {
+  public:
+    using char_type = charT;
+    using const_iterator = typename basic_string_view<charT>::const_iterator;
+    using iterator = const_iterator;
+
+  private:
+    iterator begin_;                                    // exposition only
+    iterator end_;                                      // exposition only
+    enum indexing { unknown, manual, automatic };       // exposition only
+    indexing indexing_;                                 // exposition only
+    size_t next_arg_id_;                                // exposition only
+    size_t num_args_;                                   // exposition only
+
+  public:
+    constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
+                                                  size_t num_args = 0) noexcept;
+    basic_format_parse_context(const basic_format_parse_context&) = delete;
+    basic_format_parse_context& operator=(const basic_format_parse_context&) = delete;
+
+    constexpr const_iterator begin() const noexcept;
+    constexpr const_iterator end() const noexcept;
+    constexpr void advance_to(const_iterator it);
+
+    constexpr size_t next_arg_id();
+    constexpr void check_arg_id(size_t id);
+
++   class end_sentry;
+  };
 }
 ```
 :::
 
-And:
+And later:
 
 ::: bq
 ::: addu
@@ -1694,7 +1730,7 @@ struct formatter<TwoInts> {
         }
 
         {
-            end_sentry _(ctx, it);
+            typename ParseContext::end_sentry _(ctx, it);
             if (fmt_i.parse(ctx) != it) {
                 throw format_error("invalid specifier");
             }
@@ -1732,22 +1768,23 @@ And
 ::: bq
 ::: addu
 ```
-template <typename Context>
-struct end_sentry {
-    Context& $ctx$;                        // exposition only
-    typename Context::iterator $real_end$; // exposition only
+template <typename charT>
+class basic_format_parse_context<charT>::end_sentry {
+    basic_format_parse_context& $ctx$;   // exposition only
+    iterator $real_end$;                 // exposition only
 
-    constexpr end_sentry(Context& ctx, typename Context::iterator it);
+public:
+    constexpr end_sentry(basic_format_parse_context& ctx, iterator it);
+    end_sentry(end_sentry&&) = delete;
+    end_sentry& operator=(end_sentry&&) = delete;
     constexpr ~end_sentry();
 };
 ```
 
 ```
-constexpr end_sentry(Context& ctx, typename Context::iterator it);
+constexpr end_sentry(basic_format_parse_context& ctx, iterator it);
 ```
 [1]{.pnum} *Effects*: Initializes `$ctx$` with `ctx` and `$real_end$` with `ctx.end()`. Assigns `it` to `$ctx$.$end_$`.
-
-[2]{.pnum} *Mandates*: `Context` is a specialization of `basic_format_parse_context` that is not a program-defined specialization.
 
 ```
 constexpr ~end_sentry();
@@ -1773,7 +1810,7 @@ namespace std {
 + template<class T, class charT = char>
 +   struct range_formatter;
 +
-+ template<ranges::range R, class charT>
++ template<ranges::input_range R, class charT>
 +         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
 +           && formattable<ranges::range_reference_t<R>, charT>
 +   struct formatter<R, charT>
@@ -1800,7 +1837,7 @@ namespace std {
 
 + template<class charT, formattable<charT> T1, formattable<charT> T2>
 +   struct formatter<pair<T1, T2>, charT>
-+     : tuple_formatter<tuple<remove_cvref_t<T1>, remove_cvref_t<T2>, charT>
++     : tuple_formatter<tuple<remove_cvref_t<T1>, remove_cvref_t<T2>>, charT>
 +   { };
 
   // ...
