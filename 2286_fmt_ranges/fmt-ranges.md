@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R4
+document: D2286R5
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,12 @@ toc-depth: 4
 ---
 
 # Revision History
+
+Since [@P2286R4], several major changes:
+
+* Removed the `d` specifier for delimiters. This paper offers no direct support for changing delimiter
+* Removed the extra APIs (`retargeted_format_context` and `end_sentry`)
+* Added clearer description of why `range_formatter` is desired and what its [exposed API is](#interface-of-the-proposed-solution).
 
 Since [@P2286R3], several major changes:
 
@@ -310,7 +316,7 @@ Should `std::map<int, int>{@{@1, 2}, {3, 4}}` be printed as `[(1, 2), (3, 4)]` (
 
 The same question holds for sets as well as maps, it's just a question for whether `std::set<int>{1, 2, 3}` prints as `[1, 2, 3]` (i.e. as any other range of `int`) or `{1, 2, 3}`?
 
-If we print `map`s as any other range of pairs, there's nothing left to do. If we print `map`s as associations, then we additionally have to answer the question of how user-defined associative containers can get printed in the same way. Hold onto this thought for a minute.
+If we print `map`s as any other range of pairs, there's nothing left to do. If we print `map`s as associations, then we additionally have to answer the question of how user-defined associative containers can get printed in the same way. This paper proposes printing the standard library maps as `{1: 2, 3, 4}` and the standard library sets as `{1, 2, 3}`.
 
 ### `char` and `string` (and other string-like types) in ranges or tuples
 
@@ -512,7 +518,9 @@ struct range_formatter {
 
 #### Range specifiers
 
-Range format specifiers come in two kinds: specifiers for the range itself and specifiers for the underlying elements of the range. They must be provided in order: the range specifiers (optionally), then if desired, a colon and then the underlying specifier (optionally). For instance:
+Range format specifiers come in two kinds: specifiers for the range itself and specifiers for the underlying elements of the range. They must be provided in order: the range specifiers (optionally), then if desired, a colon and then the underlying specifier (optionally).
+
+Some examples:
 
 |specifier|meaning|
 |-|----|
@@ -527,10 +535,9 @@ Range format specifiers come in two kinds: specifiers for the range itself and s
 There are only a few top-level range-specific specifiers proposed:
 
 * `s`: for ranges of char, only: formats the range as a string.
-* `?s` for ranges of char, only: same as `s` except will additionally quote and escape the string
+* `?s` for ranges of char, only: same as `s` except will additionally quote and escape the string.
 * `m`: for ranges of `pair`s (or `tuple`s of size 2) will format as `{k1: v1, k2: v2}` instead of `[(k1, v1), (k2, v2)]` (i.e. as a `map`).
-* `e`: will format without the brackets. This will let you, for instance, format a range as `a, b, c` or `{a, b, c}` or `(a, b, c)` or however else you want, simply by providing the desired format string. If printing a normal range, the brackets removed are `[]`. If printing as a map, the brackets removed are `{}`. If printing as a quoted string, the brackets removed are the `""`s (but escaping will still happen).
-* `d`: either a [dynamic delimiter](#dynamic-delimiter-for-ranges) or [static delimiter](#static-delimiter-for-ranges), depending on what follows the `d`. See those sections for more detail.
+* `n`: will format without the brackets. This will let you, for instance, format a range as `a, b, c` or `{a, b, c}` or `(a, b, c)` or however else you want, simply by providing the desired format string. If printing a normal range, the brackets removed are `[]`. If printing as a map, the brackets removed are `{}`. If printing as a quoted string, the brackets removed are the `""`s (but escaping will still happen).
 
 Additionally, ranges will support the same fill/align/width specifiers as in _std-format-spec_, for convenience and consistency.
 
@@ -570,262 +577,13 @@ Note that you can provide both a fill/align/width specifier to the range itself 
 |`{:o^17}`{.x}|`vector<int>{1, 2, 3}`|`oooo[1, 2, 3]oooo`{.x}|
 |`{:o^29:*^5}`{.x}|`vector<int>{1, 2, 3}`|`oooo[**1**, **2**, **3**]oooo`{.x}|
 
-#### Dynamic Delimiter for Ranges
-
-Let's say I have a `vector<uint8_t>` that I wish to format as a MAC address. That is, I want to print every element with `"02x"`, delimited with `":"` (rather than the default `", "`), and without the surrounding square brackets.
-
-I showed an example of how to do this earlier using `{fmt}`:
-
-::: bq
-```cpp
-std::vector<uint8_t> mac = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-fmt::print("{}\n", mac);                     // [170, 187, 204, 221, 238, 255]
-fmt::print("{:02x}\n", fmt::join(mac, ":")); // aa:bb:cc:dd:ee:ff
-```
-:::
-
-However, if we're going to add more support for adding specifiers to ranges, that suggests a potential alternate avenue. We could add a dynamic delimiter in the same way that we support dynamic width in other contexts. That is:
-
-::: bq
-```cpp
-fmt::print("{:ed{}:02x}", mac, ":"); // aa:bb:cc:dd:ee:ff
-```
-:::
-
-Here, `":ed{}"` are the specifiers for the top-level vector, and then `":02x"` are the specifiers for the underlying element. The `e` specifier (for empty brackets) avoids printing the `[]`s and then the `d` specifier (for delimiter) is followed by which argument to get the delimiter out of (`{}` for auto-numbering, could also have been `{1}` in this example).
-
-Perhaps `e` is implicit with `d`, perhaps not.
-
-The question is, there are ultimately two ways that we could format this mac address as a result of this paper:
-
-::: bq
-```cpp
-fmt::print("{:02x}\n", fmt::join(mac, ":")); // aa:bb:cc:dd:ee:ff
-fmt::print("{:ed{}:02x}\n", mac, ":");       // aa:bb:cc:dd:ee:ff
-```
-:::
-
-Do we want to pursue:
-
-1. Just `fmt::join`?
-2. Just dynamic delimiter?
-3. Both?
-
-The dynamic delimiter approach is more cryptic. The `join` approach arguably has the advantage of making it more clear what the delimiter is and how it's used, whereas in the dynamic delimiter approach it's just... wherever. I'll discuss [static delimiters](#static-delimiter-for-ranges) shortly.
-
-The dynamic delimiter approach is also limited to _just_ allowing `charT`, `charT const*`, and `basic_string_view<charT>` (and maybe `basic_string<charT>`) as delimiter types. The `fmt::join` approach would allow any type convertible to `basic_string_view<charT>`. This is a consequence of `fmt::join` being a function that accepts a `string_view` argument, while going through `format` directly can't do any sort of conversions - we have to use the type-erased arguments, and we simply cannot know if some user-defined type would have been convertible to `string_view`.
-
-But the dynamic delimiter approach has advantages too.
-
-First, it naturally nests. So if I wanted to format a _range_ of mac addresses, I can do that:
-
-::: bq
-```cpp
-// one mac
-fmt::print("{:ed{}:02x}\n", one_mac, ":");
-// range of macs
-fmt::print("{::ed{}:02x}\n", some_macs, ":");
-// range of range of macs
-fmt::print("{:::ed{}:02x}\n", uber_macs, ":");
-// range of range of macs, providing all three delimiters
-fmt::print("{:ed{}:ed{}:ed{}:02x}\n", uber_macs, "++", "**", ":");
-
-```
-:::
-
-Whereas this is much more awkward with `fmt::join`:
-
-::: bq
-```cpp
-// one mac
-fmt::print("{:02x}\n", fmt::join(one_mac, ":"));
-// range of macs
-fmt::print("{::02x}\n",
-    some_macs | std::views::transform([](auto&& m){
-        return fmt::join(m, ":");
-    }));
-// range of range of macs
-fmt::print("{:::02x}\n",
-    uber_macs | std::views::transform([](auto&& m){
-        return m | std::views::transform([](auto&& m2){
-            return fmt::join(m2, ":");
-        });
-    }));
-// range of range of macs, providing all three delimiters
-fmt::print("{:02x}\n",
-    fmt::join(uber_macs | std::views::transform([](auto&& m){
-        return fmt::join(m | std::views::transform([](auto&& m2){
-            return fmt::join(m2, ":");
-        }), "**");
-    }),
-    "++"));
-```
-:::
-
-The dynamic delimiter approach also supports more functionality. If I want to center-align the mac address and pad it with asterisks like I've been doing with every other example (for instance), that's just more specifiers as compared with another call to `format`:
-
-::: bq
-```cpp
-fmt::print("{:*^23ed{}:02x}\n", mac, ":");                            // ***aa:bb:cc:dd:ee:ff***
-fmt::print("{:*^23}\n", fmt::format("{:02x}", fmt::join(mac, ":")));  // ***aa:bb:cc:dd:ee:ff***
-```
-:::
-
-And the other advantage is that it's one less thing to have to specify. And part of the problem there is what to name `fmt::join`? This paper has been using the name `std::format_join`. Is this one of those cases that Bjarne likes to point out as people want more syntax because it's simply novel, or is this one of those cases where the terser syntax is just inscrutable and unnecessary?
-
-I was initially torn on dynamic delimiter, but after spending even a little bit of time working with them in the contexts of this paper, I have become a big fan. I don't actually think `fmt::join` adds anything. In `{fmt}`, formatting ranges wouldn't accept specifiers for each element, so `join` there solved two problems: adding element-specific specifiers and a custom delimiter. But this paper is already expanding the `{fmt}` functionality by allowing specifiers in direct range formatting, adding delimiters there seems in line with that further enhancement.
-
-In fact, we can even go further...
-
-#### Static Delimiter for Ranges
-
-I just showed the idea that we might be able to support:
-
-::: bq
-```cpp
-fmt::print("{:ed{}:02x}", mac, ":");  // aa:bb:cc:dd:ee:ff
-```
-:::
-
-But practically speaking, it is extremely common to know, statically, what the delimiter is. And a lot of the time the delimiter is going to be either empty (`""`) or a single character, as opposed to the default `", "`. In these cases, having a dynamic delimiter seems like pure overhead.
-
-Now the question is, how could we do a static delimiter (i.e. built into the specifier) rather than a dynamic delimiter (i.e. provided as a format argument)? The issue here is we need bounds - the same kinds of bounds we need for pair/tuple. So a starting point might be... let's just use `[]`s. The stuff between the `[]`s is the delimiter:
-
-::: bq
-```cpp
-// dynamic delimiter, single colon
-fmt::print("{:ed{}:02x}", mac, ":"); // aa:bb:cc:dd:ee:ff
-
-// static delimiter, different amounts of colons
-fmt::print("{:ed[:]:02x}", mac);     // aa:bb:cc:dd:ee:ff
-fmt::print("{:ed[]:02x}", mac);      // aabbccddeeff
-fmt::print("{:ed[::]:02x}", mac);    // aa::bb::cc::dd::ee::ff
-
-// dynamic delimiter, brackets for whatever reason
-fmt::print("{:ed{}:02x}", mac, "[]"); // aa[]bb[]cc[]dd[]ee[]ff
-```
-:::
-
-That is, grammatically, `d{}` or `d{4}` is a dynamic delimiter (referring to the next or 5th argument, respectively), while `d[]` or `d[-]` is a static delimiter (having no delimiter and a single hyphen, respectively). This is easy enough to parse.
-
-Of course, as the last example illustrates, once we pick some arbitrary brackets for this (and at least in this case we can actually pick square brackets), we run into the problem of: what if the user actually wants to use `]` in their delimiter? Now this makes the specifier much harder to parse or deal with and this quickly becomes the same level of problem as the pair/tuple issue.
-
-This one does have slightly easier solutions, in that we could either:
-
-1. Just not allow `]` in static delimiters, if they want to do that they have to use a dynamic one
-2. Go the lua/cmake route and rather than use `[` and `]` to delimit the static delimiter, use `[=[` and `]=]` (except with a variable amount of `=`s, they just have to match).
-3. Allow any Unicode open bracket (except `{`), that will then be matched by the corresponding close bracket.
-
-Or, in code form:
-
-::: bq
-```cpp
-// option 1)
-fmt::print("{:ed{}:02x}", mac, "[]");      // aa[]bb[]cc[]dd[]ee[]ff
-
-// option 2) disambiguate by using ='s
-fmt::print("{:ed[=[[]]=]:02x}", mac);      // aa[]bb[]cc[]dd[]ee[]ff
-fmt::print("{:ed[==[[]]==]:02x}", mac);    // aa[]bb[]cc[]dd[]ee[]ff
-
-// .. which pessimizes the typical case
-fmt::print("{:ed[[:]]:02x}", mac);         // aa:bb:cc:dd:ee:ff
-
-// option 3) use different brackets:
-fmt::print("{:ed([]):02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
-fmt::print("{:ed«[]»:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
-fmt::print("{:ed⦕[]⦖:02x}", mac);          // aa[]bb[]cc[]dd[]ee[]ff
-```
-:::
-
-If we're going to go the route of static delimiter at all, option 1 seems completely sufficient: if you want to use `]` in your delimiter, you have to use dynamic delimiter. That seems like an incredibly rare choice of delimiter anyway, not nearly common enough to either pessimize the overwhelmingly common case in terms of what the specifier string looks like or to overcomplicate what the implementation has to do to make it work.
-
-Using a static delimiter, bounded by `[]`s, does end up being a few characters shorter than using a dynamic delimiter:
-
-::: bq
-```cpp
-// format a mac address
-fmt::print("{:ed{}:02x}", mac, ":");
-fmt::print("{:ed[:]:02x}", mac);
-
-// join words with a space
-fmt::print("{:d{}})", words, " ");
-fmt::print("{:d[ ]})", words);
-
-// .. or with no delimiter
-fmt::print("{:d{}})", words, "");
-fmt::print("{:d[]})", words);
-```
-:::
-
-But the advantage here isn't that we're optimizing for the length of the specifier. The advantage here is that the specifier itself is sufficient to format the argument, so we _only_ have to deal with a single argument. I don't care about the four fewer characters. I do care about the one fewer argument and the locality of the delimiter.
-
-There would also be a question of how to implement this. Is a `formatter` allowed to keep a `string_view` into the format specifier ([@LWG3651]), to be used in `format`? If we can, then at least this would be a pretty cheap operation. If we can't, that in of itself might be a reason to eschew static delimiters. Note that `{fmt}`'s implementation today does already store `string_view`s to the format specifier in order to handle named arguments (which are not yet standardized), which at least suggests that this is a safe thing to do - although this should probably be clarified in the `formatter` requirements regardless of whether we pursue static delimiters (since just because we don't in this context, doesn't mean that users won't want to for their own types).
-
-
-A more complete example from my own code base, where in some contexts we have a type like `span<unsigned char>` we want to print in both hex and ascii. The three different levels of functionality there are:
-
-::: bq
-```cpp
-// use fmt::join
-fmt::print("{:#04x}: \"{}\"\n",
-    fmt::join(data, ","),
-    fmt::join(data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }), ""));
-
-// use dynamic delimiter
-fmt::print("{:d{}:#04x} \"{:ed{}:}\"\n",
-    data,
-    ",",
-    data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }),
-    "");
-
-// use static delimiter
-fmt::print("{:d[,]:#04x} \"{:ed[]:}\"\n",
-    data,
-    data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }));
-```
-:::
-
-Although with this particular example, this paper provides a better way to print the second part of this. We're producing a range of `char` and we want to print it with no delimiter and quoted. That's `{:s}`. So really the right way to present these levels are:
-
-::: bq
-```cpp
-// use fmt::join
-fmt::print("{:#04x}: {:s}\n",
-    fmt::join(data, ","),
-    data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }));
-
-// use dynamic delimiter
-fmt::print("{:d{}:#04x} {:s}\n",
-    data,
-    ",",
-    data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }));
-
-// use static delimiter
-fmt::print("{:d[,]:#04x} {:s}\n",
-    data,
-    data | views::transform([](unsigned char c){
-        return std::isprint(c) ? (char)c : '.';
-    }));
-```
-:::
-
-Static delimiter is limited by the fact that the delimiter must be static, so it cannot be the whole solution the problem. But it _is_ a good solution to the common case where the delimiter is statically known. When it's not (or based on user preference or other considerations), dynamic delimiter will be available as a fallback. Between these two options, that covers the complete set of functionality that `{fmt}` provides under `fmt::join` (in fact, more than complete).
-
 #### Pair and Tuple Specifiers
 
 This is the hard part.
 
 To start with, we for consistency will support the same fill/align/width specifiers as usual.
+
+And likewise an `n` specifier to omit the parentheses and an `m` speciifer to format `pair`s and 2-`tuple`s as `k: v` rather than `(k, v)`.
 
 For ranges, we can have the underlying element's `formatter` simply parse the whole format specifier string from the character past the `:` to the `}`. The range doesn't care anymore at that point, and what we're left with is a specifier that the underlying element should understand (or not).
 
@@ -860,26 +618,10 @@ To summarize: `std::pair` and `std::tuple` will only support:
 
 * the fill/align/width specifiers from _std-format-spec_
 * the `?` specifier, to format as debug (which is a no-op, since it will always format as debug, since there is no opt-out provided)
+* the `n` specifier, to omit the parentheses
 * the `m` specifier, only valid for `pair` or 2-tuple, to format as `k: v` instead of `(k, v)`
 
-
-It will additionally provide the function:
-
-::: bq
-```cpp
-void set_debug_format();
-```
-:::
-
-and `pair` and `tuple` will provide the function:
-
-::: bq
-```cpp
-void set_map_format();
-```
-:::
-
-which for `tuple` of size other than 2 will throw an exception (since you cannot format those as a map). To clarify the map specifier:
+For `tuple` of size other than 2, this will throw an exception (since you cannot format those as a map). To clarify the map specifier:
 
 |Format String|Contents|Formatted Output|
 |-|----|----|
@@ -936,92 +678,6 @@ Notes:
 
 * SG16 requested using the escape sequence format proposed by [@P2290R2], `{fmt}` uses a non-braced escape format (same as Python).
 * Grapheme_Extend part is not implemented in `{fmt}` yet.
-
-### Examples with user-defined types
-
-Let's say a user has a type like:
-
-::: bq
-```cpp
-struct Foo {
-    int bar;
-    std::string baz;
-};
-```
-:::
-
-And want to format `Foo{.bar=10, .baz="Hello World"}` as the string `Foo(bar=10, baz="Hello World")`. They can do so this way:
-
-::: bq
-```cpp
-template <>
-struct formatter<Foo, char> {
-    template <typename FormatContext>
-    constexpr auto format(Foo const& f, FormatContext& ctx) const {
-        return format_to(ctx.out(), "Foo(bar={}, baz={:?})", f.bar, f.baz);
-    }
-};
-```
-:::
-
-How about wrappers?
-
-Let's say you have your own implementation of `Optional`, that you want to format the same way that Rust does: so that a disengaged one formats as `None` and an engaged one formats as `Some(??)`. We can start by:
-
-::: bq
-```cpp
-template <formattable<char> T>
-struct formatter<Optional<T>, char> {
-    // we'll skip parse for now
-
-    template <typename FormatContext>
-    auto format(Optional<T> const& opt, FormatContext& ctx) {
-        if (not opt) {
-            return format_to(ctx.out(), "None");
-        } else {
-            return format_to(ctx.out(), "Some({})", *opt);
-        }
-    }
-};
-```
-:::
-
-If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules described earlier. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context?
-
-We can both add support for quoting/escaping and also arbitrary specifiers at the same time:
-
-::: bq
-```cpp
-template <formattable<char> T>
-struct formatter<Optional<T>, char> {
-    formatter<T, char> underlying;
-
-    template <typenaem ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        auto end = underlying.parse(ctx);
-        if constexpr (requires { underlying.set_debug_format(); }) {
-            underlying.set_debug_format();
-        }
-        return end;
-    }
-
-    template <typename FormatContext>
-    auto format(Optional<T> const& opt, FormatContext& ctx) {
-        if (not opt) {
-            return format_to(ctx.out(), "None");
-        } else {
-            ctx.advance_to(format_to(ctx.out(), "Some("));
-            auto out = underlying.format(*opt, ctx);
-            *out++ = ')';
-            return out;
-        }
-    }
-};
-```
-:::
-
-This lets me format `Optional<string>("hello")` as `Some("hello")`{.x} by default, or format `Optional<int>(42)` as `Some(0x2a)`{.x} if I provide the specifier string `"{:#x}"`.
-
 
 ## Implementation Challenges
 
@@ -1368,13 +1024,123 @@ struct formatter<R> : range_formatter<range_reference_t<R>>
 
 `range_formatter` allows reducing unnecessary template instantiations. Any range of `int` is going to `parse` its specifiers the same way, there's no need to re-instantiate that code n times. Such a type will also help users to write their own formatters, since they can have a member `range_formatter<int>` to handle any range of `int` (or `int&` or `int const&`) rather than having to have a specific `formatter<my_special_range>`.
 
+## Interface of the proposed solution
+
+The proposed API for range formatting is:
+
+::: bq
+```cpp
+template <range R, class charT>
+    requires (not same_as<remove_cvref_t<range_reference_t<R>>, R>)
+         and formattable<range_reference_t<R>, charT>
+struct formatter<R, charT>
+    : range_formatter<remove_cvref_t<range_reference_t<R>>, charT>
+{ };
+```
+:::
+
+Where the public-facing API of `range_formatter` is:
+
+::: bq
+```cpp
+template <class T, class charT = char>
+    requires formattable<T, charT>
+struct range_formatter {
+    void set_debug_format();
+    void set_map_format() requires (tuple_size<T>::value == 2);
+    void set_delimiter(basic_string_view<charT>);
+    void set_string_format() requires same_as<T, charT>;
+    void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext&) -> ParseContext::iterator;
+
+    template <typename R, typename FormatContext>
+        requires same_as<T, remove_cvref_t<range_reference_t<R>>>
+    auto format(R&&, FormatContext&) const -> FormatContext::iterator;
+};
+```
+:::
+
+The reason for this shape, rather than putting all the implementation directly into the particular specialization of `formatter<R, charT>`, is that it makes it much easier to implement custom formatting for other ranges. You can see an example in the implementation of `format_join` in the next section. Or, even simpler, implementing formatting for `std::map` and `std::set`:
+
+::: bq
+```cpp
+template <formattable Key, formattable T, class Compare, class Allocator>
+struct formatter<map<Key, T, Compare, Allocator>>
+    : range_formatter<pair<Key const, T>>
+{
+    formatter() {
+        this->set_map_format();
+    }
+};
+
+template <formattable Key, class Compare, class Allocator>
+struct formatter<set<Key, Compare, Allocator>>
+    : range_formatter<Key>
+{
+    formatter() {
+        this->set_brackets("{", "}");
+    }
+};
+```
+:::
+
+Similarly, the proposed API for pair and tuple formatting is:
+
+::: bq
+```cpp
+template <class charT, formattable<charT> T, formattable<charT> U>
+struct formatter<pair<T, U>, charT>
+    : tuple_formatter<tuple<remove_cvref_t<T>, remove_cvref_t<U>>, charT>
+{ };
+
+template <class charT, formattable<charT>... Ts>
+struct formatter<tuple<Ts...>, charT>
+    : tuple_formatter<tuple<remove_cvref_t<Ts>...>, charT>
+{ };
+```
+:::
+
+with the public-facing API of `tuple_formatter` being:
+
+::: bq
+```cpp
+template <class Tuple, class charT = char>
+struct tuple_formatter;
+
+template <class charT, formattable<charT>... Ts>
+struct tuple_formatter<tuple<Ts...>, charT>
+{
+    void set_debug_format();
+    void set_map_format() requires (tuple_size<T>::value == 2);
+    void set_delimiter(basic_string_view<charT>);
+    void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext&) -> ParseContext::iterator;
+
+    template <typename U, typename FormatContext>
+        requires $see below$
+    auto format(U&, FormatContext&) const -> FormatContext::iterator;
+};
+```
+:::
+
+Same structure (except no `set_string_format`) as before, for the same reasoning. The one thing to note here is that the formatter for, e.g., `pair<int, string>` inherits from `tuple_formatter<tuple<int, string>>`. The reason for this is that it allows the grouping of parameters nicely - otherwise the spelling would have to be `tuple_formatter<char, int, string>`, which looks exceedingly weird.
+
+The constraints on `U` for `format` are:
+
+* `tuple_size<U>::value == sizeof...(Ts)`
+*  for each `i`, `same_as<remove_cvref_t<tuple_element_t<i, U>>, T@~i~@>`
+
 ## What additional functionality?
 
 There’s three layers of potential functionality:
 
 1. Top-level printing of ranges: this is `fmt::print("{}", r)`;
 
-2. A format-joiner which allows providing a a custom delimiter: this is provided in `{fmt}` under the spelling `fmt::print("{:02x}", fmt::join(r, ":"))`. Previous revisions of the paper sought to simply standardize this under the name `std::format_join`, but this paper has since evolved to both allow custom specifier directly to format `r` as well as now providing the ability to directly provide the delimiter. A `fmt::join`-like facility is thus not necessary and not proposed.
+2. A format-joiner which allows providing a a custom delimiter: this is provided in `{fmt}` under the spelling `fmt::print("{:02x}", fmt::join(r, ":"))`. Previous revisions of the paper either sought to simply standardize this under the name `std::format_join` ([@P2286R3]), or to add the ability to specify a custom delimiter under the `d` specifier ([@P2286R4]), but this paper does not actually provide such a facility directly.
 
 3. A more involved version of a format-joiner which takes a delimiter and a callback that gets invoked on each element. fmt does not provide such a mechanism, though the Rust itertools library does:
 
@@ -1390,44 +1156,23 @@ assert_eq!(format!("{}", matrix_formatter),
 ```
 :::
 
-Even this example is also already solvable with the facilities suggested in this revision, as `format("{:ed[\n]:e}", matrix)` (or the `"\n"` delimiter can be provided dynamically). The one piece of flexibility _not_ provided in this revision is, in the case of formatting a range of ranges, there is currently no ability to provide a custom bracket to the inner range. You either get the default `[]`s or you can get nothing, but you have no way of providing, say... `()`s or `<>` or `⦕⦖`s or whatever. This would have to be provided by either the user writing a custom formatter for their custom type, or a future extension of this paper which explores how to do custom brackets.
+The paper provides the tools to implement to implement (2) and (3), but does not directly propose either.
 
-But given the wealth of functionality that is available, that's pretty great.
-
-### `fmt::join`
-
-If we were not going to support [dynamic](#dynamic-delimiter-for-ranges) and [static](#static-delimiter-for-ranges) delimiters for ranges, then we need some other mechanism to provide a custom delimiter. That mechanism exists in `{fmt}` already under the name `fmt::join`.
-
-It works like this:
-
-|Format String|Contents|Formatted Output|
-|-|---|---|
-|`{}`{.x}|`fmt::join(std::vector{1, 2, 3}, ", ")`|`1, 2, 3`{.x}|
-|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, ", ")`|`[1, 2, 3]`{.x}|
-|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, "--")`|`[1--2--3]`{.x}|
-|`[{}]`{.x}|`fmt::join(std::vector{1, 2, 3}, "--"s)`|`[1--2--3]`{.x}|
-|`{:x}`{.x}|`fmt::join(std::vector{10, 20, 30}, ":")`|`a:14:1e`{.x}|
-|`{:#04X}`{.x}|`fmt::join(std::vector{10, 20, 30}, ":")`|`0X0A:0X14:0X1E`{.x}|
-|`{}`{.x}|`fmt::join(std::vector{"h\tllo"s, "world"s}, ", ")`|`h    llo, world`{.x}|
-|`{:?}`{.x}|`fmt::join(std::vector{"h\tllo"s, "world"s}, ", ")`|`"h\tllo", "world"`{.x}|
-
-`std::format_join` (since we already have a `std::views::join` and none of the formatting is in a `fmt` namespace) will accept a `viewable_range` of `formattable` (based on the range's `reference` type) and a delimiter which is convertible to `(w)string_view`, and produce an `std::$format-join-view$` object. That object will take as a specifier whatever the underlying type accepts, and use that result to format each element, using the provided delimiter. Unlike the default ranges formatter, strings and chars are not printed escaped/quoted: users need to provide `?` for that functionality.
-
-Note that `std::format_join` does not (and cannot) support pad/align/width. But some people might prefer reading `join(r, "-")` in code over something like `d{}` with a `"-"` somewhere or `d[-]`. For those people, it is pretty straightforward to implement `fmt::join`, and that implementation is provided here (even though the paper is not proposing that we standardize this facility, because I've become convinced at this point that it is strictly worse than the static/dynamic delimiter approach that is proposed in this facility).
+For example, here is an implementation of `format_join(r, delim)`:
 
 ::: bq
 ```cpp
 template <std::ranges::input_range V>
     requires std::ranges::view<V>
-          && formattable<std::ranges::range_reference_t<V>>
+          && std::formattable<std::ranges::range_reference_t<V>>
 struct format_join_view {
     V v;
-    fmt::string_view delim;
+    std::string_view delim;
 };
 
-template <std::ranges::input_range V>
-struct fmt::formatter<format_join_view<V>> {
-    fmt::formatter<std::remove_cvref_t<std::ranges::range_reference_t<V>>> underlying;
+template <typename V>
+struct std::formatter<format_join_view<V>> {
+    std::range_formatter<std::ranges::range_reference_t<V>> underlying;
 
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
@@ -1436,22 +1181,14 @@ struct fmt::formatter<format_join_view<V>> {
 
     template <typename R, typename FormatContext>
     constexpr auto format(R&& r, FormatContext& ctx) {
-        auto it = std::ranges::begin(r.v);
-        auto out = ctx.out();
-        if (it != std::ranges::end(r.v)) {
-            out = underlying.format(*it, ctx);
-            for (++it; it != std::ranges::end(r.v); ++it) {
-                ctx.advance_to(std::ranges::copy(r.delim, out).out);
-                out = underlying.format(*it, ctx);
-            }
-        }
-        return out;
+        underlying.set_delimiter(r.delim);
+        return underling.format(r, ctx);
     }
 };
 
 template <std::ranges::viewable_range R>
-    requires formattable<std::ranges::range_reference_t<R>>
-auto format_join(R&& r, fmt::string_view delim) {
+    requires std::formattable<std::ranges::range_reference_t<R>>
+auto format_join(R&& r, std::string_view delim) {
     return format_join_view{std::views::all(std::forward<R>(r)), delim};
 }
 ```
@@ -1473,15 +1210,109 @@ For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there’s n
 
 Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. This type is actually defined as `vector<bool, Alloc>::reference`, so the wording for this aspect will be a little awkward (we'll need to provide a type trait `$is-vector-bool-reference$<R>`, etc., but this is a problem for the wording and the implementation to deal with).
 
+## Examples with user-defined types
+
+Let's say a user has a type like:
+
+::: bq
+```cpp
+struct Foo {
+    int bar;
+    std::string baz;
+};
+```
+:::
+
+And want to format `Foo{.bar=10, .baz="Hello World"}` as the string `Foo(bar=10, baz="Hello World")`. They can do so this way:
+
+::: bq
+```cpp
+template <>
+struct formatter<Foo, char> {
+    template <typename FormatContext>
+    constexpr auto format(Foo const& f, FormatContext& ctx) const {
+        return format_to(ctx.out(), "Foo(bar={}, baz={:?})", f.bar, f.baz);
+    }
+};
+```
+:::
+
+How about wrappers?
+
+Let's say you have your own implementation of `Optional`, that you want to format the same way that Rust does: so that a disengaged one formats as `None` and an engaged one formats as `Some(??)`. We can start by:
+
+::: bq
+```cpp
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    // we'll skip parse for now
+
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            return format_to(ctx.out(), "Some({})", *opt);
+        }
+    }
+};
+```
+:::
+
+If we had an `Optional<string>("hello")`, this would format as `Some(hello)`. Which may be fine. But what if we wanted to format it as `Some("hello")` instead? That is, take advantage of the quoting rules described earlier. What do you write instead of `*opt` to format `string`s (or `char`s or user-defined string-like types) as quoted in this context?
+
+We can both add support for quoting/escaping and also arbitrary specifiers at the same time:
+
+::: bq
+```cpp
+template <formattable<char> T>
+struct formatter<Optional<T>, char> {
+    formatter<T, char> underlying;
+
+    formatter() {
+        if constexpr (requires { underlying.set_debug_format(); }) {
+            underlying.set_debug_format();
+        }
+    }
+
+    template <typenaem ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return underlying.parse(ctx);
+    }
+
+    template <typename FormatContext>
+    auto format(Optional<T> const& opt, FormatContext& ctx) {
+        if (not opt) {
+            return format_to(ctx.out(), "None");
+        } else {
+            ctx.advance_to(format_to(ctx.out(), "Some("));
+            auto out = underlying.format(*opt, ctx);
+            *out++ = ')';
+            return out;
+        }
+    }
+};
+```
+:::
+
+This lets me format `Optional<string>("hello")` as `Some("hello")`{.x} by default, or format `Optional<int>(42)` as `Some(0x2a)`{.x} if I provide the specifier string `"{:#x}"`.
+
+
 # Proposal
 
 The standard library will provide the following utilities:
 
 * A `formattable` concept.
-* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/static delimiter/dynamic delimiter) and on the underlying element (which will be applied to every element in the range).
+* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/static delimiter/dynamic delimiter) and on the underlying element (which will be applied to every element in the range). `range_formatter`
 * A `tuple_formatter<tuple<Ts...>>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/static delimiter/dynamic delimiter), but will not accept any specifier the underlying elements.
-* A `retargeted_format_context` facility that allows the user to construct a new `(w)format_context` with a custom output iterator.
-* An `end_sentry` facility that allows the user to manipulate the parse context's range, for generic parsing purposes (so that users can, if they want, write their own arbitrarily-complex pair/tuple formatting).
+
+`range_formatter` and `tuple_formatter` will additionally have a bunch of public member functions to facilitate users building custom range and tuple formatters, as detailed [here](#interface-of-the-proposed-solution):
+
+* `set_debug_format()`
+* `set_map_format()`
+* `set_delimiter(string_view)`
+* `set_brackets(string_view, string_view)`
+* `set_string_format()` (`range_formatter` only)
 
 The standard library should add specializations of `formatter` for:
 
@@ -1497,7 +1328,7 @@ Additionally, the standard library should provide the following more specific sp
 * all the associative maps (`map`, `multimap`, `unordered_map`, `unordered_multimap`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{k: v, k: v}` instead of `[(k, v), (k, v)]`
 * all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
 
-Formatting for `string`, `string_view`, and `char`/`wchar_t` will gain a `?` specifier, which causes these types to be printed as escaped and quoted if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
+Formatting for `string`, `string_view`, `const char*`, and `char` (and all the `wchar_t` equivalents) will gain a `?` specifier as well as a `set_debug_format()` member function, which causes these types to be printed as [escaped and quoted](#escaping-behavior) if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
 
 ## Wording
 
@@ -1551,246 +1382,6 @@ template<class T, class charT>
 concept formattable = $formattable-impl$<remove_cvref_t<T>, charT>;
 ```
 [2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
-:::
-:::
-
-### Retargeting `format_context`
-
-Add to... somewhere:
-
-::: bq
-::: addu
-```
-// [format.retargeted.context]
-template<class Context, class OutputIt>
- struct retargeted_format_context;
-```
-:::
-:::
-
-And:
-
-::: bq
-::: addu
-[#]{.pnum} `retargeted_format_context` creates a new `basic_format_context` to allow for formatting into a custom buffer. [*Note*: This allows a `formatter` to change the output that a different `formatter` produces, for instance to add alignment or padding. *-end note*]
-
-[#]{.pnum} [*Example*:
-
-```cpp
-struct NoCapes {
-    string_view value;
-};
-
-template <>
-struct formatter<NoCapes> {
-    formatter<string_view> fmt;
-
-    template <class ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        return fmt.parse(ctx);
-    }
-
-    template <class FormatContext>
-    auto format(NoCapes nc, FormatContext& ctx) const {
-        vector<char> edna;
-        retargeted_format_context new_ctx(ctx, back_inserter(edna));
-        fmt.format(nc.value, new_ctx.context());
-        new_ctx.flush();
-
-        erase_if(edna, [](char c){
-            constexpr string_view capes = "capes";
-            return capes.contains(c);
-        });
-
-        return copy(edna.begin(), edna.end(), ctx.out());
-    }
-};
-
-print("'{}'\n", NoCapes{"scathing concession"}); // prints 'thing onion'
-```
-
--*end example*]
-:::
-:::
-
-And:
-
-::: bq
-::: addu
-```
-template<class Context, class OutputIt>
- class retargeted_format_context {
-   using $RetargetIt$ = $unspecified$;
-   using $NewContext$ = basic_format_context<$RetargetIt$, typename Context::char_type>; // exposition only
-   $NewContext$ $new_context_$;                                                          // exposition only
-
- public:
-   constexpr retargeted_format_context(Context& ctx, OutputIt it);
-   retargeted_format_context(retargeted_format_context&&) = delete;
-   retargeted_format_context& operator=(retargeted_format_context&&) = delete;
-   constexpr ~retargeted_format_context();
-
-   constexpr $NewContext$& context();
-   constexpr void flush();
- };
-```
-[1]{.pnum} `$RetargetIt$` is an implementation-defined type that models `output_iterator<const typename Context::char_type&>`.
-
-```cpp
-constexpr retargeted_format_context(Context& ctx, OutputIt it);
-```
-
-[#]{.pnum} *Effects*: Initializes `$new_context_$` such that it holds the same formatting state as `ctx` and such that writing through the iterator yielded by `$new_context_$.out()` will write through `it`, possibly buffered.
-
-```cpp
-constexpr ~retargeted_format_context();
-```
-
-[#]{.pnum} *Effects*: Calls `flush()`.
-
-```cpp
-constexpr $NewContext$& context();
-```
-
-[#]{.pnum} *Returns*: `$new_context_$`.
-
-```cpp
-constexpr void flush();
-```
-
-[#]{.pnum} *Effects*: All of the possibly-buffered writes into `$new_context_$.out()` are written through the user-provided output iterator.
-:::
-:::
-
-### An `end_sentry` for `basic_parse_format_context`
-
-In [format.parse.ctx]{.sref}:
-
-::: bq
-```diff
-namespace std {
-  template<class charT>
-  class basic_format_parse_context {
-  public:
-    using char_type = charT;
-    using const_iterator = typename basic_string_view<charT>::const_iterator;
-    using iterator = const_iterator;
-
-  private:
-    iterator begin_;                                    // exposition only
-    iterator end_;                                      // exposition only
-    enum indexing { unknown, manual, automatic };       // exposition only
-    indexing indexing_;                                 // exposition only
-    size_t next_arg_id_;                                // exposition only
-    size_t num_args_;                                   // exposition only
-
-  public:
-    constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
-                                                  size_t num_args = 0) noexcept;
-    basic_format_parse_context(const basic_format_parse_context&) = delete;
-    basic_format_parse_context& operator=(const basic_format_parse_context&) = delete;
-
-    constexpr const_iterator begin() const noexcept;
-    constexpr const_iterator end() const noexcept;
-    constexpr void advance_to(const_iterator it);
-
-    constexpr size_t next_arg_id();
-    constexpr void check_arg_id(size_t id);
-
-+   class end_sentry;
-  };
-}
-```
-:::
-
-And later:
-
-::: bq
-::: addu
-[1]{.pnum} `end_sentry` temporarily reduces the scope of the parse context to facilitate more complex parsing of format specifiers.
-
-[#]{.pnum} [*Example*:
-
-```cpp
-struct TwoInts {
-    int i;
-    int j;
-};
-
-template <>
-struct formatter<TwoInts> {
-    formatter<int> fmt_i;
-    formatter<int> fmt_j;
-
-    template <class ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        auto it = find(ctx.begin(), ctx.end(), ',');
-        if (it == ctx.end()) {
-            throw format_error("invalid specifier");
-        }
-
-        {
-            typename ParseContext::end_sentry _(ctx, it);
-            if (fmt_i.parse(ctx) != it) {
-                throw format_error("invalid specifier");
-            }
-        }
-
-        ++it;
-        ctx.advance_to(it);
-        return fmt_j.parse(ctx);
-    }
-
-    template <class FormatContext>
-    auto format(TwoInts ti, FormatContext& ctx) const {
-        auto out = ctx.out();
-        *out++ = '(';
-        ctx.advance_to(out);
-        out = fmt_i.format(ti.i, ctx);
-        *out++ = ',';
-        *out++ = ' ';
-        ctx.advance_to(out);
-        out = fmt_j.format(ti.j, ctx);
-        *out++ = ')';
-        return out;
-    }
-};
-
-print("{:#04x,#06x}\n", TwoInts{222, 173}); // prints (0xde, 0x00ad)
-```
-
--*end example*]
-:::
-:::
-
-And
-
-::: bq
-::: addu
-```
-template <typename charT>
-class basic_format_parse_context<charT>::end_sentry {
-    basic_format_parse_context& $ctx$;   // exposition only
-    iterator $real_end$;                 // exposition only
-
-public:
-    constexpr end_sentry(basic_format_parse_context& ctx, iterator it);
-    end_sentry(end_sentry&&) = delete;
-    end_sentry& operator=(end_sentry&&) = delete;
-    constexpr ~end_sentry();
-};
-```
-
-```
-constexpr end_sentry(basic_format_parse_context& ctx, iterator it);
-```
-[1]{.pnum} *Effects*: Initializes `$ctx$` with `ctx` and `$real_end$` with `ctx.end()`. Assigns `it` to `$ctx$.$end_$`.
-
-```
-constexpr ~end_sentry();
-```
-
-[#]{.pnum} *Effects*: Assigns `$real_end$` to `$ctx$.$end_$`
 :::
 :::
 
@@ -1880,6 +1471,8 @@ namespace std {
 + template<class Tuple, class charT = char>
 +   struct tuple_formatter;
 
++ template <class charT, formattable<charT>... Ts>
++   struct tuple_formatter<tuple<Ts...>, charT>;
   // ...
 }
 ```

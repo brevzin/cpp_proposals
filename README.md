@@ -72,7 +72,7 @@ None.
 
 - [p2214r1 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r1.html), with Conor Hoekstra and Tim Song.
 - [p2278r2 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r2.html).
-- [p2286r4 - Formatting Ranges](2286_fmt_ranges/p2286r4.html)
+- [d2286r5 - Formatting Ranges](2286_fmt_ranges/d2286r5.html)
 - [p2441r0 - `views::join_with`](2441_join_with/p2441r1.html)
 - [p2446r1 - `views::all_move`](2441_move_view/p2446r1.html)
 
