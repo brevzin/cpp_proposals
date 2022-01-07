@@ -72,13 +72,13 @@ The standard library _could_ do better. In fact, even outside of the standard li
 
 ## What does single-pass actually mean?
 
-The question really boils down to: is `move_iterator<T*>` a single-pass iterator or not? The text we have in the standard, in [forward.iterators]{.sref} is:
+The question really boils down to: is `move_iterator<T*>` a single-pass iterator or not? The text we have in the standard, in [iterator.concept.forward]{.sref} (and also in [forward.iterators]{.sref}) is:
 
 ::: bq
-[3]{.pnum} Two dereferenceable iterators `a` and `b` of type `X` offer the _multi-pass guarantee_ if:
+[4]{.pnum} Two dereferenceable iterators `a` and `b` of type `X` offer the _multi-pass guarantee_ if:
 
-* [3.1]{.pnum} `a == b` implies `++a == ++b` and
-* [3.2]{.pnum} `X` is a pointer type or the expression `(void)++X(a), *a` is equivalent to the expression `*a`.
+* [4.1]{.pnum} `a == b` implies `++a == ++b` and
+* [4.2]{.pnum} the expression `((void)[](X x){++x;}(a), *a)` is equivalent to the expression `*a`.
 :::
 
 `move_iterator<T*>` very much satisfies both of those requirements. This issue here is not dereferencing. Given a `move_iterator<T*>`, this logic is fine:
@@ -151,9 +151,9 @@ namespace std {
 ::: addu
 [0]{.pnum} The member _typedef-name_ `iterator_concept` is defined as follows:
 
-* [0.#]{.pnum} If `Iterator` models `random_access_range`, then `iterator_concept` denotes `random_access_iterator_tag`.
-* [0.#]{.pnum} Otherwise, if `Iterator` models `bidirectional_range`, then `iterator_concept` denotes `bidirectional_iterator_tag`.
-* [0.#]{.pnum} Otherwise, if `Iterator` models `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
+* [0.#]{.pnum} If `Iterator` models `random_access_iterator`, then `iterator_concept` denotes `random_access_iterator_tag`.
+* [0.#]{.pnum} Otherwise, if `Iterator` models `bidirectional_iterator`, then `iterator_concept` denotes `bidirectional_iterator_tag`.
+* [0.#]{.pnum} Otherwise, if `Iterator` models `forward_iterator`, then `iterator_concept` denotes `forward_iterator_tag`.
 * [0.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag`.
 :::
 
