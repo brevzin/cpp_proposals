@@ -11,7 +11,7 @@ toc: true
 
 # Introduction
 
-`std::move_iterator<Iter>` was added in C++11 as an iterator adaptor that wraps `Iter` and changed only its `operator*()`, such that dereferencing a `std::move_iterator<Iter>` would give you an rvalue reference if dereferencing an `Iter` gave you an lvalue reference. Originally, the `iterator_category` of a `move_iterator<Iter>` was simply propagated from `Iter`'s (so `std::move_iterator<int*>::iterator_category` was `random_access_iterator_tag`), but then there was some discussion about whether it should instead _always_ be `input_iterator_tag`. That discussion was resolved in [@LWG1211] in favor of keeping the iterator category stronger, for performance reasons.
+`std::move_iterator<Iter>` was added in C++11 as an iterator adaptor ([@N1771]) that wraps `Iter` and changed only its `operator*()`, such that dereferencing a `std::move_iterator<Iter>` would give you an rvalue reference if dereferencing an `Iter` gave you an lvalue reference. Originally, the `iterator_category` of a `move_iterator<Iter>` was simply propagated from `Iter`'s (so `std::move_iterator<int*>::iterator_category` was `random_access_iterator_tag`), but then there was some discussion about whether it should instead _always_ be `input_iterator_tag`. That discussion was resolved in [@LWG1211] in favor of keeping the iterator category stronger, for performance reasons.
 
 Howard Hinnant's example from that issue was:
 
