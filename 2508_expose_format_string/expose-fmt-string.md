@@ -1,6 +1,6 @@
 ---
 title: "Expose `std::$basic-format-string$<charT, Args...>`"
-document: P2508R0
+document: P2508R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2508R0]: making `$basic-format-string$` non-exposition only isn't sufficient, also actually need a way to pull out the underlying format string if we want to eventually invoke `vformat`.
 
 # Introduction
 
@@ -76,6 +80,25 @@ Either way, it would be nice to avoid specifying `std::basic_format_string` as a
 
 I leave it up to the discretion of LEWG, Charlie, and the ghost of C++20 Past whether or not we ever actually want to declare C++20 complete.
 
+## Also need a getter
+
+Making `$basic-format-string$` publicly accessible is enough to make the original example work, since `std::format` just takes a `std::format_string<Args...>`, so if we construct one in advance and pass it in, that's sufficient:
+
+::: bq
+```cpp
+template <typename... Args>
+void log(std::format_string<Args...> s, Args&&... args) {
+    if (logging_enabled) {
+        log_raw(std::format(s, std::forward<Args>(args)...));
+    }
+}
+```
+:::
+
+However, it's not enough for us with other APIs. We may want to do static validation in the front-end of our logger, but then ship everything over to the back-end to do actual logging, in a way that could support shipping the actual format string but not its type. This is still useful, as it lets us get the benefit of doing checks up front. It's just that ultimately, instead of calling `std::format` to do the actual formatting, we call `std::vformat` (which just takes a `string_view` and a `format_args`).
+
+In order to do so, we need some way to pull out the underlying `string_view` from a `std::format<Args...>`. A simple getter suffices, but we do need that getter. So this paper isn't simply making names non-exposition-only, it's also adding a function.
+
 # Wording
 
 In [format.syn]{.sref}, replace the exposition-only names `$basic-format-string$`, `$format-string$`, and `$wformat-string$` with the non-exposition-only names `basic_format_string`, `format_string`, and `wformat_string`.
@@ -85,7 +108,7 @@ Do the same for their uses in [format.fmt.string]{.sref} (renaming the clause to
 In [format.fmt.string]{.sref}, the member should still be exposition only. The full subclause should now read (the only change is the name of the class template, which no longer is exposition only):
 
 ::: bq
-```cpp
+```diff
 template<class charT, class... Args>
 struct basic_format_string {
 private:
@@ -93,6 +116,8 @@ private:
 
 public:
   template<class T> consteval basic_format_string(const T& s);
+
++ constexpr basic_string_view<charT> get_format_string() const { return $str$; }
 };
 ```
 
@@ -129,8 +154,8 @@ Bump the `format` feature-test macro in [version.syn]{.sref}:
 
 ::: bq
 ```diff
-- #define __cpp_­lib_­format    @[202110L]{.diffdel}@ // also in <format>
-+ #define __cpp_­lib_­format    @[2022XXL]{.diffins}@ // also in <format>
+- #define __cpp_lib_format    @[202110L]{.diffdel}@ // also in <format>
++ #define __cpp_lib_format    @[2022XXL]{.diffins}@ // also in <format>
 ```
 :::
 
