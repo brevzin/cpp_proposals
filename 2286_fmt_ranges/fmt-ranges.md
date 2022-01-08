@@ -1399,13 +1399,14 @@ namespace std {
 
 + // [format.range], range formatter
 + template<class T, class charT = char>
++     requires formattable<T, charT>
 +   struct range_formatter;
 +
 + template<ranges::input_range R, class charT>
 +         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
 +           && formattable<ranges::range_reference_t<R>, charT>
 +   struct formatter<R, charT>
-+     : range_formatter<ranges::range_reference_t<R>, charT>
++     : range_formatter<remove_cvref_t<ranges::range_reference_t<R>>, charT>
 +   { };
 
   // ...
