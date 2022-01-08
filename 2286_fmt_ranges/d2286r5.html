@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-03" />
+  <meta name="dcterms.date" content="2022-01-07" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-03</td>
+    <td>2022-01-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1806,7 +1806,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb34-3"><a href="#cb34-3"></a><span class="kw">struct</span> range_formatter <span class="op">{</span></span>
 <span id="cb34-4"><a href="#cb34-4"></a>    <span class="dt">void</span> set_debug_format<span class="op">()</span>;</span>
 <span id="cb34-5"><a href="#cb34-5"></a>    <span class="dt">void</span> set_map_format<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>tuple_size<span class="op">&lt;</span>T<span class="op">&gt;::</span>value <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb34-6"><a href="#cb34-6"></a>    <span class="dt">void</span> set_delimiter<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
+<span id="cb34-6"><a href="#cb34-6"></a>    <span class="dt">void</span> set_separator<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
 <span id="cb34-7"><a href="#cb34-7"></a>    <span class="dt">void</span> set_string_format<span class="op">()</span> <span class="kw">requires</span> same_as<span class="op">&lt;</span>T, charT<span class="op">&gt;</span>;</span>
 <span id="cb34-8"><a href="#cb34-8"></a>    <span class="dt">void</span> set_brackets<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;</span>, basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
 <span id="cb34-9"><a href="#cb34-9"></a></span>
@@ -1860,7 +1860,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb37-6"><a href="#cb37-6"></a><span class="op">{</span></span>
 <span id="cb37-7"><a href="#cb37-7"></a>    <span class="dt">void</span> set_debug_format<span class="op">()</span>;</span>
 <span id="cb37-8"><a href="#cb37-8"></a>    <span class="dt">void</span> set_map_format<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>tuple_size<span class="op">&lt;</span>T<span class="op">&gt;::</span>value <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb37-9"><a href="#cb37-9"></a>    <span class="dt">void</span> set_delimiter<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
+<span id="cb37-9"><a href="#cb37-9"></a>    <span class="dt">void</span> set_separator<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
 <span id="cb37-10"><a href="#cb37-10"></a>    <span class="dt">void</span> set_brackets<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;</span>, basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;)</span>;</span>
 <span id="cb37-11"><a href="#cb37-11"></a></span>
 <span id="cb37-12"><a href="#cb37-12"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
@@ -1915,7 +1915,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb38-17"><a href="#cb38-17"></a></span>
 <span id="cb38-18"><a href="#cb38-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
 <span id="cb38-19"><a href="#cb38-19"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb38-20"><a href="#cb38-20"></a>        underlying<span class="op">.</span>set_delimiter<span class="op">(</span>r<span class="op">.</span>delim<span class="op">)</span>;</span>
+<span id="cb38-20"><a href="#cb38-20"></a>        underlying<span class="op">.</span>set_separator<span class="op">(</span>r<span class="op">.</span>delim<span class="op">)</span>;</span>
 <span id="cb38-21"><a href="#cb38-21"></a>        <span class="cf">return</span> underling<span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</span>
 <span id="cb38-22"><a href="#cb38-22"></a>    <span class="op">}</span></span>
 <span id="cb38-23"><a href="#cb38-23"></a><span class="op">}</span>;</span>
@@ -2012,7 +2012,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><code class="sourceCode cpp">set_debug_format<span class="op">()</span></code></li>
 <li><code class="sourceCode cpp">set_map_format<span class="op">()</span></code></li>
-<li><code class="sourceCode cpp">set_delimiter<span class="op">(</span>string_view<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp">set_separator<span class="op">(</span>string_view<span class="op">)</span></code></li>
 <li><code class="sourceCode cpp">set_brackets<span class="op">(</span>string_view, string_view<span class="op">)</span></code></li>
 <li><code class="sourceCode cpp">set_string_format<span class="op">()</span></code> (<code class="sourceCode cpp">range_formatter</code> only)</li>
 </ul>

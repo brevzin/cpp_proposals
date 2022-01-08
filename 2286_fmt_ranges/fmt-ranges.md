@@ -1048,7 +1048,7 @@ template <class T, class charT = char>
 struct range_formatter {
     void set_debug_format();
     void set_map_format() requires (tuple_size<T>::value == 2);
-    void set_delimiter(basic_string_view<charT>);
+    void set_separator(basic_string_view<charT>);
     void set_string_format() requires same_as<T, charT>;
     void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
 
@@ -1114,7 +1114,7 @@ struct tuple_formatter<tuple<Ts...>, charT>
 {
     void set_debug_format();
     void set_map_format() requires (tuple_size<T>::value == 2);
-    void set_delimiter(basic_string_view<charT>);
+    void set_separator(basic_string_view<charT>);
     void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
 
     template <typename ParseContext>
@@ -1181,7 +1181,7 @@ struct std::formatter<format_join_view<V>> {
 
     template <typename R, typename FormatContext>
     constexpr auto format(R&& r, FormatContext& ctx) {
-        underlying.set_delimiter(r.delim);
+        underlying.set_separator(r.delim);
         return underling.format(r, ctx);
     }
 };
@@ -1310,7 +1310,7 @@ The standard library will provide the following utilities:
 
 * `set_debug_format()`
 * `set_map_format()`
-* `set_delimiter(string_view)`
+* `set_separator(string_view)`
 * `set_brackets(string_view, string_view)`
 * `set_string_format()` (`range_formatter` only)
 
