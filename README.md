@@ -35,7 +35,7 @@ make all of my papers.
 - [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 - [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
-- [p2415r1 - What is a `view`?](2415_what_view/p2415r1.html)
+- [p2415r2 - What is a `view`?](2415_what_view/p2415r2.html)
 
 #### C++23
 
@@ -88,7 +88,7 @@ None.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2481r0 - Forwarding reference to specific type/template](2481_forward_ref/forward-ref.md).
 - [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
-- [p2508r0 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r0.html)
+- [p2508r1 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r1.html)
 
 ### Rejected
 
