@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-07" />
+  <meta name="dcterms.date" content="2022-01-10" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-07</td>
+    <td>2022-01-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -881,7 +881,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p><code class="sourceCode cpp">filesystem<span class="op">::</span>path</code> is kind of an interesting range, since it’s a range of <code class="sourceCode cpp">path</code>. As such, checking to see if it would be formattable as this paper currently does would lead to constraint recursion:</p>
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range R<span class="op">&gt;</span></span>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb17-2"><a href="#cb17-2"></a>    <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
 <span id="cb17-3"><a href="#cb17-3"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
 <span id="cb17-4"><a href="#cb17-4"></a>    <span class="op">:</span> range_formatter<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
@@ -895,7 +895,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>But this only handles <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code> and would not handle other ranges-of-self (the obvious example here is <code class="sourceCode cpp">boost<span class="op">::</span>filesystem<span class="op">::</span>path</code>). So instead, this paper proposes that we first reject ranges-of-self:</p>
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range R<span class="op">&gt;</span></span>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb19-2"><a href="#cb19-2"></a>    <span class="kw">requires</span> <span class="op">(</span><span class="kw">not</span> same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, R<span class="op">&gt;)</span></span>
 <span id="cb19-3"><a href="#cb19-3"></a>         <span class="kw">and</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
 <span id="cb19-4"><a href="#cb19-4"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span></span>
@@ -1779,12 +1779,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb32-3"><a href="#cb32-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
 <span id="cb32-4"><a href="#cb32-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;)</span>;</span>
 <span id="cb32-5"><a href="#cb32-5"></a></span>
-<span id="cb32-6"><a href="#cb32-6"></a>    <span class="kw">template</span> <span class="op">&lt;</span>range R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
 <span id="cb32-7"><a href="#cb32-7"></a>        <span class="kw">requires</span> same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, V<span class="op">&gt;</span></span>
 <span id="cb32-8"><a href="#cb32-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span>, FormatContext<span class="op">&amp;)</span>;</span>
 <span id="cb32-9"><a href="#cb32-9"></a><span class="op">}</span>;</span>
 <span id="cb32-10"><a href="#cb32-10"></a></span>
-<span id="cb32-11"><a href="#cb32-11"></a><span class="kw">template</span> <span class="op">&lt;</span>range R<span class="op">&gt;</span> <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb32-11"><a href="#cb32-11"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span> <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
 <span id="cb32-12"><a href="#cb32-12"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">:</span> range_formatter<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
 <span id="cb32-13"><a href="#cb32-13"></a><span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
@@ -1792,7 +1792,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="3.6" id="interface-of-the-proposed-solution"><span class="header-section-number">3.6</span> Interface of the proposed solution<a href="#interface-of-the-proposed-solution" class="self-link"></a></h2>
 <p>The proposed API for range formatting is:</p>
 <blockquote>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range R, <span class="kw">class</span> charT<span class="op">&gt;</span></span>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">class</span> charT<span class="op">&gt;</span></span>
 <span id="cb33-2"><a href="#cb33-2"></a>    <span class="kw">requires</span> <span class="op">(</span><span class="kw">not</span> same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, R<span class="op">&gt;)</span></span>
 <span id="cb33-3"><a href="#cb33-3"></a>         <span class="kw">and</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, charT<span class="op">&gt;</span></span>
 <span id="cb33-4"><a href="#cb33-4"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R, charT<span class="op">&gt;</span></span>
@@ -1905,26 +1905,27 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb38-7"><a href="#cb38-7"></a><span class="op">}</span>;</span>
 <span id="cb38-8"><a href="#cb38-8"></a></span>
 <span id="cb38-9"><a href="#cb38-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> V<span class="op">&gt;</span></span>
-<span id="cb38-10"><a href="#cb38-10"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>format_join_view<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb38-11"><a href="#cb38-11"></a>    std<span class="op">::</span>range_formatter<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> underlying;</span>
-<span id="cb38-12"><a href="#cb38-12"></a></span>
-<span id="cb38-13"><a href="#cb38-13"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
-<span id="cb38-14"><a href="#cb38-14"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb38-15"><a href="#cb38-15"></a>        <span class="cf">return</span> underlying<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
-<span id="cb38-16"><a href="#cb38-16"></a>    <span class="op">}</span></span>
-<span id="cb38-17"><a href="#cb38-17"></a></span>
-<span id="cb38-18"><a href="#cb38-18"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb38-19"><a href="#cb38-19"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb38-20"><a href="#cb38-20"></a>        underlying<span class="op">.</span>set_separator<span class="op">(</span>r<span class="op">.</span>delim<span class="op">)</span>;</span>
-<span id="cb38-21"><a href="#cb38-21"></a>        <span class="cf">return</span> underling<span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</span>
-<span id="cb38-22"><a href="#cb38-22"></a>    <span class="op">}</span></span>
-<span id="cb38-23"><a href="#cb38-23"></a><span class="op">}</span>;</span>
-<span id="cb38-24"><a href="#cb38-24"></a></span>
-<span id="cb38-25"><a href="#cb38-25"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>viewable_range R<span class="op">&gt;</span></span>
-<span id="cb38-26"><a href="#cb38-26"></a>    <span class="kw">requires</span> std<span class="op">::</span>formattable<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb38-27"><a href="#cb38-27"></a><span class="kw">auto</span> format_join<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, std<span class="op">::</span>string_view delim<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb38-28"><a href="#cb38-28"></a>    <span class="cf">return</span> format_join_view<span class="op">{</span>std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>, delim<span class="op">}</span>;</span>
-<span id="cb38-29"><a href="#cb38-29"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb38-10"><a href="#cb38-10"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>format_join_view<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></span>
+<span id="cb38-11"><a href="#cb38-11"></a><span class="op">{</span></span>
+<span id="cb38-12"><a href="#cb38-12"></a>    std<span class="op">::</span>range_formatter<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> underlying;</span>
+<span id="cb38-13"><a href="#cb38-13"></a></span>
+<span id="cb38-14"><a href="#cb38-14"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
+<span id="cb38-15"><a href="#cb38-15"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-16"><a href="#cb38-16"></a>        <span class="cf">return</span> underlying<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
+<span id="cb38-17"><a href="#cb38-17"></a>    <span class="op">}</span></span>
+<span id="cb38-18"><a href="#cb38-18"></a></span>
+<span id="cb38-19"><a href="#cb38-19"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb38-20"><a href="#cb38-20"></a>    <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb38-21"><a href="#cb38-21"></a>        underlying<span class="op">.</span>set_separator<span class="op">(</span>r<span class="op">.</span>delim<span class="op">)</span>;</span>
+<span id="cb38-22"><a href="#cb38-22"></a>        <span class="cf">return</span> underling<span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</span>
+<span id="cb38-23"><a href="#cb38-23"></a>    <span class="op">}</span></span>
+<span id="cb38-24"><a href="#cb38-24"></a><span class="op">}</span>;</span>
+<span id="cb38-25"><a href="#cb38-25"></a></span>
+<span id="cb38-26"><a href="#cb38-26"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>viewable_range R<span class="op">&gt;</span></span>
+<span id="cb38-27"><a href="#cb38-27"></a>    <span class="kw">requires</span> std<span class="op">::</span>formattable<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb38-28"><a href="#cb38-28"></a><span class="kw">auto</span> format_join<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, std<span class="op">::</span>string_view delim<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-29"><a href="#cb38-29"></a>    <span class="cf">return</span> format_join_view<span class="op">{</span>std<span class="op">::</span>views<span class="op">::</span>all<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>R<span class="op">&gt;(</span>r<span class="op">))</span>, delim<span class="op">}</span>;</span>
+<span id="cb38-30"><a href="#cb38-30"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <h2 data-number="3.8" id="format-or-stdcout"><span class="header-section-number">3.8</span> <code class="sourceCode cpp">format</code> or <code class="sourceCode cpp">std<span class="op">::</span>cout</code>?<a href="#format-or-stdcout" class="self-link"></a></h2>
 <p>Just <code class="sourceCode cpp">format</code> is sufficient.</p>
@@ -2018,7 +2019,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>The standard library should add specializations of <code class="sourceCode cpp">formatter</code> for:</p>
 <ul>
-<li>any type <code class="sourceCode cpp">R</code> that is a <code class="sourceCode cpp">range</code> whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></code></li>
+<li>any type <code class="sourceCode cpp">R</code> that is an <code class="sourceCode cpp">input_range</code> whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></code></li>
 <li><code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> if <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>tuple<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, remove_cvref_t<span class="op">&lt;</span>U<span class="op">&gt;&gt;&gt;</span></code></li>
 <li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> if all of <code class="sourceCode cpp">Ts<span class="op">...</span></code> are <code class="sourceCode cpp">formattable</code>, which inherits from <code class="sourceCode cpp">tuple_formatter<span class="op">&lt;</span>tuple<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>Ts<span class="op">&gt;...&gt;&gt;</span></code></li>
 </ul>
@@ -2149,7 +2150,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb48-4"><a href="#cb48-4"></a>  // [format.formatter], formatter</span>
 <span id="cb48-5"><a href="#cb48-5"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
 <span id="cb48-6"><a href="#cb48-6"></a></span>
-<span id="cb48-7"><a href="#cb48-7"></a><span class="va">+ // [format.tuple], range formatter</span></span>
+<span id="cb48-7"><a href="#cb48-7"></a><span class="va">+ // [format.tuple], tuple formatter</span></span>
 <span id="cb48-8"><a href="#cb48-8"></a><span class="va">+ template&lt;class Tuple, class charT = char&gt;</span></span>
 <span id="cb48-9"><a href="#cb48-9"></a><span class="va">+   struct tuple_formatter;</span></span>
 <span id="cb48-10"><a href="#cb48-10"></a></span>
@@ -2172,11 +2173,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb49-7"><a href="#cb49-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
 <span id="cb49-8"><a href="#cb49-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
 <span id="cb49-9"><a href="#cb49-9"></a></span>
-<span id="cb49-10"><a href="#cb49-10"></a><span class="va">+ template&lt;class R&gt;</span></span>
+<span id="cb49-10"><a href="#cb49-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
 <span id="cb49-11"><a href="#cb49-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
 <span id="cb49-12"><a href="#cb49-12"></a></span>
-<span id="cb49-13"><a href="#cb49-13"></a><span class="va">+ template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span></span>
-<span id="cb49-14"><a href="#cb49-14"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span></code></pre></div>
+<span id="cb49-13"><a href="#cb49-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
+<span id="cb49-14"><a href="#cb49-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [vector.bool] at the end:</p>
@@ -2185,8 +2186,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1"></a>template&lt;class R&gt;</span>
 <span id="cb50-2"><a href="#cb50-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>template&lt;class R, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;R&gt;</span>
-<span id="cb51-2"><a href="#cb51-2"></a>  class formatter&lt;R, charT&gt; {</span>
+<div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
+<span id="cb51-2"><a href="#cb51-2"></a>  class formatter&lt;T, charT&gt; {</span>
 <span id="cb51-3"><a href="#cb51-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
 <span id="cb51-4"><a href="#cb51-4"></a></span>
 <span id="cb51-5"><a href="#cb51-5"></a>  public:</span>
@@ -2196,7 +2197,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb51-9"><a href="#cb51-9"></a></span>
 <span id="cb51-10"><a href="#cb51-10"></a>    template &lt;class FormatContext&gt;</span>
 <span id="cb51-11"><a href="#cb51-11"></a>      typename FormatContext::iterator</span>
-<span id="cb51-12"><a href="#cb51-12"></a>        format(const R&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb51-12"><a href="#cb51-12"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
 <span id="cb51-13"><a href="#cb51-13"></a>  };</span></code></pre></div>
 <div class="sourceCode" id="cb52"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb52-1"><a href="#cb52-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb52-2"><a href="#cb52-2"></a>  constexpr typename ParseContext::iterator</span>
@@ -2204,7 +2205,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb53"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb53-2"><a href="#cb53-2"></a>  typename FormatContext::iterator</span>
-<span id="cb53-3"><a href="#cb53-3"></a>    format(const R&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
+<span id="cb53-3"><a href="#cb53-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>

@@ -365,7 +365,7 @@ Poll 1: Recommend removing the filesystem::path formatter from P1636 "Formatters
 
 ::: bq
 ```cpp
-template <range R>
+template <input_range R>
     requires formattable<range_reference_t<R>>
 struct formatter<R>
     : range_formatter<range_reference_t<R>>
@@ -388,7 +388,7 @@ But this only handles `std::filesystem::path` and would not handle other ranges-
 
 ::: bq
 ```cpp
-template <range R>
+template <input_range R>
     requires (not same_as<remove_cvref_t<range_reference_t<R>>, R>)
          and formattable<range_reference_t<R>>
 struct formatter<R>
@@ -1011,12 +1011,12 @@ struct range_formatter {
     template <typename ParseContext>
     constexpr auto parse(ParseContext&);
 
-    template <range R, typename FormatContext>
+    template <input_range R, typename FormatContext>
         requires same_as<remove_cvref_t<range_reference_t<R>>, V>
     constexpr auto format(R&&, FormatContext&);
 };
 
-template <range R> requires formattable<range_reference_t<R>>
+template <input_range R> requires formattable<range_reference_t<R>>
 struct formatter<R> : range_formatter<range_reference_t<R>>
 { };
 ```
@@ -1030,7 +1030,7 @@ The proposed API for range formatting is:
 
 ::: bq
 ```cpp
-template <range R, class charT>
+template <input_range R, class charT>
     requires (not same_as<remove_cvref_t<range_reference_t<R>>, R>)
          and formattable<range_reference_t<R>, charT>
 struct formatter<R, charT>
@@ -1171,7 +1171,8 @@ struct format_join_view {
 };
 
 template <typename V>
-struct std::formatter<format_join_view<V>> {
+struct std::formatter<format_join_view<V>>
+{
     std::range_formatter<std::ranges::range_reference_t<V>> underlying;
 
     template <typename ParseContext>
@@ -1180,7 +1181,7 @@ struct std::formatter<format_join_view<V>> {
     }
 
     template <typename R, typename FormatContext>
-    constexpr auto format(R&& r, FormatContext& ctx) {
+    auto format(R&& r, FormatContext& ctx) const {
         underlying.set_separator(r.delim);
         return underling.format(r, ctx);
     }
@@ -1316,7 +1317,7 @@ The standard library will provide the following utilities:
 
 The standard library should add specializations of `formatter` for:
 
-* any type `R` that is a `range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
+* any type `R` that is an `input_range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
 * `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<T>, remove_cvref_t<U>>>`
 * `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<Ts>...>>`
 
@@ -1468,7 +1469,7 @@ namespace std {
   // [format.formatter], formatter
   template<class T, class charT = char> struct formatter;
 
-+ // [format.tuple], range formatter
++ // [format.tuple], tuple formatter
 + template<class Tuple, class charT = char>
 +   struct tuple_formatter;
 
@@ -1494,11 +1495,11 @@ namespace std {
   // [vector.bool], class vector<bool>
   template<class Allocator> class vector<bool, Allocator>;
 
-+ template<class R>
++ template<class T>
 +   inline constexpr bool @*is-vector-bool-reference*@ = @*see below*@; // exposition only
 
-+ template<class R, class charT> requires @*is-vector-bool-reference*@<R>
-+   struct formatter<R, charT>;
++ template<class T, class charT> requires @*is-vector-bool-reference*@<T>
++   struct formatter<T, charT>;
 ```
 :::
 
@@ -1513,8 +1514,8 @@ template<class R>
 [8]{.pnum} The variable template `@*is-vector-bool-reference*@<T>` is `true` if `T` denotes the type `vector<bool, Alloc>::reference` for some type `Alloc` and `vector<bool, Alloc>` is not a program-defined specialization.
 
 ```
-template<class R, class charT> requires @*is-vector-bool-reference*@<R>
-  class formatter<R, charT> {
+template<class T, class charT> requires @*is-vector-bool-reference*@<T>
+  class formatter<T, charT> {
     formatter<bool, charT> @*fmt*@;     // exposition only
 
   public:
@@ -1524,7 +1525,7 @@ template<class R, class charT> requires @*is-vector-bool-reference*@<R>
 
     template <class FormatContext>
       typename FormatContext::iterator
-        format(const R& ref, FormatContext& ctx) const;
+        format(const T& ref, FormatContext& ctx) const;
   };
 ```
 
@@ -1539,7 +1540,7 @@ template <class ParseContext>
 ```
 template <class FormatContext>
   typename FormatContext::iterator
-    format(const R& ref, FormatContext& ctx) const;
+    format(const T& ref, FormatContext& ctx) const;
 ```
 
 [10]{.pnum} *Effects*: Equivalent to `return @*fmt*@.format(ref, ctx);`
