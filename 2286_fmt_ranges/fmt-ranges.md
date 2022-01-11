@@ -1401,7 +1401,7 @@ namespace std {
 + // [format.range], range formatter
 + template<class T, class charT = char>
 +     requires formattable<T, charT>
-+   struct range_formatter;
++   class range_formatter;
 +
 + template<ranges::input_range R, class charT>
 +         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
@@ -1413,6 +1413,121 @@ namespace std {
   // ...
 }
 ```
+:::
+
+And a new clause [format.range]:
+
+::: bq
+::: addu
+```
+namespace std {
+  template<class T, class charT = char>
+    requires formattable<T, charT>
+  class range_formatter {
+    formatter<T, charT> $underlying_$;                                          // exposition only
+    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
+    basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("[");  // exposition only
+    basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
+
+  public:
+    range_formatter() = default;
+
+    void set_debug_format();
+    void set_map_format() requires (tuple_size<T>::value == 2);
+    void set_string_format() requires same_as<T, charT>;
+    void set_separator(basic_string_view<charT> sep);
+    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <ranges::input_range R, class FormatContext>
+        requires same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
+      typename FormatContext::iterator
+        format(R&& r, FormatContext& ctx);
+  };
+}
+```
+
+[1]{.pnum} The class template `range_formatter` is a convenient utility for implementing `formatter` specializations for range types.
+
+```
+void set_debug_format();
+```
+
+[#]{.pnum} *Effects*: Equivalent to ...???
+
+```
+void set_map_format() requires (tuple_size<T>::value == 2);
+```
+
+[#]{.pnum} *Effects*: Equivalent to
+
+::: bq
+```
+set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
+set_separator($STATICALLY-WIDEN$<charT>(", "));
+$underlying_$.set_map_format();
+```
+:::
+
+```
+void set_string_format() requires same_as<T, charT>;
+```
+
+[#]{.pnum} *Effects*: Equivalent to
+
+::: bq
+```
+set_brackets({}, {});
+set_separator({});
+```
+:::
+
+```
+void set_separator(basic_string_view<charT> sep);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `$sep_$ = sep`;
+
+```
+void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+```
+
+[#]{.pnum} *Effects*: Equivalent to
+
+::: bq
+```
+$open_$ = open;
+$close_$ = close;
+```
+:::
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+[#]{.pnum} Something.
+
+```
+template <ranges::input_range R, class FormatContext>
+    requires same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
+  typename FormatContext::iterator
+    format(R&& r, FormatContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Writes the following into `ctx.out()`:
+
+* [#.#]{.pnum} `$open_$`
+* [#.#]{.pnum} for each element, `e`, of the range `r`:
+  * [#.#.#]{.pnum} the result of writing `e` via `$underlying_$`
+  * [#.#.#]{.pnum} `$sep_$`, unless `e` is the last element of `r`
+* [#.#]{.pnum} `$close_$`
+
+[#]{.pnum} *Returns*:  an iterator past the end of the output range.
+:::
 :::
 
 ### Formatting for `pair` and `tuple`
