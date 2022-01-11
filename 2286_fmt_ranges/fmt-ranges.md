@@ -1424,15 +1424,16 @@ namespace std {
   template<class T, class charT = char>
     requires formattable<T, charT>
   class range_formatter {
-    formatter<T, charT> $underlying_$;                                          // exposition only
+    formatter<T, charT> $underlying_$;                                        // exposition only
     basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
     basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("[");  // exposition only
     basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
+    bool $debug_$ = true;                                                     // exposition only
 
   public:
     range_formatter() = default;
 
-    void set_debug_format();
+    void set_debug_format(bool debug = true);
     void set_map_format() requires (tuple_size<T>::value == 2);
     void set_string_format() requires same_as<T, charT>;
     void set_separator(basic_string_view<charT> sep);
@@ -1453,10 +1454,10 @@ namespace std {
 [1]{.pnum} The class template `range_formatter` is a convenient utility for implementing `formatter` specializations for range types.
 
 ```
-void set_debug_format();
+void set_debug_format(bool debug);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to ...???
+[#]{.pnum} *Effects*: Equivalent to `$debug_$ = debug;`
 
 ```
 void set_map_format() requires (tuple_size<T>::value == 2);

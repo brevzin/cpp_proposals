@@ -2109,33 +2109,34 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb46-2"><a href="#cb46-2"></a>  template&lt;class T, class charT = char&gt;</span>
 <span id="cb46-3"><a href="#cb46-3"></a>    requires formattable&lt;T, charT&gt;</span>
 <span id="cb46-4"><a href="#cb46-4"></a>  class range_formatter {</span>
-<span id="cb46-5"><a href="#cb46-5"></a>    formatter&lt;T, charT&gt; <em>underlying_</em>;                                          // exposition only</span>
+<span id="cb46-5"><a href="#cb46-5"></a>    formatter&lt;T, charT&gt; <em>underlying_</em>;                                        // exposition only</span>
 <span id="cb46-6"><a href="#cb46-6"></a>    basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);    // exposition only</span>
 <span id="cb46-7"><a href="#cb46-7"></a>    basic_string_view&lt;charT&gt; <em>open-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;[&quot;);  // exposition only</span>
 <span id="cb46-8"><a href="#cb46-8"></a>    basic_string_view&lt;charT&gt; <em>close-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;]&quot;); // exposition only</span>
-<span id="cb46-9"><a href="#cb46-9"></a></span>
-<span id="cb46-10"><a href="#cb46-10"></a>  public:</span>
-<span id="cb46-11"><a href="#cb46-11"></a>    range_formatter() = default;</span>
-<span id="cb46-12"><a href="#cb46-12"></a></span>
-<span id="cb46-13"><a href="#cb46-13"></a>    void set_debug_format();</span>
-<span id="cb46-14"><a href="#cb46-14"></a>    void set_map_format() requires (tuple_size&lt;T&gt;::value == 2);</span>
-<span id="cb46-15"><a href="#cb46-15"></a>    void set_string_format() requires same_as&lt;T, charT&gt;;</span>
-<span id="cb46-16"><a href="#cb46-16"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
-<span id="cb46-17"><a href="#cb46-17"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
-<span id="cb46-18"><a href="#cb46-18"></a></span>
-<span id="cb46-19"><a href="#cb46-19"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb46-20"><a href="#cb46-20"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb46-21"><a href="#cb46-21"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb46-22"><a href="#cb46-22"></a></span>
-<span id="cb46-23"><a href="#cb46-23"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
-<span id="cb46-24"><a href="#cb46-24"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
-<span id="cb46-25"><a href="#cb46-25"></a>      typename FormatContext::iterator</span>
-<span id="cb46-26"><a href="#cb46-26"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
-<span id="cb46-27"><a href="#cb46-27"></a>  };</span>
-<span id="cb46-28"><a href="#cb46-28"></a>}</span></code></pre></div>
+<span id="cb46-9"><a href="#cb46-9"></a>    bool <em>debug_</em> = true;                                                     // exposition only</span>
+<span id="cb46-10"><a href="#cb46-10"></a></span>
+<span id="cb46-11"><a href="#cb46-11"></a>  public:</span>
+<span id="cb46-12"><a href="#cb46-12"></a>    range_formatter() = default;</span>
+<span id="cb46-13"><a href="#cb46-13"></a></span>
+<span id="cb46-14"><a href="#cb46-14"></a>    void set_debug_format(bool debug = true);</span>
+<span id="cb46-15"><a href="#cb46-15"></a>    void set_map_format() requires (tuple_size&lt;T&gt;::value == 2);</span>
+<span id="cb46-16"><a href="#cb46-16"></a>    void set_string_format() requires same_as&lt;T, charT&gt;;</span>
+<span id="cb46-17"><a href="#cb46-17"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
+<span id="cb46-18"><a href="#cb46-18"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
+<span id="cb46-19"><a href="#cb46-19"></a></span>
+<span id="cb46-20"><a href="#cb46-20"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb46-21"><a href="#cb46-21"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb46-22"><a href="#cb46-22"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb46-23"><a href="#cb46-23"></a></span>
+<span id="cb46-24"><a href="#cb46-24"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
+<span id="cb46-25"><a href="#cb46-25"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
+<span id="cb46-26"><a href="#cb46-26"></a>      typename FormatContext::iterator</span>
+<span id="cb46-27"><a href="#cb46-27"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
+<span id="cb46-28"><a href="#cb46-28"></a>  };</span>
+<span id="cb46-29"><a href="#cb46-29"></a>}</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">1</a></span> The class template <code class="sourceCode cpp">range_formatter</code> is a convenient utility for implementing <code class="sourceCode cpp">formatter</code> specializations for range types.</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>void set_debug_format();</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">2</a></span> <em>Effects</em>: Equivalent to …???</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>void set_debug_format(bool debug);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>debug_</em> <span class="op">=</span> debug;</code></p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>void set_map_format() requires (tuple_size&lt;T&gt;::value == 2);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">3</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
