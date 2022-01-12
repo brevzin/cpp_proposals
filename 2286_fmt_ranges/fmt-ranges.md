@@ -1419,6 +1419,38 @@ And a new clause [format.range]:
 
 ::: bq
 ::: addu
+[1]{.pnum} The class template `range_formatter` is a convenient utility for implementing `formatter` specializations for range types.
+
+[#]{.pnum} `range_formatter` interprets `$format-spec$` as a `$range-format-spec$`.  The syntax of format specifications is as follows:
+
+```
+$range-format-spec$:
+    $fill-and-align$@~opt~@ $width$@~opt~@ $range-no-bracket$@~opt~@ $range-type$@~opt~@ $range-underlying-spec$@~opt~@
+
+$range-no-bracket$:
+    n
+
+$range-type$:
+    m
+    s
+    ?s
+
+$range-underlying-spec$:
+    : $format-spec$
+```
+
+[#]{.pnum} For `range_formatter<T, charT>`, the `$format-spec$` in a `$range-underlying-spec$`, if any, is interpreted by `formatter<T, charT>`.
+
+[#]{.pnum} The `$range-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
+
+[#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
+
+|Option|Requirements|Meaning|
+|-|-|-|
+|`m`|`T` must be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `$range-no-bracket$` specifier is also provided, both the open and close brackets are still empty. *-end note*]|
+|`s`|`T` must be `charT`|Indicates that the open bracket should be `""`, the close bracket should be `""`, and the separator should be `""`.|
+|`?s`|`T` must be `charT`|Indicates that the open bracket should be `"\"'`, the close bracket should be `"\""`, the separator should be `""`, and every `charT` in the range should be formatted as escaped but not quoted ([format.string.debug]). |
+
 ```
 namespace std {
   template<class T, class charT = char>
@@ -1428,14 +1460,10 @@ namespace std {
     basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
     basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("[");  // exposition only
     basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
-    bool $debug_$ = true;                                                     // exposition only
 
   public:
     range_formatter() = default;
 
-    void set_debug_format(bool debug = true);
-    void set_map_format() requires (tuple_size<T>::value == 2);
-    void set_string_format() requires same_as<T, charT>;
     void set_separator(basic_string_view<charT> sep);
     void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
 
@@ -1450,41 +1478,6 @@ namespace std {
   };
 }
 ```
-
-[1]{.pnum} The class template `range_formatter` is a convenient utility for implementing `formatter` specializations for range types.
-
-```
-void set_debug_format(bool debug);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `$debug_$ = debug;`
-
-```
-void set_map_format() requires (tuple_size<T>::value == 2);
-```
-
-[#]{.pnum} *Effects*: Equivalent to
-
-::: bq
-```
-set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
-set_separator($STATICALLY-WIDEN$<charT>(", "));
-$underlying_$.set_map_format();
-```
-:::
-
-```
-void set_string_format() requires same_as<T, charT>;
-```
-
-[#]{.pnum} *Effects*: Equivalent to
-
-::: bq
-```
-set_brackets({}, {});
-set_separator({});
-```
-:::
 
 ```
 void set_separator(basic_string_view<charT> sep);
@@ -1506,20 +1499,13 @@ $close_$ = close;
 :::
 
 ```
-template <class ParseContext>
-  constexpr typename ParseContext::iterator
-    parse(ParseContext& ctx);
-```
-[#]{.pnum} Something.
-
-```
 template <ranges::input_range R, class FormatContext>
     requires same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
   typename FormatContext::iterator
     format(R&& r, FormatContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Writes the following into `ctx.out()`:
+[#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$range-format-spec$`:
 
 * [#.#]{.pnum} `$open_$`
 * [#.#]{.pnum} for each element, `e`, of the range `r`:
@@ -1527,7 +1513,7 @@ template <ranges::input_range R, class FormatContext>
   * [#.#.#]{.pnum} `$sep_$`, unless `e` is the last element of `r`
 * [#.#]{.pnum} `$close_$`
 
-[#]{.pnum} *Returns*:  an iterator past the end of the output range.
+[#]{.pnum} *Returns*: an iterator past the end of the output range.
 :::
 :::
 
