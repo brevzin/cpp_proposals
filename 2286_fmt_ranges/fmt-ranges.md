@@ -1441,15 +1441,19 @@ $range-underlying-spec$:
 
 [#]{.pnum} For `range_formatter<T, charT>`, the `$format-spec$` in a `$range-underlying-spec$`, if any, is interpreted by `formatter<T, charT>`.
 
+[#]{.pnum} The `$fill$` in a `$fill-and-align$` in a `$range-format-spec$`, if any, shall not be `:`.
+
 [#]{.pnum} The `$range-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
 [#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
 |Option|Requirements|Meaning|
 |-|-|-|
-|`m`|`T` must be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `$range-no-bracket$` specifier is also provided, both the open and close brackets are still empty. *-end note*]|
-|`s`|`T` must be `charT`|Indicates that the open bracket, close bracket, and separator should be `""`.|
-|`?s`|`T` must be `charT`|Indicates that the open bracket and close bracket should be `"\""`, the separator should be `""`, and every `charT` in the range should be formatted as escaped but not quoted ([format.string.debug]). |
+|`m`|`T` shall be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `$range-no-bracket$` specifier is also provided, both the open and close brackets are still empty. *-end note*]|
+|`s`|`T` shall be `charT`|Indicates that the range should be formatted as a `string`.|
+|`?s`|`T` shall be `charT`|Indicates that the range should be formatted as an escaped `string` ([format.string.escaped]).|
+
+If the `$range-type$` is `s` or `?s`, then there shall be no `$range-underlying-spec$`.
 
 ```
 namespace std {
@@ -1483,7 +1487,7 @@ namespace std {
 void set_separator(basic_string_view<charT> sep);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `$sep_$ = sep`;
+[#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
 void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
@@ -1493,10 +1497,20 @@ void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close)
 
 ::: bq
 ```
-$open_$ = open;
-$close_$ = close;
+$open-bracket_$ = open;
+$close-bracket_$ = close;
 ```
 :::
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the `$range-type$` is either `s` or `?s`, if `$underlying_$.set_debug_format()` is a valid expression, calls `$underlying_$.set_debug_format()`.
+
+[#]{.pnum} *Returns*: an iterator past the end of the `$range-format-spec$`.
 
 ```
 template <ranges::input_range R, class FormatContext>
@@ -1507,11 +1521,14 @@ template <ranges::input_range R, class FormatContext>
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$range-format-spec$`:
 
-* [#.#]{.pnum} `$open_$`
-* [#.#]{.pnum} for each element, `e`, of the range `r`:
-  * [#.#.#]{.pnum} the result of writing `e` via `$underlying_$`
-  * [#.#.#]{.pnum} `$sep_$`, unless `e` is the last element of `r`
-* [#.#]{.pnum} `$close_$`
+* [#.#]{.pnum} If the `$range-type$` was `s`, then as if by formatting `basic_string<charT>(from_range, r)`.
+* [#.#]{.pnum} Otherwise, if the `$range-type$` was `?s`, then as if by formatting `basic_string<charT>(from_range, r)` as an escaped string ([format.string.escaped]).
+* [#.#]{.pnum} Otherwise,
+  * [#.#.#]{.pnum} `$open-bracket_$`
+  * [#.#.#]{.pnum} for each element, `e`, of the range `r`:
+    * [#.#.#.#]{.pnum} the result of writing `e` via `$underlying_$`
+    * [#.#.#.#]{.pnum} `$separator_$`, unless `e` is the last element of `r`
+  * [#.#.#]{.pnum} `$close-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
 :::
