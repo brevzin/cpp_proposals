@@ -1453,7 +1453,7 @@ $range-underlying-spec$:
 |`s`|`T` shall be `charT`|Indicates that the range should be formatted as a `string`.|
 |`?s`|`T` shall be `charT`|Indicates that the range should be formatted as an escaped `string` ([format.string.escaped]).|
 
-If the `$range-type$` is `s` or `?s`, then there shall be no `$range-underlying-spec$`.
+If the `$range-type$` is `s` or `?s`, then there shall be no `$range-no-bracket$` specifier and no `$range-underlying-spec$`.
 
 ```
 namespace std {
