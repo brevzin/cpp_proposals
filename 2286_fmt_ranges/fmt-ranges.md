@@ -1448,8 +1448,8 @@ $range-underlying-spec$:
 |Option|Requirements|Meaning|
 |-|-|-|
 |`m`|`T` must be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `$range-no-bracket$` specifier is also provided, both the open and close brackets are still empty. *-end note*]|
-|`s`|`T` must be `charT`|Indicates that the open bracket should be `""`, the close bracket should be `""`, and the separator should be `""`.|
-|`?s`|`T` must be `charT`|Indicates that the open bracket should be `"\"'`, the close bracket should be `"\""`, the separator should be `""`, and every `charT` in the range should be formatted as escaped but not quoted ([format.string.debug]). |
+|`s`|`T` must be `charT`|Indicates that the open bracket, close bracket, and separator should be `""`.|
+|`?s`|`T` must be `charT`|Indicates that the open bracket and close bracket should be `"\""`, the separator should be `""`, and every `charT` in the range should be formatted as escaped but not quoted ([format.string.debug]). |
 
 ```
 namespace std {
