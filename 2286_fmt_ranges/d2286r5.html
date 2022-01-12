@@ -2176,17 +2176,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb47-12"><a href="#cb47-12"></a></span>
 <span id="cb47-13"><a href="#cb47-13"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
 <span id="cb47-14"><a href="#cb47-14"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
-<span id="cb47-15"><a href="#cb47-15"></a></span>
-<span id="cb47-16"><a href="#cb47-16"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb47-17"><a href="#cb47-17"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb47-18"><a href="#cb47-18"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb47-19"><a href="#cb47-19"></a></span>
-<span id="cb47-20"><a href="#cb47-20"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
-<span id="cb47-21"><a href="#cb47-21"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
-<span id="cb47-22"><a href="#cb47-22"></a>      typename FormatContext::iterator</span>
-<span id="cb47-23"><a href="#cb47-23"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
-<span id="cb47-24"><a href="#cb47-24"></a>  };</span>
-<span id="cb47-25"><a href="#cb47-25"></a>}</span></code></pre></div>
+<span id="cb47-15"><a href="#cb47-15"></a>    formatter&lt;T, charT&gt;&amp; underlying() { return <em>underlying_</em>; }</span>
+<span id="cb47-16"><a href="#cb47-16"></a></span>
+<span id="cb47-17"><a href="#cb47-17"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb47-18"><a href="#cb47-18"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb47-19"><a href="#cb47-19"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb47-20"><a href="#cb47-20"></a></span>
+<span id="cb47-21"><a href="#cb47-21"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
+<span id="cb47-22"><a href="#cb47-22"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
+<span id="cb47-23"><a href="#cb47-23"></a>      typename FormatContext::iterator</span>
+<span id="cb47-24"><a href="#cb47-24"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
+<span id="cb47-25"><a href="#cb47-25"></a>  };</span>
+<span id="cb47-26"><a href="#cb47-26"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
 <div class="sourceCode" id="cb49"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb49-1"><a href="#cb49-1"></a>void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span></code></pre></div>

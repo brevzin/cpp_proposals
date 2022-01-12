@@ -1470,6 +1470,7 @@ namespace std {
 
     void set_separator(basic_string_view<charT> sep);
     void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+    formatter<T, charT>& underlying() { return $underlying_$; }
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
